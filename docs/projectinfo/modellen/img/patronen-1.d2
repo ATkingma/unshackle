@@ -1,0 +1,32 @@
+title: "[Overzicht] FluentAssertions naar Shouldly - patterns" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+vars: {
+  d2-legend: {
+    f: FluentAssertions {style.fill: "#bbdefb"}
+    s: Shouldly {style.fill: "#c8e6c9"}
+    m: Manual {style.fill: "#ffe0b2"}
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: Wordt
+  }
+}
+be: "x.Should().Be(y)" {style.fill: "#bbdefb"}
+count: "x.Should().HaveCount(n)" {style.fill: "#bbdefb"}
+truefalse: "x.Should().BeTrue() / BeFalse()" {style.fill: "#bbdefb"}
+nul: "x.Should().BeNull() / NotBeNull()" {style.fill: "#bbdefb"}
+sbe: "x.ShouldBe(y)\n(cast bij numeriek type)" {style.fill: "#c8e6c9"}
+scount: "x.Length / x.Count / x.Count().ShouldBe(n)\n(+ using System.Linq)" {style.fill: "#c8e6c9"}
+stf: "x.ShouldBeTrue() / ShouldBeFalse()\nbool?: x.ShouldBe(true)" {style.fill: "#c8e6c9"}
+snull: "x.ShouldBeNull() / ShouldNotBeNull()" {style.fill: "#c8e6c9"}
+m1: "Manual: XML/Types, comparer,\nonverenigbaar type" {style.fill: "#ffe0b2"}
+m2: "Manual: predicate, dictionary,\n?., niet-generiek IEnumerable" {style.fill: "#ffe0b2"}
+m3: "Manual: type niet bool/bool?" {style.fill: "#ffe0b2"}
+m4: "Manual: alleen gedeelde gevallen" {style.fill: "#ffe0b2"}
+be -> sbe
+count -> scount
+truefalse -> stf
+nul -> snull
+be -> m1
+count -> m2
+truefalse -> m3
+nul -> m4

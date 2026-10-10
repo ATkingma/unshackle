@@ -11,7 +11,7 @@ Statussen: `open` · `bezig (TAAK-NNN)` · `geblokkeerd (TAAK-NNN, wacht op TAAK
 | 0   | _fundament_                  | contracten, Fixer, proof-runner + `fa.should-be`  | —                                                                                        | klaar (TAAK-001)         |
 | 1   | `fa.have-count`              | `x.Should().HaveCount(n)`                         | List → `x.Count.ShouldBe(n)`, IEnumerable → `x.Count().ShouldBe(n)`, dictionary → Manual | klaar (TAAK-002)        |
 | 2   | `fa.be-true-false`           | `x.Should().BeTrue()` / `BeFalse()`               | `x.ShouldBeTrue()` / `ShouldBeFalse()`                                                   | klaar (TAAK-003) |
-| 3   | `fa.be-null`                 | `x.Should().BeNull()` / `NotBeNull()`             | `x.ShouldBeNull()` / `ShouldNotBeNull()`                                                 | open   |
+| 3   | `fa.be-null`                 | `x.Should().BeNull()` / `NotBeNull()`             | `x.ShouldBeNull()` / `ShouldNotBeNull()`                                                 | klaar (TAAK-004) |
 | 4   | `fa.be-empty`                | `x.Should().BeEmpty()` / `NotBeEmpty()`           | `x.ShouldBeEmpty()` / `ShouldNotBeEmpty()`                                               | open   |
 | 5   | `fa.contain`                 | `x.Should().Contain(item)` / `Contain(predicate)` | `x.ShouldContain(item)` / `ShouldContain(predicate)`                                     | open   |
 | 6   | `fa.throw`                   | `act.Should().Throw<T>()` (+ `.WithMessage`)      | `Should.Throw<T>(act)` (+ message-check)                                                 | open   |

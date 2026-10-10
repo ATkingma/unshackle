@@ -1,0 +1,59 @@
+classes: {
+  person: {shape: c4-person; style: {fill: "#08427b"; stroke: "#073b6f"; font-color: "#ffffff"}}
+  system: {shape: rectangle; style: {fill: "#1168bd"; stroke: "#0b4884"; font-color: "#ffffff"}}
+  external: {shape: rectangle; style: {fill: "#999999"; stroke: "#6b6b6b"; font-color: "#ffffff"}}
+  container: {shape: rectangle; style: {fill: "#438dd5"; stroke: "#3c7fc0"; font-color: "#ffffff"}}
+  component: {shape: rectangle; style: {fill: "#85bbf0"; stroke: "#5d82a8"; font-color: "#000000"}}
+  boundary: {label.near: top-left; style: {fill: transparent; stroke: "#888888"; stroke-dash: 4; font-size: 15}}
+}
+title: "[Container] Unshackle" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    p: Person {class: person}
+    c: Container {class: container}
+    x: External software system {class: external}
+    bd: Software system boundary {class: boundary}
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: Relationship
+  }
+}
+dev: |md
+  **Developer**\
+  [Person]
+
+  Draait de tool.
+| {class: person}
+unshackle: "Unshackle [Software System]" {
+  class: boundary
+  cli: |md
+    **Unshackle.Interface**\
+    [Container: C# console (System.CommandLine)]
+
+    CLI en composition root. Nu leeg: Program.cs geeft alleen 0 terug.
+  | {class: container}
+  core: |md
+    **Unshackle.Core**\
+    [Container: C# class library (Roslyn)]
+
+    Fixer, fixes en patterns.
+  | {class: container}
+  data: |md
+    **Unshackle.DataAccess**\
+    [Container: C# class library (MSBuildWorkspace)]
+
+    Solution laden en opslaan, rapporten schrijven. Nu leeg.
+  | {class: container}
+}
+solution: |md
+  **Solution van de gebruiker**\
+  [Software System]
+
+  .sln/.slnx met C#-projecten op schijf.
+| {class: external}
+dev -> unshackle.cli: "Draait\n[CLI]"
+unshackle.cli -> unshackle.core: "Roept IFixer aan\n[in-process]"
+unshackle.cli -> unshackle.data: "Gebruikt\n[in-process]"
+unshackle.data -> unshackle.core: "Verwijst naar\n[projectreferentie]"
+unshackle.data -> solution: "Leest en schrijft\n[bestanden]"

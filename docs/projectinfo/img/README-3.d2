@@ -1,0 +1,86 @@
+classes: {
+  person: {shape: c4-person; style: {fill: "#08427b"; stroke: "#073b6f"; font-color: "#ffffff"}}
+  system: {shape: rectangle; style: {fill: "#1168bd"; stroke: "#0b4884"; font-color: "#ffffff"}}
+  external: {shape: rectangle; style: {fill: "#999999"; stroke: "#6b6b6b"; font-color: "#ffffff"}}
+  container: {shape: rectangle; style: {fill: "#438dd5"; stroke: "#3c7fc0"; font-color: "#ffffff"}}
+  component: {shape: rectangle; style: {fill: "#85bbf0"; stroke: "#5d82a8"; font-color: "#000000"}}
+  boundary: {label.near: top-left; style: {fill: transparent; stroke: "#888888"; stroke-dash: 4; font-size: 15}}
+}
+title: "[Component] Unshackle.Core" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    c: Container {class: container}
+    k: Component {class: component}
+    bd: Container boundary {class: boundary}
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: Relationship
+  }
+}
+core: "Unshackle.Core [Container: C# / Roslyn]" {
+  class: boundary
+  fixer: |md
+    **Fixer**\
+    [Component: class, IFixer]
+
+    Draait de patterns per document en vervangt de gevonden nodes.
+  | {class: component}
+  usings: |md
+    **UsingDirectives**\
+    [Component: static class]
+
+    Voegt usings toe en verwijdert ongebruikte.
+  | {class: component}
+  fafix: |md
+    **FluentAssertionsFix**\
+    [Component: class, IFix]
+
+    Lijst van FA-patterns; FA eruit, Shouldly erin.
+  | {class: component}
+  syntax: |md
+    **FluentAssertionsSyntax**\
+    [Component: static class]
+
+    Herkent x.Should().Methode(...), subject en because.
+  | {class: component}
+  p1: |md
+    **ShouldBePattern**\
+    [Component: IPattern]
+
+    fa.should-be
+  | {class: component}
+  p2: |md
+    **HaveCountPattern**\
+    [Component: IPattern]
+
+    fa.have-count
+  | {class: component}
+  p3: |md
+    **BeTrueFalsePattern**\
+    [Component: IPattern]
+
+    fa.be-true-false
+  | {class: component}
+  p4: |md
+    **BeNullPattern**\
+    [Component: IPattern]
+
+    fa.be-null
+  | {class: component}
+}
+cli: |md
+  **Unshackle.Interface**\
+  [Container: C# console]
+| {class: container}
+cli -> core.fixer: "Roept FixAsync aan\n[in-process]"
+core.fixer -> core.fafix: "Haalt patterns uit\n[IFix]"
+core.fixer -> core.usings: "Past usings aan via"
+core.fixer -> core.p1: "Find / Rewrite\n[IPattern]"
+core.p1 -> core.syntax: "Gebruikt"
+core.p2 -> core.syntax: "Gebruikt"
+core.p3 -> core.syntax: "Gebruikt"
+core.p4 -> core.syntax: "Gebruikt"
+core.fixer -> core.p2: "Find / Rewrite"
+core.fixer -> core.p3: "Find / Rewrite"
+core.fixer -> core.p4: "Find / Rewrite"

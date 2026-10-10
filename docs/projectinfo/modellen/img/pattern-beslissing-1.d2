@@ -1,0 +1,32 @@
+title: "[Activity] Pattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"}
+    m: Manual {style.fill: "#ffe0b2"}
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: Stroom
+  }
+}
+start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
+subject: "Vorm x.Should().Methode()?" {shape: diamond}
+discarded: "Resultaat weggegooid?" {shape: diamond}
+args: "Geen becauseArgs of benoemde argumenten?" {shape: diamond}
+own: "Eigen controles geslaagd?" {shape: diamond}
+rewrite: Bouw de Shouldly-aanroep {style.border-radius: 12}
+fixed: Fixed {style.fill: "#c8e6c9"; style.border-radius: 12}
+manual: Manual met reden {style.fill: "#ffe0b2"; style.border-radius: 12}
+end: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"; double-border: true}}
+start -> subject
+subject -> discarded: ja
+subject -> manual: "nee (bijv. na .And)"
+discarded -> args: ja
+discarded -> manual: "nee (.And/.Which of waarde gebruikt)"
+args -> own: ja
+args -> manual: nee
+own -> rewrite: ja
+own -> manual: nee
+rewrite -> fixed
+fixed -> end
+manual -> end

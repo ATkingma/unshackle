@@ -13,7 +13,8 @@ Agents draaien parallel. De voortgang en keuzes staan in de taakbestanden; de wa
 4. Zet de rij op `bezig (wordt geclaimd)` zodat de volgende tick hem overslaat.
 5. Start één achtergrond-agent met de **Agent-brief** hieronder plus het rijnummer.
    Model: rij 0 (fundament) → `opus`; patronen → `sonnet`; `mislukt` poging 2 → `opus`, poging 3 → `fable`.
-6. Als een agent klaar is met een patroon (rij `klaar`): controleer zelf `dotnet build`, `dotnet test` en
+6. Als een agent klaar is met een patroon (rij `klaar`): start eerst één achtergrond-agent (`sonnet`) met de
+   **Modellen-brief** hieronder en wacht op zijn verslag. Daarna controleer zelf `dotnet build`, `dotnet test` en
    `dotnet test --solution samples/SampleShop/SampleShop.slnx`. Alles groen → `git add -A`, commit
    (`Add <patroon-ID> pattern`, Engels, geen Claude-vermelding) en `git push origin main` (staande opdracht van de
    gebruiker, 2026-10-10). Iets rood → niet pushen (`claude/docs/agent-werkwijze.md` §6), melden.
@@ -56,6 +57,30 @@ Niet committen of pushen (zie `claude/docs/agent-werkwijze.md` §6: main blijft 
    context in de taak, rij `mislukt (TAAK-NNN, poging N)`. De SubagentStop-hook blokkeert je stop zolang plan, verify
    of de README-rij van jouw patroon ontbreekt.
 9. **Verslag** (max 8 regels): patroon, gewijzigde bestanden, kernkeuzes, proofs, testresultaat.
+
+### Modellen-brief (na elk afgerond patroon)
+
+Werk de visuele modellen van het hele project bij in `/mnt/dikkeschijf/documenten/Git/unshackle`, volgens de
+explaining-code-skill (`~/.claude-timme/skills/explaining-code/SKILL.md` + alleen de benodigde secties van
+`reference/c4-model.md` en `reference/models.md`). Nederlands. Alleen docs en afbeeldingen; geen code wijzigen,
+niet committen.
+
+- Feiten: `kingmadoc explain facts` (en `--only` voor delen). Niets verzinnen; tekst moet bij de figuren passen.
+- Plek: **niet** `docs/explain/`, maar `docs/projectinfo/`:
+  - `README.md`: C4 Context, Container en Component (Core) als D2-figuren (vervang de Mermaid-blokken), plus een
+    tabel "Modellen" met links naar de bestanden hieronder.
+  - `modellen/klassen.md`: UML-klassendiagram van contracten en modellen (`Abstractions/`, `Models/`).
+  - `modellen/fix-flow.md`: UML-sequence van `FixAsync`: Fixer → IFix → IPattern.Find/Rewrite → ReplaceNode → usings.
+  - `modellen/pattern-beslissing.md`: UML-activity: hoe een pattern kiest tussen Fixed en Manual (generiek, met de
+    gedeelde stappen uit `FluentAssertionsSyntax`).
+  - `modellen/patronen.md`: overzicht van alle patterns (tabel + figuur: welke FA-vorm → welke Shouldly-vorm,
+    welke gevallen Manual), bijgewerkt met het nieuwste patroon.
+  - Andere modellen alleen als het signaal in de code duidelijk is (zie de beslistabel in `reference/models.md`).
+  - Figuren genummerd per document, max ~15 elementen per figuur, elke figuur met tabel; `## Zie ook` onderaan;
+    nieuwe bestanden in `claude/docs/INDEX.md`.
+- Render: `kingmadoc render docs/projectinfo/README.md docs/projectinfo/modellen/*.md` (PNG + SVG + D2 in `img/`).
+  Bij een D2-fout: `.d2` repareren en opnieuw renderen. Bestaat het al: alleen bijwerken wat het nieuwe patroon raakt.
+- Verslag (max 5 regels): gewijzigde bestanden, aantal figuren, wat er nieuw is.
 
 ### Extra voor rij 0 (fundament)
 

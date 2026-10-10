@@ -16,64 +16,56 @@ documenten, en elk patroon heeft een eigen plan en verificatie (KingmaDoc) in `p
 
 ## C4 Context
 
-Wie Unshackle gebruikt en waar het van afhangt.
+**Figure 1.** Wie Unshackle gebruikt en waar het van afhangt.
 
-```mermaid
-C4Context
-    title System Context: Unshackle
+<!-- kingmadoc:diagram img/README-1.d2 -->
+![C4 Context](img/README-1.png)
 
-    Person(dev, "Developer", "Migreert een .NET-solution weg van commerciële bibliotheken")
-    System(unshackle, "Unshackle", "dotnet tool: scan, fix, list")
-    System_Ext(solution, "Solution van de gebruiker", ".sln/.slnx met C#-projecten op schijf")
-    System_Ext(msbuild, "MSBuild / .NET SDK", "Laadt projecten en referenties")
-
-    Rel(dev, unshackle, "Draait")
-    Rel(unshackle, msbuild, "Laadt solution via")
-    Rel(unshackle, solution, "Leest en herschrijft")
-```
+| Element | Type | Rol |
+| ------- | ---- | --- |
+| Developer | Persoon | Draait de tool op zijn solution |
+| Unshackle | Systeem | `src/`: scan, fix, list (alleen Core is gebouwd) |
+| Solution van de gebruiker | Extern | `.sln`/`.slnx` die gelezen en herschreven wordt |
+| MSBuild / .NET SDK | Extern | Laadt projecten en referenties |
 
 ## C4 Container
 
-De projecten in `src/` _(uit de code; Interface en DataAccess zijn nog leeg)_.
+**Figure 2.** De projecten in `src/` _(Interface en DataAccess zijn nog leeg)_. Het testproject staat er niet in.
 
-```mermaid
-C4Container
-    title Containers: Unshackle
+<!-- kingmadoc:diagram img/README-2.d2 -->
+![C4 Container](img/README-2.png)
 
-    Person(dev, "Developer")
-    System_Boundary(unshackle_boundary, "Unshackle") {
-        Container(cli, "Unshackle.Interface", "C# / System.CommandLine", "CLI en composition root")
-        Container(core, "Unshackle.Core", "C# / Roslyn", "Fixer, fixes en patterns")
-        Container(data, "Unshackle.DataAccess", "C# / MSBuildWorkspace", "Solution laden/opslaan, rapporten schrijven")
-    }
-
-    Rel(dev, cli, "Uses")
-    Rel(cli, core, "Roept Fixer aan")
-    Rel(cli, data, "Koppelt in Program.cs")
-    Rel(data, core, "Implementeert interfaces van")
-```
+| Container | Pad | Rol |
+| --------- | --- | --- |
+| Unshackle.Interface | `src/Unshackle.Interface/Program.cs` | CLI en composition root; verwijst naar Core en DataAccess |
+| Unshackle.Core | `src/Unshackle.Core/` | Fixer, fixes, patterns |
+| Unshackle.DataAccess | `src/Unshackle.DataAccess/` | Verwijst naar Core; nog geen code |
 
 ## C4 Component: Unshackle.Core
 
-_(uit de code, stand TAAK-002)_
+**Figure 3.** Onderdelen van Core, met de vier patterns die er nu zijn. Contracten en modellen staan in [modellen/klassen.md](modellen/klassen.md).
 
-```mermaid
-C4Component
-    title Components: Unshackle.Core
+<!-- kingmadoc:diagram img/README-3.d2 -->
+<!-- kingmadoc:diagram img/README-3.d2 -->
+<!-- kingmadoc:diagram img/README-3.d2 -->
+![C4 Component: Unshackle.Core](img/README-3.png)
 
-    Container_Boundary(core_boundary, "Unshackle.Core") {
-        Component(fixer, "Fixer", "IFixer", "Draait patterns per document, vervangt nodes, regelt usings")
-        Component(usings, "UsingDirectives", "C#", "Voegt usings toe en verwijdert ongebruikte")
-        Component(fafix, "FluentAssertionsFix", "IFix", "Lijst FA-patterns, FA eruit, Shouldly erin")
-        Component(fasyntax, "FluentAssertionsSyntax", "C#", "Herkent x.Should().Methode(...) via SemanticModel")
-        Component(patterns, "Patterns", "IPattern", "Eén soort code vinden en herschrijven; zie tabel hieronder")
-    }
+| Component | Pad | Rol |
+| --------- | --- | --- |
+| Fixer | `src/Unshackle.Core/Fixer.cs` | Zie [modellen/fix-flow.md](modellen/fix-flow.md) |
+| UsingDirectives | `src/Unshackle.Core/UsingDirectives.cs` | Alleen usings op bovenste niveau |
+| FluentAssertionsFix | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` | Patterns in vaste volgorde |
+| FluentAssertionsSyntax | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde bouwstenen |
+| Patterns (4) | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/` | Zie [modellen/patronen.md](modellen/patronen.md) |
 
-    Rel(fixer, fafix, "Haalt patterns uit")
-    Rel(fixer, patterns, "Find / Rewrite")
-    Rel(fixer, usings, "Past usings aan via")
-    Rel(patterns, fasyntax, "Gebruikt")
-```
+## Modellen
+
+| Model | Document |
+| ----- | -------- |
+| UML-klassendiagram: contracten en modellen | [modellen/klassen.md](modellen/klassen.md) |
+| UML-sequence: `FixAsync` | [modellen/fix-flow.md](modellen/fix-flow.md) |
+| UML-activity: Fixed of Manual | [modellen/pattern-beslissing.md](modellen/pattern-beslissing.md) |
+| Overzicht van alle patterns | [modellen/patronen.md](modellen/patronen.md) |
 
 ## Patronen
 
@@ -85,6 +77,7 @@ Wachtrij en status: `claude/tasks/patroon-queue.md`.
 | `fa.should-be`  | [plan](patterns/fa-should-be-plan.md)  | [verify](patterns/fa-should-be-verify.md)  | TAAK-001 |
 | `fa.have-count` | [plan](patterns/fa-have-count-plan.md) | [verify](patterns/fa-have-count-verify.md) | TAAK-002 |
 | `fa.be-true-false` | [plan](patterns/fa-be-true-false-plan.md) | [verify](patterns/fa-be-true-false-verify.md) | TAAK-003 |
+| `fa.be-null` | [plan](patterns/fa-be-null-plan.md) | [verify](patterns/fa-be-null-verify.md) | TAAK-004 |
 
 ## Zie ook
 

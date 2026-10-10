@@ -1,0 +1,47 @@
+classes: {
+  person: {shape: c4-person; style: {fill: "#08427b"; stroke: "#073b6f"; font-color: "#ffffff"}}
+  system: {shape: rectangle; style: {fill: "#1168bd"; stroke: "#0b4884"; font-color: "#ffffff"}}
+  external: {shape: rectangle; style: {fill: "#999999"; stroke: "#6b6b6b"; font-color: "#ffffff"}}
+  container: {shape: rectangle; style: {fill: "#438dd5"; stroke: "#3c7fc0"; font-color: "#ffffff"}}
+  component: {shape: rectangle; style: {fill: "#85bbf0"; stroke: "#5d82a8"; font-color: "#000000"}}
+  boundary: {label.near: top-left; style: {fill: transparent; stroke: "#888888"; stroke-dash: 4; font-size: 15}}
+}
+title: "[System Context] Unshackle" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    p: Person {class: person}
+    s: Software system {class: system}
+    x: External software system {class: external}
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: Relationship
+  }
+}
+dev: |md
+  **Developer**\
+  [Person]
+
+  Migreert een .NET-solution weg van commerciële bibliotheken.
+| {class: person}
+unshackle: |md
+  **Unshackle**\
+  [Software System]
+
+  dotnet tool: scan, fix, list. Herschrijft C#-code.
+| {class: system}
+solution: |md
+  **Solution van de gebruiker**\
+  [Software System]
+
+  .sln/.slnx met C#-projecten op schijf.
+| {class: external}
+msbuild: |md
+  **MSBuild / .NET SDK**\
+  [Software System]
+
+  Laadt projecten en referenties.
+| {class: external}
+dev -> unshackle: "Draait"
+unshackle -> msbuild: "Laadt solution via"
+unshackle -> solution: "Leest en herschrijft"

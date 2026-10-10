@@ -14,6 +14,10 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `docs/projectinfo/architectuur/testen.md` | Proofs, types, mocking, samples |
 | `docs/projectinfo/architectuur/rapportage.md` | Rapportformaten |
 | `docs/projectinfo/beslissingen.md` | Codestijl-verwijzing, nog te beslissen |
+| `docs/projectinfo/modellen/klassen.md` | UML-klassendiagram: contracten en modellen van Core |
+| `docs/projectinfo/modellen/fix-flow.md` | UML-sequence van `Fixer.FixAsync` |
+| `docs/projectinfo/modellen/pattern-beslissing.md` | UML-activity: Fixed of Manual |
+| `docs/projectinfo/modellen/patronen.md` | Overzicht alle patterns: FA-vorm, Shouldly-vorm, Manual |
 | `docs/projectinfo/patterns/` | KingmaDoc plan + verify per patroon (`<id>-plan.md`, `<id>-verify.md`) |
 | `README.md`       | Publieke korte uitleg + projecttabel                                                             |
 

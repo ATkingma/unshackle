@@ -1,0 +1,73 @@
+title: "[Class] Unshackle.Core - contracten en modellen" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: "Dependency (gestreept), realisatie (holle driehoek), overerving (holle driehoek)"
+  }
+}
+ifixer: "«interface» IFixer" {
+  shape: class
+  "+FixAsync(solution, request, ct)": "Task<FixReport>"
+}
+fixer: Fixer {
+  shape: class
+  "-_fixes": "IReadOnlyList<IFix>"
+  "+FixAsync(solution, request, ct)": "Task<FixReport>"
+}
+ifix: "«interface» IFix" {
+  shape: class
+  "+Id": string
+  "+Patterns": "IReadOnlyList<IPattern>"
+  "+RemovedNamespaces": "IReadOnlyList<string>"
+  "+AddedNamespaces": "IReadOnlyList<string>"
+}
+ipattern: "«interface» IPattern" {
+  shape: class
+  "+Id": string
+  "+Description": string
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+request: FixRequest {
+  shape: class
+  "+FixId": string
+}
+report: FixReport {
+  shape: class
+  "+Solution": Solution
+  "+Findings": "IReadOnlyList<Finding>"
+}
+finding: Finding {
+  shape: class
+  "+FilePath": string
+  "+Line": int
+  "+FixId": string
+  "+PatternId": string
+  "+Result": PatternResult
+}
+result: "PatternResult (abstract)" {
+  shape: class
+  "+Fixed(...)": PatternResult
+  "+Manual(reason)": PatternResult
+}
+fixed: FixedResult {
+  shape: class
+  "+NewNodes": "IReadOnlyList<SyntaxNode>"
+  "+RequiredNamespaces": "IReadOnlyList<string>"
+}
+manual: ManualResult {
+  shape: class
+  "+Reason": string
+}
+fixer -> ifixer: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+fixer -> ifix: "0..*" {target-arrowhead: {shape: diamond; style.filled: true}}
+ifix -> ipattern: "0..*" {target-arrowhead: {shape: diamond; style.filled: true}}
+report -> finding: "0..*" {target-arrowhead: {shape: diamond; style.filled: true}}
+finding -> result: "1" {target-arrowhead: {shape: diamond; style.filled: true}}
+fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+ifixer -> request: leest {style.stroke-dash: 3}
+ifixer -> report: levert {style.stroke-dash: 3}
+ipattern -> result: levert {style.stroke-dash: 3}

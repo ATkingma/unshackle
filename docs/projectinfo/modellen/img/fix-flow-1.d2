@@ -1,0 +1,24 @@
+title: "[Sequence] Fixer.FixAsync - één document" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+cli: Aanroeper
+fixer: Fixer
+fix: IFix
+pattern: IPattern
+usings: UsingDirectives
+cli -> fixer: "FixAsync(solution, request)"
+fixer -> fix: "zoek op FixId, lees Patterns"
+fix -> fixer: "patterns" {style.stroke-dash: 3}
+loop: "loop [elk pattern, elk C#-document]" {
+  fixer -> pattern: "Find(root, model)"
+  pattern -> fixer: "nodes" {style.stroke-dash: 3}
+  each: "loop [elke node, buitenste eerst]" {
+    fixer -> pattern: "Rewrite(node, model)"
+    pattern -> fixer: "Fixed of Manual" {style.stroke-dash: 3}
+    fixed: "alt [Fixed]" {
+      fixer -> fixer: "ReplaceNode met trivia"
+    }
+  }
+}
+fixer -> usings: "UpdateAsync(toe te voegen, te verwijderen)"
+usings -> fixer: "nieuwe Solution" {style.stroke-dash: 3}
+fixer -> cli: "FixReport" {style.stroke-dash: 3}

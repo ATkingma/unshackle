@@ -3,7 +3,7 @@
 Migrate .NET code away from libraries that went commercial (FluentAssertions, MediatR, AutoMapper).
 Roslyn-powered, with a report and dry-run before anything changes.
 
-> Work in progress.
+> Work in progress. See [PROJECT.md](PROJECT.md) and [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Projects
 

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>unshackle</AssemblyName>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>unshackle</ToolCommandName>
+    <PackageId>Unshackle</PackageId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Unshackle.Core\Unshackle.Core.csproj" />
+    <ProjectReference Include="..\Unshackle.DataAccess\Unshackle.DataAccess.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="Spectre.Console" />
+  </ItemGroup>
+</Project>

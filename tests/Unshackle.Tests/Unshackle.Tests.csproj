@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Unshackle.Core\Unshackle.Core.csproj" />
+    <ProjectReference Include="..\..\src\Unshackle.DataAccess\Unshackle.DataAccess.csproj" />
+    <ProjectReference Include="..\..\src\Unshackle.Interface\Unshackle.Interface.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="Verify.XunitV3" />
+    <PackageReference Include="TestableIO.System.IO.Abstractions.TestingHelpers" />
+    <PackageReference Include="Basic.Reference.Assemblies.Net100" />
+  </ItemGroup>
+  <ItemGroup Label="Proof references: de echte types voor het SemanticModel">
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="AutoMapper" />
+    <PackageReference Include="Mediator.Abstractions" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Proofs zijn testdata, geen code van het testproject zelf -->
+    <Compile Remove="Proofs\**" />
+    <None Include="Proofs\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

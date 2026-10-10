@@ -3,10 +3,7 @@
     <Project Path="src/Unshackle.Interface/Unshackle.Interface.csproj" />
     <Project Path="src/Unshackle.Core/Unshackle.Core.csproj" />
     <Project Path="src/Unshackle.DataAccess/Unshackle.DataAccess.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/Unshackle.Tests/Unshackle.Tests.csproj" />
-    <Project Path="tests/Unshackle.IntegrationTests/Unshackle.IntegrationTests.csproj" />
+    <Project Path="src/Unshackle.Tests/Unshackle.Tests.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path="Directory.Build.props" />

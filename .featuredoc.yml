@@ -1,0 +1,95 @@
+# KingmaDoc configuration. All keys are optional; shown values are the defaults.
+
+# Where generated feature docs are written (relative to the project root).
+output_dir: docs/projectinfo/patterns
+
+# Plan template: a bundled name, or an explicit path such as ./my_plan.md.j2
+# (relative to the project root). Templates always run sandboxed.
+template: plan_default.md.j2
+
+# Number of clarifying questions asked in `plan` mode (0-5).
+max_questions: 5
+
+project:
+  # Defaults to the project directory name.
+  name: Unshackle
+  description: "Roslyn-based dotnet tool that migrates .NET code away from libraries that went commercial (FluentAssertions, MediatR, AutoMapper)."
+
+analyzer:
+  max_files: 5000  # maximum
+  tree_depth: 3
+  # Lines read per source file when scanning imports (imports sit at the top).
+  max_lines_per_file: 2000
+  exclude_dirs:
+    - ".git"
+    - ".hg"
+    - ".svn"
+    - ".venv"
+    - "venv"
+    - "env"
+    - "node_modules"
+    - "__pycache__"
+    - ".mypy_cache"
+    - ".pytest_cache"
+    - ".ruff_cache"
+    - ".tox"
+    - "dist"
+    - "build"
+    - "bin"
+    - "obj"
+    - "*.egg-info"
+
+# Diagrams included in the plan doc.
+diagrams:
+  - c4_context
+  - c4_container
+
+# Diagram language: mermaid, plantuml (C4-PlantUML) or d2.
+diagram_format: mermaid
+
+# Optional extra documents written by `plan` next to the plan doc. `template` is a
+# bundled name or an explicit path (e.g. ./my_design.md.j2); templates run sandboxed.
+# `models` selects the design models (sections) of a document; default: all of them.
+extra_designs:
+  functional_design:
+    # <slug>-functional-design.md: user flows, edge cases, business rules,
+    # permissions and roles.
+    enabled: false
+    template: functional_design.md.j2
+    models: []
+  technical_design:
+    # <slug>-technical-design.md: database schema, API contracts, error handling,
+    # performance and security considerations.
+    enabled: false
+    template: technical_design.md.j2
+    models: [dependency_graph]
+  domain_design:
+    # <slug>-domain-design.md: domain model and event storming.
+    enabled: false
+    template: domain_design.md.j2
+    models: [domain_model, event_storming]
+  security_design:
+    # <slug>-security-design.md: threat model (STRIDE) and who may do what.
+    enabled: false
+    template: security_design.md.j2
+    models: [threat_model, permissions]
+
+# Architecture Decision Records: `kingmadoc adr "<title>"` writes docs/adr/<NNNN>-<slug>.md.
+adr:
+  enabled: false
+  template: adr.md.j2
+
+# Explainers written by the explaining-code agent skill ("explain this project").
+# format: arc42 (the 12 arc42 sections, default) or c4 (compact zoom-in).
+# documents: single (one explainer, default) or split (functional + technical).
+explain:
+  format: arc42
+  documents: single
+
+# Verification (`kingmadoc verify`). Build, test and lint commands; null means detected
+# from the project files. They only run with `kingmadoc verify --run-checks`.
+verify:
+  build: "dotnet build"
+  test: "dotnet test"
+  lint: null
+  timeout: 600  # seconds per command

@@ -1,0 +1,9 @@
+# Samples mimic user code; the Unshackle code-style rules do not apply here.
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8

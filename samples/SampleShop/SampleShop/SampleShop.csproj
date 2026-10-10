@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <!-- 14.0.0 is deliberately the last free version -->
+    <PackageReference Include="AutoMapper" NoWarn="NU1903" />
+  </ItemGroup>
+</Project>

@@ -51,6 +51,9 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-034-fa-be-of-type.md` | ✅ `BeOfType<T>()`/`BeAssignableTo<T>()` (+ `Not`, `.Which`) → `ShouldBeOfType<T>()` e.d.; patroon `fa.be-of-type` |
 | `claude/tasks/archief/TAAK-035-fa-string-start-end.md` | ✅ `StartWith`/`EndWith` (+ `Not`, `EquivalentOf`) en `(Not)BeNullOr(Empty | WhiteSpace)`→ Shouldly met`Case.Sensitive`; patroon `fa.string-start-end` |
 | `claude/tasks/archief/TAAK-036-fa-contain-single-which.md` | ✅ `ContainSingle()`/`ContainSingle(pred)` (+ `var y = ….Which`) → `ShouldHaveSingleItem()`/`ShouldContain(pred, 1)`; patroon `fa.contain-single-which` |
+| `claude/tasks/archief/TAAK-038-fa-equal-sequence.md` | ✅ `Equal(seq)`/`Equal(params)` → `ShouldBe(seq)` (volgorde-gevoelig), `NotEqual` Manual; patroon `fa.equal-sequence` |
+| `claude/tasks/archief/TAAK-039-fa-have-length.md` | ✅ string `HaveLength(n)` → `Length.ShouldBe(n)`; patroon `fa.have-length` |
+| `claude/tasks/archief/TAAK-050-fa-be-approximately.md` | ✅ `(Not)BeApproximately`/`(Not)BeCloseTo` → `ShouldBe(x, tol)`/`ShouldNotBe`/`Math.Abs(..).ShouldBeGreaterThan`; patroon `fa.be-approximately` |
 | `claude/tasks/archief/TAAK-023-mediatr-request-handler.md` | ✅ `Task<T> Handle` → `ValueTask<T> Handle`; patroon `mediatr.request-handler` |
 | `claude/tasks/archief/TAAK-043-fa-inactive-preprocessor-branch.md` | ✅ Inactieve `#if`-code: oude using blijft + Manual (`usings`) |
 | `claude/tasks/archief/TAAK-044-fa-global-using.md` | ✅ `global using` projectbreed geswapt, of blijft naast de nieuwe + Manual |

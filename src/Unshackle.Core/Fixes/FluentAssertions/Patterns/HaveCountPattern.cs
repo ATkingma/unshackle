@@ -88,7 +88,7 @@ public class HaveCountPattern : IPattern
     private static MemberAccessExpressionSyntax Member(ExpressionSyntax expression, string name) =>
         SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, expression, SyntaxFactory.IdentifierName(name));
 
-    private static bool IsSafeReceiver(ExpressionSyntax subject) => subject is
+    internal static bool IsSafeReceiver(ExpressionSyntax subject) => subject is
         IdentifierNameSyntax or GenericNameSyntax or MemberAccessExpressionSyntax or InvocationExpressionSyntax
         or ElementAccessExpressionSyntax or ParenthesizedExpressionSyntax or ThisExpressionSyntax or ObjectCreationExpressionSyntax
         || subject.IsKind(SyntaxKind.SuppressNullableWarningExpression);

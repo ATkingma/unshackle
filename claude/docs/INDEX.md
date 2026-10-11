@@ -12,6 +12,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `docs/projectinfo/architectuur/projecten.md`               | Projecten, afhankelijkheden, build-instellingen                                                                                                                                                                                                                                                                      |
 | `docs/projectinfo/architectuur/core.md`                    | Fixer → Fix → Pattern (ontwerp + zoals gebouwd), SOLID                                                                                                                                                                                                                                                               |
 | `docs/projectinfo/architectuur/testen.md`                  | Proofs, types, mocking, samples                                                                                                                                                                                                                                                                                      |
+| `docs/projectinfo/architectuur/corpus.md`                  | Testcorpus: FA-API-frequentie in 14 projecten, dekking, fix-runs (FluentResults, Ardalis.Result)                                                                                                                                                                                                                     |
 | `docs/projectinfo/architectuur/edge-cases.md`              | Edge cases uit open-source projecten → `edge-*` proofs, pending bugs                                                                                                                                                                                                                                                 |
 | `docs/projectinfo/architectuur/proofs.md` | Alle proof-tests per patroon met uitkomst en korte uitleg (gegenereerd: `python3 claude/tools/proofs-doc.py`) |
 | `docs/projectinfo/architectuur/rapportage.md`              | Rapportformaten                                                                                                                                                                                                                                                                                                      |
@@ -84,6 +85,10 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/TAAK-042-fa-throwasync-configure-await.md` | Bug: `ThrowAsync<T>().ConfigureAwait(false)` wordt Manual |
 | `claude/tasks/TAAK-043-fa-inactive-preprocessor-branch.md` | Bug: inactieve `#if`-tak blijft FA, using verdwijnt |
 | `claude/tasks/TAAK-044-fa-global-using.md` | Bug: `global using FluentAssertions;` wordt niet vervangen |
+| `claude/tasks/TAAK-070-fa-assertion-in-throw-lambda.md` | Bug: assertion in lambda met `Throw<XunitException>` → regressie na fix |
+| `claude/tasks/TAAK-071-fa-equivalent-collection-params.md` | Bug: `BeEquivalentTo(params)` op collectie krijgt foute Manual-reden |
+| `claude/tasks/TAAK-072-fa-contain-single-subject.md` | Bug: `ContainSingle().Subject` wordt Manual |
+| `claude/tasks/TAAK-073-unused-fa-using-after-package-removal.md` | Bug: ongebruikte `using FluentAssertions;` blijft na pakketverwijdering (CS0246) |
 
 ## Skills
 

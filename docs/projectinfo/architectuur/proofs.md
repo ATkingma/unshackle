@@ -577,6 +577,26 @@ Totaal: 403 proofs (zonder `_Pending`).
 
 ## _Pending (bekende fouten)
 
+### _Pending / FluentAssertions
+
+#### BeEquivalentToObject (1)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `edge-collection-params` | Manual | `numbers.Select(n => n.ToString()).Should().BeEquivalentTo("1", "2");` — reden: is a collection |
+
+#### ContainSingle (1)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `edge-subject` | Fixed | `var name = names.Should().ContainSingle().Subject;` → `var name = names.ShouldHaveSingleItem();` |
+
+#### ShouldBe (1)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `edge-assertion-in-throw-lambda` | Manual | `Action act = () => total.Should().Be(3);` — reden: exception type |
+
 ### _Pending / MediatR
 
 #### NotificationHandler (1)

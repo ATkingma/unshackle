@@ -38,11 +38,19 @@ grep, niets uitgevoerd). De proofs (`edge-<slug>`) zijn eigen minimale voorbeeld
 | `double` / `BeEquivalentTo(new[] {…})`       | SmartEnum                        | `BeGreaterLess/edge-double`, `BeEquivalentToObject/edge-array-literal` (Manual)                                  | groen                         |
 | `Throw<T>().Which…` / `.WithInnerException`  | NUKE, SmartEnum                  | `Throw/edge-which-message`, `Throw/edge-inner-exception` (Manual)                                                | groen                         |
 | Lokale `Func<Task> act = async () => …`      | EventFlow                        | `ThrowAsync/edge-local-async-lambda`                                                                             | groen                         |
-| Expression-bodied void-methode               | algemeen                         | `ShouldBe`, `BeNull`, `NotThrow/edge-expression-bodied`                                                         | groen, TAAK-040               |
-| `a?.B.Should()`                              | algemeen                         | `BeNull/edge-null-conditional`                                                                                  | groen, TAAK-041               |
-| `.ConfigureAwait(false)` na `ThrowAsync`     | EventFlow                        | `ThrowAsync/edge-configure-await`                                                                               | groen, TAAK-042               |
+| Expression-bodied void-methode               | algemeen                         | `ShouldBe`, `BeNull`, `NotThrow/edge-expression-bodied`                                                          | groen, TAAK-040               |
+| `a?.B.Should()`                              | algemeen                         | `BeNull/edge-null-conditional`                                                                                   | groen, TAAK-041               |
+| `.ConfigureAwait(false)` na `ThrowAsync`     | EventFlow                        | `ThrowAsync/edge-configure-await`                                                                                | groen, TAAK-042               |
 | `#if` rond assertions                        | Refit                            | `ShouldBe/edge-ifdef` (oude using blijft, Manual)                                                                | groen (TAAK-043)              |
 | `global using FluentAssertions;`             | Ardalis.Specification            | `ShouldBe/edge-global-using`                                                                                     | groen (TAAK-044)              |
+
+### Corpus-ronde 2 (2026-10-11, zie `corpus.md`)
+
+| Vorm                                              | Bron          | Proof                                                         | Status            |
+| ------------------------------------------------- | ------------- | ------------------------------------------------------------- | ----------------- |
+| Assertion in lambda, `Throw<XunitException>` erop | FluentResults | `_Pending/…/ShouldBe/edge-assertion-in-throw-lambda` (Manual) | pending, TAAK-070 |
+| `coll.Should().BeEquivalentTo("a", "b")` (params) | FluentResults | `_Pending/…/BeEquivalentToObject/edge-collection-params`      | pending, TAAK-071 |
+| `ContainSingle().Subject` i.p.v. `.Which`         | Akka.NET      | `_Pending/…/ContainSingle/edge-subject`                       | pending, TAAK-072 |
 
 ## Niet als proof
 
@@ -54,4 +62,5 @@ grep, niets uitgevoerd). De proofs (`edge-<slug>`) zijn eigen minimale voorbeeld
 ## Zie ook
 
 - `docs/projectinfo/architectuur/testen.md` — proofs en de map `_Pending`
+- `docs/projectinfo/architectuur/corpus.md` — frequentietabel en fix-runs op echte projecten
 - `claude/tasks/archief/TAAK-040-…` t/m `TAAK-042-…`; `claude/tasks/TAAK-043-…`, `TAAK-044-fa-global-using.md`

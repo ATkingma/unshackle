@@ -23,6 +23,11 @@ public class NotThrowPattern : IPattern
             return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
         }
 
+        if (FluentAssertionsSyntax.IsInsideExpectedFailure(node, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.ExpectedFailureReason);
+        }
+
         var call = (InvocationExpressionSyntax)node;
         var name = (SimpleNameSyntax)((MemberAccessExpressionSyntax)call.Expression).Name;
 

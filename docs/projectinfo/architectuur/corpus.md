@@ -99,7 +99,7 @@ build/test. Tests in de map met een eigen `global.json` (VSTest i.p.v. MTP).
 
 | Project        | Baseline         | Fixed | Manual | Bouwfouten na fix                | Regressies na fix        |
 | -------------- | ---------------- | ----: | -----: | -------------------------------- | ------------------------ |
-| FluentResults  | 288 groen        |   567 |     64 | geen                             | 2 (TAAK-070)             |
+| FluentResults  | 288 groen        |   567 |     64 | geen                             | 0 (TAAK-070 opgelost)    |
 | Ardalis.Result | 373 groen (\*\*) |   281 |     47 | CS0246 in 2 bestanden (TAAK-073) | geen (na handmatige fix) |
 
 (\*\*) `SampleWeb` net6.0 bouwt al in de baseline niet (geen .NET 6-runtime voor de OpenAPI-tool); niet meegeteld.
@@ -111,7 +111,7 @@ collectie-volgorde 3, rest ≤ 2.
 Bevindingen:
 
 - **Regressie** (TAAK-070): `Action act = () => x.Should().Be(y); act.Should().Throw<XunitException>();` — de binnenste
-  assertion wordt Shouldly en gooit een ander exception-type.
+  assertion wordt Shouldly en gooit een ander exception-type. Opgelost: assertion én Throw Manual als T niet `Exception`/`ShouldAssertException` is (FluentResults: 0 regressies).
 - **Foute Manual-reden** (TAAK-071): `coll.Should().BeEquivalentTo("a", "b")` (params-overload) heet "becauseArgs". Opgelost: collectie-reden.
 - **Bouwfout** (TAAK-073): bestand met alleen een ongebruikte `using FluentAssertions;` houdt die using terwijl het
   pakket uit het project verdwijnt. Opgelost: de Fixer verwijdert die using ook zonder findings.
@@ -150,4 +150,4 @@ MediatR (`claude/tasks/CORPUSRUN-mediatr.md`): 0 van 9 volledig gemigreerd, voor
 - `docs/projectinfo/architectuur/edge-cases.md` — afwijkende vormen → `edge-*` proofs
 - `claude/tasks/ANALYSE-fa-100.md`, `claude/tasks/CORPUSRUN-fa.md`, `claude/tasks/CORPUSRUN-mediatr.md` — bronnen van de cijfers
 - `claude/tasks/patroon-queue.md` — wachtrij, prioriteit volgt deze tabel
-- `claude/tasks/TAAK-070-fa-assertion-in-throw-lambda.md` t/m `TAAK-073-unused-fa-using-after-package-removal.md`
+- `claude/tasks/archief/TAAK-070-fa-assertion-in-throw-lambda.md` t/m `TAAK-073-unused-fa-using-after-package-removal.md`

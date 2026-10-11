@@ -38,6 +38,11 @@ public class AndChainPattern : IPattern
             return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
         }
 
+        if (FluentAssertionsSyntax.IsInsideExpectedFailure(node, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.ExpectedFailureReason);
+        }
+
         if (node is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax top } statement)
         {
             return PatternResult.Manual("The result of the .And chain is used (.Which or a value); Shouldly's methods return nothing.");

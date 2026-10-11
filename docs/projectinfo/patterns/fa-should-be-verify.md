@@ -27,6 +27,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs`; r
 | REQ-10 | Gehaald in code, geen proof | `subject is null` (`FluentAssertionPattern.Rewrite`) en `IErrorTypeSymbol` (`RewriteAssertion`) geven Manual; geen proof-bestand |
 | TAAK-097 | Gehaald | `because-args.after.cs` (`string.Format`); Manual: `edge-named-because`, `because-args-variable`, `because-args-bad-format` |
 | TAAK-100 | Gehaald | `assertion-scope-nested`, `assertion-scope-using-block`, `assertion-scope-using-var` (`.manual.txt`) |
+| TAAK-070 | Gehaald | `edge-assertion-in-throw-lambda` (`.manual.txt`): assertion in een lambda waarvan `Throw<T>` met T ≠ `Exception`/`ShouldAssertException` gecontroleerd wordt; gedeelde check `IsInsideExpectedFailure` in alle FA-patterns, unittest `IsInsideExpectedFailure_DependsOnExpectedExceptionType` |
 
 ## Deviations
 

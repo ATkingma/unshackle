@@ -26,6 +26,11 @@ public class NotThrowAsyncPattern : IPattern
             return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
         }
 
+        if (FluentAssertionsSyntax.IsInsideExpectedFailure(node, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.ExpectedFailureReason);
+        }
+
         if (node is not AwaitExpressionSyntax { Parent: ExpressionStatementSyntax } awaitExpression)
         {
             return PatternResult.Manual("NotThrowAsync() is not awaited as a statement (no await, or its result is used); Should.NotThrowAsync is not chained like that.");

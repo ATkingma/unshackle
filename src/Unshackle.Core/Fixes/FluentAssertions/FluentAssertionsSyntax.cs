@@ -12,6 +12,9 @@ public static class FluentAssertionsSyntax
     public const string InsideAssertionScopeReason =
         "Inside an AssertionScope: Shouldly stops at the first failure; group the assertions with ShouldSatisfyAllConditions.";
 
+    public const string ExpectedFailureReason =
+        "The exception type of this assertion is checked (e.g. Throw<XunitException>) and Shouldly throws ShouldAssertException: rewrite the assertion and its Throw together by hand.";
+
     // Every invocation of one of the methods whose symbol lives in a FluentAssertions namespace, whatever its shape.
     public static IEnumerable<InvocationExpressionSyntax> FindInvocations(SyntaxNode root, SemanticModel model, params string[] methodNames) =>
         root.DescendantNodes()
@@ -295,6 +298,92 @@ public static class FluentAssertionsSyntax
 
         return false;
     }
+
+    // True when node runs inside a lambda whose exception is expected (Throw<T>, ThrowExactly<T>, ThrowAsync<T>, Invoking,
+    // Shouldly's Should.Throw<T>) with a T that a ShouldAssertException does not satisfy, e.g. XunitException.
+    public static bool IsInsideExpectedFailure(SyntaxNode node, SemanticModel model) =>
+        node.Ancestors().OfType<AnonymousFunctionExpressionSyntax>()
+            .SelectMany(lambda => UsesOf(lambda, model))
+            .Any(use => ExpectedException(use, model) is { } type && !AcceptsShouldlyFailure(type));
+
+    // True when the action of a Throw<T> with such a T contains a FluentAssertions assertion: the two belong together.
+    // shortcut: only assertions written in the lambda itself, not in a helper it calls; widen when real code needs it.
+    public static bool ExpectsAssertionFailure(ExpressionSyntax subject, ITypeSymbol? expected, SemanticModel model)
+    {
+        if (expected is null || AcceptsShouldlyFailure(expected))
+        {
+            return false;
+        }
+
+        ExpressionSyntax action = subject is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Invoking" or "Awaiting" } } invoking
+            && invoking.ArgumentList.Arguments.Count > 0
+            ? invoking.ArgumentList.Arguments[^1].Expression
+            : subject;
+        SyntaxNode? body = model.GetSymbolInfo(action).Symbol is ILocalSymbol local
+            ? local.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax()
+            : action;
+        return body is not null && body.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Any(i => i.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Should" } && IsFluentAssertions(model.GetSymbolInfo(i).Symbol));
+    }
+
+    // The lambda itself and, for `Action act = () => ...;`, every use of act.
+    private static IEnumerable<ExpressionSyntax> UsesOf(AnonymousFunctionExpressionSyntax lambda, SemanticModel model)
+    {
+        yield return lambda;
+        if (lambda.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator }
+            && model.GetDeclaredSymbol(declarator) is ILocalSymbol local)
+        {
+            SyntaxNode scope = (SyntaxNode?)declarator.FirstAncestorOrSelf<BlockSyntax>() ?? declarator.SyntaxTree.GetRoot();
+            foreach (IdentifierNameSyntax use in scope.DescendantNodes().OfType<IdentifierNameSyntax>()
+                .Where(i => i.Identifier.ValueText == local.Name && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(i).Symbol, local)))
+            {
+                yield return use;
+            }
+        }
+    }
+
+    // T of the Throw-like check the action flows into, through parentheses, casts and Invoking/Awaiting; null if none.
+    private static ITypeSymbol? ExpectedException(ExpressionSyntax action, SemanticModel model)
+    {
+        SyntaxNode current = action;
+        while (true)
+        {
+            switch (current.Parent)
+            {
+                case ParenthesizedExpressionSyntax or CastExpressionSyntax:
+                    current = current.Parent;
+                    break;
+                case ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax call }
+                    when model.GetSymbolInfo(call).Symbol is IMethodSymbol method:
+                    if (method.Name is "Invoking" or "Awaiting" && IsFluentAssertions(method))
+                    {
+                        current = call;
+                        break;
+                    }
+
+                    return method is { ContainingType.Name: "Should", TypeArguments: [var thrown] }
+                        && method.Name.StartsWith("Throw", StringComparison.Ordinal)
+                        && method.ContainingNamespace?.ToDisplayString() == "Shouldly"
+                        ? thrown
+                        : null;
+                case MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Should", Parent: InvocationExpressionSyntax should } access
+                    when access.Expression == current:
+                    return should.Parent is MemberAccessExpressionSyntax { Parent: InvocationExpressionSyntax check } next
+                        && next.Expression == should
+                        && model.GetSymbolInfo(check).Symbol is IMethodSymbol { TypeArguments: [var expected] } assertion
+                        && assertion.Name.StartsWith("Throw", StringComparison.Ordinal)
+                        && IsFluentAssertions(assertion)
+                            ? expected
+                            : null;
+                default:
+                    return null;
+            }
+        }
+    }
+
+    // Exception or ShouldAssertException itself: a Shouldly failure still satisfies the check.
+    private static bool AcceptsShouldlyFailure(ITypeSymbol type) =>
+        type.ToDisplayString() is "System.Exception" or "Shouldly.ShouldAssertException";
 
     // AssertionScope is sealed in FluentAssertions 7, so no subclasses to look for.
     public static bool IsAssertionScope(ITypeSymbol? type) =>

@@ -47,6 +47,19 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
   projectbestand (package blijft als één TFM het nog nodig heeft); `fix` telt geschreven bestanden uniek (TAAK-022).
 - Details en redenen: `claude/tasks/archief/TAAK-001-fundament.md`.
 
+## FluentAssertions-patronen: gedeelde basis (REVIEW-A)
+
+- `FluentAssertionPattern` (Template Method): `Rewrite` doet de controles die elke `x.Should().Method(...)` deelt
+  (AssertionScope, subjectvorm, gebruikt resultaat, becauseArgs) met één redentekst, daarna `RewriteAssertion(AssertionContext)`.
+  Hooks: `GetAssertion` (statement of `.Which` als node), `IsResultDiscarded`/`ResultUsedReason`, `RewriteBeforeArguments`
+  (params-overloads die de argumentsplitsing anders als becauseArgs ziet). De Throw-familie (Throw, ThrowAsync, ThrowExactly,
+  NotThrow, Invoking) heeft een andere node-vorm en deelt `ThrowSyntax` en `ThrowMessage` in plaats van de basis.
+- Gedeelde helpers in `FluentAssertionsSyntax`: `ConvertExpected`, `IsSafeReceiver`/`NotNullReceiver`, `IsSafeToEvaluateTwice`
+  (één symboolgebaseerde regel), `TryGetSplittableStatement`/`NotSplittableReason`, `Arguments`/`Invoke`, `WithWhich`/`WithStatement`.
+  Patronen roepen geen statics van andere patronen meer aan.
+- `.And`-ketens zijn alleen van `AndChainPattern`; het geeft warnings van schakels door en accepteert schakels van meerdere statements.
+- `UsingDirectives` swapt ook usings binnen een namespace-declaratie (blok of file-scoped).
+
 ## Contracten naar buiten (TAAK-005)
 
 - `ISolutionStore`: `LoadAsync(path, ct)` → `Solution` (gooit `FileNotFoundException` of `SolutionLoadException` met

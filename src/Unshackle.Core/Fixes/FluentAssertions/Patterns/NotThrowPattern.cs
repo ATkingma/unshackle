@@ -14,10 +14,7 @@ public class NotThrowPattern : IPattern
 
     // Invoking subjects belong to InvokingPattern, which calls Rewrite below.
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        Find(root, model, t => !InvokingPattern.IsInvoking(t, model));
-
-    internal static IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model, Func<InvocationExpressionSyntax, bool> owns) =>
-        FluentAssertionsSyntax.FindInvocations(root, model, "NotThrow", "NotThrowAfter").Where(owns);
+        ThrowSyntax.FindNotThrow(root, model, t => !ThrowSyntax.IsInvoking(t, model));
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
@@ -51,9 +48,9 @@ public class NotThrowPattern : IPattern
         }
 
         ExpressionSyntax action = subject;
-        if (InvokingPattern.IsInvoking(call, model))
+        if (ThrowSyntax.IsInvoking(call, model))
         {
-            if (!InvokingPattern.TryGetAction(subject, model, out action, out _, out string reason))
+            if (!ThrowSyntax.TryGetAction(subject, model, out action, out _, out string reason))
             {
                 return PatternResult.Manual(reason);
             }

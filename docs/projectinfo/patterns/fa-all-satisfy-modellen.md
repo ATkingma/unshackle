@@ -13,7 +13,7 @@ Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AllSatisfyPattern
 | ------- | --- |
 | `AllSatisfyPattern` | Vindt `AllSatisfy` (`Find`, geeft het hele statement terug) en bouwt twee statements (`Rewrite`) |
 | `FluentAssertionsSyntax` | Gedeelde stappen: aanroepen vinden, onderwerp, `because`-argumenten |
-| `Reindent` / `IsSimple` | Eigen helpers: loop-body op de juiste inspringing; subject mag twee keer geëvalueerd worden |
+| `Reindent` / `FluentAssertionsSyntax.IsSafeToEvaluateTwice` | Eigen helpers: loop-body op de juiste inspringing; subject mag twee keer geëvalueerd worden |
 | `PatternResult` | `Fixed` met twee statements, of `Manual(reden)` |
 | FA / Shouldly | `AllSatisfy(Action<T>)` wordt `ShouldNotBeEmpty()` plus `foreach`, want `ShouldAllBe` verwacht een bool-predicate |
 
@@ -29,7 +29,7 @@ Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AllSatisfyPattern
 | Vinden | `Find` | `FindInvocations` met `AllSatisfy`; bij een statement-ouder wordt het statement de node |
 | Subject | `GetSubject` | Moet `x.Should()` zijn, anders Manual |
 | Argumenten | `TryGetArguments` | Lambda en `because`; `becauseArgs` of `because` geeft Manual |
-| Controles | `IsSimple`, `Reindent` | Simpel subject, lambda zonder `return`; blok wordt opnieuw ingesprongen |
+| Controles | `IsSafeToEvaluateTwice`, `Reindent` | Simpel subject, lambda zonder `return`; blok wordt opnieuw ingesprongen |
 | Resultaat | `PatternResult.Fixed` | Twee statements; de Fixer geeft het tweede alleen de inspringing |
 
 ## Figuur 3: beslisboom

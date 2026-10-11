@@ -1,49 +1,28 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.FluentAssertions.Patterns;
 
 // AllSatisfy takes an Action<T> with assertions, Shouldly's ShouldAllBe a bool predicate: the equivalent is a loop.
-public class AllSatisfyPattern : IPattern
+public class AllSatisfyPattern : FluentAssertionPattern
 {
-    public string Id => "fa.all-satisfy";
+    public override string Id => "fa.all-satisfy";
 
-    public string Description => "x.Should().AllSatisfy(a => ...) → x.ShouldNotBeEmpty(); foreach (var a in x) { ... }";
+    public override string Description => "x.Should().AllSatisfy(a => ...) → x.ShouldNotBeEmpty(); foreach (var a in x) { ... }";
 
     // The node is the whole statement (it is replaced by two statements), or the bare invocation when the result is used.
-    public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        FluentAssertionsSyntax.FindInvocations(root, model, "AllSatisfy")
-            .Select<InvocationExpressionSyntax, SyntaxNode>(i => i.Parent is ExpressionStatementSyntax statement ? statement : i);
+    public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
+        FluentAssertionsSyntax.FindInvocations(root, model, "AllSatisfy").Select(FluentAssertionsSyntax.WithStatement);
 
-    public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
+    protected override InvocationExpressionSyntax GetAssertion(SyntaxNode node) => FluentAssertionsSyntax.AssertionOfStatement(node);
+
+    protected override PatternResult RewriteAssertion(AssertionContext context)
     {
-        if (FluentAssertionsSyntax.IsInsideAssertionScope(node, model))
-        {
-            return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
-        }
-
-        var statement = node as ExpressionStatementSyntax;
-        var assertion = (InvocationExpressionSyntax)(statement?.Expression ?? node);
-        ExpressionSyntax? subject = FluentAssertionsSyntax.GetSubject(assertion);
-        if (subject is null)
-        {
-            return PatternResult.Manual("AllSatisfy(...) is not in the form x.Should().AllSatisfy(...), e.g. after .And.");
-        }
-
-        if (statement is null)
-        {
-            return PatternResult.Manual("The result of AllSatisfy(...) is used (.And or a value); a foreach loop returns nothing.");
-        }
-
-        if (!FluentAssertionsSyntax.TryGetArguments(assertion, model, out IReadOnlyList<ArgumentSyntax> values, out ArgumentSyntax? because))
-        {
-            return PatternResult.Manual("AllSatisfy(...) with becauseArgs or named arguments: the message cannot be carried over.");
-        }
-
-        if (because is not null)
+        ExpressionSyntax subject = context.Subject;
+        IReadOnlyList<ArgumentSyntax> values = context.Values;
+        if (context.Because is not null)
         {
             return PatternResult.Manual("AllSatisfy(...) with a because message: it cannot be carried into the loop body.");
         }
@@ -71,12 +50,12 @@ public class AllSatisfyPattern : IPattern
             return PatternResult.Manual("The inspector lambda contains a return: in a foreach loop it would leave the enclosing method.");
         }
 
-        if (statement.Parent is not (BlockSyntax or SwitchSectionSyntax))
+        if (!FluentAssertionsSyntax.TryGetSplittableStatement(context.Node, out ExpressionStatementSyntax? statement))
         {
-            return PatternResult.Manual("The statement is not directly in a block, so it cannot be split into a check and a loop.");
+            return PatternResult.Manual(FluentAssertionsSyntax.NotSplittableReason);
         }
 
-        if (!IsSimple(subject))
+        if (!FluentAssertionsSyntax.IsSafeToEvaluateTwice(subject, context.Model))
         {
             return PatternResult.Manual("The subject is not a plain name or member access, so the emptiness check and the loop would evaluate it twice.");
         }
@@ -101,12 +80,4 @@ public class AllSatisfyPattern : IPattern
         string braceIndent = new([.. block.CloseBraceToken.LeadingTrivia.Reverse().TakeWhile(t => !t.IsKind(SyntaxKind.EndOfLineTrivia)).Reverse().SelectMany(t => t.ToString())]);
         return string.Join(eol, lines.Select((l, i) => i == 0 ? l : indent + (l.StartsWith(braceIndent, StringComparison.Ordinal) ? l[braceIndent.Length..] : l.TrimStart())));
     }
-
-    // Names, `this` and member accesses on those: safe to evaluate twice (shortcut: property getters are assumed pure).
-    private static bool IsSimple(ExpressionSyntax e) => e switch
-    {
-        IdentifierNameSyntax or ThisExpressionSyntax => true,
-        MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name: IdentifierNameSyntax } access => IsSimple(access.Expression),
-        _ => false,
-    };
 }

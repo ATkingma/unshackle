@@ -21,6 +21,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AndChainPattern.cs`; r
 | REQ-5 | Gehaald | `unsupported-link`, `link-manual` |
 | REQ-6 | Gehaald | `used`, `which`, `no-block` |
 | REQ-7 | Gehaald | `assertion-scope` |
+| REVIEW-A | Gehaald | `greater-less`, `lambda` (verhuisd uit BeGreaterLess); `AndChainPatternTests`: de `Warning` van een schakel blijft staan (H2) en een schakel van meerdere statements (OnlyContain) wordt overgenomen (L3) |
 
 ## Deviations
 
@@ -28,6 +29,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AndChainPattern.cs`; r
 | --- | --- | --- | --- | --- |
 | 1 | Code | Alleen eigen bestanden | `FluentAssertionsFix`: assertion-patronen in `s_assertions`, gedeeld met `AndChainPattern`; volgorde ongewijzigd | Low |
 | 2 | Proof | - | `.And`-typecheck zonder proof: geen compileerbaar FA 7.2.2-voorbeeld gevonden | Low |
+| R-A | Performance | `Find` over het hele bestand per schakel | REVIEW-A M6: `Find` draait op de ouder van het schakelstatement | Low |
 
 ## Validation results
 

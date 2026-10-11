@@ -20,14 +20,15 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeGreaterLessPattern.c
 | REQ-4  | Gehaald | `sign.*.cs` |
 | REQ-5  | Gehaald | `because.*.cs`, `sign.*.cs` |
 | REQ-6  | Gehaald | `lambda.*.cs` |
-| REQ-7  | Gehaald | `and-chain.*.cs` (twee ketens, ook met `because` en drie schakels) |
+| REQ-7  | Gehaald | Sinds REVIEW-A via `fa.and-chain`: `AndChain/greater-less.*.cs` (twee ketens, ook met `because` en drie schakels) |
 | REQ-8  | Gehaald | `nullable.*` |
 | REQ-9  | Gehaald | `sign-byte.*` |
 | REQ-10 | Gehaald | `because-args.*` |
-| REQ-11 | Gehaald | `value-used.*`, `chain-used.*`, `chain-lambda.*` |
-| REQ-12 | Gehaald | `chain-other.*` |
-| REQ-13 | Gehaald | `chain-subject-call.*` |
-| REQ-14 | Gehaald | `chain-no-block.*` |
+| REQ-11 | Gehaald | `value-used.*`; keten in een lambda: `AndChain/lambda.*` |
+| REQ-12 | Vervallen (REVIEW-A M4) | Ketens zijn van `fa.and-chain`, dat elke schakel aan zijn eigen patroon geeft: een niet-vergelijking in de keten is geen Manual meer |
+| REQ-13 | Gehaald | Via `fa.and-chain`: `AndChain/subject-call.*` |
+| REQ-14 | Gehaald | Via `fa.and-chain`: `AndChain/no-block.*` |
+| REQ-15 | Gehaald (REVIEW-A H1) | `byte-short.*.cs`: waarden worden naar het subjecttype gecast (`(byte)1`), anders leidt Shouldly `T = int` af en compileert het niet |
 
 ## Deviations
 
@@ -35,6 +36,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeGreaterLessPattern.c
 | - | ---- | --------- | --------- | ------ |
 | 1 | Plan | C4-sectie | Vervangen door sectie Modellen met link naar `fa-be-greater-less-modellen.md` (nieuwe regel van de coordinator) | Low |
 | 2 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because` | Low |
+| 3 | Structure | Eigen `.And`-ketenlogica | REVIEW-A M4: ketenlogica weg, `fa.and-chain` is de enige eigenaar; patroon erft van `FluentAssertionPattern` | Low |
 
 ## Validation results
 

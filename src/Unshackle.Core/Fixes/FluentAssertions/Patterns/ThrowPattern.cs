@@ -15,16 +15,7 @@ public class ThrowPattern : IPattern
     // The node is the Throw call, or the whole `.WithMessage(...)` call when that directly follows it.
     // ThrowExactly and Invoking subjects belong to ThrowExactlyPattern and InvokingPattern, which call Rewrite below.
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        Find(root, model, t => !ThrowExactlyPattern.IsExactly(t) && !InvokingPattern.IsInvoking(t, model));
-
-    internal static IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model, Func<InvocationExpressionSyntax, bool> owns) =>
-        FluentAssertionsSyntax.FindInvocations(root, model, "Throw", "ThrowExactly")
-            .Where(owns)
-            .Select(t => t.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "WithMessage" } access
-                && access.Parent is InvocationExpressionSyntax { } withMessage
-                && withMessage.Expression == access
-                    ? withMessage
-                    : t);
+        ThrowSyntax.FindThrow(root, model, t => !ThrowSyntax.IsExactly(t) && !ThrowSyntax.IsInvoking(t, model));
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
@@ -59,9 +50,9 @@ public class ThrowPattern : IPattern
 
         ExpressionSyntax action = subject;
         ExpressionSyntax inspected = subject;
-        if (InvokingPattern.IsInvoking(throwCall, model))
+        if (ThrowSyntax.IsInvoking(throwCall, model))
         {
-            if (!InvokingPattern.TryGetAction(subject, model, out action, out AnonymousFunctionExpressionSyntax lambda, out string reason))
+            if (!ThrowSyntax.TryGetAction(subject, model, out action, out AnonymousFunctionExpressionSyntax lambda, out string reason))
             {
                 return PatternResult.Manual(reason);
             }

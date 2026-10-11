@@ -30,6 +30,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/OnlyContainPattern.cs`
 | - | ---- | --------- | --------- | ------ |
 | 1 | Behaviour | Gelijke semantiek op lege collectie | Extra `ShouldNotBeEmpty()` houdt het falen op een lege collectie in stand | Low |
 | 2 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because`; `null` geeft een andere uitzondering | Low |
+| R-A | Structure | Eigen preamble, eigen `IsSimple` | REVIEW-A: erft van `FluentAssertionPattern`; `Find` geeft het statement (ook buiten een blok), splitsen via `FluentAssertionsSyntax.TryGetSplittableStatement`, subject via `IsSafeToEvaluateTwice` (symboolgebaseerd) | Low |
 
 ## Validation results
 

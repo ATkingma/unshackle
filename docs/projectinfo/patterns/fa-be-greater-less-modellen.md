@@ -11,21 +11,21 @@ Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeGreaterLessPatt
 
 | Element | Rol |
 | ------- | --- |
-| `BeGreaterLessPattern` | Vindt de vergelijkingen (`Find`) en bouwt `Should...`-aanroepen (`Rewrite`); een `.And`-keten wordt een lijst statements |
+| `BeGreaterLessPattern` | Vindt de vergelijkingen (`Find`) en bouwt `Should...`-aanroepen (`RewriteAssertion`, na de gedeelde controles van `FluentAssertionPattern`); `.And`-ketens splitst `AndChainPattern` |
 | `FluentAssertionsSyntax` | Gedeelde stappen: onderwerp (`GetSubject`), weggegooid resultaat, `because`-argumenten |
 | `PatternResult` | `Fixed` met één of meer nodes, of `Manual(reden)` |
 | FA- en Shouldly-methoden | Vaste vertaaltabel `s_methods`; aliassen `BeGreaterOrEqualTo` en `BeLessOrEqualTo` vallen samen met hun lange naam |
 
 ## Figuur 2: sequence
 
-**Figure 2.** Eén document: `Find` klimt langs `.And` naar de bovenste aanroep (of het statement), `Rewrite` loopt de keten terug naar `Should()`.
+**Figure 2.** Eén document (vóór REVIEW-A, met de ketenlogica die nu in `AndChainPattern` zit): `Find` klimt langs `.And` naar de bovenste aanroep (of het statement), `Rewrite` loopt de keten terug naar `Should()`.
 
 <!-- kingmadoc:diagram img/fa-be-greater-less-modellen-2.d2 -->
 ![Figuur 2: sequence](img/fa-be-greater-less-modellen-2.png)
 
 | Stap | Methode in de code | Wat gebeurt er |
 | ---- | ------------------ | -------------- |
-| Vinden | `Find` | Elke vergelijking klimt via `.And` naar de top; dubbele nodes vallen weg (`Distinct`) |
+| Vinden | `Find` | Elke vergelijking (`FindInvocations`) |
 | Subject | `FluentAssertionsSyntax.GetSubject` | Eerste schakel moet `x.Should()` hebben |
 | Type | `SemanticModel.GetTypeInfo` | Niet-nullable en `IComparable<T>` van zichzelf |
 | Argumenten | `TryGetArguments` | Waarden en `because`; `becauseArgs` geeft Manual |
@@ -40,11 +40,8 @@ Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeGreaterLessPatt
 | Blad | Voorwaarde | Proof (`Proofs/FluentAssertions/BeGreaterLess/`) |
 | ---- | ---------- | ------------------------------------------------ |
 | Fixed, 1 aanroep | losse vergelijking, `because` mee | `simple`, `because`, `in-range`, `sign`, `comparable`, `lambda` |
-| Fixed, statements | `.And`-keten van vergelijkingen | `and-chain` |
-| Manual "is used" | resultaat gebruikt | `value-used`, `chain-used`, `chain-lambda` |
-| Manual "not a comparison" | andere assertion in keten | `chain-other` |
-| Manual "not directly in a block" | keten onder `if` zonder blok | `chain-no-block` |
-| Manual "evaluate it twice" | subject is een aanroep | `chain-subject-call` |
+| Manual "is used" | resultaat gebruikt | `value-used` |
+| Fixed met cast | waarde van een ander type dan `byte`/`short`-subject | `byte-short` |
 | Manual "nullable or has an unknown type" | `int?` | `nullable` |
 | Manual "becauseArgs" | format-argumenten | `because-args` |
 | Manual "only exists for" | `BePositive` op `byte` | `sign-byte` |

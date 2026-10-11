@@ -16,23 +16,7 @@ public class ThrowAsyncPattern : IPattern
     // without an await it is the invocation itself. A `.ConfigureAwait(...)` between the call and the await is kept.
     // ThrowExactlyAsync and Awaiting subjects belong to ThrowExactlyPattern and InvokingPattern, which call Rewrite below.
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        Find(root, model, t => !ThrowExactlyPattern.IsExactly(t) && !InvokingPattern.IsInvoking(t, model));
-
-    internal static IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model, Func<InvocationExpressionSyntax, bool> owns) =>
-        FluentAssertionsSyntax.FindInvocations(root, model, "ThrowAsync", "ThrowExactlyAsync")
-            .Where(owns)
-            .Select(t => Follow(t, "WithMessage"))
-            .Select(i => Follow(i, "ConfigureAwait"))
-            .Select(i => i.Parent is AwaitExpressionSyntax await ? (SyntaxNode)await : i);
-
-    // `call.method(...)` when that directly follows call, else call.
-    private static InvocationExpressionSyntax Follow(InvocationExpressionSyntax call, string method) =>
-        call.Parent is MemberAccessExpressionSyntax access
-        && access.Name.Identifier.ValueText == method
-        && access.Parent is InvocationExpressionSyntax next
-        && next.Expression == access
-            ? next
-            : call;
+        ThrowSyntax.FindThrowAsync(root, model, t => !ThrowSyntax.IsExactly(t) && !ThrowSyntax.IsInvoking(t, model));
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
@@ -79,9 +63,9 @@ public class ThrowAsyncPattern : IPattern
 
         ExpressionSyntax action = subject;
         ExpressionSyntax inspected = subject;
-        if (InvokingPattern.IsInvoking(throwCall, model))
+        if (ThrowSyntax.IsInvoking(throwCall, model))
         {
-            if (!InvokingPattern.TryGetAction(subject, model, out action, out AnonymousFunctionExpressionSyntax lambda, out string reason))
+            if (!ThrowSyntax.TryGetAction(subject, model, out action, out AnonymousFunctionExpressionSyntax lambda, out string reason))
             {
                 return PatternResult.Manual(reason);
             }

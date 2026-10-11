@@ -73,6 +73,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/TAAK-044-fa-global-using.md`                 | Bug: `global using FluentAssertions;` wordt niet vervangen                               |
 | `claude/tasks/archief/TAAK-045-flaky-integratietest.md`    | ✅ Integratietest: kind-`dotnet` geïsoleerd (geen node reuse, geen gelekte MSBuild-env)  |
 | `claude/tasks/archief/TAAK-047-fa-withmessage-line-endings.md` | ✅ `WithMessage` met regeleinde: `IgnoreLineEndings` of Manual |
+| `claude/tasks/archief/TAAK-048-fa-throw-aggregate-exception.md` | ✅ `Throw`/`ThrowAsync`: actie met `Wait`/`.Result`/`Parallel.*` → Manual (AggregateException) |
 | `claude/tasks/archief/TAAK-049-fa-equivalent-runtime-type.md` | ✅ `BeEquivalentTo` object: waarschuwing bij niet-sealed types (runtime-type) |
 | `claude/tasks/patroon-queue.md`                            | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status (ronde 2: rijen 15-34) |
 | `claude/tasks/mediatr-queue.md`                            | Wachtrij MediatR → Mediator-patronen; infrastructuur in TAAK-020                         |

@@ -50,6 +50,59 @@ internal static class ThrowMessage
             Arguments(messageArguments, null)));
     }
 
+    public const string AggregateReason = "The action blocks on a task or runs Parallel.* (Wait/Result/WaitAll/Parallel.For/ForEach/Invoke), which throws AggregateException: FluentAssertions unwraps AggregateException; Shouldly does not.";
+
+    // Heuristic: true when the action (a lambda, a local delegate initialised with one, or a method group) visibly calls
+    // a member that wraps exceptions in AggregateException, and exceptionType does not already accept AggregateException.
+    // An action that cannot be followed (e.g. a parameter) counts as false. GetAwaiter().GetResult() and WaitAny do not wrap.
+    public static bool MayThrowAggregate(ExpressionSyntax action, TypeSyntax exceptionType, SemanticModel model)
+    {
+        if (model.GetTypeInfo(exceptionType).Type is not ITypeSymbol expected
+            || model.Compilation.GetTypeByMetadataName("System.AggregateException") is not { } aggregate
+            || model.Compilation.ClassifyConversion(aggregate, expected).IsImplicit)
+        {
+            return false;
+        }
+
+        SyntaxNode? body = action is AnonymousFunctionExpressionSyntax ? action : null;
+        if (body is null)
+        {
+            ISymbol? symbol = model.GetSymbolInfo(action).Symbol;
+            SyntaxNode? declaration = symbol is ILocalSymbol or IMethodSymbol && symbol.DeclaringSyntaxReferences is [var reference]
+                ? reference.GetSyntax()
+                : null;
+            if (declaration is VariableDeclaratorSyntax { Initializer.Value: var value })
+            {
+                // A local's initialiser can never refer back to itself, so this recursion ends.
+                return MayThrowAggregate(value, exceptionType, model);
+            }
+
+            body = declaration switch
+            {
+                BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax => declaration,
+                _ => null,
+            };
+        }
+
+        if (body is null)
+        {
+            return false;
+        }
+
+        SemanticModel bodyModel = body.SyntaxTree == model.SyntaxTree ? model : model.Compilation.GetSemanticModel(body.SyntaxTree);
+        return body.DescendantNodes().OfType<SimpleNameSyntax>().Any(n => Wraps(bodyModel.GetSymbolInfo(n).Symbol));
+    }
+
+    private static bool Wraps(ISymbol? symbol) =>
+        symbol?.ContainingType?.OriginalDefinition is { ContainingNamespace: { Name: "Tasks", ContainingNamespace: { Name: "Threading", ContainingNamespace.Name: "System" } } } type
+        && (type.Name, symbol) switch
+        {
+            ("Task", IMethodSymbol { Name: "Wait" or "WaitAll" }) => true,
+            ("Task", IPropertySymbol { Name: "Result" }) => true,
+            ("Parallel", IMethodSymbol { Name: "For" or "ForEach" or "Invoke" }) => true,
+            _ => false,
+        };
+
     // Arguments separated by ", ": every argument after the first gets a leading space.
     public static ArgumentListSyntax Arguments(ArgumentSyntax[] first, ArgumentSyntax? because) =>
         SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(

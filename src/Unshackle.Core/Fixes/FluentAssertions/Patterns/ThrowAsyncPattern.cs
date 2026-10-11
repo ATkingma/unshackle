@@ -89,6 +89,11 @@ public class ThrowAsyncPattern : IPattern
             return PatternResult.Manual("The subject is not a Func<Task> or a Func<Task<T>> with T a reference type, the only delegates Should.ThrowAsync accepts.");
         }
 
+        if (ThrowMessage.MayThrowAggregate(subject, generic.TypeArgumentList.Arguments[0], model))
+        {
+            return PatternResult.Manual(ThrowMessage.AggregateReason);
+        }
+
         if (!FluentAssertionsSyntax.TryGetArguments(throwCall, model, out IReadOnlyList<ArgumentSyntax> throwValues, out ArgumentSyntax? throwBecause)
             || throwValues.Count != 0)
         {

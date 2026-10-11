@@ -7,6 +7,7 @@ Fixer                       de ene ingang: FixAsync(solution, request)
           ├─ Find(...)      → plekken in de code
           └─ Rewrite(...)   → Fixed(nieuwe node) of Manual(reden)
 ```
+
 ```
 src/Unshackle.Core/
 ├─ Fixer.cs
@@ -17,6 +18,7 @@ src/Unshackle.Core/
    ├─ MediatR/            MediatRFix.cs + Patterns/
    └─ AutoMapper/         AutoMapperFix.cs + Patterns/
 ```
+
 Elke fix heeft dezelfde indeling. Ken je er één, dan ken je ze allemaal.
 
 **Afwijkende patronen** (bijvoorbeeld `HaveCount`, waar het type bepaalt wat de juiste
@@ -66,21 +68,33 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
 
 ## Gelijknamige typen (TAAK-024)
 
-- `IFix.SwappedTypes` (default leeg): typen als `MediatR.IRequest\`1` met een tweeling in de nieuwe namespace. Symbolen van
-  die typen en hun leden tellen niet als gebruik in `UsingDirectives.UsedNamespaces` en `ProjectPackages`.
+- `IFix.SwappedTypes` (default leeg): typen als `MediatR.IRequest\`1`met een tweeling in de nieuwe namespace. Symbolen van
+die typen en hun leden tellen niet als gebruik in`UsingDirectives.UsedNamespaces`en`ProjectPackages`.
 - Een bestand zonder patroon-wijziging krijgt de using-swap toch als alleen swapped typen de oude using nodig hebben.
 - `PackageMigration.AlsoRemovedPackages` (MediatR: `MediatR.Contracts`) wordt mee verwijderd. Zie
   `docs/projectinfo/features/gelijknamige-typen-swap-plan.md`.
 
+## Inactieve `#if`-code en global usings (TAAK-043, TAAK-044)
+
+- Code in een inactieve `#if`-tak is `DisabledTextTrivia`: patronen zien hem niet en niets bindt eraan. Heeft een gewijzigd
+  bestand zulke trivia, dan blijft de oude using staan (de nieuwe komt erbij) en meldt de Fixer Manual (pattern `usings`,
+  regel van de inactieve code). `ProjectPackages` houdt dan ook het pakket. Gekozen boven parsen per symbolenset: welke
+  symbolen bestaan (`DEBUG`, eigen) is niet te weten, en alles tegelijk aanzetten parst `#else`-takken niet.
+- `global using <oud>;` in een eigen bestand (niet `*.g.cs`; `<Using Include>` doet `XmlProjectFileStore`) geldt voor het
+  hele project. Bestanden in zo'n project krijgen geen eigen `using <nieuw>;`. Na alle bestanden beslist
+  `Fixer.SwapGlobalUsingsAsync` per projectbestand (alle TFM's): bindt geen bestand meer aan de oude namespace en is er geen
+  inactieve code, dan wordt hij in place `global using <nieuw>;`; anders blijft hij met de nieuwe ernaast + Manual `usings`.
+  Een overgebleven global using houdt het pakket in `ProjectPackages`.
+
 ## SOLID in het kort
 
-| Principe | Hoe |
-|---|---|
-| S | Een pattern beschrijft alleen wat er herschreven wordt. Laden, schrijven en rapporteren gebeurt elders |
-| O | Een nieuwe bibliotheek of nieuw patroon is een nieuwe klasse. De Fixer verandert niet |
-| L | Elk pattern geeft `Fixed` of `Manual` terug en gooit nooit een exception, dus de Fixer behandelt ze allemaal hetzelfde |
-| I | Kleine interfaces: zoeken/herschrijven, solution-opslag en rapport-schrijven zijn apart |
-| D | Core hangt af van interfaces. MSBuild, het bestandssysteem en CSV zitten in DataAccess |
+| Principe | Hoe                                                                                                                    |
+| -------- | ---------------------------------------------------------------------------------------------------------------------- |
+| S        | Een pattern beschrijft alleen wat er herschreven wordt. Laden, schrijven en rapporteren gebeurt elders                 |
+| O        | Een nieuwe bibliotheek of nieuw patroon is een nieuwe klasse. De Fixer verandert niet                                  |
+| L        | Elk pattern geeft `Fixed` of `Manual` terug en gooit nooit een exception, dus de Fixer behandelt ze allemaal hetzelfde |
+| I        | Kleine interfaces: zoeken/herschrijven, solution-opslag en rapport-schrijven zijn apart                                |
+| D        | Core hangt af van interfaces. MSBuild, het bestandssysteem en CSV zitten in DataAccess                                 |
 
 ## Zie ook
 

@@ -40,8 +40,8 @@ grep, niets uitgevoerd). De proofs (`edge-<slug>`) zijn eigen minimale voorbeeld
 | Expression-bodied void-methode               | algemeen                         | `ShouldBe`, `BeNull`, `NotThrow/edge-expression-bodied`                                                         | groen, TAAK-040               |
 | `a?.B.Should()`                              | algemeen                         | `BeNull/edge-null-conditional`                                                                                  | groen, TAAK-041               |
 | `.ConfigureAwait(false)` na `ThrowAsync`     | EventFlow                        | `ThrowAsync/edge-configure-await`                                                                               | groen, TAAK-042               |
-| `#if` rond assertions                        | Refit                            | `_Pending/…/ShouldBe/edge-ifdef`                                                                                 | pending, TAAK-043             |
-| `global using FluentAssertions;`             | Ardalis.Specification            | `_Pending/…/ShouldBe/edge-global-using`                                                                          | pending, TAAK-044             |
+| `#if` rond assertions                        | Refit                            | `ShouldBe/edge-ifdef` (oude using blijft, Manual)                                                                | groen (TAAK-043)              |
+| `global using FluentAssertions;`             | Ardalis.Specification            | `ShouldBe/edge-global-using`                                                                                     | groen (TAAK-044)              |
 
 ## Niet als proof
 

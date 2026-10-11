@@ -46,10 +46,10 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-040-fa-expression-bodied-void.md` | ✅ `void M() => x.Should()...` wordt herschreven |
 | `claude/tasks/archief/TAAK-041-fa-null-conditional-subject.md` | ✅ `a?.B.Should()...` → `a?.B.ShouldX()` (zelfde semantiek) |
 | `claude/tasks/archief/TAAK-042-fa-throwasync-configure-await.md` | ✅ `ThrowAsync<T>().ConfigureAwait(x)` blijft behouden |
-| `claude/tasks/TAAK-043-fa-inactive-preprocessor-branch.md` | Bug: inactieve `#if`-tak blijft FA, using verdwijnt |
-| `claude/tasks/TAAK-044-fa-global-using.md` | Bug: `global using FluentAssertions;` wordt niet vervangen |
 | `claude/tasks/archief/TAAK-032-fa-not-be.md` | ✅ `x.Should().NotBe(y)` → `x.ShouldNotBe(y)`; patroon `fa.not-be` |
 | `claude/tasks/archief/TAAK-023-mediatr-request-handler.md` | ✅ `Task<T> Handle` → `ValueTask<T> Handle`; patroon `mediatr.request-handler` |
+| `claude/tasks/archief/TAAK-043-fa-inactive-preprocessor-branch.md` | ✅ Inactieve `#if`-code: oude using blijft + Manual (`usings`) |
+| `claude/tasks/archief/TAAK-044-fa-global-using.md` | ✅ `global using` projectbreed geswapt, of blijft naast de nieuwe + Manual |
 | `claude/tasks/patroon-queue.md` | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status (ronde 2: rijen 15-34) |
 | `claude/tasks/mediatr-queue.md` | Wachtrij MediatR → Mediator-patronen; infrastructuur in TAAK-020 |
 | `claude/tasks/archief/` | Voltooide taken                     |

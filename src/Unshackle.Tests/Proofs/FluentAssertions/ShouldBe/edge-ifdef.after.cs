@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Shouldly;
 
 namespace Proofs;
@@ -7,9 +8,9 @@ public class EdgeCase
     public void Test(int value)
     {
 #if DEBUG
-        value.ShouldBe(1);
+        value.Should().Be(1);
 #else
-        value.Should().Be(2);
+        value.ShouldBe(2);
 #endif
     }
 }

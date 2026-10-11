@@ -83,7 +83,11 @@ public class ProofTests
             string after = Normalize(await File.ReadAllTextAsync(basePath + ".after.cs", TestContext.Current.CancellationToken));
             report.Findings.ShouldContain(f => f.Result is FixedResult);
             actual.ShouldBe(after);
-            TestSolution.CompileErrors(actual, proofFix.After).ShouldBeEmpty("after must compile against the new library");
+            // A Manual finding can keep the old library (e.g. inactive #if code still uses it); then both are referenced.
+            IEnumerable<MetadataReference> afterReferences = report.Findings.Any(f => f.Result is ManualResult)
+                ? proofFix.Before.Union(proofFix.After)
+                : proofFix.After;
+            TestSolution.CompileErrors(actual, afterReferences).ShouldBeEmpty("after must compile against the new library");
         }
     }
 

@@ -1,6 +1,6 @@
 # TAAK-042 — `await act.Should().ThrowAsync<T>().ConfigureAwait(false)` wordt Manual
 
-**Status**: stap 1/3 — nog te starten
+**Status**: ✅ voltooid (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Doel**: de pending proof(s) hieronder slagen en staan weer in `Proofs/FluentAssertions/`.
 
@@ -37,9 +37,9 @@ Herken `await <x>.Should().ThrowAsync<T>().ConfigureAwait(<arg>)` als directe aw
 
 ## Stappen
 
-- [ ] 1. Proof(s) uit `_Pending/` terugzetten naar `Proofs/FluentAssertions/<Patroon>/`, zien falen.
-- [ ] 2. Fix in de genoemde code; alle proofs (`--filter-class "*ProofTests"`) en `dotnet test` groen.
-- [ ] 3. Verify-doc van het geraakte patroon bijwerken; taak archiveren.
+- [x] 1. Proof(s) uit `_Pending/` terugzetten naar `Proofs/FluentAssertions/<Patroon>/`, zien falen.
+- [x] 2. Fix in de genoemde code; alle proofs (`--filter-class "*ProofTests"`) en `dotnet test` groen.
+- [x] 3. Verify-doc van het geraakte patroon bijwerken; taak archiveren.
 
 ## Risico's & randgevallen
 
@@ -49,7 +49,9 @@ Herken `await <x>.Should().ThrowAsync<T>().ConfigureAwait(<arg>)` als directe aw
 
 ## Gewijzigde bestanden
 
-_(wordt aangevuld tijdens uitvoering)_
+- `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` (`IsResultDiscarded`: `?.`-keten en void expression body)
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowAsyncPattern.cs` (ConfigureAwait)
+- proofs uit `_Pending/` verplaatst; verify-docs fa-should-be, fa-be-null, fa-not-throw, fa-throw-async
 
 ## Zie ook
 

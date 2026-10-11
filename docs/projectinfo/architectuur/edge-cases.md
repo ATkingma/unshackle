@@ -37,9 +37,9 @@ grep, niets uitgevoerd). De proofs (`edge-<slug>`) zijn eigen minimale voorbeeld
 | `double` / `BeEquivalentTo(new[] {…})`       | SmartEnum                        | `BeGreaterLess/edge-double`, `BeEquivalentToObject/edge-array-literal` (Manual)                                  | groen                         |
 | `Throw<T>().Which…` / `.WithInnerException`  | NUKE, SmartEnum                  | `Throw/edge-which-message`, `Throw/edge-inner-exception` (Manual)                                                | groen                         |
 | Lokale `Func<Task> act = async () => …`      | EventFlow                        | `ThrowAsync/edge-local-async-lambda`                                                                             | groen                         |
-| Expression-bodied void-methode               | algemeen                         | `_Pending/…/ShouldBe`, `BeNull`, `NotThrow/edge-expression-bodied`                                               | pending, TAAK-040             |
-| `a?.B.Should()`                              | algemeen                         | `_Pending/…/BeNull/edge-null-conditional`                                                                        | pending, TAAK-041             |
-| `.ConfigureAwait(false)` na `ThrowAsync`     | EventFlow                        | `_Pending/…/ThrowAsync/edge-configure-await`                                                                     | pending, TAAK-042             |
+| Expression-bodied void-methode               | algemeen                         | `ShouldBe`, `BeNull`, `NotThrow/edge-expression-bodied`                                                         | groen, TAAK-040               |
+| `a?.B.Should()`                              | algemeen                         | `BeNull/edge-null-conditional`                                                                                  | groen, TAAK-041               |
+| `.ConfigureAwait(false)` na `ThrowAsync`     | EventFlow                        | `ThrowAsync/edge-configure-await`                                                                               | groen, TAAK-042               |
 | `#if` rond assertions                        | Refit                            | `_Pending/…/ShouldBe/edge-ifdef`                                                                                 | pending, TAAK-043             |
 | `global using FluentAssertions;`             | Ardalis.Specification            | `_Pending/…/ShouldBe/edge-global-using`                                                                          | pending, TAAK-044             |
 
@@ -53,4 +53,4 @@ grep, niets uitgevoerd). De proofs (`edge-<slug>`) zijn eigen minimale voorbeeld
 ## Zie ook
 
 - `docs/projectinfo/architectuur/testen.md` — proofs en de map `_Pending`
-- `claude/tasks/TAAK-040-fa-expression-bodied-void.md` t/m `TAAK-044-fa-global-using.md`
+- `claude/tasks/archief/TAAK-040-…` t/m `TAAK-042-…`; `claude/tasks/TAAK-043-…`, `TAAK-044-fa-global-using.md`

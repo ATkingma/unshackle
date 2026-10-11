@@ -13,15 +13,21 @@ public class ThrowAsyncPattern : IPattern
     public string Description => "await act.Should().ThrowAsync<T>()[.WithMessage(p)] → await Should.ThrowAsync<T>(act)[.Message.Should...]";
 
     // The node is the `await` around the ThrowAsync call (or around the `.WithMessage(...)` call that directly follows it);
-    // without an await it is the invocation itself.
+    // without an await it is the invocation itself. A `.ConfigureAwait(...)` between the call and the await is kept.
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         FluentAssertionsSyntax.FindInvocations(root, model, "ThrowAsync", "ThrowExactlyAsync")
-            .Select(t => t.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "WithMessage" } access
-                && access.Parent is InvocationExpressionSyntax withMessage
-                && withMessage.Expression == access
-                    ? withMessage
-                    : t)
+            .Select(t => Follow(t, "WithMessage"))
+            .Select(i => Follow(i, "ConfigureAwait"))
             .Select(i => i.Parent is AwaitExpressionSyntax await ? (SyntaxNode)await : i);
+
+    // `call.method(...)` when that directly follows call, else call.
+    private static InvocationExpressionSyntax Follow(InvocationExpressionSyntax call, string method) =>
+        call.Parent is MemberAccessExpressionSyntax access
+        && access.Name.Identifier.ValueText == method
+        && access.Parent is InvocationExpressionSyntax next
+        && next.Expression == access
+            ? next
+            : call;
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
@@ -32,6 +38,12 @@ public class ThrowAsyncPattern : IPattern
 
         var awaitExpression = node as AwaitExpressionSyntax;
         var outer = (InvocationExpressionSyntax)(awaitExpression?.Expression ?? node);
+        InvocationExpressionSyntax? configureAwait = null;
+        if (outer.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ConfigureAwait", Expression: InvocationExpressionSyntax configured })
+        {
+            (configureAwait, outer) = (outer, configured);
+        }
+
         InvocationExpressionSyntax throwCall = outer.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "WithMessage", Expression: InvocationExpressionSyntax inner }
             ? inner
             : outer;
@@ -83,12 +95,19 @@ public class ThrowAsyncPattern : IPattern
             return PatternResult.Manual("ThrowAsync<T>() with becauseArgs or named arguments: Shouldly cannot format the message.");
         }
 
-        ExpressionSyntax thrown = SyntaxFactory.AwaitExpression(SyntaxFactory.Token(SyntaxKind.AwaitKeyword).WithTrailingTrivia(SyntaxFactory.Space), SyntaxFactory.InvocationExpression(
+        ExpressionSyntax shouldThrow = SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
                 SyntaxFactory.IdentifierName("Should"),
                 SyntaxFactory.GenericName(SyntaxFactory.Identifier("ThrowAsync"), generic.TypeArgumentList)),
-            ThrowMessage.Arguments([SyntaxFactory.Argument(subject.WithoutTrivia())], throwBecause)));
+            ThrowMessage.Arguments([SyntaxFactory.Argument(subject.WithoutTrivia())], throwBecause));
+        if (configureAwait is not null)
+        {
+            // Shouldly's ThrowAsync returns Task<TException>, so the same ConfigureAwait applies.
+            shouldThrow = configureAwait.WithExpression(((MemberAccessExpressionSyntax)configureAwait.Expression).WithExpression(shouldThrow));
+        }
+
+        ExpressionSyntax thrown = SyntaxFactory.AwaitExpression(SyntaxFactory.Token(SyntaxKind.AwaitKeyword).WithTrailingTrivia(SyntaxFactory.Space), shouldThrow);
 
         if (!hasMessage)
         {

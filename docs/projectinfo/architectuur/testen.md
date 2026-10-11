@@ -57,8 +57,8 @@ in-memory solution.
 Moq gebruiken we bewust niet (SponsorLink-ophef in 2023, en het is zelf een migratiekandidaat).
 
 ## Zie ook
-- `docs/projectinfo/architectuur/proofs.md` — overzicht van alle proofs (genereren: `python3 claude/tools/proofs-doc.py`)
 
+- `docs/projectinfo/architectuur/proofs.md` — overzicht van alle proofs (genereren: `python3 claude/tools/proofs-doc.py`)
 - `docs/projectinfo/README.md` — overzicht en C4-diagrammen
 - `src/Unshackle.Tests/ProofTests.cs` — proof-runner
 - `src/Unshackle.Tests/CombinedProofTests.cs` — runner voor samenwerking van patterns

@@ -1,6 +1,6 @@
 # TAAK-047 — fa.throw/fa.throw-async: WithMessage negeert regeleinden, Shouldly-vorm niet
 
-**Status**: open
+**Status**: voltooid (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: TAAK-046 (semantische audit)
 
@@ -25,10 +25,14 @@ Gevolg: een FA-test die groen was (bv. multiline-melding op Windows) wordt rood 
 
 ## Stappen
 
-- [ ] Proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/Throw/` en `ThrowAsync/`: exacte melding met `\n` (after met IgnoreLineEndings) en `*..\n..*` (manual.txt)
-- [ ] Wijziging in `ThrowMessage.cs`
-- [ ] KingmaDoc plan/verify van fa.throw en fa.throw-async bijwerken (`docs/projectinfo/patterns/`)
-- [ ] `dotnet build` + `dotnet test` groen
+- [x] Proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/Throw/` en `ThrowAsync/`: exacte melding met `\n` (after met IgnoreLineEndings) en `*..\n..*` (manual.txt)
+- [x] Wijziging in `ThrowMessage.cs`
+- [x] KingmaDoc plan/verify van fa.throw en fa.throw-async bijwerken (`docs/projectinfo/patterns/`)
+- [x] `dotnet build` + `dotnet test` groen
+
+## Resultaat
+
+`ThrowMessage.Check` geeft nu `PatternResult`: exacte melding met regeleinde → `IgnoreCase | IgnoreLineEndings` (probe PASS, ook omgekeerd \n vs \r\n; IgnoreLineEndings alleen faalt op hoofdletters), `*`-vorm met regeleinde → Manual. Proofs `message-line-break.*` en `message-contains-line-break.*` in Throw/ en ThrowAsync/.
 
 ## Zie ook
 

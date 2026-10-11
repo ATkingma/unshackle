@@ -36,6 +36,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowAsyncPattern.cs` 
 | 2 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because` | Low |
 | 3 | Scope | `.Where`/`.WithInnerException` | Manual met reden "not directly awaited" | Low |
 | 4 | Scope | _(edge case)_ | `await ...ThrowAsync<T>()[.WithMessage(p)].ConfigureAwait(x)`: de ConfigureAwait blijft staan achter `Should.ThrowAsync<T>(act)` (TAAK-042, `edge-configure-await.*`) | Low |
+| 5 | Behaviour | `WithMessage` gelijk aan FA | FA negeert `\r\n` vs `\n`. Exacte melding met regeleinde → `ShouldBe(.., IgnoreCase \| IgnoreLineEndings)`; `*`-vorm met regeleinde → Manual (Shouldly's ShouldContain/StartWith/EndWith kennen geen regeleinde-optie). Probe FA 7.2.2/Shouldly 4.3.0 (TAAK-047, `message-line-break.*`, `message-contains-line-break.*`) | Low |
 
 ## Validation results
 

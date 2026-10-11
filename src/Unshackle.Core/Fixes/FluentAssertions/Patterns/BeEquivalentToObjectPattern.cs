@@ -8,7 +8,8 @@ namespace Unshackle.Core.Fixes.FluentAssertions.Patterns;
 
 // FluentAssertions' BeEquivalentTo is lenient (any order, Equals overrides, declared types, extra runtime members);
 // Shouldly's ShouldBeEquivalentTo is strict. Only shapes where both decide the same are Fixed: the same plain class or
-// struct on both sides, with leaf members only. Shouldly passes where FluentAssertions fails for Equals overrides,
+// struct on both sides, with leaf or plain nested members. Shouldly also compares runtime types: a non-sealed type
+// (unless both sides are new-expressions) is Fixed with a warning in the report. Shouldly passes where FluentAssertions fails for Equals overrides,
 // cyclic graphs and types without public members, so those are Manual. See fa-be-equivalent-to-object-modellen.md.
 public class BeEquivalentToObjectPattern : IPattern
 {
@@ -67,23 +68,36 @@ public class BeEquivalentToObjectPattern : IPattern
             return PatternResult.Manual("Different compile-time types (or an anonymous expectation): FluentAssertions compares only the expectation's members, Shouldly requires equal types.");
         }
 
-        if (Unsupported(subjectType, requireMembers: true) is { } reason)
+        var derivable = new List<string>();
+        if (Unsupported(subjectType, requireMembers: true, derivable) is { } reason)
         {
             return PatternResult.Manual(reason);
         }
 
+        // Shouldly compares runtime types (also nested), FluentAssertions only the declared members: a derived instance
+        // passes FA and fails Shouldly. Fixed anyway (user decision TAAK-049), with a warning unless no type can derive.
+        if (subjectType is { TypeKind: TypeKind.Class, IsSealed: false }
+            && !(subject is BaseObjectCreationExpressionSyntax && values[0].Expression is BaseObjectCreationExpressionSyntax))
+        {
+            derivable.Insert(0, subjectType.Name);
+        }
+
         // The overload is ShouldBeEquivalentTo(expected, customMessage).
         ArgumentSyntax[] arguments = because is null ? [values[0]] : [values[0], because.WithLeadingTrivia(SyntaxFactory.Space)];
-        return PatternResult.Fixed(SyntaxFactory.InvocationExpression(
+        InvocationExpressionSyntax rewritten = SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
                 subject.WithoutTrailingTrivia(),
                 SyntaxFactory.IdentifierName("ShouldBeEquivalentTo")),
-            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments))));
+            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments)));
+        return new FixedResult([rewritten], [])
+        {
+            Warning = derivable.Count == 0 ? null : DerivableWarning(derivable),
+        };
     }
 
     // The reason the type (and everything reachable through its public members) cannot be compared identically, or null.
-    private static string? Unsupported(ITypeSymbol type, bool requireMembers, ISet<ITypeSymbol>? path = null)
+    private static string? Unsupported(ITypeSymbol type, bool requireMembers, List<string> derivable, ISet<ITypeSymbol>? path = null)
     {
         if (type.AllInterfaces.Any(i => i.SpecialType == SpecialType.System_Collections_IEnumerable))
         {
@@ -107,6 +121,11 @@ public class BeEquivalentToObjectPattern : IPattern
             return $"{type.Name} overrides Equals: FluentAssertions compares it with Equals instead of its members.";
         }
 
+        if (!requireMembers && named is { TypeKind: TypeKind.Class, IsSealed: false })
+        {
+            derivable.Add(named.Name);
+        }
+
         var members = new List<ITypeSymbol>();
         for (INamedTypeSymbol? t = named; t is { SpecialType: not (SpecialType.System_Object or SpecialType.System_ValueType) }; t = t.BaseType)
         {
@@ -128,7 +147,7 @@ public class BeEquivalentToObjectPattern : IPattern
         foreach (ITypeSymbol member in members)
         {
             ITypeSymbol leaf = member is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable ? nullable.TypeArguments[0] : member;
-            if (!IsLeaf(leaf) && Unsupported(member, requireMembers: false, path) is { } reason)
+            if (!IsLeaf(leaf) && Unsupported(member, requireMembers: false, derivable, path) is { } reason)
             {
                 return reason;
             }
@@ -137,6 +156,9 @@ public class BeEquivalentToObjectPattern : IPattern
         path.Remove(named);
         return null;
     }
+
+    private static string DerivableWarning(IEnumerable<string> types) =>
+        $"ShouldBeEquivalentTo fails when the runtime type differs; FluentAssertions accepted derived types (not sealed: {string.Join(", ", types.Distinct())}).";
 
     // Compared by value in the same way by both libraries (probed): primitives, string, decimal, enums and a few BCL structs.
     private static bool IsLeaf(ITypeSymbol t) =>

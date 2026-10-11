@@ -33,7 +33,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPa
 | # | Area | Plan says | Code does | Impact |
 | - | ---- | --------- | --------- | ------ |
 | 1 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because`; andere meldingstekst | Low |
-| 2 | Behaviour | Zelfde beslissing | Bij een afgeleid runtime-type van een niet-afgeschermde klasse faalt Shouldly waar FA slaagt (hoorbaar, nooit stil) | Low |
+| 2 | Behaviour | Zelfde beslissing | Shouldly vergelijkt runtime-types (ook genest), FA alleen de gedeclareerde members (probe: afgeleid subject, afgeleide geneste member en beide-afgeleid met verschillend extra member: FA PASS, Shouldly FAIL). Besluit gebruiker (TAAK-049): blijft Fixed, met waarschuwing `FixedResult.Warning` in rapport (kolom Reason) en console-telling, tenzij type en geneste class-members `sealed`/struct zijn of beide kanten een `new`-expressie zijn. Unittest `BeEquivalentToObjectPatternTests`, proofs `sealed`, `both-new` | Medium |
 | 3 | Coverage | Onbekend type geeft Manual | Tak "type onbekend" (null-literal) heeft geen proof: `BeEquivalentTo(null)` compileert niet (ambigue overload) | Low |
 
 ## Validation results

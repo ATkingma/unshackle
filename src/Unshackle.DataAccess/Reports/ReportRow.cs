@@ -23,7 +23,7 @@ public class ReportRow
         ArgumentNullException.ThrowIfNull(finding);
         (string status, string reason) = finding.Result switch
         {
-            FixedResult => ("Fixed", ""),
+            FixedResult fixedResult => ("Fixed", fixedResult.Warning ?? ""),
             ManualResult manual => ("Manual", manual.Reason),
             _ => throw new UnreachableException(),
         };

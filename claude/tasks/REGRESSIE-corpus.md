@@ -38,14 +38,13 @@ De eerste run gaf 0 tests (harnas dwong VSTest af). Na TAAK-143 detecteert het h
 
 | Solution | Reden | Soort |
 | --- | --- | --- |
-| evo1, evo2 | Build na fix faalt (IDE0060: ongebruikte `assembly`-parameter na `AddMediator`; TAAK-117 gaf alleen waarschuwing) | **opgelost** in TAAK-141 (`_ = assembly;`); evo2 heeft daarna nog CS0104/CS0122/CS0436/CS0535 (los probleem) |
+| evo1, evo2 | Build na fix faalt (IDE0060: ongebruikte `assembly`-parameter na `AddMediator`; TAAK-117 gaf alleen waarschuwing) | **opgelost** in TAAK-141 (`_ = assembly;`); evo2's CS0104/CS0122/CS0436/CS0535: **TAAK-144** (naamconflict opgelost; generator-conflict → Manual, harnas evo1 45/45, evo2 ongewijzigd 39/39) |
 | Akka.NET, Steeltoe | Unshackle laadt de solution niet: AOT-/benchmark-/sample-projecten waarvan types niet resolven (302 resp. 502 fouten) | product: loader (TAAK-112/135 dekken dit nog niet) |
 | LiteDB | Baseline-build faalt al (`LiteDB.Fuzz`) | omgeving/project |
 
 ## Open vervolg (niet gestart, op verzoek gebruiker)
 
 - Loader: Akka/Steeltoe laden (projecten met onopgeloste types overslaan als ze geen FA/MediatR gebruiken; regels uit TAAK-112/135 verbreden).
-- evo1/evo2: IDE0060 oplossen in plaats van alleen waarschuwen.
 
 ## Zie ook
 

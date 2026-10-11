@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- FluentAssertions in forms that the current patterns do not (fully) migrate: these should end up as Manual. -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+    <NoWarn>$(NoWarn);NU1903</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SampleShop\SampleShop.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="FluentAssertions" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

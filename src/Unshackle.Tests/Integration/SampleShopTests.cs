@@ -69,6 +69,7 @@ public class SampleShopTests
         File.Copy(Path.Combine(RepositoryRoot.Path, "global.json"), Path.Combine(directory.Path, "global.json"));
         string solution = Path.Combine(samples, "SampleShop", "SampleShop.slnx");
         string testProject = Path.Combine(samples, "SampleShop", "SampleShop.Tests", "SampleShop.Tests.csproj");
+        string advancedProject = Path.Combine(samples, "SampleShop", "SampleShop.Advanced.Tests", "SampleShop.Advanced.Tests.csproj");
         string repositoryTests = Path.Combine(samples, "SampleShop", "SampleShop.Tests", "RepositoryTests.cs");
         string report = Path.Combine(directory.Path, "r.csv");
         await DotnetAsync(cancellationToken, "restore", solution);
@@ -94,14 +95,12 @@ public class SampleShopTests
         afterFirst.ShouldContain("<PackageReference Include=\"Shouldly\" />");
 
         secondExit.ShouldBe(ExitCodes.Ok);
-        foreach (string file in Directory.EnumerateFiles(samples, "*.*proj*", SearchOption.AllDirectories)
-            .Concat(Directory.EnumerateFiles(samples, "*.props", SearchOption.AllDirectories))
-            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)))
-        {
-            (await File.ReadAllTextAsync(file, cancellationToken)).ShouldNotContain("FluentAssertions", customMessage: file);
-        }
-
-        (await File.ReadAllTextAsync(testProject, cancellationToken)).ShouldContain("<Using Include=\"Shouldly\" />");
+        string afterSecond = await File.ReadAllTextAsync(testProject, cancellationToken);
+        afterSecond.ShouldNotContain("FluentAssertions");
+        afterSecond.ShouldContain("<Using Include=\"Shouldly\" />");
+        // SampleShop.Advanced.Tests holds constructions that stay manual (TAAK-030), so it and the central versions keep FluentAssertions.
+        (await File.ReadAllTextAsync(advancedProject, cancellationToken)).ShouldContain("<PackageReference Include=\"FluentAssertions\" />");
+        (await File.ReadAllTextAsync(Path.Combine(samples, "Directory.Packages.props"), cancellationToken)).ShouldContain("\"FluentAssertions\"");
         await DotnetAsync(cancellationToken, "build", solution);
         await DotnetAsync(cancellationToken, "test", "--solution", solution);
     }

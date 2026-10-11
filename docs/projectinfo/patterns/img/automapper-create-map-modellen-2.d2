@@ -1,0 +1,17 @@
+title: "[Sequence] CreateMapPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: CreateMapPattern
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> model: "GetDeclaredSymbol(class): IsProfile?"
+pattern -> model: "GetSymbolInfo(invocation): Map/ProjectTo uit AutoMapper?"
+pattern -> fixer: "ClassDeclarationSyntax / InvocationExpressionSyntax" {style.stroke-dash: 3}
+fixer -> pattern: "Rewrite(node, model)"
+pattern -> model: "GetSymbolInfo(CreateMap<A, B>()): TypeArguments"
+pattern -> pattern: "Problem(A, B, out members)"
+pattern -> pattern: "Effective(A), Effective(B)"
+pattern -> model: "Compilation.GetSymbolsWithName(<Profile>Extensions)"
+pattern -> pattern: "Extensions(profile, className, access, maps)"
+pattern -> fixer: "Fixed([leeg profile, <Profile>Extensions]) of Manual(reden)" {style.stroke-dash: 3}
+fixer -> fixer: "AllOrNothing: Manual ergens? dan origineel"

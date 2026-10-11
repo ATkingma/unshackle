@@ -3,6 +3,7 @@ using NSubstitute;
 using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
+using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.FluentAssertions;
 using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Models;
@@ -34,6 +35,12 @@ public class ProofTests
             Before = TestReferences.MediatR,
             After = TestReferences.Mediator,
             AfterGenerators = TestReferences.MediatorGenerators,
+        },
+        ["AutoMapper"] = new()
+        {
+            Fix = new AutoMapperFix(),
+            Before = TestReferences.AutoMapper,
+            After = TestReferences.AutoMapper,
         },
     };
 

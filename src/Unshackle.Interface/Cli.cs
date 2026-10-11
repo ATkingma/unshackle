@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Spectre.Console;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
+using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.FluentAssertions;
 using Unshackle.Core.Fixes.MediatR;
 using Unshackle.DataAccess.Projects;
@@ -27,6 +28,7 @@ public static class Cli
         [
             new FluentAssertionsFix([MetadataReference.CreateFromFile(Path.Combine(AppContext.BaseDirectory, "References", "Shouldly.dll"))]),
             new MediatRFix(),
+            new AutoMapperFix(),
         ];
         var fileSystem = new FileSystem();
         IReportWriter[] reportWriters =

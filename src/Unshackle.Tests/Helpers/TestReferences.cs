@@ -37,6 +37,10 @@ public static class TestReferences
             .GetGenerators(LanguageNames.CSharp),
     ];
 
+    // AutoMapper 14.0.0: the last free version. "After" keeps it while a Profile stays (an emptied one too).
+    public static IReadOnlyList<MetadataReference> AutoMapper { get; } =
+        [.. Net, MetadataReference.CreateFromFile(typeof(global::AutoMapper.Profile).Assembly.Location), DependencyInjection];
+
     // AddMediatR, AddMediator and the code Mediator's source generator writes need IServiceCollection.
     private static MetadataReference DependencyInjection =>
         MetadataReference.CreateFromFile(typeof(global::Microsoft.Extensions.DependencyInjection.IServiceCollection).Assembly.Location);

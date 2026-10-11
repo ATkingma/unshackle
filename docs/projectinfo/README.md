@@ -138,6 +138,7 @@ Wachtrij en status: `claude/tasks/patroon-queue.md`.
 | `fa.not-throw-async`               | [plan](patterns/fa-not-throw-async-plan.md)               | [modellen](patterns/fa-not-throw-async-modellen.md)               | [verify](patterns/fa-not-throw-async-verify.md)               | TAAK-094 |
 | `fa.match`                         | [plan](patterns/fa-match-plan.md)                         | [modellen](patterns/fa-match-modellen.md)                         | [verify](patterns/fa-match-verify.md)                         | TAAK-099 |
 | `fa.direct-mapping`                | [plan](patterns/fa-direct-mapping-plan.md)                | [modellen](patterns/fa-direct-mapping-modellen.md)                | [verify](patterns/fa-direct-mapping-verify.md)                | TAAK-101 |
+| `automapper.create-map`            | [plan](patterns/automapper-create-map-plan.md)            | [modellen](patterns/automapper-create-map-modellen.md)            | [verify](patterns/automapper-create-map-verify.md)            | TAAK-146 |
 
 ## Zie ook
 

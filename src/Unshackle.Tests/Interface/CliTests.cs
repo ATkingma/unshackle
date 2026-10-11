@@ -40,6 +40,7 @@ public class CliTests
     [Theory]
     [InlineData("fluentassertions")]
     [InlineData("mediatr")]
+    [InlineData("automapper")]
     public async Task RunAsync_ScanMissingSolution_ReturnsFailure(string fixId)
     {
         // Arrange

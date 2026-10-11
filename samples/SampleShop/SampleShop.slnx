@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="SampleShop/SampleShop.csproj" />
   <Project Path="SampleShop.Tests/SampleShop.Tests.csproj" />
+  <Project Path="SampleShop.Advanced.Tests/SampleShop.Advanced.Tests.csproj" />
 </Solution>

@@ -48,7 +48,7 @@ grep, niets uitgevoerd). De proofs (`edge-<slug>`) zijn eigen minimale voorbeeld
 
 | Vorm                                              | Bron          | Proof                                                         | Status            |
 | ------------------------------------------------- | ------------- | ------------------------------------------------------------- | ----------------- |
-| Assertion in lambda, `Throw<XunitException>` erop | FluentResults | `_Pending/…/ShouldBe/edge-assertion-in-throw-lambda` (Manual) | pending, TAAK-070 |
+| Assertion in lambda, `Throw<XunitException>` erop | FluentResults | `FluentAssertions/ShouldBe/edge-assertion-in-throw-lambda`, `Throw/…` | Manual (beide), TAAK-070 |
 | `coll.Should().BeEquivalentTo("a", "b")` (params) | FluentResults | `FluentAssertions/BeEquivalentToObject/edge-collection-params` | Manual (collectie), TAAK-071 |
 | `ContainSingle().Subject` i.p.v. `.Which`         | Akka.NET      | `FluentAssertions/ContainSingle/edge-subject`                 | Fixed, TAAK-072 |
 

@@ -24,6 +24,11 @@ public class ThrowPattern : IPattern
             return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
         }
 
+        if (FluentAssertionsSyntax.IsInsideExpectedFailure(node, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.ExpectedFailureReason);
+        }
+
         // `act.Should().Throw<T>().Which`: Should.Throw<T> returns the exception itself.
         var which = node as MemberAccessExpressionSyntax;
         var outer = (InvocationExpressionSyntax)(which?.Expression ?? node);
@@ -43,6 +48,11 @@ public class ThrowPattern : IPattern
         if (subject is null)
         {
             return PatternResult.Manual("Throw<T>(...) is not in the form x.Should().Throw<T>(), e.g. after .And.");
+        }
+
+        if (FluentAssertionsSyntax.ExpectsAssertionFailure(subject, model.GetTypeInfo(generic.TypeArgumentList.Arguments[0]).Type, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.ExpectedFailureReason);
         }
 
         if (which is null && !FluentAssertionsSyntax.IsResultDiscarded(outer, model))

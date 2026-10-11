@@ -25,6 +25,11 @@ public class ThrowAsyncPattern : IPattern
             return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
         }
 
+        if (FluentAssertionsSyntax.IsInsideExpectedFailure(node, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.ExpectedFailureReason);
+        }
+
         var awaitExpression = node as AwaitExpressionSyntax;
         var outer = (InvocationExpressionSyntax)(awaitExpression?.Expression ?? node);
         InvocationExpressionSyntax? configureAwait = null;
@@ -49,6 +54,11 @@ public class ThrowAsyncPattern : IPattern
         if (subject is null)
         {
             return PatternResult.Manual("ThrowAsync<T>(...) is not in the form x.Should().ThrowAsync<T>(), e.g. after .And.");
+        }
+
+        if (FluentAssertionsSyntax.ExpectsAssertionFailure(subject, model.GetTypeInfo(generic.TypeArgumentList.Arguments[0]).Type, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.ExpectedFailureReason);
         }
 
         if (awaitExpression is null)

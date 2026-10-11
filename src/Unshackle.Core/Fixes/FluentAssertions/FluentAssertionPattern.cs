@@ -22,6 +22,11 @@ public abstract class FluentAssertionPattern : IPattern
             return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
         }
 
+        if (FluentAssertionsSyntax.IsInsideExpectedFailure(node, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.ExpectedFailureReason);
+        }
+
         InvocationExpressionSyntax assertion = GetAssertion(node);
         string name = ((MemberAccessExpressionSyntax)assertion.Expression).Name.Identifier.ValueText;
         ExpressionSyntax? subject = FluentAssertionsSyntax.GetSubject(assertion);

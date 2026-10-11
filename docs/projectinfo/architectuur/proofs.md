@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 513 proofs (zonder `_Pending`).
+Totaal: 515 proofs (zonder `_Pending`).
 
 ## FluentAssertions
 
@@ -476,7 +476,7 @@ Totaal: 513 proofs (zonder `_Pending`).
 | `subject-call` | Fixed | `Load().Should().OnlyContain(i => i > y);` → `var subject = Load(); subject.ShouldNotBeEmpty();` |
 | `used` | Manual | `var r = x.Should().OnlyContain(i => i > 0);` — reden: is used |
 
-### ShouldBe (30)
+### ShouldBe (31)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -490,6 +490,7 @@ Totaal: 513 proofs (zonder `_Pending`).
 | `chain` | Manual | `result.Should().Be(42).And.NotBe(41);` — reden: is used |
 | `comparer` | Manual | `actual.Should().Be(expected, EqualityComparer<object>.Default);` — reden: comparer |
 | `constant-cast` | Fixed | `count.Should().Be(1); status.Should().Be(0);` → `count.ShouldBe((byte)1); status.ShouldBe((Status)0);` |
+| `edge-assertion-in-throw-lambda` | Manual | `Action act = () => total.Should().Be(3);` — reden: exception type |
 | `edge-await-subject` | Fixed | `(await load()).Should().Be(1);` → `(await load()).ShouldBe(1);` |
 | `edge-cast-subject` | Fixed | `((string)value).Should().Be("a");` → `((string)value).ShouldBe("a");` |
 | `edge-enum` | Fixed | `day.Should().Be(DayOfWeek.Monday);` → `day.ShouldBe(DayOfWeek.Monday);` |
@@ -526,7 +527,7 @@ Totaal: 513 proofs (zonder `_Pending`).
 | `nullable` | Fixed | `s.Should().StartWith("Ti"); s.Should().NotBeNullOrWhiteSpace();` → `s.ShouldStartWith("Ti", Shouldly.Case.Sensitive); s.ShouldNotBeNullOrWhiteSpace();` |
 | `simple` | Fixed | `s.Should().StartWith("Ti"); s.Should().EndWith("me");` → `s.ShouldStartWith("Ti", Shouldly.Case.Sensitive); s.ShouldEndWith("me", Shouldly.Case.Sensitive);` |
 
-### Throw (26)
+### Throw (27)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -537,6 +538,7 @@ Totaal: 513 proofs (zonder `_Pending`).
 | `because` | Fixed | `act.Should().Throw<InvalidOperationException>("it is shipped");` → `Should.Throw<InvalidOperationException>(act, "it is shipped");` |
 | `because-args` | Fixed | `act.Should().Throw<InvalidOperationException>("because {0}", 1);` → `Should.Throw<InvalidOperationException>(act, string.Format(System.Globalization.CultureInfo.InvariantCulture, …` |
 | `chain` | Manual | `act.Should().Throw<InvalidOperationException>().WithInnerException<ArgumentException>();` — reden: is used |
+| `edge-assertion-in-throw-lambda` | Manual | `Action act = () => total.Should().Be(3);` — reden: exception type |
 | `edge-inner-exception` | Manual | `act.Should().Throw<InvalidOperationException>().WithInnerException<ArgumentException>();` — reden: is used |
 | `edge-multiline-message` | Fixed | `act.Should() .Throw<InvalidOperationException>()` → `Should.Throw<InvalidOperationException>(act).Message.ShouldBe("boom", Shouldly.StringCompareShould.IgnoreCase)…` |
 | `edge-which-message` | Fixed | `string message = act.Should().Throw<Exception>().Which.Message;` → `string message = Should.Throw<Exception>(act).Message;` |
@@ -738,12 +740,6 @@ Totaal: 513 proofs (zonder `_Pending`).
 ## _Pending (bekende fouten)
 
 ### _Pending / FluentAssertions
-
-#### ShouldBe (1)
-
-| Proof | Uitkomst | Wat het bewijst |
-| --- | --- | --- |
-| `edge-assertion-in-throw-lambda` | Manual | `Action act = () => total.Should().Be(3);` — reden: exception type |
 
 ## Zie ook
 

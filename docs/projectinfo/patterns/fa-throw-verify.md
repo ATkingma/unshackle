@@ -34,6 +34,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowPattern.cs`; regi
 | AggregateException | Gehaald | `aggregate-wait`, `aggregate-method-group` (Manual); `aggregate-expected`, `aggregate-get-result` (Fixed) |
 | Regeleinden | Gehaald | `message-line-break`, `edge-multiline-message` (Fixed); `message-contains-line-break` (Manual) |
 | TAAK-100 | Gehaald | `ThrowExactly/assertion-scope`, `Invoking/assertion-scope` |
+| TAAK-070 | Gehaald | `edge-assertion-in-throw-lambda` (`.manual.txt`): `Throw<T>`/`ThrowAsync<T>` met T ≠ `Exception`/`ShouldAssertException` op een actie met een FA-assertion → Manual (`ExpectsAssertionFailure`) |
 
 ## Deviations
 

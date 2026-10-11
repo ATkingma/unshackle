@@ -1,6 +1,6 @@
 # TAAK-070 — fa.should-be (e.a.): assertion in een lambda waarvan de exception verwacht wordt
 
-**Status**: open
+**Status**: klaar
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: corpus-run FluentResults (`docs/projectinfo/architectuur/corpus.md`)
 
@@ -21,9 +21,10 @@ Testcode van assertion-extensies test dat een FA-assertion faalt:
 
 ## Stappen
 
-- [ ] Detectie (lokale `Action`/`Func` + directe lambda)
-- [ ] Proof uit `_Pending` terugzetten, groen
-- [ ] `dotnet build` + `dotnet test` groen
+- [x] Detectie (lokale `Action`/`Func`, directe lambda, Invoking/Awaiting, Shouldly `Should.Throw<T>`): `FluentAssertionsSyntax.IsInsideExpectedFailure` (binnenste assertion) en `ExpectsAssertionFailure` (buitenste Throw), beide Manual met `ExpectedFailureReason`. Veilig (geen Manual) als T `Exception` of `ShouldAssertException` is.
+- [x] Proof uit `_Pending` naar `ShouldBe/` en `Throw/` (manual), groen
+- [x] Probe (FA 7.2.2 + Shouldly 4.3.0 + xunit.assert): Shouldly-assertion in `Throw<XunitException>` faalt, in `Throw<Exception>` slaagt
+- [x] `dotnet build` + `dotnet test` groen; FluentResults corpus-regressie (`corpus-regression.sh one`): 576/576 groen vóór en na, 0 regressies
 
 ## Zie ook
 

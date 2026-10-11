@@ -69,6 +69,7 @@ Alle Shouldly-doelen gecontroleerd in `Shouldly.dll` 4.3.0. Prio: H = in bijna e
 
 | Taak | Bug | Gevonden in | Status |
 | --- | --- | --- | --- |
+| TAAK-070 | Assertion in lambda met `Throw<XunitException>` erop → regressie | FluentResults | klaar (assertion + Throw Manual) |
 | TAAK-110 | Niet-herkende `.Should()` → `using FluentAssertions` toch verwijderd | CSharpFunctionalExtensions | klaar (using + Manual; CSFE bouwt) |
 | TAAK-111 | Projectbestand niet aanpasbaar → code toch herschreven | Polly, Ardalis.Result | klaar (TAAK-111/134) |
 | TAAK-112 | Bogus laadt niet | Bogus | klaar (Builder weggelaten met waarschuwing; Bogus bouwt) |

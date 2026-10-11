@@ -1,0 +1,13 @@
+title: "[Beslisboom] BehaviorDiRegistrationPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q1: "Twee argumenten,\nbeide typeof(...)?" {shape: diamond}
+q2: "AddTransient/AddScoped/AddSingleton\nuit M.E.DependencyInjection?" {shape: diamond}
+q3: "Eerste typeof is\nMediatR.IPipelineBehavior`2?" {shape: diamond}
+n: "niet gevonden\n(unittest Find_Registration_...)"
+f: "Fixed: node blijft,\nusing-swap naar Mediator\n(transient, lifetimes)"
+q1 -> n: nee
+q1 -> q2: ja
+q2 -> n: nee
+q2 -> q3: ja
+q3 -> n: nee
+q3 -> f: ja

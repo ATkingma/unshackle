@@ -1,0 +1,12 @@
+title: "[Sequence] BehaviorDiRegistrationPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: BehaviorDiRegistrationPattern
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> model: "GetSymbolInfo(invocation): AddTransient/AddScoped/AddSingleton uit M.E.DependencyInjection?"
+pattern -> model: "GetTypeInfo(serviceType.Type): IPipelineBehavior`2 uit MediatR?"
+pattern -> fixer: "InvocationExpressionSyntax" {style.stroke-dash: 3}
+fixer -> pattern: "Rewrite(node, model)"
+pattern -> fixer: "Fixed(node) (ongewijzigd)" {style.stroke-dash: 3}
+fixer -> fixer: "using MediatR → using Mediator (SwappedTypes)"

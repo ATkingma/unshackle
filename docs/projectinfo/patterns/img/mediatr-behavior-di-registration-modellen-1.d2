@@ -1,0 +1,13 @@
+title: "[Klassen] BehaviorDiRegistrationPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+ipattern: "«interface»\nIPattern" {shape: class; Find(root, model); Rewrite(node, model)}
+pattern: BehaviorDiRegistrationPattern {shape: class; Id: "mediatr.behavior-di-registration"; Find(root, model); Rewrite(node, model)}
+fixed: FixedResult {shape: class; NewNodes; Warning: "null"}
+di: "ServiceCollectionServiceExtensions\n(Microsoft.Extensions.DependencyInjection)" {shape: class; "AddTransient(Type, Type)"; "AddScoped(Type, Type)"; "AddSingleton(Type, Type)"}
+old: "MediatR.IPipelineBehavior<,>" {shape: class}
+new: "Mediator.IPipelineBehavior<,>" {shape: class}
+pattern -> ipattern: implementeert {style.stroke-dash: 3}
+pattern -> fixed: maakt
+pattern -> di: herkent aanroep
+pattern -> old: herkent typeof
+old -> new: "SwappedTypes (using-swap)" {style.stroke-dash: 3}

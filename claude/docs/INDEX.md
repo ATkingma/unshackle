@@ -41,7 +41,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | ----------------------- | ----------------------------------- |
 | `claude/tasks/`         | Actieve taken: `TAAK-NNN-<slug>.md` |
 | `claude/tasks/TAAK-019-lancering.md` | Volgende stap: lancering (echte casus, NuGet, publiek, README-GIF) |
-| `claude/tasks/TAAK-031-fa-assertion-scope.md` | Bug: assertions in `AssertionScope` worden stil Fixed → Manual |
+| `claude/tasks/archief/TAAK-031-fa-assertion-scope.md` | ✅ Assertions in `AssertionScope` → Manual; patroon `fa.assertion-scope` |
 | `claude/tasks/patroon-queue.md` | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status (ronde 2: rijen 15-34) |
 | `claude/tasks/mediatr-queue.md` | Wachtrij MediatR → Mediator-patronen; infrastructuur in TAAK-020 |
 | `claude/tasks/archief/` | Voltooide taken                     |

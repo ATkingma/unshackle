@@ -1,6 +1,6 @@
 # TAAK-031 — FA-assertions binnen `AssertionScope` niet stil herschrijven
 
-**Status**: stap 0/4 — nog te starten
+**Status**: ✅ voltooid (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Doel**: een assertion binnen `using (new AssertionScope())` wordt nooit meer stil `Fixed`; de scope-semantiek (alle fouten verzamelen) blijft behouden of wordt als `Manual` gemeld.
 
@@ -54,16 +54,22 @@ Optie B, automatisch herschrijven naar `x.ShouldSatisfyAllConditions(() => ..., 
 
 ## Stappen
 
-- [ ] 1. Helper + unittests (`using`-blok, `using var`, geneste scope, assertion buiten scope)
-- [ ] 2. Alle patronen laten afvragen; bestaande proofs blijven groen
-- [ ] 3. `AssertionScopePattern` + proofs + KingmaDoc
-- [ ] 4. Scan op SampleShop: r85-87 `Manual`; `dotnet build`, `dotnet test`, sample-tests groen
+- [x] 1. Helper + unittests (`using`-blok, `using var`, geneste scope, assertion buiten scope)
+- [x] 2. Alle patronen laten afvragen; bestaande proofs blijven groen
+- [x] 3. `AssertionScopePattern` + proofs + KingmaDoc
+- [x] 4. Scan op SampleShop: r85-87 `Manual`; `dotnet build`, `dotnet test`, sample-tests groen
 
 ## Risico's & randgevallen
 
 - `using var scope` geldt tot einde blok: alleen statements na de declaratie in hetzelfde blok en dieper.
 - Lambdas binnen de scope (bijv. `act` die later wordt uitgevoerd) vallen syntactisch binnen de scope; Manual is dan te voorzichtig, maar veilig.
 - Custom scope-subklassen: check met `InheritsFrom`/`SymbolEqualityComparer` op `AssertionScope`.
+
+## Keuzes (uitvoering)
+
+- Subklassen vervallen: `AssertionScope` is `sealed` in FA 7.2.2 (CS0509); `IsAssertionScope` vergelijkt exact type.
+- "Assertion vóór `using var` blijft Fixed" als unittest, niet als proof: de after zou nog `AssertionScope` bevatten en niet tegen alleen Shouldly compileren.
+- Integratietest SampleShop ongewijzigd: assertions zijn ruim (`>= 20` Fixed) en blijven groen.
 
 ## Zie ook
 

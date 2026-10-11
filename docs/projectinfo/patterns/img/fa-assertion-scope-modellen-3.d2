@@ -1,0 +1,13 @@
+title: "[Beslisboom] IsInsideAssertionScope" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q0: "Volgende voorouder?" {shape: diamond}
+q1: "using-statement, node in body,\ntype AssertionScope?" {shape: diamond}
+q2: "Blok met eerdere using var\nvan type AssertionScope?" {shape: diamond}
+m: "Manual: Inside an AssertionScope"
+f: "Patroon gaat gewoon door"
+q0 -> q1: ja
+q0 -> f: nee
+q1 -> m: ja
+q1 -> q2: nee
+q2 -> m: ja
+q2 -> q0: nee

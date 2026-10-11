@@ -29,6 +29,31 @@ public class FluentAssertionsSyntaxTests
         result.ToString().ShouldBe(expected);
     }
 
+    [Theory]
+    [InlineData("using (new AssertionScope()) { M(1); }", true)]
+    [InlineData("using (var s = new AssertionScope(\"ctx\")) { if (true) { M(1); } }", true)]
+    [InlineData("using var s = new AssertionScope(); M(1);", true)]
+    [InlineData("using var s = new AssertionScope(); { { M(1); } }", true)]
+    [InlineData("using (new AssertionScope()) { using (new AssertionScope()) { M(1); } }", true)]
+    [InlineData("M(1); using var s = new AssertionScope();", false)]
+    [InlineData("using (new AssertionScope()) { } M(1);", false)]
+    [InlineData("using (new System.IO.MemoryStream()) { M(1); }", false)]
+    [InlineData("M(1);", false)]
+    public void IsInsideAssertionScope_DependsOnEnclosingScope(string body, bool expected)
+    {
+        // Arrange
+        string code = "using FluentAssertions.Execution;\nclass C { void M(int i) { } void T() { " + body + " } }";
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(code, cancellationToken: TestContext.Current.CancellationToken);
+        SemanticModel model = CSharpCompilation.Create("Check", [tree], TestReferences.FluentAssertions).GetSemanticModel(tree);
+        InvocationExpressionSyntax call = tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
+
+        // Act
+        bool result = FluentAssertionsSyntax.IsInsideAssertionScope(call, model);
+
+        // Assert
+        result.ShouldBe(expected);
+    }
+
     [Fact]
     public void CompileErrors_ReportsNullableWarningOfRewrite()
     {

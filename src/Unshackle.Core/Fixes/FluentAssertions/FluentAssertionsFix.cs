@@ -36,5 +36,6 @@ public class FluentAssertionsFix : IFix
         new ContainKeyPattern(),
         new BeEquivalentToObjectPattern(),
         new OnlyContainPattern(),
+        new AssertionScopePattern(),
     ];
 }

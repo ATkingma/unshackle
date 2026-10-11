@@ -18,6 +18,11 @@ public class ContainKeyPattern : IPattern
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
+        if (FluentAssertionsSyntax.IsInsideAssertionScope(node, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
+        }
+
         var assertion = (InvocationExpressionSyntax)node;
         string name = ((MemberAccessExpressionSyntax)assertion.Expression).Name.Identifier.ValueText;
         ExpressionSyntax? subject = FluentAssertionsSyntax.GetSubject(assertion);

@@ -1,0 +1,17 @@
+title: "[Sequence] AssertionScope" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+scope: AssertionScopePattern
+other: ShouldBePattern
+syntax: FluentAssertionsSyntax
+model: SemanticModel
+fixer -> scope: "Find(root, model)"
+scope -> model: "GetTypeInfo(creation)"
+scope -> syntax: "IsAssertionScope(type)"
+fixer -> scope: "Rewrite(node, model)"
+scope -> fixer: "Manual(ShouldSatisfyAllConditions)" {style.stroke-dash: 3}
+fixer -> other: "Rewrite(node, model)"
+other -> syntax: "IsInsideAssertionScope(node, model)"
+syntax -> model: "GetTypeInfo(declaration)"
+syntax -> other: "true" {style.stroke-dash: 3}
+other -> fixer: "Manual(Inside an AssertionScope)" {style.stroke-dash: 3}

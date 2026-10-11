@@ -1,0 +1,13 @@
+title: "[Klassen] AssertionScopePattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+IPattern: {shape: class; "+Id: string"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
+AssertionScopePattern: {shape: class; "+Id = fa.assertion-scope"; "+Find(root, model)"; "+Rewrite(node, model)"}
+FluentAssertionsSyntax: {shape: class; "+InsideAssertionScopeReason"; "+IsAssertionScope(type): bool"; "+IsInsideAssertionScope(node, model): bool"}
+OtherPatterns: "Andere FA-patronen\n(ShouldBePattern, ...)" {shape: class}
+PatternResult: {shape: class; "+Manual(reason)"}
+AssertionScope: "FluentAssertions.Execution.AssertionScope\n(sealed)" {shape: class}
+AssertionScopePattern -> IPattern: implementeert
+OtherPatterns -> IPattern: implementeert
+AssertionScopePattern -> FluentAssertionsSyntax: IsAssertionScope
+OtherPatterns -> FluentAssertionsSyntax: IsInsideAssertionScope
+FluentAssertionsSyntax -> AssertionScope: herkent
+AssertionScopePattern -> PatternResult: Manual

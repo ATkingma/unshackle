@@ -17,6 +17,11 @@ public class HaveCountPattern : IPattern
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
+        if (FluentAssertionsSyntax.IsInsideAssertionScope(node, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
+        }
+
         var assertion = (InvocationExpressionSyntax)node;
         ExpressionSyntax? subject = FluentAssertionsSyntax.GetSubject(assertion);
         if (subject is null)

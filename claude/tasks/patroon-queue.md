@@ -26,7 +26,7 @@ Statussen: `open` · `bezig (TAAK-NNN)` · `geblokkeerd (TAAK-NNN, wacht op TAAK
 
 ### Ronde 2 — uit SampleShop.Advanced.Tests (TAAK-030)
 
-Op prioriteit (hoe vaak in echte testcode). TAAK-nummer bij claimen, vanaf 032 (031 = AssertionScope-bug, eerst doen).
+Op prioriteit (hoe vaak in echte testcode). TAAK-nummer bij claimen, vanaf 032 (031 = AssertionScope-bug: klaar, patroon `fa.assertion-scope`, TAAK-031).
 Alle Shouldly-doelen gecontroleerd in `Shouldly.dll` 4.3.0. Prio: H = in bijna elke codebase, M = regelmatig, L = zelden.
 
 | #   | Patroon-ID                 | FluentAssertions (before)                                                                           | Shouldly (verwacht)                                                                                                                                                                              | Prio | Status |

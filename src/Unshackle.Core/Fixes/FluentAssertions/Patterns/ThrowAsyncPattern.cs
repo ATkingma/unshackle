@@ -25,6 +25,11 @@ public class ThrowAsyncPattern : IPattern
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
+        if (FluentAssertionsSyntax.IsInsideAssertionScope(node, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
+        }
+
         var awaitExpression = node as AwaitExpressionSyntax;
         var outer = (InvocationExpressionSyntax)(awaitExpression?.Expression ?? node);
         InvocationExpressionSyntax throwCall = outer.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "WithMessage", Expression: InvocationExpressionSyntax inner }

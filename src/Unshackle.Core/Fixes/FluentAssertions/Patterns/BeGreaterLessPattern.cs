@@ -65,6 +65,12 @@ public class BeGreaterLessPattern : FluentAssertionPattern
             return PatternResult.Manual($"{shouldName} only exists for int, long, short, decimal, double and float.");
         }
 
+        // Probed: FluentAssertions fails BeNegative on NaN, ShouldBeNegative passes it.
+        if (context.Name == "BeNegative" && type.SpecialType is SpecialType.System_Double or SpecialType.System_Single)
+        {
+            return PatternResult.Manual("BeNegative() on double/float: FluentAssertions fails on NaN, ShouldBeNegative passes; use (x < 0).ShouldBeTrue() by hand.");
+        }
+
         // ShouldBeGreaterThan<T>(this T, T) infers T from both sides: `b.ShouldBeGreaterThan(1)` on a byte binds T = int and fails.
         var values = new List<ArgumentSyntax>();
         foreach (ArgumentSyntax value in context.Values)

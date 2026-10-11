@@ -7,7 +7,7 @@ public class Case
 {
     public void Test(object obj)
     {
-        obj.Should().BeOfType<Dto>().Which.Name.Should().Be("a");
+        string name = obj.Should().BeOfType<Dto>().Which.Name;
     }
 }
 

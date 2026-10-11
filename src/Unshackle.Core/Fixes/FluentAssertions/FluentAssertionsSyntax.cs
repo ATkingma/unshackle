@@ -74,6 +74,32 @@ public static class FluentAssertionsSyntax
         _ => false,
     };
 
+    // `var subject = x;` for a subject that IsSafeToEvaluateTwice refuses, to put before the statements that now each read
+    // `subject`: FluentAssertions evaluates x once too, before any assertion. Only for a statement that
+    // TryGetSplittableStatement accepts. The name is unused in the member. One pattern pass hoists several subjects of a
+    // member on the same tree, so each gets its own number: k-th such subject → subject{k}, then k + n, k + 2n, ….
+    public static (StatementSyntax Declaration, IdentifierNameSyntax Name) Hoist(ExpressionSyntax subject, SemanticModel model)
+    {
+        SyntaxNode scope = subject.Ancestors().FirstOrDefault(a => a is MemberDeclarationSyntax and not GlobalStatementSyntax) ?? subject.SyntaxTree.GetRoot();
+        HashSet<string> used = [.. scope.DescendantTokens().Where(t => t.IsKind(SyntaxKind.IdentifierToken)).Select(t => t.ValueText)];
+        List<ExpressionSyntax> unsafeSubjects =
+        [
+            .. scope.DescendantNodes()
+                .OfType<InvocationExpressionSyntax>()
+                .Select(i => i.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Should" } should && i.ArgumentList.Arguments.Count == 0 ? should.Expression : null)
+                .OfType<ExpressionSyntax>()
+                .Where(e => !IsSafeToEvaluateTwice(e, model)),
+        ];
+        int count = Math.Max(unsafeSubjects.Count, 1);
+        int k = unsafeSubjects.IndexOf(subject) + 1;
+        string name;
+        for (int i = Math.Max(k, 1); used.Contains(name = i == 1 ? "subject" : "subject" + i); i += count)
+        {
+        }
+
+        return (SyntaxFactory.ParseStatement($"var {name} = {subject.WithoutTrivia()};"), SyntaxFactory.IdentifierName(name));
+    }
+
     private static bool IsStorage(ISymbol? symbol) =>
         symbol is ILocalSymbol or IParameterSymbol or IFieldSymbol or IPropertySymbol { IsIndexer: false };
 
@@ -135,10 +161,10 @@ public static class FluentAssertionsSyntax
             SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, receiver, SyntaxFactory.IdentifierName(name)),
             Arguments(arguments));
 
-    // For assertions whose `.Which`/`.Subject` Shouldly returns directly: the member access in `var y = x.Should().M().Which;`,
-    // else the assertion itself.
+    // For assertions whose `.Which`/`.Subject` Shouldly returns directly: the `….Which` member access wherever it is used
+    // (`var y = ….Which;`, `….Which.P.Should()…`, an argument), else the assertion itself.
     public static SyntaxNode WithWhich(InvocationExpressionSyntax assertion) =>
-        assertion.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Which" or "Subject", Parent: EqualsValueClauseSyntax } which
+        assertion.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Which" or "Subject" } which && which.Expression == assertion
             ? which
             : assertion;
 
@@ -146,14 +172,12 @@ public static class FluentAssertionsSyntax
     public static InvocationExpressionSyntax AssertionOfWhich(SyntaxNode node) =>
         (InvocationExpressionSyntax)((node as MemberAccessExpressionSyntax)?.Expression ?? node);
 
-    // A node from WithWhich: a discarded assertion, or `.Which` as the only variable of a declaration.
+    // A node from WithWhich: a discarded assertion, or `.Which`, whose value the Shouldly call returns as the same type.
     public static bool IsResultDiscardedOrWhich(AssertionContext context) =>
-        context.Node is MemberAccessExpressionSyntax which
-            ? which.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Variables.Count: 1 } } }
-            : IsResultDiscarded(context.Assertion, context.Model);
+        context.Node is MemberAccessExpressionSyntax || IsResultDiscarded(context.Assertion, context.Model);
 
     public static string WhichUsedReason(string name) =>
-        $"The result of {name}(...) is used beyond `var x = ….Which;` (.And/.Which chain): rewrite it by hand.";
+        $"The result of {name}(...) is used other than through .Which/.Subject (.And chain or a value): rewrite it by hand.";
 
     // True when nothing uses the AndConstraint the assertion returns: a statement, the body of a void lambda or the
     // expression body of a void member. `a?.B.Should()...` counts too: the `?.` only skips the assertion, as it does after rewriting.
@@ -176,7 +200,9 @@ public static class FluentAssertionsSyntax
     }
 
     // Splits the arguments into the value arguments (in order) and the `because` argument, which maps to Shouldly's
-    // customMessage. False when becauseArgs or named arguments are used: Shouldly cannot format the message.
+    // customMessage. becauseArgs become `string.Format(CultureInfo.InvariantCulture, because, args)`: FluentAssertions formats
+    // with the invariant culture too (probed under nl-NL). False for named arguments, or becauseArgs with a because that is
+    // no constant or does not format: FluentAssertions swallows that FormatException, string.Format would throw it.
     public static bool TryGetArguments(
         InvocationExpressionSyntax assertion,
         SemanticModel model,
@@ -192,6 +218,7 @@ public static class FluentAssertionsSyntax
             return false;
         }
 
+        IReadOnlyList<SyntaxNode> becauseArgs = [];
         foreach (IArgumentOperation argument in operation.Arguments)
         {
             switch (argument.ArgumentKind, argument.Parameter?.Name)
@@ -199,6 +226,9 @@ public static class FluentAssertionsSyntax
                 case (ArgumentKind.DefaultValue, _):
                     break;
                 case (ArgumentKind.ParamArray, _) when argument.Value is IArrayCreationOperation { Initializer: null or { ElementValues.IsEmpty: true } }:
+                    break;
+                case (ArgumentKind.ParamArray, "becauseArgs") when argument.Value is IArrayCreationOperation { Initializer: { } initializer }:
+                    becauseArgs = [.. initializer.ElementValues.Select(e => e.Syntax)];
                     break;
                 case (ArgumentKind.ParamArray, _) or (_, "becauseArgs"):
                     return false;
@@ -213,7 +243,32 @@ public static class FluentAssertionsSyntax
             }
         }
 
+        if (becauseArgs.Count == 0)
+        {
+            return true;
+        }
+
+        if (because is null || model.GetConstantValue(because.Expression) is not { Value: string format } || !CanFormat(format, becauseArgs.Count))
+        {
+            return false;
+        }
+
+        because = SyntaxFactory.Argument(SyntaxFactory.ParseExpression(
+            $"string.Format(System.Globalization.CultureInfo.InvariantCulture, {because.Expression.WithoutTrivia()}, {string.Join(", ", becauseArgs.Select(a => a.WithoutTrivia()))})"));
         return true;
+    }
+
+    private static bool CanFormat(string format, int count)
+    {
+        try
+        {
+            _ = string.Format(System.Globalization.CultureInfo.InvariantCulture, format, new object?[count]);
+            return true;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
     }
 
     // True when node runs inside a FluentAssertions AssertionScope: the body of `using (new AssertionScope())`

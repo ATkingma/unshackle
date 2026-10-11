@@ -73,7 +73,7 @@ public class HaveCountPattern : FluentAssertionPattern
         }
 
         return PatternResult.Fixed(
-            SyntaxFactory.InvocationExpression(Member(count, s_methods[context.Name]), assertion.ArgumentList),
+            SyntaxFactory.InvocationExpression(Member(count, s_methods[context.Name]), FluentAssertionsSyntax.Arguments([.. context.Values, context.Because])),
             namespaces);
     }
 

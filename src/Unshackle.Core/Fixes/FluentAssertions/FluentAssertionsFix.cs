@@ -11,7 +11,7 @@ public class FluentAssertionsFix : IFix
 
     public string Id => "fluentassertions";
 
-    public IReadOnlyList<string> RemovedNamespaces { get; } = ["FluentAssertions"];
+    public IReadOnlyList<string> RemovedNamespaces { get; } = ["FluentAssertions", "FluentAssertions.Execution"];
 
     public IReadOnlyList<string> AddedNamespaces { get; } = ["Shouldly"];
 
@@ -46,16 +46,19 @@ public class FluentAssertionsFix : IFix
         new BeApproximatelyPattern(),
         new BeSameAsPattern(),
         new NotThrowAsyncPattern(),
+        new MatchPattern(),
+        new DirectMappingPattern(),
     ];
 
     public IReadOnlyList<IPattern> Patterns { get; } =
     [
-        // First: its loop body keeps the FluentAssertions assertions, which the patterns below then rewrite as statements.
+        // First: a scope of only assertions becomes ShouldSatisfyAllConditions, whose lambdas the patterns below rewrite.
+        new AssertionScopePattern(),
+        // Then: its loop body keeps the FluentAssertions assertions, which the patterns below then rewrite as statements.
         new AllSatisfyPattern(),
         // Before the assertion patterns, which report a link after .And as Manual.
         new AndChainPattern(s_assertions),
         .. s_assertions,
-        new AssertionScopePattern(),
         new CustomAssertionPattern(),
     ];
 }

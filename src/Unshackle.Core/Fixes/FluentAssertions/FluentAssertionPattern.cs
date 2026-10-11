@@ -43,7 +43,7 @@ public abstract class FluentAssertionPattern : IPattern
 
         if (!FluentAssertionsSyntax.TryGetArguments(assertion, model, out IReadOnlyList<ArgumentSyntax> values, out ArgumentSyntax? because))
         {
-            return PatternResult.Manual($"{name}(...) with becauseArgs or named arguments: Shouldly cannot format the message.");
+            return PatternResult.Manual($"{name}(...) with named arguments, or becauseArgs whose because is no constant format string: rewrite it by hand.");
         }
 
         return RewriteAssertion(new AssertionContext

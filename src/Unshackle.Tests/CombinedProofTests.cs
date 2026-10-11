@@ -47,16 +47,16 @@ public class CombinedProofTests
     }
 
     [Fact]
-    public void AllSatisfyPattern_IsFirstInFix()
+    public void AllSatisfyPattern_IsFirstAfterAssertionScope()
     {
         // Arrange
         var fix = new FluentAssertionsFix();
 
         // Act
-        string first = fix.Patterns[0].Id;
+        string[] first = [.. fix.Patterns.Take(2).Select(p => p.Id)];
 
         // Assert
-        first.ShouldBe("fa.all-satisfy", "AllSatisfy copies its lambda body into a foreach with FluentAssertions code still in it; "
+        first.ShouldBe(["fa.assertion-scope", "fa.all-satisfy"], "AllSatisfy copies its lambda body into a foreach with FluentAssertions code still in it; "
             + "the patterns after it rewrite those statements. Placed later, the loop body would stay FluentAssertions code.");
     }
 

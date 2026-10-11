@@ -55,9 +55,11 @@ public class AllSatisfyPattern : FluentAssertionPattern
             return PatternResult.Manual(FluentAssertionsSyntax.NotSplittableReason);
         }
 
+        var statements = new List<StatementSyntax>();
         if (!FluentAssertionsSyntax.IsSafeToEvaluateTwice(subject, context.Model))
         {
-            return PatternResult.Manual("The subject is not a plain name or member access, so the emptiness check and the loop would evaluate it twice.");
+            (StatementSyntax declaration, subject) = FluentAssertionsSyntax.Hoist(subject, context.Model);
+            statements.Add(declaration);
         }
 
         string indent = new([.. statement.GetLeadingTrivia().Reverse().TakeWhile(t => !t.IsKind(SyntaxKind.EndOfLineTrivia)).Reverse().SelectMany(t => t.ToString())]);
@@ -70,7 +72,7 @@ public class AllSatisfyPattern : FluentAssertionPattern
 
         StatementSyntax check = SyntaxFactory.ParseStatement($"{subjectText}.ShouldNotBeEmpty();");
         StatementSyntax loop = SyntaxFactory.ParseStatement($"foreach ({variable} in {subjectText}){eol}{indent}{body}");
-        return PatternResult.Fixed([check, loop]);
+        return PatternResult.Fixed([.. statements, check, loop]);
     }
 
     // Moves the block from the indentation of its closing brace to the indentation of the statement it now belongs to.

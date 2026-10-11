@@ -10,15 +10,18 @@ namespace Unshackle.Core.Fixes.FluentAssertions.Patterns;
 // passes which ones it owns), the ThrowExactly and Invoking checks, and the Invoking subject as a lambda.
 internal static class ThrowSyntax
 {
-    // The node is the Throw call, or the whole `.WithMessage(...)` call when that directly follows it.
+    // The node is the Throw call, the whole `.WithMessage(...)` call when that directly follows it, or `.Which` after the call
+    // (not `.Subject`: that is all thrown exceptions, Should.Throw returns one).
     public static IEnumerable<SyntaxNode> FindThrow(SyntaxNode root, SemanticModel model, Func<InvocationExpressionSyntax, bool> owns) =>
         FluentAssertionsSyntax.FindInvocations(root, model, "Throw", "ThrowExactly")
             .Where(owns)
-            .Select(t => t.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "WithMessage" } access
+            .Select<InvocationExpressionSyntax, SyntaxNode>(t => t.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "WithMessage" } access
                 && access.Parent is InvocationExpressionSyntax { } withMessage
                 && withMessage.Expression == access
                     ? withMessage
-                    : t);
+                    : t.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Which" } which && which.Expression == t
+                        ? which
+                        : t);
 
     // The node is the `await` around the ThrowAsync call (or around the `.WithMessage(...)` call that directly follows it);
     // without an await it is the invocation itself. A `.ConfigureAwait(...)` between the call and the await is kept.

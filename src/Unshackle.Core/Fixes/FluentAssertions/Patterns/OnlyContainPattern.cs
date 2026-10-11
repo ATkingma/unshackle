@@ -35,18 +35,18 @@ public class OnlyContainPattern : FluentAssertionPattern
             return PatternResult.Manual("OnlyContain(...) fails on an empty collection and ShouldAllBe does not, so a ShouldNotBeEmpty is needed. " + FluentAssertionsSyntax.NotSplittableReason);
         }
 
+        var statements = new List<StatementSyntax>();
         if (!FluentAssertionsSyntax.IsSafeToEvaluateTwice(subject, context.Model))
         {
-            return PatternResult.Manual("OnlyContain(...) fails on an empty collection and ShouldAllBe does not: splitting into two statements would evaluate the subject twice.");
+            (StatementSyntax declaration, subject) = FluentAssertionsSyntax.Hoist(subject, context.Model);
+            statements.Add(declaration);
         }
 
         ArgumentSyntax[] emptyArguments = because is null ? [] : [because.WithoutTrivia()];
         ArgumentSyntax[] allArguments = [values[0].WithoutTrivia(), .. emptyArguments.Select(a => a.WithLeadingTrivia(SyntaxFactory.Space))];
-        return PatternResult.Fixed(new[]
-        {
-            SyntaxFactory.ExpressionStatement(Call(subject, "ShouldNotBeEmpty", emptyArguments)),
-            SyntaxFactory.ExpressionStatement(Call(subject, "ShouldAllBe", allArguments)),
-        });
+        statements.Add(SyntaxFactory.ExpressionStatement(Call(subject, "ShouldNotBeEmpty", emptyArguments)));
+        statements.Add(SyntaxFactory.ExpressionStatement(Call(subject, "ShouldAllBe", allArguments)));
+        return PatternResult.Fixed(statements);
     }
 
     private static InvocationExpressionSyntax Call(ExpressionSyntax subject, string name, ArgumentSyntax[] arguments) =>

@@ -44,6 +44,6 @@ public class ContainKeyPattern : FluentAssertionPattern
                 SyntaxKind.SimpleMemberAccessExpression,
                 FluentAssertionsSyntax.NotNull(context.Subject, context.Model).WithoutTrailingTrivia(),
                 SyntaxFactory.IdentifierName("Should" + context.Name)),
-            context.Assertion.ArgumentList));
+            FluentAssertionsSyntax.Arguments([.. context.Values, context.Because])));
     }
 }

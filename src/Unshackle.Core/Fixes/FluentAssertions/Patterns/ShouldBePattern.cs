@@ -50,9 +50,7 @@ public class ShouldBePattern : FluentAssertionPattern
                 $"Expected type {model.GetTypeInfo(expected).Type} differs from subject type {subjectType}; {ShouldName} cannot infer one type.");
         }
 
-        ArgumentListSyntax arguments = newExpected == expected
-            ? assertion.ArgumentList
-            : assertion.ArgumentList.ReplaceNode(expected, newExpected.WithTriviaFrom(expected));
+        ArgumentListSyntax arguments = FluentAssertionsSyntax.Arguments(context.Values[0].WithExpression(newExpected), context.Because);
         return PatternResult.Fixed(SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,

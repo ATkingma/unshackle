@@ -31,6 +31,11 @@ internal class ProjectFile
         _prefix = text[..rootStart];
         _suffix = text[rootEnd..];
         _crlf = text.Contains("\r\n", StringComparison.Ordinal);
+        // A "</Project>" in a trailing comment or CR-only line endings would cut the file wrongly; refuse instead of corrupting it.
+        if (ToChange().NewText != text)
+        {
+            throw new InvalidDataException($"{path} cannot be edited without changing unrelated text; migrate it by hand.");
+        }
     }
 
     public string Path { get; }

@@ -18,4 +18,17 @@ public class ConsoleTextTests
         // Assert
         result.ShouldBe("x�[2Jy��\tz");
     }
+
+    [Fact]
+    public void Sanitize_BidiAndZeroWidth_ReplacesFormatCharacters()
+    {
+        // Arrange
+        const string Text = "a‮b⁦c​d";
+
+        // Act
+        string result = ConsoleText.Sanitize(Text);
+
+        // Assert
+        result.ShouldBe("a�b�c�d");
+    }
 }

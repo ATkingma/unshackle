@@ -1,7 +1,8 @@
 # Rapportage
 
 Elk formaat is een eigen `IReportWriter` in DataAccess (`CsvReportWriter`, `JsonReportWriter`,
-`MarkdownReportWriter`). Interface kiest er een op basis van de extensie van `--report`.
+`MarkdownReportWriter`). Interface kiest er een op basis van de extensie van `--report`. Een bestaand bestand wordt alleen met `--force` overschreven.
+Markdown-cellen worden HTML-ge-encodeerd en `\`, `|`, `` ` `` en regeleinden ge-escaped (redenen citeren gebruikerscode).
 ```csv
 File,Line,Fix,Pattern,Status,Reason
 tests/UserTests.cs,14,fluentassertions,fa.should-be,Fixed,

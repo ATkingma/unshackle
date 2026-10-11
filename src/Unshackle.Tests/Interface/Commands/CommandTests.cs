@@ -69,7 +69,7 @@ public class CommandTests
         ScanCommand command = CreateScan();
 
         // Act
-        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", "/out/r.CSV", TestContext.Current.CancellationToken);
+        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", "/out/r.CSV", false, TestContext.Current.CancellationToken);
 
         // Assert
         exitCode.ShouldBe(ExitCodes.Ok);
@@ -77,7 +77,7 @@ public class CommandTests
             "/out/r.CSV",
             Arg.Is<IEnumerable<Finding>>(f => f.Single().FilePath == "tests/A.cs"),
             Arg.Any<CancellationToken>());
-        await _store.DidNotReceive().SaveAsync(Arg.Any<Solution>(), Arg.Any<CancellationToken>());
+        await _projectFiles.DidNotReceive().SaveAsync(Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class CommandTests
         ScanCommand command = CreateScan();
 
         // Act
-        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", "/out/r.xlsx", TestContext.Current.CancellationToken);
+        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", "/out/r.xlsx", false, TestContext.Current.CancellationToken);
 
         // Assert
         exitCode.ShouldBe(ExitCodes.InvalidArguments);
@@ -103,7 +103,7 @@ public class CommandTests
         ScanCommand command = CreateScan();
 
         // Act
-        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", null, TestContext.Current.CancellationToken);
+        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", null, false, TestContext.Current.CancellationToken);
 
         // Assert
         exitCode.ShouldBe(ExitCodes.Failure);
@@ -118,7 +118,7 @@ public class CommandTests
         ScanCommand command = CreateScan();
 
         // Act
-        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", null, TestContext.Current.CancellationToken);
+        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", null, false, TestContext.Current.CancellationToken);
 
         // Assert
         exitCode.ShouldBe(ExitCodes.Failure);
@@ -133,7 +133,7 @@ public class CommandTests
         ScanCommand command = CreateScan();
 
         // Act
-        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", "/missing/r.csv", TestContext.Current.CancellationToken);
+        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", "/missing/r.csv", false, TestContext.Current.CancellationToken);
 
         // Assert
         exitCode.ShouldBe(ExitCodes.Failure);
@@ -150,7 +150,7 @@ public class CommandTests
 
         // Assert
         exitCode.ShouldBe(ExitCodes.Ok);
-        await _store.Received(1).SaveAsync(Arg.Any<Solution>(), Arg.Any<CancellationToken>());
+        await _projectFiles.Received(1).SaveAsync(Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>());
         _view.Received(1).ShowMessage("1 file(s) written.");
     }
 
@@ -167,7 +167,7 @@ public class CommandTests
         // Assert
         exitCode.ShouldBe(ExitCodes.Failure);
         await _store.DidNotReceive().LoadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-        await _store.DidNotReceive().SaveAsync(Arg.Any<Solution>(), Arg.Any<CancellationToken>());
+        await _projectFiles.DidNotReceive().SaveAsync(Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public class CommandTests
 
         // Assert
         exitCode.ShouldBe(ExitCodes.Ok);
-        await _store.Received(1).SaveAsync(Arg.Any<Solution>(), Arg.Any<CancellationToken>());
+        await _projectFiles.Received(1).SaveAsync(Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -200,14 +200,14 @@ public class CommandTests
         _view.Received(1).ShowDiff(
             TestSolution.FileName,
             Arg.Is<IReadOnlyList<DiffLine>>(l => l.Count == 2 && l[0].Text == "class C { }" && l[1].Text == "class D { }"));
-        await _store.DidNotReceive().SaveAsync(Arg.Any<Solution>(), Arg.Any<CancellationToken>());
+        await _projectFiles.DidNotReceive().SaveAsync(Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task FixExecuteAsync_SaveFails_ReturnsFailure()
     {
         // Arrange
-        _store.SaveAsync(Arg.Any<Solution>(), Arg.Any<CancellationToken>()).ThrowsAsync(new IOException("disk full"));
+        _projectFiles.SaveAsync(Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>()).ThrowsAsync(new IOException("disk full"));
         FixCommand command = CreateFix();
 
         // Act
@@ -219,7 +219,7 @@ public class CommandTests
     }
 
     [Fact]
-    public async Task FixExecuteAsync_ProjectFileChanges_SavesThemAfterTheSolution()
+    public async Task FixExecuteAsync_ProjectFileChanges_SavesThemWithTheSourceInOneCall()
     {
         // Arrange
         ProjectFileChange change = ReturnProjectFileChange();
@@ -230,12 +230,68 @@ public class CommandTests
 
         // Assert
         exitCode.ShouldBe(ExitCodes.Ok);
-        Received.InOrder(() =>
-        {
-            _store.SaveAsync(Arg.Any<Solution>(), Arg.Any<CancellationToken>());
-            _projectFiles.SaveAsync(Arg.Is<IEnumerable<ProjectFileChange>>(c => c.Single() == change), Arg.Any<CancellationToken>());
-        });
+        // One call: the store checks every file, source and project, before it writes the first one.
+        await _projectFiles.Received(1).SaveAsync(
+            Arg.Is<IEnumerable<ProjectFileChange>>(c => c.Count() == 2
+                && c.First().FilePath == TestSolution.FileName
+                && c.First().OldText == "class C { }\n"
+                && c.First().NewText == "class D { }\n"
+                && c.Last() == change),
+            Arg.Any<CancellationToken>());
         _view.Received(1).ShowMessage("2 file(s) written.");
+    }
+
+    [Fact]
+    public async Task FixExecuteAsync_SourceControlCannotTell_RefusesWithoutLoading()
+    {
+        // Arrange
+        _sourceControl.HasUncommittedChangesAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("not in a git repository."));
+        FixCommand command = CreateFix();
+
+        // Act
+        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", null, false, false, TestContext.Current.CancellationToken);
+
+        // Assert
+        exitCode.ShouldBe(ExitCodes.Failure);
+        _view.Received(1).ShowError(Arg.Is<string>(m => m.Contains("git repository", StringComparison.Ordinal)
+            && m.Contains("--force", StringComparison.Ordinal)));
+        await _store.DidNotReceive().LoadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ScanExecuteAsync_ReportExists_RefusesWithoutForce()
+    {
+        // Arrange
+        using var directory = new TempDirectory();
+        string report = Path.Combine(directory.Path, "README.csv");
+        await File.WriteAllTextAsync(report, "mine", TestContext.Current.CancellationToken);
+        ScanCommand command = CreateScan();
+
+        // Act
+        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", report, false, TestContext.Current.CancellationToken);
+
+        // Assert
+        exitCode.ShouldBe(ExitCodes.Failure);
+        await _store.DidNotReceive().LoadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await _csv.DidNotReceive().WriteAsync(Arg.Any<string>(), Arg.Any<IEnumerable<Finding>>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ScanExecuteAsync_ReportExistsWithForce_Overwrites()
+    {
+        // Arrange
+        using var directory = new TempDirectory();
+        string report = Path.Combine(directory.Path, "old.csv");
+        await File.WriteAllTextAsync(report, "old", TestContext.Current.CancellationToken);
+        ScanCommand command = CreateScan();
+
+        // Act
+        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", report, true, TestContext.Current.CancellationToken);
+
+        // Assert
+        exitCode.ShouldBe(ExitCodes.Ok);
+        await _csv.Received(1).WriteAsync(report, Arg.Any<IEnumerable<Finding>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -294,5 +350,5 @@ public class CommandTests
 
     private ScanCommand CreateScan() => new(_fixer, _store, [_csv], _view);
 
-    private FixCommand CreateFix() => new(CreateScan(), _store, _projectFiles, _sourceControl, _view);
+    private FixCommand CreateFix() => new(CreateScan(), _projectFiles, _sourceControl, _view);
 }

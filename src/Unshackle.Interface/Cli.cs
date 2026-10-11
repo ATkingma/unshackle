@@ -32,10 +32,10 @@ public static class Cli
         output.Profile.Width = Console.IsOutputRedirected ? RedirectedWidth : output.Profile.Width;
         error.Profile.Width = Console.IsErrorRedirected ? RedirectedWidth : error.Profile.Width;
         var view = new SpectreConsoleView(output, error);
-        using var store = new MsBuildSolutionStore();
+        using var store = new MsBuildSolutionStore(fileSystem);
         var projectFiles = new XmlProjectFileStore(fileSystem);
         var scan = new ScanCommand(new Fixer(fixes, projectFiles), store, reportWriters, view);
-        var fix = new FixCommand(scan, store, projectFiles, new GitSourceControl(), view);
+        var fix = new FixCommand(scan, projectFiles, new GitSourceControl(), view);
         var list = new ListCommand(fixes, view);
 
         RootCommand root = CreateRootCommand(fixes, reportWriters, scan, fix, list);
@@ -60,14 +60,14 @@ public static class Cli
             Description = $"Write every finding to this file ({string.Join(", ", reportWriters.Select(w => w.Extension))}).",
         };
         var dryRun = new Option<bool>("--dry-run") { Description = "Show the diff, write nothing." };
-        var force = new Option<bool>("--force") { Description = "Write even when the git working tree has uncommitted changes." };
+        var force = new Option<bool>("--force") { Description = "Write even when the working tree is dirty, not a git repository, or git fails; overwrite an existing report." };
 
         var scanCommand = new Command("scan", "Run a fix and report what it would change, without writing code.")
         {
-            solution, fixOption, report,
+            solution, fixOption, report, force,
         };
         scanCommand.SetAction((r, ct) => scan.ExecuteAsync(
-            r.GetRequiredValue(solution), r.GetRequiredValue(fixOption), r.GetValue(report), ct));
+            r.GetRequiredValue(solution), r.GetRequiredValue(fixOption), r.GetValue(report), r.GetValue(force), ct));
 
         var fixCommand = new Command("fix", "Run a fix and write the changes.") { solution, fixOption, report, dryRun, force };
         fixCommand.SetAction((r, ct) => fix.ExecuteAsync(

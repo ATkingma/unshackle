@@ -1,19 +1,29 @@
+using System.Globalization;
+using System.IO.Abstractions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Unshackle.Core.Abstractions;
 
 namespace Unshackle.DataAccess.Solutions;
 
-// One workspace per store: SaveAsync applies changes to the workspace that loaded the solution.
+// Only loads: FixCommand writes the changed documents through IProjectFileStore, so every file gets the same
+// staleness check before the first write (Workspace.TryApplyChanges would overwrite edits made after the load).
 public class MsBuildSolutionStore : ISolutionStore, IDisposable
 {
+    private readonly IFileSystem _fileSystem;
     private MSBuildWorkspace? _workspace;
+
+    public MsBuildSolutionStore(IFileSystem fileSystem)
+    {
+        ArgumentNullException.ThrowIfNull(fileSystem);
+        _fileSystem = fileSystem;
+    }
 
     public async Task<Solution> LoadAsync(string path, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
-        string fullPath = Path.GetFullPath(path);
-        if (!File.Exists(fullPath))
+        string fullPath = _fileSystem.Path.GetFullPath(path);
+        if (!_fileSystem.File.Exists(fullPath))
         {
             throw new FileNotFoundException($"File not found: {fullPath}", fullPath);
         }
@@ -34,21 +44,26 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
             ? (await _workspace.OpenProjectAsync(fullPath, cancellationToken: cancellationToken)).Solution
             : await _workspace.OpenSolutionAsync(fullPath, cancellationToken: cancellationToken);
 
-        return errors.Count > 0 ? throw new SolutionLoadException(errors) : solution;
-    }
-
-    public Task SaveAsync(Solution solution, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(solution);
-        cancellationToken.ThrowIfCancellationRequested();
-        if (_workspace is null)
+        if (errors.Count > 0)
         {
-            throw new InvalidOperationException("Load a solution before saving it.");
+            throw new SolutionLoadException(errors);
         }
 
-        return _workspace.TryApplyChanges(solution)
-            ? Task.CompletedTask
-            : throw new InvalidOperationException("The changes could not be written; was the solution loaded by this store?");
+        // An unrestored solution loads without a failure, but package types do not bind: the fix would find nothing and
+        // still swap usings and packages blindly. A missing namespace or type is the symptom we can see.
+        foreach (Project project in solution.Projects)
+        {
+            Compilation? compilation = await project.GetCompilationAsync(cancellationToken);
+            errors.AddRange(compilation?.GetDiagnostics(cancellationToken)
+                .Where(d => d.Id is "CS0246" or "CS0234" && d.Severity == DiagnosticSeverity.Error)
+                .Take(3)
+                .Select(d => $"{project.Name}: {d.GetMessage(CultureInfo.InvariantCulture)}") ?? []);
+        }
+
+        return errors.Count > 0
+            ? throw new SolutionLoadException(
+                [.. errors, $"Types do not resolve. Run 'dotnet restore \"{fullPath}\"' and make sure the code builds first."])
+            : solution;
     }
 
     public void Dispose()

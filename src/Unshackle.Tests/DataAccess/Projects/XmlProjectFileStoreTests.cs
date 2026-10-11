@@ -1,8 +1,10 @@
+using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using System.Text;
 using Shouldly;
 using Unshackle.Core.Models;
 using Unshackle.DataAccess.Projects;
+using Unshackle.Tests.Helpers;
 using Xunit;
 
 namespace Unshackle.Tests.DataAccess.Projects;
@@ -346,6 +348,86 @@ public class XmlProjectFileStoreTests
         // Assert
         await save.ShouldThrowAsync<InvalidOperationException>();
         _fileSystem.File.ReadAllText(Project).ShouldBe("changed");
+    }
+
+    [Fact]
+    public async Task SaveAsync_SecondFileChanged_WritesNothing()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData("old"));
+        _fileSystem.AddFile(OtherProject, new MockFileData("changed"));
+        var store = new XmlProjectFileStore(_fileSystem);
+
+        // Act
+        Func<Task> save = () => store.SaveAsync(
+            [
+                new ProjectFileChange { FilePath = Project, OldText = "old", NewText = "new" },
+                new ProjectFileChange { FilePath = OtherProject, OldText = "old", NewText = "new" },
+            ],
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        await save.ShouldThrowAsync<InvalidOperationException>();
+        _fileSystem.File.ReadAllText(Project).ShouldBe("old");
+    }
+
+    [Fact]
+    public async Task SaveAsync_SecondWriteFails_RestoresTheFirst()
+    {
+        // Arrange
+        // A real disk: the mock file system lets a file be written over a directory.
+        using var directory = new TempDirectory();
+        string first = Path.Combine(directory.Path, "A.csproj");
+        string second = Path.Combine(directory.Path, "B.csproj");
+        await File.WriteAllTextAsync(first, "old", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(second, "old", TestContext.Current.CancellationToken);
+        Directory.CreateDirectory(second + ".unshackle.tmp"); // the temp file of the second cannot be created
+        var store = new XmlProjectFileStore(new FileSystem());
+
+        // Act
+        Func<Task> save = () => store.SaveAsync(
+            [
+                new ProjectFileChange { FilePath = first, OldText = "old", NewText = "new" },
+                new ProjectFileChange { FilePath = second, OldText = "old", NewText = "new" },
+            ],
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        await save.ShouldThrowAsync<Exception>();
+        (await File.ReadAllTextAsync(first, TestContext.Current.CancellationToken)).ShouldBe("old");
+        (await File.ReadAllTextAsync(second, TestContext.Current.CancellationToken)).ShouldBe("old");
+        File.Exists(first + ".unshackle.tmp").ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task EditAsync_ClosingTagInTrailingComment_ThrowsInsteadOfCorrupting()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(
+            "<Project>\n  <ItemGroup><PackageReference Include=\"FluentAssertions\" /></ItemGroup>\n</Project>\n<!-- </Project> -->\n"));
+
+        // Act
+        Func<Task> edit = () => EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        await edit.ShouldThrowAsync<InvalidDataException>();
+    }
+
+    [Fact]
+    public async Task SaveAsync_NotUtf8_ThrowsAndKeepsFile()
+    {
+        // Arrange
+        byte[] latin1 = [0x63, 0x61, 0x66, 0xE9]; // "café" in Latin-1
+        _fileSystem.AddFile(Project, new MockFileData(latin1));
+        var store = new XmlProjectFileStore(_fileSystem);
+
+        // Act
+        Func<Task> save = () => store.SaveAsync(
+            [new ProjectFileChange { FilePath = Project, OldText = "caf�", NewText = "new" }], TestContext.Current.CancellationToken);
+
+        // Assert
+        await save.ShouldThrowAsync<InvalidDataException>();
+        _fileSystem.File.ReadAllBytes(Project).ShouldBe(latin1);
     }
 
     private static ProjectMigration Migration(string projectPath, bool keep) => new()

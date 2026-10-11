@@ -141,7 +141,31 @@ public class ReportWriterTests
             "| File | Line | Fix | Pattern | Status | Reason |",
             "| --- | --- | --- | --- | --- | --- |",
             "| tests/UserTests.cs | 14 | fluentassertions | fa.should-be | Fixed |  |",
-            "| tests/OrderTests.cs | 8 | fluentassertions | fa.have-count | Manual | Dictionary, \\| or \"Keys\" |",
+            "| tests/OrderTests.cs | 8 | fluentassertions | fa.have-count | Manual | Dictionary, \\| or &quot;Keys&quot; |",
         ]);
+    }
+
+    [Fact]
+    public async Task MarkdownWriteAsync_HtmlBackticksAndTrailingBackslash_EscapesEveryCell()
+    {
+        // Arrange
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddDirectory("/out");
+        var writer = new MarkdownReportWriter(fileSystem);
+        Finding finding = new()
+        {
+            FilePath = @"a\",
+            Line = 1,
+            FixId = "f",
+            PatternId = "p",
+            Result = PatternResult.Manual("<script>x</script> `c`\r\nnext"),
+        };
+
+        // Act
+        await writer.WriteAsync(ReportPath, [finding], TestContext.Current.CancellationToken);
+
+        // Assert
+        fileSystem.File.ReadAllLines(ReportPath)[2].ShouldBe(
+            @"| a\\ | 1 | f | p | Manual | &lt;script&gt;x&lt;/script&gt; \`c\` next |");
     }
 }

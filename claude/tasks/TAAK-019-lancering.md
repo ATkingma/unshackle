@@ -1,6 +1,6 @@
 # TAAK-019 — Lancering FluentAssertions → Shouldly (roadmap stap 4)
 
-**Status**: stap 1/8 — nog te starten (pas na TAAK-017 en TAAK-018 gepusht)
+**Status**: casus gedaan (stap 2+3); lancering wacht op TAAK-021 (casus bouwt nog niet)
 **Aangemaakt**: 2026-10-11
 **Doel**: Unshackle 0.1 staat publiek op GitHub en NuGet, bewezen op een echt open-source project, met een README die in 30 seconden laat zien wat het doet.
 
@@ -44,11 +44,22 @@ Eerste gebruikers en feedback via issues; bewijs dat de tool op echte code werkt
 
 Eerst de echte casus: als die faalt, wil je dat weten vóór de publieke lancering.
 
+## Resultaat echte casus (2026-10-11)
+
+- **Project**: `microsoft/PowerApps-Tooling` @ `630e6973e5c81ddc196283cde26dd696d619d6c7`, `src/PASopa.sln`, FluentAssertions 7.2.0, MSTest, ~403 `.Should()`, TFM's `net48;net8.0;net10.0`.
+- Lokaal aangepast voor de baseline: `global.json` SDK 10.0.401 → 10.0.100 (alleen 10.0.112 geïnstalleerd). net48-tests draaien niet op Linux (geen mono), in beide runs.
+- **Baseline**: build groen (0 warnings). Test: 1178 totaal, 1172 geslaagd, 6 gefaald (`StressTestApps` x3 apps x2 TFM's in PAModelTests, ook vóór de fix; omgeving).
+- **Scan/fix**: tool meldt 778 Fixed / 162 Manual, maar telt elke bevinding per TFM (3x). Uniek: **262 Fixed, 53 Manual** in 25 gewijzigde .cs-bestanden + `Directory.Packages.props` + Testing-csproj. Zie TAAK-022.
+- Grootste Manual-redenen: `Contain(IEnumerable)` (6), `Be(...)` met becauseArgs (6), onbekend type/null-literal (5), resultaat van `Throw<T>()` gebruikt (5), `ThrowExactly` (3), `.And/.Which` na NotBeNull/Be (3+3), BeEquivalentTo verschillende typen (3). Project-file: Persistence.Tests en PAModelTests houden FA (er blijven Manual-gevallen).
+- **Build na fix**: 8 unieke fouten (x3 TFM = 21+), allemaal in `Persistence.Tests`: CS8602 na fa.have-count (`x.Count` op nullable) en CS8604 na fa.contain op `string?`. Zie TAAK-021.
+- **Tests na fix**: PAModelTests 530 totaal, 524 geslaagd, dezelfde 6 `StressTestApps` gefaald → geen regressie. Persistence.Tests (648 in baseline) niet te draaien: bouwt niet.
+- Conclusie: nog niet lanceerbaar met deze casus; eerst TAAK-021, dan casus opnieuw.
+
 ## Stappen
 
 - [ ] 1. Wachten tot TAAK-017 + TAAK-018 gepusht zijn (checks groen)
-- [ ] 2. Echte casus: scan/fix/build/test op een open-source project, resultaten hier vastleggen
-- [ ] 3. Gevonden pattern-fouten als issues/taken vastleggen (niet in deze taak fixen)
+- [x] 2. Echte casus: scan/fix/build/test op een open-source project, resultaten hier vastleggen
+- [x] 3. Gevonden pattern-fouten als issues/taken vastleggen (niet in deze taak fixen)
 - [ ] 4. NuGet-metadata + release-workflow (`v*`-tag), lokaal `dotnet pack` controleren
 - [ ] 5. README: GIF, casus-cijfers, ondersteunde patronen, beperkingen
 - [ ] 6. Met gebruiker: `.vibe-wise/` regelen, repo publiek, branch protection aan
@@ -69,6 +80,9 @@ Eerst de echte casus: als die faalt, wil je dat weten vóór de publieke lanceri
 _(wordt aangevuld tijdens uitvoering)_
 
 ## Zie ook
+
+- `claude/tasks/TAAK-021-fa-nullable-subject.md` — patroonfout uit de casus
+- `claude/tasks/TAAK-022-scan-telt-per-target-framework.md` — telling per TFM
 
 - `claude/docs/INDEX.md`
 - `docs/projectinfo/README.md`

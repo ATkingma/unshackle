@@ -385,11 +385,12 @@ public class Fixer : IFixer
             return root.ReplaceNode(current, newNodes[0].WithTriviaFrom(current));
         }
 
-        // Extra nodes get only the indentation, so comments in front of the original are not duplicated.
+        // Extra nodes get only the indentation, so comments in front of the original are not duplicated;
+        // blank lines a pattern put in front of an extra node stay (a new type after a class).
         SyntaxTriviaList leading = current.GetLeadingTrivia();
         SyntaxTriviaList indentation = [.. leading.Reverse().TakeWhile(t => !t.IsKind(SyntaxKind.EndOfLineTrivia)).Reverse()];
         IEnumerable<SyntaxNode> withTrivia = newNodes.Select((n, i) => n
-            .WithLeadingTrivia(i == 0 ? leading : indentation)
+            .WithLeadingTrivia(i == 0 ? leading : [.. n.GetLeadingTrivia().TakeWhile(t => t.IsKind(SyntaxKind.EndOfLineTrivia)), .. indentation])
             .WithTrailingTrivia(current.GetTrailingTrivia()));
         return root.ReplaceNode(current, withTrivia);
     }

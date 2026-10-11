@@ -6,7 +6,22 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 515 proofs (zonder `_Pending`).
+Totaal: 527 proofs (zonder `_Pending`).
+
+## AutoMapper
+
+### CreateMap (8)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `collection` | Manual | `CreateMap<Order, OrderDto>();` — reden: is a collection |
+| `constructor` | Manual | `CreateMap<Order, OrderDto>();` — reden: has no public parameterless constructor |
+| `conversion` | Manual | `CreateMap<Order, OrderDto>();` — reden: (AutoMapper converts) |
+| `flattening` | Manual | `CreateMap<Order, OrderDto>();` — reden: has no member with the same name |
+| `internal-types` | Fixed | `CreateMap<Order, OrderDto>();` → `internal static class OrderProfileExtensions {` |
+| `map-call` | Manual |  — reden: is not migrated yet (automapper.map-call) |
+| `options` | Manual | `CreateMap<Order, OrderDto>().ReverseMap();` — reden: is not a CreateMap<A, B>() without options |
+| `simple` | Fixed | `CreateMap<Product, ProductDto>(); CreateMap<Tag, TagDto>();` → `public static class ProductProfileExtensions {` |
 
 ## FluentAssertions
 
@@ -238,6 +253,15 @@ Totaal: 515 proofs (zonder `_Pending`).
 | `edge-pattern-subject` | Fixed | `(value is string { Length: > 0 }).Should().BeTrue();` → `(value is string { Length: > 0 }).ShouldBeTrue();` |
 | `nullable` | Fixed | `flag.Should().BeTrue(); flag.Should().BeFalse("why");` → `flag.ShouldBe(true); flag.ShouldBe(false, "why");` |
 | `value-used` | Manual | `var c = flag.Should().BeFalse();` — reden: is used |
+
+### CatchAssertionException (4)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `catch-clause` | Fixed |  → `catch (ShouldAssertException) {` |
+| `catch-uses-exception` | Manual |  — reden: uses the exception: add a catch for Shouldly.ShouldAssertException by hand |
+| `retry-filter` | Fixed | `if (!(e is AssertionFailedException) \|\| i == attempts)` → `if (!(e is AssertionFailedException \|\| e is ShouldAssertException) \|\| i == attempts)` |
+| `when-filter` | Fixed | `catch (Exception e) when (e is AssertionFailedException)` → `catch (Exception e) when (e is AssertionFailedException \|\| e is ShouldAssertException)` |
 
 ### Contain (19)
 
@@ -626,7 +650,7 @@ Totaal: 515 proofs (zonder `_Pending`).
 | --- | --- | --- |
 | `behavior-lifetime` | Manual | `services.AddMediatR(cfg => cfg.AddOpenBehavior(typeof(LoggingBehavior<,>), ServiceLifetime.Singleton));` — reden: cfg.AddOpenBehavior(...) has no direct Mediator equivalent |
 | `behaviors` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<ValidationBehavior>();` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Scoped;` |
-| `edge-assemblies` | Fixed | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` → `services.AddMediator(configuration => configuration.ServiceLifetime = ServiceLifetime.Transient);` |
+| `edge-assemblies` | Fixed | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` → `_ = handlers; services.AddMediator(configuration => configuration.ServiceLifetime = ServiceLifetime.Transient)…` |
 | `edge-publisher-qualified` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `edge-service-type-behavior` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `empty` | Fixed | `services.AddMediatR(cfg => { });` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient);` |
@@ -736,10 +760,6 @@ Totaal: 515 proofs (zonder `_Pending`).
 | `explicit` | Manual | `Task IRequestHandler<Command>.Handle(Command request, CancellationToken cancellationToken) => Task.CompletedTa…` — reden: explicit interface |
 | `other-return` | Manual | `public Task Handle(Command request, CancellationToken cancellationToken) =>` — reden: not Task.CompletedTask |
 | `throw-at-end` | Fixed | `public async Task Handle(Command request, CancellationToken cancellationToken)` → `public async ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken)` |
-
-## _Pending (bekende fouten)
-
-### _Pending / FluentAssertions
 
 ## Zie ook
 

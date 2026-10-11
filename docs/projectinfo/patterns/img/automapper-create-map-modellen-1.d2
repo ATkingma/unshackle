@@ -1,0 +1,15 @@
+title: "[Klassen] CreateMapPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+IFix: {shape: class; "+Id"; "+Patterns"; "+AllOrNothing"}
+AutoMapperFix: {shape: class; "+Id = automapper"; "+RemovedNamespaces = [AutoMapper]"; "+AllOrNothing = true"; "+Patterns = [CreateMapPattern]"}
+IPattern: {shape: class; "+Id"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
+CreateMapPattern: {shape: class; "+Id = automapper.create-map"; "+Find(root, model)"; "+Rewrite(node, model)"; "-Problem(source, destination, out members): string?"; "-AllMembers(type)"; "-IsProfile(type): bool"; "-Effective(type): Accessibility"; "-Extensions(profile, className, access, maps)"}
+PatternResult: {shape: class; "+Fixed(nodes)"; "+Manual(reason)"}
+AutoMapper: "AutoMapper 14.0.0: Profile,\nProfile.CreateMap<A, B>(),\nIMapper.Map, ProjectTo"
+Output: "<Profile>Extensions:\nstatic B ToB(this A source)"
+AutoMapperFix -> IFix: implementeert {style.stroke-dash: 3}
+CreateMapPattern -> IPattern: implementeert {style.stroke-dash: 3}
+AutoMapperFix -> CreateMapPattern: Patterns
+CreateMapPattern -> PatternResult: geeft
+CreateMapPattern -> AutoMapper: herkent
+CreateMapPattern -> Output: schrijft

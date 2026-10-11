@@ -147,3 +147,28 @@ Geen `sealed`, geen primary constructors, modellen zijn classes met `required in
 3. **H2**: Warning doorgeven in AndChain, zodat het rapport niet liegt.
 4. **M4 + M8**: ketens hebben één eigenaar (AndChain), de ketenlogica gaat uit BeGreaterLess en linkpatronen slaan `.And`-links over. Dat ruimt dode code en dubbele rapportregels op.
 5. **M1 + M2 + M3**: basisklasse `FluentAssertionPattern` met gedeelde helpers in `FluentAssertionsSyntax`. Hierdoor worden M5 en L1 en L2 bijna gratis consistent. Doe dit vóór er nog meer patronen bijkomen.
+
+## Status (uitgevoerd op 3e7f807, ongecommit)
+
+| Bevinding | Status | Toelichting |
+| --------- | ------ | ----------- |
+| H1 | Opgelost | `BeGreaterLessPattern` haalt elke waarde door `FluentAssertionsSyntax.ConvertExpected`; null → Manual. Proof `BeGreaterLess/byte-short`. |
+| H2 | Opgelost | `AndChainPattern` verzamelt `Warning` van de schakels. Unittest `AndChainPatternTests.Rewrite_LinkWithWarning_KeepsWarning`. |
+| H3 | Opgelost | `Fixer.cs` (enige wijziging, regels ~106-109): `First` → `FirstOrDefault`, regel 0 als de disabled trivia alleen in de geüpdatete root zit. |
+| M1 | Opgelost | `FluentAssertionPattern` (Template Method) + `AssertionContext`; 19 patronen erven ervan. Bewust niet: Throw, ThrowAsync, ThrowExactly, NotThrow, Invoking (andere node-vorm: `WithMessage`/`await` als node, eigen volgorde van checks); die delen `ThrowSyntax`. |
+| M2 | Opgelost | Eén `FluentAssertionsSyntax.IsSafeToEvaluateTwice` (symboolgebaseerd, uit AndChain), gebruikt door AndChain, AllSatisfy, OnlyContain. BeGreaterLess heeft hem niet meer nodig (M4). |
+| M3 | Opgelost | `IsSafeReceiver`, `ConvertExpected` → `FluentAssertionsSyntax`; `IsExactly`, `IsInvoking`, `TryGetAction`, de `Find(owns)`-varianten en de dispatch → `ThrowSyntax`. NotBe is een subklasse van ShouldBe (alleen de Shouldly-naam verschilt). |
+| M4 | Deels | Ketenlogica uit BeGreaterLess weg (proofs `and-chain`, `chain-lambda` → `AndChain/greater-less`, `AndChain/lambda`; `chain-other`, `chain-no-block`, `chain-subject-call`, `chain-used` vervallen, gedekt door `AndChain`-proofs en `BeGreaterLess/value-used`). Bewust niet: linkpatronen `.And`-schakels laten overslaan. ~25 proofs per patroon leggen die Manual vast, en een patroon zonder AndChain (proofrunner, of een fix zonder AndChain) zou de keten dan stil negeren. Dubbele regels ontstaan alleen als AndChain Manual geeft. |
+| M5 | Deels | `FluentAssertionsSyntax.NotNullReceiver`: HaveCount en HaveLength krijgen nu ook bij een complex subject `ShouldNotBeNull()` (zelfde regel). Bewust niet voor ShouldBe/NotBe (generieke `T` accepteert nullable; NotBe zou falen op null), EqualSequence/OnlyContain/StringStartEnd: vereist per Shouldly-overload verificatie met proofs (nullable-enabled), eigen taak waard. |
+| M6 | Opgelost | `RewriteLink` doet `Find` op de ouder van het schakelstatement in plaats van het hele bestand. Bewust niet: alle ketens in één fork (optioneel). |
+| M7 | Deels | `HasUnusedRemovedUsingAsync` en `MayUseRemovedNamespaceAsync` binden pas als het syntactisch nodig is (bestanden zonder using van een verwijderde namespace slaan het binden over). Bewust niet: cache over de drie passes; de compilation verschilt per pass (na elk bestand, na de global usings), dus hergebruik zou semantisch fout kunnen zijn. `ProjectPackages` niet aangeraakt (andere agent, TAAK-060/063). |
+| M8 | Opgelost | `FluentAssertionsSyntax.TryGetSplittableStatement` + `NotSplittableReason`, gebruikt door AllSatisfy, OnlyContain en AndChain. OnlyContain vindt nu net als AllSatisfy altijd het statement. |
+| L1 | Opgelost | `FluentAssertionsSyntax.Arguments`/`Invoke` (zonder trivia, spatie na komma) in de geraakte patronen. `ThrowMessage.Arguments` blijft voor de Throw-familie (behoudt trivia van `because`). |
+| L2 | Opgelost | Base splitst becauseArgs; een afwijkend aantal waarden heeft een eigen reden (BeGreaterLess, BeApproximately, BeEquivalentToString). Throw/NotThrow: bewust niet (Throw-familie niet gemigreerd). |
+| L3 | Opgelost | AndChain accepteert een schakel die meerdere statements geeft. Unittest `Rewrite_LinkWithSeveralStatements_KeepsAll`. |
+| L4 | Opgelost | `IComparable<T>` via `Compilation.GetTypeByMetadataName` (`System.IComparable` met arity 1). |
+| L5 | Bewust niet | Optioneel en alleen relevant samen met M7-cache. |
+| L6 | Bewust niet | `ProjectPackages.cs` is van de andere agent (merge-conflict vermijden); nit. |
+| L7 | Bewust niet | Onzeker, vereist runtime-verificatie van Shouldly's `ShouldBe` op `object` met een lijst; eigen taak. |
+| L8 | Opgelost | `UsingDirectives`: usings binnen een namespace-declaratie (blok en na file-scoped) worden geswapt/verwijderd en tellen voor `HasUnusedRemovedUsingAsync`/`KeepsRemovedUsing`. Proofs `ShouldBe/edge-using-in-namespace`, `ShouldBe/edge-using-after-file-scoped-namespace`. Overige shortcuts gelaten. |
+| L9 | Geen actie | Geen schendingen. |

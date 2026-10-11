@@ -1,64 +1,35 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.FluentAssertions.Patterns;
 
-public class BeEquivalentToStringPattern : IPattern
+public class BeEquivalentToStringPattern : FluentAssertionPattern
 {
-    public string Id => "fa.be-equivalent-to-string";
+    public override string Id => "fa.be-equivalent-to-string";
 
-    public string Description => "s.Should().BeEquivalentTo(\"x\") → s.ShouldBe(\"x\", StringCompareShould.IgnoreCase)";
+    public override string Description => "s.Should().BeEquivalentTo(\"x\") → s.ShouldBe(\"x\", StringCompareShould.IgnoreCase)";
 
-    public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
+    public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         FluentAssertionsSyntax.FindInvocations(root, model, "BeEquivalentTo", "NotBeEquivalentTo")
-            .Where(i => i.Expression is MemberAccessExpressionSyntax
-                && model.GetSymbolInfo(i).Symbol is IMethodSymbol { ContainingType.Name: "StringAssertions" });
+            .Where(i => model.GetSymbolInfo(i).Symbol is IMethodSymbol { ContainingType.Name: "StringAssertions" });
 
-    public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
+    protected override PatternResult RewriteAssertion(AssertionContext context)
     {
-        if (FluentAssertionsSyntax.IsInsideAssertionScope(node, model))
-        {
-            return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
-        }
-
-        var assertion = (InvocationExpressionSyntax)node;
-        string name = ((MemberAccessExpressionSyntax)assertion.Expression).Name.Identifier.ValueText;
-        ExpressionSyntax? subject = FluentAssertionsSyntax.GetSubject(assertion);
-        if (subject is null)
-        {
-            return PatternResult.Manual($"{name}(...) is not in the form x.Should().{name}(...), e.g. after .And.");
-        }
-
-        if (name == "NotBeEquivalentTo")
+        if (context.Name == "NotBeEquivalentTo")
         {
             return PatternResult.Manual("NotBeEquivalentTo(...) has no Shouldly equivalent: ShouldNotBe has no case-insensitive string overload.");
         }
 
-        if (!FluentAssertionsSyntax.IsResultDiscarded(assertion, model))
+        if (context.Values.Count != 1)
         {
-            return PatternResult.Manual($"The result of {name}(...) is used (.And/.Which or a value); Shouldly's ShouldBe returns nothing.");
-        }
-
-        if (!FluentAssertionsSyntax.TryGetArguments(assertion, model, out IReadOnlyList<ArgumentSyntax> values, out ArgumentSyntax? because)
-            || values.Count != 1)
-        {
-            return PatternResult.Manual($"{name}(...) with becauseArgs or named arguments: Shouldly cannot format the message.");
+            return PatternResult.Manual($"{context.Name}(...) with an unexpected argument list.");
         }
 
         // Both ignore only the casing (ordinal): whitespace, line endings and culture-specific folding still differ.
         // The overload is ShouldBe(expected, customMessage, options), so `because` sits before the compare option.
-        ArgumentSyntax ignoreCase = SyntaxFactory.Argument(SyntaxFactory.ParseExpression(" StringCompareShould.IgnoreCase"));
-        ArgumentSyntax[] arguments = because is null
-            ? [values[0], ignoreCase]
-            : [values[0], because.WithLeadingTrivia(SyntaxFactory.Space), ignoreCase];
-        return PatternResult.Fixed(SyntaxFactory.InvocationExpression(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                subject.WithoutTrailingTrivia(),
-                SyntaxFactory.IdentifierName("ShouldBe")),
-            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments))));
+        ArgumentSyntax ignoreCase = SyntaxFactory.Argument(SyntaxFactory.ParseExpression("StringCompareShould.IgnoreCase"));
+        return PatternResult.Fixed(FluentAssertionsSyntax.Invoke(context.Subject.WithoutTrailingTrivia(), "ShouldBe", context.Values[0], context.Because, ignoreCase));
     }
 }

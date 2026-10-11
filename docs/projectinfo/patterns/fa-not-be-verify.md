@@ -10,7 +10,7 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotBePattern.cs`; registratie in `FluentAssertionsFix.cs`; `ShouldBePattern.ConvertExpected` van private naar internal. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/NotBe/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotBePattern.cs`; registratie in `FluentAssertionsFix.cs`; `FluentAssertionsSyntax.ConvertExpected` van private naar internal. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/NotBe/`, gedraaid door `ProofTests`.
 
 | REQ   | Oordeel | Bewijs                         |
 | ----- | ------- | ------------------------------ |
@@ -27,7 +27,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotBePattern.cs`; regi
 
 | #   | Area | Plan says              | Code does                                                                  | Impact |
 | --- | ---- | ---------------------- | -------------------------------------------------------------------------- | ------ |
-| 1   | Code | Alleen eigen bestanden | `ShouldBePattern.ConvertExpected` werd `internal` om de conversie te delen | Low    |
+| 1   | Code | Alleen eigen bestanden | `FluentAssertionsSyntax.ConvertExpected` werd `internal` om de conversie te delen | Low    |
 
 ## Validation results
 

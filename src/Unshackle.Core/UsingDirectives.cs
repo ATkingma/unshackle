@@ -4,7 +4,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Unshackle.Core;
 
-// shortcut: only top-level usings are touched; usings inside namespace blocks stay. Upgrade when real code needs it.
+// Usings of removed namespaces are swapped or removed wherever they are: top-level or inside a namespace declaration.
+// Global usings are only top-level (the compiler requires that).
 internal static class UsingDirectives
 {
     public static async Task<Solution> UpdateAsync(
@@ -20,29 +21,29 @@ internal static class UsingDirectives
             return document.Project.Solution;
         }
 
-        HashSet<string> imported = [.. root.Usings.Concat(GlobalUsings(model.Compilation, cancellationToken))
+        HashSet<string> imported = [.. AllUsings(root).Concat(GlobalUsings(model.Compilation, cancellationToken))
             .Where(IsPlainUsing)
             .Select(u => u.Name!.ToString())];
         List<string> missing = [.. addedNamespaces.Distinct().Where(ns => !imported.Contains(ns)).Order(StringComparer.Ordinal)];
 
         HashSet<string> used = UsedNamespaces(root, model, swappedTypes, cancellationToken);
-        bool keepRemoved = HasInactiveCode(root);
-        var usings = new List<UsingDirectiveSyntax>();
-        foreach (UsingDirectiveSyntax directive in root.Usings)
+        List<UsingDirectiveSyntax> unused = HasInactiveCode(root)
+            ? []
+            : [.. AllUsings(root).Where(d => IsPlainUsing(d) && d.GlobalKeyword.IsKind(SyntaxKind.None)
+                && removedNamespaces.Contains(d.Name!.ToString()) && !used.Contains(d.Name!.ToString()))];
+
+        // Swap in place, so position and surrounding trivia stay as the user had them; the other unused ones go.
+        int swapCount = Math.Min(unused.Count, missing.Count);
+        CompilationUnitSyntax updated = root.TrackNodes(unused);
+        updated = updated.RemoveNodes(unused.Skip(swapCount).Select(u => updated.GetCurrentNode(u)!), SyntaxRemoveOptions.KeepNoTrivia)!;
+        for (int i = 0; i < swapCount; i++)
         {
-            bool unused = !keepRemoved && IsPlainUsing(directive) && directive.GlobalKeyword.IsKind(SyntaxKind.None)
-                && removedNamespaces.Contains(directive.Name!.ToString()) && !used.Contains(directive.Name!.ToString());
-            if (!unused)
-            {
-                usings.Add(directive);
-            }
-            else if (missing.Count > 0)
-            {
-                // Swap in place, so position and surrounding trivia stay as the user had them.
-                usings.Add(directive.WithName(SyntaxFactory.ParseName(missing[0]).WithTriviaFrom(directive.Name!)));
-                missing.RemoveAt(0);
-            }
+            UsingDirectiveSyntax current = updated.GetCurrentNode(unused[i])!;
+            updated = updated.ReplaceNode(current, current.WithName(SyntaxFactory.ParseName(missing[i]).WithTriviaFrom(current.Name!)));
         }
+
+        missing.RemoveRange(0, swapCount);
+        var usings = new List<UsingDirectiveSyntax>(updated.Usings);
 
         SyntaxTrivia endOfLine = root.DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia));
         if (endOfLine.IsKind(SyntaxKind.None))
@@ -54,7 +55,7 @@ internal static class UsingDirectives
         usings.AddRange(missing.Select(ns => SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(ns).WithLeadingTrivia(SyntaxFactory.Space))
             .WithTrailingTrivia(root.Usings.Count == 0 ? SyntaxFactory.TriviaList(endOfLine, endOfLine) : SyntaxFactory.TriviaList(endOfLine))));
 
-        return document.WithSyntaxRoot(root.WithUsings([.. usings])).Project.Solution;
+        return document.WithSyntaxRoot(updated.WithUsings([.. usings])).Project.Solution;
     }
 
     // True when the document has a top-level using of a removed namespace that nothing (but swapped types) binds to anymore.
@@ -64,17 +65,19 @@ internal static class UsingDirectives
         IReadOnlyCollection<string> swappedTypes,
         CancellationToken cancellationToken)
     {
-        if (await document.GetSyntaxRootAsync(cancellationToken) is not CompilationUnitSyntax root
-            || await document.GetSemanticModelAsync(cancellationToken) is not SemanticModel model)
+        if (await document.GetSyntaxRootAsync(cancellationToken) is not CompilationUnitSyntax root)
         {
             return false;
         }
 
-        List<string> candidates = [.. root.Usings
+        List<string> candidates = [.. AllUsings(root)
             .Where(u => IsPlainUsing(u) && u.GlobalKeyword.IsKind(SyntaxKind.None))
             .Select(u => u.Name!.ToString())
             .Where(removedNamespaces.Contains)];
-        return candidates.Count > 0 && candidates.Except(UsedNamespaces(root, model, swappedTypes, cancellationToken)).Any();
+        // Binding every name is the expensive part: only files that import a removed namespace get that far.
+        return candidates.Count > 0
+            && await document.GetSemanticModelAsync(cancellationToken) is SemanticModel model
+            && candidates.Except(UsedNamespaces(root, model, swappedTypes, cancellationToken)).Any();
     }
 
     // Code in an inactive #if branch is only trivia: nothing binds there, so a removed using may still be needed by it.
@@ -83,7 +86,7 @@ internal static class UsingDirectives
 
     // A top-level using of a removed namespace that stays because inactive code may still need it.
     public static bool KeepsRemovedUsing(SyntaxNode root, IEnumerable<string> removedNamespaces) =>
-        root is CompilationUnitSyntax unit && HasInactiveCode(unit) && unit.Usings
+        root is CompilationUnitSyntax unit && HasInactiveCode(unit) && AllUsings(unit)
             .Any(u => IsPlainUsing(u) && u.GlobalKeyword.IsKind(SyntaxKind.None) && removedNamespaces.Contains(u.Name!.ToString()));
 
     // Top-level `global using` directives of removed namespaces in the user's own files (not MSBuild's generated *.g.cs).
@@ -126,13 +129,14 @@ internal static class UsingDirectives
     public static async Task<bool> MayUseRemovedNamespaceAsync(
         Document document, IEnumerable<string> removedNamespaces, IReadOnlyCollection<string> swappedTypes, CancellationToken cancellationToken)
     {
-        if (await document.GetSyntaxRootAsync(cancellationToken) is not CompilationUnitSyntax root
-            || await document.GetSemanticModelAsync(cancellationToken) is not SemanticModel model)
+        if (await document.GetSyntaxRootAsync(cancellationToken) is not CompilationUnitSyntax root)
         {
             return false;
         }
 
-        return HasInactiveCode(root) || UsedNamespaces(root, model, swappedTypes, cancellationToken).Overlaps(removedNamespaces);
+        return HasInactiveCode(root)
+            || await document.GetSemanticModelAsync(cancellationToken) is SemanticModel model
+            && UsedNamespaces(root, model, swappedTypes, cancellationToken).Overlaps(removedNamespaces);
     }
 
     // A swapped type, or a member of one: its twin in the added namespace takes over after the using swap.
@@ -141,6 +145,16 @@ internal static class UsingDirectives
         INamedTypeSymbol? type = (symbol as INamedTypeSymbol ?? symbol.ContainingType)?.OriginalDefinition;
         return type is not null && swappedTypes.Contains($"{type.ContainingNamespace.ToDisplayString()}.{type.MetadataName}");
     }
+
+    // The file's usings and those of its namespace declarations (block or file-scoped).
+    private static IEnumerable<UsingDirectiveSyntax> AllUsings(CompilationUnitSyntax root) =>
+        root.DescendantNodesAndSelf(n => n is CompilationUnitSyntax or BaseNamespaceDeclarationSyntax)
+            .SelectMany(n => n switch
+            {
+                CompilationUnitSyntax unit => unit.Usings,
+                BaseNamespaceDeclarationSyntax ns => ns.Usings,
+                _ => [],
+            });
 
     private static bool IsPlainUsing(UsingDirectiveSyntax directive) =>
         directive.Alias is null && directive.StaticKeyword.IsKind(SyntaxKind.None) && directive.Name is not null;

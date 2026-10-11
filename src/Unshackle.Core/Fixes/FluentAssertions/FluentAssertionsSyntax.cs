@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -43,6 +44,116 @@ public static class FluentAssertionsSyntax
             ? SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression, subject.WithoutTrailingTrivia(), SyntaxFactory.IdentifierName("ShouldNotBeNull")))
             : subject;
+
+    // `x.ShouldNotBeNull()` around a receiver for a member access (parenthesized when needed, see IsSafeReceiver):
+    // one null rule for every Shouldly receiver that is read directly, like Count or Length.
+    public static ExpressionSyntax NotNullReceiver(ExpressionSyntax subject, SemanticModel model)
+    {
+        ExpressionSyntax receiver = IsSafeReceiver(subject) ? subject.WithoutTrailingTrivia() : SyntaxFactory.ParenthesizedExpression(subject.WithoutTrivia());
+        return model.GetTypeInfo(subject).Nullability.FlowState == NullableFlowState.MaybeNull
+            ? SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression, receiver, SyntaxFactory.IdentifierName("ShouldNotBeNull")))
+            : receiver;
+    }
+
+    // True when the expression can be the receiver of a member access without parentheses.
+    public static bool IsSafeReceiver(ExpressionSyntax subject) => subject is
+        IdentifierNameSyntax or GenericNameSyntax or MemberAccessExpressionSyntax or InvocationExpressionSyntax
+        or ElementAccessExpressionSyntax or ParenthesizedExpressionSyntax or ThisExpressionSyntax or ObjectCreationExpressionSyntax
+        || subject.IsKind(SyntaxKind.SuppressNullableWarningExpression);
+
+    // Conservative: `this`, locals, parameters, fields and properties without arguments, and member accesses on those.
+    // shortcut: property getters are assumed pure; refuse properties too when a getter with side effects shows up.
+    public static bool IsSafeToEvaluateTwice(ExpressionSyntax expression, SemanticModel model) => expression switch
+    {
+        ThisExpressionSyntax => true,
+        IdentifierNameSyntax => IsStorage(model.GetSymbolInfo(expression).Symbol),
+        MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name: IdentifierNameSyntax } access =>
+            IsStorage(model.GetSymbolInfo(access).Symbol)
+            && (model.GetSymbolInfo(access.Expression).Symbol is INamedTypeSymbol || IsSafeToEvaluateTwice(access.Expression, model)),
+        _ => false,
+    };
+
+    private static bool IsStorage(ISymbol? symbol) =>
+        symbol is ILocalSymbol or IParameterSymbol or IFieldSymbol or IPropertySymbol { IsIndexer: false };
+
+    public const string NotSplittableReason =
+        "The assertion is not directly in a block (e.g. a lambda body or an if without braces), so it cannot hold two statements: rewrite it by hand.";
+
+    // For assertions rewritten to several statements: the statement around the assertion, else the assertion itself.
+    public static SyntaxNode WithStatement(InvocationExpressionSyntax assertion) =>
+        assertion.Parent is ExpressionStatementSyntax statement ? statement : assertion;
+
+    // The assertion of a node from WithStatement.
+    public static InvocationExpressionSyntax AssertionOfStatement(SyntaxNode node) =>
+        (InvocationExpressionSyntax)((node as ExpressionStatementSyntax)?.Expression ?? node);
+
+    // The statement around the assertion when it may be replaced by several statements: directly in a block or a switch section.
+    public static bool TryGetSplittableStatement(SyntaxNode node, [NotNullWhen(true)] out ExpressionStatementSyntax? statement)
+    {
+        statement = node as ExpressionStatementSyntax ?? node.Parent as ExpressionStatementSyntax;
+        return statement is { Parent: BlockSyntax or SwitchSectionSyntax };
+    }
+
+    // ShouldBe<T>(this T actual, T expected) infers T from both sides, and the receiver allows no numeric or nullable
+    // conversion. FluentAssertions converted the argument to the subject type instead, e.g. byte b; b.Should().Be(1).
+    // Returns the expected expression (cast when needed), or null when no safe form exists.
+    public static ExpressionSyntax? ConvertExpected(ExpressionSyntax expected, ITypeSymbol subjectType, SemanticModel model, int position)
+    {
+        ITypeSymbol? expectedType = model.GetTypeInfo(expected).Type;
+        if (expectedType is null || SymbolEqualityComparer.Default.Equals(expectedType, subjectType)
+            || model.Compilation.ClassifyConversion(expectedType, subjectType).IsImplicit)
+        {
+            return expected;
+        }
+
+        Conversion toExpected = model.Compilation.ClassifyConversion(subjectType, expectedType);
+        if (toExpected.IsImplicit && (toExpected.IsReference || toExpected.IsBoxing))
+        {
+            return expected;
+        }
+
+        if (!model.ClassifyConversion(expected, subjectType).IsImplicit)
+        {
+            return null;
+        }
+
+        ExpressionSyntax operand = expected is LiteralExpressionSyntax or IdentifierNameSyntax or MemberAccessExpressionSyntax
+            ? expected.WithoutTrivia()
+            : SyntaxFactory.ParenthesizedExpression(expected.WithoutTrivia());
+        return SyntaxFactory.CastExpression(SyntaxFactory.ParseTypeName(subjectType.ToMinimalDisplayString(model, position)), operand);
+    }
+
+    // Arguments separated by ", ", without their own trivia; a null (e.g. no because) is left out.
+    public static ArgumentListSyntax Arguments(params IEnumerable<ArgumentSyntax?> arguments) =>
+        SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(
+            arguments.OfType<ArgumentSyntax>().Select((a, i) => i == 0 ? a.WithoutTrivia() : a.WithoutTrivia().WithLeadingTrivia(SyntaxFactory.Space))));
+
+    // `receiver.name(arguments)`.
+    public static InvocationExpressionSyntax Invoke(ExpressionSyntax receiver, string name, params IEnumerable<ArgumentSyntax?> arguments) =>
+        SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, receiver, SyntaxFactory.IdentifierName(name)),
+            Arguments(arguments));
+
+    // For assertions whose `.Which`/`.Subject` Shouldly returns directly: the member access in `var y = x.Should().M().Which;`,
+    // else the assertion itself.
+    public static SyntaxNode WithWhich(InvocationExpressionSyntax assertion) =>
+        assertion.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Which" or "Subject", Parent: EqualsValueClauseSyntax } which
+            ? which
+            : assertion;
+
+    // The assertion of a node from WithWhich.
+    public static InvocationExpressionSyntax AssertionOfWhich(SyntaxNode node) =>
+        (InvocationExpressionSyntax)((node as MemberAccessExpressionSyntax)?.Expression ?? node);
+
+    // A node from WithWhich: a discarded assertion, or `.Which` as the only variable of a declaration.
+    public static bool IsResultDiscardedOrWhich(AssertionContext context) =>
+        context.Node is MemberAccessExpressionSyntax which
+            ? which.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Variables.Count: 1 } } }
+            : IsResultDiscarded(context.Assertion, context.Model);
+
+    public static string WhichUsedReason(string name) =>
+        $"The result of {name}(...) is used beyond `var x = ….Which;` (.And/.Which chain): rewrite it by hand.";
 
     // True when nothing uses the AndConstraint the assertion returns: a statement, the body of a void lambda or the
     // expression body of a void member. `a?.B.Should()...` counts too: the `?.` only skips the assertion, as it does after rewriting.

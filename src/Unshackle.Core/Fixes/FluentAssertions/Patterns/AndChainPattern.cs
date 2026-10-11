@@ -43,9 +43,9 @@ public class AndChainPattern : IPattern
             return PatternResult.Manual("The result of the .And chain is used (.Which or a value); Shouldly's methods return nothing.");
         }
 
-        if (statement.Parent is not (BlockSyntax or SwitchSectionSyntax))
+        if (!FluentAssertionsSyntax.TryGetSplittableStatement(statement, out _))
         {
-            return PatternResult.Manual("The .And chain cannot be split: the statement is not directly in a block.");
+            return PatternResult.Manual("The .And chain cannot be split: " + FluentAssertionsSyntax.NotSplittableReason);
         }
 
         // Walk down to `x.Should()`; links ends up in source order.
@@ -70,7 +70,7 @@ public class AndChainPattern : IPattern
             return PatternResult.Manual("An .And in the chain continues on another subject than x.Should(): rewrite it by hand.");
         }
 
-        if (!IsFreeOfSideEffects(subject, model))
+        if (!FluentAssertionsSyntax.IsSafeToEvaluateTwice(subject, model))
         {
             return PatternResult.Manual("The .And chain subject is not a local, parameter, field or property, so splitting would evaluate it twice.");
         }
@@ -98,16 +98,23 @@ public class AndChainPattern : IPattern
 
         var statements = new List<SyntaxNode>();
         var namespaces = new List<string>();
+        var warnings = new List<string>();
         for (int i = 0; i < links.Count; i++)
         {
             SyntaxNode linkStatement = splitRoot.GetAnnotatedNodes(annotations[i]).Single();
             string name = ((MemberAccessExpressionSyntax)links[i].Expression).Name.ToString();
-            PatternResult? result = RewriteLink(linkStatement, splitRoot, splitModel);
+            PatternResult? result = RewriteLink(linkStatement, splitModel);
             switch (result)
             {
-                case FixedResult { NewNodes: [StatementSyntax rewritten] } fixedResult:
-                    statements.Add(rewritten.WithoutTrivia());
+                // A link can become several statements itself (OnlyContain, AllSatisfy).
+                case FixedResult { NewNodes: var nodes } fixedResult when nodes.All(n => n is StatementSyntax):
+                    statements.AddRange(nodes.Select(n => n.WithoutTrivia()));
                     namespaces.AddRange(fixedResult.RequiredNamespaces);
+                    if (fixedResult.Warning is not null)
+                    {
+                        warnings.Add(fixedResult.Warning);
+                    }
+
                     break;
                 case ManualResult manual:
                     return PatternResult.Manual($"Link {name} of the .And chain: {manual.Reason}");
@@ -116,28 +123,38 @@ public class AndChainPattern : IPattern
             }
         }
 
-        return PatternResult.Fixed(statements, [.. namespaces.Distinct(StringComparer.Ordinal)]);
+        return new FixedResult(statements, [.. namespaces.Distinct(StringComparer.Ordinal)])
+        {
+            Warning = warnings.Count == 0 ? null : string.Join(" ", warnings),
+        };
     }
 
     // The first link pattern that finds something in the statement rewrites it; the result replaces that node.
-    private PatternResult? RewriteLink(SyntaxNode statement, SyntaxNode root, SemanticModel model)
+    // Find runs on the statement's parent, not the whole file: patterns that find the statement itself need it as a descendant.
+    private PatternResult? RewriteLink(SyntaxNode statement, SemanticModel model)
     {
         foreach (IPattern pattern in _links)
         {
-            SyntaxNode? found = pattern.Find(root, model).FirstOrDefault(n => statement.Span.Contains(n.Span));
+            SyntaxNode? found = pattern.Find(statement.Parent!, model).FirstOrDefault(n => statement.Span.Contains(n.Span));
             if (found is null)
             {
                 continue;
             }
 
             PatternResult result = pattern.Rewrite(found, model);
-            if (result is not FixedResult { NewNodes: [{ } newNode] } fixedResult)
+            if (result is not FixedResult fixedResult)
             {
-                return result is ManualResult ? result : null;
+                return result;
             }
 
-            SyntaxNode rewritten = found == statement ? newNode : statement.ReplaceNode(found, newNode.WithTriviaFrom(found));
-            return fixedResult with { NewNodes = [rewritten] };
+            if (found == statement)
+            {
+                return fixedResult;
+            }
+
+            return fixedResult.NewNodes is [{ } newNode]
+                ? fixedResult with { NewNodes = [statement.ReplaceNode(found, newNode.WithTriviaFrom(found))] }
+                : null;
         }
 
         return null;
@@ -151,18 +168,4 @@ public class AndChainPattern : IPattern
         }
             ? previous
             : null;
-
-    // Conservative: `this`, locals, parameters, fields and properties without arguments, and member accesses on those.
-    private static bool IsFreeOfSideEffects(ExpressionSyntax expression, SemanticModel model) => expression switch
-    {
-        ThisExpressionSyntax => true,
-        IdentifierNameSyntax => IsStorage(model.GetSymbolInfo(expression).Symbol),
-        MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name: IdentifierNameSyntax } access =>
-            IsStorage(model.GetSymbolInfo(access).Symbol)
-            && (model.GetSymbolInfo(access.Expression).Symbol is INamedTypeSymbol || IsFreeOfSideEffects(access.Expression, model)),
-        _ => false,
-    };
-
-    private static bool IsStorage(ISymbol? symbol) =>
-        symbol is ILocalSymbol or IParameterSymbol or IFieldSymbol or IPropertySymbol { IsIndexer: false };
 }

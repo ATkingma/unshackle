@@ -1,39 +1,24 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.FluentAssertions.Patterns;
 
-public class HaveCountPattern : IPattern
+public class HaveCountPattern : FluentAssertionPattern
 {
-    public string Id => "fa.have-count";
+    public override string Id => "fa.have-count";
 
-    public string Description => "x.Should().HaveCount(n) → x.Count.ShouldBe(n)";
+    public override string Description => "x.Should().HaveCount(n) → x.Count.ShouldBe(n)";
 
-    public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
+    public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         FluentAssertionsSyntax.FindInvocations(root, model, "HaveCount");
 
-    public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
+    protected override PatternResult RewriteAssertion(AssertionContext context)
     {
-        if (FluentAssertionsSyntax.IsInsideAssertionScope(node, model))
-        {
-            return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
-        }
-
-        var assertion = (InvocationExpressionSyntax)node;
-        ExpressionSyntax? subject = FluentAssertionsSyntax.GetSubject(assertion);
-        if (subject is null)
-        {
-            return PatternResult.Manual("HaveCount(...) is not in the form x.Should().HaveCount(n), e.g. after .And.");
-        }
-
-        if (!FluentAssertionsSyntax.IsResultDiscarded(assertion, model))
-        {
-            return PatternResult.Manual("The result of HaveCount(...) is used (.And/.Which or a value); ShouldBe returns nothing.");
-        }
-
+        SemanticModel model = context.Model;
+        InvocationExpressionSyntax assertion = context.Assertion;
+        ExpressionSyntax subject = context.Subject;
         if (subject is ConditionalAccessExpressionSyntax)
         {
             return PatternResult.Manual("The subject uses ?. so the count cannot be read directly.");
@@ -44,18 +29,13 @@ public class HaveCountPattern : IPattern
             return PatternResult.Manual("Predicate: rewrite to Count.ShouldBeGreaterThan/ShouldBeLessThan/... by hand.");
         }
 
-        if (!FluentAssertionsSyntax.TryGetArguments(assertion, model, out _, out _))
-        {
-            return PatternResult.Manual("HaveCount(...) with becauseArgs or named arguments: Shouldly cannot format the message.");
-        }
-
         ITypeSymbol? type = model.GetTypeInfo(subject).Type;
         if (type is null or IErrorTypeSymbol)
         {
             return PatternResult.Manual("The type of the subject is unknown.");
         }
 
-        ExpressionSyntax receiver = IsSafeReceiver(subject) ? FluentAssertionsSyntax.NotNull(subject, model).WithoutTrailingTrivia() : SyntaxFactory.ParenthesizedExpression(subject.WithoutTrivia());
+        ExpressionSyntax receiver = FluentAssertionsSyntax.NotNullReceiver(subject, model);
         string[] namespaces = [];
         ExpressionSyntax count;
         if (Implements(type, "IDictionary", "IReadOnlyDictionary"))
@@ -87,11 +67,6 @@ public class HaveCountPattern : IPattern
 
     private static MemberAccessExpressionSyntax Member(ExpressionSyntax expression, string name) =>
         SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, expression, SyntaxFactory.IdentifierName(name));
-
-    internal static bool IsSafeReceiver(ExpressionSyntax subject) => subject is
-        IdentifierNameSyntax or GenericNameSyntax or MemberAccessExpressionSyntax or InvocationExpressionSyntax
-        or ElementAccessExpressionSyntax or ParenthesizedExpressionSyntax or ThisExpressionSyntax or ObjectCreationExpressionSyntax
-        || subject.IsKind(SyntaxKind.SuppressNullableWarningExpression);
 
     // The type itself or one of its interfaces is (a constructed form of) the named System.Collections(.Generic) interface.
     private static bool Implements(ITypeSymbol type, params string[] names) =>

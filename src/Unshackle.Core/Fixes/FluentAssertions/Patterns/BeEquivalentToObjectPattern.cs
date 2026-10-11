@@ -1,7 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.FluentAssertions.Patterns;
@@ -11,52 +10,31 @@ namespace Unshackle.Core.Fixes.FluentAssertions.Patterns;
 // struct on both sides, with leaf or plain nested members. Shouldly also compares runtime types: a non-sealed type
 // (unless both sides are new-expressions) is Fixed with a warning in the report. Shouldly passes where FluentAssertions fails for Equals overrides,
 // cyclic graphs and types without public members, so those are Manual. See fa-be-equivalent-to-object-modellen.md.
-public class BeEquivalentToObjectPattern : IPattern
+public class BeEquivalentToObjectPattern : FluentAssertionPattern
 {
-    public string Id => "fa.be-equivalent-to-object";
+    public override string Id => "fa.be-equivalent-to-object";
 
-    public string Description => "obj.Should().BeEquivalentTo(other) → obj.ShouldBeEquivalentTo(other) for the same plain type, otherwise Manual";
+    public override string Description => "obj.Should().BeEquivalentTo(other) → obj.ShouldBeEquivalentTo(other) for the same plain type, otherwise Manual";
 
-    public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
+    public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         FluentAssertionsSyntax.FindInvocations(root, model, "BeEquivalentTo", "NotBeEquivalentTo")
             .Where(i => model.GetSymbolInfo(i).Symbol is IMethodSymbol { ContainingType.Name: not "StringAssertions" });
 
-    public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
+    // Before the argument split: BeEquivalentTo(params TExpectation[]) on a collection takes expected items, not becauseArgs.
+    protected override PatternResult? RewriteBeforeArguments(AssertionContext context) =>
+        context.Name == "NotBeEquivalentTo"
+            ? PatternResult.Manual("NotBeEquivalentTo(...) has no Shouldly equivalent: there is no ShouldNotBeEquivalentTo.")
+            : context.Model.GetSymbolInfo(context.Assertion).Symbol is IMethodSymbol { Parameters: [{ IsParams: true }, ..] }
+                ? PatternResult.Manual($"{context.Name}(params items) is a collection assertion: FluentAssertions ignores the item order by default, Shouldly does not.")
+                : null;
+
+    protected override PatternResult RewriteAssertion(AssertionContext context)
     {
-        if (FluentAssertionsSyntax.IsInsideAssertionScope(node, model))
-        {
-            return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
-        }
-
-        var assertion = (InvocationExpressionSyntax)node;
-        string name = ((MemberAccessExpressionSyntax)assertion.Expression).Name.Identifier.ValueText;
-        ExpressionSyntax? subject = FluentAssertionsSyntax.GetSubject(assertion);
-        if (subject is null)
-        {
-            return PatternResult.Manual($"{name}(...) is not in the form x.Should().{name}(...), e.g. after .And.");
-        }
-
-        if (name == "NotBeEquivalentTo")
-        {
-            return PatternResult.Manual("NotBeEquivalentTo(...) has no Shouldly equivalent: there is no ShouldNotBeEquivalentTo.");
-        }
-
-        if (!FluentAssertionsSyntax.IsResultDiscarded(assertion, model))
-        {
-            return PatternResult.Manual($"The result of {name}(...) is used (.And/.Which or a value); Shouldly's ShouldBeEquivalentTo returns nothing.");
-        }
-
-        // BeEquivalentTo(params TExpectation[]) on a collection: the extra arguments are expected items, not becauseArgs.
-        if (model.GetSymbolInfo(assertion).Symbol is IMethodSymbol { Parameters: [{ IsParams: true }, ..] })
-        {
-            return PatternResult.Manual($"{name}(params items) is a collection assertion: FluentAssertions ignores the item order by default, Shouldly does not.");
-        }
-
-        if (!FluentAssertionsSyntax.TryGetArguments(assertion, model, out IReadOnlyList<ArgumentSyntax> values, out ArgumentSyntax? because))
-        {
-            return PatternResult.Manual($"{name}(...) with becauseArgs or named arguments: Shouldly cannot format the message.");
-        }
-
+        SemanticModel model = context.Model;
+        string name = context.Name;
+        ExpressionSyntax subject = context.Subject;
+        IReadOnlyList<ArgumentSyntax> values = context.Values;
+        ArgumentSyntax? because = context.Because;
         if (values.Count != 1)
         {
             return PatternResult.Manual($"{name}(..., options => ...) configuration (ordering, exclusions, tolerances) has no Shouldly equivalent.");
@@ -89,13 +67,7 @@ public class BeEquivalentToObjectPattern : IPattern
         }
 
         // The overload is ShouldBeEquivalentTo(expected, customMessage).
-        ArgumentSyntax[] arguments = because is null ? [values[0]] : [values[0], because.WithLeadingTrivia(SyntaxFactory.Space)];
-        InvocationExpressionSyntax rewritten = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                subject.WithoutTrailingTrivia(),
-                SyntaxFactory.IdentifierName("ShouldBeEquivalentTo")),
-            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments)));
+        InvocationExpressionSyntax rewritten = FluentAssertionsSyntax.Invoke(subject.WithoutTrailingTrivia(), "ShouldBeEquivalentTo", values[0], because);
         return new FixedResult([rewritten], [])
         {
             Warning = derivable.Count == 0 ? null : DerivableWarning(derivable),

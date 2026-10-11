@@ -103,9 +103,10 @@ public class Fixer : IFixer
                 SyntaxNode updatedRoot = (await updated.GetSyntaxRootAsync(cancellationToken))!;
                 if (UsingDirectives.KeepsRemovedUsing(updatedRoot, fix.RemovedNamespaces))
                 {
-                    // Line in the file as the patterns saw it, like their findings.
-                    int line = (await document.GetSyntaxRootAsync(cancellationToken))!.DescendantTrivia().First(t => t.IsKind(SyntaxKind.DisabledTextTrivia))
-                        .GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+                    // Line in the file as the patterns saw it, like their findings; 0 (whole file) when only the updated root has it.
+                    SyntaxTrivia disabled = (await document.GetSyntaxRootAsync(cancellationToken))!.DescendantTrivia()
+                        .FirstOrDefault(t => t.IsKind(SyntaxKind.DisabledTextTrivia));
+                    int line = disabled.IsKind(SyntaxKind.DisabledTextTrivia) ? disabled.GetLocation().GetLineSpan().StartLinePosition.Line + 1 : 0;
                     findings.Add(CreateUsingsFinding(updated.FilePath ?? updated.Name, line, fix, PatternResult.Manual(
                         "Code in an inactive #if branch is not migrated, so the old using stays. Migrate that branch by hand.")));
                 }

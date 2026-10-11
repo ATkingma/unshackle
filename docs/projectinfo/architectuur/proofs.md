@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 422 proofs (zonder `_Pending`).
+Totaal: 421 proofs (zonder `_Pending`).
 
 ## FluentAssertions
 
@@ -30,7 +30,7 @@ Totaal: 422 proofs (zonder `_Pending`).
 | `typed-parameter` | Fixed | `x.Should().AllSatisfy((int i) => Check(i));` → `x.ShouldNotBeEmpty(); foreach (int i in x)` |
 | `used` | Manual | `x.Should().AllSatisfy(i => Check(i)).And.NotBeEmpty();` — reden: is used |
 
-### AndChain (16)
+### AndChain (18)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -39,6 +39,8 @@ Totaal: 422 proofs (zonder `_Pending`).
 | `because` | Fixed | `items.Should().NotBeEmpty("needed").And.Contain(3, "three");` → `items.ShouldNotBeEmpty("needed"); items.ShouldContain(3, "three");` |
 | `edge-multiline` | Fixed | `items.Should() .NotBeEmpty()` → `items.ShouldNotBeEmpty(); items.Count.ShouldBe(2);` |
 | `equal-length-approximately` | Fixed | `x.Should().NotBeEmpty().And.Equal(1, 2); s.Should().NotBeNull().And.HaveLength(3);` → `x.ShouldNotBeEmpty(); x.ShouldBe(new int[] { 1, 2 });` |
+| `greater-less` | Fixed | `order.Total.Should().BeGreaterThan(20m).And.BeLessThan(30m); order.Total.Should().BeGreaterThan(1m, "above").A…` → `order.Total.ShouldBeGreaterThan(20m); order.Total.ShouldBeLessThan(30m);` |
+| `lambda` | Manual | `Action a = () => x.Should().BeGreaterThan(1).And.BeLessThan(5);` — reden: is used |
 | `link-manual` | Manual | `items.Should().NotBeEmpty().And.HaveCount(2, "of {0}", 2);` — reden: Link HaveCount |
 | `member-subject` | Fixed | `_order.Lines.Should().NotBeEmpty().And.HaveCount(1);` → `_order.Lines.ShouldNotBeEmpty(); _order.Lines.Count.ShouldBe(1);` |
 | `no-block` | Manual | `if (items.Count > 0) items.Should().NotBeEmpty().And.HaveCount(2);` — reden: not directly in a block |
@@ -138,18 +140,13 @@ Totaal: 422 proofs (zonder `_Pending`).
 | `simple` | Fixed | `s.Should().BeEquivalentTo("ab");` → `s.ShouldBe("ab", StringCompareShould.IgnoreCase);` |
 | `value-used` | Manual | `var c = s.Should().BeEquivalentTo("ab");` — reden: is used |
 
-### BeGreaterLess (18)
+### BeGreaterLess (13)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
-| `and-chain` | Fixed | `order.Total.Should().BeGreaterThan(20m).And.BeLessThan(30m); order.Total.Should().BeGreaterThan(1m, "above").A…` → `order.Total.ShouldBeGreaterThan(20m); order.Total.ShouldBeLessThan(30m);` |
 | `because` | Fixed | `x.Should().BeGreaterThan(1, "it grew"); x.Should().BeInRange(1, 5, "it is small");` → `x.ShouldBeGreaterThan(1, "it grew"); x.ShouldBeInRange(1, 5, "it is small");` |
 | `because-args` | Manual | `x.Should().BeGreaterThan(1, "it is {0}", 1);` — reden: becauseArgs |
-| `chain-lambda` | Manual | `Action a = () => x.Should().BeGreaterThan(1).And.BeLessThan(5);` — reden: is used |
-| `chain-no-block` | Manual | `x.Should().BeGreaterThan(1).And.BeLessThan(5);` — reden: not directly in a block |
-| `chain-other` | Manual | `x.Should().BeGreaterThan(1).And.NotBe(3);` — reden: not a comparison |
-| `chain-subject-call` | Manual | `Next().Should().BeGreaterThan(0).And.BeLessThan(5);` — reden: evaluate it twice |
-| `chain-used` | Manual | `var c = x.Should().BeGreaterThan(1);` — reden: is used |
+| `byte-short` | Fixed | `b.Should().BeGreaterThan(1); s.Should().BeLessOrEqualTo(10, "small");` → `b.ShouldBeGreaterThan((byte)1); s.ShouldBeLessThanOrEqualTo((short)10, "small");` |
 | `comparable` | Fixed | `t.Should().BeGreaterThan(TimeSpan.Zero); v.Should().BeLessThan(new Version(2, 0));` → `t.ShouldBeGreaterThan(TimeSpan.Zero); v.ShouldBeLessThan(new Version(2, 0));` |
 | `edge-double` | Fixed | `ratio.Should().BeGreaterThan(0.5);` → `ratio.ShouldBeGreaterThan(0.5);` |
 | `edge-interpolated-because` | Fixed | `age.Should().BeLessThan(150, $"{name} is human");` → `age.ShouldBeLessThan(150, $"{name} is human");` |
@@ -388,7 +385,7 @@ Totaal: 422 proofs (zonder `_Pending`).
 | `subject-call` | Manual | `Load().Should().OnlyContain(i => i > y);` — reden: evaluate the subject twice |
 | `used` | Manual | `var r = x.Should().OnlyContain(i => i > 0);` — reden: is used |
 
-### ShouldBe (26)
+### ShouldBe (28)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -414,6 +411,8 @@ Totaal: 422 proofs (zonder `_Pending`).
 | `edge-named-because` | Manual | `total.Should().Be(3, because: "three items were added");` — reden: named arguments |
 | `edge-raw-string` | Fixed | `json.Should().Be("""{"name":"a"}""");` → `json.ShouldBe("""{"name":"a"}""");` |
 | `edge-trailing-comment` | Fixed | `value.Should().Be(42); // keep me` → `value.ShouldBe(42); // keep me` |
+| `edge-using-after-file-scoped-namespace` | Fixed | `result.Should().Be(42);` → `result.ShouldBe(42);` |
+| `edge-using-in-namespace` | Fixed | `result.Should().Be(42);` → `result.ShouldBe(42);` |
 | `lambda` | Fixed | `Array.ForEach(totals, t => t.Should().Be(20m));` → `Array.ForEach(totals, t => t.ShouldBe(20m));` |
 | `nullable-expected` | Manual | `count.Should().Be(expected);` — reden: differs from subject type |
 | `simple` | Fixed | `result.Should().Be(42); name.Should().Be("timme");` → `result.ShouldBe(42); name.ShouldBe("timme");` |

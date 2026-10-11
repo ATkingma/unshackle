@@ -32,6 +32,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AllSatisfyPattern.cs`;
 | # | Area | Plan says | Code does | Impact |
 | - | ---- | --------- | --------- | ------ |
 | 1 | Behaviour | Foutmelding gelijk aan FA | Loop stopt bij het eerste mislukte element; FA toont alle indexen | Low |
+| R-A | Structure | Eigen preamble, eigen `IsSimple` | REVIEW-A: erft van `FluentAssertionPattern`; een void-lambda-body is nu "not directly in a block" i.p.v. "is used"; subject via `IsSafeToEvaluateTwice` (symboolgebaseerd) | Low |
 
 ## Validation results
 

@@ -10,7 +10,7 @@ x.Should().Be(y) naar x.ShouldBe(y). Feiten uit `src/Unshackle.Core/Fixes/Fluent
 | Element | Pad | Rol |
 | --- | --- | --- |
 | `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract: `Find` en `Rewrite` |
-| `ShouldBePattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs` | Dit patroon, Id `fa.should-be`; privé: `ConvertExpected(expected, subjectType, model, position)` |
+| `ShouldBePattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs` | Dit patroon, Id `fa.should-be`; gedeeld via `FluentAssertionsSyntax`: `ConvertExpected(expected, subjectType, model, position)` |
 | `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde bouwstenen: `FindInvocations`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments` |
 | `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst: `Fixed` met nieuwe node(s) en namespaces, of `Manual` met reden |
 | «FluentAssertions» herkend | - | `Be(expected[, because])`; `Be uit FluentAssertions.Xml / .Types` |

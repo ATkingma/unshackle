@@ -2,7 +2,7 @@
 
 `x.Should().NotBe(y)` naar `x.ShouldNotBe(y)`. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotBePattern.cs`.
 
-**Figure 1.** Klassen rond `NotBePattern`. Het hergebruikt `ShouldBePattern.ConvertExpected` (internal) voor de typeconversie. Weggelaten: `Fixer`, `IFix` en de usings-afhandeling (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Klassen rond `NotBePattern`. Het hergebruikt `FluentAssertionsSyntax.ConvertExpected` voor de typeconversie (sinds REVIEW-A een subklasse van `ShouldBePattern`). Weggelaten: `Fixer`, `IFix` en de usings-afhandeling (zie [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-not-be-modellen-1.d2 -->
 ![Modellen: fa.not-be](img/fa-not-be-modellen-1.png)
@@ -11,7 +11,7 @@
 | ---------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `IPattern`                                     | `src/Unshackle.Core/Abstractions/IPattern.cs`                           | Contract: `Find` en `Rewrite`                                                                     |
 | `NotBePattern`                                 | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotBePattern.cs`    | Dit patroon, Id `fa.not-be`                                                                       |
-| `ShouldBePattern.ConvertExpected`              | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs` | Cast van de verwachte waarde naar het subjecttype, of `null`                                      |
+| `FluentAssertionsSyntax.ConvertExpected`              | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Cast van de verwachte waarde naar het subjecttype, of `null`                                      |
 | `FluentAssertionsSyntax`                       | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs`   | `FindInvocations`, `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments` |
 | `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/`                                            | Uitkomst                                                                                          |
 | «FluentAssertions» herkend                     | -                                                                       | `NotBe(unexpected[, because])`                                                                    |

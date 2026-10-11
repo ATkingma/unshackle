@@ -1,49 +1,28 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.FluentAssertions.Patterns;
 
-public class OnlyContainPattern : IPattern
+public class OnlyContainPattern : FluentAssertionPattern
 {
-    public string Id => "fa.only-contain";
+    public override string Id => "fa.only-contain";
 
-    public string Description => "x.Should().OnlyContain(pred) → x.ShouldNotBeEmpty(); x.ShouldAllBe(pred); (FluentAssertions fails on an empty collection)";
+    public override string Description => "x.Should().OnlyContain(pred) → x.ShouldNotBeEmpty(); x.ShouldAllBe(pred); (FluentAssertions fails on an empty collection)";
 
-    // The node is the whole statement when it can be split into two statements, otherwise the invocation.
-    public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        FluentAssertionsSyntax.FindInvocations(root, model, "OnlyContain")
-            .Select<InvocationExpressionSyntax, SyntaxNode>(i =>
-                i.Parent is ExpressionStatementSyntax { Parent: BlockSyntax or SwitchSectionSyntax } statement ? statement : i);
+    // The node is the whole statement (it is replaced by two statements), or the bare invocation when it is no statement.
+    public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
+        FluentAssertionsSyntax.FindInvocations(root, model, "OnlyContain").Select(FluentAssertionsSyntax.WithStatement);
 
-    public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
+    protected override InvocationExpressionSyntax GetAssertion(SyntaxNode node) => FluentAssertionsSyntax.AssertionOfStatement(node);
+
+    protected override PatternResult RewriteAssertion(AssertionContext context)
     {
-        if (FluentAssertionsSyntax.IsInsideAssertionScope(node, model))
-        {
-            return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
-        }
-
-        var statement = node as ExpressionStatementSyntax;
-        var assertion = (InvocationExpressionSyntax)(statement?.Expression ?? node);
-        ExpressionSyntax? subject = FluentAssertionsSyntax.GetSubject(assertion);
-        if (subject is null)
-        {
-            return PatternResult.Manual("OnlyContain(...) is not in the form x.Should().OnlyContain(...), e.g. after .And.");
-        }
-
-        if (!FluentAssertionsSyntax.IsResultDiscarded(assertion, model))
-        {
-            return PatternResult.Manual("The result of OnlyContain(...) is used (.And/.Which or a value); Shouldly's ShouldAllBe returns nothing.");
-        }
-
-        if (!FluentAssertionsSyntax.TryGetArguments(assertion, model, out IReadOnlyList<ArgumentSyntax> values, out ArgumentSyntax? because))
-        {
-            return PatternResult.Manual("OnlyContain(...) with becauseArgs or named arguments: Shouldly cannot format the message.");
-        }
-
-        ITypeSymbol? type = model.GetTypeInfo(subject).Type;
+        ExpressionSyntax subject = context.Subject;
+        IReadOnlyList<ArgumentSyntax> values = context.Values;
+        ArgumentSyntax? because = context.Because;
+        ITypeSymbol? type = context.Model.GetTypeInfo(subject).Type;
         if (values.Count != 1 || type is null or IErrorTypeSymbol
             || !type.AllInterfaces.Prepend(type).Any(t => t.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T))
         {
@@ -51,12 +30,12 @@ public class OnlyContainPattern : IPattern
         }
 
         // FluentAssertions fails on an empty collection, ShouldAllBe passes: a ShouldNotBeEmpty statement keeps the behaviour.
-        if (statement is null)
+        if (!FluentAssertionsSyntax.TryGetSplittableStatement(context.Node, out _))
         {
-            return PatternResult.Manual("OnlyContain(...) fails on an empty collection and ShouldAllBe does not: add ShouldNotBeEmpty by hand, the assertion is not a statement directly in a block (e.g. a lambda body) so it cannot hold two statements.");
+            return PatternResult.Manual("OnlyContain(...) fails on an empty collection and ShouldAllBe does not, so a ShouldNotBeEmpty is needed. " + FluentAssertionsSyntax.NotSplittableReason);
         }
 
-        if (!IsSimple(subject))
+        if (!FluentAssertionsSyntax.IsSafeToEvaluateTwice(subject, context.Model))
         {
             return PatternResult.Manual("OnlyContain(...) fails on an empty collection and ShouldAllBe does not: splitting into two statements would evaluate the subject twice.");
         }
@@ -74,12 +53,4 @@ public class OnlyContainPattern : IPattern
         SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, subject.WithoutTrivia(), SyntaxFactory.IdentifierName(name)),
             SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments)));
-
-    // Names, `this` and member accesses on those: safe to evaluate twice (shortcut: property getters are assumed pure).
-    private static bool IsSimple(ExpressionSyntax e) => e switch
-    {
-        IdentifierNameSyntax or ThisExpressionSyntax => true,
-        MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name: IdentifierNameSyntax } access => IsSimple(access.Expression),
-        _ => false,
-    };
 }

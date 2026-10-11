@@ -1,0 +1,16 @@
+title: "[Sequence] VoidRequestHandlerPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: VoidRequestHandlerPattern
+syntax: MediatRSyntax
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "FindHandleMethods(root, model, IRequestHandler`1)"
+syntax -> model: "GetDeclaredSymbol / FindImplementationForInterfaceMember"
+pattern -> fixer: "MethodDeclarationSyntax Handle" {style.stroke-dash: 3}
+fixer -> pattern: "Rewrite(node, model)"
+pattern -> syntax: "ToValueTask(ReturnType) + WithUnit"
+pattern -> model: "AnalyzeControlFlow(body) (async)"
+pattern -> syntax: "ReturnedExpressions / IsTaskMember CompletedTask (niet-async)"
+pattern -> fixer: "Fixed(method) of Manual(reden)" {style.stroke-dash: 3}
+fixer -> fixer: "UsingDirectives.UpdateAsync (SwappedTypes)"

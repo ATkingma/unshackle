@@ -1,6 +1,8 @@
 title: "[Klassen] RequestHandlerPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 IPattern: {shape: class; "+Id: string"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
-RequestHandlerPattern: {shape: class; "+Id = mediatr.request-handler"; "+Find(root, model)"; "+Rewrite(node, model)"; "-IsRequestHandler(type): bool"; "-ToValueTask(type): TypeSyntax?"; "-ReturnedExpressions(method)"; "-IsTaskFromResult(expr, model): bool"}
+RequestHandlerPattern: {shape: class; "+Id = mediatr.request-handler"; "+Find(root, model)"; "+Rewrite(node, model)"}
+MediatRSyntax: {shape: class; "+FindHandleMethods(root, model, name)"; "+ToValueTask(type): TypeSyntax?"; "+ReturnedExpressions(method)"; "+IsTaskMember(expr, model, name): bool"; "+OnValueTask(member)"}
+RequestHandlerPattern -> MediatRSyntax: gebruikt
 MediatRFix: {shape: class; "+Patterns"; "+SwappedTypes"}
 PatternResult: {shape: class; "+Fixed(node, namespaces)"; "+Manual(reason)"}
 Old: "MediatR.IRequestHandler<TReq,TRes>\nTask<TRes> Handle(...)" {shape: class}

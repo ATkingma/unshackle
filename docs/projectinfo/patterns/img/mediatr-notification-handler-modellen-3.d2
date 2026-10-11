@@ -1,0 +1,19 @@
+title: "[Beslisboom] NotificationHandlerPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q1: "Expliciete interface-\nimplementatie?" {shape: diamond}
+q2: "Returntype Task\n(ook gekwalificeerd)?" {shape: diamond}
+q3: "async?" {shape: diamond}
+q4: "Elke return / expression body\nTask.CompletedTask?" {shape: diamond}
+m1: "Manual: explicit interface\n(explicit)"
+m2: "Manual: does not return Task"
+f1: "ValueTask, body blijft\n(async, two-handlers)"
+f2: "ValueTask + ValueTask.CompletedTask\n(completed-task, completed-task-expression, two-handlers)"
+m3: "Manual: not Task.CompletedTask\n(other-return)"
+q1 -> m1: ja
+q1 -> q2: nee
+q2 -> m2: nee
+q2 -> q3: ja
+q3 -> f1: ja
+q3 -> q4: nee
+q4 -> f2: ja
+q4 -> m3: nee

@@ -109,6 +109,8 @@ Wachtrij en status: `claude/tasks/patroon-queue.md`.
 | `fa.assertion-scope` | [plan](patterns/fa-assertion-scope-plan.md) | [modellen](patterns/fa-assertion-scope-modellen.md) | [verify](patterns/fa-assertion-scope-verify.md) | TAAK-031 |
 | `fa.not-be` | [plan](patterns/fa-not-be-plan.md) | [modellen](patterns/fa-not-be-modellen.md) | [verify](patterns/fa-not-be-verify.md) | TAAK-032 |
 | `mediatr.request-handler` | [plan](patterns/mediatr-request-handler-plan.md) | [modellen](patterns/mediatr-request-handler-modellen.md) | [verify](patterns/mediatr-request-handler-verify.md) | TAAK-023 |
+| `mediatr.void-request-handler` | [plan](patterns/mediatr-void-request-handler-plan.md) | [modellen](patterns/mediatr-void-request-handler-modellen.md) | [verify](patterns/mediatr-void-request-handler-verify.md) | TAAK-025 |
+| `mediatr.notification-handler` | [plan](patterns/mediatr-notification-handler-plan.md) | [modellen](patterns/mediatr-notification-handler-modellen.md) | [verify](patterns/mediatr-notification-handler-verify.md) | TAAK-026 |
 
 ## Zie ook
 

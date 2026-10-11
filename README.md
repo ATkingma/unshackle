@@ -5,6 +5,24 @@ Roslyn-powered, with a report and dry-run before anything changes.
 
 > Work in progress. See [docs/projectinfo](docs/projectinfo/README.md).
 
+## What it migrates
+
+| Fix (`--fix`) | From → to | Status |
+|---|---|---|
+| `fluentassertions` | FluentAssertions 7 → [Shouldly](https://github.com/shouldly/shouldly) | Most assertions rewritten (`Should().Be`, collections, exceptions, `AssertionScope`, `Equal`, …); the rest is reported as manual work |
+| `mediatr` | MediatR 12 → [Mediator](https://github.com/martinothamar/Mediator) (source generator) | Handlers, notification handlers, pipeline/stream behaviors, pre/post-processors, exception handlers, `AddMediatR` |
+| `automapper` | AutoMapper → hand-written extension methods | Early: plain `CreateMap<A, B>()` only |
+
+`unshackle list` shows every pattern with a one-line description. Each pattern has proofs (`before` → `after`) in
+`src/Unshackle.Tests/Proofs/`. A pattern never guesses: when a rewrite is not provably safe it is reported as
+*Manual* with the reason, for you to finish by hand.
+
+`fix` also migrates the project files: the old package reference and `<Using Include="..." />` go, the new packages
+are added (central package management is respected).
+
+Tested on real open-source solutions by building and running their full test suites before and after the fix
+(e.g. Polly 3790/3790, Facility 1164/1164, MODiX 477/477 tests green, 0 regressions).
+
 ## Projects
 
 | Project | Role |
@@ -55,5 +73,4 @@ unshackle fix "My App/MyApp.sln" --fix fluentassertions --report report.json || 
 ```
 
 `fix` refuses to write when the solution's git working tree has uncommitted changes; commit or stash first, or pass
-`--force`. Reports: `.csv`, `.json` or `.md`, with the columns `File,Line,Fix,Pattern,Status,Reason`. Project files
-(package references, `<Using Include="FluentAssertions" />`) are not migrated yet.
+`--force`. Reports: `.csv`, `.json` or `.md`, with the columns `File,Line,Fix,Pattern,Status,Reason`.

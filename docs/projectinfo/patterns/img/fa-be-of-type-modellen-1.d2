@@ -1,0 +1,61 @@
+title: "[Class] BeOfTypePattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: "Realisatie (holle driehoek), overerving (holle driehoek), dependency (gestreept)"
+  }
+}
+result: "PatternResult (abstract)" {
+  shape: class
+  "+Fixed(newNodes, namespaces)": PatternResult
+  "+Manual(reason)": PatternResult
+}
+fixed: FixedResult {
+  shape: class
+  "+NewNodes": "IReadOnlyList<SyntaxNode>"
+  "+RequiredNamespaces": "IReadOnlyList<string>"
+}
+manual: ManualResult {
+  shape: class
+  "+Reason": string
+}
+ipattern: "«interface» IPattern" {
+  shape: class
+  "+Id": string
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+BeOfTypePattern: BeOfTypePattern {
+  shape: class
+  "-s_methods": "Dictionary<string, string>"
+  "+Id": "fa.be-of-type"
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+syntax: FluentAssertionsSyntax {
+  shape: class
+  "+FindInvocations(root, model, names)": "IEnumerable<InvocationExpressionSyntax>"
+  "+IsInsideAssertionScope(node, model)": bool
+  "+GetSubject(assertion)": "ExpressionSyntax?"
+  "+IsResultDiscarded(assertion, model)": bool
+  "+TryGetArguments(assertion, model, values, because)": bool
+}
+fa: "«FluentAssertions» herkend" {
+  shape: class
+  "BeOfType / BeAssignableTo / NotBeOfType / NotBeAssignableTo (<T> of Type)": ""
+  "var v = ….Which / .Subject": ""
+}
+sh: "«Shouldly» aangemaakt" {
+  shape: class
+  "ShouldBeOfType / ShouldBeAssignableTo / ShouldNotBeOfType / ShouldNotBeAssignableTo": ""
+  "var v = x.ShouldBeOfType<T>()": ""
+}
+BeOfTypePattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+BeOfTypePattern -> syntax: gebruikt {style.stroke-dash: 3}
+BeOfTypePattern -> result: levert {style.stroke-dash: 3}
+BeOfTypePattern -> fa: herkent {style.stroke-dash: 3}
+BeOfTypePattern -> sh: bouwt {style.stroke-dash: 3}

@@ -32,7 +32,8 @@ grep, niets uitgevoerd). De proofs (`edge-<slug>`) zijn eigen minimale voorbeeld
 | Enum / geneste generic dictionary            | SmartEnum                        | `ShouldBe/edge-enum`, `ContainKey/edge-nested-generic`                                                           | groen                         |
 | Raw string literal                           | Refit                            | `ShouldBe/edge-raw-string`                                                                                       | groen                         |
 | `!` als subject                              | algemeen                         | `BeNull/edge-null-forgiving`                                                                                     | groen                         |
-| `NotBeNull().And.…`                          | SmartEnum                        | `BeNull/edge-not-null-and` (Manual)                                                                              | groen                         |
+| `NotBeNull().And.…`                          | SmartEnum                        | `BeNull/edge-not-null-and` (Manual), `AndChain/simple` (gesplitst)                                               | groen (TAAK-033)              |
+| Multiline `.And`-keten                       | NUKE                             | `AndChain/edge-multiline`                                                                                        | groen (TAAK-033)              |
 | Multiline-lambda / lambda-inspector          | algemeen                         | `OnlyContain/edge-multiline-lambda`, `AllSatisfy/edge-expression-lambda`                                         | groen                         |
 | `double` / `BeEquivalentTo(new[] {…})`       | SmartEnum                        | `BeGreaterLess/edge-double`, `BeEquivalentToObject/edge-array-literal` (Manual)                                  | groen                         |
 | `Throw<T>().Which…` / `.WithInnerException`  | NUKE, SmartEnum                  | `Throw/edge-which-message`, `Throw/edge-inner-exception` (Manual)                                                | groen                         |
@@ -45,7 +46,7 @@ grep, niets uitgevoerd). De proofs (`edge-<slug>`) zijn eigen minimale voorbeeld
 
 ## Niet als proof
 
-- `NotBe(...)`, `BeSameAs`, `BeOfType`, `ContainSingle`, `Equal(...)`: veel gebruikt (CSharpFunctionalExtensions,
+- `BeSameAs`, `ContainSingle`, `Equal(...)`: veel gebruikt (CSharpFunctionalExtensions,
   SmartEnum, NUKE), maar geen bestaand patroon. Kandidaten voor de patroon-queue.
 - Top-level statements: de proof-runner compileert als library (CS8805), dus niet te bewijzen.
 - `using FA = FluentAssertions;`, `using static`, `dynamic`: niet gevonden; `dynamic.Should()` compileert niet.

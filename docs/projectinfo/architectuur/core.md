@@ -64,6 +64,14 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
 - Implementatie: `XmlProjectFileStore` (DataAccess, `XDocument` + `IFileSystem`), behoudt witruimte, CRLF en BOM en weigert te
   schrijven als het bestand intussen veranderd is. Zie `docs/projectinfo/features/projectbestanden-migreren-plan.md`.
 
+## Gelijknamige typen (TAAK-024)
+
+- `IFix.SwappedTypes` (default leeg): typen als `MediatR.IRequest\`1` met een tweeling in de nieuwe namespace. Symbolen van
+  die typen en hun leden tellen niet als gebruik in `UsingDirectives.UsedNamespaces` en `ProjectPackages`.
+- Een bestand zonder patroon-wijziging krijgt de using-swap toch als alleen swapped typen de oude using nodig hebben.
+- `PackageMigration.AlsoRemovedPackages` (MediatR: `MediatR.Contracts`) wordt mee verwijderd. Zie
+  `docs/projectinfo/features/gelijknamige-typen-swap-plan.md`.
+
 ## SOLID in het kort
 
 | Principe | Hoe |

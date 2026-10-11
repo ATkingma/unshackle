@@ -11,6 +11,7 @@ internal static class UsingDirectives
         Document document,
         IEnumerable<string> addedNamespaces,
         IEnumerable<string> removedNamespaces,
+        IReadOnlyCollection<string> swappedTypes,
         CancellationToken cancellationToken)
     {
         if (await document.GetSyntaxRootAsync(cancellationToken) is not CompilationUnitSyntax root
@@ -24,7 +25,7 @@ internal static class UsingDirectives
             .Select(u => u.Name!.ToString())];
         List<string> missing = [.. addedNamespaces.Distinct().Where(ns => !imported.Contains(ns)).Order(StringComparer.Ordinal)];
 
-        HashSet<string> used = UsedNamespaces(root, model, cancellationToken);
+        HashSet<string> used = UsedNamespaces(root, model, swappedTypes, cancellationToken);
         var usings = new List<UsingDirectiveSyntax>();
         foreach (UsingDirectiveSyntax directive in root.Usings)
         {
@@ -55,6 +56,33 @@ internal static class UsingDirectives
         return document.WithSyntaxRoot(root.WithUsings([.. usings])).Project.Solution;
     }
 
+    // True when the document has a top-level using of a removed namespace that nothing (but swapped types) binds to anymore.
+    public static async Task<bool> HasUnusedRemovedUsingAsync(
+        Document document,
+        IEnumerable<string> removedNamespaces,
+        IReadOnlyCollection<string> swappedTypes,
+        CancellationToken cancellationToken)
+    {
+        if (await document.GetSyntaxRootAsync(cancellationToken) is not CompilationUnitSyntax root
+            || await document.GetSemanticModelAsync(cancellationToken) is not SemanticModel model)
+        {
+            return false;
+        }
+
+        List<string> candidates = [.. root.Usings
+            .Where(u => IsPlainUsing(u) && u.GlobalKeyword.IsKind(SyntaxKind.None))
+            .Select(u => u.Name!.ToString())
+            .Where(removedNamespaces.Contains)];
+        return candidates.Count > 0 && candidates.Except(UsedNamespaces(root, model, swappedTypes, cancellationToken)).Any();
+    }
+
+    // A swapped type, or a member of one: its twin in the added namespace takes over after the using swap.
+    public static bool IsSwapped(ISymbol symbol, IReadOnlyCollection<string> swappedTypes)
+    {
+        INamedTypeSymbol? type = (symbol as INamedTypeSymbol ?? symbol.ContainingType)?.OriginalDefinition;
+        return type is not null && swappedTypes.Contains($"{type.ContainingNamespace.ToDisplayString()}.{type.MetadataName}");
+    }
+
     private static bool IsPlainUsing(UsingDirectiveSyntax directive) =>
         directive.Alias is null && directive.StaticKeyword.IsKind(SyntaxKind.None) && directive.Name is not null;
 
@@ -66,10 +94,11 @@ internal static class UsingDirectives
             .Where(u => !u.GlobalKeyword.IsKind(SyntaxKind.None));
 
     // Namespaces the document still needs a using for: those of the types and members it binds to by simple name.
-    private static HashSet<string> UsedNamespaces(CompilationUnitSyntax root, SemanticModel model, CancellationToken cancellationToken) =>
+    private static HashSet<string> UsedNamespaces(
+        CompilationUnitSyntax root, SemanticModel model, IReadOnlyCollection<string> swappedTypes, CancellationToken cancellationToken) =>
         [.. root.DescendantNodes(n => n is not UsingDirectiveSyntax)
             .OfType<SimpleNameSyntax>()
             .Select(n => model.GetSymbolInfo(n, cancellationToken).Symbol)
-            .Where(s => s is not null and not INamespaceSymbol)
+            .Where(s => s is not null and not INamespaceSymbol && !IsSwapped(s, swappedTypes))
             .Select(s => s!.ContainingNamespace?.ToDisplayString() ?? string.Empty)];
 }

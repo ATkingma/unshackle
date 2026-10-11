@@ -114,6 +114,35 @@ public class XmlProjectFileStoreTests
     }
 
     [Fact]
+    public async Task EditAsync_AlsoRemovedPackageReferenced_RemovesIt()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(
+            "<Project><ItemGroup><PackageReference Include=\"MediatR\" Version=\"12.5.0\" />" +
+            "<PackageReference Include=\"MediatR.Contracts\" Version=\"2.0.1\" /></ItemGroup></Project>"));
+        var migration = new ProjectMigration
+        {
+            ProjectPath = Project,
+            Package = new PackageMigration
+            {
+                RemovedPackage = "MediatR",
+                AlsoRemovedPackages = ["MediatR.Contracts"],
+                AddedPackages = [new() { Name = "Mediator.Abstractions", Version = "3.0.2" }],
+            },
+            KeepRemovedPackage = false,
+            RemovedNamespaces = ["MediatR"],
+            AddedNamespaces = ["Mediator"],
+        };
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(migration);
+
+        // Assert
+        changes.ShouldHaveSingleItem().NewText.ShouldBe(
+            "<Project><ItemGroup><PackageReference Include=\"Mediator.Abstractions\" Version=\"3.0.2\" /></ItemGroup></Project>");
+    }
+
+    [Fact]
     public async Task EditAsync_VersionAsChildElement_SwapsIt()
     {
         // Arrange

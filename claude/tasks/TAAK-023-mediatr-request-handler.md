@@ -29,7 +29,7 @@
 
 Find: methoden `Handle` in klassen die `MediatR.IRequestHandler<,>` implementeren (semantisch via `SemanticModel`, niet op naam).
 
-## Blokkade
+## Blokkade (opgelost door TAAK-024)
 
 `UsingDirectives.UpdateAsync` (`src/Unshackle.Core/UsingDirectives.cs`) wisselt `using MediatR;` → `using Mediator;` alleen als
 **niets** in het document nog aan `MediatR` bindt (`UsedNamespaces`, bepaald met de oude compilatie). Na deze herschrijving

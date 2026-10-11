@@ -12,14 +12,16 @@ internal static class ProjectPackages
         Solution solution,
         IFix fix,
         PackageMigration package,
+        IReadOnlyCollection<string> swappedTypes,
         CancellationToken cancellationToken)
     {
         var migrations = new List<ProjectMigration>();
         foreach (Project project in solution.Projects.Where(p => p.Language == LanguageNames.CSharp && p.FilePath is not null))
         {
             Compilation? compilation = await project.GetCompilationAsync(cancellationToken);
-            // shortcut: package id = assembly name (true for FluentAssertions); a package with other assembly names needs a list.
-            if (compilation is null || !compilation.ReferencedAssemblyNames.Any(a => a.Name == package.RemovedPackage))
+            // shortcut: package id = assembly name (true for FluentAssertions and MediatR); other packages need a mapping.
+            HashSet<string> removed = [package.RemovedPackage, .. package.AlsoRemovedPackages];
+            if (compilation is null || !compilation.ReferencedAssemblyNames.Any(a => removed.Contains(a.Name)))
             {
                 continue;
             }
@@ -28,7 +30,7 @@ internal static class ProjectPackages
             {
                 ProjectPath = project.FilePath!,
                 Package = package,
-                KeepRemovedPackage = await UsesAssemblyAsync(project, package.RemovedPackage, cancellationToken),
+                KeepRemovedPackage = await UsesAssemblyAsync(project, removed, swappedTypes, cancellationToken),
                 RemovedNamespaces = fix.RemovedNamespaces,
                 AddedNamespaces = fix.AddedNamespaces,
             });
@@ -41,9 +43,10 @@ internal static class ProjectPackages
         ];
     }
 
-    // True when any document binds a name to a type or member of the assembly. Using directives do not count:
+    // True when any document binds a name to a type or member of the assemblies, swapped types aside. Using directives do not count:
     // the global usings MSBuild generates from <Using Include> would otherwise always keep the package.
-    private static async Task<bool> UsesAssemblyAsync(Project project, string assemblyName, CancellationToken cancellationToken)
+    private static async Task<bool> UsesAssemblyAsync(
+        Project project, HashSet<string> assemblyNames, IReadOnlyCollection<string> swappedTypes, CancellationToken cancellationToken)
     {
         foreach (Document document in project.Documents)
         {
@@ -57,7 +60,8 @@ internal static class ProjectPackages
             bool uses = root.DescendantNodes(n => n is not UsingDirectiveSyntax)
                 .OfType<SimpleNameSyntax>()
                 .Select(n => model.GetSymbolInfo(n, cancellationToken).Symbol)
-                .Any(s => s is not null and not INamespaceSymbol && s.ContainingAssembly?.Name == assemblyName);
+                .Any(s => s is not null and not INamespaceSymbol && s.ContainingAssembly?.Name is string name && assemblyNames.Contains(name)
+                    && !UsingDirectives.IsSwapped(s, swappedTypes));
             if (uses)
             {
                 return true;

@@ -25,4 +25,11 @@ public interface IFix
     /// <c>&lt;Using Include&gt;</c> items follow <see cref="RemovedNamespaces"/> and <see cref="AddedNamespaces"/>.
     /// </summary>
     PackageMigration? Package => null;
+
+    /// <summary>
+    /// Types of <see cref="RemovedNamespaces"/> that have a namespace-swapped twin with the same name and arity in
+    /// <see cref="AddedNamespaces"/>, as <c>Namespace.MetadataName</c> (for example <c>MediatR.IRequest`1</c>). Using
+    /// them, or their members, does not keep the removed using or package. Empty (the default) when no type is swapped.
+    /// </summary>
+    IReadOnlyList<string> SwappedTypes => [];
 }

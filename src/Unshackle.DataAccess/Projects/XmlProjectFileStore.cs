@@ -64,6 +64,19 @@ public class XmlProjectFileStore : IProjectFileStore
                         Find(versions, PackageVersion, added.Name) is not null, added, versioned: true);
                 }
             }
+
+            foreach (string also in migration.Package.AlsoRemovedPackages)
+            {
+                foreach (ProjectFile file in chain.Where(f => !Keeps(f.Path)))
+                {
+                    RemoveIfPresent(Find(file, PackageReference, also));
+                }
+
+                if (packagesProps is not null && !Keeps(packagesProps))
+                {
+                    RemoveIfPresent(Find(await LoadAsync(files, packagesProps, cancellationToken), PackageVersion, also));
+                }
+            }
         }
 
         return [.. files.Values.Select(f => f.ToChange()).Where(c => c.NewText != c.OldText)];
@@ -190,6 +203,14 @@ public class XmlProjectFileStore : IProjectFileStore
 
     private static string Indentation(XElement element) =>
         element.PreviousNode is XText text && string.IsNullOrWhiteSpace(text.Value) ? text.Value : "\n";
+
+    private static void RemoveIfPresent(XElement? element)
+    {
+        if (element is not null)
+        {
+            RemoveWithIndentation(element);
+        }
+    }
 
     // Also drops an <ItemGroup> that becomes empty, so no hollow groups stay behind.
     private static void RemoveWithIndentation(XElement element)

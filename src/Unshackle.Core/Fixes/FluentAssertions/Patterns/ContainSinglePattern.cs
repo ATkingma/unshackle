@@ -16,7 +16,7 @@ public class ContainSinglePattern : IPattern
         FluentAssertionsSyntax.FindInvocations(root, model, "ContainSingle")
             .Select<InvocationExpressionSyntax, SyntaxNode>(i => i.Parent is MemberAccessExpressionSyntax
             {
-                Name.Identifier.ValueText: "Which",
+                Name.Identifier.ValueText: "Which" or "Subject",
                 Parent: EqualsValueClauseSyntax,
             } which
                 ? which
@@ -29,7 +29,7 @@ public class ContainSinglePattern : IPattern
             return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
         }
 
-        // `var item = x.Should().ContainSingle().Which;`: ShouldHaveSingleItem returns the item itself.
+        // `var item = x.Should().ContainSingle().Which;` (or .Subject): ShouldHaveSingleItem returns the item itself.
         var which = node as MemberAccessExpressionSyntax;
         var assertion = (InvocationExpressionSyntax)(which?.Expression ?? node);
         ExpressionSyntax? subject = FluentAssertionsSyntax.GetSubject(assertion);

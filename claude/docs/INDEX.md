@@ -88,9 +88,9 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/TAAK-043-fa-inactive-preprocessor-branch.md` | Bug: inactieve `#if`-tak blijft FA, using verdwijnt |
 | `claude/tasks/TAAK-044-fa-global-using.md` | Bug: `global using FluentAssertions;` wordt niet vervangen |
 | `claude/tasks/TAAK-070-fa-assertion-in-throw-lambda.md` | Bug: assertion in lambda met `Throw<XunitException>` → regressie na fix |
-| `claude/tasks/TAAK-071-fa-equivalent-collection-params.md` | Bug: `BeEquivalentTo(params)` op collectie krijgt foute Manual-reden |
-| `claude/tasks/TAAK-072-fa-contain-single-subject.md` | Bug: `ContainSingle().Subject` wordt Manual |
-| `claude/tasks/TAAK-073-unused-fa-using-after-package-removal.md` | Bug: ongebruikte `using FluentAssertions;` blijft na pakketverwijdering (CS0246) |
+| `claude/tasks/archief/TAAK-071-fa-equivalent-collection-params.md` | ✅ `BeEquivalentTo(params)` op collectie → Manual met collectie-reden |
+| `claude/tasks/archief/TAAK-072-fa-contain-single-subject.md` | ✅ `ContainSingle().Subject` als `.Which` |
+| `claude/tasks/archief/TAAK-073-unused-fa-using-after-package-removal.md` | ✅ Ongebruikte oude using ook verwijderd in bestanden zonder findings |
 
 ## Skills
 

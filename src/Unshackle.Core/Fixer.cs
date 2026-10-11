@@ -81,11 +81,16 @@ public class Fixer : IFixer
                 }
             }
 
-            // A file that only uses swapped types needs no pattern, just the using swap.
-            if (changed || (swappedTypes.Count > 0
-                && await UsingDirectives.HasUnusedRemovedUsingAsync(solution.GetDocument(documentId)!, fix.RemovedNamespaces, swappedTypes, cancellationToken)))
+            // A file that only uses swapped types needs no pattern, just the using swap. A file without findings still loses
+            // its unused old using: the package may be removed from the project (TAAK-073).
+            if (changed
+                || await UsingDirectives.HasUnusedRemovedUsingAsync(solution.GetDocument(documentId)!, fix.RemovedNamespaces, swappedTypes, cancellationToken))
             {
-                requiredNamespaces.UnionWith(fix.AddedNamespaces);
+                if (changed || swappedTypes.Count > 0)
+                {
+                    requiredNamespaces.UnionWith(fix.AddedNamespaces);
+                }
+
                 if (globalProjects.Contains(documentId.ProjectId))
                 {
                     // The project's global using brings the added namespaces (see SwapGlobalUsingsAsync).

@@ -46,6 +46,12 @@ public class BeEquivalentToObjectPattern : IPattern
             return PatternResult.Manual($"The result of {name}(...) is used (.And/.Which or a value); Shouldly's ShouldBeEquivalentTo returns nothing.");
         }
 
+        // BeEquivalentTo(params TExpectation[]) on a collection: the extra arguments are expected items, not becauseArgs.
+        if (model.GetSymbolInfo(assertion).Symbol is IMethodSymbol { Parameters: [{ IsParams: true }, ..] })
+        {
+            return PatternResult.Manual($"{name}(params items) is a collection assertion: FluentAssertions ignores the item order by default, Shouldly does not.");
+        }
+
         if (!FluentAssertionsSyntax.TryGetArguments(assertion, model, out IReadOnlyList<ArgumentSyntax> values, out ArgumentSyntax? because))
         {
             return PatternResult.Manual($"{name}(...) with becauseArgs or named arguments: Shouldly cannot format the message.");

@@ -143,6 +143,24 @@ public class FixerTests
     }
 
     [Fact]
+    public async Task FixAsync_FileWithoutFindingsHasUnusedRemovedUsing_RemovesItWithoutAddingNamespaces()
+    {
+        // Arrange
+        IPattern pattern = Substitute.For<IPattern>();
+        pattern.Id.Returns("test.pattern");
+        pattern.Find(Arg.Any<SyntaxNode>(), Arg.Any<SemanticModel>()).Returns([]);
+        var fixer = new Fixer([CreateFix(pattern, removed: ["System.Text"], added: ["System.IO"])]);
+
+        // Act
+        FixReport report = await FixAsync(fixer, Code);
+
+        // Assert
+        string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        text.ShouldStartWith("\npublic class C");
+        report.Findings.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task FixAsync_NamespaceStillUsed_KeepsUsing()
     {
         // Arrange

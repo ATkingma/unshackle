@@ -110,9 +110,9 @@ Bevindingen:
 
 - **Regressie** (TAAK-070): `Action act = () => x.Should().Be(y); act.Should().Throw<XunitException>();` — de binnenste
   assertion wordt Shouldly en gooit een ander exception-type.
-- **Foute Manual-reden** (TAAK-071): `coll.Should().BeEquivalentTo("a", "b")` (params-overload) heet "becauseArgs".
+- **Foute Manual-reden** (TAAK-071): `coll.Should().BeEquivalentTo("a", "b")` (params-overload) heet "becauseArgs". Opgelost: collectie-reden.
 - **Bouwfout** (TAAK-073): bestand met alleen een ongebruikte `using FluentAssertions;` houdt die using terwijl het
-  pakket uit het project verdwijnt.
+  pakket uit het project verdwijnt. Opgelost: de Fixer verwijdert die using ook zonder findings.
 - **Laden**: een solution met een niet-gerestored `net48`-project faalt in zijn geheel ("reference assemblies for
   .NETFramework 4.8 not found"). Na `dotnet restore` werkt het. Kandidaat voor een duidelijkere melding in de CLI.
 

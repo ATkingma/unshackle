@@ -1,6 +1,6 @@
 # TAAK-073 — ongebruikte `using FluentAssertions;` blijft staan als het pakket weggaat
 
-**Status**: open
+**Status**: voltooid
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: corpus-run Ardalis.Result (`docs/projectinfo/architectuur/corpus.md`)
 
@@ -19,9 +19,13 @@ verwijdert de FluentAssertions-referentie → CS0246, het project bouwt niet mee
 
 ## Stappen
 
-- [ ] Usings opruimen in bestanden zonder findings bij pakketverwijdering
-- [ ] Unittest
-- [ ] `dotnet build` + `dotnet test` groen
+- [x] Usings opruimen in bestanden zonder findings bij pakketverwijdering
+- [x] Unittest
+- [x] `dotnet build` + `dotnet test` groen
+
+## Resultaat
+
+`Fixer` draait de using-stap ook voor bestanden zonder findings met een ongebruikte oude using; zonder wijziging of swapped types wordt die alleen verwijderd (geen Shouldly-using). Test: `FixerTests.FixAsync_FileWithoutFindingsHasUnusedRemovedUsing_RemovesItWithoutAddingNamespaces`.
 
 ## Zie ook
 

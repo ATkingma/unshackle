@@ -1,0 +1,55 @@
+title: "[Class] ContainSinglePattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+result: "PatternResult (abstract)" {
+  shape: class
+  "+Fixed(newNode, namespaces)": PatternResult
+  "+Manual(reason)": PatternResult
+}
+fixed: FixedResult {
+  shape: class
+  "+NewNodes": "IReadOnlyList<SyntaxNode>"
+  "+RequiredNamespaces": "IReadOnlyList<string>"
+}
+manual: ManualResult {
+  shape: class
+  "+Reason": string
+}
+ipattern: "«interface» IPattern" {
+  shape: class
+  "+Id": string
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+pattern: ContainSinglePattern {
+  shape: class
+
+  "+Id": "fa.contain-single-which"
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+syntax: FluentAssertionsSyntax {
+  shape: class
+  "+FindInvocations(root, model, names)": "IEnumerable<InvocationExpressionSyntax>"
+  "+IsInsideAssertionScope(node, model)": bool
+  "+GetSubject(assertion)": "ExpressionSyntax?"
+  "+IsResultDiscarded(assertion, model)": bool
+  "+TryGetArguments(assertion, model, values, because)": bool
+  "+NotNull(subject, model)": ExpressionSyntax
+}
+fa: "«FluentAssertions» herkend" {
+  shape: class
+  "ContainSingle() / ContainSingle(pred)": ""
+  "var y = ….Which": ""
+}
+sh: "«Shouldly» aangemaakt" {
+  shape: class
+  "ShouldHaveSingleItem() / ShouldContain(pred, 1)": ""
+  "var y = x.Where(pred).ShouldHaveSingleItem()": ""
+}
+pattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+pattern -> syntax: gebruikt {style.stroke-dash: 3}
+pattern -> result: levert {style.stroke-dash: 3}
+pattern -> fa: herkent {style.stroke-dash: 3}
+pattern -> sh: bouwt {style.stroke-dash: 3}

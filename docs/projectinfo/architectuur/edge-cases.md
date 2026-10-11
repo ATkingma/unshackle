@@ -46,7 +46,7 @@ grep, niets uitgevoerd). De proofs (`edge-<slug>`) zijn eigen minimale voorbeeld
 
 ## Niet als proof
 
-- `BeSameAs`, `ContainSingle`, `Equal(...)`: veel gebruikt (CSharpFunctionalExtensions,
+- `BeSameAs`, `Equal(...)` (`ContainSingle`: nu `fa.contain-single-which`, TAAK-036): veel gebruikt (CSharpFunctionalExtensions,
   SmartEnum, NUKE), maar geen bestaand patroon. Kandidaten voor de patroon-queue.
 - Top-level statements: de proof-runner compileert als library (CS8805), dus niet te bewijzen.
 - `using FA = FluentAssertions;`, `using static`, `dynamic`: niet gevonden; `dynamic.Should()` compileert niet.

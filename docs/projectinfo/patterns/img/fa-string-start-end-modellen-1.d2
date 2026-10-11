@@ -1,0 +1,56 @@
+title: "[Class] StringStartEndPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+result: "PatternResult (abstract)" {
+  shape: class
+  "+Fixed(newNode, namespaces)": PatternResult
+  "+Manual(reason)": PatternResult
+}
+fixed: FixedResult {
+  shape: class
+  "+NewNodes": "IReadOnlyList<SyntaxNode>"
+  "+RequiredNamespaces": "IReadOnlyList<string>"
+}
+manual: ManualResult {
+  shape: class
+  "+Reason": string
+}
+ipattern: "«interface» IPattern" {
+  shape: class
+  "+Id": string
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+pattern: StringStartEndPattern {
+  shape: class
+  "-s_affixes": "FA-naam -> (Shouldly-naam, CaseSensitive)"
+  "-s_nullOr": "FA-naam -> Shouldly-naam"
+  "+Id": "fa.string-start-end"
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+syntax: FluentAssertionsSyntax {
+  shape: class
+  "+FindInvocations(root, model, names)": "IEnumerable<InvocationExpressionSyntax>"
+  "+IsInsideAssertionScope(node, model)": bool
+  "+GetSubject(assertion)": "ExpressionSyntax?"
+  "+IsResultDiscarded(assertion, model)": bool
+  "+TryGetArguments(assertion, model, values, because)": bool
+  "+NotNull(subject, model)": ExpressionSyntax
+}
+fa: "«FluentAssertions» herkend" {
+  shape: class
+  "StartWith / EndWith / NotStartWith / NotEndWith (+ EquivalentOf)": ""
+  "(Not)BeNullOrEmpty / (Not)BeNullOrWhiteSpace": ""
+}
+sh: "«Shouldly» aangemaakt" {
+  shape: class
+  "ShouldStartWith(x, Shouldly.Case.Sensitive) e.d.": ""
+  "ShouldNotBeNullOrEmpty() e.d.": ""
+}
+pattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+pattern -> syntax: gebruikt {style.stroke-dash: 3}
+pattern -> result: levert {style.stroke-dash: 3}
+pattern -> fa: herkent {style.stroke-dash: 3}
+pattern -> sh: bouwt {style.stroke-dash: 3}

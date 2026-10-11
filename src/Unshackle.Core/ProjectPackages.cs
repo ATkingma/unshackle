@@ -30,7 +30,7 @@ internal static class ProjectPackages
             {
                 ProjectPath = project.FilePath!,
                 Package = await ForProjectAsync(project, package, cancellationToken),
-                KeepRemovedPackage = await UsesAssemblyAsync(project, removed, fix.RemovedNamespaces, swappedTypes, cancellationToken),
+                KeepRemovedPackage = await UsesAssemblyAsync(project, removed, fix, swappedTypes, cancellationToken),
                 RemovedNamespaces = fix.RemovedNamespaces,
                 AddedNamespaces = fix.AddedNamespaces,
             });
@@ -67,9 +67,9 @@ internal static class ProjectPackages
 
     // True when any document binds a name to a type or member of the assemblies, swapped types aside. Using directives do not count:
     // the global usings MSBuild generates from <Using Include> would otherwise always keep the package. Except a using that
-    // inactive #if code may need, or a global using the fixer kept: that code would break without the package.
+    // inactive #if code may need, a global using the fixer kept, or an unbound x.Should() (TAAK-110): that code would break without the package.
     private static async Task<bool> UsesAssemblyAsync(
-        Project project, HashSet<string> assemblyNames, IReadOnlyList<string> removedNamespaces, IReadOnlyCollection<string> swappedTypes,
+        Project project, HashSet<string> assemblyNames, IFix fix, IReadOnlyCollection<string> swappedTypes,
         CancellationToken cancellationToken)
     {
         foreach (Document document in project.Documents)
@@ -86,8 +86,9 @@ internal static class ProjectPackages
                 .Select(n => model.GetSymbolInfo(n, cancellationToken).Symbol)
                 .Any(s => s is not null and not INamespaceSymbol && s.ContainingAssembly?.Name is string name && assemblyNames.Contains(name)
                     && !UsingDirectives.IsSwapped(s, swappedTypes));
-            if (uses || UsingDirectives.KeepsRemovedUsing(root, removedNamespaces)
-                || UsingDirectives.RemovedGlobalUsings(root, document.FilePath, removedNamespaces).Any())
+            if (uses || UsingDirectives.KeepsRemovedUsing(root, fix.RemovedNamespaces)
+                || UsingDirectives.RemovedGlobalUsings(root, document.FilePath, fix.RemovedNamespaces).Any()
+                || UsingDirectives.UnboundCalls(root, model, fix.RemovedExtensionMethods, cancellationToken).Any())
             {
                 return true;
             }

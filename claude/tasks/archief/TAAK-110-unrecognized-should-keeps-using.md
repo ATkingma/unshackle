@@ -1,6 +1,6 @@
 # TAAK-110 — Niet-herkende `.Should()` mag `using FluentAssertions` niet laten verwijderen
 
-**Status**: open
+**Status**: klaar (2026-10-11)
 **Aangemaakt**: 2026-10-11 (corpus-run, `claude/tasks/CORPUSRUN-fa.md` volgt)
 
 ## Context
@@ -14,6 +14,18 @@ Vermoeden: subject/aanroep bindt niet (type via lambda-inferentie van `maybe2`),
 2. Root cause in `UsingDirectives`/`Fixer`: een overgebleven `Should()`-aanroep (syntactisch, naam `Should` op member-access) of een niet-gebonden symbool in een bestand met een verwijderde using → using **houden** + Manual-finding ("assertion not recognised; using kept").
 3. Waarom het patroon de regel niet herkende: aparte bevinding (kan een `fa.be-true-false`-gat zijn).
 4. Bewijs: corpus-kopie CSFE opnieuw `fix` + build groen.
+
+## Resultaat
+
+- Oorzaak r54 (BindTests.cs): `fa.should-be` herschrijft eerst `ctx.Should().Be(context)` in het lambda-argument van `maybe.Bind(...)`.
+  In het geladen model is Shouldly nog niet gerefereerd, dus `ctx.ShouldBe` bindt niet; daardoor kiest de overload-resolutie van
+  `Bind` (Maybe/Task/ValueTask-varianten) niets en is `maybe2` een fouttype. `fa.be-true-false` ziet `maybe2.HasValue.Should()` dan
+  niet meer. Geen gat in het patroon; de opeenvolgende patronen op het tussenresultaat zijn de oorzaak.
+- Fix: `IFix.RemovedExtensionMethods` (FA: `Should`). `UsingDirectives.UnboundCalls` vindt `x.Should()` die nergens aan bindt;
+  dan blijft de oude using (`UpdateAsync`), blijft het pakket (`ProjectPackages`) en komt er een Manual-finding `usings`
+  ("Run the fix again once the project builds"). Een tweede run herschrijft de rest.
+- Proof: `src/Unshackle.Tests/Proofs/FluentAssertions/_Combined/unbound-should.*` (Maybe/Bind-nabootsing).
+- Corpus: verse kopie CSFE (`scratchpad/v110/work/csfe`): fix 4481 Fixed / 70 Manual (21 `usings`), **build groen** (was 42x CS1061).
 
 ## Zie ook
 

@@ -90,7 +90,10 @@ public class Fixer : IFixer
             if (changed
                 || await UsingDirectives.HasUnusedRemovedUsingAsync(working.GetDocument(documentId)!, fix.RemovedNamespaces, swappedTypes, cancellationToken))
             {
-                if (changed || swappedTypes.Count > 0)
+                // Only a file that names the old library gets the new namespaces: one that uses it through a base type of its own
+                // would get an unused using (IDE0005, TAAK-115).
+                if ((changed || swappedTypes.Count > 0)
+                    && await UsingDirectives.NamesRemovedNamespaceAsync(original.GetDocument(documentId)!, fix.RemovedNamespaces, cancellationToken))
                 {
                     requiredNamespaces.UnionWith(fix.AddedNamespaces);
                 }
@@ -102,9 +105,15 @@ public class Fixer : IFixer
                 }
 
                 Document document = working.GetDocument(documentId)!;
-                working = await UsingDirectives.UpdateAsync(document, requiredNamespaces, fix.RemovedNamespaces, swappedTypes, cancellationToken);
+                working = await UsingDirectives.UpdateAsync(
+                    document, requiredNamespaces, fix.RemovedNamespaces, swappedTypes, fix.RemovedExtensionMethods, cancellationToken);
                 Document updated = working.GetDocument(documentId)!;
                 SyntaxNode updatedRoot = (await updated.GetSyntaxRootAsync(cancellationToken))!;
+                SemanticModel model = (await document.GetSemanticModelAsync(cancellationToken))!;
+                findings.AddRange(UsingDirectives.UnboundCalls((await document.GetSyntaxRootAsync(cancellationToken))!, model, fix.RemovedExtensionMethods, cancellationToken)
+                    .Select(n => CreateUsingsFinding(updated.FilePath ?? updated.Name, n.GetLocation().GetLineSpan().StartLinePosition.Line + 1, fix, PatternResult.Manual(
+                        $"{n.Identifier.ValueText}() binds to nothing here (the type it is called on is unknown, e.g. after a rewrite in a lambda earlier on), " +
+                        "so no pattern migrated it and the old using stays. Run the fix again once the project builds, or migrate it by hand."))));
                 if (UsingDirectives.KeepsRemovedUsing(updatedRoot, fix.RemovedNamespaces))
                 {
                     // Line in the file as the patterns saw it, like their findings; 0 (whole file) when only the updated root has it.

@@ -31,6 +31,19 @@
 
 Niet gedaan: Manual-redenen samengevoegd en testlogs vóór/na vergeleken (regressie-analyse). Rapporten per project: `scratchpad/run-fa/<naam>.json`.
 
+## Herhaling na TAAK-110/112/113/114 (2026-10-11)
+
+Verse kopieën in `scratchpad/v110/work/<naam>` (bron `corpus/src`), alleen restore → fix → build (`-m:2`); script `scratchpad/v110/run.sh`.
+
+| Project | fix | build na | Opmerking |
+| --- | --- | --- | --- |
+| CSharpFunctionalExtensions | 0 | 0 | 4481 Fixed / 70 Manual; 21 `usings` (niet-gebonden `Should()`, TAAK-110) |
+| Bogus | 0 | 0 | laadt; 'Builder' weggelaten met waarschuwing (TAAK-112) |
+| Polly | 0 | 0 | 4446 Fixed / 966 Manual; Guid-`NotBeEmpty` → `ShouldNotBe(Guid.Empty)` (TAAK-114) |
+| PowerApps-Tooling | – | – | niet herhaald: geen schone kopie beschikbaar (TAAK-113 alleen met proofs bewezen) |
+
+evo1 (MediatR, TAAK-115): geen IDE0005/IDE0065 meer; build nog rood op IDE0060 en MSG0005 (TAAK-136).
+
 ## Zie ook
 
 - `claude/tasks/CORPUSRUN-mediatr.md`

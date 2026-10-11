@@ -61,7 +61,11 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
   (één symboolgebaseerde regel), `TryGetSplittableStatement`/`NotSplittableReason`, `Arguments`/`Invoke`, `WithWhich`/`WithStatement`.
   Patronen roepen geen statics van andere patronen meer aan.
 - `.And`-ketens zijn alleen van `AndChainPattern`; het geeft warnings van schakels door en accepteert schakels van meerdere statements.
-- `UsingDirectives` swapt ook usings binnen een namespace-declaratie (blok of file-scoped).
+- `UsingDirectives` swapt ook usings binnen een namespace-declaratie (blok of file-scoped). Nieuwe usings komen binnen de
+  namespace als het bestand ze daar heeft (IDE0065), tenzij een eigen namespace de nieuwe overschaduwt; en alleen in een bestand
+  dat de oude bibliotheek bij naam noemt (IDE0005, TAAK-115).
+- `IFix.RemovedExtensionMethods` (FA: `Should`): een `x.Should()` die na de fix nergens aan bindt (ontvanger onbekend, bv. na een
+  herschreven lambda-argument) houdt de oude using en het pakket en geeft een Manual-finding `usings` (TAAK-110).
 
 ## Contracten naar buiten (TAAK-005)
 

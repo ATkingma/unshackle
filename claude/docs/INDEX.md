@@ -82,10 +82,12 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-100-fa-assertion-scope-satisfy.md` | ✅ AssertionScope → `ShouldSatisfyAllConditions` |
 | `claude/tasks/archief/TAAK-101-fa-direct-mappings.md` | ✅ Kleine mappings |
 | `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` | Frequentietabel MediatR/AutoMapper-API's uit 9 open-source projecten, dekking door patronen |
-| `claude/tasks/TAAK-110-unrecognized-should-keeps-using.md` | Bug (corpus): niet-herkende `.Should()` → using toch weg (CSFE, CS1061) |
+| `claude/tasks/archief/TAAK-110-unrecognized-should-keeps-using.md` | ✅ Bug (corpus): niet-herkende `.Should()` → using toch weg (CSFE, CS1061) |
 | `claude/tasks/archief/TAAK-111-project-file-not-editable-blocks-rewrite.md` | ✅ Bug (corpus): csproj niet aanpasbaar (BOM?) → code wel herschreven, Shouldly ontbreekt (Polly, Ardalis.Result) |
-| `claude/tasks/TAAK-112-bogus-load-builder-project.md` | Bug (corpus): Bogus laadt niet (NU1701-vorm, Builder 'System') |
-| `claude/tasks/TAAK-113-equal-sequence-collection-expression.md` | Bug (corpus): `Equal([..])` → `new T[] { [..] }` (PowerApps, CS0029) |
+| `claude/tasks/archief/TAAK-112-bogus-load-builder-project.md` | ✅ Bug (corpus): Bogus laadt niet (Builder 'System') |
+| `claude/tasks/archief/TAAK-113-equal-sequence-collection-expression.md` | ✅ Bug (corpus): `Equal([..])` → `new T[] { [..] }` (PowerApps, CS0029) |
+| `claude/tasks/archief/TAAK-114-be-empty-guid.md` | ✅ Bug (corpus): `Guid` `NotBeEmpty()` → `ShouldNotBe(Guid.Empty)` (Polly, CS1061) |
+| `claude/tasks/archief/TAAK-115-usings-stijl-en-overbodig.md` | ✅ Bug (corpus): toegevoegde usings buiten namespace of overbodig (evo1, IDE0065/IDE0005) |
 | `claude/tasks/archief/TAAK-130-mediatr-cross-file-marker-volgorde.md` | ✅ TAAK-130 — MediatR: handler via marker-interface in ander bestand wordt gemist (bestandsvolgorde) |
 | `claude/tasks/TAAK-131-mediatr-namespace-schaduw.md` | TAAK-131 — MediatR: `using Mediator;` binnen een namespace wordt overschaduwd door eigen `*.Mediator`-namespace |
 | `claude/tasks/TAAK-132-mediatr-abstracte-generieke-basis.md` | TAAK-132 — MediatR: abstracte generieke basisklasse onterecht Manual ("generic messages") |

@@ -21,6 +21,11 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EqualSequencePattern.c
 | REQ-5 | Gehaald | `not-equal`, `dictionary`, `predicate`, `because-args`, `assertion-scope`, `and` |
 | REQ-6 | Gehaald | `AndChain/equal-length-approximately` |
 
+## Aanvulling TAAK-113
+
+Een collection expression als enig argument (`Equal(["a", "b"])`) is de reeks zelf, geen params-element: →
+`ShouldBe(new string[] { "a", "b" })`. Met een spread-element → Manual. Proofs: `collection-expression.*`, `collection-expression-spread.*`.
+
 ## Deviations
 
 | # | Area | Plan says | Code does | Impact |

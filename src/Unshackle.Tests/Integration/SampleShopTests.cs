@@ -272,6 +272,46 @@ public class SampleShopTests
         store.Warnings.ShouldContain(w => w.Contains("Gone.csproj", StringComparison.Ordinal), string.Join(" | ", store.Warnings));
     }
 
+    // Bogus (TAAK-112): a build project the solution restore skips resolves not even System (simulated here without framework
+    // references). With nothing depending on it, it is left out with a warning; the other projects still load.
+    [Fact]
+    public async Task Load_LeafProjectWithoutSystemNextToRestoredOne_LeavesItOutWithWarning()
+    {
+        // Arrange
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using var directory = new TempDirectory();
+        string solution = Path.Combine(directory.Path, "Mixed.slnx");
+        foreach ((string name, string property) in new[] { ("App", ""), ("Builder", "<DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>") })
+        {
+            Directory.CreateDirectory(Path.Combine(directory.Path, name));
+            await File.WriteAllTextAsync(Path.Combine(directory.Path, name, name + ".csproj"), $"""
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>net10.0</TargetFramework>
+                    {property}
+                  </PropertyGroup>
+                </Project>
+                """, cancellationToken);
+            await File.WriteAllTextAsync(Path.Combine(directory.Path, name, "T.cs"), "using System; class T { }", cancellationToken);
+            await DotnetAsync(cancellationToken, "restore", Path.Combine(directory.Path, name, name + ".csproj"));
+        }
+
+        await File.WriteAllTextAsync(solution, """
+            <Solution>
+              <Project Path="App/App.csproj" />
+              <Project Path="Builder/Builder.csproj" />
+            </Solution>
+            """, cancellationToken);
+        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem());
+
+        // Act
+        Microsoft.CodeAnalysis.Solution loaded = await store.LoadAsync(solution, cancellationToken);
+
+        // Assert
+        loaded.Projects.ShouldHaveSingleItem().Name.ShouldBe("App", string.Join(" | ", store.Warnings));
+        store.Warnings.ShouldContain(w => w.StartsWith("Builder:", StringComparison.Ordinal), string.Join(" | ", store.Warnings));
+    }
+
     // MSBuild loads a multi-target project once per target framework; every finding and file still counts once.
     [Fact]
     public async Task ScanFix_MultiTargetProject_ReportsAndWritesEachFileOnce()

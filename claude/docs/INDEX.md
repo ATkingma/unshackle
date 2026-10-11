@@ -82,6 +82,10 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-100-fa-assertion-scope-satisfy.md` | ✅ AssertionScope → `ShouldSatisfyAllConditions` |
 | `claude/tasks/archief/TAAK-101-fa-direct-mappings.md` | ✅ Kleine mappings |
 | `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` | Frequentietabel MediatR/AutoMapper-API's uit 9 open-source projecten, dekking door patronen |
+| `claude/tasks/TAAK-110-unrecognized-should-keeps-using.md` | Bug (corpus): niet-herkende `.Should()` → using toch weg (CSFE, CS1061) |
+| `claude/tasks/TAAK-111-project-file-not-editable-blocks-rewrite.md` | Bug (corpus): csproj niet aanpasbaar (BOM?) → code wel herschreven, Shouldly ontbreekt (Polly, Ardalis.Result) |
+| `claude/tasks/TAAK-112-bogus-load-builder-project.md` | Bug (corpus): Bogus laadt niet (NU1701-vorm, Builder 'System') |
+| `claude/tasks/TAAK-113-equal-sequence-collection-expression.md` | Bug (corpus): `Equal([..])` → `new T[] { [..] }` (PowerApps, CS0029) |
 | `claude/tasks/patroon-queue.md` | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status (ronde 2: rijen 15-34) |
 | `claude/tasks/mediatr-queue.md` | Wachtrij MediatR → Mediator-patronen; infrastructuur in TAAK-020 |
 | `claude/tasks/automapper-queue.md` | Wachtrij AutoMapper → handgeschreven mapping (voorstel, op frequentie) |

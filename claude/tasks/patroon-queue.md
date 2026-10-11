@@ -63,3 +63,13 @@ Alle Shouldly-doelen gecontroleerd in `Shouldly.dll` 4.3.0. Prio: H = in bijna e
 - `docs/projectinfo/architectuur/corpus.md` — frequentie per FA-API in 14 open-source projecten (bron van de prioriteiten)
 - `claude/docs/patroon-loop.md` — hoe de loop en de agents werken
 - `docs/projectinfo/project.md` sectie "Voorbeelden van herschrijvingen"
+
+
+## Bugs uit corpus-run (2026-10-11) — eerst, vóór nieuwe patronen
+
+| Taak | Bug | Gevonden in | Status |
+| --- | --- | --- | --- |
+| TAAK-110 | Niet-herkende `.Should()` → `using FluentAssertions` toch verwijderd | CSharpFunctionalExtensions | open |
+| TAAK-111 | Projectbestand niet aanpasbaar → code toch herschreven | Polly, Ardalis.Result | open |
+| TAAK-112 | Bogus laadt niet | Bogus | open |
+| TAAK-113 | `Equal([..])` collection expression | PowerApps-Tooling | open |

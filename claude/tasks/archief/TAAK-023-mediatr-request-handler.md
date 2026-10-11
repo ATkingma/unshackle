@@ -1,6 +1,6 @@
 # TAAK-023 — mediatr.request-handler
 
-**Status**: geblokkeerd (wacht op infrastructuur: namespace-swap voor gelijknamige typen)
+**Status**: ✅ voltooid
 **Aangemaakt**: 2026-10-11
 **Doel**: `IRequestHandler<TReq,TRes>` met `Task<TRes> Handle(...)` (MediatR 12.5.0) → `ValueTask<TRes> Handle(...)` (Mediator 3.0.2).
 
@@ -63,8 +63,15 @@ Een pattern kan dit niet oplossen zonder contract- of Fixer-wijziging (verboden 
 
 - [x] 1. Claim rij 1.
 - [x] 2. Onderzoek API in echte assemblies, voorbeelden in samples.
-- [!] 3. Plan + bouw + proofs — geblokkeerd, zie **Blokkade**.
-- [ ] 4. Na infrastructuurtaak: pattern `RequestHandlerPattern`, proofs (async, FromResult, expression-body, Manual), plan/modellen/verify, README-rij.
+- [x] 3. Blokkade opgelost door TAAK-024 (`MediatRFix.SwappedTypes`).
+- [x] 4. Pattern `RequestHandlerPattern`, proofs (`async`, `from-result-expression`, `from-result-block`, `generic`, `token-name`; Manual: `other-return`, `explicit`), plan/modellen/verify, README-rij.
+
+## Resultaat
+
+- `ProofTests` geeft de fix-substitute nu `SwappedTypes` mee (anders blijft `using MediatR` staan); bij `*.manual.txt` leeg, zodat een manual-proof alleen toetst dat het pattern niets wijzigt (de Fixer swapt de using anders toch).
+- Expliciete interface-implementatie → Manual (keuze: zeldzaam, en de interface-naam in de declaratie moet ook mee).
+- Scan `dotnet run --project src/Unshackle.Interface -- scan samples/SampleShop/SampleShop.slnx --fix mediatr` (na `dotnet restore` van de sample; zonder restore: 0 findings): `mediatr.request-handler` 5 Fixed / 0 Manual (`CountQuery`, `RegisterCustomerCommand`, `GetOrderHandler`, `ListOrdersHandler`, `PlaceOrderHandler`); `project-file` 4 Fixed, 1 Manual (`SampleShop.csproj`: MediatR nog gebruikt door notification-handler/`AddMediatR`, rijen 3 en 5).
+- Checks: `dotnet build` 0 warnings, `dotnet test` 318/318, sample-tests 38/38, hook groen.
 
 ## Zie ook
 

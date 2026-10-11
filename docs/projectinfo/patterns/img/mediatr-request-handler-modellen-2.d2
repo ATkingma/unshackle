@@ -1,0 +1,15 @@
+title: "[Sequence] RequestHandlerPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: RequestHandlerPattern
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> model: "GetDeclaredSymbol(type)"
+pattern -> model: "FindImplementationForInterfaceMember(Handle)"
+pattern -> fixer: "MethodDeclarationSyntax Handle" {style.stroke-dash: 3}
+fixer -> pattern: "Rewrite(node, model)"
+pattern -> pattern: "ToValueTask(ReturnType)"
+pattern -> pattern: "ReturnedExpressions(method)"
+pattern -> model: "GetSymbolInfo (IsTaskFromResult)"
+pattern -> fixer: "Fixed(method, System.Threading.Tasks) of Manual(reden)" {style.stroke-dash: 3}
+fixer -> fixer: "UsingDirectives.UpdateAsync (SwappedTypes)"

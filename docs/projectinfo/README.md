@@ -13,7 +13,7 @@ documenten, en elk patroon heeft een eigen plan en verificatie (KingmaDoc) in `p
 | [architectuur/testen.md](architectuur/testen.md)         | Proofs, types zonder te builden, mocking, samples                    |
 | [architectuur/rapportage.md](architectuur/rapportage.md) | Rapportformaten (nog niet gebouwd)                                   |
 | [beslissingen.md](beslissingen.md)                       | Codestijl en wat nog beslist moet worden                             |
-| [features/](features/end-to-end-keten-plan.md)           | KingmaDoc plan + verify per feature (niet-patroon), bv. [end-to-end-keten](features/end-to-end-keten-plan.md) ([verify](features/end-to-end-keten-verify.md)), [projectbestanden-migreren](features/projectbestanden-migreren-plan.md) ([verify](features/projectbestanden-migreren-verify.md)), [mediatr-fix](features/mediatr-fix-plan.md) ([verify](features/mediatr-fix-verify.md)) |
+| [features/](features/end-to-end-keten-plan.md)           | KingmaDoc plan + verify per feature (niet-patroon), bv. [end-to-end-keten](features/end-to-end-keten-plan.md) ([verify](features/end-to-end-keten-verify.md)), [projectbestanden-migreren](features/projectbestanden-migreren-plan.md) ([verify](features/projectbestanden-migreren-verify.md)), [mediatr-fix](features/mediatr-fix-plan.md) ([verify](features/mediatr-fix-verify.md)), [gelijknamige-typen-swap](features/gelijknamige-typen-swap-plan.md) ([verify](features/gelijknamige-typen-swap-verify.md)) |
 
 ## C4 Context
 

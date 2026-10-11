@@ -37,6 +37,7 @@ public class Fixer : IFixer
             ?? throw new ArgumentException($"Unknown fix '{request.FixId}'.", nameof(request));
 
         var findings = new List<Finding>();
+        HashSet<string> swappedTypes = [.. fix.SwappedTypes];
         // A multi-target project is loaded once per target framework: the same file is fixed and reported once,
         // and its copies in the other projects get the fixed text.
         List<IGrouping<string, DocumentId>> files =
@@ -66,11 +67,13 @@ public class Fixer : IFixer
                 }
             }
 
-            if (changed)
+            // A file that only uses swapped types needs no pattern, just the using swap.
+            if (changed || (swappedTypes.Count > 0
+                && await UsingDirectives.HasUnusedRemovedUsingAsync(solution.GetDocument(documentId)!, fix.RemovedNamespaces, swappedTypes, cancellationToken)))
             {
                 requiredNamespaces.UnionWith(fix.AddedNamespaces);
                 Document document = solution.GetDocument(documentId)!;
-                solution = await UsingDirectives.UpdateAsync(document, requiredNamespaces, fix.RemovedNamespaces, cancellationToken);
+                solution = await UsingDirectives.UpdateAsync(document, requiredNamespaces, fix.RemovedNamespaces, swappedTypes, cancellationToken);
                 SourceText text = await solution.GetDocument(documentId)!.GetTextAsync(cancellationToken);
                 foreach (DocumentId copy in file.Skip(1))
                 {
@@ -80,7 +83,7 @@ public class Fixer : IFixer
         }
 
         IReadOnlyList<ProjectFileChange> projectFileChanges = _projectFiles is not null && fix.Package is PackageMigration package
-            ? await MigrateProjectFilesAsync(_projectFiles, solution, fix, package, findings, cancellationToken)
+            ? await MigrateProjectFilesAsync(_projectFiles, solution, fix, package, swappedTypes, findings, cancellationToken)
             : [];
         return new FixReport { Solution = solution, Findings = findings, ProjectFileChanges = projectFileChanges };
     }
@@ -91,10 +94,11 @@ public class Fixer : IFixer
         Solution solution,
         IFix fix,
         PackageMigration package,
+        HashSet<string> swappedTypes,
         List<Finding> findings,
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<ProjectMigration> migrations = await ProjectPackages.PlanAsync(solution, fix, package, cancellationToken);
+        IReadOnlyList<ProjectMigration> migrations = await ProjectPackages.PlanAsync(solution, fix, package, swappedTypes, cancellationToken);
         if (migrations.Count == 0)
         {
             return [];

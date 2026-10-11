@@ -23,10 +23,13 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`, registra
 | Uitbreiding TAAK-060 | Gehaald | `publisher`, `edge-publisher-qualified` |
 | Uitbreiding TAAK-061/062 | Gehaald | `processors`, `empty` |
 | Uitbreiding TAAK-144 | Gehaald | `edge-assemblies-public`, `AddMediatRPatternTests` |
+| Uitbreiding TAAK-147 | Gehaald | `edge-assemblies-friend`, `AddMediatRPatternTests`, `SwappedTypesTests` |
 
 TAAK-117: een parameter die alleen naar een weggevallen `RegisterServicesFrom...` ging (IDE0060) blijft staan. TAAK-141: is de aanroep een los statement, dan komt er `_ = parameter;` vóór (geen IDE0060, signatuur en aanroepers ongewijzigd; proof `edge-assemblies`, evo1 bouwt weer). Anders `Fixed` met een waarschuwing in het rapport (`AddMediatRPatternTests`).
 
 TAAK-144: is die methode publiek (evo2's gedeelde `MediatorModule.AddMediator(services, assembly)`), of scant de aanroep een ander project met een internal handler, dan Manual; proof `edge-assemblies` is daarom nu `internal`. Daarnaast krijgt een eigen type dat zo heet als een Mediator-type (`ICommand`) de volledige naam waar `using Mediator;` binnenkomt (`IFix.AddedTypes`, proof `RequestHandler/edge-own-command-name`). Harnas: evo2 `ok` (Manual, ongewijzigd, 39/39), evo1 `ok` (45/45).
+
+TAAK-147: een `internal` methode in een assembly met `InternalsVisibleTo` (behalve `DynamicProxyGenAssembly2`) telt ook als aanroepbaar van buiten → Manual (proof `edge-assemblies-friend`). `Mediator.SourceGenerator` komt alleen in projecten waarvan de originele code de echte MediatR-`AddMediatR` aanroept (semantisch, niet meer op naam; een eigen `AddMediator` telt niet). Een geswapte `global using Mediator;` kwalificeert eigen typen met een Mediator-naam in elk bestand van het project (proof `RequestHandler/edge-own-command-name-global`).
 
 Regressie-edges bij REQ-1/REQ-2: `edge-assemblies` (`RegisterServicesFromAssemblies`), `edge-service-type-behavior` (`AddBehavior(typeof(IPipelineBehavior<,>), typeof(X<,>))`).
 
@@ -53,7 +56,7 @@ Geen.
 
 TAAK-060: `cfg.NotificationPublisher = new TaskWhenAllPublisher()` / `new ForeachAwaitPublisher()` (ook MediatR-gekwalificeerd) → `cfg.NotificationPublisherType = typeof(global::Mediator.X)` (Mediator 3.0.2: `Mediator.TaskWhenAllPublisher`, `Mediator.ForeachAwaitPublisher`, `MediatorOptions.NotificationPublisherType`). `global::` bindt tijdens de fix niet aan MediatR, dus `using MediatR.NotificationPublishers;` (nu in `RemovedNamespaces`) verdwijnt. Blijft één removed using staan (bv. AddMediatR Manual), dan blijven ze allemaal (`UsingDirectives.UsedRemovedNamespaces`): geen CS0104/CS0029. Proofs `publisher` (was manual) en `edge-publisher-qualified`. Eigen publisher blijft Manual (`mediatr.unsupported`).
 
-TAAK-063: `Mediator.SourceGenerator` alleen in projecten die `AddMediator`/`AddMediatR` aanroepen (`AddedPackage.OnlyWithCallTo`, syntactisch in `ProjectPackages`), met `PrivateAssets="all"` zodat hij niet transitief naar testprojecten stroomt (dat gaf de CS0436).
+TAAK-063: `Mediator.SourceGenerator` alleen in projecten die `AddMediator`/`AddMediatR` aanroepen (`AddedPackage.OnlyWithCallTo`, syntactisch in `ProjectPackages`; sinds TAAK-147 semantisch, alleen MediatR's `AddMediatR`), met `PrivateAssets="all"` zodat hij niet transitief naar testprojecten stroomt (dat gaf de CS0436).
 
 End-to-end (`fix --fix mediatr` op een kopie van SampleShop, na restore): 20 Fixed, 8 Manual; build zonder CS0436 (alleen MSG0003/MSG0005 van de generieke `CountQuery`). Manual: pre/post-processor, exception-handler, stream-behavior (TAAK-061/062), generieke `CountQuery`, en daardoor `AddMediatR` (`AddOpenStreamBehavior`). Omdat de registratie MediatR blijft, falen 28/38 sample-tests bij het opstarten (`LoggingBehavior`2 must implement MediatR.IPipelineBehavior`2`); dat lost zich op met TAAK-061/062.
 

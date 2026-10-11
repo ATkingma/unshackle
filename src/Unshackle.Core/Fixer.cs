@@ -203,7 +203,7 @@ public class Fixer : IFixer
         List<Finding> findings,
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<ProjectMigration> migrations = await ProjectPackages.PlanAsync(solution, fix, package, swappedTypes, cancellationToken);
+        IReadOnlyList<ProjectMigration> migrations = await ProjectPackages.PlanAsync(original, solution, fix, package, swappedTypes, cancellationToken);
         if (migrations.Count == 0)
         {
             return (solution, []);
@@ -264,6 +264,12 @@ public class Fixer : IFixer
             foreach (Document document in project.SelectMany(id => solution.GetProject(id)!.Documents))
             {
                 keep = keep || await UsingDirectives.MayUseRemovedNamespaceAsync(document, fix.RemovedNamespaces, swappedTypes, cancellationToken);
+            }
+
+            foreach (DocumentId documentId in project.SelectMany(id => solution.GetProject(id)!.DocumentIds).ToList())
+            {
+                solution = await UsingDirectives.QualifyClashingAsync(
+                    solution.GetDocument(documentId)!, fix.AddedNamespaces, fix.RemovedNamespaces, fix.AddedTypes, cancellationToken);
             }
 
             HashSet<string> reported = new(StringComparer.Ordinal);

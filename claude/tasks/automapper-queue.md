@@ -1,7 +1,6 @@
 # Patroon-wachtrij (AutoMapper ≤14 → handgeschreven mapping)
 
-**Open vraag**: `docs/projectinfo/project.md` noemt als doel _handgeschreven mapping_ (`CreateMap` met `ForMember` → `ToDto()`-extensiemethode),
-maar ook Mapperly als vervanger in de tabel. Deze wachtrij gaat uit van handgeschreven mapping; bevestigen vóór rij 0.
+**Besluit (2026-10-11, gebruiker)**: handgeschreven mapping (`ToDto()`-extensiemethoden), geen Mapperly.
 
 Rij 0 en 1 klaar (TAAK-146): handgeschreven mapping gekozen. Zelfde werkwijze als `claude/tasks/mediatr-queue.md`; rij 0 krijgt bij claimen een TAAK-nummer.
 Volgorde op frequentie in `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` (corpus klein, vooral nopCommerce).

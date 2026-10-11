@@ -99,6 +99,24 @@ public class FixerProjectFileTests
     }
 
     [Fact]
+    public async Task FixAsync_SharedFileKeptForUnloadedProject_ReportsManual()
+    {
+        // Arrange
+        var kept = new ProjectFileChange { FilePath = "/repo/Directory.Packages.props", OldText = "a", NewText = "b", KeptRemovedPackageFor = "/repo/Other/Other.csproj" };
+        _projectFiles.EditAsync(Arg.Any<IEnumerable<ProjectMigration>>(), Arg.Any<CancellationToken>()).Returns([_change, kept]);
+        var fixer = new Fixer([CreateFix(s_package)], _projectFiles);
+
+        // Act
+        FixReport report = await FixAsync(fixer, NoFluentAssertions, TestReferences.FluentAssertions);
+
+        // Assert
+        report.ProjectFileChanges.ShouldBe([_change, kept]);
+        report.Findings.Single(f => f.FilePath == ProjectPath).Result.ShouldBeOfType<FixedResult>();
+        ManualResult manual = report.Findings.Single(f => f.FilePath == kept.FilePath).Result.ShouldBeOfType<ManualResult>();
+        manual.Reason.ShouldContain("/repo/Other/Other.csproj is not migrated but still uses FluentAssertions");
+    }
+
+    [Fact]
     public async Task FixAsync_EditThrows_ReportsManualInsteadOfFailing()
     {
         // Arrange

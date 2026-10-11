@@ -126,6 +126,10 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
 - Veiligheidsregel (TAAK-111): faalt `EditAsync` toch, dan zet de Fixer alle `.cs`-bestanden van de betrokken projecten terug
   naar de originele tekst en worden hun Fixed-findings Manual ("Not rewritten: Could not edit the project files: …"). Nooit
   herschreven code zonder het nieuwe pakket.
+- Niet-gemigreerde projecten op schijf (TAAK-118): een gedeeld `Directory.Build.props`/`Directory.Packages.props` verliest het
+  oude pakket alleen als geen `.csproj` onder zijn map (met dit bestand als dichtstbijzijnde) het nog via `PackageReference`
+  gebruikt, ook een project dat bij het laden is overgeslagen (TAAK-112/135). Anders blijft de regel, komt het nieuwe pakket
+  ernaast en zet `XmlProjectFileStore` `ProjectFileChange.KeptRemovedPackageFor`; de Fixer meldt dat bestand Manual.
 
 ## Gelijknamige typen (TAAK-024)
 

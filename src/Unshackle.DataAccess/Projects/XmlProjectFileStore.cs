@@ -40,8 +40,10 @@ public class XmlProjectFileStore : IProjectFileStore
         List<(ProjectMigration Migration, string? BuildProps, string? PackagesProps)> projects =
             [.. migrations.Select(m => (m, FindUp(m.ProjectPath, BuildProps), FindUp(m.ProjectPath, PackagesProps)))];
 
-        // A shared file keeps the removed package as soon as one project that uses the file keeps it.
-        bool Keeps(string path) => projects.Any(p => p.Migration.KeepRemovedPackage
+        // A shared file keeps the removed package as soon as one project that uses the file keeps it, also a project on disk
+        // that was not loaded (TAAK-118).
+        Dictionary<string, string> keptForUnloaded = UnloadedUsers(projects);
+        bool Keeps(string path) => keptForUnloaded.ContainsKey(_fileSystem.Path.GetFullPath(path)) || projects.Any(p => p.Migration.KeepRemovedPackage
             && (SamePath(p.Migration.ProjectPath, path) || SamePath(p.BuildProps, path) || SamePath(p.PackagesProps, path)));
 
         var files = new Dictionary<string, ProjectFile>(s_pathComparer);
@@ -85,7 +87,57 @@ public class XmlProjectFileStore : IProjectFileStore
             }
         }
 
-        return [.. files.Values.Select(f => f.ToChange()).Where(c => c.NewText != c.OldText)];
+        return
+        [
+            .. files.Values.Select(f => f.ToChange()).Where(c => c.NewText != c.OldText).Select(c => keptForUnloaded.TryGetValue(c.FilePath, out string? project)
+                ? new ProjectFileChange { FilePath = c.FilePath, OldText = c.OldText, NewText = c.NewText, KeptRemovedPackageFor = project }
+                : c),
+        ];
+    }
+
+    // Shared file (full path) -> a .csproj on disk under it that is not migrated but still references a removed package,
+    // in its own file or through that shared Directory.Build.props. A file it cannot read counts as a user.
+    private Dictionary<string, string> UnloadedUsers(List<(ProjectMigration Migration, string? BuildProps, string? PackagesProps)> projects)
+    {
+        var users = new Dictionary<string, string>(s_pathComparer);
+        HashSet<string> migrated = new(projects.Select(p => _fileSystem.Path.GetFullPath(p.Migration.ProjectPath)), s_pathComparer);
+        HashSet<string> removed = new(projects.SelectMany(p => p.Migration.Package.AlsoRemovedPackages.Prepend(p.Migration.Package.RemovedPackage)), StringComparer.OrdinalIgnoreCase);
+        IEnumerable<(string Shared, string Name)> shared = projects.SelectMany(p => new[] { (p.BuildProps, BuildProps), (p.PackagesProps, PackagesProps) })
+            .Where(s => s.Item1 is not null).Select(s => (_fileSystem.Path.GetFullPath(s.Item1!), s.Item2)).Distinct();
+        foreach ((string sharedPath, string name) in shared)
+        {
+            foreach (string project in _fileSystem.Directory.EnumerateFiles(_fileSystem.Path.GetDirectoryName(sharedPath)!, "*.csproj", SearchOption.AllDirectories))
+            {
+                string full = _fileSystem.Path.GetFullPath(project);
+                // A nearer Directory.*.props of the same name hides this one from the project.
+                if (migrated.Contains(full) || !SamePath(FindUp(full, name), sharedPath))
+                {
+                    continue;
+                }
+
+                string? buildProps = FindUp(full, BuildProps);
+                if (References(full, removed) || (buildProps is not null && References(buildProps, removed)))
+                {
+                    users.TryAdd(sharedPath, full);
+                    break;
+                }
+            }
+        }
+
+        return users;
+    }
+
+    private bool References(string path, HashSet<string> packages)
+    {
+        try
+        {
+            return XDocument.Parse(_fileSystem.File.ReadAllText(path)).Descendants()
+                .Any(e => e.Name.LocalName == PackageReference && packages.Contains((string?)e.Attribute(Include) ?? string.Empty));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException)
+        {
+            return true;
+        }
     }
 
     public async Task SaveAsync(IEnumerable<ProjectFileChange> changes, CancellationToken cancellationToken)

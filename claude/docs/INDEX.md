@@ -63,6 +63,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-028-mediatr-add-mediatr.md` | ✅ `AddMediatR(cfg => ...)` → `AddMediator(cfg => ...)`; patroon `mediatr.add-mediatr` |
 | `claude/tasks/archief/TAAK-045-flaky-integratietest.md` | ✅ Integratietest: kind-`dotnet` geïsoleerd (geen node reuse, geen gelekte MSBuild-env) |
 | `claude/tasks/archief/TAAK-047-fa-withmessage-line-endings.md` | ✅ `WithMessage` met regeleinde: `IgnoreLineEndings` of Manual |
+| `claude/tasks/archief/TAAK-048-fa-throw-aggregate-exception.md` | ✅ `Throw`/`ThrowAsync`: actie met `Wait`/`.Result`/`Parallel.*` → Manual (AggregateException) |
 | `claude/tasks/archief/TAAK-049-fa-equivalent-runtime-type.md` | ✅ `BeEquivalentTo` object: waarschuwing bij niet-sealed types (runtime-type) |
 | `claude/tasks/TAAK-080-mediatr-marker-interface-handler.md` | Bug: handler via eigen marker-interface (`ICommandHandler<T> : IRequestHandler<T>`) niet gevonden |
 | `claude/tasks/TAAK-081-mediatr-behavior-request-constraint.md` | Bug: behavior met `IRequest<TResponse>`-constraint krijgt overbodig `IMessage` |

@@ -35,6 +35,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowPattern.cs`; regi
 | 1 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because`; gedocumenteerd verschil | Low |
 | 2 | Behaviour | `WithMessage` gelijk aan FA | Het patroon wordt als string-literal opnieuw opgebouwd (verbatim/raw-opmaak gaat verloren) | Low |
 | 3 | Behaviour | `WithMessage` gelijk aan FA | FA negeert `\r\n` vs `\n`. Exacte melding met regeleinde → `ShouldBe(.., IgnoreCase \| IgnoreLineEndings)`; `*`-vorm met regeleinde → Manual (Shouldly's ShouldContain/StartWith/EndWith kennen geen regeleinde-optie). Probe FA 7.2.2/Shouldly 4.3.0 (TAAK-047, `message-line-break.*`, `message-contains-line-break.*`) | Low |
+| 4 | Behaviour | `Throw<T>` gelijk aan FA | FA pakt `AggregateException` uit, Shouldly niet. Heuristiek: blokkeert de te volgen actie (lambda, lokale delegate-variabele, method group) op `Task.Wait`/`WaitAll`/`.Result` of roept `Parallel.For/ForEach/Invoke` aan, en accepteert `T` geen `AggregateException` → Manual. Niet te volgen acties (parameter, veld) en indirecte aanroepen worden gewoon omgezet. `GetAwaiter().GetResult()` en `WaitAny` wikkelen niet in en blijven Fixed. Probe FA 7.2.2/Shouldly 4.3.0 (TAAK-048, `aggregate-*.*`) | Medium |
 
 ## Validation results
 

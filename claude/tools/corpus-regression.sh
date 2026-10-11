@@ -8,7 +8,8 @@
 # Env: OUT (results, default $PWD/corpus-regression-out), TOOL (published unshackle.dll; default: publish this repo
 # once into $OUT/tool), JOBS, TEST_TIMEOUT (s per test run, default 3600).
 # Source must be an untouched original (corpus dir or tarball); a fresh copy is made on every run.
-# Steps: copy -> global.json SDK 10 (VSTest) -> restore -> build -> test x2 (flaky) -> fix -> clean bin/obj ->
+# Steps: copy -> global.json SDK 10 (VSTest; MTP + --report-trx if the source uses MTP) -> restore -> build ->
+# test x2 (flaky) -> fix -> clean bin/obj ->
 # restore -> build (fails: STOP, no tests on old binaries) -> test -> compare.
 set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -34,8 +35,11 @@ one() {
   local D=$OUT/$N W=$OUT/$N/work L=$OUT/$N/logs T0=$(date +%s)
   rm -rf "$D"; mkdir -p "$W" "$L"
   if [[ $SRC == *.tgz ]]; then tar -xzf "$SRC" -C "$W" --strip-components=1; else cp -r "$SRC/." "$W"; fi
-  $PY globaljson "$W"
+  local RUNNER; RUNNER=$($PY globaljson "$W")
   cd "$W" || return
+  local TEST=(dotnet test "$SLN" --no-build --logger trx --results-directory)
+  # shortcut: MTP mode takes --solution only, a .csproj target needs --project
+  [ "$RUNNER" = mtp ] && TEST=(dotnet test --solution "$SLN" --no-build --report-trx --results-directory)
   status() { echo "$1" > "$D/status.txt"; echo "$(( $(date +%s)-T0 ))s" > "$D/duration.txt"; }
   step() { local s=$1; shift; local t=$(date +%s); timeout "$TO" nice "$@" > "$L/$s.log" 2>&1; local e=$?
            echo "$s exit=$e t=$(( $(date +%s)-t ))s" >> "$D/steps.txt"; return $e; }
@@ -43,8 +47,8 @@ one() {
   step restore0 dotnet restore "$SLN" $P || { status "restore-faalt"; return; }
   step build0 dotnet build "$SLN" $P --no-restore || { status "baseline-build-faalt"; return; }
   TO=$TEST_TIMEOUT
-  step test0a dotnet test "$SLN" --no-build --logger trx --results-directory "$D/trx-base1"
-  step test0b dotnet test "$SLN" --no-build --logger trx --results-directory "$D/trx-base2"
+  step test0a "${TEST[@]}" "$D/trx-base1"
+  step test0b "${TEST[@]}" "$D/trx-base2"
   TO=1800
   step fix dotnet "$TOOL" fix "$SLN" --fix "$FIX" --force --report "$D/report.json" || { status "fix-faalt"; return; }
   find . -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +
@@ -53,7 +57,7 @@ one() {
     grep -oE 'error [A-Z]+[0-9]+' "$L/build1.log" | sort | uniq -c | sort -rn > "$D/build1-errors.txt"
     status "BUILD-NA-FIX-FAALT"; return; }
   TO=$TEST_TIMEOUT
-  step test1 dotnet test "$SLN" --no-build --logger trx --results-directory "$D/trx-after"
+  step test1 "${TEST[@]}" "$D/trx-after"
   $PY compare "$N" "$D/trx-base1" "$D/trx-base2" "$D/trx-after" "$D/compare.json"
   status "ok"
 }

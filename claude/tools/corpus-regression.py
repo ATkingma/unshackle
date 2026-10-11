@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Helper for corpus-regression.sh.
 
-  globaljson <dir>                     pin every global.json to SDK 10 (VSTest), add one at the root
+  globaljson <dir>                     pin every global.json to SDK 10, add one at the root; prints the test
+                                       runner: "mtp" (Microsoft.Testing.Platform) or "vstest"
   compare <name> <base1> <base2> <after> <out.json>
                                        compare per-test outcomes of three TRX directories
   summary <out-dir>                    markdown table of all <name>/compare.json files
@@ -12,20 +13,36 @@ from collections import Counter
 
 NS = '{http://microsoft.com/schemas/VisualStudio/TeamTest/2010}'
 SDK = {'version': '10.0.100', 'rollForward': 'latestFeature'}
+MTP = {'runner': 'Microsoft.Testing.Platform'}
+MTP_MARKERS = ('Sdk="MSTest.Sdk', '<UseMicrosoftTestingPlatformRunner>true', '<EnableMSTestRunner>true',
+               '<EnableNUnitRunner>true', '<TestingPlatformDotnetTestSupport>true')
+
+
+def is_mtp(root, jsons):
+    if any(j.get('test', {}).get('runner') == MTP['runner'] for j in jsons):
+        return True
+    files = (f for pat in ('*.csproj', '*.props') for f in root.rglob(pat))
+    return any(m in f.read_text(errors='ignore') for f in files for m in MTP_MARKERS)
 
 
 def globaljson(root):
     root = pathlib.Path(root)
+    found = {}
     for p in root.rglob('global.json'):
         try:
-            j = json.loads(p.read_text(encoding='utf-8-sig'))
+            found[p] = json.loads(p.read_text(encoding='utf-8-sig'))
         except Exception:
-            j = {}
+            found[p] = {}
+    mtp = is_mtp(root, found.values())
+    found.setdefault(root / 'global.json', {})
+    for p, j in found.items():
         j['sdk'] = SDK
-        j.pop('test', None)  # no "runner": MTP -> keep VSTest so --logger trx works
+        if mtp:
+            j['test'] = MTP  # SDK 10 refuses MTP projects under VSTest
+        else:
+            j.pop('test', None)
         p.write_text(json.dumps(j), encoding='utf-8')
-    if not (root / 'global.json').exists():
-        (root / 'global.json').write_text(json.dumps({'sdk': SDK}))
+    print('mtp' if mtp else 'vstest')
 
 
 def load(trx_dir):
@@ -115,6 +132,9 @@ def selftest():
         assert r['fixed'] == [k + 'b'] and r['flaky'] == [k + 'f'], r
         assert r['missing'] == [k + 'm'] and r['new'] == [k + 'n'], r
         assert r['before']['total'] == 6, r
+        (t / 'g1').mkdir(); (t / 'g1' / 'a.csproj').write_text('<Project Sdk="MSTest.Sdk/4.0.2"/>')
+        (t / 'g2').mkdir(); (t / 'g2' / 'a.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"/>')
+        assert is_mtp(t / 'g1', []) and not is_mtp(t / 'g2', []) and is_mtp(t / 'g2', [{'test': MTP}])
     print('selftest ok')
 
 

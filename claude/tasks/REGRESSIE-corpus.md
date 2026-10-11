@@ -16,7 +16,7 @@ Harnas: `claude/tools/corpus-regression.sh` (+ `.py`). Per solution: verse kopie
 | litedb | baseline-build-faalt | | | | | | | | 23s |
 | nuke | ok | 398 (388/3) | 398 (388/3) | 0 | 0 | 0 | 0 | 0 | 112s |
 | polly | ok | 3790 (3790/0) | 3790 (3764/26) | 26 | 0 | 0 | 0 | 0 | 423s |
-| powerapps | ok | 0 (0/0) | 0 (0/0) | 0 | 0 | 0 | 0 | 0 | 54s |
+| powerapps | ok | 1178 (1172/6) | 1178 (1172/6) | 0 | 0 | 0 | 0 | 0 | 530s |
 | smartenum | ok | 1293 (1293/0) | 1293 (1293/0) | 0 | 0 | 0 | 0 | 0 | 104s |
 | steeltoe | fix-faalt | | | | | | | | 829s |
 
@@ -30,6 +30,10 @@ Harnas: `claude/tools/corpus-regression.sh` (+ `.py`). Per solution: verse kopie
 | FluentResults | 4 | Assertion in lambda met `Throw<XunitException>` | **opgelost** in TAAK-070 (na de run gemerged; harnas op FluentResults met de nieuwe tool: 576/576, 0 regressies) |
 | Polly | 26 | Eigen helper `Within(timeSpan, Action)` vangt alleen `AssertionFailedException`/`XunitException` om opnieuw te proberen. Shouldly gooit `ShouldAssertException`, die niet gevangen wordt → geen retry → test faalt | **TAAK-140**, open |
 
+## PowerApps-Tooling via MTP (TAAK-143)
+
+De eerste run gaf 0 tests (harnas dwong VSTest af). Na TAAK-143 detecteert het harnas Microsoft.Testing.Platform en draait `dotnet test --solution … --report-trx`. Herhaald op een verse upstream-tarball (uitvoer `/mnt/dikkeschijf/unshackle-corpus/t143/`): **1178 tests, per test identiek, 0 regressies** (293 Fixed, 103 Manual). De 6 falende tests falen al vóór de fix. Controle VSTest-pad: ardalis 20 (19/1) → identiek. De powerapps-rij hierboven is bijgewerkt met deze run.
+
 ## Niet vergelijkbaar (geen regressie-oordeel mogelijk)
 
 | Solution | Reden | Soort |
@@ -37,14 +41,12 @@ Harnas: `claude/tools/corpus-regression.sh` (+ `.py`). Per solution: verse kopie
 | evo1, evo2 | Build na fix faalt (IDE0060: ongebruikte `assembly`-parameter na `AddMediator`; TAAK-117 geeft alleen waarschuwing) | product: TAAK-117-vervolg |
 | Akka.NET, Steeltoe | Unshackle laadt de solution niet: AOT-/benchmark-/sample-projecten waarvan types niet resolven (302 resp. 502 fouten) | product: loader (TAAK-112/135 dekken dit nog niet) |
 | LiteDB | Baseline-build faalt al (`LiteDB.Fuzz`) | omgeving/project |
-| PowerApps-Tooling | 0 tests: project gebruikt Microsoft.Testing.Platform; het harnas dwingt VSTest af | harnas |
 
 ## Open vervolg (niet gestart, op verzoek gebruiker)
 
 - **TAAK-140** — zie taakbestand.
 - Loader: Akka/Steeltoe laden (projecten met onopgeloste types overslaan als ze geen FA/MediatR gebruiken; regels uit TAAK-112/135 verbreden).
 - evo1/evo2: IDE0060 oplossen in plaats van alleen waarschuwen.
-- Harnas: MTP-testprojecten (PowerApps) ondersteunen (`dotnet test` met MTP + TRX-extensie).
 
 ## Zie ook
 

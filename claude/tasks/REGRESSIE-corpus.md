@@ -28,7 +28,7 @@ Harnas: `claude/tools/corpus-regression.sh` (+ `.py`). Per solution: verse kopie
 | Solution | Regressies | Oorzaak | Status |
 | --- | ---: | --- | --- |
 | FluentResults | 4 | Assertion in lambda met `Throw<XunitException>` | **opgelost** in TAAK-070 (na de run gemerged; harnas op FluentResults met de nieuwe tool: 576/576, 0 regressies) |
-| Polly | 26 | Eigen helper `Within(timeSpan, Action)` vangt alleen `AssertionFailedException`/`XunitException` om opnieuw te proberen. Shouldly gooit `ShouldAssertException`, die niet gevangen wordt → geen retry → test faalt | **TAAK-140**, open |
+| Polly | 26 | Eigen helper `Within(timeSpan, Action)` vangt alleen `AssertionFailedException`/`XunitException` om opnieuw te proberen. Shouldly gooit `ShouldAssertException`, die niet gevangen wordt → geen retry → test faalt | **opgelost** in TAAK-140 (harnas op Polly 7.2.4, ongewijzigde bron van tag `7.2.4` in `src/polly`, tool uit main `d252749`: 3790/3790, 0 regressies; uitvoer `/mnt/dikkeschijf/unshackle-corpus/t140/polly/`) |
 
 ## PowerApps-Tooling via MTP (TAAK-143)
 
@@ -44,7 +44,6 @@ De eerste run gaf 0 tests (harnas dwong VSTest af). Na TAAK-143 detecteert het h
 
 ## Open vervolg (niet gestart, op verzoek gebruiker)
 
-- **TAAK-140** — zie taakbestand.
 - Loader: Akka/Steeltoe laden (projecten met onopgeloste types overslaan als ze geen FA/MediatR gebruiken; regels uit TAAK-112/135 verbreden).
 - evo1/evo2: IDE0060 oplossen in plaats van alleen waarschuwen.
 

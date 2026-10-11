@@ -1,6 +1,6 @@
 # TAAK-140 — Code die FA-/xunit-exceptions vangt breekt na omzetting
 
-**Status**: open
+**Status**: klaar (branch, niet gemerged)
 **Aangemaakt**: 2026-10-11 (regressie-run, `claude/tasks/REGRESSIE-corpus.md`)
 
 ## Context
@@ -15,6 +15,16 @@ Zelfde klasse als TAAK-070 (verwachte assertion-exception), maar nu via een `cat
 3. Alternatief onderzoeken: de catch-plek automatisch uitbreiden met `|| e is Shouldly.ShouldAssertException` (veilig, semantisch gelijk) — voorkeur als bewijsbaar.
 4. Bewijs: harnas op Polly → 0 regressies.
 
+## Verslag (2026-10-11)
+
+- Gekozen voor stap 3 (automatisch uitbreiden): nieuw patroon `fa.catch-assertion-exception` (`CatchAssertionExceptionPattern`). `e is T` → `e is T || e is ShouldAssertException`; `catch (T)` zonder gebruikte variabele → extra `catch (ShouldAssertException)`; gebruikte variabele of is-pattern → Manual. T = `AssertionFailedException` of `XunitException`. Het oude type blijft (Manual-assertions blijven gevangen); idempotent bij tweede run.
+- Proofs `Proofs/FluentAssertions/CatchAssertionException/` (4), unittests `CatchAssertionExceptionPatternTests` (3, waaronder exact de Polly-regel). `ProofTests`: een `after` die een verwijderde namespace houdt compileert tegen oud + nieuw.
+- Docs: `docs/projectinfo/patterns/fa-catch-assertion-exception-{plan,modellen,verify}.md`, rij in README.
+- `dotnet build` 0 warnings, `dotnet test` 700/700, SampleShop 38/38.
+- Stap 4 (harnas Polly) niet gedraaid: in het corpus staat geen ongewijzigde Polly-bron, alleen de omgezette `out/polly/work`.
+
 ## Zie ook
+
+- `docs/projectinfo/patterns/fa-catch-assertion-exception-plan.md`
 
 - `claude/tasks/archief/TAAK-070-fa-assertion-in-throw-lambda.md`

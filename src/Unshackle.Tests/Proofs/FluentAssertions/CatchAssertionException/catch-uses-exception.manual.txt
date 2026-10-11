@@ -1,0 +1,1 @@
+uses the exception: add a catch for Shouldly.ShouldAssertException by hand

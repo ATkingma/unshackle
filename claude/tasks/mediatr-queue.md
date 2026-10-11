@@ -24,13 +24,13 @@ Statussen: `open` · `bezig (TAAK-NNN)` · `geblokkeerd (TAAK-NNN, wacht op TAAK
 | # | Patroon-ID / bug | MediatR 12.x | Mediator (verwacht) | Status |
 | --- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------- |
 | 8 | `mediatr.behavior-di-registration` | `services.AddTransient(typeof(IPipelineBehavior<,>), typeof(X<,>))` buiten `AddMediatR` (jason, ardalis) | Mediator 3 leest behaviors ook uit DI: alleen namespace-swap; eerst meten, anders Manual | open |
-| 9 | bug: handler via eigen marker-interface | `ICommandHandler<T> : IRequestHandler<T>`, `IIntegrationEventHandler<T> : INotificationHandler<T>` (kgrzybek, evolutionary) | `ValueTask Handle` zoals bij directe implementatie | open (TAAK-080) |
-| 10 | bug: behavior met `IRequest<TResponse>`-constraint | `where TRequest : IRequest<TResponse>` (eShop, ardalis) | constraint blijft, geen extra `, IMessage` | open (TAAK-081) |
+| 9 | bug: handler via eigen marker-interface | `ICommandHandler<T> : IRequestHandler<T>`, `IIntegrationEventHandler<T> : INotificationHandler<T>` (kgrzybek, evolutionary) | `ValueTask Handle` zoals bij directe implementatie | klaar (TAAK-080) |
+| 10 | bug: behavior met `IRequest<TResponse>`-constraint | `where TRequest : IRequest<TResponse>` (eShop, ardalis) | constraint blijft, geen extra `, IMessage` | klaar (TAAK-081) |
 
 Interfaces met dezelfde naam (`IRequest<T>`, `INotification`, `ISender`, `IPublisher`, `IMediator`, `Unit`) krijgen geen eigen patroon:
 de namespace-swap van de fix (`MediatR` → `Mediator`) dekt ze via `MediatRFix.SwappedTypes` (TAAK-024).
 
-Vervolg na de end-to-end-run (TAAK-037): TAAK-060 (NotificationPublisher, dubbelzinnige using), TAAK-061 (pre/post/exception-handlers), TAAK-062 (stream-behavior), TAAK-063 (source generator alleen in host-project).
+Vervolg na de end-to-end-run (TAAK-037): TAAK-060 (NotificationPublisher, dubbelzinnige using, klaar), TAAK-061 (pre/post/exception-handlers, open), TAAK-062 (stream-behavior, open), TAAK-063 (source generator alleen in host-project, klaar).
 
 ## Zie ook
 
@@ -39,4 +39,4 @@ Vervolg na de end-to-end-run (TAAK-037): TAAK-060 (NotificationPublisher, dubbel
 - `claude/tasks/patroon-queue.md` — de FA-wachtrij (voorbeeld)
 - `claude/docs/patroon-loop.md`
 - `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` — frequenties uit open-source projecten
-- `claude/tasks/TAAK-080-mediatr-marker-interface-handler.md`, `claude/tasks/TAAK-081-mediatr-behavior-request-constraint.md`
+- `claude/tasks/archief/TAAK-080-mediatr-marker-interface-handler.md`, `claude/tasks/archief/TAAK-081-mediatr-behavior-request-constraint.md`

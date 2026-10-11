@@ -25,7 +25,7 @@ internal static class UsingDirectives
             .Select(u => u.Name!.ToString())];
         List<string> missing = [.. addedNamespaces.Distinct().Where(ns => !imported.Contains(ns)).Order(StringComparer.Ordinal)];
 
-        HashSet<string> used = UsedNamespaces(root, model, swappedTypes, cancellationToken);
+        HashSet<string> used = UsedRemovedNamespaces(root, model, removedNamespaces, swappedTypes, cancellationToken);
         bool keepRemoved = HasInactiveCode(root);
         var usings = new List<UsingDirectiveSyntax>();
         foreach (UsingDirectiveSyntax directive in root.Usings)
@@ -74,7 +74,22 @@ internal static class UsingDirectives
             .Where(u => IsPlainUsing(u) && u.GlobalKeyword.IsKind(SyntaxKind.None))
             .Select(u => u.Name!.ToString())
             .Where(removedNamespaces.Contains)];
-        return candidates.Count > 0 && candidates.Except(UsedNamespaces(root, model, swappedTypes, cancellationToken)).Any();
+        return candidates.Count > 0 && candidates.Except(UsedRemovedNamespaces(root, model, removedNamespaces, swappedTypes, cancellationToken)).Any();
+    }
+
+    // One removed using that stays keeps them all: swapping the others would import a twin of what it brings (e.g. MediatR.NotificationPublishers
+    // still used next to using Mediator: TaskWhenAllPublisher is ambiguous, CS0104).
+    private static HashSet<string> UsedRemovedNamespaces(
+        CompilationUnitSyntax root, SemanticModel model, IEnumerable<string> removedNamespaces, IReadOnlyCollection<string> swappedTypes,
+        CancellationToken cancellationToken)
+    {
+        HashSet<string> used = UsedNamespaces(root, model, swappedTypes, cancellationToken);
+        if (used.Overlaps(removedNamespaces))
+        {
+            used.UnionWith(removedNamespaces);
+        }
+
+        return used;
     }
 
     // Code in an inactive #if branch is only trivia: nothing binds there, so a removed using may still be needed by it.

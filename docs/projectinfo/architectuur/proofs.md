@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 422 proofs (zonder `_Pending`).
+Totaal: 427 proofs (zonder `_Pending`).
 
 ## FluentAssertions
 
@@ -520,37 +520,40 @@ Totaal: 422 proofs (zonder `_Pending`).
 
 ## MediatR
 
-### AddMediatR (9)
+### AddMediatR (10)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `behavior-lifetime` | Manual | `services.AddMediatR(cfg => cfg.AddOpenBehavior(typeof(LoggingBehavior<,>), ServiceLifetime.Singleton));` — reden: cfg.AddOpenBehavior(...) has no direct Mediator equivalent |
 | `behaviors` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<ValidationBehavior>();` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Scoped;` |
 | `edge-assemblies` | Fixed | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` → `services.AddMediator(configuration => configuration.ServiceLifetime = ServiceLifetime.Transient);` |
+| `edge-publisher-qualified` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `edge-service-type-behavior` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `expression` | Fixed | `services.AddMediatR(options => options.RegisterServicesFromAssembly(typeof(Registration).Assembly));` → `services.AddMediator(options => options.ServiceLifetime = ServiceLifetime.Transient);` |
 | `generic-handlers` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `no-lambda` | Manual | `services.AddMediatR(configuration);` — reden: AddMediatR is not called as services.AddMediatR(cfg => ...) |
-| `publisher` | Manual | `services.AddMediatR(cfg =>` — reden: 'cfg.NotificationPublisher = new TaskWhenAllPublisher()' has no direct Mediator equivalent |
+| `publisher` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `unknown-call` | Manual | `services.AddMediatR(cfg =>` — reden: cfg.AddOpenRequestPreProcessor(...) has no direct Mediator equivalent |
 
-### NotificationHandler (6)
+### NotificationHandler (7)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `async` | Fixed | `public async Task Handle(Placed notification, CancellationToken cancellationToken)` → `public async ValueTask Handle(Placed notification, CancellationToken cancellationToken)` |
 | `completed-task` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) return Task.CompletedTask;` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) return ValueTask.CompletedTa…` |
 | `completed-task-expression` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) => Task.CompletedTask;` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) => ValueTask.CompletedTask;` |
+| `edge-marker-interface` | Fixed | `public async Task Handle(OrderPlaced notification, CancellationToken cancellationToken)` → `public async ValueTask Handle(OrderPlaced notification, CancellationToken cancellationToken)` |
 | `explicit` | Manual | `Task INotificationHandler<Placed>.Handle(Placed notification, CancellationToken cancellationToken) => Task.Com…` — reden: explicit interface |
 | `other-return` | Manual | `public Task Handle(Placed notification, CancellationToken cancellationToken) =>` — reden: not Task.CompletedTask |
 | `two-handlers` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) => Task.CompletedTask; public asy…` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) => ValueTask.CompletedTask; …` |
 
-### PipelineBehavior (9)
+### PipelineBehavior (10)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `closed` | Fixed | `public Task<int> Handle(Register command, RequestHandlerDelegate<int> next, CancellationToken token) return Ta…` → `public ValueTask<int> Handle(Register command, MessageHandlerDelegate<Register, int> next, CancellationToken t…` |
 | `edge-notnull-constraint` | Fixed | `where TRequest : notnull public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRespons…` → `where TRequest : notnull, IMessage public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDe…` |
+| `edge-request-constraint` | Fixed | `public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToke…` → `public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest, TResponse> next, C…` |
 | `explicit` | Manual | `Task<TResponse> IPipelineBehavior<TRequest, TResponse>.Handle(TRequest request, RequestHandlerDelegate<TRespon…` — reden: explicit interface implementation |
 | `new-constraint` | Fixed | `where TRequest : class, new() public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRe…` → `where TRequest : class, IMessage, new() public async ValueTask<TResponse> Handle(TRequest request, MessageHand…` |
 | `next-passed` | Manual | `public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken canc…` — reden: Handle returns a Task that is not next() |
@@ -559,11 +562,12 @@ Totaal: 422 proofs (zonder `_Pending`).
 | `no-constraint` | Fixed | `public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken canc…` → `where TRequest : IMessage public ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest…` |
 | `open-async` | Fixed | `where TRequest : notnull public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRespons…` → `where TRequest : notnull, IMessage public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDe…` |
 
-### RequestHandler (9)
+### RequestHandler (10)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `async` | Fixed | `public async Task<int> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<int> Handle(Query request, CancellationToken cancellationToken)` |
+| `edge-marker-interface` | Fixed | `public async Task<int> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<int> Handle(Query request, CancellationToken cancellationToken)` |
 | `edge-nested-generic` | Fixed | `public async Task<Result<List<int>>> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<Result<List<int>>> Handle(Query request, CancellationToken cancellationToken)` |
 | `edge-primary-ctor` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => Task.FromResult(request.Id + cl…` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) => ValueTask.FromResult(reque…` |
 | `explicit` | Manual | `Task<int> IRequestHandler<Query, int>.Handle(Query request, CancellationToken cancellationToken) =>` — reden: explicit interface implementation |
@@ -591,7 +595,7 @@ Totaal: 422 proofs (zonder `_Pending`).
 | `pre-processor` | Manual |  — reden: derive from Mediator.MessagePreProcessor<TMessage, TResponse> |
 | `stream-behavior` | Manual | `public IAsyncEnumerable<TResponse> Handle(TRequest request, StreamHandlerDelegate<TResponse> next, Cancellatio…` — reden: add it to StreamPipelineBehaviors in AddMediator |
 
-### VoidRequestHandler (8)
+### VoidRequestHandler (9)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -600,6 +604,7 @@ Totaal: 422 proofs (zonder `_Pending`).
 | `completed-task` | Fixed | `public Task Handle(Command request, CancellationToken cancellationToken) return Task.CompletedTask;` → `public ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken) return Unit.ValueTask;` |
 | `completed-task-expression` | Fixed | `public Task Handle(Command request, CancellationToken cancellationToken) => Task.CompletedTask;` → `public ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken) => Unit.ValueTask;` |
 | `early-return` | Fixed | `public async Task Handle(Command request, CancellationToken cancellationToken) return;` → `public async ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken) return Unit.Value;` |
+| `edge-marker-interface` | Fixed | `public async Task Handle(Command request, CancellationToken cancellationToken)` → `public async ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken) return Unit.Value;` |
 | `explicit` | Manual | `Task IRequestHandler<Command>.Handle(Command request, CancellationToken cancellationToken) => Task.CompletedTa…` — reden: explicit interface |
 | `other-return` | Manual | `public Task Handle(Command request, CancellationToken cancellationToken) =>` — reden: not Task.CompletedTask |
 | `throw-at-end` | Fixed | `public async Task Handle(Command request, CancellationToken cancellationToken)` → `public async ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken)` |
@@ -613,26 +618,6 @@ Totaal: 422 proofs (zonder `_Pending`).
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `edge-assertion-in-throw-lambda` | Manual | `Action act = () => total.Should().Be(3);` — reden: exception type |
-
-### _Pending / MediatR
-
-#### NotificationHandler (1)
-
-| Proof | Uitkomst | Wat het bewijst |
-| --- | --- | --- |
-| `edge-marker-interface` | Fixed | `public async Task Handle(OrderPlaced notification, CancellationToken cancellationToken)` → `public async ValueTask Handle(OrderPlaced notification, CancellationToken cancellationToken)` |
-
-#### PipelineBehavior (1)
-
-| Proof | Uitkomst | Wat het bewijst |
-| --- | --- | --- |
-| `edge-request-constraint` | Fixed | `public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToke…` → `public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest, TResponse> next, C…` |
-
-#### RequestHandler (1)
-
-| Proof | Uitkomst | Wat het bewijst |
-| --- | --- | --- |
-| `edge-marker-interface` | Fixed | `public async Task<int> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<int> Handle(Query request, CancellationToken cancellationToken)` |
 
 ## Zie ook
 

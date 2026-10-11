@@ -29,7 +29,7 @@ internal static class ProjectPackages
             migrations.Add(new ProjectMigration
             {
                 ProjectPath = project.FilePath!,
-                Package = package,
+                Package = await ForProjectAsync(project, package, cancellationToken),
                 KeepRemovedPackage = await UsesAssemblyAsync(project, removed, fix.RemovedNamespaces, swappedTypes, cancellationToken),
                 RemovedNamespaces = fix.RemovedNamespaces,
                 AddedNamespaces = fix.AddedNamespaces,
@@ -41,6 +41,28 @@ internal static class ProjectPackages
         [
             .. migrations.GroupBy(m => m.ProjectPath, StringComparer.Ordinal).Select(g => g.FirstOrDefault(m => m.KeepRemovedPackage) ?? g.First()),
         ];
+    }
+
+    // The package migration without the added packages this project's code has no call for (AddedPackage.OnlyWithCallTo).
+    private static async Task<PackageMigration> ForProjectAsync(Project project, PackageMigration package, CancellationToken cancellationToken)
+    {
+        var called = new HashSet<string>(StringComparer.Ordinal);
+        foreach (Document document in project.Documents)
+        {
+            SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken);
+            // Syntactic: after the fix the call (AddMediator) does not bind yet, its source generator is not referenced.
+            called.UnionWith(root?.DescendantNodes().OfType<InvocationExpressionSyntax>().Select(i => i.Expression switch
+            {
+                MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText,
+                SimpleNameSyntax name => name.Identifier.ValueText,
+                _ => string.Empty,
+            }) ?? []);
+        }
+
+        List<AddedPackage> added = [.. package.AddedPackages.Where(p => p.OnlyWithCallTo.Count == 0 || p.OnlyWithCallTo.Any(called.Contains))];
+        return added.Count == package.AddedPackages.Count
+            ? package
+            : new PackageMigration { RemovedPackage = package.RemovedPackage, AlsoRemovedPackages = package.AlsoRemovedPackages, AddedPackages = added };
     }
 
     // True when any document binds a name to a type or member of the assemblies, swapped types aside. Using directives do not count:

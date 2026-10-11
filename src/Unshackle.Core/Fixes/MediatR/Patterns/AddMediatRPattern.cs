@@ -45,6 +45,7 @@ public class AddMediatRPattern : IPattern
 
         string lifetime = "ServiceLifetime.Transient"; // MediatR's default; Mediator's is Singleton.
         List<string> behaviors = [];
+        string? publisher = null;
         foreach (ExpressionSyntax setting in settings)
         {
             switch (setting)
@@ -72,6 +73,11 @@ public class AddMediatRPattern : IPattern
                 case AssignmentExpressionSyntax { Left: MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax target, Name.Identifier.ValueText: "RegisterGenericHandlers" } }
                     when target.Identifier.ValueText == config:
                     break;
+                // MediatR's built-in publishers have twins in Mediator, set by type; a publisher of the user's own stays Manual.
+                case AssignmentExpressionSyntax { Left: MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax target, Name.Identifier.ValueText: "NotificationPublisher" }, Right: ObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: 0, Initializer: null } creation }
+                    when target.Identifier.ValueText == config && IsBuiltInPublisher(model.GetTypeInfo(creation).Type, out string? publisherName):
+                    publisher = $"{config}.NotificationPublisherType = typeof(global::Mediator.{publisherName})";
+                    break;
                 default:
                     return PatternResult.Manual($"'{setting}' has no direct Mediator equivalent; configure AddMediator by hand.");
             }
@@ -84,6 +90,11 @@ public class AddMediatRPattern : IPattern
             assignments.Add($"{config}.PipelineBehaviors = [{string.Join(", ", behaviors)}]");
         }
 
+        if (publisher is not null)
+        {
+            assignments.Add(publisher);
+        }
+
         LambdaExpressionSyntax? rewritten = lambda.Block is { } body
             ? lambda.WithBlock(body.WithStatements([.. assignments.Select(a => SyntaxFactory.ParseStatement(a + ";")
                 .WithLeadingTrivia(body.Statements[0].GetLeadingTrivia())
@@ -93,7 +104,7 @@ public class AddMediatRPattern : IPattern
                 : null;
         if (rewritten is null)
         {
-            return PatternResult.Manual("Behaviors in an AddMediatR expression lambda; write AddMediator(cfg => { ... }) by hand.");
+            return PatternResult.Manual("Several settings in an AddMediatR expression lambda; write AddMediator(cfg => { ... }) by hand.");
         }
 
         return PatternResult.Fixed(
@@ -101,6 +112,16 @@ public class AddMediatRPattern : IPattern
                 .WithExpression(member.WithName(SyntaxFactory.IdentifierName("AddMediator").WithTriviaFrom(member.Name)))
                 .WithArgumentList(invocation.ArgumentList.WithArguments([invocation.ArgumentList.Arguments[0].WithExpression(rewritten)])),
             "Microsoft.Extensions.DependencyInjection");
+    }
+
+    // Mediator 3.0.2 has Mediator.TaskWhenAllPublisher and Mediator.ForeachAwaitPublisher; written as global::Mediator.X it does not
+    // bind to MediatR while fixing, so using MediatR.NotificationPublishers counts as unused and goes (no CS0104 next to using Mediator).
+    private static bool IsBuiltInPublisher(ITypeSymbol? type, out string? name)
+    {
+        name = type is { Name: "TaskWhenAllPublisher" or "ForeachAwaitPublisher" } && type.ContainingNamespace.ToDisplayString() == "MediatR.NotificationPublishers"
+            ? type.Name
+            : null;
+        return name is not null;
     }
 
     private static string? ParameterName(LambdaExpressionSyntax lambda) => lambda switch

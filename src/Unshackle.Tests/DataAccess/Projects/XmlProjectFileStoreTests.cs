@@ -61,7 +61,7 @@ public class XmlProjectFileStoreTests
     }
 
     [Fact]
-    public async Task EditAsync_TwoAddedPackagesCentral_SwapsFirstInPlaceAndAddsSecondAfterIt()
+    public async Task EditAsync_TwoAddedPackagesCentral_SwapsFirstInPlaceAndAddsSecondWithPrivateAssetsAfterIt()
     {
         // Arrange
         _fileSystem.AddFile(Project, new MockFileData(CentralProject));
@@ -72,7 +72,7 @@ public class XmlProjectFileStoreTests
             Package = new PackageMigration
             {
                 RemovedPackage = "FluentAssertions",
-                AddedPackages = [new() { Name = "Shouldly", Version = "4.3.0" }, new() { Name = "Extra", Version = "1.0.0" }],
+                AddedPackages = [new() { Name = "Shouldly", Version = "4.3.0" }, new() { Name = "Extra", Version = "1.0.0", PrivateAssets = "all" }],
             },
             KeepRemovedPackage = false,
             RemovedNamespaces = ["FluentAssertions"],
@@ -85,7 +85,7 @@ public class XmlProjectFileStoreTests
         // Assert
         Text(changes, Project).ShouldBe(CentralProject
             .Replace("<PackageReference Include=\"FluentAssertions\" />",
-                "<PackageReference Include=\"Shouldly\" />\n    <PackageReference Include=\"Extra\" />", StringComparison.Ordinal)
+                "<PackageReference Include=\"Shouldly\" />\n    <PackageReference Include=\"Extra\" PrivateAssets=\"all\" />", StringComparison.Ordinal)
             .Replace("<Using Include=\"FluentAssertions\" />", "<Using Include=\"Shouldly\" />", StringComparison.Ordinal));
         Text(changes, PackagesProps).ShouldBe(CentralVersions.Replace(
             "Include=\"FluentAssertions\" Version=\"7.2.2\" />",

@@ -103,6 +103,13 @@ internal static class ThrowMessage
             _ => false,
         };
 
+    // `thrown.ShouldBeOfType<T>()`: Should.Throw<T> also accepts derived types, ThrowExactly<T> does not.
+    public static ExpressionSyntax OfType(ExpressionSyntax thrown, GenericNameSyntax throwName) =>
+        SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            thrown,
+            SyntaxFactory.GenericName(SyntaxFactory.Identifier("ShouldBeOfType"), throwName.TypeArgumentList)));
+
     // Arguments separated by ", ": every argument after the first gets a leading space.
     public static ArgumentListSyntax Arguments(ArgumentSyntax[] first, ArgumentSyntax? because) =>
         SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(

@@ -12,8 +12,12 @@ public class NotThrowPattern : IPattern
 
     public string Description => "act.Should().NotThrow() → Should.NotThrow(act)";
 
+    // Invoking subjects belong to InvokingPattern, which calls Rewrite below.
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        FluentAssertionsSyntax.FindInvocations(root, model, "NotThrow", "NotThrowAfter");
+        Find(root, model, t => !InvokingPattern.IsInvoking(t, model));
+
+    internal static IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model, Func<InvocationExpressionSyntax, bool> owns) =>
+        FluentAssertionsSyntax.FindInvocations(root, model, "NotThrow", "NotThrowAfter").Where(owns);
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
@@ -46,9 +50,17 @@ public class NotThrowPattern : IPattern
             return PatternResult.Manual("The result of NotThrow() is used (.Which/.And or a value); Should.NotThrow is not chained like that.");
         }
 
-        if (FluentAssertionsSyntax.IsFluentAssertions(model.GetSymbolInfo(subject).Symbol))
+        ExpressionSyntax action = subject;
+        if (InvokingPattern.IsInvoking(call, model))
         {
-            return PatternResult.Manual("The subject is built with Invoking(...): pass the delegate to Should.NotThrow by hand.");
+            if (!InvokingPattern.TryGetAction(subject, model, out action, out _, out string reason))
+            {
+                return PatternResult.Manual(reason);
+            }
+        }
+        else if (FluentAssertionsSyntax.IsFluentAssertions(model.GetSymbolInfo(subject).Symbol))
+        {
+            return PatternResult.Manual("The subject is built with FluentAssertions (e.g. FluentActions.Invoking): pass the delegate to Should.NotThrow by hand.");
         }
 
         if (model.GetTypeInfo(subject).Type is not INamedTypeSymbol { TypeKind: TypeKind.Delegate, DelegateInvokeMethod.Parameters.Length: 0 })
@@ -63,8 +75,8 @@ public class NotThrowPattern : IPattern
         }
 
         ArgumentSyntax[] arguments = because is null
-            ? [SyntaxFactory.Argument(subject.WithoutTrivia())]
-            : [SyntaxFactory.Argument(subject.WithoutTrivia()), because.WithLeadingTrivia(SyntaxFactory.Space)];
+            ? [SyntaxFactory.Argument(action.WithoutTrivia())]
+            : [SyntaxFactory.Argument(action.WithoutTrivia()), because.WithLeadingTrivia(SyntaxFactory.Space)];
 
         return PatternResult.Fixed(SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(

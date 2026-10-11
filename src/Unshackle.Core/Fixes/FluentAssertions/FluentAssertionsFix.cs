@@ -31,6 +31,8 @@ public class FluentAssertionsFix : IFix
         new BeEquivalentToStringPattern(),
         new ThrowPattern(),
         new ThrowAsyncPattern(),
+        new ThrowExactlyPattern(),
+        new InvokingPattern(),
         new BeGreaterLessPattern(),
         new NotThrowPattern(),
         new ContainKeyPattern(),

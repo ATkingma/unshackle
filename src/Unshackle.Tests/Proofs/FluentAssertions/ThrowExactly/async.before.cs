@@ -4,7 +4,7 @@ using FluentAssertions;
 
 namespace Proofs;
 
-public class ThrowExactlyCase
+public class AsyncCase
 {
     public async Task Test(Func<Task> act)
     {

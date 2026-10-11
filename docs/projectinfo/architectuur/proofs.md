@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 531 proofs (zonder `_Pending`).
+Totaal: 533 proofs (zonder `_Pending`).
 
 ## AutoMapper
 
@@ -644,13 +644,14 @@ Totaal: 531 proofs (zonder `_Pending`).
 
 ## MediatR
 
-### AddMediatR (13)
+### AddMediatR (14)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `behavior-lifetime` | Manual | `services.AddMediatR(cfg => cfg.AddOpenBehavior(typeof(LoggingBehavior<,>), ServiceLifetime.Singleton));` — reden: cfg.AddOpenBehavior(...) has no direct Mediator equivalent |
 | `behaviors` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<ValidationBehavior>();` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Scoped;` |
 | `edge-assemblies` | Fixed | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` → `_ = handlers; services.AddMediator(configuration => configuration.ServiceLifetime = ServiceLifetime.Transient)…` |
+| `edge-assemblies-friend` | Manual | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` — reden: AddMediatR scans the assembly passed in 'handlers' of an internal method that Proofs.Tests may call |
 | `edge-assemblies-public` | Manual | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` — reden: AddMediatR scans the assembly passed in 'handlers' of a public method |
 | `edge-publisher-qualified` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `edge-service-type-behavior` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
@@ -704,7 +705,7 @@ Totaal: 531 proofs (zonder `_Pending`).
 | `no-constraint` | Fixed | `public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken canc…` → `where TRequest : IMessage public ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest…` |
 | `open-async` | Fixed | `where TRequest : notnull public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRespons…` → `where TRequest : notnull, IMessage public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDe…` |
 
-### RequestHandler (12)
+### RequestHandler (13)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -713,6 +714,7 @@ Totaal: 531 proofs (zonder `_Pending`).
 | `edge-marker-interface` | Fixed | `public async Task<int> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<int> Handle(Query request, CancellationToken cancellationToken)` |
 | `edge-nested-generic` | Fixed | `public async Task<Result<List<int>>> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<Result<List<int>>> Handle(Query request, CancellationToken cancellationToken)` |
 | `edge-own-command-name` | Fixed | `public async Task<int> Handle(Ping request, CancellationToken cancellationToken) public async Task<int> Execut…` → `public async ValueTask<int> Handle(Ping request, CancellationToken cancellationToken) public async Task<int> E…` |
+| `edge-own-command-name-global` | Fixed | `global using MediatR; public async Task<int> Handle(Ping request, CancellationToken cancellationToken)` → `global using Mediator; public async ValueTask<int> Handle(Ping request, CancellationToken cancellationToken)` |
 | `edge-primary-ctor` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => Task.FromResult(request.Id + cl…` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) => ValueTask.FromResult(reque…` |
 | `explicit` | Manual | `Task<int> IRequestHandler<Query, int>.Handle(Query request, CancellationToken cancellationToken) =>` — reden: explicit interface implementation |
 | `from-result-block` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) return Task.FromResult(0);` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) return ValueTask.FromResult(0…` |

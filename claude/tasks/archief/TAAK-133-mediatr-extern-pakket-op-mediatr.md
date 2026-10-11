@@ -1,6 +1,6 @@
 # TAAK-133 — MediatR: pakketten die zelf op MediatR bouwen (Ardalis.SharedKernel) worden niet gezien
 
-**Status**: open
+**Status**: klaar (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: `claude/tasks/CORPUSRUN-mediatr.md` (ardalis CleanArchitecture 9.1)
 
@@ -22,9 +22,9 @@ schreef 23 bestanden, en de build breekt: CS0311 `ContributorDeletedEvent` (erft
 
 ## Stappen
 
-- [ ] Rode test met externe basisklasse
-- [ ] Detectie + Manual
-- [ ] `dotnet build` + `dotnet test` groen
+- [x] Rode test met externe basisklasse
+- [x] Detectie + Manual
+- [x] `dotnet build` + `dotnet test` groen
 
 ## Zie ook
 

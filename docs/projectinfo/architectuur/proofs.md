@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 496 proofs (zonder `_Pending`).
+Totaal: 497 proofs (zonder `_Pending`).
 
 ## FluentAssertions
 
@@ -654,11 +654,12 @@ Totaal: 496 proofs (zonder `_Pending`).
 | `no-constraint` | Fixed | `public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken canc…` → `where TRequest : IMessage public ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest…` |
 | `open-async` | Fixed | `where TRequest : notnull public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRespons…` → `where TRequest : notnull, IMessage public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDe…` |
 
-### RequestHandler (10)
+### RequestHandler (11)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `async` | Fixed | `public async Task<int> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<int> Handle(Query request, CancellationToken cancellationToken)` |
+| `edge-abstract-generic-base` | Fixed | `public Task<int> Handle(Ping request, CancellationToken cancellationToken) => Task.FromResult(42);` → `public ValueTask<int> Handle(Ping request, CancellationToken cancellationToken) => ValueTask.FromResult(42);` |
 | `edge-marker-interface` | Fixed | `public async Task<int> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<int> Handle(Query request, CancellationToken cancellationToken)` |
 | `edge-nested-generic` | Fixed | `public async Task<Result<List<int>>> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<Result<List<int>>> Handle(Query request, CancellationToken cancellationToken)` |
 | `edge-primary-ctor` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => Task.FromResult(request.Id + cl…` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) => ValueTask.FromResult(reque…` |
@@ -727,6 +728,14 @@ Totaal: 496 proofs (zonder `_Pending`).
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `edge-assertion-in-throw-lambda` | Manual | `Action act = () => total.Should().Be(3);` — reden: exception type |
+
+### _Pending / MediatR
+
+#### Usings (1)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `edge-namespace-shadow` | Fixed | alleen usings |
 
 ## Zie ook
 

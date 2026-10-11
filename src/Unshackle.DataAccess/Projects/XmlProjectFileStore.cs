@@ -211,6 +211,13 @@ public class XmlProjectFileStore : IProjectFileStore
             }
 
             AddNextTo(file, removed ?? file.Document.Descendants(file.Namespace + kind).LastOrDefault(), added);
+            if (package.WarningsNotAsErrors.Count > 0 && kind == PackageReference)
+            {
+                var property = new XElement(file.Namespace + "WarningsNotAsErrors", $"$(WarningsNotAsErrors);{string.Join(';', package.WarningsNotAsErrors)}");
+                // An unconditional group of the root; a conditional one may not apply.
+                XElement? group = file.Document.Root!.Elements(file.Namespace + "PropertyGroup").LastOrDefault(g => g.Attribute("Condition") is null);
+                AddNextTo(file, group?.Elements().LastOrDefault(), property, "PropertyGroup");
+            }
         }
     }
 
@@ -248,8 +255,8 @@ public class XmlProjectFileStore : IProjectFileStore
         file.Document.Descendants(file.Namespace + kind)
             .FirstOrDefault(e => string.Equals((string?)e.Attribute(Include), package, StringComparison.OrdinalIgnoreCase));
 
-    // Copies the indentation of the neighbour; without one, a new <ItemGroup> goes after the last element of the root.
-    private static void AddNextTo(ProjectFile file, XElement? neighbour, XElement added)
+    // Copies the indentation of the neighbour; without one, a new group (ItemGroup or PropertyGroup) goes after the last element of the root.
+    private static void AddNextTo(ProjectFile file, XElement? neighbour, XElement added, string group = "ItemGroup")
     {
         if (neighbour is not null)
         {
@@ -261,14 +268,14 @@ public class XmlProjectFileStore : IProjectFileStore
         XElement? last = root.Elements().LastOrDefault();
         string outer = last is null ? "\n  " : Indentation(last);
         string inner = outer + outer.TrimStart('\r', '\n');
-        var group = new XElement(file.Namespace + "ItemGroup", new XText(inner), added, new XText(outer));
+        var newGroup = new XElement(file.Namespace + group, new XText(inner), added, new XText(outer));
         if (last is null)
         {
-            root.Add(new XText(outer), group, new XText("\n"));
+            root.Add(new XText(outer), newGroup, new XText("\n"));
         }
         else
         {
-            last.AddAfterSelf(new XText(outer), group);
+            last.AddAfterSelf(new XText(outer), newGroup);
         }
     }
 

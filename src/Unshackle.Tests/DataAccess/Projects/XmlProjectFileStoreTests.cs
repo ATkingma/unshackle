@@ -62,6 +62,38 @@ public class XmlProjectFileStoreTests
             "Include=\"FluentAssertions\" Version=\"7.2.2\"", "Include=\"Shouldly\" Version=\"4.3.0\"", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData(
+        "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>\n  </PropertyGroup>\n  <ItemGroup>\n    <PackageReference Include=\"FluentAssertions\" />\n  </ItemGroup>\n</Project>\n",
+        "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>\n    <WarningsNotAsErrors>$(WarningsNotAsErrors);MSG0005</WarningsNotAsErrors>\n  </PropertyGroup>\n  <ItemGroup>\n    <PackageReference Include=\"Shouldly\" />\n    <PackageReference Include=\"Extra\" />\n  </ItemGroup>\n</Project>\n")]
+    [InlineData(
+        "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <PackageReference Include=\"FluentAssertions\" />\n  </ItemGroup>\n</Project>\n",
+        "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <PackageReference Include=\"Shouldly\" />\n    <PackageReference Include=\"Extra\" />\n  </ItemGroup>\n  <PropertyGroup>\n    <WarningsNotAsErrors>$(WarningsNotAsErrors);MSG0005</WarningsNotAsErrors>\n  </PropertyGroup>\n</Project>\n")]
+    public async Task EditAsync_AddedPackageWithWarningsNotAsErrors_AddsThemToTheSameFile(string project, string expected)
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(project));
+        _fileSystem.AddFile(PackagesProps, new MockFileData(CentralVersions));
+        var migration = new ProjectMigration
+        {
+            ProjectPath = Project,
+            Package = new PackageMigration
+            {
+                RemovedPackage = "FluentAssertions",
+                AddedPackages = [new() { Name = "Shouldly", Version = "4.3.0" }, new() { Name = "Extra", Version = "1.0.0", WarningsNotAsErrors = ["MSG0005"] }],
+            },
+            KeepRemovedPackage = false,
+            RemovedNamespaces = ["FluentAssertions"],
+            AddedNamespaces = ["Shouldly"],
+        };
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(migration);
+
+        // Assert
+        Text(changes, Project).ShouldBe(expected);
+    }
+
     [Fact]
     public async Task EditAsync_TwoAddedPackagesCentral_SwapsFirstInPlaceAndAddsSecondWithPrivateAssetsAfterIt()
     {

@@ -1,6 +1,6 @@
 # TAAK-136 — MediatR: Mediator-generator MSG0005 breekt build met TreatWarningsAsErrors
 
-**Status**: open
+**Status**: klaar (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: `claude/tasks/CORPUSRUN-mediatr.md` (evolutionary-architecture hfst. 1, gesimuleerd na TAAK-134)
 
@@ -19,9 +19,17 @@ breekt de build na een verder geslaagde migratie.
 
 ## Stappen
 
-- [ ] Gedrag MSG0005 voor notification vs request vastleggen
-- [ ] NoWarn of Manual
-- [ ] `dotnet build` + `dotnet test` groen
+- [x] Gedrag MSG0005 voor notification vs request vastleggen
+- [x] NoWarn of Manual
+- [x] `dotnet build` + `dotnet test` groen
+
+## Resultaat
+
+MSG0005 komt ook bij een request zonder handler (probe Mediator 3.0.2), maar MediatR faalt daar ook pas bij `Send`:
+gedrag gelijk, dus geen Manual. `AddedPackage.WarningsNotAsErrors`: bij het toevoegen van `Mediator.SourceGenerator`
+schrijft `XmlProjectFileStore` `<WarningsNotAsErrors>$(WarningsNotAsErrors);MSG0005</WarningsNotAsErrors>` in hetzelfde
+bestand (laatste onvoorwaardelijke `PropertyGroup`, anders een nieuwe). Gekozen boven `NoWarn`: de waarschuwing blijft
+zichtbaar. evo1: MSG0005 nu warning.
 
 ## Zie ook
 

@@ -241,7 +241,10 @@ public class Fixer : IFixer
         findings.AddRange(migrations.Where(m => m.KeepRemovedPackage).Select(m => CreateProjectFinding(m.ProjectPath, fix,
             PatternResult.Manual($"{package.RemovedPackage} is still used in this project, so its package and global usings stay. " +
                 "Fix the manual findings and run the fix again."))));
-        findings.AddRange(changes.Select(c => CreateProjectFinding(c.FilePath, fix, PatternResult.Fixed(Array.Empty<SyntaxNode>()))));
+        findings.AddRange(changes.Select(c => CreateProjectFinding(c.FilePath, fix, c.KeptRemovedPackageFor is string user
+            ? PatternResult.Manual($"{user} is not migrated but still uses {package.RemovedPackage}, so this shared file keeps it next to the new package. " +
+                "Migrate that project and run the fix again.")
+            : PatternResult.Fixed(Array.Empty<SyntaxNode>()))));
         return (solution, changes);
     }
 

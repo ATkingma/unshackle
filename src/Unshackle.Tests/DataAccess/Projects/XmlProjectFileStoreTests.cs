@@ -542,6 +542,86 @@ public class XmlProjectFileStoreTests
         _fileSystem.File.ReadAllBytes(Project).ShouldBe(latin1);
     }
 
+    [Fact]
+    public async Task EditAsync_UnloadedProjectUsesCentralPackage_KeepsVersionNextToNewOne()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(CentralProject));
+        _fileSystem.AddFile(OtherProject, new MockFileData(CentralProject));
+        _fileSystem.AddFile(PackagesProps, new MockFileData(CentralVersions));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        Text(changes, Project).ShouldContain("<PackageReference Include=\"Shouldly\" />");
+        ProjectFileChange versions = changes.Single(c => c.FilePath == PackagesProps);
+        versions.NewText.ShouldBe(CentralVersions.Replace(
+            "<PackageVersion Include=\"FluentAssertions\" Version=\"7.2.2\" />",
+            "<PackageVersion Include=\"FluentAssertions\" Version=\"7.2.2\" />\n    <PackageVersion Include=\"Shouldly\" Version=\"4.3.0\" />", StringComparison.Ordinal));
+        versions.KeptRemovedPackageFor.ShouldBe(OtherProject);
+        changes.ShouldNotContain(c => c.FilePath == OtherProject);
+    }
+
+    [Theory]
+    [InlineData("<Project Sdk=\"Microsoft.NET.Sdk\" />")]
+    [InlineData("<Project Sdk=\"Microsoft.NET.Sdk\"><ItemGroup><PackageReference Include=\"xunit.v3\" /></ItemGroup></Project>")]
+    public async Task EditAsync_UnloadedProjectWithoutPackage_RemovesSharedVersion(string other)
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(CentralProject));
+        _fileSystem.AddFile(OtherProject, new MockFileData(other));
+        _fileSystem.AddFile(PackagesProps, new MockFileData(CentralVersions));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        ProjectFileChange versions = changes.Single(c => c.FilePath == PackagesProps);
+        versions.NewText.ShouldNotContain("FluentAssertions");
+        versions.KeptRemovedPackageFor.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task EditAsync_UnloadedProjectInheritsReferenceFromSharedBuildProps_KeepsIt()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData("<Project Sdk=\"Microsoft.NET.Sdk\" />\n"));
+        _fileSystem.AddFile(OtherProject, new MockFileData("<Project Sdk=\"Microsoft.NET.Sdk\" />\n"));
+        _fileSystem.AddFile(BuildProps, new MockFileData(SharedReference));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        ProjectFileChange change = changes.ShouldHaveSingleItem();
+        change.FilePath.ShouldBe(BuildProps);
+        change.NewText.ShouldContain("Include=\"FluentAssertions\"");
+        change.NewText.ShouldContain("Include=\"Shouldly\" Version=\"4.3.0\"");
+        change.KeptRemovedPackageFor.ShouldBe(OtherProject);
+    }
+
+    [Fact]
+    public async Task EditAsync_UnloadedProjectHasNearerBuildProps_DoesNotKeepOuterOne()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData("<Project Sdk=\"Microsoft.NET.Sdk\" />\n"));
+        _fileSystem.AddFile(OtherProject, new MockFileData("<Project Sdk=\"Microsoft.NET.Sdk\" />\n"));
+        _fileSystem.AddFile("/repo/src/Other/Directory.Build.props", new MockFileData("<Project />\n"));
+        _fileSystem.AddFile(BuildProps, new MockFileData(SharedReference));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        ProjectFileChange change = changes.ShouldHaveSingleItem();
+        change.NewText.ShouldNotContain("FluentAssertions");
+        change.KeptRemovedPackageFor.ShouldBeNull();
+    }
+
+    private const string SharedReference =
+        "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"FluentAssertions\" Version=\"7.2.2\" />\n  </ItemGroup>\n</Project>\n";
+
     private static ProjectMigration Migration(string projectPath, bool keep) => new()
     {
         ProjectPath = projectPath,

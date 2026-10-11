@@ -1,6 +1,6 @@
 # TAAK-005 — End-to-end keten: laden, CLI, rapport, eerste integratietest
 
-**Status**: stap 8/8 — in uitvoering (checks + commit/push door hoofdsessie)
+**Status**: ✅ voltooid — 2026-10-11 (commit d5b8778)
 **Aangemaakt**: 2026-10-10
 **Doel**: `unshackle scan|fix|list` werkt op een echte solution (`samples/SampleShop`), met rapport en `--dry-run`-diff, bewezen door een integratietest.
 
@@ -83,7 +83,7 @@ Handmatige composition root: drie klassen, een DI-container is overbodig. Diff: 
 - [x] 5. `Program.cs` composition root; handmatig `dotnet run --project src/Unshackle.Interface -- scan samples/SampleShop/SampleShop.slnx --fix fluentassertions`
 - [x] 6. Integratietest op kopie van SampleShop (trait `Category=Integration`, apart filterbaar)
 - [x] 7. KingmaDoc-verify, modellen bijwerken (Modellen-brief in `claude/docs/patroon-loop.md`), docs `rapportage.md` + `core.md`
-- [→] 8. Drie checks groen (`claude/docs/agent-werkwijze.md` §6), commit + push
+- [x] 8. Drie checks groen (`claude/docs/agent-werkwijze.md` §6), commit + push
 
 ## Risico's & randgevallen
 

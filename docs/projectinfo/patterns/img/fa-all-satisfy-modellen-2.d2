@@ -1,0 +1,22 @@
+title: "[Sequence] AllSatisfyPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: AllSatisfyPattern
+syntax: FluentAssertionsSyntax
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "FindInvocations(root, model, \"AllSatisfy\")"
+syntax -> pattern: "aanroepen" {style.stroke-dash: 3}
+pattern -> fixer: "statements (of aanroep)" {style.stroke-dash: 3}
+loop: "loop [elke node]" {
+  fixer -> pattern: "Rewrite(node, model)"
+  pattern -> syntax: "GetSubject(assertion)"
+  pattern -> syntax: "TryGetArguments(assertion, model)"
+  syntax -> pattern: "lambda + because" {style.stroke-dash: 3}
+  pattern -> pattern: "IsSimple(subject), Reindent(...)"
+  alt: "alt" {
+    pattern -> fixer: "Fixed([ShouldNotBeEmpty, foreach])" {style.stroke-dash: 3}
+  }
+  alt2: "else" {
+    pattern -> fixer: "Manual(reden)" {style.stroke-dash: 3}
+  }
+}

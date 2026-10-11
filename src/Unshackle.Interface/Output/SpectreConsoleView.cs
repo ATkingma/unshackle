@@ -51,17 +51,17 @@ public class SpectreConsoleView : IConsoleView
 
     public void ShowDiff(string filePath, IReadOnlyList<DiffLine> lines)
     {
-        _out.Write(new Text($"--- {filePath}", new Style(decoration: Decoration.Bold)));
+        _out.Write(new Text($"--- {ConsoleText.Sanitize(filePath)}", new Style(decoration: Decoration.Bold)));
         _out.WriteLine();
         foreach (DiffLine line in lines)
         {
             (string sign, Color color) = line.Kind == DiffKind.Removed ? ("-", Color.Red) : ("+", Color.Green);
-            _out.Write(new Text($"{sign}{line.LineNumber,5} | {line.Text}", new Style(color)));
+            _out.Write(new Text($"{sign}{line.LineNumber,5} | {ConsoleText.Sanitize(line.Text)}", new Style(color)));
             _out.WriteLine();
         }
     }
 
-    public void ShowMessage(string message) => _out.WriteLine(message);
+    public void ShowMessage(string message) => _out.WriteLine(ConsoleText.Sanitize(message));
 
-    public void ShowError(string message) => _error.Write(new Text(message + Environment.NewLine, new Style(Color.Red)));
+    public void ShowError(string message) => _error.Write(new Text(ConsoleText.Sanitize(message) + Environment.NewLine, new Style(Color.Red)));
 }

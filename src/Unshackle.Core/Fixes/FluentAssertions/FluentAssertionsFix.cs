@@ -13,6 +13,8 @@ public class FluentAssertionsFix : IFix
 
     public IReadOnlyList<IPattern> Patterns { get; } =
     [
+        // First: its loop body keeps the FluentAssertions assertions, which the patterns below then rewrite as statements.
+        new AllSatisfyPattern(),
         new ShouldBePattern(),
         new HaveCountPattern(),
         new BeTrueFalsePattern(),
@@ -25,6 +27,7 @@ public class FluentAssertionsFix : IFix
         new BeGreaterLessPattern(),
         new NotThrowPattern(),
         new ContainKeyPattern(),
+        new BeEquivalentToObjectPattern(),
         new OnlyContainPattern(),
     ];
 }

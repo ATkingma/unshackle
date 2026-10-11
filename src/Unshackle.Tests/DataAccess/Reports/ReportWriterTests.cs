@@ -54,6 +54,34 @@ public class ReportWriterTests
     }
 
     [Fact]
+    public async Task CsvWriteAsync_FormulaInCell_EscapesIt()
+    {
+        // Arrange
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddDirectory("/out");
+        var writer = new CsvReportWriter(fileSystem);
+        Finding[] findings =
+        [
+            new()
+            {
+                FilePath = "=HYPERLINK(\"http://x\")",
+                Line = 1,
+                FixId = "fluentassertions",
+                PatternId = "fa.should-be",
+                Result = PatternResult.Manual("+cmd"),
+            },
+        ];
+
+        // Act
+        await writer.WriteAsync(ReportPath, findings, TestContext.Current.CancellationToken);
+
+        // Assert
+        string row = fileSystem.File.ReadAllLines(ReportPath)[1];
+        row.ShouldNotStartWith("=");
+        row.ShouldContain("'+cmd");
+    }
+
+    [Fact]
     public async Task JsonWriteAsync_Findings_WritesArrayOfRows()
     {
         // Arrange

@@ -1,4 +1,4 @@
-title: "[Overzicht] FluentAssertions naar Shouldly - patterns" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Overzicht] Waarden, booleans, null, leeg, tellen, vergelijken" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: right
 vars: {
   d2-legend: {
@@ -11,42 +11,32 @@ vars: {
   }
 }
 be: "x.Should().Be(y)" {style.fill: "#bbdefb"}
-count: "x.Should().HaveCount(n)" {style.fill: "#bbdefb"}
-truefalse: "x.Should().BeTrue() / BeFalse()" {style.fill: "#bbdefb"}
+bes: "x.ShouldBe(y)\n(cast bij numeriek type)" {style.fill: "#c8e6c9"}
+bem: "Manual: XML/Types, comparer,\nonverenigbaar type" {style.fill: "#ffe0b2"}
+cnt: "x.Should().HaveCount(n)" {style.fill: "#bbdefb"}
+cnts: "x.Length / x.Count / x.Count().ShouldBe(n)\n(+ using System.Linq)" {style.fill: "#c8e6c9"}
+cntm: "Manual: predicate, dictionary,\n?., niet-generiek IEnumerable" {style.fill: "#ffe0b2"}
+tf: "x.Should().BeTrue() / BeFalse()" {style.fill: "#bbdefb"}
+tfs: "x.ShouldBeTrue() / ShouldBeFalse()\nbool?: x.ShouldBe(true)" {style.fill: "#c8e6c9"}
+tfm: "Manual: type niet bool/bool?" {style.fill: "#ffe0b2"}
 nul: "x.Should().BeNull() / NotBeNull()" {style.fill: "#bbdefb"}
-empty: "x.Should().BeEmpty() / NotBeEmpty()" {style.fill: "#bbdefb"}
-contain: "x.Should().Contain(y) / NotContain(y)" {style.fill: "#bbdefb"}
-scontain: "x.ShouldContain(y) / ShouldNotContain(y)\n(string: + Case.Sensitive)" {style.fill: "#c8e6c9"}
-m6: "Manual: dictionary, meerdere items,\noccurrence, geen string/IEnumerable<T>" {style.fill: "#ffe0b2"}
-sbe: "x.ShouldBe(y)\n(cast bij numeriek type)" {style.fill: "#c8e6c9"}
-scount: "x.Length / x.Count / x.Count().ShouldBe(n)\n(+ using System.Linq)" {style.fill: "#c8e6c9"}
-stf: "x.ShouldBeTrue() / ShouldBeFalse()\nbool?: x.ShouldBe(true)" {style.fill: "#c8e6c9"}
-snull: "x.ShouldBeNull() / ShouldNotBeNull()" {style.fill: "#c8e6c9"}
-sempty: "x.ShouldBeEmpty() / ShouldNotBeEmpty()\n(string, collectie, dictionary)" {style.fill: "#c8e6c9"}
-m5: "Manual: alleen gedeelde gevallen" {style.fill: "#ffe0b2"}
-m1: "Manual: XML/Types, comparer,\nonverenigbaar type" {style.fill: "#ffe0b2"}
-m2: "Manual: predicate, dictionary,\n?., niet-generiek IEnumerable" {style.fill: "#ffe0b2"}
-m3: "Manual: type niet bool/bool?" {style.fill: "#ffe0b2"}
-m4: "Manual: alleen gedeelde gevallen" {style.fill: "#ffe0b2"}
-be -> sbe
-count -> scount
-truefalse -> stf
-nul -> snull
-be -> m1
-count -> m2
-truefalse -> m3
-nul -> m4
-empty -> sempty
-empty -> m5
-contain -> scontain
-contain -> m6
-beq: "s.Should().BeEquivalentTo(y) / NotBeEquivalentTo(y)" {style.fill: "#bbdefb"}
-sbeq: "s.ShouldBe(y, StringCompareShould.IgnoreCase)" {style.fill: "#c8e6c9"}
-m7: "Manual: NotBeEquivalentTo, resultaat gebruikt,\nbecauseArgs" {style.fill: "#ffe0b2"}
-thr: "act.Should().Throw<T>()\n(+ .WithMessage(p))" {style.fill: "#bbdefb"}
-sthr: "Should.Throw<T>(act)\n(+ .Message.ShouldBe / ShouldContain /\nShouldStartWith / ShouldEndWith)" {style.fill: "#c8e6c9"}
-m8: "Manual: ThrowExactly, Invoking, chain/Which,\nwildcard of variabele in WithMessage, becauseArgs" {style.fill: "#ffe0b2"}
-beq -> sbeq
-beq -> m7
-thr -> sthr
-thr -> m8
+nuls: "x.ShouldBeNull() / ShouldNotBeNull()" {style.fill: "#c8e6c9"}
+nulm: "Manual: alleen gedeelde gevallen" {style.fill: "#ffe0b2"}
+emp: "x.Should().BeEmpty() / NotBeEmpty()" {style.fill: "#bbdefb"}
+emps: "x.ShouldBeEmpty() / ShouldNotBeEmpty()" {style.fill: "#c8e6c9"}
+empm: "Manual: alleen gedeelde gevallen" {style.fill: "#ffe0b2"}
+gl: "x.Should().BeGreaterThan(y) / BeLessThan / ...OrEqualTo,\nBeInRange, BePositive, BeNegative" {style.fill: "#bbdefb"}
+gls: "x.ShouldBeGreaterThan(y) / ShouldBeLessThan / ...,\nShouldBeInRange, ShouldBePositive, ShouldBeNegative" {style.fill: "#c8e6c9"}
+glm: "Manual: nullable subject, niet IComparable<T>,\nsubject twee keer geevalueerd,\nBePositive op ander type dan int/long/short/\ndecimal/double/float" {style.fill: "#ffe0b2"}
+be -> bes
+be -> bem
+cnt -> cnts
+cnt -> cntm
+tf -> tfs
+tf -> tfm
+nul -> nuls
+nul -> nulm
+emp -> emps
+emp -> empm
+gl -> gls
+gl -> glm

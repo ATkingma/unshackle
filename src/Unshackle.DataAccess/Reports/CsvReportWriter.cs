@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IO.Abstractions;
 using CsvHelper;
+using CsvHelper.Configuration;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
@@ -23,7 +24,9 @@ public class CsvReportWriter : IReportWriter
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(findings);
         await using StreamWriter writer = _fileSystem.File.CreateText(path);
-        await using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+        // Paths and reasons come from user code; keep spreadsheets from running them as formulas.
+        var configuration = new CsvConfiguration(CultureInfo.InvariantCulture) { InjectionOptions = InjectionOptions.Escape };
+        await using var csv = new CsvWriter(writer, configuration);
         await csv.WriteRecordsAsync(findings.Select(ReportRow.From), cancellationToken);
     }
 }

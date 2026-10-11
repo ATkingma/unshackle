@@ -1,0 +1,32 @@
+title: "[Overzicht] Collecties" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+vars: {
+  d2-legend: {
+    f: FluentAssertions {style.fill: "#bbdefb"}
+    s: Shouldly {style.fill: "#c8e6c9"}
+    m: Manual {style.fill: "#ffe0b2"}
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: Wordt
+  }
+}
+con: "x.Should().Contain(y) / NotContain(y)" {style.fill: "#bbdefb"}
+cons: "x.ShouldContain(y) / ShouldNotContain(y)\n(string: + Case.Sensitive)" {style.fill: "#c8e6c9"}
+conm: "Manual: dictionary, meerdere items,\noccurrence, geen string/IEnumerable<T>" {style.fill: "#ffe0b2"}
+key: "d.Should().ContainKey(k) / NotContainKey(k)" {style.fill: "#bbdefb"}
+keys: "d.ShouldContainKey(k) / ShouldNotContainKey(k)" {style.fill: "#c8e6c9"}
+keym: "Manual: ContainKeys, ContainValue(s),\nresultaat gebruikt (WhoseValue)" {style.fill: "#ffe0b2"}
+onl: "x.Should().OnlyContain(pred)" {style.fill: "#bbdefb"}
+onls: "x.ShouldNotBeEmpty();\nx.ShouldAllBe(pred);" {style.fill: "#c8e6c9"}
+onlm: "Manual: niet direct in een blok,\nsubject niet eenvoudig, niet IEnumerable<T>" {style.fill: "#ffe0b2"}
+all: "x.Should().AllSatisfy(a => { ... })" {style.fill: "#bbdefb"}
+alls: "x.ShouldNotBeEmpty();\nforeach (var a in x) { ... }" {style.fill: "#c8e6c9"}
+allm: "Manual: because/becauseArgs, return in body,\nmethodgroep, async lambda,\nsubject niet eenvoudig" {style.fill: "#ffe0b2"}
+con -> cons
+con -> conm
+key -> keys
+key -> keym
+onl -> onls
+onl -> onlm
+all -> alls
+all -> allm

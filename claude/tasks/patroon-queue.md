@@ -21,8 +21,8 @@ Statussen: `open` · `bezig (TAAK-NNN)` · `geblokkeerd (TAAK-NNN, wacht op TAAK
 | 10  | `fa.be-greater-less`         | `BeGreaterThan` / `BeLessThan` (+ `.And`-ketens)  | `ShouldBeGreaterThan` / `ShouldBeLessThan`, keten splitsen                               | klaar (TAAK-010)   |
 | 11  | `fa.contain-key`             | `dict.Should().ContainKey(k)`                     | `dict.ShouldContainKey(k)`                                                               | klaar (TAAK-013)|
 | 12  | `fa.only-contain`            | `x.Should().OnlyContain(pred)`                    | `x.ShouldAllBe(pred)`                                                                    | klaar (TAAK-015)   |
-| 13  | `fa.all-satisfy`             | `x.Should().AllSatisfy(a => ...)`                 | `x.ShouldAllBe(...)` of Manual                                                           | bezig (TAAK-014)   |
-| 14  | `fa.be-equivalent-to-object` | `obj.Should().BeEquivalentTo(other)`              | `obj.ShouldBeEquivalentTo(other)` of Manual (semantiek!)                                 | bezig (TAAK-016)   |
+| 13  | `fa.all-satisfy`             | `x.Should().AllSatisfy(a => ...)`                 | `x.ShouldAllBe(...)` of Manual                                                           | klaar (TAAK-014)   |
+| 14  | `fa.be-equivalent-to-object` | `obj.Should().BeEquivalentTo(other)`              | `obj.ShouldBeEquivalentTo(other)` of Manual (semantiek!)                                 | klaar (TAAK-016)   |
 
 ## Zie ook
 

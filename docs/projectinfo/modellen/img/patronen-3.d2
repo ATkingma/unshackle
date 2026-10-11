@@ -1,0 +1,27 @@
+title: "[Overzicht] Exceptions" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+vars: {
+  d2-legend: {
+    f: FluentAssertions {style.fill: "#bbdefb"}
+    s: Shouldly {style.fill: "#c8e6c9"}
+    m: Manual {style.fill: "#ffe0b2"}
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: Wordt
+  }
+}
+thr: "act.Should().Throw<T>()\n(+ .WithMessage(p))" {style.fill: "#bbdefb"}
+thrs: "Should.Throw<T>(act)\n(+ .Message.ShouldBe / ShouldContain /\nShouldStartWith / ShouldEndWith)" {style.fill: "#c8e6c9"}
+thrm: "Manual: ThrowExactly, Invoking, chain/Which,\nwildcard in het midden of variabele, becauseArgs" {style.fill: "#ffe0b2"}
+tha: "await act.Should().ThrowAsync<T>()" {style.fill: "#bbdefb"}
+thas: "await Should.ThrowAsync<T>(act)" {style.fill: "#c8e6c9"}
+tham: "Manual: ThrowExactlyAsync, Awaiting,\nniet direct awaited, Func<Task<waardetype>>" {style.fill: "#ffe0b2"}
+nth: "act.Should().NotThrow()" {style.fill: "#bbdefb"}
+nths: "Should.NotThrow(act)" {style.fill: "#c8e6c9"}
+nthm: "Manual: NotThrow<T>, NotThrowAfter,\nresultaat gebruikt (Which), Invoking" {style.fill: "#ffe0b2"}
+thr -> thrs
+thr -> thrm
+tha -> thas
+tha -> tham
+nth -> nths
+nth -> nthm

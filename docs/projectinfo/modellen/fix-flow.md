@@ -1,6 +1,6 @@
 # Flow: Fixer.FixAsync
 
-**Figure 1.** Eén document in `FixAsync`: elk pattern draait op de uitkomst van het vorige, daarna volgen de usings. Weggelaten: annulering, onbekende fix (`ArgumentException`) en documenten van niet-C#-projecten (worden overgeslagen).
+**Figure 1.** Eén document in `FixAsync`: elk pattern draait op de uitkomst van het vorige, daarna volgen de usings. Volgorde van de patterns telt: `AllSatisfyPattern` staat eerst in `FluentAssertionsFix` (zie [patronen.md](patronen.md#volgorde)). Weggelaten: annulering, onbekende fix (`ArgumentException`) en documenten van niet-C#-projecten (worden overgeslagen).
 
 <!-- kingmadoc:diagram img/fix-flow-1.d2 -->
 ![Flow: Fixer.FixAsync](img/fix-flow-1.png)

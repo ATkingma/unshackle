@@ -45,7 +45,7 @@ documenten, en elk patroon heeft een eigen plan en verificatie (KingmaDoc) in `p
 
 ## C4 Component: Unshackle.Core
 
-**Figure 3.** Onderdelen van Core, met de acht patterns die er nu zijn. Contracten en modellen staan in [modellen/klassen.md](modellen/klassen.md).
+**Figure 3.** Onderdelen van Core, met de vijftien patterns die er nu zijn. Contracten en modellen staan in [modellen/klassen.md](modellen/klassen.md).
 
 <!-- kingmadoc:diagram img/README-3.d2 -->
 ![C4 Component: Unshackle.Core](img/README-3.png)
@@ -56,7 +56,7 @@ documenten, en elk patroon heeft een eigen plan en verificatie (KingmaDoc) in `p
 | UsingDirectives | `src/Unshackle.Core/UsingDirectives.cs` | Alleen usings op bovenste niveau |
 | FluentAssertionsFix | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` | Patterns in vaste volgorde |
 | FluentAssertionsSyntax | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde bouwstenen |
-| Patterns (8) | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/` | Zie [modellen/patronen.md](modellen/patronen.md) |
+| Patterns (15) | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/` | Zie [modellen/patronen.md](modellen/patronen.md) |
 
 ## C4 Component: Unshackle.Interface en Unshackle.DataAccess
 
@@ -81,7 +81,7 @@ documenten, en elk patroon heeft een eigen plan en verificatie (KingmaDoc) in `p
 | UML-klassendiagram: contracten, modellen, I/O-contracten en implementaties | [modellen/klassen.md](modellen/klassen.md) |
 | UML-sequence: `FixAsync` | [modellen/fix-flow.md](modellen/fix-flow.md) |
 | UML-activity: Fixed of Manual | [modellen/pattern-beslissing.md](modellen/pattern-beslissing.md) |
-| Overzicht van alle patterns | [modellen/patronen.md](modellen/patronen.md) |
+| Overzicht van alle 15 patterns in vier groepen | [modellen/patronen.md](modellen/patronen.md) |
 
 ## Patronen
 
@@ -101,8 +101,10 @@ Wachtrij en status: `claude/tasks/patroon-queue.md`.
 | `fa.throw-async` | [plan](patterns/fa-throw-async-plan.md) | [modellen](patterns/fa-throw-async-modellen.md) | [verify](patterns/fa-throw-async-verify.md) | TAAK-012 |
 | `fa.not-throw` | [plan](patterns/fa-not-throw-plan.md) | [modellen](patterns/fa-not-throw-modellen.md) | [verify](patterns/fa-not-throw-verify.md) | TAAK-011 |
 | `fa.be-equivalent-to-string` | [plan](patterns/fa-be-equivalent-to-string-plan.md) | [modellen](patterns/fa-be-equivalent-to-string-modellen.md) | [verify](patterns/fa-be-equivalent-to-string-verify.md) | TAAK-009 |
+| `fa.be-equivalent-to-object` | [plan](patterns/fa-be-equivalent-to-object-plan.md) | [modellen](patterns/fa-be-equivalent-to-object-modellen.md) | [verify](patterns/fa-be-equivalent-to-object-verify.md) | TAAK-016 |
 | `fa.be-greater-less` | [plan](patterns/fa-be-greater-less-plan.md) | [modellen](patterns/fa-be-greater-less-modellen.md) | [verify](patterns/fa-be-greater-less-verify.md) | TAAK-010 |
 | `fa.only-contain` | [plan](patterns/fa-only-contain-plan.md) | [modellen](patterns/fa-only-contain-modellen.md) | [verify](patterns/fa-only-contain-verify.md) | TAAK-015 |
+| `fa.all-satisfy` | [plan](patterns/fa-all-satisfy-plan.md) | [modellen](patterns/fa-all-satisfy-modellen.md) | [verify](patterns/fa-all-satisfy-verify.md) | TAAK-014 |
 
 ## Zie ook
 

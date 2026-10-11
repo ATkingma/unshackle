@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 427 proofs (zonder `_Pending`).
+Totaal: 438 proofs (zonder `_Pending`).
 
 ## FluentAssertions
 
@@ -520,7 +520,7 @@ Totaal: 427 proofs (zonder `_Pending`).
 
 ## MediatR
 
-### AddMediatR (10)
+### AddMediatR (12)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -529,11 +529,20 @@ Totaal: 427 proofs (zonder `_Pending`).
 | `edge-assemblies` | Fixed | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` → `services.AddMediator(configuration => configuration.ServiceLifetime = ServiceLifetime.Transient);` |
 | `edge-publisher-qualified` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `edge-service-type-behavior` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
+| `empty` | Fixed | `services.AddMediatR(cfg => { });` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient);` |
 | `expression` | Fixed | `services.AddMediatR(options => options.RegisterServicesFromAssembly(typeof(Registration).Assembly));` → `services.AddMediator(options => options.ServiceLifetime = ServiceLifetime.Transient);` |
 | `generic-handlers` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `no-lambda` | Manual | `services.AddMediatR(configuration);` — reden: AddMediatR is not called as services.AddMediatR(cfg => ...) |
+| `processors` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => // logging` |
 | `publisher` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
-| `unknown-call` | Manual | `services.AddMediatR(cfg =>` — reden: cfg.AddOpenRequestPreProcessor(...) has no direct Mediator equivalent |
+| `unknown-call` | Manual | `services.AddMediatR(cfg =>` — reden: cfg.AddOpenBehaviors(...) has no direct Mediator equivalent |
+
+### ExceptionHandler (2)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `set-handled` | Fixed | `public class FallbackHandler : IRequestExceptionHandler<Query, int, KeyNotFoundException> public Task Handle(Q…` → `public class FallbackHandler : MessageExceptionHandler<Query, int, KeyNotFoundException> protected override Va…` |
+| `state-passed` | Manual | `public Task Handle(Query request, InvalidOperationException exception, RequestExceptionHandlerState<int> state…` — reden: state is used other than as state.SetHandled(x) |
 
 ### NotificationHandler (7)
 
@@ -577,23 +586,40 @@ Totaal: 427 proofs (zonder `_Pending`).
 | `other-return` | Manual | `public Task<int> Handle(Query request, CancellationToken cancellationToken) =>` — reden: not Task.FromResult |
 | `token-name` | Fixed | `public async Task<int> Handle(Query query, CancellationToken token)` → `public async ValueTask<int> Handle(Query query, CancellationToken token)` |
 
-### SendAsTask (2)
+### RequestProcessor (5)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
+| `other-return` | Manual |  — reden: not async |
+| `post-open-async` | Fixed | `public class AuditPostProcessor<TRequest, TResponse> : IRequestPostProcessor<TRequest, TResponse> where TReque…` → `public class AuditPostProcessor<TRequest, TResponse> : MessagePostProcessor<TRequest, TResponse> where TReques…` |
+| `pre-closed` | Fixed | `public class QueryPreProcessor : IRequestPreProcessor<Query> public Task Process(Query request, CancellationTo…` → `public class QueryPreProcessor : MessagePreProcessor<Query, int> protected override ValueTask Handle(Query req…` |
+| `pre-open` | Fixed | `public class AuditPreProcessor<TRequest> : IRequestPreProcessor<TRequest> where TRequest : notnull public Task…` → `public class AuditPreProcessor<TRequest, TResponse> : MessagePreProcessor<TRequest, TResponse> where TRequest …` |
+| `used-elsewhere` | Manual |  — reden: used outside AddMediatR |
+
+### SendAsTask (3)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `null-conditional` | Manual |  — reden: called with ?. |
 | `send-object` | Fixed | `return _mediator.Send(message, cancellationToken);` → `return _mediator.Send(message, cancellationToken).AsTask();` |
 | `task-uses` | Fixed | `public Task<int> GetAsync(int id, CancellationToken cancellationToken) => _sender.Send(new Query(id), cancella…` → `public Task<int> GetAsync(int id, CancellationToken cancellationToken) => _sender.Send(new Query(id), cancella…` |
 
-### Unsupported (6)
+### StreamPipelineBehavior (3)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
-| `exception-handler` | Manual | `public Task Handle(Query request, InvalidOperationException exception, RequestExceptionHandlerState<int> state…` — reden: derive from Mediator.MessageExceptionHandler<TMessage, TResponse, TException> |
+| `next-passed` | Manual | `public IAsyncEnumerable<TResponse> Handle(TRequest request, StreamHandlerDelegate<TResponse> next, Cancellatio…` — reden: next is used other than as next() |
+| `open` | Fixed | `public class StreamLoggingBehavior<TRequest, TResponse> : IStreamPipelineBehavior<TRequest, TResponse> where T…` → `public class StreamLoggingBehavior<TRequest, TResponse> : IStreamPipelineBehavior<TRequest, TResponse> where T…` |
+| `request-constraint` | Fixed | `public async IAsyncEnumerable<TResponse> Handle(TRequest request, StreamHandlerDelegate<TResponse> next, [Enum…` → `public async IAsyncEnumerable<TResponse> Handle(TRequest request, StreamHandlerDelegate<TRequest, TResponse> n…` |
+
+### Unsupported (4)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `derived-generic-message` | Manual |  — reden: does not support generic messages |
+| `exception-action` | Manual |  — reden: run the action and return NotHandled |
 | `generic-handler` | Manual | `public Task<int> Handle(CountQuery<TEntity> request, CancellationToken cancellationToken) => Task.FromResult(0…` — reden: does not support generic messages or request handlers |
 | `notification-publisher` | Manual |  — reden: set NotificationPublisherType in AddMediator |
-| `post-processor` | Manual |  — reden: derive from Mediator.MessagePostProcessor<TMessage, TResponse> |
-| `pre-processor` | Manual |  — reden: derive from Mediator.MessagePreProcessor<TMessage, TResponse> |
-| `stream-behavior` | Manual | `public IAsyncEnumerable<TResponse> Handle(TRequest request, StreamHandlerDelegate<TResponse> next, Cancellatio…` — reden: add it to StreamPipelineBehaviors in AddMediator |
 
 ### VoidRequestHandler (9)
 

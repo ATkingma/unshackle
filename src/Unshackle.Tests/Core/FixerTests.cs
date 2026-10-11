@@ -75,6 +75,44 @@ public class FixerTests
     }
 
     [Fact]
+    public async Task FixAsync_AllOrNothingWithAManualFinding_KeepsSolutionAndReportsEveryFindingManual()
+    {
+        // Arrange
+        IPattern pattern = CreatePattern(node => node.ToString() == "Foo()" ? PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")) : PatternResult.Manual("by hand"));
+        IFix fix = CreateFix(pattern);
+        fix.AllOrNothing.Returns(true);
+        var fixer = new Fixer([fix]);
+        Solution solution = TestSolution.Create(Code.Replace("Foo();", "Foo(); Bar();", StringComparison.Ordinal), TestReferences.Net);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Solution.ShouldBeSameAs(solution);
+        report.ProjectFileChanges.ShouldBeEmpty();
+        report.Findings.Count.ShouldBe(2);
+        report.Findings.ShouldContain(f => f.Result.Equals(PatternResult.Manual("by hand")));
+        report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.StartsWith("Not rewritten", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task FixAsync_AllOrNothingWithoutManualFindings_Rewrites()
+    {
+        // Arrange
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        IFix fix = CreateFix(pattern);
+        fix.AllOrNothing.Returns(true);
+        var fixer = new Fixer([fix]);
+
+        // Act
+        FixReport report = await FixAsync(fixer, Code);
+
+        // Assert
+        (await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken)).ShouldNotContain("Foo();");
+        report.Findings.ShouldHaveSingleItem().Result.ShouldBeOfType<FixedResult>();
+    }
+
+    [Fact]
     public async Task FixAsync_RewriteThrows_ReportsInternalErrorAsManual()
     {
         // Arrange

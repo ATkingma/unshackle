@@ -36,6 +36,11 @@ Scan op SampleShop: 6 Manual (pre- en post-processor, stream-behavior, exception
 | Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 groen                             |
 | Lint    | _geen_                                                      | _not run_: geen lint-commando ingesteld |
 
+## Bijgewerkt (TAAK-061/062, review B M5, 2026-10-11)
+
+- Pre/post-processors, exception handlers en stream behaviors zijn eigen patronen (`mediatr.request-processor`, `mediatr.exception-handler`, `mediatr.stream-pipeline-behavior`); proofs `pre-processor`, `post-processor`, `stream-behavior` weg, `exception-handler` → `exception-action`.
+- M5: advies alleen op het type dat de interface zelf declareert; een generieke message wordt ook gemeld als `IRequest` via een basistype komt (`AllInterfaces`, proof `derived-generic-message`).
+
 ## Zie ook
 
 - [mediatr-unsupported-plan.md](mediatr-unsupported-plan.md)

@@ -32,4 +32,10 @@ public interface IFix
     /// them, or their members, does not keep the removed using or package. Empty (the default) when no type is swapped.
     /// </summary>
     IReadOnlyList<string> SwappedTypes => [];
+
+    /// <summary>
+    /// True when a partial migration is unsafe (for example code rewritten while its registration stays): if any finding is Manual,
+    /// the solution and project files are left as they are and every Fixed finding is reported as Manual. False (the default): fix what can be fixed.
+    /// </summary>
+    bool AllOrNothing => false;
 }

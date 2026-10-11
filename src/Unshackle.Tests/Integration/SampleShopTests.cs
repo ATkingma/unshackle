@@ -108,6 +108,102 @@ public class SampleShopTests
         await DotnetAsync(cancellationToken, "test", "--solution", solution);
     }
 
+    // mediatr is all-or-nothing: the generic CountQuery stays Manual, so the first fix changes nothing and the app still works.
+    // After that is fixed by hand (in MediatR), the second fix migrates everything: no MediatR left, build and all tests green.
+    [Fact]
+    public async Task FixMediatRTwice_SampleShopCopy_FirstChangesNothingThenMigratesAndBuildsAndTests()
+    {
+        // Arrange
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using var directory = new TempDirectory();
+        string samples = Path.Combine(directory.Path, "my samples");
+        CopyWithoutBuildOutput(Path.Combine(RepositoryRoot.Path, "samples"), samples);
+        File.Copy(Path.Combine(RepositoryRoot.Path, "global.json"), Path.Combine(directory.Path, "global.json"));
+        string shop = Path.Combine(samples, "SampleShop");
+        string solution = Path.Combine(shop, "SampleShop.slnx");
+        string registration = Path.Combine(shop, "SampleShop", "ServiceCollectionExtensions.cs");
+        string project = Path.Combine(shop, "SampleShop", "SampleShop.csproj");
+        string firstReport = Path.Combine(directory.Path, "first.csv");
+        string secondReport = Path.Combine(directory.Path, "second.csv");
+        await DotnetAsync(cancellationToken, "restore", solution);
+        string originalRegistration = await File.ReadAllTextAsync(registration, cancellationToken);
+
+        // Act
+        int firstExit = await Cli.RunAsync(["fix", solution, "--fix", "mediatr", "--report", firstReport, "--force"], cancellationToken);
+        string[] firstRows = await File.ReadAllLinesAsync(firstReport, cancellationToken);
+        string afterFirst = await File.ReadAllTextAsync(registration, cancellationToken);
+        await DotnetAsync(cancellationToken, "build", solution);
+        await DotnetAsync(cancellationToken, "test", "--solution", solution);
+        await FixCountQueryByHandAsync(shop, cancellationToken);
+        int secondExit = await Cli.RunAsync(["fix", solution, "--fix", "mediatr", "--report", secondReport, "--force"], cancellationToken);
+        string[] secondRows = await File.ReadAllLinesAsync(secondReport, cancellationToken);
+
+        // Assert
+        firstExit.ShouldBe(ExitCodes.Ok);
+        firstRows.ShouldContain(r => r.StartsWith("SampleShop/Features/Common/CountQuery.cs,", StringComparison.Ordinal) && r.Contains("does not support generic messages", StringComparison.Ordinal));
+        firstRows.ShouldNotContain(r => r.Contains(",Fixed,", StringComparison.Ordinal));
+        afterFirst.ShouldBe(originalRegistration);
+
+        secondExit.ShouldBe(ExitCodes.Ok);
+        secondRows.ShouldNotContain(r => r.Contains(",Manual,", StringComparison.Ordinal), string.Join('\n', secondRows));
+        string afterSecond = await File.ReadAllTextAsync(registration, cancellationToken);
+        afterSecond.ShouldContain("services.AddMediator(");
+        afterSecond.ShouldContain("cfg.StreamPipelineBehaviors = [typeof(StreamLoggingBehavior<,>)];");
+        (await File.ReadAllTextAsync(project, cancellationToken)).ShouldNotContain("\"MediatR\"");
+        (await File.ReadAllTextAsync(Path.Combine(samples, "Directory.Packages.props"), cancellationToken)).ShouldNotContain("\"MediatR\"");
+        await DotnetAsync(cancellationToken, "build", solution);
+        await DotnetAsync(cancellationToken, "test", "--solution", solution);
+    }
+
+    // What a user does with the Manual finding: one non-generic query per entity type, still on MediatR.
+    private static async Task FixCountQueryByHandAsync(string shop, CancellationToken cancellationToken)
+    {
+        await File.WriteAllTextAsync(Path.Combine(shop, "SampleShop", "Features", "Common", "CountQuery.cs"), """
+            using MediatR;
+            using SampleShop.Data;
+
+            namespace SampleShop.Features.Common;
+
+            public record CountOrdersQuery() : IRequest<int>;
+
+            public record CountCustomersQuery() : IRequest<int>;
+
+            public class CountOrdersHandler : IRequestHandler<CountOrdersQuery, int>
+            {
+                private readonly OrderRepository _orders;
+
+                public CountOrdersHandler(OrderRepository orders)
+                {
+                    _orders = orders;
+                }
+
+                public Task<int> Handle(CountOrdersQuery request, CancellationToken cancellationToken) => Task.FromResult(_orders.All.Count);
+            }
+
+            public class CountCustomersHandler : IRequestHandler<CountCustomersQuery, int>
+            {
+                private readonly CustomerRepository _customers;
+
+                public CountCustomersHandler(CustomerRepository customers)
+                {
+                    _customers = customers;
+                }
+
+                public Task<int> Handle(CountCustomersQuery request, CancellationToken cancellationToken) => Task.FromResult(_customers.Customers.Count);
+            }
+
+            """, cancellationToken);
+        foreach (string file in new[] { Path.Combine(shop, "SampleShop", "Features", "Orders", "OrderFacade.cs"), Path.Combine(shop, "SampleShop.Tests", "PipelineTests.cs") })
+        {
+            string code = await File.ReadAllTextAsync(file, cancellationToken);
+            await File.WriteAllTextAsync(
+                file,
+                code.Replace("new CountQuery<Order>()", "new CountOrdersQuery()", StringComparison.Ordinal)
+                    .Replace("new CountQuery<Customer>()", "new CountCustomersQuery()", StringComparison.Ordinal),
+                cancellationToken);
+        }
+    }
+
     // Without restore nothing binds: scan would report 0 findings and fix would swap usings blindly.
     [Fact]
     public async Task Scan_NotRestored_FailsWithRestoreAdvice()

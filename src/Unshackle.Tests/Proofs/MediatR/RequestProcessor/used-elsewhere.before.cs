@@ -8,3 +8,8 @@ public class AuditPreProcessor<TRequest> : IRequestPreProcessor<TRequest> where 
 {
     public Task Process(TRequest request, CancellationToken cancellationToken) => Task.CompletedTask;
 }
+
+public static class Factory
+{
+    public static object Create() => new AuditPreProcessor<string>();
+}

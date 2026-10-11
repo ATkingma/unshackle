@@ -1,1 +1,1 @@
-cfg.AddOpenRequestPreProcessor(...) has no direct Mediator equivalent
+cfg.AddOpenBehaviors(...) has no direct Mediator equivalent

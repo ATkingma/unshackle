@@ -43,6 +43,10 @@ TAAK-081: een constraint die na de swap al `IMessage` is (`IRequest<TResponse>`,
 
 End-to-end (`fix --fix mediatr` op een kopie van SampleShop, na restore): 20 Fixed, 8 Manual; build zonder CS0436 (alleen MSG0003/MSG0005 van de generieke `CountQuery`). Manual: pre/post-processor, exception-handler, stream-behavior (TAAK-061/062), generieke `CountQuery`, en daardoor `AddMediatR` (`AddOpenStreamBehavior`). Omdat de registratie MediatR blijft, falen 28/38 sample-tests bij het opstarten (`LoggingBehavior`2 must implement MediatR.IPipelineBehavior`2`); dat lost zich op met TAAK-061/062.
 
+## Bijgewerkt (review B L3, 2026-10-11)
+
+- `CommaList`, de constraint-helper (`MediatRSyntax.WithConstraint`, ook voor `IStreamMessage`) en het expliciete-interface-Manual (`MediatRSyntax.RejectExplicit`) zijn gedeeld; gedrag ongewijzigd.
+
 ## Zie ook
 
 - [mediatr-pipeline-behavior-plan.md](mediatr-pipeline-behavior-plan.md)

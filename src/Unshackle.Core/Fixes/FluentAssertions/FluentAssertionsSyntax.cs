@@ -8,6 +8,9 @@ namespace Unshackle.Core.Fixes.FluentAssertions;
 // Shared building blocks for FluentAssertions patterns: finding assertions, the subject and the because-message.
 public static class FluentAssertionsSyntax
 {
+    public const string InsideAssertionScopeReason =
+        "Inside an AssertionScope: Shouldly stops at the first failure; group the assertions with ShouldSatisfyAllConditions.";
+
     // Every invocation of one of the methods whose symbol lives in a FluentAssertions namespace, whatever its shape.
     public static IEnumerable<InvocationExpressionSyntax> FindInvocations(SyntaxNode root, SemanticModel model, params string[] methodNames) =>
         root.DescendantNodes()
@@ -90,4 +93,33 @@ public static class FluentAssertionsSyntax
 
         return true;
     }
+
+    // True when node runs inside a FluentAssertions AssertionScope: the body of `using (new AssertionScope())`
+    // or a statement after `using var scope = new AssertionScope();` in the same block or deeper.
+    public static bool IsInsideAssertionScope(SyntaxNode node, SemanticModel model)
+    {
+        SyntaxNode child = node;
+        foreach (SyntaxNode ancestor in node.Ancestors())
+        {
+            switch (ancestor)
+            {
+                case UsingStatementSyntax usingStatement when usingStatement.Statement == child
+                    && IsAssertionScope(model.GetTypeInfo((SyntaxNode?)usingStatement.Declaration?.Type ?? usingStatement.Expression!).Type):
+                    return true;
+                case BlockSyntax block when block.Statements
+                    .TakeWhile(s => s != child)
+                    .OfType<LocalDeclarationStatementSyntax>()
+                    .Any(d => d.UsingKeyword != default && IsAssertionScope(model.GetTypeInfo(d.Declaration.Type).Type)):
+                    return true;
+            }
+
+            child = ancestor;
+        }
+
+        return false;
+    }
+
+    // AssertionScope is sealed in FluentAssertions 7, so no subclasses to look for.
+    public static bool IsAssertionScope(ITypeSymbol? type) =>
+        type is { Name: "AssertionScope" } && type.ContainingNamespace?.ToDisplayString() == "FluentAssertions.Execution";
 }

@@ -51,6 +51,11 @@ public class BeGreaterLessPattern : IPattern
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
+        if (FluentAssertionsSyntax.IsInsideAssertionScope(node, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
+        }
+
         var statement = node as ExpressionStatementSyntax;
         var top = (InvocationExpressionSyntax)(statement?.Expression ?? node);
 

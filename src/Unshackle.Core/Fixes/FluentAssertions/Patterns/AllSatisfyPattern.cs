@@ -20,6 +20,11 @@ public class AllSatisfyPattern : IPattern
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
+        if (FluentAssertionsSyntax.IsInsideAssertionScope(node, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
+        }
+
         var statement = node as ExpressionStatementSyntax;
         var assertion = (InvocationExpressionSyntax)(statement?.Expression ?? node);
         ExpressionSyntax? subject = FluentAssertionsSyntax.GetSubject(assertion);

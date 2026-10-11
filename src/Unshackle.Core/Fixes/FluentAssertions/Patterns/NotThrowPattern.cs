@@ -17,6 +17,11 @@ public class NotThrowPattern : IPattern
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
+        if (FluentAssertionsSyntax.IsInsideAssertionScope(node, model))
+        {
+            return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
+        }
+
         var call = (InvocationExpressionSyntax)node;
         var name = (SimpleNameSyntax)((MemberAccessExpressionSyntax)call.Expression).Name;
 

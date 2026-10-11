@@ -1,0 +1,584 @@
+# Proofs
+
+Overzicht van alle proof-tests in `src/Unshackle.Tests/Proofs/`. Gegenereerd door `claude/tools/proofs-doc.py`; niet met de hand bewerken.
+
+Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.after.cs` (verwachte uitvoer, compileert tegen de nieuwe)
+of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
+Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
+
+Totaal: 394 proofs (zonder `_Pending`).
+
+## FluentAssertions
+
+### AllSatisfy (15)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `and-chain` | Manual | `x.Should().NotBeEmpty().And.AllSatisfy(i => Check(i));` — reden: is not in the form |
+| `async` | Manual | `x.Should().AllSatisfy(async i => await System.Threading.Tasks.Task.CompletedTask);` — reden: is async |
+| `because` | Manual | `x.Should().AllSatisfy(i => Check(i), "they are valid");` — reden: because message |
+| `because-args` | Manual | `x.Should().AllSatisfy(i => Check(i), "because {0}", 1);` — reden: becauseArgs |
+| `block` | Fixed | `x.Should().AllSatisfy(i => });` → `x.ShouldNotBeEmpty(); foreach (var i in x)` |
+| `edge-expression-lambda` | Fixed | `items.Should().AllSatisfy(x => Check(x));` → `items.ShouldNotBeEmpty(); foreach (var x in items)` |
+| `member-subject` | Fixed | `h.Items.Should().AllSatisfy(i => Check(i));` → `h.Items.ShouldNotBeEmpty(); foreach (var i in h.Items)` |
+| `method-group` | Manual | `x.Should().AllSatisfy(Check);` — reden: not an inline lambda |
+| `not-in-block` | Manual | `if (x.Count > 0) x.Should().AllSatisfy(i => Check(i));` — reden: not directly in a block |
+| `nullable` | Fixed | `x.Should().AllSatisfy(i => Check(i));` → `x.ShouldNotBeEmpty(); foreach (var i in x)` |
+| `return` | Manual | `x.Should().AllSatisfy(i =>` — reden: contains a return |
+| `simple` | Fixed | `x.Should().AllSatisfy(i => Check(i));` → `x.ShouldNotBeEmpty(); foreach (var i in x)` |
+| `subject-call` | Manual | `f().Should().AllSatisfy(i => Check(i));` — reden: evaluate it twice |
+| `typed-parameter` | Fixed | `x.Should().AllSatisfy((int i) => Check(i));` → `x.ShouldNotBeEmpty(); foreach (int i in x)` |
+| `used` | Manual | `x.Should().AllSatisfy(i => Check(i)).And.NotBeEmpty();` — reden: is used |
+
+### AndChain (16)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `assertion-scope` | Manual | `items.Should().NotBeEmpty().And.HaveCount(2);` — reden: AssertionScope |
+| `be-of-type` | Fixed | `obj.Should().NotBeNull().And.BeOfType<string>();` → `obj.ShouldNotBeNull(); obj.ShouldBeOfType<string>();` |
+| `because` | Fixed | `items.Should().NotBeEmpty("needed").And.Contain(3, "three");` → `items.ShouldNotBeEmpty("needed"); items.ShouldContain(3, "three");` |
+| `edge-multiline` | Fixed | `items.Should() .NotBeEmpty()` → `items.ShouldNotBeEmpty(); items.Count.ShouldBe(2);` |
+| `equal-length-approximately` | Fixed | `x.Should().NotBeEmpty().And.Equal(1, 2); s.Should().NotBeNull().And.HaveLength(3);` → `x.ShouldNotBeEmpty(); x.ShouldBe(new int[] { 1, 2 });` |
+| `link-manual` | Manual | `items.Should().NotBeEmpty().And.HaveCount(2, "of {0}", 2);` — reden: Link HaveCount |
+| `member-subject` | Fixed | `_order.Lines.Should().NotBeEmpty().And.HaveCount(1);` → `_order.Lines.ShouldNotBeEmpty(); _order.Lines.Count.ShouldBe(1);` |
+| `no-block` | Manual | `if (items.Count > 0) items.Should().NotBeEmpty().And.HaveCount(2);` — reden: not directly in a block |
+| `nullable` | Fixed | `name.Should().NotBeNull().And.Be("Ann");` → `name.ShouldNotBeNull(); name.ShouldBe("Ann");` |
+| `simple` | Fixed | `items.Should().NotBeEmpty().And.HaveCount(2); name.Should().NotBeNull().And.Be("Ann");` → `items.ShouldNotBeEmpty(); items.Count.ShouldBe(2);` |
+| `subject-call` | Manual | `GetItems().Should().NotBeEmpty().And.HaveCount(2);` — reden: evaluate it twice |
+| `subject-indexer` | Manual | `lists[0].Should().NotBeEmpty().And.HaveCount(2);` — reden: evaluate it twice |
+| `three-links` | Fixed | `items.Should().NotBeEmpty().And.HaveCount(2).And.Contain(1);` → `items.ShouldNotBeEmpty(); items.Count.ShouldBe(2);` |
+| `unsupported-link` | Manual | `items.Should().NotBeEmpty().And.ContainInOrder(1, 2);` — reden: which no pattern rewrites |
+| `used` | Manual | `var c = items.Should().NotBeEmpty().And.HaveCount(2);` — reden: is used |
+| `which` | Manual | `items.Should().NotBeEmpty().And.ContainSingle().Which.Should().Be(1);` — reden: is used |
+
+### AssertionScope (4)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `context` | Manual | `x.Should().Be(1);` — reden: Shouldly has no scope |
+| `target-typed` | Manual | `x.Should().Be(1);` — reden: Shouldly has no scope |
+| `using-block` | Manual | `x.Should().Be(1);` — reden: Shouldly has no scope |
+| `using-var` | Manual | `x.Should().Be(1);` — reden: Shouldly has no scope |
+
+### BeApproximately (9)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `assertion-scope` | Manual | `d.Should().BeApproximately(1.5, 0.01);` — reden: AssertionScope |
+| `because` | Fixed | `d.Should().BeApproximately(1.5, 0.01, "rounding");` → `d.ShouldBe(1.5, 0.01, "rounding");` |
+| `because-args` | Manual | `d.Should().BeApproximately(1.5, 0.01, "of {0}", 1);` — reden: becauseArgs |
+| `close-to` | Fixed | `t.Should().BeCloseTo(u, TimeSpan.FromSeconds(2)); o.Should().BeCloseTo(p, TimeSpan.FromSeconds(2), "clock");` → `t.ShouldBe(u, TimeSpan.FromSeconds(2)); o.ShouldBe(p, TimeSpan.FromSeconds(2), "clock");` |
+| `int-close-to` | Manual | `i.Should().BeCloseTo(5, 1);` — reden: tolerance only for |
+| `not` | Fixed | `d.Should().NotBeApproximately(1.5, 0.01); f.Should().NotBeApproximately(1.5f, 0.01f, "far");` → `System.Math.Abs(d - 1.5).ShouldBeGreaterThan(0.01); System.Math.Abs(f - 1.5f).ShouldBeGreaterThan(0.01f, "far"…` |
+| `nullable` | Fixed | `d.Should().BeApproximately(1.5, 0.01); t.Should().BeCloseTo(u, TimeSpan.FromSeconds(1));` → `d.ShouldNotBeNull().ShouldBe(1.5, 0.01); t.ShouldNotBeNull().ShouldBe(u, TimeSpan.FromSeconds(1));` |
+| `nullable-not` | Manual | `d.Should().NotBeApproximately(1.5, 0.01);` — reden: nullable subject |
+| `simple` | Fixed | `d.Should().BeApproximately(1.5, 0.01); f.Should().BeApproximately(1.5f, 0.01f);` → `d.ShouldBe(1.5, 0.01); f.ShouldBe(1.5f, 0.01f);` |
+
+### BeEmpty (14)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `and-chain` | Manual | `text.Should().NotBeNull().And.NotBeEmpty();` — reden: is not in the form |
+| `be-empty-list` | Fixed | `list.Should().BeEmpty();` → `list.ShouldBeEmpty();` |
+| `because` | Fixed | `list.Should().BeEmpty("fresh order"); text.Should().NotBeEmpty("must be filled");` → `list.ShouldBeEmpty("fresh order"); text.ShouldNotBeEmpty("must be filled");` |
+| `because-args` | Manual | `text.Should().BeEmpty("because {0}", 1);` — reden: becauseArgs |
+| `chain` | Manual | `text.Should().NotBeEmpty().And.StartWith("a");` — reden: is used |
+| `dictionary` | Fixed | `map.Should().BeEmpty(); map.Should().NotBeEmpty();` → `map.ShouldBeEmpty(); map.ShouldNotBeEmpty();` |
+| `edge-await-subject` | Fixed | `(await load()).Should().BeEmpty();` → `(await load()).ShouldBeEmpty();` |
+| `edge-linq-subject` | Fixed | `items.Where(x => x < 0).Should().BeEmpty();` → `items.Where(x => x < 0).ShouldBeEmpty();` |
+| `enumerable` | Fixed | `items.Should().BeEmpty(); array.Should().NotBeEmpty();` → `items.ShouldBeEmpty(); array.ShouldNotBeEmpty();` |
+| `lambda` | Fixed | `Action act = () => text.Should().BeEmpty();` → `Action act = () => text.ShouldBeEmpty();` |
+| `not-be-empty-list` | Fixed | `list.Should().NotBeEmpty();` → `list.ShouldNotBeEmpty();` |
+| `nullable` | Fixed | `x.Should().BeEmpty();` → `x.ShouldBeEmpty();` |
+| `string` | Fixed | `text.Should().BeEmpty(); text.Should().NotBeEmpty();` → `text.ShouldBeEmpty(); text.ShouldNotBeEmpty();` |
+| `value-used` | Manual | `var result = text.Should().BeEmpty();` — reden: is used |
+
+### BeEquivalentToObject (25)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `and-chain` | Manual | `a.Should().NotBeNull().And.BeEquivalentTo(b);` — reden: is not in the form |
+| `anonymous` | Manual | `a.Should().BeEquivalentTo(new { Id = 1 });` — reden: Different compile-time types |
+| `base-vs-derived` | Manual | `a.Should().BeEquivalentTo(b);` — reden: Different compile-time types |
+| `because` | Fixed | `a.Should().BeEquivalentTo(b, "same dto");` → `a.ShouldBeEquivalentTo(b, "same dto");` |
+| `because-args` | Manual | `a.Should().BeEquivalentTo(b, "reason {0}", 1);` — reden: becauseArgs |
+| `both-new` | Fixed | `new Dto { Id = 1 }.Should().BeEquivalentTo(new Dto { Id = 1 });` → `new Dto { Id = 1 }.ShouldBeEquivalentTo(new Dto { Id = 1 });` |
+| `collection` | Manual | `a.Should().BeEquivalentTo(b);` — reden: is a collection |
+| `collection-member` | Manual | `a.Should().BeEquivalentTo(b);` — reden: is a collection |
+| `cyclic` | Manual | `a.Should().BeEquivalentTo(b);` — reden: cyclic object graph |
+| `different-types` | Manual | `a.Should().BeEquivalentTo(b);` — reden: Different compile-time types |
+| `edge-array-literal` | Manual | `result.Should().BeEquivalentTo(new[] { 1, 2 });` — reden: collection |
+| `equals-member` | Manual | `a.Should().BeEquivalentTo(b);` — reden: overrides Equals |
+| `equals-override` | Manual | `a.Should().BeEquivalentTo(b);` — reden: overrides Equals |
+| `lambda` | Fixed | `System.Action act = () => a.Should().BeEquivalentTo(b);` → `System.Action act = () => a.ShouldBeEquivalentTo(b);` |
+| `nested` | Fixed | `a.Should().BeEquivalentTo(b);` → `a.ShouldBeEquivalentTo(b);` |
+| `new-expectation` | Fixed | `a.Should().BeEquivalentTo(new Dto { Id = 1, Name = "x" });` → `a.ShouldBeEquivalentTo(new Dto { Id = 1, Name = "x" });` |
+| `no-members` | Manual | `a.Should().BeEquivalentTo(b);` — reden: no public members |
+| `not-equivalent` | Manual | `a.Should().NotBeEquivalentTo(b);` — reden: no Shouldly equivalent |
+| `object-member` | Manual | `a.Should().BeEquivalentTo(b);` — reden: not a plain class or struct |
+| `object-subject` | Manual | `a.Should().BeEquivalentTo(b);` — reden: not a plain class or struct |
+| `options` | Manual | `a.Should().BeEquivalentTo(b, options => options.Excluding(x => x.Id));` — reden: options => ... |
+| `record` | Fixed | `a.Should().BeEquivalentTo(b);` → `a.ShouldBeEquivalentTo(b);` |
+| `sealed` | Fixed | `a.Should().BeEquivalentTo(b);` → `a.ShouldBeEquivalentTo(b);` |
+| `simple` | Fixed | `a.Should().BeEquivalentTo(b);` → `a.ShouldBeEquivalentTo(b);` |
+| `value-used` | Manual | `var c = a.Should().BeEquivalentTo(b);` — reden: is used |
+
+### BeEquivalentToString (9)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `and-chain` | Manual | `s.Should().NotBeNull().And.BeEquivalentTo("ab");` — reden: is not in the form |
+| `because` | Fixed | `s.Should().BeEquivalentTo("ab", "names are case-free");` → `s.ShouldBe("ab", "names are case-free", StringCompareShould.IgnoreCase);` |
+| `because-args` | Manual | `s.Should().BeEquivalentTo("ab", "reason {0}", 1);` — reden: becauseArgs |
+| `chain` | Manual | `s.Should().BeEquivalentTo("ab").And.HaveLength(2);` — reden: is used |
+| `edge-interpolated` | Fixed | `text.Should().BeEquivalentTo($"hello {name}");` → `text.ShouldBe($"hello {name}", StringCompareShould.IgnoreCase);` |
+| `lambda` | Fixed | `Action act = () => s.Should().BeEquivalentTo("ab");` → `Action act = () => s.ShouldBe("ab", StringCompareShould.IgnoreCase);` |
+| `not-equivalent` | Manual | `s.Should().NotBeEquivalentTo("ab");` — reden: no Shouldly equivalent |
+| `simple` | Fixed | `s.Should().BeEquivalentTo("ab");` → `s.ShouldBe("ab", StringCompareShould.IgnoreCase);` |
+| `value-used` | Manual | `var c = s.Should().BeEquivalentTo("ab");` — reden: is used |
+
+### BeGreaterLess (18)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `and-chain` | Fixed | `order.Total.Should().BeGreaterThan(20m).And.BeLessThan(30m); order.Total.Should().BeGreaterThan(1m, "above").A…` → `order.Total.ShouldBeGreaterThan(20m); order.Total.ShouldBeLessThan(30m);` |
+| `because` | Fixed | `x.Should().BeGreaterThan(1, "it grew"); x.Should().BeInRange(1, 5, "it is small");` → `x.ShouldBeGreaterThan(1, "it grew"); x.ShouldBeInRange(1, 5, "it is small");` |
+| `because-args` | Manual | `x.Should().BeGreaterThan(1, "it is {0}", 1);` — reden: becauseArgs |
+| `chain-lambda` | Manual | `Action a = () => x.Should().BeGreaterThan(1).And.BeLessThan(5);` — reden: is used |
+| `chain-no-block` | Manual | `x.Should().BeGreaterThan(1).And.BeLessThan(5);` — reden: not directly in a block |
+| `chain-other` | Manual | `x.Should().BeGreaterThan(1).And.NotBe(3);` — reden: not a comparison |
+| `chain-subject-call` | Manual | `Next().Should().BeGreaterThan(0).And.BeLessThan(5);` — reden: evaluate it twice |
+| `chain-used` | Manual | `var c = x.Should().BeGreaterThan(1);` — reden: is used |
+| `comparable` | Fixed | `t.Should().BeGreaterThan(TimeSpan.Zero); v.Should().BeLessThan(new Version(2, 0));` → `t.ShouldBeGreaterThan(TimeSpan.Zero); v.ShouldBeLessThan(new Version(2, 0));` |
+| `edge-double` | Fixed | `ratio.Should().BeGreaterThan(0.5);` → `ratio.ShouldBeGreaterThan(0.5);` |
+| `edge-interpolated-because` | Fixed | `age.Should().BeLessThan(150, $"{name} is human");` → `age.ShouldBeLessThan(150, $"{name} is human");` |
+| `in-range` | Fixed | `x.Should().BeInRange(1, 5); x.Should().NotBeInRange(6, 9);` → `x.ShouldBeInRange(1, 5); x.ShouldNotBeInRange(6, 9);` |
+| `lambda` | Fixed | `Action a = () => x.Should().BeGreaterThan(1);` → `Action a = () => x.ShouldBeGreaterThan(1);` |
+| `nullable` | Manual | `x.Should().BeGreaterThan(1);` — reden: nullable or has an unknown type |
+| `sign` | Fixed | `x.Should().BePositive(); d.Should().BeNegative("it dropped");` → `x.ShouldBePositive(); d.ShouldBeNegative("it dropped");` |
+| `sign-byte` | Manual | `b.Should().BePositive();` — reden: only exists for |
+| `simple` | Fixed | `x.Should().BeGreaterThan(1); x.Should().BeGreaterThanOrEqualTo(2);` → `x.ShouldBeGreaterThan(1); x.ShouldBeGreaterThanOrEqualTo(2);` |
+| `value-used` | Manual | `var c = x.Should().BeGreaterThan(1);` — reden: is used |
+
+### BeNull (14)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `and-chain` | Manual | `text.Should().NotBeEmpty().And.NotBeNull();` — reden: is not in the form |
+| `be-null` | Fixed | `text.Should().BeNull();` → `text.ShouldBeNull();` |
+| `because` | Fixed | `text.Should().BeNull("not set yet"); text.Should().NotBeNull("must be set");` → `text.ShouldBeNull("not set yet"); text.ShouldNotBeNull("must be set");` |
+| `because-args` | Manual | `text.Should().NotBeNull("missing {0}", id);` — reden: becauseArgs |
+| `chain` | Manual | `text.Should().NotBeNull().And.NotBeEmpty();` — reden: is used |
+| `collection` | Fixed | `list.Should().NotBeNull(); array.Should().BeNull();` → `list.ShouldNotBeNull(); array.ShouldBeNull();` |
+| `edge-expression-bodied` | Fixed | `public void Test(object? value) => value.Should().BeNull();` → `public void Test(object? value) => value.ShouldBeNull();` |
+| `edge-not-null-and` | Manual | `text.Should().NotBeNull().And.Be("a");` — reden: is used |
+| `edge-null-conditional` | Fixed | `uri?.Host.Should().BeNull();` → `uri?.Host.ShouldBeNull();` |
+| `edge-null-forgiving` | Fixed | `text!.Should().NotBeNull();` → `text!.ShouldNotBeNull();` |
+| `lambda` | Fixed | `Action act = () => text.Should().BeNull();` → `Action act = () => text.ShouldBeNull();` |
+| `not-be-null` | Fixed | `item.Should().NotBeNull();` → `item.ShouldNotBeNull();` |
+| `nullable-value` | Fixed | `number.Should().BeNull(); flag.Should().NotBeNull("why");` → `number.ShouldBeNull(); flag.ShouldNotBeNull("why");` |
+| `value-used` | Manual | `var constraint = text.Should().NotBeNull();` — reden: is used |
+
+### BeOfType (11)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `and` | Manual | `obj.Should().BeOfType<Dto>().And.NotBeNull();` — reden: is used |
+| `assertion-scope` | Manual | `obj.Should().BeOfType<Dto>();` — reden: AssertionScope |
+| `because` | Fixed | `obj.Should().BeOfType<Dto>("mapped");` → `obj.ShouldBeOfType<Dto>("mapped");` |
+| `because-args` | Manual | `obj.Should().BeOfType<Dto>("of {0}", 1);` — reden: becauseArgs |
+| `nullable` | Fixed | `obj.Should().BeOfType<Dto>(); Dto dto = obj.Should().BeOfType<Dto>().Which;` → `obj.ShouldBeOfType<Dto>(); Dto dto = obj.ShouldBeOfType<Dto>();` |
+| `simple` | Fixed | `obj.Should().BeOfType<Dto>(); obj.Should().BeAssignableTo<object>();` → `obj.ShouldBeOfType<Dto>(); obj.ShouldBeAssignableTo<object>();` |
+| `type-argument` | Fixed | `obj.Should().BeOfType(typeof(Dto)); obj.Should().NotBeAssignableTo(typeof(string), "no");` → `obj.ShouldBeOfType(typeof(Dto)); obj.ShouldNotBeAssignableTo(typeof(string), "no");` |
+| `type-subject` | Manual | `typeof(Dto).Should().BeAssignableTo<object>();` — reden: on a Type |
+| `which` | Fixed | `var dto = obj.Should().BeOfType<Dto>().Which; var asObject = obj.Should().BeAssignableTo<object>("any").Subjec…` → `var dto = obj.ShouldBeOfType<Dto>(); var asObject = obj.ShouldBeAssignableTo<object>("any");` |
+| `which-chain` | Manual | `obj.Should().BeOfType<Dto>().Which.Name.Should().Be("a");` — reden: is used |
+| `which-multiple` | Manual | `Dto a = obj.Should().BeOfType<Dto>().Which, b = new Dto();` — reden: is used |
+
+### BeTrueFalse (11)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `be-false` | Fixed | `(a == b).Should().BeFalse();` → `(a == b).ShouldBeFalse();` |
+| `be-true` | Fixed | `flag.Should().BeTrue();` → `flag.ShouldBeTrue();` |
+| `because` | Fixed | `flag.Should().BeTrue("must be paid");` → `flag.ShouldBeTrue("must be paid");` |
+| `because-args` | Manual | `flag.Should().BeTrue("x {0}", y);` — reden: becauseArgs |
+| `chain` | Manual | `flag.Should().BeTrue().And.NotBe(false);` — reden: is used |
+| `edge-has-value` | Fixed | `value.HasValue.Should().BeTrue();` → `value.HasValue.ShouldBeTrue();` |
+| `edge-interpolated-because` | Fixed | `ok.Should().BeTrue($"{name} must be valid");` → `ok.ShouldBeTrue($"{name} must be valid");` |
+| `edge-linq-subject` | Fixed | `items.Any(x => x > 1).Should().BeFalse();` → `items.Any(x => x > 1).ShouldBeFalse();` |
+| `edge-pattern-subject` | Fixed | `(value is string { Length: > 0 }).Should().BeTrue();` → `(value is string { Length: > 0 }).ShouldBeTrue();` |
+| `nullable` | Fixed | `flag.Should().BeTrue(); flag.Should().BeFalse("why");` → `flag.ShouldBe(true); flag.ShouldBe(false, "why");` |
+| `value-used` | Manual | `var c = flag.Should().BeFalse();` — reden: is used |
+
+### Contain (17)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `and-chain` | Manual | `x.Should().NotBeEmpty().And.Contain(2);` — reden: is not in the form |
+| `because` | Fixed | `x.Should().Contain(2, "it was added"); text.Should().Contain("ab", "the prefix");` → `x.ShouldContain(2, "it was added"); text.ShouldContain("ab", Shouldly.Case.Sensitive, "the prefix");` |
+| `because-args` | Manual | `x.Should().Contain(2, "it was {0}", "added");` — reden: becauseArgs |
+| `chain` | Manual | `x.Should().Contain(2).And.HaveCount(3);` — reden: is used |
+| `dictionary` | Manual | `x.Should().Contain(new KeyValuePair<string, int>("a", 1));` — reden: Dictionary: |
+| `edge-generic-list` | Fixed | `items.Should().Contain(item);` → `items.ShouldContain(item);` |
+| `edge-interpolated` | Fixed | `text.Should().Contain($"id={id}");` → `text.ShouldContain($"id={id}", Shouldly.Case.Sensitive);` |
+| `enumerable` | Fixed | `x.Should().Contain("a"); arr.Should().Contain("b");` → `x.ShouldContain("a"); arr.ShouldContain("b");` |
+| `items` | Manual | `x.Should().Contain(new[] { 1, 2 });` — reden: several items |
+| `lambda` | Fixed | `System.Action act = () => x.Should().Contain(1);` → `System.Action act = () => x.ShouldContain(1);` |
+| `list` | Fixed | `x.Should().Contain(2);` → `x.ShouldContain(2);` |
+| `not-contain` | Fixed | `x.Should().NotContain(2); text.Should().NotContain("bad");` → `x.ShouldNotContain(2); text.ShouldNotContain("bad", Shouldly.Case.Sensitive);` |
+| `nullable-string` | Fixed | `text.Should().Contain("ab");` → `text.ShouldNotBeNull().ShouldContain("ab", Shouldly.Case.Sensitive);` |
+| `occurrence` | Manual | `text.Should().Contain("ab", Exactly.Twice());` — reden: occurrence constraint |
+| `predicate` | Fixed | `x.Should().Contain(e => e.StartsWith("a")); x.Should().NotContain(e => e.Length > 3);` → `x.ShouldContain(e => e.StartsWith("a")); x.ShouldNotContain(e => e.Length > 3);` |
+| `string` | Fixed | `text.Should().Contain("ab");` → `text.ShouldContain("ab", Shouldly.Case.Sensitive);` |
+| `value-used` | Manual | `var result = x.Should().Contain(2);` — reden: is used |
+
+### ContainKey (17)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `and-chain` | Manual | `x.Should().NotBeEmpty().And.ContainKey("a");` — reden: is not in the form |
+| `because` | Fixed | `x.Should().ContainKey("a", "it was added");` → `x.ShouldContainKey("a", "it was added");` |
+| `because-args` | Manual | `x.Should().ContainKey("a", "because {0}", 1);` — reden: becauseArgs |
+| `chain` | Manual | `x.Should().ContainKey("a").And.NotBeEmpty();` — reden: is used |
+| `contain-value` | Manual | `x.Should().ContainValue(1);` — reden: has no Shouldly equivalent |
+| `contain-values` | Manual | `x.Should().ContainValues(1, 2);` — reden: has no Shouldly equivalent |
+| `dictionary` | Fixed | `x.Should().ContainKey("a");` → `x.ShouldContainKey("a");` |
+| `edge-nested-generic` | Fixed | `map.Should().ContainKey("a");` → `map.ShouldContainKey("a");` |
+| `idictionary` | Fixed | `x.Should().ContainKey("a");` → `x.ShouldContainKey("a");` |
+| `keys` | Manual | `x.Should().ContainKeys("a", "b");` — reden: several keys |
+| `lambda` | Fixed | `System.Action a = () => x.Should().ContainKey("a");` → `System.Action a = () => x.ShouldContainKey("a");` |
+| `not-contain-key` | Fixed | `x.Should().NotContainKey("a");` → `x.ShouldNotContainKey("a");` |
+| `not-contain-keys` | Manual | `x.Should().NotContainKeys("a", "b");` — reden: several keys |
+| `not-contain-value` | Manual | `x.Should().NotContainValue(1);` — reden: has no Shouldly equivalent |
+| `nullable` | Fixed | `x.Should().ContainKey("a");` → `x.ShouldNotBeNull().ShouldContainKey("a");` |
+| `read-only` | Fixed | `x.Should().ContainKey(1);` → `x.ShouldContainKey(1);` |
+| `which` | Manual | `var v = x.Should().ContainKey("a").WhoseValue;` — reden: is used |
+
+### ContainSingle (10)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `assertion-scope` | Manual | `x.Should().ContainSingle();` — reden: AssertionScope |
+| `because` | Fixed | `x.Should().ContainSingle("one"); x.Should().ContainSingle(i => i > 2, "one");` → `x.ShouldHaveSingleItem("one"); x.ShouldContain(i => i > 2, 1, "one");` |
+| `because-args` | Manual | `x.Should().ContainSingle("of {0}", 1);` — reden: becauseArgs |
+| `enumerable` | Fixed | `x.Should().ContainSingle(s => s == "a");` → `x.ShouldContain(s => s == "a", 1);` |
+| `expression-variable` | Manual | `var one = x.Should().ContainSingle(p).Which;` — reden: Expression variable |
+| `nullable` | Fixed | `x.Should().ContainSingle(); int one = x.Should().ContainSingle().Which;` → `x.ShouldNotBeNull().ShouldHaveSingleItem(); int one = x.ShouldHaveSingleItem();` |
+| `predicate` | Fixed | `x.Should().ContainSingle(i => i > 2);` → `x.ShouldContain(i => i > 2, 1);` |
+| `simple` | Fixed | `x.Should().ContainSingle();` → `x.ShouldHaveSingleItem();` |
+| `which` | Fixed | `var only = x.Should().ContainSingle().Which; var big = x.Should().ContainSingle(d => d.Price > 5m, "big").Whic…` → `var only = x.ShouldHaveSingleItem(); var big = x.Where(d => d.Price > 5m).ShouldHaveSingleItem("big");` |
+| `which-chain` | Manual | `x.Should().ContainSingle().Which.Price.Should().Be(5m);` — reden: is used |
+
+### EqualSequence (11)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `and` | Manual | `x.Should().Equal(y).And.HaveCount(3);` — reden: .And |
+| `assertion-scope` | Manual | `x.Should().Equal(y);` — reden: AssertionScope |
+| `because` | Fixed | `x.Should().Equal(y, "order matters");` → `x.ShouldBe(y, ignoreOrder: false, "order matters");` |
+| `because-args` | Manual | `x.Should().Equal(y, "of {0}", 2);` — reden: becauseArgs |
+| `dictionary` | Manual | `x.Should().Equal(y);` — reden: dictionary |
+| `not-equal` | Manual | `x.Should().NotEqual(y);` — reden: NotEqual |
+| `nullable` | Fixed | `x.Should().Equal(y);` → `x.ShouldBe(y);` |
+| `params` | Fixed | `x.Should().Equal(1, 2, 3); s.Should().Equal("a", "b");` → `x.ShouldBe(new long[] { 1, 2, 3 }); s.ShouldBe(new string[] { "a", "b" });` |
+| `params-array` | Fixed | `x.Should().Equal(y); x.Should().Equal(new[] { 1 });` → `x.ShouldBe(y); x.ShouldBe(new[] { 1 });` |
+| `predicate` | Manual | `x.Should().Equal(y, (a, b) => a.ToString() == b);` — reden: predicate |
+| `simple` | Fixed | `x.Should().Equal(y);` → `x.ShouldBe(y);` |
+
+### HaveCount (16)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `array` | Fixed | `x.Should().HaveCount(3);` → `x.Length.ShouldBe(3);` |
+| `because-args` | Manual | `x.Should().HaveCount(2, "x {0}", y);` — reden: becauseArgs |
+| `chain` | Manual | `x.Should().HaveCount(2).And.Contain(1);` — reden: is used |
+| `collection-interfaces` | Fixed | `a.Should().HaveCount(1); b.Should().HaveCount(2);` → `a.Count.ShouldBe(1); b.Count.ShouldBe(2);` |
+| `dictionary` | Manual | `x.Should().HaveCount(2);` — reden: Dictionary: |
+| `edge-generic-element` | Fixed | `items.Should().HaveCount(1);` → `items.Count.ShouldBe(1);` |
+| `edge-linq-subject` | Fixed | `items.Where(x => x > 0).Should().HaveCount(2);` → `items.Where(x => x > 0).Count().ShouldBe(2);` |
+| `edge-multiline` | Fixed | `items .Should()` → `items.Length.ShouldBe(3);` |
+| `enumerable` | Fixed | `x.Should().HaveCount(2); Numbers().Should().HaveCount(1);` → `x.Count().ShouldBe(2); Numbers().Count().ShouldBe(1);` |
+| `enumerable-because` | Fixed | `x.Should().HaveCount(2, "two items expected");` → `x.Count().ShouldBe(2, "two items expected");` |
+| `enumerable-existing-using` | Fixed | `x.Should().HaveCount(2);` → `x.Count().ShouldBe(2);` |
+| `list` | Fixed | `x.Should().HaveCount(2);` → `x.Count.ShouldBe(2);` |
+| `list-because` | Fixed | `x.Should().HaveCount(2, "two items expected");` → `x.Count.ShouldBe(2, "two items expected");` |
+| `nullable` | Fixed | `x.Should().HaveCount(2);` → `x.ShouldNotBeNull().Count.ShouldBe(2);` |
+| `predicate` | Manual | `x.Should().HaveCount(c => c > 1);` — reden: Predicate: |
+| `receiver-parens` | Fixed | `(a ?? b).Should().HaveCount(1);` → `(a ?? b).Count.ShouldBe(1);` |
+
+### HaveLength (7)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `assertion-scope` | Manual | `s.Should().HaveLength(5);` — reden: AssertionScope |
+| `because` | Fixed | `s.Should().HaveLength(5, "a code");` → `s.Length.ShouldBe(5, "a code");` |
+| `because-args` | Manual | `s.Should().HaveLength(5, "of {0}", 5);` — reden: becauseArgs |
+| `nullable` | Fixed | `s.Should().HaveLength(5);` → `s.ShouldNotBeNull().Length.ShouldBe(5);` |
+| `receiver-parens` | Fixed | `(a + b).Should().HaveLength(5);` → `(a + b).Length.ShouldBe(5);` |
+| `simple` | Fixed | `s.Should().HaveLength(5);` → `s.Length.ShouldBe(5);` |
+| `stream` | Manual | `s.Should().HaveLength(5);` — reden: stream |
+
+### NotBe (9)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `assertion-scope` | Manual | `x.Should().NotBe(1);` — reden: Inside an AssertionScope |
+| `because` | Fixed | `status.Should().NotBe(Status.Shipped, "a new order is not shipped yet");` → `status.ShouldNotBe(Status.Shipped, "a new order is not shipped yet");` |
+| `because-args` | Manual | `total.Should().NotBe(0, "{0} items", items);` — reden: becauseArgs |
+| `chain` | Manual | `result.Should().NotBe(41).And.BePositive();` — reden: is used |
+| `comparer` | Manual | `actual.Should().NotBe(other, EqualityComparer<object>.Default);` — reden: comparer |
+| `constant-cast` | Fixed | `count.Should().NotBe(0);` → `count.ShouldNotBe((byte)0);` |
+| `nullable` | Fixed | `count.Should().NotBe(0); name.Should().NotBe("timme");` → `count.ShouldNotBe(0); name.ShouldNotBe("timme");` |
+| `record` | Fixed | `price.Should().NotBe(new Money(0m, "EUR"));` → `price.ShouldNotBe(new Money(0m, "EUR"));` |
+| `simple` | Fixed | `result.Should().NotBe(41); name.Should().NotBe("timme");` → `result.ShouldNotBe(41); name.ShouldNotBe("timme");` |
+
+### NotThrow (11)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `after` | Manual | `act.Should().NotThrowAfter(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(10));` — reden: NotThrowAfter |
+| `because` | Fixed | `act.Should().NotThrow("it is valid");` → `Should.NotThrow(act, "it is valid");` |
+| `because-args` | Manual | `act.Should().NotThrow("because {0}", 1);` — reden: becauseArgs |
+| `edge-expression-bodied` | Fixed | `public void Test(Action act) => act.Should().NotThrow();` → `public void Test(Action act) => Should.NotThrow(act);` |
+| `func` | Fixed | `func.Should().NotThrow();` → `Should.NotThrow(func);` |
+| `generic` | Manual | `act.Should().NotThrow<InvalidOperationException>();` — reden: only forbids exception type |
+| `invoking` | Manual | `o.Invoking(x => x.ToString()).Should().NotThrow();` — reden: Invoking |
+| `result-used` | Manual | `var result = act.Should().NotThrow();` — reden: is used |
+| `simple` | Fixed | `act.Should().NotThrow();` → `Should.NotThrow(act);` |
+| `value-func` | Fixed | `func.Should().NotThrow();` → `Should.NotThrow(func);` |
+| `value-used` | Manual | `var value = func.Should().NotThrow().Which;` — reden: is used |
+
+### OnlyContain (15)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `and-chain` | Manual | `x.Should().HaveCount(2).And.OnlyContain(i => i > 0);` — reden: is not in the form |
+| `array` | Fixed | `x.Should().OnlyContain(i => i > 0);` → `x.ShouldNotBeEmpty(); x.ShouldAllBe(i => i > 0);` |
+| `because` | Fixed | `x.Should().OnlyContain(i => i > 0, "all are positive");` → `x.ShouldNotBeEmpty("all are positive"); x.ShouldAllBe(i => i > 0, "all are positive");` |
+| `because-args` | Manual | `x.Should().OnlyContain(i => i > 0, "because {0}", "reason");` — reden: becauseArgs |
+| `chain` | Manual | `x.Should().OnlyContain(i => i > 0).And.HaveCount(2);` — reden: is used |
+| `dictionary` | Fixed | `x.Should().OnlyContain(p => p.Value > 0);` → `x.ShouldNotBeEmpty(); x.ShouldAllBe(p => p.Value > 0);` |
+| `edge-multiline-lambda` | Fixed | `names.Should().OnlyContain(n =>` → `names.ShouldNotBeEmpty(); names.ShouldAllBe(n =>` |
+| `enumerable` | Fixed | `x.Should().OnlyContain(s => s.Length > 1);` → `x.ShouldNotBeEmpty(); x.ShouldAllBe(s => s.Length > 1);` |
+| `lambda` | Manual | `Action act = () => x.Should().OnlyContain(i => i > 0);` — reden: cannot hold two statements |
+| `member-subject` | Fixed | `other.Items.Should().OnlyContain(i => i > 0); this.Items.Should().OnlyContain(i => i > 0);` → `other.Items.ShouldNotBeEmpty(); other.Items.ShouldAllBe(i => i > 0);` |
+| `no-block` | Manual | `x.Should().OnlyContain(i => i > 0);` — reden: cannot hold two statements |
+| `nullable` | Fixed | `x.Should().OnlyContain(i => i > 0);` → `x.ShouldNotBeEmpty(); x.ShouldAllBe(i => i > 0);` |
+| `simple` | Fixed | `x.Should().OnlyContain(i => i > 0);` → `x.ShouldNotBeEmpty(); x.ShouldAllBe(i => i > 0);` |
+| `subject-call` | Manual | `Load().Should().OnlyContain(i => i > y);` — reden: evaluate the subject twice |
+| `used` | Manual | `var r = x.Should().OnlyContain(i => i > 0);` — reden: is used |
+
+### ShouldBe (26)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `assertion-scope-nested` | Manual | `x.Should().Be(1);` — reden: Inside an AssertionScope |
+| `assertion-scope-using-block` | Manual | `x.Should().Be(1);` — reden: Inside an AssertionScope |
+| `assertion-scope-using-var` | Manual | `x.Should().Be(1);` — reden: Inside an AssertionScope |
+| `because` | Fixed | `total.Should().Be(25, "two items of 12.50");` → `total.ShouldBe(25, "two items of 12.50");` |
+| `because-args` | Manual | `total.Should().Be(25, "{0} items", items);` — reden: becauseArgs |
+| `chain` | Manual | `result.Should().Be(42).And.NotBe(41);` — reden: is used |
+| `comparer` | Manual | `actual.Should().Be(expected, EqualityComparer<object>.Default);` — reden: comparer |
+| `constant-cast` | Fixed | `count.Should().Be(1); status.Should().Be(0);` → `count.ShouldBe((byte)1); status.ShouldBe((Status)0);` |
+| `edge-await-subject` | Fixed | `(await load()).Should().Be(1);` → `(await load()).ShouldBe(1);` |
+| `edge-cast-subject` | Fixed | `((string)value).Should().Be("a");` → `((string)value).ShouldBe("a");` |
+| `edge-enum` | Fixed | `day.Should().Be(DayOfWeek.Monday);` → `day.ShouldBe(DayOfWeek.Monday);` |
+| `edge-expression-bodied` | Fixed | `public void Test(int value) => value.Should().Be(1);` → `public void Test(int value) => value.ShouldBe(1);` |
+| `edge-generic` | Fixed | `value.Should().Be(expected);` → `value.ShouldBe(expected);` |
+| `edge-global-using` | Fixed | `global using FluentAssertions; value.Should().Be(1);` → `global using Shouldly; value.ShouldBe(1);` |
+| `edge-ifdef` | Fixed | `value.Should().Be(2);` → `value.ShouldBe(2);` |
+| `edge-interpolated-because` | Fixed | `total.Should().Be(3, $"{count} items were added");` → `total.ShouldBe(3, $"{count} items were added");` |
+| `edge-interpolated-expected` | Fixed | `url.Should().Be($"{root}/license");` → `url.ShouldBe($"{root}/license");` |
+| `edge-method-chain-subject` | Fixed | `text.Trim().ToUpperInvariant().Should().Be("A");` → `text.Trim().ToUpperInvariant().ShouldBe("A");` |
+| `edge-multiline` | Fixed | `value .Should()` → `value.ShouldBe(42);` |
+| `edge-named-because` | Manual | `total.Should().Be(3, because: "three items were added");` — reden: named arguments |
+| `edge-raw-string` | Fixed | `json.Should().Be("""{"name":"a"}""");` → `json.ShouldBe("""{"name":"a"}""");` |
+| `edge-trailing-comment` | Fixed | `value.Should().Be(42); // keep me` → `value.ShouldBe(42); // keep me` |
+| `lambda` | Fixed | `Array.ForEach(totals, t => t.Should().Be(20m));` → `Array.ForEach(totals, t => t.ShouldBe(20m));` |
+| `nullable-expected` | Manual | `count.Should().Be(expected);` — reden: differs from subject type |
+| `simple` | Fixed | `result.Should().Be(42); name.Should().Be("timme");` → `result.ShouldBe(42); name.ShouldBe("timme");` |
+| `xml` | Manual | `actual.Should().Be(expected);` — reden: different equality semantics |
+
+### StringStartEnd (10)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `and` | Manual | `s.Should().StartWith("Ti").And.EndWith("me");` — reden: .And |
+| `assertion-scope` | Manual | `s.Should().StartWith("Ti");` — reden: AssertionScope |
+| `because` | Fixed | `s.Should().StartWith("Ti", "name"); s.Should().NotEndWith("x", "name");` → `s.ShouldStartWith("Ti", Shouldly.Case.Sensitive, "name"); s.ShouldNotEndWith("x", "name", Shouldly.Case.Sensit…` |
+| `because-args` | Manual | `s.Should().StartWith("Ti", "of {0}", 1);` — reden: becauseArgs |
+| `collection` | Manual | `x.Should().StartWith(1);` — reden: non-string |
+| `edge-member-subject` | Fixed | `dto.Name.Should().StartWith($"{dto.Name[0]}");` → `dto.Name.ShouldStartWith($"{dto.Name[0]}", Shouldly.Case.Sensitive);` |
+| `equivalent-of` | Fixed | `s.Should().StartWithEquivalentOf("ti"); s.Should().EndWithEquivalentOf("ME");` → `s.ShouldStartWith("ti"); s.ShouldEndWith("ME");` |
+| `null-or` | Fixed | `s.Should().NotBeNullOrEmpty(); s.Should().NotBeNullOrWhiteSpace();` → `s.ShouldNotBeNullOrEmpty(); s.ShouldNotBeNullOrWhiteSpace();` |
+| `nullable` | Fixed | `s.Should().StartWith("Ti"); s.Should().NotBeNullOrWhiteSpace();` → `s.ShouldStartWith("Ti", Shouldly.Case.Sensitive); s.ShouldNotBeNullOrWhiteSpace();` |
+| `simple` | Fixed | `s.Should().StartWith("Ti"); s.Should().EndWith("me");` → `s.ShouldStartWith("Ti", Shouldly.Case.Sensitive); s.ShouldEndWith("me", Shouldly.Case.Sensitive);` |
+
+### Throw (28)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `aggregate-expected` | Fixed | `act.Should().Throw<AggregateException>();` → `Should.Throw<AggregateException>(act);` |
+| `aggregate-get-result` | Fixed | `act.Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(act);` |
+| `aggregate-method-group` | Manual | `act.Should().Throw<InvalidOperationException>();` — reden: unwraps AggregateException |
+| `aggregate-wait` | Manual | `act.Should().Throw<InvalidOperationException>();` — reden: unwraps AggregateException |
+| `because` | Fixed | `act.Should().Throw<InvalidOperationException>("it is shipped");` → `Should.Throw<InvalidOperationException>(act, "it is shipped");` |
+| `because-args` | Manual | `act.Should().Throw<InvalidOperationException>("because {0}", 1);` — reden: becauseArgs |
+| `chain` | Manual | `act.Should().Throw<InvalidOperationException>().WithInnerException<ArgumentException>();` — reden: is used |
+| `edge-inner-exception` | Manual | `act.Should().Throw<InvalidOperationException>().WithInnerException<ArgumentException>();` — reden: is used |
+| `edge-multiline-message` | Fixed | `act.Should() .Throw<InvalidOperationException>()` → `Should.Throw<InvalidOperationException>(act).Message.ShouldBe("boom", Shouldly.StringCompareShould.IgnoreCase)…` |
+| `edge-which-message` | Manual | `act.Should().Throw<Exception>().Which.Message.Should().StartWith("x");` — reden: is used |
+| `func` | Fixed | `func.Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(func);` |
+| `invoking` | Manual | `text.Invoking(t => t.ToString()).Should().Throw<InvalidOperationException>();` — reden: Invoking |
+| `lambda` | Fixed | `Action run = () => act.Should().Throw<InvalidOperationException>();` → `Action run = () => Should.Throw<InvalidOperationException>(act);` |
+| `message-because` | Fixed | `act.Should().Throw<InvalidOperationException>("a").WithMessage("*shipped*", "b");` → `Should.Throw<InvalidOperationException>(act, "a").Message.ShouldContain("shipped", Shouldly.Case.Insensitive, …` |
+| `message-because-args` | Manual | `act.Should().Throw<InvalidOperationException>().WithMessage("*a*", "because {0}", 1);` — reden: becauseArgs |
+| `message-contains` | Fixed | `act.Should().Throw<InvalidOperationException>().WithMessage("*shipped*");` → `Should.Throw<InvalidOperationException>(act).Message.ShouldContain("shipped", Shouldly.Case.Insensitive);` |
+| `message-contains-line-break` | Manual | `act.Should().Throw<InvalidOperationException>().WithMessage("*order\nshipped*");` — reden: contains a line break |
+| `message-ends` | Fixed | `act.Should().Throw<InvalidOperationException>().WithMessage("*shipped");` → `Should.Throw<InvalidOperationException>(act).Message.ShouldEndWith("shipped", Shouldly.Case.Insensitive);` |
+| `message-exact` | Fixed | `act.Should().Throw<InvalidOperationException>().WithMessage("Order shipped");` → `Should.Throw<InvalidOperationException>(act).Message.ShouldBe("Order shipped", Shouldly.StringCompareShould.Ig…` |
+| `message-exact-because` | Fixed | `act.Should().Throw<InvalidOperationException>().WithMessage("Order shipped", "b");` → `Should.Throw<InvalidOperationException>(act).Message.ShouldBe("Order shipped", "b", Shouldly.StringCompareShou…` |
+| `message-line-break` | Fixed | `act.Should().Throw<InvalidOperationException>().WithMessage("Order\nshipped");` → `Should.Throw<InvalidOperationException>(act).Message.ShouldBe("Order\nshipped", Shouldly.StringCompareShould.I…` |
+| `message-starts` | Fixed | `act.Should().Throw<InvalidOperationException>().WithMessage("Order*");` → `Should.Throw<InvalidOperationException>(act).Message.ShouldStartWith("Order", Shouldly.Case.Insensitive);` |
+| `message-variable` | Manual | `act.Should().Throw<InvalidOperationException>().WithMessage(pattern);` — reden: not a string constant |
+| `message-wildcard` | Manual | `act.Should().Throw<InvalidOperationException>().WithMessage("*ship?ed*");` — reden: wildcards other than |
+| `simple` | Fixed | `act.Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(act);` |
+| `throw-exactly` | Manual | `act.Should().ThrowExactly<InvalidOperationException>();` — reden: requires the exact exception type |
+| `value-func` | Manual | `func.Should().Throw<InvalidOperationException>();` — reden: reference type |
+| `value-used` | Manual | `var exception = act.Should().Throw<InvalidOperationException>().Which;` — reden: is used |
+
+### ThrowAsync (25)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `aggregate-awaited` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
+| `aggregate-result` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>();` — reden: unwraps AggregateException |
+| `awaiting` | Manual | `await text.Awaiting(t => Task.CompletedTask).Should().ThrowAsync<InvalidOperationException>();` — reden: Invoking |
+| `because` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>("a");` → `await Should.ThrowAsync<InvalidOperationException>(act, "a");` |
+| `because-args` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>("a {0}", 1);` — reden: becauseArgs |
+| `edge-configure-await` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>().ConfigureAwait(false);` → `await Should.ThrowAsync<InvalidOperationException>(act).ConfigureAwait(false);` |
+| `edge-local-async-lambda` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
+| `func-task-reference` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
+| `message-because` | Fixed | `await act.Should().ThrowAsync<ArgumentException>("a").WithMessage("*shipped*", "b");` → `(await Should.ThrowAsync<ArgumentException>(act, "a")).Message.ShouldContain("shipped", Shouldly.Case.Insensit…` |
+| `message-because-args` | Manual | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("*x*", "a {0}", 1);` — reden: becauseArgs |
+| `message-contains` | Fixed | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("*at least one line*");` → `(await Should.ThrowAsync<ArgumentException>(act)).Message.ShouldContain("at least one line", Shouldly.Case.Ins…` |
+| `message-contains-line-break` | Manual | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("*at least\none line*");` — reden: contains a line break |
+| `message-ends` | Fixed | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("*shipped");` → `(await Should.ThrowAsync<ArgumentException>(act)).Message.ShouldEndWith("shipped", Shouldly.Case.Insensitive);` |
+| `message-exact` | Fixed | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("Order shipped");` → `(await Should.ThrowAsync<ArgumentException>(act)).Message.ShouldBe("Order shipped", Shouldly.StringCompareShou…` |
+| `message-exact-because` | Fixed | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("Order shipped", "b");` → `(await Should.ThrowAsync<ArgumentException>(act)).Message.ShouldBe("Order shipped", "b", Shouldly.StringCompar…` |
+| `message-line-break` | Fixed | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("Order\nshipped");` → `(await Should.ThrowAsync<ArgumentException>(act)).Message.ShouldBe("Order\nshipped", Shouldly.StringCompareSho…` |
+| `message-starts` | Fixed | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("order*");` → `(await Should.ThrowAsync<ArgumentException>(act)).Message.ShouldStartWith("order", Shouldly.Case.Insensitive);` |
+| `message-variable` | Manual | `await act.Should().ThrowAsync<ArgumentException>().WithMessage(pattern);` — reden: not a string constant |
+| `message-wildcard` | Manual | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("a*b");` — reden: wildcards other than |
+| `no-await` | Manual | `var task = act.Should().ThrowAsync<InvalidOperationException>();` — reden: not directly awaited |
+| `simple` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
+| `throw-exactly` | Manual | `await act.Should().ThrowExactlyAsync<InvalidOperationException>();` — reden: requires the exact exception type |
+| `value-func` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>();` — reden: reference type |
+| `value-used` | Manual | `var thrown = await act.Should().ThrowAsync<InvalidOperationException>();` — reden: is used |
+| `where` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>().Where(e => e.Message.Length > 0);` — reden: not directly awaited |
+
+### _Combined (6)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `all-satisfy-be` | Fixed | `orders.Should().AllSatisfy(o => o.Total.Should().Be(20m));` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
+| `all-satisfy-other` | Fixed | `orders.Should().AllSatisfy(o => o.Note.Should().NotBeNull();` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
+| `manual-and-fixed` | Fixed | `y.Should().Be(1); y.Should().Be(2);` → `y.ShouldBe(1); y.ShouldBe(2);` |
+| `mixed` | Fixed | `order.Id.Should().Be(1); order.Total.Should().BeGreaterThan(10m).And.BeLessThan(30m);` → `order.Id.ShouldBe(1); order.Total.ShouldBeGreaterThan(10m);` |
+| `usings` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
+| `usings-existing` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
+
+## MediatR
+
+### AddMediatR (8)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `behavior-lifetime` | Manual | `services.AddMediatR(cfg => cfg.AddOpenBehavior(typeof(LoggingBehavior<,>), ServiceLifetime.Singleton));` — reden: cfg.AddOpenBehavior(...) has no direct Mediator equivalent |
+| `behaviors` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<ValidationBehavior>();` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Scoped;` |
+| `edge-assemblies` | Fixed | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` → `services.AddMediator(configuration => configuration.ServiceLifetime = ServiceLifetime.Transient);` |
+| `edge-service-type-behavior` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
+| `expression` | Fixed | `services.AddMediatR(options => options.RegisterServicesFromAssembly(typeof(Registration).Assembly));` → `services.AddMediator(options => options.ServiceLifetime = ServiceLifetime.Transient);` |
+| `no-lambda` | Manual | `services.AddMediatR(configuration);` — reden: AddMediatR is not called as services.AddMediatR(cfg => ...) |
+| `publisher` | Manual | `services.AddMediatR(cfg =>` — reden: 'cfg.NotificationPublisher = new TaskWhenAllPublisher()' has no direct Mediator equivalent |
+| `unknown-call` | Manual | `services.AddMediatR(cfg =>` — reden: cfg.AddOpenRequestPreProcessor(...) has no direct Mediator equivalent |
+
+### NotificationHandler (6)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `async` | Fixed | `public async Task Handle(Placed notification, CancellationToken cancellationToken)` → `public async ValueTask Handle(Placed notification, CancellationToken cancellationToken)` |
+| `completed-task` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) return Task.CompletedTask;` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) return ValueTask.CompletedTa…` |
+| `completed-task-expression` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) => Task.CompletedTask;` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) => ValueTask.CompletedTask;` |
+| `explicit` | Manual | `Task INotificationHandler<Placed>.Handle(Placed notification, CancellationToken cancellationToken) => Task.Com…` — reden: explicit interface |
+| `other-return` | Manual | `public Task Handle(Placed notification, CancellationToken cancellationToken) =>` — reden: not Task.CompletedTask |
+| `two-handlers` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) => Task.CompletedTask; public asy…` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) => ValueTask.CompletedTask; …` |
+
+### PipelineBehavior (9)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `closed` | Fixed | `public Task<int> Handle(Register command, RequestHandlerDelegate<int> next, CancellationToken token) return Ta…` → `public ValueTask<int> Handle(Register command, MessageHandlerDelegate<Register, int> next, CancellationToken t…` |
+| `edge-notnull-constraint` | Fixed | `where TRequest : notnull public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRespons…` → `where TRequest : notnull, IMessage public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDe…` |
+| `explicit` | Manual | `Task<TResponse> IPipelineBehavior<TRequest, TResponse>.Handle(TRequest request, RequestHandlerDelegate<TRespon…` — reden: explicit interface implementation |
+| `new-constraint` | Fixed | `where TRequest : class, new() public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRe…` → `where TRequest : class, IMessage, new() public async ValueTask<TResponse> Handle(TRequest request, MessageHand…` |
+| `next-passed` | Manual | `public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken canc…` — reden: Handle returns a Task that is not next() |
+| `next-stored` | Manual | `public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToke…` — reden: next is used other than as next() |
+| `next-token` | Fixed | `where TRequest : notnull public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> nex…` → `where TRequest : notnull, IMessage public ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate…` |
+| `no-constraint` | Fixed | `public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken canc…` → `where TRequest : IMessage public ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest…` |
+| `open-async` | Fixed | `where TRequest : notnull public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRespons…` → `where TRequest : notnull, IMessage public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDe…` |
+
+### RequestHandler (9)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `async` | Fixed | `public async Task<int> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<int> Handle(Query request, CancellationToken cancellationToken)` |
+| `edge-nested-generic` | Fixed | `public async Task<Result<List<int>>> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<Result<List<int>>> Handle(Query request, CancellationToken cancellationToken)` |
+| `edge-primary-ctor` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => Task.FromResult(request.Id + cl…` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) => ValueTask.FromResult(reque…` |
+| `explicit` | Manual | `Task<int> IRequestHandler<Query, int>.Handle(Query request, CancellationToken cancellationToken) =>` — reden: explicit interface implementation |
+| `from-result-block` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) return Task.FromResult(0);` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) return ValueTask.FromResult(0…` |
+| `from-result-expression` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => Task.FromResult(request.Id);` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) => ValueTask.FromResult(reque…` |
+| `generic` | Fixed | `public Task<T> Handle(Wrapped<T> request, CancellationToken ct) => Task.FromResult(request.Value);` → `public ValueTask<T> Handle(Wrapped<T> request, CancellationToken ct) => ValueTask.FromResult(request.Value);` |
+| `other-return` | Manual | `public Task<int> Handle(Query request, CancellationToken cancellationToken) =>` — reden: not Task.FromResult |
+| `token-name` | Fixed | `public async Task<int> Handle(Query query, CancellationToken token)` → `public async ValueTask<int> Handle(Query query, CancellationToken token)` |
+
+### VoidRequestHandler (8)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `async` | Fixed | `public async Task Handle(Command request, CancellationToken cancellationToken)` → `public async ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken) return Unit.Value;` |
+| `async-expression` | Manual | `public async Task Handle(Command request, CancellationToken cancellationToken) =>` — reden: without a statement body |
+| `completed-task` | Fixed | `public Task Handle(Command request, CancellationToken cancellationToken) return Task.CompletedTask;` → `public ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken) return Unit.ValueTask;` |
+| `completed-task-expression` | Fixed | `public Task Handle(Command request, CancellationToken cancellationToken) => Task.CompletedTask;` → `public ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken) => Unit.ValueTask;` |
+| `early-return` | Fixed | `public async Task Handle(Command request, CancellationToken cancellationToken) return;` → `public async ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken) return Unit.Value;` |
+| `explicit` | Manual | `Task IRequestHandler<Command>.Handle(Command request, CancellationToken cancellationToken) => Task.CompletedTa…` — reden: explicit interface |
+| `other-return` | Manual | `public Task Handle(Command request, CancellationToken cancellationToken) =>` — reden: not Task.CompletedTask |
+| `throw-at-end` | Fixed | `public async Task Handle(Command request, CancellationToken cancellationToken)` → `public async ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken)` |
+
+## _Pending (bekende fouten)
+
+### _Pending / MediatR
+
+#### NotificationHandler (1)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `edge-marker-interface` | Fixed | `public async Task Handle(OrderPlaced notification, CancellationToken cancellationToken)` → `public async ValueTask Handle(OrderPlaced notification, CancellationToken cancellationToken)` |
+
+#### PipelineBehavior (1)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `edge-request-constraint` | Fixed | `public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToke…` → `public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest, TResponse> next, C…` |
+
+#### RequestHandler (1)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `edge-marker-interface` | Fixed | `public async Task<int> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<int> Handle(Query request, CancellationToken cancellationToken)` |
+
+## Zie ook
+
+- `docs/projectinfo/architectuur/testen.md` — hoe proofs draaien
+- `docs/projectinfo/architectuur/edge-cases.md` — herkomst van de edge-proofs

@@ -22,8 +22,11 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`, registra
 | REQ-6 | Gehaald | `generic-handlers` (TAAK-037)       |
 | Uitbreiding TAAK-060 | Gehaald | `publisher`, `edge-publisher-qualified` |
 | Uitbreiding TAAK-061/062 | Gehaald | `processors`, `empty` |
+| Uitbreiding TAAK-144 | Gehaald | `edge-assemblies-public`, `AddMediatRPatternTests` |
 
 TAAK-117: een parameter die alleen naar een weggevallen `RegisterServicesFrom...` ging (IDE0060) blijft staan. TAAK-141: is de aanroep een los statement, dan komt er `_ = parameter;` vóór (geen IDE0060, signatuur en aanroepers ongewijzigd; proof `edge-assemblies`, evo1 bouwt weer). Anders `Fixed` met een waarschuwing in het rapport (`AddMediatRPatternTests`).
+
+TAAK-144: is die methode publiek (evo2's gedeelde `MediatorModule.AddMediator(services, assembly)`), of scant de aanroep een ander project met een internal handler, dan Manual; proof `edge-assemblies` is daarom nu `internal`. Daarnaast krijgt een eigen type dat zo heet als een Mediator-type (`ICommand`) de volledige naam waar `using Mediator;` binnenkomt (`IFix.AddedTypes`, proof `RequestHandler/edge-own-command-name`). Harnas: evo2 `ok` (Manual, ongewijzigd, 39/39), evo1 `ok` (45/45).
 
 Regressie-edges bij REQ-1/REQ-2: `edge-assemblies` (`RegisterServicesFromAssemblies`), `edge-service-type-behavior` (`AddBehavior(typeof(IPipelineBehavior<,>), typeof(X<,>))`).
 

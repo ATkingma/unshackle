@@ -106,6 +106,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/CORPUSRUN-mediatr.md` | Corpus-run MediatR: 0/9 volledig gemigreerd, blokkades en top-10 acties |
 | `claude/tasks/REGRESSIE-corpus.md` | Regressie-run per test: 8/10 identiek; Polly → TAAK-140 |
 | `claude/tasks/TAAK-140-catch-filter-op-fa-exception.md` | Bug: eigen code vangt FA-exception → Shouldly-exception niet gevangen (Polly) |
+| `claude/tasks/archief/TAAK-144-mediatr-evo2-naamconflict-generator.md` | evo2: eigen `ICommand` vs `Mediator.ICommand` (volledige naam), gedeelde/internal registratie → Manual |
 | `claude/tasks/patroon-queue.md` | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status (ronde 2: rijen 15-34) |
 | `claude/tasks/mediatr-queue.md` | Wachtrij MediatR → Mediator-patronen; infrastructuur in TAAK-020 |
 | `claude/tasks/automapper-queue.md` | Wachtrij AutoMapper → handgeschreven mapping (voorstel, op frequentie) |

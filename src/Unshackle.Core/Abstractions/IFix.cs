@@ -35,6 +35,13 @@ public interface IFix
     IReadOnlyList<string> SwappedTypes => [];
 
     /// <summary>
+    /// Public types of <see cref="AddedNamespaces"/>, as <c>Namespace.MetadataName</c> (for example <c>Mediator.ICommand`1</c>).
+    /// Where a file gets an added using, its references to an own type with the same name and arity get the full name, so they
+    /// neither become ambiguous (CS0104) nor bind to the new type. Empty (the default): not checked.
+    /// </summary>
+    IReadOnlyList<string> AddedTypes => [];
+
+    /// <summary>
     /// Extension methods of <see cref="RemovedNamespaces"/> that the patterns start from, called as <c>x.Name()</c> (for example
     /// <c>Should</c>). One that binds to nothing after the fix was seen by no pattern: its file keeps the removed using and package,
     /// and gets a Manual finding. Empty (the default) when the fix has none.

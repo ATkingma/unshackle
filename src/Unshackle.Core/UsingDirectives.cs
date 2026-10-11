@@ -14,6 +14,7 @@ internal static class UsingDirectives
         IEnumerable<string> removedNamespaces,
         IReadOnlyCollection<string> swappedTypes,
         IReadOnlyCollection<string> removedExtensionMethods,
+        IReadOnlyCollection<string> addedTypes,
         CancellationToken cancellationToken)
     {
         if (await document.GetSyntaxRootAsync(cancellationToken) is not CompilationUnitSyntax root
@@ -38,9 +39,11 @@ internal static class UsingDirectives
             : [.. AllUsings(root).Where(d => IsPlainUsing(d) && d.GlobalKeyword.IsKind(SyntaxKind.None)
                 && removedNamespaces.Contains(d.Name!.ToString()) && !used.Contains(d.Name!.ToString()))];
 
+        List<SimpleNameSyntax> clashing = Clashing(root, model, missing, removedNamespaces, addedTypes, cancellationToken);
+
         // Swap in place, so position and surrounding trivia stay as the user had them; the other unused ones go.
         int swapCount = Math.Min(unused.Count, missing.Count);
-        CompilationUnitSyntax updated = root.TrackNodes(unused);
+        CompilationUnitSyntax updated = Qualify(root.TrackNodes(unused.Cast<SyntaxNode>().Concat(clashing)), clashing, model);
         updated = updated.RemoveNodes(unused.Skip(swapCount).Select(u => updated.GetCurrentNode(u)!), SyntaxRemoveOptions.KeepNoTrivia)!;
         for (int i = 0; i < swapCount; i++)
         {
@@ -79,6 +82,41 @@ internal static class UsingDirectives
 
         return document.WithSyntaxRoot(updated.WithUsings([.. usings])).Project.Solution;
     }
+
+    // Own types named like a type of an added namespace (an own ICommand next to Mediator.ICommand): once the using is in,
+    // the name is ambiguous (CS0104) or binds to the added type, so these references get their full name (TAAK-144).
+    // shortcut: a global using of the added namespace (SwapGlobalUsings) is not checked; add that when seen in real code.
+    private static List<SimpleNameSyntax> Clashing(
+        CompilationUnitSyntax root, SemanticModel model, List<string> added, IEnumerable<string> removed, IReadOnlyCollection<string> addedTypes,
+        CancellationToken cancellationToken)
+    {
+        HashSet<string> taken = [.. addedTypes.Where(t => added.Contains(t[..t.LastIndexOf('.')])).Select(t => t[(t.LastIndexOf('.') + 1)..])];
+        return taken.Count == 0
+            ? []
+            : [.. root.DescendantNodes(n => n is not UsingDirectiveSyntax)
+                .OfType<SimpleNameSyntax>()
+                .Where(n => n.Parent switch
+                {
+                    QualifiedNameSyntax q => q.Right != n,
+                    MemberAccessExpressionSyntax m => m.Name != n,
+                    AliasQualifiedNameSyntax a => a.Name != n,
+                    _ => true,
+                })
+                .Where(n => model.GetSymbolInfo(n, cancellationToken).Symbol is INamedTypeSymbol type
+                    && taken.Contains(type.MetadataName)
+                    && n.Identifier.ValueText == type.Name // not through an alias
+                    && type.ContainingSymbol is not INamespaceSymbol { IsGlobalNamespace: true } // shortcut: would need global::Name, not seen yet
+                    && !added.Concat(removed).Contains(type.ContainingNamespace.ToDisplayString()))];
+    }
+
+    private static CompilationUnitSyntax Qualify(CompilationUnitSyntax root, List<SimpleNameSyntax> clashing, SemanticModel model) =>
+        root.ReplaceNodes(clashing.Select(n => root.GetCurrentNode(n)!), (original, current) =>
+        {
+            ISymbol container = model.GetSymbolInfo(clashing.First(n => n.Span == original.Span)).Symbol!.ContainingSymbol;
+            return SyntaxFactory.QualifiedName(
+                SyntaxFactory.ParseName(container.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)),
+                current.WithoutTrivia()).WithTriviaFrom(current);
+        });
 
     // True when the document has a top-level using of a removed namespace that nothing (but swapped types) binds to anymore.
     public static async Task<bool> HasUnusedRemovedUsingAsync(

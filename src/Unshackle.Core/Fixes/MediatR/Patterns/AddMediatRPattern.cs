@@ -105,6 +105,21 @@ public class AddMediatRPattern : IPattern
             }
         }
 
+        // Mediator's generator only sees this project and its references, and its code only reaches public handlers there (TAAK-144).
+        if (CallerAssemblyParameter(dropped, model) is string parameter)
+        {
+            return PatternResult.Manual(
+                $"AddMediatR scans the assembly passed in '{parameter}' of a public method: its handlers live in the caller's project, which Mediator's source generator in this project cannot see. "
+                + "Call AddMediator once in the host project (with Mediator.SourceGenerator) instead of in this shared method.");
+        }
+
+        if (HiddenHandler(dropped, model) is INamedTypeSymbol hidden)
+        {
+            return PatternResult.Manual(
+                $"AddMediatR scans {hidden.ContainingAssembly.Name}, whose handler {hidden.Name} is not public: the code Mediator generates in this project cannot reach it (CS0122). "
+                + "Make the handlers public, or call AddMediator in the project that declares them.");
+        }
+
         // MediatR's assembly scan registers closed exception handlers and processors itself; Mediator only runs what is listed.
         // Order: exception handlers outermost, then pre-processors, behaviors, post-processors.
         List<string> pipeline = [.. Scanned(model, [.. preProcessors, .. postProcessors]), .. preProcessors, .. behaviors, .. postProcessors];
@@ -178,6 +193,57 @@ public class AddMediatRPattern : IPattern
             .Where(p => references.All(r => dropped.Any(d => d.Span.Contains(r.Span))
                 || !SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(r).Symbol, p)))
             .Select(p => p.Name)];
+    }
+
+    // A parameter of an externally visible method passed to a dropped scan: the scanned assembly is the caller's.
+    // shortcut: InternalsVisibleTo also lets other projects call an internal method; not followed until seen in real code.
+    private static string? CallerAssemblyParameter(List<InvocationExpressionSyntax> dropped, SemanticModel model) =>
+        dropped.SelectMany(d => d.ArgumentList.DescendantNodes().OfType<IdentifierNameSyntax>())
+            .Select(i => model.GetSymbolInfo(i).Symbol)
+            .OfType<IParameterSymbol>()
+            .FirstOrDefault(p => IsVisibleOutside(p.ContainingSymbol))?.Name;
+
+    // A non-public handler in another assembly that a dropped scan names by typeof(T) or <T>, directly or through a local.
+    private static INamedTypeSymbol? HiddenHandler(List<InvocationExpressionSyntax> dropped, SemanticModel model)
+    {
+        List<SyntaxNode> sources = [.. dropped];
+        sources.AddRange(dropped.SelectMany(d => d.ArgumentList.DescendantNodes().OfType<IdentifierNameSyntax>())
+            .Select(i => model.GetSymbolInfo(i).Symbol)
+            .OfType<ILocalSymbol>()
+            .SelectMany(l => l.DeclaringSyntaxReferences)
+            .Select(r => r.GetSyntax())
+            .OfType<VariableDeclaratorSyntax>()
+            .Where(v => v.SyntaxTree == model.SyntaxTree)
+            .Select(v => (SyntaxNode?)v.Initializer)
+            .OfType<SyntaxNode>());
+        return sources
+            .SelectMany(s => s.DescendantNodesAndSelf().OfType<TypeOfExpressionSyntax>().Select(t => t.Type)
+                .Concat(s.DescendantNodesAndSelf().OfType<GenericNameSyntax>().SelectMany(g => g.TypeArgumentList.Arguments)))
+            .Select(t => model.GetTypeInfo(t).Type?.ContainingAssembly)
+            .OfType<IAssemblySymbol>()
+            .Where(a => !SymbolEqualityComparer.Default.Equals(a, model.Compilation.Assembly))
+            .Distinct(SymbolEqualityComparer.Default)
+            .Cast<IAssemblySymbol>()
+            .SelectMany(a => Types(a.GlobalNamespace))
+            .FirstOrDefault(t => !t.IsAbstract && !IsVisibleOutside(t) && t.AllInterfaces.Any(i =>
+                i.MetadataName is "IRequestHandler`1" or "IRequestHandler`2" or "INotificationHandler`1" or "IStreamRequestHandler`2"
+                && i.ContainingNamespace.ToDisplayString() is "MediatR" or "Mediator"));
+    }
+
+    private static IEnumerable<INamedTypeSymbol> Types(INamespaceOrTypeSymbol container) =>
+        container.GetMembers().OfType<INamespaceOrTypeSymbol>().SelectMany(m => m is INamedTypeSymbol type ? [type, .. Types(type)] : Types(m));
+
+    private static bool IsVisibleOutside(ISymbol symbol)
+    {
+        for (ISymbol? current = symbol; current is not null and not INamespaceSymbol; current = current.ContainingSymbol)
+        {
+            if (current.DeclaredAccessibility is not (Accessibility.Public or Accessibility.Protected or Accessibility.ProtectedOrInternal))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // Each statement gets only the indentation of the block; comments of the old statements go in front of the first new one.

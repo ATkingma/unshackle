@@ -34,7 +34,7 @@ Harnas: `claude/tools/corpus-regression.sh` (+ `.py`). Per solution: verse kopie
 
 | Solution | Reden | Soort |
 | --- | --- | --- |
-| evo1, evo2 | Build na fix faalt (IDE0060: ongebruikte `assembly`-parameter na `AddMediator`; TAAK-117 gaf alleen waarschuwing) | **opgelost** in TAAK-141 (`_ = assembly;`); evo2 heeft daarna nog CS0104/CS0122/CS0436/CS0535 (los probleem) |
+| evo1, evo2 | Build na fix faalt (IDE0060: ongebruikte `assembly`-parameter na `AddMediator`; TAAK-117 gaf alleen waarschuwing) | **opgelost** in TAAK-141 (`_ = assembly;`); evo2's CS0104/CS0122/CS0436/CS0535: **TAAK-144** (naamconflict opgelost; generator-conflict → Manual, harnas evo1 45/45, evo2 ongewijzigd 39/39) |
 | Akka.NET, Steeltoe | Unshackle laadt de solution niet: AOT-/benchmark-/sample-projecten waarvan types niet resolven (302 resp. 502 fouten) | product: loader (TAAK-112/135 dekken dit nog niet) |
 | LiteDB | Baseline-build faalt al (`LiteDB.Fuzz`) | omgeving/project |
 | PowerApps-Tooling | 0 tests: project gebruikt Microsoft.Testing.Platform; het harnas dwingt VSTest af | harnas |
@@ -43,7 +43,6 @@ Harnas: `claude/tools/corpus-regression.sh` (+ `.py`). Per solution: verse kopie
 
 - **TAAK-140** — zie taakbestand.
 - Loader: Akka/Steeltoe laden (projecten met onopgeloste types overslaan als ze geen FA/MediatR gebruiken; regels uit TAAK-112/135 verbreden).
-- evo1/evo2: IDE0060 oplossen in plaats van alleen waarschuwen.
 - Harnas: MTP-testprojecten (PowerApps) ondersteunen (`dotnet test` met MTP + TRX-extensie).
 
 ## Zie ook

@@ -107,7 +107,7 @@ public class Fixer : IFixer
 
                 Document document = working.GetDocument(documentId)!;
                 working = await UsingDirectives.UpdateAsync(
-                    document, requiredNamespaces, fix.RemovedNamespaces, swappedTypes, fix.RemovedExtensionMethods, cancellationToken);
+                    document, requiredNamespaces, fix.RemovedNamespaces, swappedTypes, fix.RemovedExtensionMethods, fix.AddedTypes, cancellationToken);
                 Document updated = working.GetDocument(documentId)!;
                 SyntaxNode updatedRoot = (await updated.GetSyntaxRootAsync(cancellationToken))!;
                 SemanticModel model = (await document.GetSemanticModelAsync(cancellationToken))!;

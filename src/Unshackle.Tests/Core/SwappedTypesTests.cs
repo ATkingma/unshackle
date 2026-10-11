@@ -43,6 +43,21 @@ public class SwappedTypesTests
     }
 
     [Fact]
+    public void AddedTypes_MatchPublicAndGeneratedTypesOfMediatorNamespace()
+    {
+        // Act
+        List<string> actual = [.. Compile(TestReferences.Mediator).GetTypeByMetadataName("Mediator.IMediator")!.ContainingNamespace
+            .GetTypeMembers()
+            .Where(t => t.DeclaredAccessibility == Accessibility.Public)
+            .Select(t => "Mediator." + t.MetadataName)
+            .Concat(["Mediator.Mediator", "Mediator.MediatorOptions", "Mediator.AssemblyReference"]) // written by the source generator
+            .Order(StringComparer.Ordinal)];
+
+        // Assert
+        new MediatRFix().AddedTypes.Order(StringComparer.Ordinal).ShouldBe(actual);
+    }
+
+    [Fact]
     public async Task FixAsync_FileWithOnlySwappedTypes_SwapsUsingAndRemovesPackage()
     {
         // Arrange

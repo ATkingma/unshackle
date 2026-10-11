@@ -43,6 +43,22 @@ public class MediatRFix : IFix
         "MediatR.IStreamRequestHandler`2",
     ];
 
+    // Public types of namespace Mediator in 3.0.2 (checked by SwappedTypesTests): an own ICommand next to the new using → full name (TAAK-144).
+    public IReadOnlyList<string> AddedTypes { get; } =
+    [
+        "Mediator.ExceptionHandlingResult`1", "Mediator.ForeachAwaitPublisher", "Mediator.IBaseCommand", "Mediator.IBaseQuery", "Mediator.IBaseRequest",
+        "Mediator.IBaseStreamCommand", "Mediator.IBaseStreamQuery", "Mediator.IBaseStreamRequest", "Mediator.ICommand", "Mediator.ICommandHandler`1",
+        "Mediator.ICommandHandler`2", "Mediator.ICommand`1", "Mediator.IMediator", "Mediator.IMessage", "Mediator.INotification",
+        "Mediator.INotificationHandler`1", "Mediator.INotificationPublisher", "Mediator.IPipelineBehavior`2", "Mediator.IPublisher", "Mediator.IQueryHandler`2",
+        "Mediator.IQuery`1", "Mediator.IRequest", "Mediator.IRequestHandler`1", "Mediator.IRequestHandler`2", "Mediator.IRequest`1",
+        "Mediator.ISender", "Mediator.IStreamCommandHandler`2", "Mediator.IStreamCommand`1", "Mediator.IStreamMessage", "Mediator.IStreamPipelineBehavior`2",
+        "Mediator.IStreamQueryHandler`2", "Mediator.IStreamQuery`1", "Mediator.IStreamRequestHandler`2", "Mediator.IStreamRequest`1", "Mediator.InvalidMessageException",
+        "Mediator.MessageExceptionHandler`2", "Mediator.MessageExceptionHandler`3", "Mediator.MessageHandlerDelegate`2", "Mediator.MessagePostProcessor`2", "Mediator.MessagePreProcessor`2",
+        "Mediator.MissingMessageHandlerException", "Mediator.NotificationHandlers`1", "Mediator.StreamHandlerDelegate`2", "Mediator.TaskWhenAllPublisher", "Mediator.Unit",
+        // Written by the source generator.
+        "Mediator.Mediator", "Mediator.MediatorOptions", "Mediator.AssemblyReference",
+    ];
+
     // The source generator writes AddMediator and the dispatcher; without it the abstractions do nothing.
     public PackageMigration Package { get; } = new()
     {

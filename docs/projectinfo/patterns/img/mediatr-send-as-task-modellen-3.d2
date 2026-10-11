@@ -1,0 +1,11 @@
+title: "[Beslisboom] SendAsTaskPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q1: "x.Send/x.Publish uit\nassembly MediatR?" {shape: diamond}
+q2: "await x, await (x) of\nawait x.ConfigureAwait(...)?" {shape: diamond}
+n: "niet gevonden"
+k: "blijft staan\n(task-uses)"
+f: "x.Send(...).AsTask()\n(task-uses, send-object)"
+q1 -> n: nee
+q1 -> q2: ja
+q2 -> k: ja
+q2 -> f: nee

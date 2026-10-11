@@ -1,0 +1,1 @@
+derive from Mediator.MessagePreProcessor<TMessage, TResponse>

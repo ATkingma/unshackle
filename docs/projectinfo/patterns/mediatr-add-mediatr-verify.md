@@ -19,10 +19,13 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`, registra
 | REQ-3 | Gehaald | `unknown-call`, `behavior-lifetime` |
 | REQ-4 | Gehaald | `publisher`                         |
 | REQ-5 | Gehaald | `no-lambda`                         |
+| REQ-6 | Gehaald | `generic-handlers` (TAAK-037)       |
 
 `after` compileert alleen met de Mediator-source-generator (die schrijft `AddMediator`); de proof-runner draait hem (`ProofFix.AfterGenerators`). De Fixer voegt `using Mediator;` toe, ook al is hij in `behaviors`/`expression` ongebruikt (onschuldig).
 
 Scan op SampleShop (na `dotnet restore`): `mediatr.add-mediatr` 0 Fixed, 1 Manual: `'cfg.RegisterGenericHandlers = true' has no direct Mediator equivalent` (`ServiceCollectionExtensions.cs:20`; daarna ook stream-behavior, pre/post-processors en publisher, die allemaal Manual zijn).
+
+Na TAAK-037 valt `RegisterGenericHandlers` weg; de Manual op SampleShop is nu `cfg.NotificationPublisher = new TaskWhenAllPublisher()` (en daarna stream-behavior en pre/post-processors).
 
 ## Deviations
 

@@ -61,6 +61,44 @@ public class SwappedTypesTests
     }
 
     [Fact]
+    public async Task FixAsync_StreamRequestHandler_CompilesAgainstMediator()
+    {
+        // Arrange
+        const string code = """
+            using System.Collections.Generic;
+            using System.Runtime.CompilerServices;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using MediatR;
+
+            public record StreamPing(int Count) : IStreamRequest<int>;
+
+            public class StreamPingHandler : IStreamRequestHandler<StreamPing, int>
+            {
+                public async IAsyncEnumerable<int> Handle(StreamPing request, [EnumeratorCancellation] CancellationToken cancellationToken)
+                {
+                    for (int i = 0; i < request.Count; i++)
+                    {
+                        await Task.Yield();
+                        yield return i;
+                    }
+                }
+            }
+
+            """;
+        var fixer = new Fixer([new MediatRFix()], _projectFiles);
+        (Solution solution, DocumentId documentId) = CreateSolution(code);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "mediatr" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        string text = (await report.Solution.GetDocument(documentId)!.GetTextAsync(TestContext.Current.CancellationToken)).ToString();
+        text.ShouldBe(code.Replace("using MediatR;", "using Mediator;", StringComparison.Ordinal));
+        TestSolution.CompileErrors(text, TestReferences.Mediator, TestReferences.MediatorGenerators).ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task FixAsync_FileStillUsingOtherMediatRType_KeepsUsingAndPackage()
     {
         // Arrange

@@ -1,0 +1,11 @@
+title: "[Sequence] SendAsTaskPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: SendAsTaskPattern
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> model: "GetSymbolInfo(invocation): Send/Publish uit assembly MediatR?"
+pattern -> pattern: "IsAwaited(invocation)?"
+pattern -> fixer: "InvocationExpressionSyntax" {style.stroke-dash: 3}
+fixer -> pattern: "Rewrite(node, model)"
+pattern -> fixer: "Fixed(x.Send(...).AsTask())" {style.stroke-dash: 3}

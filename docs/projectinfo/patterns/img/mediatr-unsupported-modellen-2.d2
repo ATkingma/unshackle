@@ -1,0 +1,11 @@
+title: "[Sequence] UnsupportedPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: UnsupportedPattern
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> model: "GetDeclaredSymbol(type): interfaces uit MediatR*"
+pattern -> pattern: "Advice(type, model) != null?"
+pattern -> fixer: "TypeDeclarationSyntax" {style.stroke-dash: 3}
+fixer -> pattern: "Rewrite(node, model)"
+pattern -> fixer: "Manual(advies)" {style.stroke-dash: 3}

@@ -2,6 +2,7 @@ using System.IO.Abstractions.TestingHelpers;
 using System.Text.Json;
 using Microsoft.CodeAnalysis.CSharp;
 using Shouldly;
+using Unshackle.Core.Fixes.FluentAssertions.Patterns;
 using Unshackle.Core.Models;
 using Unshackle.DataAccess.Reports;
 using Xunit;
@@ -100,6 +101,32 @@ public class ReportWriterTests
         // Assert
         row.Status.ShouldBe("Fixed");
         row.Reason.ShouldBe("runtime type");
+    }
+
+    [Fact]
+    public void FromAll_CustomAssertionCalls_OneRowPerAssertionWithCount()
+    {
+        // Arrange
+        static Finding Custom(string file, string reason) => new()
+        {
+            FilePath = file,
+            Line = 3,
+            FixId = "fluentassertions",
+            PatternId = CustomAssertionPattern.PatternId,
+            Result = PatternResult.Manual(reason),
+        };
+        Finding[] findings = [Custom("a.cs", "BeFailure"), s_findings[0], Custom("b.cs", "BeFailure"), Custom("c.cs", "HaveEntry")];
+
+        // Act
+        ReportRow[] rows = [.. ReportRow.FromAll(findings)];
+
+        // Assert
+        rows.Select(r => (r.File, r.Reason)).ShouldBe(
+        [
+            ("a.cs", "2 call(s), first here. BeFailure"),
+            ("tests/UserTests.cs", ""),
+            ("c.cs", "1 call(s), first here. HaveEntry"),
+        ]);
     }
 
     [Fact]

@@ -74,6 +74,27 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
 - `--report` weigert een bestaand bestand te overschrijven zonder `--force` (`scan` en `fix`).
 - De Fixer zelf is niet veranderd: Interface laadt, roept `FixAsync` aan en laat DataAccess schrijven.
 
+## Laden ondanks NuGet-warnings en ontbrekende projecten (TAAK-090)
+
+- `MsBuildSolutionStore` geeft MSBuild alleen voor de design-time build globale properties mee: `NuGetAudit=false` en
+  `WarningsNotAsErrors=NU1701;NU1900–NU1905`. Gebruikersbestanden blijven ongewijzigd.
+- Roslyn meldt elke MSBuild-melding van een project als `Failure`, ook een gewone warning (NU1903, NU1701). Zo'n failure
+  is alleen een waarschuwing (`ISolutionStore.Warnings`, door `scan`/`fix` getoond als `Warning: …`) als het project
+  toch geladen is, of als het genoemde projectbestand niet bestaat. Elke andere failure blijft fataal.
+- Waarom een ontbrekend project veilig is: er staat niets van op schijf om te herschrijven. Hangt een geladen project
+  ervan af, dan resolven zijn typen niet en faalt de bestaande CS0246/CS0234-check alsnog (met de waarschuwingen erbij in de
+  foutmelding). Een project dat wél bestaat maar niet laadt blijft fataal: de fix zou zijn code overslaan en toch
+  gedeelde pakketbestanden wijzigen.
+- Corpus (TAAK-090): Polly, EventFlow, SmartEnum en Bogus laden nu. Specification niet: het kernproject staat buiten de
+  tarball, de andere projecten verwijzen ernaar (CS0246). EventFlow's eigen `dotnet restore` faalt op NU1902/NU1903 door
+  TreatWarningsAsErrors; dat is een build van de gebruiker (`-p:NuGetAudit=false`), niet iets van de loader.
+
+## Eigen assertion-extensies (TAAK-091)
+
+- `fa.custom-assertion` (`Patterns/CustomAssertionPattern.cs`, nieuw bestand; één regel in `FluentAssertionsFix.Patterns`)
+  herkent een niet-FA-methode op een FA-assertions-type (receiver of basistype in een `FluentAssertions`-namespace,
+  naam eindigt op `Assertions`) en geeft Manual met één reden per extensie. Zie `rapportage.md` voor het groeperen.
+
 ## Projectbestanden (TAAK-017)
 
 - `IFix.Package` (default `null`): `PackageMigration` (oud pakket = assembly-naam, `AddedPackages`: naam + versie; het eerste vervangt het oude in place, de rest komt ernaast). FA → Shouldly 4.3.0; MediatR → Mediator.Abstractions + Mediator.SourceGenerator 3.0.2.

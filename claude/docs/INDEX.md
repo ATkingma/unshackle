@@ -14,7 +14,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `docs/projectinfo/architectuur/testen.md`                  | Proofs, types, mocking, samples                                                                                                                                                                                                                                                                                      |
 | `docs/projectinfo/architectuur/corpus.md`                  | Testcorpus: FA-API-frequentie in 14 projecten, dekking, fix-runs (FluentResults, Ardalis.Result)                                                                                                                                                                                                                     |
 | `docs/projectinfo/architectuur/edge-cases.md`              | Edge cases uit open-source projecten → `edge-*` proofs, pending bugs                                                                                                                                                                                                                                                 |
-| `docs/projectinfo/architectuur/proofs.md` | Alle proof-tests per patroon met uitkomst en korte uitleg (gegenereerd: `python3 claude/tools/proofs-doc.py`) |
+| `docs/projectinfo/architectuur/proofs.md`                  | Alle proof-tests per patroon met uitkomst en korte uitleg (gegenereerd: `python3 claude/tools/proofs-doc.py`)                                                                                                                                                                                                        |
 | `docs/projectinfo/architectuur/rapportage.md`              | Rapportformaten                                                                                                                                                                                                                                                                                                      |
 | `docs/projectinfo/beslissingen.md`                         | Codestijl-verwijzing, nog te beslissen                                                                                                                                                                                                                                                                               |
 | `docs/projectinfo/modellen/klassen.md`                     | UML-klassendiagram: contracten en modellen van Core                                                                                                                                                                                                                                                                  |
@@ -95,6 +95,10 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-071-fa-equivalent-collection-params.md` | ✅ `BeEquivalentTo(params)` op collectie → Manual met collectie-reden |
 | `claude/tasks/archief/TAAK-072-fa-contain-single-subject.md` | ✅ `ContainSingle().Subject` als `.Which` |
 | `claude/tasks/archief/TAAK-073-unused-fa-using-after-package-removal.md` | ✅ Ongebruikte oude using ook verwijderd in bestanden zonder findings |
+| `claude/tasks/TAAK-061-mediatr-processors-exception-handlers.md` | Pre/post-processors en exception-handlers herschrijven i.p.v. Manual |
+| `claude/tasks/TAAK-062-mediatr-stream-pipeline-behavior.md` | `IStreamPipelineBehavior` herschrijven, `AddOpenStreamBehavior` → `StreamPipelineBehaviors` |
+| `claude/tasks/archief/TAAK-090-loader-nuget-warnings.md` | ✅ Loader: NuGet-audit/NU1701 en ontbrekend projectbestand zijn waarschuwingen, geen laadfout |
+| `claude/tasks/archief/TAAK-091-custom-assertions-gegroepeerd.md` | ✅ `fa.custom-assertion`: eigen FA-extensies Manual, gegroepeerd per extensie in rapport en console |
 
 ## Skills
 

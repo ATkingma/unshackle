@@ -24,7 +24,7 @@ public class JsonReportWriter : IReportWriter
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(findings);
         await using FileSystemStream stream = _fileSystem.File.Create(path);
-        List<ReportRow> rows = [.. findings.Select(ReportRow.From)];
+        List<ReportRow> rows = [.. ReportRow.FromAll(findings)];
         await JsonSerializer.SerializeAsync(stream, rows, s_options, cancellationToken);
     }
 }

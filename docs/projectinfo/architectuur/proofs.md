@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 468 proofs (zonder `_Pending`).
+Totaal: 470 proofs (zonder `_Pending`).
 
 ## FluentAssertions
 
@@ -290,6 +290,13 @@ Totaal: 468 proofs (zonder `_Pending`).
 | `simple` | Fixed | `x.Should().ContainSingle();` → `x.ShouldHaveSingleItem();` |
 | `which` | Fixed | `var only = x.Should().ContainSingle().Which; var big = x.Should().ContainSingle(d => d.Price > 5m, "big").Whic…` → `var only = x.ShouldHaveSingleItem(); var big = x.Where(d => d.Price > 5m).ShouldHaveSingleItem("big");` |
 | `which-chain` | Manual | `x.Should().ContainSingle().Which.Price.Should().Be(5m);` — reden: is used |
+
+### CustomAssertion (2)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `extension` | Manual | `result.Should().BeFailure();` — reden: Custom assertion `ResultAssertions.BeFailure` |
+| `subclass` | Manual |  — reden: Custom assertion `OrderAssertions.BeShipped` |
 
 ### EqualSequence (11)
 

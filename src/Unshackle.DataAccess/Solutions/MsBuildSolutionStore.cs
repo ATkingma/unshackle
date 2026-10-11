@@ -10,6 +10,14 @@ namespace Unshackle.DataAccess.Solutions;
 // staleness check before the first write (Workspace.TryApplyChanges would overwrite edits made after the load).
 public class MsBuildSolutionStore : ISolutionStore, IDisposable
 {
+    // Global properties for the design-time build only; the user's files stay untouched. A vulnerable or net4x package
+    // (NuGet audit, NU1701) is a build concern, not an analysis one, but with TreatWarningsAsErrors it fails the load.
+    private static readonly Dictionary<string, string> s_loadProperties = new()
+    {
+        ["NuGetAudit"] = "false",
+        ["WarningsNotAsErrors"] = "NU1701;NU1900;NU1901;NU1902;NU1903;NU1904;NU1905",
+    };
+
     private readonly IFileSystem _fileSystem;
     private MSBuildWorkspace? _workspace;
 
@@ -29,13 +37,13 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
         }
 
         _workspace?.Dispose();
-        _workspace = MSBuildWorkspace.Create();
-        var errors = new List<string>();
+        _workspace = MSBuildWorkspace.Create(s_loadProperties);
+        var failures = new List<string>();
         _workspace.RegisterWorkspaceFailedHandler(e =>
         {
             if (e.Diagnostic.Kind == WorkspaceDiagnosticKind.Failure)
             {
-                errors.Add(e.Diagnostic.Message);
+                failures.Add(e.Diagnostic.Message);
             }
         });
 
@@ -44,9 +52,24 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
             ? (await _workspace.OpenProjectAsync(fullPath, cancellationToken: cancellationToken)).Solution
             : await _workspace.OpenSolutionAsync(fullPath, cancellationToken: cancellationToken);
 
+        var errors = new List<string>();
+        var warnings = new List<string>();
+        foreach (string failure in failures)
+        {
+            if (IsTolerable(failure, solution))
+            {
+                warnings.Add(failure);
+            }
+            else
+            {
+                errors.Add(failure);
+            }
+        }
+
+        Warnings = warnings;
         if (errors.Count > 0)
         {
-            throw new SolutionLoadException(errors);
+            throw new SolutionLoadException([.. errors, .. warnings]);
         }
 
         // An unrestored solution loads without a failure, but package types do not bind: the fix would find nothing and
@@ -62,8 +85,22 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
 
         return errors.Count > 0
             ? throw new SolutionLoadException(
-                [.. errors, $"Types do not resolve. Run 'dotnet restore \"{fullPath}\"' and make sure the code builds first."])
+                [.. errors, .. warnings, $"Types do not resolve. Run 'dotnet restore \"{fullPath}\"' and make sure the code builds first."])
             : solution;
+    }
+
+    public IReadOnlyList<string> Warnings { get; private set; } = [];
+
+    // Roslyn reports every MSBuild message of a project as a Failure, also plain warnings such as NuGet audit. Two cases
+    // are safe to continue with: the project still loaded (the CS0246 check below catches references that did not
+    // resolve), or the project file does not exist at all (nothing on disk to rewrite, and it cannot build anyway).
+    // Any other failure, such as a project that exists but did not load, stays fatal: the fix would skip its code while
+    // still changing shared package files.
+    private bool IsTolerable(string failure, Solution solution)
+    {
+        IEnumerable<string> paths = failure.Split('\'').Where(p => p.EndsWith("proj", StringComparison.OrdinalIgnoreCase));
+        return paths.Any(p => solution.Projects.Any(project => string.Equals(project.FilePath, p, StringComparison.Ordinal))
+            || !_fileSystem.File.Exists(p));
     }
 
     public void Dispose()

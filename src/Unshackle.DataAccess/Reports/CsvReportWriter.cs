@@ -27,6 +27,6 @@ public class CsvReportWriter : IReportWriter
         // Paths and reasons come from user code; keep spreadsheets from running them as formulas.
         var configuration = new CsvConfiguration(CultureInfo.InvariantCulture) { InjectionOptions = InjectionOptions.Escape };
         await using var csv = new CsvWriter(writer, configuration);
-        await csv.WriteRecordsAsync(findings.Select(ReportRow.From), cancellationToken);
+        await csv.WriteRecordsAsync(ReportRow.FromAll(findings), cancellationToken);
     }
 }

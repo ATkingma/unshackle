@@ -70,14 +70,17 @@ public class AndChainPattern : IPattern
             return PatternResult.Manual("An .And in the chain continues on another subject than x.Should(): rewrite it by hand.");
         }
 
-        if (!FluentAssertionsSyntax.IsSafeToEvaluateTwice(subject, model))
-        {
-            return PatternResult.Manual("The .And chain subject is not a local, parameter, field or property, so splitting would evaluate it twice.");
-        }
-
-        // One FluentAssertions statement per link, rewritten by the link patterns on the split tree.
+        // One FluentAssertions statement per link, rewritten by the link patterns on the split tree. A subject that must
+        // not run twice goes into a local first.
         var annotations = new List<SyntaxAnnotation>();
         var split = new List<StatementSyntax>();
+        if (!FluentAssertionsSyntax.IsSafeToEvaluateTwice(subject, model))
+        {
+            (StatementSyntax declaration, IdentifierNameSyntax local) = FluentAssertionsSyntax.Hoist(subject, model);
+            split.Add(declaration);
+            should = should.ReplaceNode(subject, local);
+        }
+
         foreach (InvocationExpressionSyntax link in links)
         {
             var annotation = new SyntaxAnnotation();
@@ -96,7 +99,7 @@ public class AndChainPattern : IPattern
         SemanticModel splitModel = model.Compilation.ReplaceSyntaxTree(tree, splitTree).GetSemanticModel(splitTree);
         SyntaxNode splitRoot = splitTree.GetRoot();
 
-        var statements = new List<SyntaxNode>();
+        List<SyntaxNode> statements = [.. split.Take(split.Count - links.Count)];
         var namespaces = new List<string>();
         var warnings = new List<string>();
         for (int i = 0; i < links.Count; i++)

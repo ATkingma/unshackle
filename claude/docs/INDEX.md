@@ -75,6 +75,12 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-093-fa-be-same-as.md` | ✅ `BeSameAs`/`NotBeSameAs` → `ShouldBeSameAs`/`ShouldNotBeSameAs` |
 | `claude/tasks/archief/TAAK-094-fa-not-throw-async.md` | ✅ `await act.Should().NotThrowAsync()` → `await Should.NotThrowAsync(act)` |
 | `claude/tasks/archief/TAAK-095-fa-date-count-comparisons.md` | ✅ `BeAfter`/`BeOnOrAfter`/`BeBefore`/`BeOnOrBefore` en `HaveCountGreaterThan…`/`HaveCountLessThan…` |
+| `claude/tasks/archief/TAAK-096-fa-which-chain.md` | ✅ `.Which`/`.Subject` na waarde-teruggevende assertions |
+| `claude/tasks/archief/TAAK-097-fa-because-args.md` | ✅ becauseArgs centraal → `string.Format` |
+| `claude/tasks/archief/TAAK-098-fa-hoist-subject.md` | ✅ Subject met bijwerkingen → `var subject = …;` |
+| `claude/tasks/archief/TAAK-099-fa-match.md` | ✅ `fa.match`: MatchRegex/NotMatchRegex en wildcard-Match |
+| `claude/tasks/archief/TAAK-100-fa-assertion-scope-satisfy.md` | ✅ AssertionScope → `ShouldSatisfyAllConditions` |
+| `claude/tasks/archief/TAAK-101-fa-direct-mappings.md` | ✅ Kleine mappings |
 | `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` | Frequentietabel MediatR/AutoMapper-API's uit 9 open-source projecten, dekking door patronen |
 | `claude/tasks/patroon-queue.md` | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status (ronde 2: rijen 15-34) |
 | `claude/tasks/mediatr-queue.md` | Wachtrij MediatR → Mediator-patronen; infrastructuur in TAAK-020 |

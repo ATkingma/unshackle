@@ -8,7 +8,7 @@ public class Case
 {
     public void Test(List<Dto> x)
     {
-        x.Should().ContainSingle().Which.Price.Should().Be(5m);
+        decimal price = x.Should().ContainSingle().Which.Price;
     }
 }
 

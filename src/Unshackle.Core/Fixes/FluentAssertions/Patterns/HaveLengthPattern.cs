@@ -34,6 +34,6 @@ public class HaveLengthPattern : FluentAssertionPattern
         ExpressionSyntax length = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, receiver, SyntaxFactory.IdentifierName("Length"));
         return PatternResult.Fixed(SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, length, SyntaxFactory.IdentifierName("ShouldBe")),
-            assertion.ArgumentList));
+            FluentAssertionsSyntax.Arguments([.. context.Values, context.Because])));
     }
 }

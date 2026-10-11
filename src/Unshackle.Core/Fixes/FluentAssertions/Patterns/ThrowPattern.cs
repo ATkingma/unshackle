@@ -12,7 +12,7 @@ public class ThrowPattern : IPattern
 
     public string Description => "act.Should().Throw<T>()[.WithMessage(p)] → Should.Throw<T>(act)[.Message.Should...]";
 
-    // The node is the Throw call, or the whole `.WithMessage(...)` call when that directly follows it.
+    // The node is the Throw call, the whole `.WithMessage(...)` call when that directly follows it, or `.Which` after it.
     // ThrowExactly and Invoking subjects belong to ThrowExactlyPattern and InvokingPattern, which call Rewrite below.
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         ThrowSyntax.FindThrow(root, model, t => !ThrowSyntax.IsExactly(t) && !ThrowSyntax.IsInvoking(t, model));
@@ -24,7 +24,9 @@ public class ThrowPattern : IPattern
             return PatternResult.Manual(FluentAssertionsSyntax.InsideAssertionScopeReason);
         }
 
-        var outer = (InvocationExpressionSyntax)node;
+        // `act.Should().Throw<T>().Which`: Should.Throw<T> returns the exception itself.
+        var which = node as MemberAccessExpressionSyntax;
+        var outer = (InvocationExpressionSyntax)(which?.Expression ?? node);
         InvocationExpressionSyntax throwCall = outer.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "WithMessage", Expression: InvocationExpressionSyntax inner }
             ? inner
             : outer;
@@ -43,7 +45,7 @@ public class ThrowPattern : IPattern
             return PatternResult.Manual("Throw<T>(...) is not in the form x.Should().Throw<T>(), e.g. after .And.");
         }
 
-        if (!FluentAssertionsSyntax.IsResultDiscarded(outer, model))
+        if (which is null && !FluentAssertionsSyntax.IsResultDiscarded(outer, model))
         {
             return PatternResult.Manual("The result of Throw<T>() is used (.Which/.And/.WithInnerException/.Where or a value); Shouldly's Should.Throw is not chained like that.");
         }
@@ -79,7 +81,7 @@ public class ThrowPattern : IPattern
         if (!FluentAssertionsSyntax.TryGetArguments(throwCall, model, out IReadOnlyList<ArgumentSyntax> throwValues, out ArgumentSyntax? throwBecause)
             || throwValues.Count != 0)
         {
-            return PatternResult.Manual("Throw<T>() with becauseArgs or named arguments: Shouldly cannot format the message.");
+            return PatternResult.Manual("Throw<T>() with named arguments, or becauseArgs whose because is no constant format string: rewrite it by hand.");
         }
 
         ExpressionSyntax result = SyntaxFactory.InvocationExpression(
@@ -101,7 +103,7 @@ public class ThrowPattern : IPattern
         if (!FluentAssertionsSyntax.TryGetArguments(outer, model, out IReadOnlyList<ArgumentSyntax> values, out ArgumentSyntax? because)
             || values.Count != 1)
         {
-            return PatternResult.Manual("WithMessage(...) with becauseArgs or named arguments: Shouldly cannot format the message.");
+            return PatternResult.Manual("WithMessage(...) with named arguments, or becauseArgs whose because is no constant format string: rewrite it by hand.");
         }
 
         if (model.GetConstantValue(values[0].Expression) is not { Value: string pattern })

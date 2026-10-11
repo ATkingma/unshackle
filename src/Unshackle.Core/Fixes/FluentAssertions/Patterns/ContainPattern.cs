@@ -47,7 +47,7 @@ public class ContainPattern : FluentAssertionPattern
         }
 
         string shouldName = name == "Contain" ? "ShouldContain" : "ShouldNotContain";
-        ArgumentListSyntax arguments = context.Assertion.ArgumentList;
+        ArgumentListSyntax arguments = FluentAssertionsSyntax.Arguments([.. context.Values, context.Because]);
         if (type.SpecialType == SpecialType.System_String)
         {
             // FluentAssertions compares substrings case-sensitively, Shouldly case-insensitively by default.

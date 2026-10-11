@@ -156,13 +156,28 @@ Gebouwd: `BeEquivalentTo` op collecties van leaves → `ShouldBe(…, ignoreOrde
 `fa.be-same-as`, `fa.not-throw-async`, en datum-/count-vergelijkingen in `fa.be-greater-less` en `fa.have-count`.
 Scan (`unshackle scan --fix fluentassertions`) met main bcf1156 (vóór) en deze wijziging (na):
 
-| Project | Fixed vóór | Manual vóór | Fixed na | Manual na | Verschil |
-| --- | --: | --: | --: | --: | --- |
-| SampleShop | 62 | 24 | 62 | 24 | geen: gebruikt geen van deze API's |
-| PowerApps-Tooling (casus, na restore) | 29 | 109 | 33 | 109 | +4 `fa.be-same-as` (waren niet herkend) |
+| Project                               | Fixed vóór | Manual vóór | Fixed na | Manual na | Verschil                                |
+| ------------------------------------- | ---------: | ----------: | -------: | --------: | --------------------------------------- |
+| SampleShop                            |         62 |          24 |       62 |        24 | geen: gebruikt geen van deze API's      |
+| PowerApps-Tooling (casus, na restore) |         29 |         109 |       33 |       109 | +4 `fa.be-same-as` (waren niet herkend) |
 
 Manual telt hier inclusief `project-file`-findings (SampleShop 2, PowerApps 3). De corpus-winst (A) zit vooral in projecten
 die hier niet laden (actie 0).
+
+## Na acties 5–10 (TAAK-096 t/m 101)
+
+Gebouwd: `.Which`/`.Subject` na BeOfType/ContainSingle/Throw (096), becauseArgs centraal als `string.Format(InvariantCulture, …)` (097),
+subject met bijwerkingen → `var subject = …;` in and-chain/only-contain/all-satisfy (098), `fa.match` (099),
+`AssertionScope` met alleen assertions → `ShouldSatisfyAllConditions` (100), `fa.direct-mapping` + ContainInOrder-Manual met code (101).
+Scan met main 0079d44 (vóór, = "na" hierboven) en deze wijziging (na), Manual inclusief `project-file`/`usings`:
+
+| Project                               | Fixed vóór | Manual vóór | Fixed na | Manual na |
+| ------------------------------------- | ---------: | ----------: | -------: | --------: |
+| SampleShop                            |         62 |          24 |       69 |        16 |
+| PowerApps-Tooling (casus, na restore) |         33 |         109 |       55 |        93 |
+
+Niet gedaan (blijft Manual): `ThrowAsync(..).Which`, `.WithMessage(..).Which`, `ContainKey(..).WhoseValue`, Invoking-receiver hoisten,
+AssertionScope met context-argument of andere statements, named arguments.
 
 ## Zie ook
 

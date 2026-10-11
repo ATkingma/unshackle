@@ -71,7 +71,7 @@ public class NotThrowAsyncPattern : IPattern
         if (!FluentAssertionsSyntax.TryGetArguments(call, model, out IReadOnlyList<ArgumentSyntax> values, out ArgumentSyntax? because)
             || values.Count != 0)
         {
-            return PatternResult.Manual("NotThrowAsync() with becauseArgs or named arguments: Shouldly cannot format the message.");
+            return PatternResult.Manual("NotThrowAsync() with named arguments, or becauseArgs whose because is no constant format string: rewrite it by hand.");
         }
 
         ExpressionSyntax notThrow = SyntaxFactory.InvocationExpression(

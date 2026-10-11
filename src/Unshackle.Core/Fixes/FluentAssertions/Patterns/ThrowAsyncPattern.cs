@@ -94,7 +94,7 @@ public class ThrowAsyncPattern : IPattern
         if (!FluentAssertionsSyntax.TryGetArguments(throwCall, model, out IReadOnlyList<ArgumentSyntax> throwValues, out ArgumentSyntax? throwBecause)
             || throwValues.Count != 0)
         {
-            return PatternResult.Manual("ThrowAsync<T>() with becauseArgs or named arguments: Shouldly cannot format the message.");
+            return PatternResult.Manual("ThrowAsync<T>() with named arguments, or becauseArgs whose because is no constant format string: rewrite it by hand.");
         }
 
         ExpressionSyntax shouldThrow = SyntaxFactory.InvocationExpression(
@@ -123,7 +123,7 @@ public class ThrowAsyncPattern : IPattern
         if (!FluentAssertionsSyntax.TryGetArguments(outer, model, out IReadOnlyList<ArgumentSyntax> values, out ArgumentSyntax? because)
             || values.Count != 1)
         {
-            return PatternResult.Manual("WithMessage(...) with becauseArgs or named arguments: Shouldly cannot format the message.");
+            return PatternResult.Manual("WithMessage(...) with named arguments, or becauseArgs whose because is no constant format string: rewrite it by hand.");
         }
 
         if (model.GetConstantValue(values[0].Expression) is not { Value: string pattern })

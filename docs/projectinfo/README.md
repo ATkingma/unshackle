@@ -133,6 +133,8 @@ Wachtrij en status: `claude/tasks/patroon-queue.md`.
 | `mediatr.stream-pipeline-behavior` | [plan](patterns/mediatr-stream-pipeline-behavior-plan.md) | [modellen](patterns/mediatr-stream-pipeline-behavior-modellen.md) | [verify](patterns/mediatr-stream-pipeline-behavior-verify.md) | TAAK-062 |
 | `fa.be-same-as` | [plan](patterns/fa-be-same-as-plan.md) | [modellen](patterns/fa-be-same-as-modellen.md) | [verify](patterns/fa-be-same-as-verify.md) | TAAK-093 |
 | `fa.not-throw-async` | [plan](patterns/fa-not-throw-async-plan.md) | [modellen](patterns/fa-not-throw-async-modellen.md) | [verify](patterns/fa-not-throw-async-verify.md) | TAAK-094 |
+| `fa.match` | [plan](patterns/fa-match-plan.md) | [modellen](patterns/fa-match-modellen.md) | [verify](patterns/fa-match-verify.md) | TAAK-099 |
+| `fa.direct-mapping` | [plan](patterns/fa-direct-mapping-plan.md) | [modellen](patterns/fa-direct-mapping-modellen.md) | [verify](patterns/fa-direct-mapping-verify.md) | TAAK-101 |
 
 ## Zie ook
 

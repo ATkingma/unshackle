@@ -17,6 +17,9 @@ public class ProofTests
 {
     private static readonly string s_proofsDirectory = Path.Combine(AppContext.BaseDirectory, "Proofs");
 
+    // Proofs of known pattern bugs: kept as documentation, not run until the bug's task is done.
+    private const string PendingFolderName = "_Pending";
+
     private static readonly Dictionary<string, ProofFix> s_fixes = new(StringComparer.Ordinal)
     {
         ["FluentAssertions"] = new()
@@ -36,6 +39,7 @@ public class ProofTests
     public static TheoryData<string> Proofs() =>
         [.. Directory.EnumerateFiles(s_proofsDirectory, "*.before.cs", SearchOption.AllDirectories)
             .Where(p => !p.Contains(CombinedProofTests.FolderName, StringComparison.Ordinal))
+            .Where(p => !p.Contains(PendingFolderName, StringComparison.Ordinal))
             .Select(p => Path.GetRelativePath(s_proofsDirectory, p)[..^".before.cs".Length].Replace('\\', '/'))
             .Order(StringComparer.Ordinal)];
 
@@ -68,7 +72,8 @@ public class ProofTests
         if (File.Exists(basePath + ".manual.txt"))
         {
             string reason = (await File.ReadAllTextAsync(basePath + ".manual.txt", TestContext.Current.CancellationToken)).Trim();
-            report.Findings.ShouldAllBe(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains(reason));
+            report.Findings.ShouldAllBe(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains(reason),
+                string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.Result.GetType().Name)));
             actual.ShouldBe(before);
         }
         else

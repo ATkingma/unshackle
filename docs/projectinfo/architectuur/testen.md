@@ -25,6 +25,11 @@ de eindtekst exact met `.after.cs`. Zelfde compileercheck: before tegen FluentAs
 de after nog `using FluentAssertions;` door een Manual-restant, dan Shouldly + FluentAssertions). `ProofTests` slaat
 de map `_Combined` over. Een aparte test legt vast dat `AllSatisfyPattern` eerst staat. Nieuw geval = twee bestanden.
 
+## Pending proofs: bekende fouten
+`src/Unshackle.Tests/Proofs/_Pending/<Fix>/<Pattern>/<case>.*` bevat proofs van bekende patroonbugs, met de gewenste
+`.after.cs`. `ProofTests` slaat de map over; elke pending proof hoort bij een taak. Fix klaar → map terugzetten.
+Herkomst van de edge cases: `architectuur/edge-cases.md`.
+
 ## Types zonder te builden
 Unittests gebruiken een `Solution` in het geheugen (`AdhocWorkspace`). De types komen uit:
 1. **Echte assemblies** (standaard). Het testproject verwijst naar de laatste vrije versies

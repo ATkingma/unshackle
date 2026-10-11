@@ -12,6 +12,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `docs/projectinfo/architectuur/projecten.md` | Projecten, afhankelijkheden, build-instellingen |
 | `docs/projectinfo/architectuur/core.md` | Fixer → Fix → Pattern (ontwerp + zoals gebouwd), SOLID |
 | `docs/projectinfo/architectuur/testen.md` | Proofs, types, mocking, samples |
+| `docs/projectinfo/architectuur/edge-cases.md` | Edge cases uit open-source projecten → `edge-*` proofs, pending bugs |
 | `docs/projectinfo/architectuur/rapportage.md` | Rapportformaten |
 | `docs/projectinfo/beslissingen.md` | Codestijl-verwijzing, nog te beslissen |
 | `docs/projectinfo/modellen/klassen.md` | UML-klassendiagram: contracten en modellen van Core |
@@ -42,6 +43,11 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/`         | Actieve taken: `TAAK-NNN-<slug>.md` |
 | `claude/tasks/TAAK-019-lancering.md` | Volgende stap: lancering (echte casus, NuGet, publiek, README-GIF) |
 | `claude/tasks/TAAK-031-fa-assertion-scope.md` | Bug: assertions in `AssertionScope` worden stil Fixed → Manual |
+| `claude/tasks/TAAK-040-fa-expression-bodied-void.md` | Bug: `void M() => x.Should()...` wordt Manual |
+| `claude/tasks/TAAK-041-fa-null-conditional-subject.md` | Bug: `a?.B.Should()...` wordt Manual "result is used" |
+| `claude/tasks/TAAK-042-fa-throwasync-configure-await.md` | Bug: `ThrowAsync<T>().ConfigureAwait(false)` wordt Manual |
+| `claude/tasks/TAAK-043-fa-inactive-preprocessor-branch.md` | Bug: inactieve `#if`-tak blijft FA, using verdwijnt |
+| `claude/tasks/TAAK-044-fa-global-using.md` | Bug: `global using FluentAssertions;` wordt niet vervangen |
 | `claude/tasks/patroon-queue.md` | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status (ronde 2: rijen 15-34) |
 | `claude/tasks/mediatr-queue.md` | Wachtrij MediatR → Mediator-patronen; infrastructuur in TAAK-020 |
 | `claude/tasks/archief/` | Voltooide taken                     |

@@ -47,6 +47,7 @@ mediatr.add-mediatr: `services.AddMediatR(cfg => { ... })` wordt `services.AddMe
 - **Uitbreiding TAAK-060**: WHEN `cfg.NotificationPublisher = new TaskWhenAllPublisher()` of `new ForeachAwaitPublisher()` (ook MediatR-gekwalificeerd) THE SYSTEM SHALL `cfg.NotificationPublisherType = typeof(global::Mediator.X)` schrijven (proofs `publisher`, `edge-publisher-qualified`); REQ-4 geldt nog voor een eigen publisher.
 - **Uitbreiding TAAK-061/062**: WHEN `Add(Open)RequestPreProcessor`/`Add(Open)RequestPostProcessor` of `Add(Open)StreamBehavior` aangeroepen wordt THE SYSTEM SHALL ze in `PipelineBehaviors` (open pre-processor `X<>` → `X<,>`) resp. `StreamPipelineBehaviors` zetten, met gesloten exception handlers en processors uit het eigen project vooraan (proof `processors`); een leeg blok wordt `cfg => cfg.ServiceLifetime = ServiceLifetime.Transient` (proof `empty`).
 - **Uitbreiding TAAK-144**: IF een weggevallen `RegisterServicesFrom...` een parameter krijgt van een buiten de assembly zichtbare methode, of een ander project scant met een niet-publieke handler, THEN THE SYSTEM SHALL Manual melden (Mediator's generator ziet de handlers van de aanroeper niet en kan internal handlers in een ander project niet aanroepen; proof `edge-assemblies-public`, `AddMediatRPatternTests`).
+- **Uitbreiding TAAK-147**: IF die methode `internal` is en de assembly `InternalsVisibleTo` een andere assembly (niet `DynamicProxyGenAssembly2`), THEN THE SYSTEM SHALL ook Manual melden (proof `edge-assemblies-friend`).
 
 ## Assumptions
 

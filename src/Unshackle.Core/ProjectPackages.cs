@@ -9,6 +9,7 @@ namespace Unshackle.Core;
 internal static class ProjectPackages
 {
     public static async Task<IReadOnlyList<ProjectMigration>> PlanAsync(
+        Solution original,
         Solution solution,
         IFix fix,
         PackageMigration package,
@@ -29,7 +30,7 @@ internal static class ProjectPackages
             migrations.Add(new ProjectMigration
             {
                 ProjectPath = project.FilePath!,
-                Package = await ForProjectAsync(project, package, cancellationToken),
+                Package = await ForProjectAsync(original.GetProject(project.Id) ?? project, removed, package, cancellationToken),
                 KeepRemovedPackage = await UsesAssemblyAsync(project, removed, fix, swappedTypes, cancellationToken),
                 RemovedNamespaces = fix.RemovedNamespaces,
                 AddedNamespaces = fix.AddedNamespaces,
@@ -44,19 +45,23 @@ internal static class ProjectPackages
     }
 
     // The package migration without the added packages this project's code has no call for (AddedPackage.OnlyWithCallTo).
-    private static async Task<PackageMigration> ForProjectAsync(Project project, PackageMigration package, CancellationToken cancellationToken)
+    // Semantic, on the original code: only a call that binds to the removed package counts, not an own method with that name (TAAK-147).
+    private static async Task<PackageMigration> ForProjectAsync(
+        Project original, HashSet<string> removed, PackageMigration package, CancellationToken cancellationToken)
     {
         var called = new HashSet<string>(StringComparer.Ordinal);
-        foreach (Document document in project.Documents)
+        foreach (Document document in original.Documents)
         {
-            SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken);
-            // Syntactic: after the fix the call (AddMediator) does not bind yet, its source generator is not referenced.
-            called.UnionWith(root?.DescendantNodes().OfType<InvocationExpressionSyntax>().Select(i => i.Expression switch
+            if (await document.GetSyntaxRootAsync(cancellationToken) is not SyntaxNode root
+                || await document.GetSemanticModelAsync(cancellationToken) is not SemanticModel model)
             {
-                MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText,
-                SimpleNameSyntax name => name.Identifier.ValueText,
-                _ => string.Empty,
-            }) ?? []);
+                continue;
+            }
+
+            called.UnionWith(root.DescendantNodes().OfType<InvocationExpressionSyntax>()
+                .Select(i => model.GetSymbolInfo(i, cancellationToken).Symbol)
+                .Where(s => s?.ContainingAssembly?.Name is string name && removed.Contains(name))
+                .Select(s => s!.Name));
         }
 
         List<AddedPackage> added = [.. package.AddedPackages.Where(p => p.OnlyWithCallTo.Count == 0 || p.OnlyWithCallTo.Any(called.Contains))];

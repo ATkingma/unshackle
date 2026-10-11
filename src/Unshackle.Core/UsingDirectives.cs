@@ -85,7 +85,6 @@ internal static class UsingDirectives
 
     // Own types named like a type of an added namespace (an own ICommand next to Mediator.ICommand): once the using is in,
     // the name is ambiguous (CS0104) or binds to the added type, so these references get their full name (TAAK-144).
-    // shortcut: a global using of the added namespace (SwapGlobalUsings) is not checked; add that when seen in real code.
     private static List<SimpleNameSyntax> Clashing(
         CompilationUnitSyntax root, SemanticModel model, List<string> added, IEnumerable<string> removed, IReadOnlyCollection<string> addedTypes,
         CancellationToken cancellationToken)
@@ -107,6 +106,22 @@ internal static class UsingDirectives
                     && n.Identifier.ValueText == type.Name // not through an alias
                     && type.ContainingSymbol is not INamespaceSymbol { IsGlobalNamespace: true } // shortcut: would need global::Name, not seen yet
                     && !added.Concat(removed).Contains(type.ContainingNamespace.ToDisplayString()))];
+    }
+
+    // Same for a global using of the added namespaces (SwapGlobalUsings): it reaches every file of the project (TAAK-147).
+    public static async Task<Solution> QualifyClashingAsync(
+        Document document, IReadOnlyList<string> added, IEnumerable<string> removed, IReadOnlyCollection<string> addedTypes, CancellationToken cancellationToken)
+    {
+        if (await document.GetSyntaxRootAsync(cancellationToken) is not CompilationUnitSyntax root
+            || await document.GetSemanticModelAsync(cancellationToken) is not SemanticModel model)
+        {
+            return document.Project.Solution;
+        }
+
+        List<SimpleNameSyntax> clashing = Clashing(root, model, [.. added], removed, addedTypes, cancellationToken);
+        return clashing.Count == 0
+            ? document.Project.Solution
+            : document.WithSyntaxRoot(Qualify(root.TrackNodes(clashing), clashing, model)).Project.Solution;
     }
 
     private static CompilationUnitSyntax Qualify(CompilationUnitSyntax root, List<SimpleNameSyntax> clashing, SemanticModel model) =>

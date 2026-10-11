@@ -106,11 +106,18 @@ public class AddMediatRPattern : IPattern
         }
 
         // Mediator's generator only sees this project and its references, and its code only reaches public handlers there (TAAK-144).
-        if (CallerAssemblyParameter(dropped, model) is string parameter)
+        if (CallerAssemblyParameter(dropped, model, IsVisibleOutside) is string parameter)
         {
             return PatternResult.Manual(
                 $"AddMediatR scans the assembly passed in '{parameter}' of a public method: its handlers live in the caller's project, which Mediator's source generator in this project cannot see. "
                 + "Call AddMediator once in the host project (with Mediator.SourceGenerator) instead of in this shared method.");
+        }
+
+        if (Friend(model) is string friend && CallerAssemblyParameter(dropped, model, _ => true) is string internalParameter)
+        {
+            return PatternResult.Manual(
+                $"AddMediatR scans the assembly passed in '{internalParameter}' of an internal method that {friend} may call (InternalsVisibleTo): its handlers would live in that project, which Mediator's source generator in this project cannot see. "
+                + "Check the callers in other projects; call AddMediator once in the host project (with Mediator.SourceGenerator) instead.");
         }
 
         if (HiddenHandler(dropped, model) is INamedTypeSymbol hidden)
@@ -195,13 +202,20 @@ public class AddMediatRPattern : IPattern
             .Select(p => p.Name)];
     }
 
-    // A parameter of an externally visible method passed to a dropped scan: the scanned assembly is the caller's.
-    // shortcut: InternalsVisibleTo also lets other projects call an internal method; not followed until seen in real code.
-    private static string? CallerAssemblyParameter(List<InvocationExpressionSyntax> dropped, SemanticModel model) =>
+    // A parameter of a method passed to a dropped scan, when the method passes the check (e.g. externally visible): the scanned assembly is the caller's.
+    private static string? CallerAssemblyParameter(List<InvocationExpressionSyntax> dropped, SemanticModel model, Func<ISymbol, bool> callable) =>
         dropped.SelectMany(d => d.ArgumentList.DescendantNodes().OfType<IdentifierNameSyntax>())
             .Select(i => model.GetSymbolInfo(i).Symbol)
             .OfType<IParameterSymbol>()
-            .FirstOrDefault(p => IsVisibleOutside(p.ContainingSymbol))?.Name;
+            .FirstOrDefault(p => callable(p.ContainingSymbol))?.Name;
+
+    // A friend assembly (InternalsVisibleTo) can call an internal method too (TAAK-147); DynamicProxyGenAssembly2 is a mocking proxy, no caller.
+    // shortcut: any friend counts, also one that never calls the method; checking the callers needs the solution, which a pattern does not see.
+    private static string? Friend(SemanticModel model) =>
+        model.Compilation.Assembly.GetAttributes()
+            .Where(a => a.AttributeClass?.ToDisplayString() == "System.Runtime.CompilerServices.InternalsVisibleToAttribute")
+            .Select(a => (a.ConstructorArguments.FirstOrDefault().Value as string)?.Split(',')[0].Trim())
+            .FirstOrDefault(n => !string.IsNullOrEmpty(n) && n != "DynamicProxyGenAssembly2");
 
     // A non-public handler in another assembly that a dropped scan names by typeof(T) or <T>, directly or through a local.
     private static INamedTypeSymbol? HiddenHandler(List<InvocationExpressionSyntax> dropped, SemanticModel model)

@@ -73,7 +73,7 @@ public class MediatRFix : IFix
             // MSG0005 (message without handler; MediatR allows it): an error under TreatWarningsAsErrors breaks a migration that behaves the same (TAAK-136).
             new()
             {
-                Name = "Mediator.SourceGenerator", Version = MediatorVersion, OnlyWithCallTo = ["AddMediator", "AddMediatR"], PrivateAssets = "all",
+                Name = "Mediator.SourceGenerator", Version = MediatorVersion, OnlyWithCallTo = ["AddMediatR"], PrivateAssets = "all",
                 WarningsNotAsErrors = ["MSG0005"],
             },
         ],

@@ -1,0 +1,1 @@
+AddMediatR scans the assembly passed in 'handlers' of an internal method that Proofs.Tests may call

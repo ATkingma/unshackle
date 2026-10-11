@@ -76,6 +76,27 @@ public class AddMediatRPatternTests
     }
 
     [Theory]
+    [InlineData("Shop.Tests", typeof(ManualResult))]
+    [InlineData("DynamicProxyGenAssembly2", typeof(FixedResult))]
+    public void Rewrite_AssemblyParameterOfInternalMethodWithFriend_ManualUnlessMockingProxy(string friend, Type expected)
+    {
+        // Arrange
+        (AddMediatRPattern pattern, SyntaxNode node, SemanticModel model) = Arrange(
+            "services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(handlers));",
+            $"[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"{friend}, PublicKey=00\")]\ninternal class C {{ internal");
+
+        // Act
+        PatternResult result = pattern.Rewrite(node, model);
+
+        // Assert
+        result.ShouldBeOfType(expected);
+        if (result is ManualResult manual)
+        {
+            manual.Reason.ShouldContain("'handlers' of an internal method that Shop.Tests may call");
+        }
+    }
+
+    [Theory]
     [InlineData("internal", typeof(ManualResult))]
     [InlineData("public", typeof(FixedResult))]
     public void Rewrite_ScannedAssemblyOfOtherProject_ManualWhenHandlerNotPublic(string accessibility, Type expected)

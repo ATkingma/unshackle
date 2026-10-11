@@ -172,6 +172,71 @@ public class SwappedTypesTests
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task FixAsync_ProjectCallingOwnAddMediator_AddsNoSourceGenerator()
+    {
+        // Arrange
+        const string code = """
+            using MediatR;
+            using Microsoft.Extensions.DependencyInjection;
+
+            public record Ping : IRequest<Unit>;
+
+            public static class Module
+            {
+                public static void Add(IServiceCollection services) => Shared.AddMediator(services);
+            }
+
+            public static class Shared
+            {
+                public static void AddMediator(IServiceCollection services) { }
+            }
+
+            """;
+        var fixer = new Fixer([new MediatRFix()], _projectFiles);
+        (Solution solution, _) = CreateSolution(code);
+
+        // Act
+        await fixer.FixAsync(solution, new FixRequest { FixId = "mediatr" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        await _projectFiles.Received(1).EditAsync(
+            Arg.Is<IEnumerable<ProjectMigration>>(m => m.Single().Package.AddedPackages.All(p => p.Name != "Mediator.SourceGenerator")),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task FixAsync_GlobalUsingSwappedWithOwnTypeOfSameName_QualifiesOwnTypeInEveryFile()
+    {
+        // Arrange
+        const string global = "global using MediatR;\n";
+        const string code = """
+            namespace App
+            {
+                public interface ICommand { }
+
+                public record Ping : IRequest<Unit>;
+
+                public class Uses
+                {
+                    public ICommand? Command { get; set; }
+                }
+            }
+
+            """;
+        var fixer = new Fixer([new MediatRFix()], _projectFiles);
+        (Solution solution, DocumentId documentId) = CreateSolution(code);
+        solution = solution.AddDocument(DocumentId.CreateNewId(documentId.ProjectId), "Usings.cs", global, filePath: "/repo/App/Usings.cs");
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "mediatr" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        string text = (await report.Solution.GetDocument(documentId)!.GetTextAsync(TestContext.Current.CancellationToken)).ToString();
+        text.ShouldContain("public global::App.ICommand? Command");
+        text.ShouldContain("public interface ICommand { }");
+    }
+
     private static CSharpCompilation Compile(IEnumerable<MetadataReference> references) =>
         CSharpCompilation.Create("Check", references: references);
 

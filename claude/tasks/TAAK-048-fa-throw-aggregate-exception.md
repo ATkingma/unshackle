@@ -32,3 +32,7 @@ Typisch bij code die `Task.Wait()`/`.Result` of `Parallel.ForEach` gebruikt. Gev
 ## Zie ook
 
 - `claude/tasks/TAAK-046-semantische-audit.md`
+
+## Besluit gebruiker (2026-10-11)
+
+Optie B: heuristiek. Kan de actie een `AggregateException` opleveren (`Task.Wait`, `.Result`, `.GetAwaiter().GetResult()`, `Parallel.*`, `Task.WaitAll`) → Manual met uitleg; anders gewoon omzetten. Start na TAAK-047 (zelfde patronen).

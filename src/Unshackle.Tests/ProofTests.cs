@@ -89,8 +89,10 @@ public class ProofTests
             string after = Normalize(await File.ReadAllTextAsync(basePath + ".after.cs", TestContext.Current.CancellationToken));
             report.Findings.ShouldContain(f => f.Result is FixedResult);
             actual.ShouldBe(after);
-            // A Manual finding can keep the old library (e.g. inactive #if code still uses it); then both are referenced.
+            // A Manual finding can keep the old library (e.g. inactive #if code still uses it), and so does a kept removed
+            // using (a catch of AssertionFailedException that now also catches Shouldly's); then both are referenced.
             IEnumerable<MetadataReference> afterReferences = report.Findings.Any(f => f.Result is ManualResult)
+                || proofFix.Fix.RemovedNamespaces.Any(ns => after.Contains($"using {ns};", StringComparison.Ordinal))
                 ? proofFix.Before.Union(proofFix.After)
                 : proofFix.After;
             TestSolution.CompileErrors(actual, afterReferences, proofFix.AfterGenerators).ShouldBeEmpty("after must compile against the new library");

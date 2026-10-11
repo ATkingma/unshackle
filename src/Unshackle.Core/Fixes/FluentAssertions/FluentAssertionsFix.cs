@@ -78,5 +78,7 @@ public class FluentAssertionsFix : IFix
         new AndChainPattern(s_assertions),
         .. s_assertions,
         new CustomAssertionPattern(),
+        // Catch sites of the assertion exception, e.g. a retry helper around assertions (TAAK-140).
+        new CatchAssertionExceptionPattern(),
     ];
 }

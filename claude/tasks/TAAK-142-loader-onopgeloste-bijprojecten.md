@@ -1,6 +1,6 @@
 # TAAK-142 — Laden: projecten met onopgeloste types overslaan als ze geen gemigreerde bibliotheek gebruiken
 
-**Status**: in uitvoering
+**Status**: klaar (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: `claude/tasks/REGRESSIE-corpus.md` (Akka.NET 302, Steeltoe 502 fouten)
 
@@ -27,11 +27,32 @@ helemaal niet laden.
 - [x] Rode test: `SampleShopTests.Load_UnresolvedLeafProject_IsSkippedUnlessItUsesAMigratedLibrary` (2 gevallen)
 - [x] Tolerantie + constructorparameter
 - [x] `dotnet build`, `dotnet test` (695), sample-tests (38) groen
-- [ ] Corpus: `claude/tools/corpus-regression.sh` op akka en steeltoe
+- [x] Corpus: `claude/tools/corpus-regression.sh` op akka en steeltoe
 
 ## Resultaat
 
-(volgt na corpus-run)
+**De oorspronkelijke 302/502 fouten waren grotendeels omgeving, niet de loader.** Bij het nalopen van `out/akka/work` bleek
+`~/.nuget/packages` tussen restore en fix uitgedund (o.a. `akka.analyzers/0.3.3`, `newtonsoft.json/13.0.1` en de net8-targeting
+packs weg): daardoor resolvede zelfs `Akka` (Newtonsoft) en Steeltoe (`Attribute`, `InternalsVisibleTo`) niet.
+
+Verse run (`OUT=/mnt/dikkeschijf/unshackle-corpus/out142`, bronnen `src142/` = de oude werkkopieën zonder bin/obj, fix
+`fluentassertions`, tool van deze branch):
+
+| Solution | laden                                                                              | fix                                     | build na fix        |
+| -------- | ---------------------------------------------------------------------------------- | --------------------------------------- | ------------------- |
+| Akka.NET | ok (alleen waarschuwingen: SourceLink "Unable to locate repository", 2× `.fsproj`) | 8453 Fixed / 1899 Manual, 742 bestanden | faalt: 4962× CS0121 |
+| Steeltoe | ok, geen waarschuwingen                                                            | 5043 Fixed / 755 Manual, 298 bestanden  | faalt: 58× CS1061   |
+
+De nieuwe tolerantie sloeg in deze runs geen project over (geen "uses no migrated library"-waarschuwing): met een intacte
+NuGet-cache resolven alle projecten. Ze blijft nuttig voor solutions met echt kapotte bijprojecten, maar is op het corpus niet
+aangetoond.
+
+Nieuwe productbevindingen (vervolgtaken, niet in deze taak):
+
+- **Akka**: `Akka.TestKit.AkkaSpecExtensions.ShouldBe<T>` (eigen extensie, zelfde naam) maakt elke `ShouldBe` na de fix
+  dubbelzinnig met Shouldly (CS0121).
+- **Steeltoe**: `fa.contain-key` herschrijft `ContainKey` op `HttpResponseHeaders` en `IReadOnlyDictionary<,>` naar
+  `ShouldContainKey`, die Shouldly alleen voor `IDictionary<,>` heeft (CS1061).
 
 ## Zie ook
 

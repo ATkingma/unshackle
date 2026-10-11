@@ -37,7 +37,7 @@ public static class Cli
         output.Profile.Width = Console.IsOutputRedirected ? RedirectedWidth : output.Profile.Width;
         error.Profile.Width = Console.IsErrorRedirected ? RedirectedWidth : error.Profile.Width;
         var view = new SpectreConsoleView(output, error);
-        using var store = new MsBuildSolutionStore(fileSystem);
+        using var store = new MsBuildSolutionStore(fileSystem, fixes.SelectMany(f => f.RemovedNamespaces));
         var projectFiles = new XmlProjectFileStore(fileSystem);
         var scan = new ScanCommand(new Fixer(fixes, projectFiles), store, reportWriters, view);
         var fix = new FixCommand(scan, projectFiles, new GitSourceControl(), view);

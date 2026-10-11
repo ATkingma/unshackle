@@ -12,7 +12,7 @@ public class MsBuildSolutionStoreTests
     public async Task LoadAsync_MissingFile_ThrowsFileNotFound()
     {
         // Arrange
-        using var store = new MsBuildSolutionStore(new MockFileSystem());
+        using var store = new MsBuildSolutionStore(new MockFileSystem(), ["FluentAssertions"]);
 
         // Act
         Task act() => store.LoadAsync("/repo/Missing.slnx", TestContext.Current.CancellationToken);

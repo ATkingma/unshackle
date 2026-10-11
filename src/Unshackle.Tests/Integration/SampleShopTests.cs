@@ -16,6 +16,7 @@ public class SampleShopTests
 {
     private const string FirstShouldBe = "        order.Total.Should().Be(25m);";
     private const string FirstShouldBeFixed = "        order.Total.ShouldBe(25m);";
+    private static readonly string[] s_libraries = ["FluentAssertions", "MediatR"];
 
     [Fact]
     public async Task ScanDryRunFix_SampleShopCopy_ReportsThenRewrites()
@@ -224,7 +225,7 @@ public class SampleShopTests
             </Project>
             """, cancellationToken);
         await File.WriteAllTextAsync(Path.Combine(directory.Path, "T.cs"), "using FluentAssertions; class T { }", cancellationToken);
-        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem());
+        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem(), s_libraries);
 
         // Act
         Task act() => store.LoadAsync(project, cancellationToken);
@@ -262,7 +263,7 @@ public class SampleShopTests
             """, cancellationToken);
         await File.WriteAllTextAsync(Path.Combine(directory.Path, "T.cs"), "using FluentAssertions; class T { }", cancellationToken);
         await DotnetAsync(cancellationToken, "restore", project);
-        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem());
+        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem(), s_libraries);
 
         // Act
         Microsoft.CodeAnalysis.Solution loaded = await store.LoadAsync(solution, cancellationToken);
@@ -302,7 +303,7 @@ public class SampleShopTests
               <Project Path="Builder/Builder.csproj" />
             </Solution>
             """, cancellationToken);
-        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem());
+        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem(), s_libraries);
 
         // Act
         Microsoft.CodeAnalysis.Solution loaded = await store.LoadAsync(solution, cancellationToken);
@@ -310,6 +311,53 @@ public class SampleShopTests
         // Assert
         loaded.Projects.ShouldHaveSingleItem().Name.ShouldBe("App", string.Join(" | ", store.Warnings));
         store.Warnings.ShouldContain(w => w.StartsWith("Builder:", StringComparison.Ordinal), string.Join(" | ", store.Warnings));
+    }
+
+    // Akka.NET/Steeltoe (TAAK-142): a benchmark or AOT app whose types do not resolve is left out with a warning when it uses
+    // no migrated library and nothing depends on it. One that names FluentAssertions stays fatal: its code would be missed.
+    [Theory]
+    [InlineData("BenchmarkDotNet", false)]
+    [InlineData("FluentAssertions", true)]
+    public async Task Load_UnresolvedLeafProject_IsSkippedUnlessItUsesAMigratedLibrary(string missingNamespace, bool fatal)
+    {
+        // Arrange
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using var directory = new TempDirectory();
+        string solution = Path.Combine(directory.Path, "Mixed.slnx");
+        foreach ((string name, string code) in new[] { ("App", "using System; class T { }"), ("Bench", $"using {missingNamespace}; class T {{ }}") })
+        {
+            Directory.CreateDirectory(Path.Combine(directory.Path, name));
+            await File.WriteAllTextAsync(Path.Combine(directory.Path, name, name + ".csproj"), """
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <TargetFramework>net10.0</TargetFramework>
+                  </PropertyGroup>
+                </Project>
+                """, cancellationToken);
+            await File.WriteAllTextAsync(Path.Combine(directory.Path, name, "T.cs"), code, cancellationToken);
+            await DotnetAsync(cancellationToken, "restore", Path.Combine(directory.Path, name, name + ".csproj"));
+        }
+
+        await File.WriteAllTextAsync(solution, """
+            <Solution>
+              <Project Path="App/App.csproj" />
+              <Project Path="Bench/Bench.csproj" />
+            </Solution>
+            """, cancellationToken);
+        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem(), s_libraries);
+
+        // Act
+        Task<Microsoft.CodeAnalysis.Solution> act() => store.LoadAsync(solution, cancellationToken);
+
+        // Assert
+        if (fatal)
+        {
+            await Should.ThrowAsync<SolutionLoadException>(act);
+            return;
+        }
+
+        (await act()).Projects.ShouldHaveSingleItem().Name.ShouldBe("App", string.Join(" | ", store.Warnings));
+        store.Warnings.ShouldContain(w => w.StartsWith("Bench:", StringComparison.Ordinal), string.Join(" | ", store.Warnings));
     }
 
     // eShopOnWeb/eShop (TAAK-135): the workspace does not run the Razor generator, so names of .razor components (or of the
@@ -333,7 +381,7 @@ public class SampleShopTests
         await File.WriteAllTextAsync(Path.Combine(directory.Path, "T.cs"),
             "namespace App { using App.Components; class T { Edit? E { get; set; } } }", cancellationToken);
         await DotnetAsync(cancellationToken, "restore", project);
-        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem());
+        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem(), s_libraries);
 
         // Act
         Microsoft.CodeAnalysis.Solution loaded = await store.LoadAsync(project, cancellationToken);
@@ -384,7 +432,7 @@ public class SampleShopTests
               <Project Path="docker-compose.dcproj" />
             </Solution>
             """, cancellationToken);
-        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem());
+        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem(), s_libraries);
 
         // Act
         Task<Microsoft.CodeAnalysis.Solution> act() => store.LoadAsync(solution, cancellationToken);

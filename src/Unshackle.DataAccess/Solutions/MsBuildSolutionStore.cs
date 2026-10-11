@@ -20,12 +20,18 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
     };
 
     private readonly IFileSystem _fileSystem;
+    private readonly HashSet<string> _libraries;
     private MSBuildWorkspace? _workspace;
 
-    public MsBuildSolutionStore(IFileSystem fileSystem)
+    /// <param name="fileSystem">Reads project files.</param>
+    /// <param name="libraryNamespaces">Namespaces of the libraries the fixes migrate (FluentAssertions, MediatR). A project whose
+    /// types do not resolve is only left out when it uses none of them.</param>
+    public MsBuildSolutionStore(IFileSystem fileSystem, IEnumerable<string> libraryNamespaces)
     {
         ArgumentNullException.ThrowIfNull(fileSystem);
+        ArgumentNullException.ThrowIfNull(libraryNamespaces);
         _fileSystem = fileSystem;
+        _libraries = [.. libraryNamespaces.Select(n => n.Split('.')[0])];
     }
 
     public async Task<Solution> LoadAsync(string path, CancellationToken cancellationToken)
@@ -99,17 +105,36 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
 
         // An unrestored solution loads without a failure, but package types do not bind: the fix would find nothing and
         // still swap usings and packages blindly. A missing namespace or type is the symptom we can see.
+        // TAAK-142: an AOT app, benchmark or sample (Akka.NET, Steeltoe) that does not resolve, uses none of the migrated libraries
+        // and has no project depending on it, is left out with a warning, as long as another project does resolve.
+        Dictionary<Project, List<string>> broken = [];
         foreach (Project project in solution.Projects)
         {
             Compilation? compilation = await project.GetCompilationAsync(cancellationToken);
             List<Diagnostic> unresolvedNames = compilation?.GetDiagnostics(cancellationToken)
                 .Where(d => d.Id is "CS0246" or "CS0234" && d.Severity == DiagnosticSeverity.Error).ToList() ?? [];
             HashSet<string> razorNames = unresolvedNames.Count > 0 ? RazorNames(project) : [];
-            errors.AddRange(unresolvedNames
-                .Where(d => !razorNames.Contains(d.GetMessage(CultureInfo.InvariantCulture).Split('\'')[1]))
-                .Take(3)
-                .Select(d => $"{project.Name}: {d.GetMessage(CultureInfo.InvariantCulture)}") ?? []);
+            List<string> messages = [.. unresolvedNames
+                .Select(d => d.GetMessage(CultureInfo.InvariantCulture))
+                .Where(m => !razorNames.Contains(m.Split('\'')[1]))];
+            if (messages.Count > 0)
+            {
+                broken[project] = messages;
+            }
         }
+
+        if (broken.Count < solution.ProjectIds.Count)
+        {
+            HashSet<ProjectId> referenced = [.. solution.Projects.SelectMany(p => p.ProjectReferences).Select(r => r.ProjectId)];
+            foreach ((Project project, List<string> messages) in broken.Where(b => !referenced.Contains(b.Key.Id) && !UsesLibrary(b.Key, b.Value)).ToList())
+            {
+                warnings.Add($"{project.Name}: types do not resolve ({messages[0]}), but it uses no migrated library, so its code is left alone.");
+                solution = solution.RemoveProject(project.Id);
+                broken.Remove(project);
+            }
+        }
+
+        errors.AddRange(broken.SelectMany(b => b.Value.Take(3).Select(m => $"{b.Key.Name}: {m}")));
 
         return errors.Count > 0
             ? throw new SolutionLoadException(
@@ -118,6 +143,15 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
     }
 
     public IReadOnlyList<string> Warnings { get; private set; } = [];
+
+    // A migrated library is in use when the project references its assembly or names it in a name that does not resolve.
+    private bool UsesLibrary(Project project, List<string> messages) =>
+        project.MetadataReferences.OfType<PortableExecutableReference>()
+            .Any(r => IsLibrary(_fileSystem.Path.GetFileNameWithoutExtension(r.FilePath)))
+        || messages.Any(m => m.Split('\'').Skip(1).Any(IsLibrary));
+
+    private bool IsLibrary(string? name) =>
+        name is not null && _libraries.Any(l => name == l || name.StartsWith(l + ".", StringComparison.Ordinal));
 
     // Roslyn reports every MSBuild message of a project as a Failure, also plain warnings such as NuGet audit. Two cases
     // are safe to continue with: the project still loaded (the CS0246 check below catches references that did not

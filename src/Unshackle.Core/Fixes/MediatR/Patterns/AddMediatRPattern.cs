@@ -18,15 +18,18 @@ public class AddMediatRPattern : IPattern
         "services.AddMediatR(cfg => ...) → services.AddMediator(cfg => ...): assembly registration dropped, behaviors, processors and exception handlers → PipelineBehaviors, stream behaviors → StreamPipelineBehaviors, Lifetime → ServiceLifetime";
 
     // A candidate counts too: once another file is fixed (AuditPreProcessor<> → <,>), the lambda no longer binds cleanly.
+    // A call that is a whole statement is found as that statement, so a "_ = parameter;" can go in front of it (IDE0060).
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i =>
             model.GetSymbolInfo(i) is var info
             && (info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is IMethodSymbol { Name: "AddMediatR" } method
-            && method.ContainingAssembly.Name == "MediatR");
+            && method.ContainingAssembly.Name == "MediatR")
+            .Select(i => i.Parent is ExpressionStatementSyntax statement ? statement : (SyntaxNode)i);
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
-        var invocation = (InvocationExpressionSyntax)node;
+        var statement = node as ExpressionStatementSyntax;
+        var invocation = (InvocationExpressionSyntax)(statement?.Expression ?? node);
         if (invocation.Expression is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "AddMediatR" } member
             || invocation.ArgumentList.Arguments is not [{ Expression: LambdaExpressionSyntax lambda }]
             || ParameterName(lambda) is not string config)
@@ -135,12 +138,19 @@ public class AddMediatRPattern : IPattern
             return PatternResult.Manual("Several settings in an AddMediatR expression lambda; write AddMediator(cfg => { ... }) by hand.");
         }
 
-        var result = (FixedResult)PatternResult.Fixed(
-            invocation
-                .WithExpression(member.WithName(SyntaxFactory.IdentifierName("AddMediator").WithTriviaFrom(member.Name)))
-                .WithArgumentList(invocation.ArgumentList.WithArguments([invocation.ArgumentList.Arguments[0].WithExpression(rewritten)])),
-            "Microsoft.Extensions.DependencyInjection");
+        InvocationExpressionSyntax addMediator = invocation
+            .WithExpression(member.WithName(SyntaxFactory.IdentifierName("AddMediator").WithTriviaFrom(member.Name)))
+            .WithArgumentList(invocation.ArgumentList.WithArguments([invocation.ArgumentList.Arguments[0].WithExpression(rewritten)]));
         List<string> unused = UnusedParameters(invocation, dropped, model);
+        if (statement is not null)
+        {
+            // "_ = p;" keeps the signature and its callers intact and counts as a use for IDE0060.
+            return PatternResult.Fixed(
+                [.. unused.Select(p => SyntaxFactory.ParseStatement($"_ = {p};")), statement.WithExpression(addMediator)],
+                "Microsoft.Extensions.DependencyInjection");
+        }
+
+        var result = (FixedResult)PatternResult.Fixed(addMediator, "Microsoft.Extensions.DependencyInjection");
         return unused.Count == 0
             ? result
             : result with
@@ -151,7 +161,7 @@ public class AddMediatRPattern : IPattern
     }
 
     // Parameters that were only passed to a dropped RegisterServicesFrom... call. Removing them changes the method's signature
-    // and its callers, so the report advises it instead of rewriting.
+    // and its callers: a statement gets "_ = p;" in front, any other call a warning in the report.
     private static List<string> UnusedParameters(InvocationExpressionSyntax invocation, List<InvocationExpressionSyntax> dropped, SemanticModel model)
     {
         if (invocation.FirstAncestorOrSelf<BaseMethodDeclarationSyntax>() is not { } method)

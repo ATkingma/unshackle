@@ -1,0 +1,35 @@
+title: "[Activity] BeApproximatelyPattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
+q0: "Buiten een AssertionScope?" {shape: diamond}
+m0: "Manual: Inside an AssertionScope\n(proof: assertion-scope)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+start -> q0
+q0 -> m0: nee
+q1: "Vorm x.Should().M(..)?" {shape: diamond}
+m1: "Manual: is not in the form x.Should()\n(proof: geen proof; .And via fa.and-chain)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q0 -> q1: ja
+q1 -> m1: nee
+q2: "Resultaat weggegooid?" {shape: diamond}
+m2: "Manual: is used\n(proof: geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q1 -> q2: ja
+q2 -> m2: nee
+q3: "Geen becauseArgs?" {shape: diamond}
+m3: "Manual: becauseArgs\n(proof: because-args)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q2 -> q3: ja
+q3 -> m3: nee
+q4: "Subject double/float/decimal/DateTime(Offset)/TimeSpan?" {shape: diamond}
+m4: "Manual: tolerance only for ...\n(proof: int-close-to)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q3 -> q4: ja
+q4 -> m4: nee
+q5: "Expected heeft hetzelfde type?" {shape: diamond}
+m5: "Manual: nullable or differently typed expected\n(proof: geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q4 -> q5: ja
+q5 -> m5: nee
+q6: "Niet Not… op nullable?" {shape: diamond}
+m6: "Manual: nullable subject\n(proof: nullable-not)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5 -> q6: ja
+q6 -> m6: nee
+f0: "Fixed: System.Math.Abs(x - y).ShouldBeGreaterThan(tol) (NotBeApproximately)\n(not)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+q6 -> f0: ja
+f1: "Fixed: x[.ShouldNotBeNull()].ShouldBe / ShouldNotBe(y, tol|span[, because])\n(simple, because, close-to, nullable)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+q6 -> f1: ja

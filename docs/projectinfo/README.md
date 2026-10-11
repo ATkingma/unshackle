@@ -112,6 +112,9 @@ Wachtrij en status: `claude/tasks/patroon-queue.md`.
 | `fa.be-of-type` | [plan](patterns/fa-be-of-type-plan.md) | [modellen](patterns/fa-be-of-type-modellen.md) | [verify](patterns/fa-be-of-type-verify.md) | TAAK-034 |
 | `fa.string-start-end` | [plan](patterns/fa-string-start-end-plan.md) | [modellen](patterns/fa-string-start-end-modellen.md) | [verify](patterns/fa-string-start-end-verify.md) | TAAK-035 |
 | `fa.contain-single-which` | [plan](patterns/fa-contain-single-which-plan.md) | [modellen](patterns/fa-contain-single-which-modellen.md) | [verify](patterns/fa-contain-single-which-verify.md) | TAAK-036 |
+| `fa.equal-sequence` | [plan](patterns/fa-equal-sequence-plan.md) | [modellen](patterns/fa-equal-sequence-modellen.md) | [verify](patterns/fa-equal-sequence-verify.md) | TAAK-038 |
+| `fa.have-length` | [plan](patterns/fa-have-length-plan.md) | [modellen](patterns/fa-have-length-modellen.md) | [verify](patterns/fa-have-length-verify.md) | TAAK-039 |
+| `fa.be-approximately` | [plan](patterns/fa-be-approximately-plan.md) | [modellen](patterns/fa-be-approximately-modellen.md) | [verify](patterns/fa-be-approximately-verify.md) | TAAK-050 |
 | `mediatr.request-handler` | [plan](patterns/mediatr-request-handler-plan.md) | [modellen](patterns/mediatr-request-handler-modellen.md) | [verify](patterns/mediatr-request-handler-verify.md) | TAAK-023 |
 | `mediatr.void-request-handler` | [plan](patterns/mediatr-void-request-handler-plan.md) | [modellen](patterns/mediatr-void-request-handler-modellen.md) | [verify](patterns/mediatr-void-request-handler-verify.md) | TAAK-025 |
 | `mediatr.notification-handler` | [plan](patterns/mediatr-notification-handler-plan.md) | [modellen](patterns/mediatr-notification-handler-modellen.md) | [verify](patterns/mediatr-notification-handler-verify.md) | TAAK-026 |

@@ -39,6 +39,9 @@ public class FluentAssertionsFix : IFix
         new BeOfTypePattern(),
         new StringStartEndPattern(),
         new ContainSinglePattern(),
+        new EqualSequencePattern(),
+        new HaveLengthPattern(),
+        new BeApproximatelyPattern(),
     ];
 
     public IReadOnlyList<IPattern> Patterns { get; } =

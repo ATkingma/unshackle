@@ -1,0 +1,20 @@
+title: "[Sequence] EqualSequencePattern - Find en Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: EqualSequencePattern
+syntax: FluentAssertionsSyntax
+model: SemanticModel
+result: PatternResult
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "FindInvocations(root, model, ...)"
+pattern -> fixer: "nodes" {style.stroke-dash: 3}
+each: "loop [elke node]" {
+  fixer -> pattern: "Rewrite(node, model)"
+  pattern -> syntax: "IsInsideAssertionScope(node, model)"
+  pattern -> syntax: "GetSubject(assertion)"
+  pattern -> syntax: "IsResultDiscarded(assertion, model)"
+  pattern -> model: "GetSymbolInfo(assertion): collectie-assertions, params?"
+  pattern -> syntax: "TryGetArguments(assertion, model)"
+  pattern -> result: "Fixed(..) of Manual(reden)"
+  pattern -> fixer: "PatternResult" {style.stroke-dash: 3}
+}

@@ -43,13 +43,6 @@ public class SwappedTypesTests
     }
 
     [Fact]
-    public void SwappedTypes_PipelineBehavior_IsNotSwappedBecauseItsSignatureDiffers()
-    {
-        // Assert
-        new MediatRFix().SwappedTypes.ShouldNotContain("MediatR.IPipelineBehavior`2");
-    }
-
-    [Fact]
     public async Task FixAsync_FileWithOnlySwappedTypes_SwapsUsingAndRemovesPackage()
     {
         // Arrange

@@ -1,0 +1,13 @@
+title: "[Sequence] AddMediatRPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: AddMediatRPattern
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> model: "GetSymbolInfo(invocation): AddMediatR uit assembly MediatR?"
+pattern -> fixer: "InvocationExpressionSyntax" {style.stroke-dash: 3}
+fixer -> pattern: "Rewrite(node, model)"
+pattern -> pattern: "ParameterName(lambda); instellingen uit blok of expression body"
+pattern -> pattern: "per instelling: s_dropped / Behavior(call, args) / Lifetime = ServiceLifetime.X"
+pattern -> pattern: "ParseStatement: cfg.ServiceLifetime = ..., cfg.PipelineBehaviors = [...]"
+pattern -> fixer: "Fixed(AddMediator(...), Microsoft.Extensions.DependencyInjection) of Manual(reden)" {style.stroke-dash: 3}

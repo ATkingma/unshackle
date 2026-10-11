@@ -1,0 +1,33 @@
+title: "[Beslisboom] AddMediatRPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q1: "x.AddMediatR(lambda met\néén parameter)?" {shape: diamond}
+q2: "Body: expressie of blok met\nalleen expressie-statements?" {shape: diamond}
+q3: "Per instelling:\nRegisterServicesFrom*?" {shape: diamond}
+q4: "Behavior-aanroep met\nalleen typeof / generics?" {shape: diamond}
+q5: "cfg.Lifetime =\nServiceLifetime.X?" {shape: diamond}
+q6: "Expression body\nmet behaviors?" {shape: diamond}
+m1: "Manual: not called as AddMediatR(cfg => ...)\n(no-lambda)"
+m2: "Manual: not a list of cfg calls\n(geen proof)"
+m3: "Manual: cfg.X(...) has no direct equivalent\n(unknown-call, behavior-lifetime)"
+m4: "Manual: 'instelling' has no direct equivalent\n(publisher)"
+m5: "Manual: behaviors in expression lambda\n(geen proof)"
+d: "vervalt (source generator)"
+b: "PipelineBehaviors += typeof(...)"
+l: "ServiceLifetime = ServiceLifetime.X\n(standaard Transient)"
+f: "AddMediator(cfg => ...)\n(behaviors, expression)"
+q1 -> m1: nee
+q1 -> q2: ja
+q2 -> m2: nee
+q2 -> q3: ja
+q3 -> d: ja
+q3 -> q4: nee
+q4 -> b: ja
+q4 -> q5: "geen aanroep"
+q4 -> m3: "andere aanroep"
+q5 -> l: ja
+q5 -> m4: nee
+d -> q6
+b -> q6
+l -> q6
+q6 -> m5: ja
+q6 -> f: nee

@@ -23,6 +23,9 @@
     <!-- 14.0.0 is bewust de laatste vrije versie; alleen nodig als types voor proofs -->
     <PackageReference Include="AutoMapper" NoWarn="NU1903" />
     <PackageReference Include="Mediator.Abstractions" />
+    <!-- Niet als analyzer van dit project: de proofs draaien de generator zelf op hun "after" (TestReferences.MediatorGenerators) -->
+    <PackageReference Include="Mediator.SourceGenerator" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
+    <None Include="$(PkgMediator_SourceGenerator)/analyzers/dotnet/cs/*.dll" Link="Generators/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
   <ItemGroup>
     <!-- Proofs zijn testdata, geen code van het testproject zelf -->

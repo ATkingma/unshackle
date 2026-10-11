@@ -15,8 +15,7 @@ public class MediatRFix : IFix
 
     public IReadOnlyList<string> AddedNamespaces { get; } = ["Mediator"];
 
-    // Same name and arity in Mediator 3.0.2 (checked in the real assemblies by MediatRFixTests). Not IPipelineBehavior:
-    // Mediator's has another delegate and an IMessage constraint, so it needs its own pattern.
+    // Same name and arity in Mediator 3.0.2 (checked in the real assemblies by MediatRFixTests).
     public IReadOnlyList<string> SwappedTypes { get; } =
     [
         "MediatR.IBaseRequest",
@@ -30,6 +29,8 @@ public class MediatRFix : IFix
         "MediatR.IPublisher",
         "MediatR.IMediator",
         "MediatR.Unit",
+        // Handle differs (ValueTask, MessageHandlerDelegate); PipelineBehaviorPattern rewrites it, the name stays.
+        "MediatR.IPipelineBehavior`2",
     ];
 
     // The source generator writes AddMediator and the dispatcher; without it the abstractions do nothing.
@@ -45,5 +46,5 @@ public class MediatRFix : IFix
         ],
     };
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern(), new PipelineBehaviorPattern(), new AddMediatRPattern()];
 }

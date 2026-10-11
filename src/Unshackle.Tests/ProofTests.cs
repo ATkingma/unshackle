@@ -33,6 +33,7 @@ public class ProofTests
             Fix = new MediatRFix(),
             Before = TestReferences.MediatR,
             After = TestReferences.Mediator,
+            AfterGenerators = TestReferences.MediatorGenerators,
         },
     };
 
@@ -87,7 +88,7 @@ public class ProofTests
             IEnumerable<MetadataReference> afterReferences = report.Findings.Any(f => f.Result is ManualResult)
                 ? proofFix.Before.Union(proofFix.After)
                 : proofFix.After;
-            TestSolution.CompileErrors(actual, afterReferences).ShouldBeEmpty("after must compile against the new library");
+            TestSolution.CompileErrors(actual, afterReferences, proofFix.AfterGenerators).ShouldBeEmpty("after must compile against the new library");
         }
     }
 

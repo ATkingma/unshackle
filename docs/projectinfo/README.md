@@ -111,6 +111,8 @@ Wachtrij en status: `claude/tasks/patroon-queue.md`.
 | `mediatr.request-handler` | [plan](patterns/mediatr-request-handler-plan.md) | [modellen](patterns/mediatr-request-handler-modellen.md) | [verify](patterns/mediatr-request-handler-verify.md) | TAAK-023 |
 | `mediatr.void-request-handler` | [plan](patterns/mediatr-void-request-handler-plan.md) | [modellen](patterns/mediatr-void-request-handler-modellen.md) | [verify](patterns/mediatr-void-request-handler-verify.md) | TAAK-025 |
 | `mediatr.notification-handler` | [plan](patterns/mediatr-notification-handler-plan.md) | [modellen](patterns/mediatr-notification-handler-modellen.md) | [verify](patterns/mediatr-notification-handler-verify.md) | TAAK-026 |
+| `mediatr.pipeline-behavior` | [plan](patterns/mediatr-pipeline-behavior-plan.md) | [modellen](patterns/mediatr-pipeline-behavior-modellen.md) | [verify](patterns/mediatr-pipeline-behavior-verify.md) | TAAK-027 |
+| `mediatr.add-mediatr` | [plan](patterns/mediatr-add-mediatr-plan.md) | [modellen](patterns/mediatr-add-mediatr-modellen.md) | [verify](patterns/mediatr-add-mediatr-verify.md) | TAAK-028 |
 
 ## Zie ook
 

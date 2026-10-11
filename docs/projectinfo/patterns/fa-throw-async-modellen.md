@@ -51,7 +51,7 @@ Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowAsyncPattern
 | Manual (Awaiting) | `Awaiting(...)` met onstabiele receiver, waardetype of geen lambda | `Invoking/side-effect-receiver`, `value-type`, `method-group` |
 | Manual "unwraps AggregateException" | `.Result` in de actie | `aggregate-result` |
 | Manual "reference type" | `Func<Task<int>>` | `value-func` |
-| Manual "named arguments, or becauseArgs" | named args of niet-constante `because` | geen proof |
+| Manual "named arguments, or becauseArgs" | named args of niet-constante `because` | `named-because`, `because-variable` |
 | Manual "not a string constant" / "wildcards other than" / "contains a line break" | niet-vertaalbaar patroon | `message-variable`, `message-wildcard`, `message-contains-line-break` |
 
 ## Zie ook

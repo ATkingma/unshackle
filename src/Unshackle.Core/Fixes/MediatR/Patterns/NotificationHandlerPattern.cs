@@ -39,14 +39,23 @@ public class NotificationHandlerPattern : IPattern
         }
 
         List<ExpressionSyntax?> returned = MediatRSyntax.ReturnedExpressions(method);
-        if (returned.Any(e => e is not MemberAccessExpressionSyntax || !MediatRSyntax.IsTaskMember(e, model, "CompletedTask")))
+        if (returned.Any(e => e is null || !IsCompletedTask(e, model) && model.GetTypeInfo(e).Type?.ToDisplayString() != "System.Threading.Tasks.Task"))
         {
-            return PatternResult.Manual("Handle returns a Task that is not Task.CompletedTask; Mediator needs a ValueTask, convert it by hand (e.g. make the method async).");
+            return PatternResult.Manual("Handle returns something that is not a Task; Mediator needs a ValueTask, convert it by hand (e.g. make the method async).");
         }
 
+        // Another Task (=> SendAsync(...)) is wrapped, not awaited: no state machine, and a synchronous throw stays synchronous (TAAK-154).
         MethodDeclarationSyntax rewritten = method.ReplaceNodes(
-            returned.OfType<MemberAccessExpressionSyntax>(),
-            (original, _) => MediatRSyntax.OnValueTask(original));
+            returned.OfType<ExpressionSyntax>(),
+            (original, _) => IsCompletedTask(original, model)
+                ? MediatRSyntax.OnValueTask((MemberAccessExpressionSyntax)original)
+                : SyntaxFactory.ObjectCreationExpression(
+                    SyntaxFactory.IdentifierName("ValueTask").WithLeadingTrivia(SyntaxFactory.Space),
+                    SyntaxFactory.ArgumentList([SyntaxFactory.Argument(original.WithoutTrivia())]),
+                    null).WithTriviaFrom(original));
         return PatternResult.Fixed(rewritten.WithReturnType(returnType), "System.Threading.Tasks");
     }
+
+    private static bool IsCompletedTask(ExpressionSyntax expression, SemanticModel model) =>
+        expression is MemberAccessExpressionSyntax && MediatRSyntax.IsTaskMember(expression, model, "CompletedTask");
 }

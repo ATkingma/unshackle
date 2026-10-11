@@ -1,6 +1,6 @@
 # TAAK-154 — MediatR: `Task Handle(…) => X(…)` blokkeert de hele migratie
 
-**Status**: open
+**Status**: klaar
 **Aangemaakt**: 2026-10-11 (`claude/tasks/REGRESSIE-corpus-2.md`, klasse 3)
 
 ## Context
@@ -11,11 +11,15 @@ Met die drie vooraf met de hand naar `async Task Handle(…) => await X(…);` g
 
 ## Stappen
 
-1. [ ] Proof: notification- en request-handler met `Task`/`Task<T> Handle(…) => Expr;` en met `{ return Expr; }`.
-2. [ ] Rewrite naar `async ValueTask Handle(…) => await Expr;` (resp. `ValueTask<T>`), of `new ValueTask(Expr)` zonder state machine. Let op `ConfigureAwait`-gebruik en exception-timing (synchroon gooien wordt bij `async` uitgesteld; bij `new ValueTask(Expr)` niet).
-3. [ ] Bewijs: harnas op `src2/modix.tgz` (ongewijzigd) → 23 Fixed, 0 regressies.
+1. [x] Proof: notification- en request-handler met `Task`/`Task<T> Handle(…) => Expr;` en met `{ return Expr; }`.
+2. [x] Rewrite naar `async ValueTask Handle(…) => await Expr;` (resp. `ValueTask<T>`), of `new ValueTask(Expr)` zonder state machine. Let op `ConfigureAwait`-gebruik en exception-timing (synchroon gooien wordt bij `async` uitgesteld; bij `new ValueTask(Expr)` niet).
+3. [x] Bewijs: harnas op `src2/modix.tgz` (ongewijzigd) → 23 Fixed, 0 regressies.
 
 ## Zie ook
 
 - `src/Unshackle.Core/Fixes/MediatR/Patterns/NotificationHandlerPattern.cs`
 - `claude/tasks/mediatr-queue.md`
+
+## Verslag (2026-10-11)
+
+Harnas `out5` (src2 ongewijzigd): Facility ok 1164/1164, MODiX ok 477/477 (23 Fixed), 0 regressies. `dotnet test` 747/747.

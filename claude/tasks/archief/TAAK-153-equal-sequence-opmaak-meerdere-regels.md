@@ -1,6 +1,6 @@
 # TAAK-153 — `Equal(` over meerdere regels wordt één lange regel
 
-**Status**: open
+**Status**: klaar
 **Aangemaakt**: 2026-10-11 (`claude/tasks/REGRESSIE-corpus-2.md`, klasse 2)
 
 ## Context
@@ -9,11 +9,15 @@ Facility: 21 van de 26 `Should().Equal(a, b, …)`-rewrites hadden één argumen
 
 ## Stappen
 
-1. [ ] Proof: `Equal(` met argumenten op aparte regels (en één met een commentaarregel ertussen).
-2. [ ] `EqualSequencePattern` (`src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EqualSequencePattern.cs`): de trivia van de argumentlijst (regeleinden, inspringing, commentaar) meenemen in de array-initializer.
-3. [ ] Bewijs: harnas Facility, steekproef `AttributeTests.cs`.
+1. [x] Proof: `Equal(` met argumenten op aparte regels (en één met een commentaarregel ertussen).
+2. [x] `EqualSequencePattern` (`src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EqualSequencePattern.cs`): de trivia van de argumentlijst (regeleinden, inspringing, commentaar) meenemen in de array-initializer.
+3. [x] Bewijs: harnas Facility, steekproef `AttributeTests.cs`.
 
 ## Zie ook
 
 - `claude/tasks/archief/TAAK-038-fa-equal-sequence.md`
 - `claude/tasks/archief/TAAK-113-equal-sequence-collection-expression.md`
+
+## Verslag (2026-10-11)
+
+Harnas `out5` (src2 ongewijzigd): Facility ok 1164/1164, MODiX ok 477/477 (23 Fixed), 0 regressies. `dotnet test` 747/747.

@@ -46,4 +46,4 @@ Voorbeelden:
 
 - `claude/tasks/REGRESSIE-corpus.md` — ronde 1
 - `claude/tools/corpus-regression.sh` — harnas
-- `claude/tasks/TAAK-152-using-volgorde-na-hernoemen.md`, `claude/tasks/TAAK-153-equal-sequence-opmaak-meerdere-regels.md`, `claude/tasks/TAAK-154-mediatr-handler-expression-body-task.md`
+- `claude/tasks/archief/TAAK-152-using-volgorde-na-hernoemen.md`, `claude/tasks/archief/TAAK-153-equal-sequence-opmaak-meerdere-regels.md`, `claude/tasks/archief/TAAK-154-mediatr-handler-expression-body-task.md`

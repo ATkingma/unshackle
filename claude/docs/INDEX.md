@@ -106,10 +106,10 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/CORPUSRUN-mediatr.md` | Corpus-run MediatR: 0/9 volledig gemigreerd, blokkades en top-10 acties |
 | `claude/tasks/REGRESSIE-corpus.md` | Regressie-run per test: 8/10 identiek; Polly → TAAK-140 |
 | `claude/tasks/REGRESSIE-corpus-2.md` | Regressie-run ronde 2 (Facility, MODiX): 0 regressies; foutklassen → TAAK-152..154 |
-| `claude/tasks/TAAK-152-using-volgorde-na-hernoemen.md` | TAAK-152 — Hernoemde using niet gesorteerd → SA1210 (Facility) |
-| `claude/tasks/TAAK-153-equal-sequence-opmaak-meerdere-regels.md` | TAAK-153 — `Equal(` over meerdere regels wordt één regel |
-| `claude/tasks/TAAK-154-mediatr-handler-expression-body-task.md` | TAAK-154 — MediatR: `Task Handle(…) => X(…)` → Manual blokkeert hele migratie (MODiX) |
-| `claude/tasks/TAAK-140-catch-filter-op-fa-exception.md` | Bug: eigen code vangt FA-exception → Shouldly-exception niet gevangen (Polly) |
+| `claude/tasks/archief/TAAK-152-using-volgorde-na-hernoemen.md` | TAAK-152 — Hernoemde using niet gesorteerd → SA1210 (Facility) |
+| `claude/tasks/archief/TAAK-153-equal-sequence-opmaak-meerdere-regels.md` | TAAK-153 — `Equal(` over meerdere regels wordt één regel |
+| `claude/tasks/archief/TAAK-154-mediatr-handler-expression-body-task.md` | TAAK-154 — MediatR: `Task Handle(…) => X(…)` → Manual blokkeert hele migratie (MODiX) |
+| `claude/tasks/archief/TAAK-140-catch-filter-op-fa-exception.md` | Bug: eigen code vangt FA-exception → Shouldly-exception niet gevangen (Polly) |
 | `claude/tasks/archief/TAAK-143-harnas-mtp.md` | Harnas ondersteunt MTP (PowerApps: 1178 tests, 0 regressies) |
 | `claude/tasks/archief/TAAK-144-mediatr-evo2-naamconflict-generator.md` | evo2: eigen `ICommand` vs `Mediator.ICommand` (volledige naam), gedeelde/internal registratie → Manual |
 | `claude/tasks/archief/TAAK-147-mediatr-restpunten-144.md` | Generator alleen bij echte `AddMediatR`, global using op naamconflict, `InternalsVisibleTo` → Manual |

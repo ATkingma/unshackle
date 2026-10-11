@@ -1,6 +1,6 @@
 # TAAK-140 — Code die FA-/xunit-exceptions vangt breekt na omzetting
 
-**Status**: klaar (branch, niet gemerged)
+**Status**: klaar (gemerged `d252749`, Polly 0 regressies `e8eb882`)
 **Aangemaakt**: 2026-10-11 (regressie-run, `claude/tasks/REGRESSIE-corpus.md`)
 
 ## Context

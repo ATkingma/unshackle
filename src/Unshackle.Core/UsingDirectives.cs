@@ -52,6 +52,11 @@ internal static class UsingDirectives
             updated = updated.ReplaceNode(current, current.WithName(SyntaxFactory.ParseName(name).WithTriviaFrom(current.Name!)));
         }
 
+        if (swapCount > 0)
+        {
+            updated = Resort(root, updated);
+        }
+
         missing.RemoveRange(0, swapCount);
         var usings = new List<UsingDirectiveSyntax>(updated.Usings);
 
@@ -82,6 +87,66 @@ internal static class UsingDirectives
 
         return document.WithSyntaxRoot(updated.WithUsings([.. usings])).Project.Solution;
     }
+
+    // A swapped name may land out of order (using Shouldly; before using NUnit.Framework;, SA1210): each using list that was sorted
+    // (System first or not) is sorted again; an unsorted one is left as the user had it (TAAK-152).
+    private static CompilationUnitSyntax Resort(CompilationUnitSyntax before, CompilationUnitSyntax after)
+    {
+        List<SyntaxNode> containers = [.. Containers(before)];
+        List<SyntaxNode> targets = [.. Containers(after)];
+        return after.ReplaceNodes(targets, (original, rewritten) =>
+        {
+            SyntaxNode source = containers[targets.IndexOf(original)];
+            SyntaxList<UsingDirectiveSyntax> was = UsingsOf(source);
+            SyntaxList<UsingDirectiveSyntax> now = UsingsOf(original);
+            List<int> plain = [.. Enumerable.Range(0, now.Count).Where(i => IsPlainUsing(now[i]) && now[i].GlobalKeyword.IsKind(SyntaxKind.None))];
+            List<string> oldNames = [.. was.Where(u => IsPlainUsing(u) && u.GlobalKeyword.IsKind(SyntaxKind.None)).Select(u => u.Name!.ToString())];
+            if (plain.Count < 2)
+            {
+                return rewritten;
+            }
+
+            foreach (bool systemFirst in (bool[])[true, false])
+            {
+                Func<string, (int, string)> key = n => (systemFirst && (n == "System" || n.StartsWith("System.", StringComparison.Ordinal)) ? 0 : 1, n);
+                IComparer<(int, string)> order = Comparer<(int, string)>.Create((a, b) => a.Item1 != b.Item1
+                    ? a.Item1.CompareTo(b.Item1)
+                    : StringComparer.OrdinalIgnoreCase.Compare(a.Item2, b.Item2));
+                if (!oldNames.Select(key).SequenceEqual(oldNames.Select(key).Order(order)))
+                {
+                    continue;
+                }
+
+                List<UsingDirectiveSyntax> sorted = [.. plain.Select(i => now[i]).OrderBy(u => key(u.Name!.ToString()), order)];
+                var result = new List<UsingDirectiveSyntax>(now);
+                for (int j = 0; j < plain.Count; j++)
+                {
+                    // Trivia stays by position: a leading comment or blank line belongs to the place, not to the name.
+                    result[plain[j]] = sorted[j].WithTriviaFrom(now[plain[j]]);
+                }
+
+                return rewritten switch
+                {
+                    CompilationUnitSyntax unit => unit.WithUsings([.. result]),
+                    BaseNamespaceDeclarationSyntax ns => ns.WithUsings([.. result]),
+                    _ => rewritten,
+                };
+            }
+
+            return rewritten;
+        });
+    }
+
+    private static IEnumerable<SyntaxNode> Containers(CompilationUnitSyntax root) =>
+        root.DescendantNodesAndSelf(n => n is CompilationUnitSyntax or BaseNamespaceDeclarationSyntax)
+            .Where(n => n is CompilationUnitSyntax or BaseNamespaceDeclarationSyntax);
+
+    private static SyntaxList<UsingDirectiveSyntax> UsingsOf(SyntaxNode container) => container switch
+    {
+        CompilationUnitSyntax unit => unit.Usings,
+        BaseNamespaceDeclarationSyntax ns => ns.Usings,
+        _ => [],
+    };
 
     // Own types named like a type of an added namespace (an own ICommand next to Mediator.ICommand): once the using is in,
     // the name is ambiguous (CS0104) or binds to the added type, so these references get their full name (TAAK-144).

@@ -78,7 +78,7 @@ public class Fixer : IFixer
                 SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken))!;
                 SemanticModel model = (await document.GetSemanticModelAsync(cancellationToken))!;
                 string filePath = document.FilePath ?? document.Name;
-                SyntaxNode newRoot = ApplyPattern(fix, pattern, filePath, root, model, findings, requiredNamespaces);
+                SyntaxNode newRoot = await ApplyPatternAsync(fix, pattern, filePath, root, model, document.Project.Solution, findings, requiredNamespaces, cancellationToken);
                 if (newRoot != root)
                 {
                     working = working.WithDocumentSyntaxRoot(documentId, newRoot);
@@ -303,14 +303,16 @@ public class Fixer : IFixer
         new() { FilePath = filePath, Line = 0, FixId = fix.Id, PatternId = ProjectFilePatternId, Result = result };
 
     // Returns the same root instance when nothing was rewritten.
-    private static SyntaxNode ApplyPattern(
+    private static async Task<SyntaxNode> ApplyPatternAsync(
         IFix fix,
         IPattern pattern,
         string filePath,
         SyntaxNode root,
         SemanticModel model,
+        Solution solution,
         List<Finding> findings,
-        HashSet<string> requiredNamespaces)
+        HashSet<string> requiredNamespaces,
+        CancellationToken cancellationToken)
     {
         List<SyntaxNode> nodes;
         try
@@ -333,7 +335,7 @@ public class Fixer : IFixer
         bool changed = false;
         foreach (SyntaxNode node in nodes)
         {
-            PatternResult result = Rewrite(pattern, node, model);
+            PatternResult result = await RewriteAsync(pattern, node, model, solution, cancellationToken);
             (newRoot, PatternResult reported) = result switch
             {
                 FixedResult fixedResult => Replace(newRoot, node, fixedResult, pattern),
@@ -354,11 +356,13 @@ public class Fixer : IFixer
         return changed ? newRoot : root;
     }
 
-    private static PatternResult Rewrite(IPattern pattern, SyntaxNode node, SemanticModel model)
+    private static async Task<PatternResult> RewriteAsync(IPattern pattern, SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
         try
         {
-            return pattern.Rewrite(node, model);
+            return pattern is ISolutionPattern solutionPattern
+                ? await solutionPattern.RewriteAsync(node, model, solution, cancellationToken)
+                : pattern.Rewrite(node, model);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

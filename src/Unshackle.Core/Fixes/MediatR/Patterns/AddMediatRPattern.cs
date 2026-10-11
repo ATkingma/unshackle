@@ -1,12 +1,13 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.FindSymbols;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.MediatR.Patterns;
 
-public class AddMediatRPattern : IPattern
+public class AddMediatRPattern : ISolutionPattern
 {
     // Mediator's source generator finds handlers at compile time; assembly scanning has nothing left to do.
     private static readonly HashSet<string> s_dropped =
@@ -26,7 +27,33 @@ public class AddMediatRPattern : IPattern
             && method.ContainingAssembly.Name == "MediatR")
             .Select(i => i.Parent is ExpressionStatementSyntax statement ? statement : (SyntaxNode)i);
 
-    public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
+    // Without the solution every friend may call the internal method.
+    public PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
+        Rewrite(node, model, Friend(model) is string friend ? $"{friend} may call" : null);
+
+    // With the solution only a real call from another project counts, and the report names it (TAAK-148).
+    public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(solution);
+        string? caller = null;
+        if (Friend(model) is not null
+            && node.FirstAncestorOrSelf<BaseMethodDeclarationSyntax>() is { } declaration
+            && model.GetDeclaredSymbol(declaration, cancellationToken) is IMethodSymbol method)
+        {
+            IEnumerable<ReferencedSymbol> references = await SymbolFinder.FindReferencesAsync(method, solution, cancellationToken);
+            caller = references.SelectMany(r => r.Locations)
+                .Where(l => l.Document.Project.AssemblyName != model.Compilation.AssemblyName)
+                .Select(l => $"{l.Document.Project.Name} calls ({l.Document.FilePath ?? l.Document.Name}:{l.Location.GetLineSpan().StartLinePosition.Line + 1})")
+                .FirstOrDefault();
+        }
+
+        return Rewrite(node, model, caller);
+    }
+
+    // caller: who may call this method from another project ("X may call", "X calls (file:line)"), or null.
+    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, string? caller)
     {
         var statement = node as ExpressionStatementSyntax;
         var invocation = (InvocationExpressionSyntax)(statement?.Expression ?? node);
@@ -113,11 +140,11 @@ public class AddMediatRPattern : IPattern
                 + "Call AddMediator once in the host project (with Mediator.SourceGenerator) instead of in this shared method.");
         }
 
-        if (Friend(model) is string friend && CallerAssemblyParameter(dropped, model, _ => true) is string internalParameter)
+        if (caller is not null && CallerAssemblyParameter(dropped, model, _ => true) is string internalParameter)
         {
             return PatternResult.Manual(
-                $"AddMediatR scans the assembly passed in '{internalParameter}' of an internal method that {friend} may call (InternalsVisibleTo): its handlers would live in that project, which Mediator's source generator in this project cannot see. "
-                + "Check the callers in other projects; call AddMediator once in the host project (with Mediator.SourceGenerator) instead.");
+                $"AddMediatR scans the assembly passed in '{internalParameter}' of an internal method that {caller} (InternalsVisibleTo): its handlers would live in that project, which Mediator's source generator in this project cannot see. "
+                + "Call AddMediator once in that project (with Mediator.SourceGenerator) instead.");
         }
 
         if (HiddenHandler(dropped, model) is INamedTypeSymbol hidden)
@@ -210,7 +237,6 @@ public class AddMediatRPattern : IPattern
             .FirstOrDefault(p => callable(p.ContainingSymbol))?.Name;
 
     // A friend assembly (InternalsVisibleTo) can call an internal method too (TAAK-147); DynamicProxyGenAssembly2 is a mocking proxy, no caller.
-    // shortcut: any friend counts, also one that never calls the method; checking the callers needs the solution, which a pattern does not see.
     private static string? Friend(SemanticModel model) =>
         model.Compilation.Assembly.GetAttributes()
             .Where(a => a.AttributeClass?.ToDisplayString() == "System.Runtime.CompilerServices.InternalsVisibleToAttribute")

@@ -14,5 +14,10 @@
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Spectre.Console" />
+    <!-- Only as metadata for the semantic model while fixing (TAAK-116), never loaded: the netstandard2.0 build binds in
+         projects of every target framework (the net9.0 one gives CS1705 in a net8.0 project). -->
+    <PackageReference Include="Shouldly" GeneratePathProperty="true" ExcludeAssets="all" />
+    <None Include="$(PkgShouldly)/lib/netstandard2.0/Shouldly.dll" Link="References/Shouldly.dll"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
 </Project>

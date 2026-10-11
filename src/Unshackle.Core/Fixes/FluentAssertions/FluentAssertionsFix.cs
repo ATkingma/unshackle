@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.FluentAssertions.Patterns;
 using Unshackle.Core.Models;
@@ -9,7 +10,22 @@ public class FluentAssertionsFix : IFix
     // The version our proofs compile every rewrite against (Directory.Packages.props): latest stable, MIT, no license check.
     public const string ShouldlyVersion = "4.3.0";
 
+    // Without Shouldly a lambda-nested rewrite needs a second run (TAAK-116); the tests of single patterns need none.
+    public FluentAssertionsFix()
+    {
+        AddedReferences = [];
+    }
+
+    // The Shouldly assembly comes from the composition root: Core does no I/O.
+    public FluentAssertionsFix(IReadOnlyList<MetadataReference> shouldly)
+    {
+        ArgumentNullException.ThrowIfNull(shouldly);
+        AddedReferences = shouldly;
+    }
+
     public string Id => "fluentassertions";
+
+    public IReadOnlyList<MetadataReference> AddedReferences { get; }
 
     public IReadOnlyList<string> RemovedNamespaces { get; } = ["FluentAssertions", "FluentAssertions.Execution"];
 

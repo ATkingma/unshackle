@@ -49,7 +49,7 @@ Niet committen of pushen (zie `claude/docs/agent-werkwijze.md` §6: main blijft 
     - één regel in de `Patterns`-lijst van `FluentAssertionsFix`;
     - proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/<Naam>/` (`*.before.cs` + `*.after.cs` of `*.manual.txt`),
       minimaal: simpel geval, `because`-argument, elk type-afhankelijk geval, elk Manual-geval.
-    - daarna `python3 claude/tools/proofs-doc.py` (werkt `docs/projectinfo/architectuur/proofs.md` bij),
+    - daarna `python3 claude/tools/proofs-doc.py` (werkt `docs/projectinfo/architectuur/proofs.md` bij).
       Contracten in `Abstractions/`, `Models/` of de `Fixer` wijzigen mag **niet**; nodig? → stap `[!]` met reden, rij `mislukt`.
 6. **Verifieer**: `dotnet build` en `dotnet test` groen. Faalt het door een file-lock of een half-af bestand van een
    andere agent? Wacht 30 s en probeer opnieuw (max 5×) voordat je het als eigen fout ziet.

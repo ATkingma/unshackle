@@ -312,6 +312,95 @@ public class SampleShopTests
         store.Warnings.ShouldContain(w => w.StartsWith("Builder:", StringComparison.Ordinal), string.Join(" | ", store.Warnings));
     }
 
+    // eShopOnWeb/eShop (TAAK-135): the workspace does not run the Razor generator, so names of .razor components (or of the
+    // folder namespace they live in) do not resolve. Those are not a missing restore.
+    [Fact]
+    public async Task Load_RazorComponentNames_DoNotFailTheLoad()
+    {
+        // Arrange
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using var directory = new TempDirectory();
+        string project = Path.Combine(directory.Path, "App.csproj");
+        await File.WriteAllTextAsync(project, """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net10.0</TargetFramework>
+              </PropertyGroup>
+            </Project>
+            """, cancellationToken);
+        Directory.CreateDirectory(Path.Combine(directory.Path, "Components"));
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "Components", "Edit.razor"), "<p>edit</p>", cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "T.cs"),
+            "namespace App { using App.Components; class T { Edit? E { get; set; } } }", cancellationToken);
+        await DotnetAsync(cancellationToken, "restore", project);
+        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem());
+
+        // Act
+        Microsoft.CodeAnalysis.Solution loaded = await store.LoadAsync(project, cancellationToken);
+
+        // Assert
+        loaded.Projects.ShouldHaveSingleItem().Name.ShouldBe("App");
+    }
+
+    // eShopOnWeb's docker-compose.dcproj and kgrzybek's _build/SqlProj (TAAK-135): a project that does not load and shares no
+    // package with the loaded ones is skipped with a warning. Sharing one (here FluentAssertions) stays fatal: a shared
+    // package file could change under it.
+    [Theory]
+    [InlineData("Nuke.Common", false)]
+    [InlineData("FluentAssertions", true)]
+    public async Task Load_UnloadableBystanderProject_IsSkippedUnlessItSharesAPackage(string package, bool fatal)
+    {
+        // Arrange
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using var directory = new TempDirectory();
+        string solution = Path.Combine(directory.Path, "Mixed.slnx");
+        Directory.CreateDirectory(Path.Combine(directory.Path, "App"));
+        string app = Path.Combine(directory.Path, "App", "App.csproj");
+        await File.WriteAllTextAsync(app, """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net10.0</TargetFramework>
+                <NoWarn>$(NoWarn);NU1903</NoWarn>
+              </PropertyGroup>
+              <ItemGroup>
+                <PackageReference Include="FluentAssertions" Version="7.2.2" />
+              </ItemGroup>
+            </Project>
+            """, cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "App", "T.cs"), "using FluentAssertions; class T { }", cancellationToken);
+        await DotnetAsync(cancellationToken, "restore", app);
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "Tool.sqlproj"), $"""
+            <Project>
+              <ItemGroup>
+                <PackageReference Include="{package}" Version="1.0.0" />
+              </ItemGroup>
+            </Project>
+            """, cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "docker-compose.dcproj"), "<Project />", cancellationToken);
+        await File.WriteAllTextAsync(solution, """
+            <Solution>
+              <Project Path="App/App.csproj" />
+              <Project Path="Tool.sqlproj" />
+              <Project Path="docker-compose.dcproj" />
+            </Solution>
+            """, cancellationToken);
+        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem());
+
+        // Act
+        Task<Microsoft.CodeAnalysis.Solution> act() => store.LoadAsync(solution, cancellationToken);
+
+        // Assert
+        if (fatal)
+        {
+            await Should.ThrowAsync<SolutionLoadException>(act);
+            return;
+        }
+
+        (await act()).Projects.ShouldHaveSingleItem().Name.ShouldBe("App", string.Join(" | ", store.Warnings));
+        store.Warnings.ShouldContain(w => w.Contains("Tool.sqlproj", StringComparison.Ordinal), string.Join(" | ", store.Warnings));
+        store.Warnings.ShouldContain(w => w.Contains("docker-compose.dcproj", StringComparison.Ordinal), string.Join(" | ", store.Warnings));
+    }
+
     // MSBuild loads a multi-target project once per target framework; every finding and file still counts once.
     [Fact]
     public async Task ScanFix_MultiTargetProject_ReportsAndWritesEachFileOnce()

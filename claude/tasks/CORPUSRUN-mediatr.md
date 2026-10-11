@@ -74,11 +74,11 @@ Omgevingsfouten (geen Unshackle): NU1902, NETSDK1226, NSwag, CA1873 (nadirbad), 
 ## 4. Bugtaken
 
 - TAAK-130 cross-file marker-handler gemist door bestandsvolgorde (stil: geen Manual) — unittest, geen proof mogelijk
-- TAAK-131 `using Mediator` overschaduwd — proof `Proofs/_Pending/MediatR/Usings/edge-namespace-shadow.*`
+- TAAK-131 `using Mediator` overschaduwd — klaar: `using global::Mediator;`, proof `Proofs/MediatR/NotificationHandler/edge-namespace-shadow.*`
 - TAAK-132 abstracte generieke basis onterecht Manual — proof `Proofs/_Pending/MediatR/Unsupported/edge-abstract-generic-base.*` (gedrag van Mediator 3.0.2 gecontroleerd met een probe-project)
 - TAAK-133 extern pakket op MediatR niet gedetecteerd — unittest met tweede assembly
 - TAAK-134 projectbestand-roundtrip te streng + onnodig laden `Directory.Build.props` — DataAccess-tests
-- TAAK-135 loader: Razor, `.dcproj`, niet-ladende bijprojecten — DataAccess-tests
+- TAAK-135 loader: Razor, `.dcproj`, niet-ladende bijprojecten — klaar: eShopOnWeb bouwt na de fix, eShop/kgrzybek laden
 - TAAK-136 MSG0005 met TreatWarningsAsErrors
 
 ## 5. Top-10 acties (winst per inspanning)

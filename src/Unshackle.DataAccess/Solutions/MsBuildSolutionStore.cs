@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.IO.Abstractions;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
 using Unshackle.Core.Abstractions;
@@ -101,8 +102,11 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
         foreach (Project project in solution.Projects)
         {
             Compilation? compilation = await project.GetCompilationAsync(cancellationToken);
-            errors.AddRange(compilation?.GetDiagnostics(cancellationToken)
-                .Where(d => d.Id is "CS0246" or "CS0234" && d.Severity == DiagnosticSeverity.Error)
+            List<Diagnostic> unresolvedNames = compilation?.GetDiagnostics(cancellationToken)
+                .Where(d => d.Id is "CS0246" or "CS0234" && d.Severity == DiagnosticSeverity.Error).ToList() ?? [];
+            HashSet<string> razorNames = unresolvedNames.Count > 0 ? RazorNames(project) : [];
+            errors.AddRange(unresolvedNames
+                .Where(d => !razorNames.Contains(d.GetMessage(CultureInfo.InvariantCulture).Split('\'')[1]))
                 .Take(3)
                 .Select(d => $"{project.Name}: {d.GetMessage(CultureInfo.InvariantCulture)}") ?? []);
         }
@@ -122,9 +126,48 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
     // still changing shared package files.
     private bool IsTolerable(string failure, Solution solution)
     {
-        IEnumerable<string> paths = failure.Split('\'').Where(p => p.EndsWith("proj", StringComparison.OrdinalIgnoreCase));
+        IEnumerable<string> paths = failure.Split('\'')
+            .Where(p => p.EndsWith("proj", StringComparison.OrdinalIgnoreCase) && _fileSystem.Path.IsPathRooted(p));
         return paths.Any(p => solution.Projects.Any(project => string.Equals(project.FilePath, p, StringComparison.Ordinal))
-            || !_fileSystem.File.Exists(p));
+            || !_fileSystem.File.Exists(p)
+            || SharesNoPackage(p, solution));
+    }
+
+    // TAAK-135: a project that does not load (.dcproj, .sqlproj, a missing SDK) can be skipped when it shares no package with
+    // the loaded projects: then a shared package file the fix changes is not one it uses.
+    // shortcut: only PackageReference items in the project files themselves; one added via Directory.Build.props is not seen.
+    private bool SharesNoPackage(string projectPath, Solution solution)
+    {
+        HashSet<string> loaded = [.. solution.Projects
+            .Select(p => p.FilePath).OfType<string>().Distinct()
+            .SelectMany(PackageIds)];
+        return !PackageIds(projectPath).Any(loaded.Contains);
+    }
+
+    private IEnumerable<string> PackageIds(string projectPath) =>
+        _fileSystem.File.Exists(projectPath)
+            ? Regex.Matches(_fileSystem.File.ReadAllText(projectPath), @"<PackageReference\s+(?:Include|Update)\s*=\s*""([^""]+)""", RegexOptions.IgnoreCase)
+                .Select(m => m.Groups[1].Value.ToUpperInvariant())
+            : [];
+
+    // The workspace does not run the Razor generator: a component (Edit.razor) or the folder namespace of components
+    // (eShop.WebApp.Components) does not resolve, while dotnet build compiles it.
+    private HashSet<string> RazorNames(Project project)
+    {
+        string? directory = _fileSystem.Path.GetDirectoryName(project.FilePath);
+        if (directory is null || !_fileSystem.Directory.Exists(directory))
+        {
+            return [];
+        }
+
+        HashSet<string> names = new(StringComparer.Ordinal);
+        foreach (string file in _fileSystem.Directory.EnumerateFiles(directory, "*.razor", SearchOption.AllDirectories))
+        {
+            names.Add(_fileSystem.Path.GetFileNameWithoutExtension(file));
+            names.UnionWith(_fileSystem.Path.GetRelativePath(directory, file).Split('/', '\\').SkipLast(1));
+        }
+
+        return names;
     }
 
     public void Dispose()

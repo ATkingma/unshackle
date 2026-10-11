@@ -1,6 +1,6 @@
 # TAAK-135 — Laden: Razor-componenten, `.dcproj` en niet-ladende bijprojecten blokkeren de hele solution
 
-**Status**: open
+**Status**: klaar (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: `claude/tasks/CORPUSRUN-mediatr.md` (eShopOnWeb, dotnet/eShop, kgrzybek)
 
@@ -28,9 +28,27 @@ Twee van de bekendste MediatR-voorbeelden (eShopOnWeb, eShop) laden daardoor noo
 
 ## Stappen
 
-- [ ] Rode tests (razor-component, dcproj, project zonder pakket dat faalt)
-- [ ] Tolerantie
-- [ ] `dotnet build` + `dotnet test` groen
+- [x] Rode tests (razor-component, dcproj, project zonder pakket dat faalt)
+- [x] Tolerantie
+- [x] `dotnet build` + `dotnet test` groen
+
+## Resultaat
+
+`src/Unshackle.DataAccess/Solutions/MsBuildSolutionStore.cs`:
+
+- `RazorNames`: CS0246/CS0234 op een naam die een `.razor`-bestand of een map met `.razor`-bestanden in de projectmap is,
+  telt niet als "niet gerestored" (de workspace draait de Razor-generator niet).
+- `IsTolerable` + `SharesNoPackage`: een bestaand projectbestand dat niet laadt (`.dcproj`, `.sqlproj`, ontbrekende SDK) wordt
+  overgeslagen met waarschuwing als het geen `PackageReference` deelt met de geladen projecten; deelt het er één, dan blijft het
+  fataal (TAAK-090: een gedeeld pakketbestand kan dan veranderen). Alleen paden die rooted zijn tellen; voorheen werd `.dcproj`
+  per ongeluk getolereerd omdat het fragment `'.dcproj'` "niet bestond".
+- Niet-gerestorede bijprojecten zonder afhankelijken: al opgelost in TAAK-112 (hergebruikt, kgrzybek `_build`).
+- Tests: `SampleShopTests.Load_RazorComponentNames_DoNotFailTheLoad`,
+  `Load_UnloadableBystanderProject_IsSkippedUnlessItSharesAPackage` (2 gevallen).
+- Corpus (verse kopieën `scratchpad/v131/`): eShopOnWeb laadt, 9 Fixed / 0 Manual, **build groen**. dotnet/eShop (MAUI-projecten
+  uit de kopie-solution, zoals de corpus-run): laadt, 36 Manual (alles-of-niets), build faalt alleen op ASPIRE009 zoals de baseline.
+  kgrzybek laadt (258 Manual), build faalt alleen op MSBuild.Sdk.SqlProj (omgeving).
+
 
 ## Zie ook
 

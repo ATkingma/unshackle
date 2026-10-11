@@ -176,6 +176,16 @@ public class SampleShopTests
     private static async Task DotnetAsync(CancellationToken cancellationToken, params string[] arguments)
     {
         var startInfo = new ProcessStartInfo("dotnet") { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
+
+        // Isolate the child from the outer dotnet test (TAAK-045): no MSBuild/testing-platform settings it leaks into the
+        // testhost, and no reused MSBuild nodes or build server left over from the cold build of the repository.
+        foreach (string name in startInfo.Environment.Keys.Where(IsInheritedBuildSetting).ToList())
+        {
+            startInfo.Environment.Remove(name);
+        }
+
+        startInfo.Environment["MSBUILDDISABLENODEREUSE"] = "1";
+        startInfo.Environment["DOTNET_CLI_USE_MSBUILD_SERVER"] = "false";
         foreach (string argument in arguments)
         {
             startInfo.ArgumentList.Add(argument);
@@ -187,4 +197,9 @@ public class SampleShopTests
         await process.WaitForExitAsync(cancellationToken);
         process.ExitCode.ShouldBe(0, await output + await error);
     }
+
+    private static bool IsInheritedBuildSetting(string name) =>
+        name.StartsWith("MSBuild", StringComparison.OrdinalIgnoreCase)
+        || name.StartsWith("_MSBuild", StringComparison.OrdinalIgnoreCase)
+        || name.StartsWith("TESTINGPLATFORM_", StringComparison.OrdinalIgnoreCase);
 }

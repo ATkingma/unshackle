@@ -51,12 +51,12 @@ Alle Shouldly-doelen gecontroleerd in `Shouldly.dll` 4.3.0. Prio: H = in bijna e
 | 32 | `fa.equivalent-options` | `BeEquivalentTo(x, o => o.Excluding(d => d.Id))` / `WithStrictOrdering` / `ExcludingMissingMembers` | Manual (Shouldly `ShouldBeEquivalentTo` heeft geen options); alleen betere Manual-reden per optie | L | open |
 | 33 | `fa.contain-equivalent-of` | `x.Should().ContainEquivalentOf(item)` | Manual (geen Shouldly-equivalent; records → `ShouldContain(item)` kan, maar alleen bij value-equality) | L | open |
 | 34 | `fa.custom-assertions` | `order.Should().BeCancelled(..)` op eigen `ReferenceTypeAssertions`-subklasse | Manual met reden "custom FA-assertion: herschrijf de extensie naar Shouldly"; niet stil overslaan | L | open |
-| — | `fa.be-same-as` | `x.Should().BeSameAs(y)` / `NotBeSameAs(y)` (482 + 54×, 9 projecten) | `x.ShouldBeSameAs(y)` / `x.ShouldNotBeSameAs(y)` | H | open |
-| — | `fa.not-throw-async` | `await act.Should().NotThrowAsync()` (150×, 4 projecten) | `await Should.NotThrowAsync(act)`; gebruikt resultaat/`.Which` → Manual | M | open |
+| — | `fa.be-same-as` | `x.Should().BeSameAs(y)` / `NotBeSameAs(y)` (482 + 54×, 9 projecten) | `x.ShouldBeSameAs(y)` / `x.ShouldNotBeSameAs(y)` | H | klaar (TAAK-093) |
+| — | `fa.not-throw-async` | `await act.Should().NotThrowAsync()` (150×, 4 projecten) | `await Should.NotThrowAsync(act)`; gebruikt resultaat/`.Which` → Manual | M | klaar (TAAK-094) |
 | — | `fa.contain-in-order` | `x.Should().ContainInOrder(a, b)` (67×, 4 projecten) | geen Shouldly-equivalent: Manual met reden, of subreeks-check met `ShouldBe` als `x` precies `a, b` is | M | open |
 | — | `fa.not-equal` | `x.Should().NotEqual(other)` (11×, 3 projecten) | `x.ShouldNotBe(other)` (volgorde-gevoelig, net als `Equal` → #21) | L | open |
 | — | `fa.be-one-of` | `x.Should().BeOneOf(a, b)` (9×, 3 projecten) | `x.ShouldBeOneOf(a, b)` | L | open |
-| — | `fa.have-count-comparison` | `x.Should().HaveCountGreaterThan(n)` / `…OrEqualTo` / `HaveCountLessThan` (3 projecten) | `x.Count().ShouldBeGreaterThan(n)` (zoals `fa.have-count`: List → `.Count`) | L | open |
+| — | `fa.have-count-comparison` | `x.Should().HaveCountGreaterThan(n)` / `…OrEqualTo` / `HaveCountLessThan` (3 projecten) | `x.Count().ShouldBeGreaterThan(n)` (zoals `fa.have-count`: List → `.Count`) | L | klaar (TAAK-095) |
 
 ## Zie ook
 

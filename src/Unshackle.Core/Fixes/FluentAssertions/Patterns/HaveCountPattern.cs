@@ -7,12 +7,24 @@ namespace Unshackle.Core.Fixes.FluentAssertions.Patterns;
 
 public class HaveCountPattern : FluentAssertionPattern
 {
+    // FluentAssertions name → Shouldly comparison on the count (probed at the boundaries n-1, n, n+1).
+    private static readonly Dictionary<string, string> s_methods = new(StringComparer.Ordinal)
+    {
+        ["HaveCount"] = "ShouldBe",
+        ["HaveCountGreaterThan"] = "ShouldBeGreaterThan",
+        ["HaveCountGreaterThanOrEqualTo"] = "ShouldBeGreaterThanOrEqualTo",
+        ["HaveCountGreaterOrEqualTo"] = "ShouldBeGreaterThanOrEqualTo",
+        ["HaveCountLessThan"] = "ShouldBeLessThan",
+        ["HaveCountLessThanOrEqualTo"] = "ShouldBeLessThanOrEqualTo",
+        ["HaveCountLessOrEqualTo"] = "ShouldBeLessThanOrEqualTo",
+    };
+
     public override string Id => "fa.have-count";
 
-    public override string Description => "x.Should().HaveCount(n) → x.Count.ShouldBe(n)";
+    public override string Description => "x.Should().HaveCount(n) → x.Count.ShouldBe(n), HaveCountGreaterThan(n) → x.Count.ShouldBeGreaterThan(n)";
 
     public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        FluentAssertionsSyntax.FindInvocations(root, model, "HaveCount");
+        FluentAssertionsSyntax.FindInvocations(root, model, [.. s_methods.Keys]);
 
     protected override PatternResult RewriteAssertion(AssertionContext context)
     {
@@ -61,7 +73,7 @@ public class HaveCountPattern : FluentAssertionPattern
         }
 
         return PatternResult.Fixed(
-            SyntaxFactory.InvocationExpression(Member(count, "ShouldBe"), assertion.ArgumentList),
+            SyntaxFactory.InvocationExpression(Member(count, s_methods[context.Name]), assertion.ArgumentList),
             namespaces);
     }
 

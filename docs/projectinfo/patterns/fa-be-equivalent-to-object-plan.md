@@ -50,6 +50,7 @@ fa.be-equivalent-to-object: `BeEquivalentTo` op een object wordt alleen `ShouldB
 - **REQ-11**: IF het type of een bereikbaar lid `Equals` overschrijft THEN THE SYSTEM SHALL Manual geven, omdat FluentAssertions dan `Equals` gebruikt en Shouldly de leden (proofs `.../equals-override.*`, `.../equals-member.*`).
 - **REQ-12**: IF het type deel is van een cyclische objectgraaf THEN THE SYSTEM SHALL Manual geven, omdat FluentAssertions faalt en Shouldly slaagt (proof `.../cyclic.*`).
 - **REQ-13**: IF het type geen publieke leden heeft THEN THE SYSTEM SHALL Manual geven, omdat FluentAssertions een uitzondering gooit en Shouldly slaagt (proof `.../no-members.*`).
+- **Uitbreiding TAAK-092**: WHEN subject en verwachting een `IEnumerable<T>` met hetzelfde leaf-elementtype zijn (primitives, string, enum, DateTime(Offset), Guid, … ook nullable) THE SYSTEM SHALL `x.ShouldBe(expected, ignoreOrder: true[, because])` geven (proofs `collection-ints`, `collection-strings-because`, `collection-nullable-enum`, `edge-array-literal`, `AndChain/equivalent-collection`); ander elementtype of niet-leaf-elementen blijven Manual (`collection-element-types`, `collection`). Probe: duplicaten, null-elementen, leeg, andere lengte, null-subject/-verwachting geven hetzelfde oordeel.
 
 ## Assumptions
 

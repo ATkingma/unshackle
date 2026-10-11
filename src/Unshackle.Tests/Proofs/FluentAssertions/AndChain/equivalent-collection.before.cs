@@ -1,0 +1,13 @@
+using FluentAssertions;
+using System;
+using System.Collections.Generic;
+
+namespace Proofs;
+
+public class Case
+{
+    public void Test(List<int> a, int[] b)
+    {
+        a.Should().NotBeEmpty().And.BeEquivalentTo(b);
+    }
+}

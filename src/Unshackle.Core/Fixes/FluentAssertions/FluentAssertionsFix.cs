@@ -44,6 +44,8 @@ public class FluentAssertionsFix : IFix
         new EqualSequencePattern(),
         new HaveLengthPattern(),
         new BeApproximatelyPattern(),
+        new BeSameAsPattern(),
+        new NotThrowAsyncPattern(),
     ];
 
     public IReadOnlyList<IPattern> Patterns { get; } =

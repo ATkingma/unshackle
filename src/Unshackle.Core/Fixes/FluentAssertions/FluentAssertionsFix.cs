@@ -23,6 +23,7 @@ public class FluentAssertionsFix : IFix
         // First: its loop body keeps the FluentAssertions assertions, which the patterns below then rewrite as statements.
         new AllSatisfyPattern(),
         new ShouldBePattern(),
+        new NotBePattern(),
         new HaveCountPattern(),
         new BeTrueFalsePattern(),
         new BeNullPattern(),

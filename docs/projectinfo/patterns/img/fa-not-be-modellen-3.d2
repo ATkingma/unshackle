@@ -1,0 +1,47 @@
+title: "[Activity] NotBePattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
+q0: "Buiten een AssertionScope?" {shape: diamond}
+m0: "Manual: Inside an AssertionScope\n(proof: assertion-scope)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q1: "Vorm x.Should().NotBe(y)?" {shape: diamond}
+m1: "Manual: NotBe(...) is not in the form x.Should().NotBe(y)\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q2: "Resultaat weggegooid?" {shape: diamond}
+m2: "Manual: The result of NotBe(...) is used\n(proof: chain)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q3: "NotBe niet uit FluentAssertions.Xml of .Types?" {shape: diamond}
+m3: "Manual: NotBe(...) from Xml/Types: andere gelijkheid\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q4: "Geen becauseArgs of benoemde argumenten?" {shape: diamond}
+m4: "Manual: becauseArgs of benoemde argumenten\n(proof: because-args)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5: "Precies één waarde-argument (geen comparer)?" {shape: diamond}
+m5: "Manual: NotBe(...) with a comparer\n(proof: comparer)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q6: "Type van het subject bekend?" {shape: diamond}
+m6: "Manual: The type of the subject is unknown\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q7: "ConvertExpected vindt een veilige vorm?" {shape: diamond}
+m7: "Manual: Unexpected type differs from subject type\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+s: "Moet unexpected een cast krijgen?" {shape: diamond}
+f1: "Fixed: x.ShouldNotBe(y[, because])\n(proof: simple, because, nullable, record)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+f2: "Fixed: x.ShouldNotBe((byte)0)\n(proof: constant-cast)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+start -> q0
+q0 -> m0: nee
+q0 -> q1: ja
+q1 -> m1: nee
+q1 -> q2: ja
+q2 -> m2: nee
+q2 -> q3: ja
+q3 -> m3: nee
+q3 -> q4: ja
+q4 -> m4: nee
+q4 -> q5: ja
+q5 -> m5: nee
+q5 -> q6: ja
+q6 -> m6: nee
+q6 -> q7: ja
+q7 -> m7: nee
+q7 -> s: ja
+s -> f1: "nee"
+s -> f2: "ja (constante alleen impliciet naar subjecttype)"

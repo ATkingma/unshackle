@@ -39,12 +39,12 @@ Alle Shouldly-doelen gecontroleerd in `Shouldly.dll` 4.3.0. Prio: H = in bijna e
 | 20  | `fa.string-start-end`      | `s.Should().StartWith("Ti")` / `EndWith` / `NotBeNullOrWhiteSpace()` / `NotBeNullOrEmpty()`         | `s.ShouldStartWith("Ti")` / `ShouldEndWith` / `ShouldNotBeNullOrWhiteSpace()` / `ShouldNotBeNullOrEmpty()` (let op: Shouldly default case-insensitive bij StartWith → `Case.Sensitive` meegeven) | H    | klaar (TAAK-035) |
 | 21 | `fa.equal-sequence` | `products.Should().Equal(Products())` | `products.ShouldBe(Products())` (volgorde-gevoelig, zoals FA `Equal`) | M | klaar (TAAK-038) |
 | 22 | `fa.because-args` | `Be(25m, "two of {0}", 10m)` / `HaveCount(2, because: "…", 2)` | `ShouldBe(25m, string.Format("two of {0}", 10m))`; named args herordenen. Gedeelde helper in `TryGetArguments` | M | open |
-| 23 | `fa.throw-exactly` | `await act.Should().ThrowExactlyAsync<T>()` / `ThrowExactly<T>()` | `(await Should.ThrowAsync<Exception>(act)).ShouldBeOfType<T>()` | M | open |
+| 23 | `fa.throw-exactly` | `await act.Should().ThrowExactlyAsync<T>()` / `ThrowExactly<T>()` | `(await Should.ThrowAsync<Exception>(act)).ShouldBeOfType<T>()` | M | klaar (TAAK-051) |
 | 24 | `fa.be-approximately` | `d.Should().BeApproximately(25m, 0.01m)` | `d.ShouldBe(25m, 0.01m)` (double/float/decimal-overload met tolerance) | M | klaar (TAAK-050) |
 | 25 | `fa.be-close-to` | `dt.Should().BeCloseTo(other, TimeSpan.FromSeconds(2))` | `dt.ShouldBe(other, TimeSpan.FromSeconds(2))` (DateTime/DateTimeOffset/TimeSpan) | M | klaar (TAAK-050) |
 | 26 | `fa.have-length` | `s.Should().HaveLength(5)` | `s.Length.ShouldBe(5)` (null-subject: `ShouldNotBeNull()` ervoor, zoals TAAK-021) | M | klaar (TAAK-039) |
 | 27 | `fa.numeric-sign` | `x.Should().BeNegative()` (`BePositive` al gedekt door `fa.be-greater-less`) | `x.ShouldBeNegative()`; ook `BeInRange(a,b)` → `ShouldBeInRange(a,b)` | M | open |
-| 28 | `fa.invoking` | `order.Invoking(o => o.Cancel()).Should().Throw<T>()` | `Should.Throw<T>(() => order.Cancel())`; daarna `fa.throw`-regels (ketens Manual) | M | open |
+| 28 | `fa.invoking` | `order.Invoking(o => o.Cancel()).Should().Throw<T>()` | `Should.Throw<T>(() => order.Cancel())`; daarna `fa.throw`-regels (ketens Manual) | M | klaar (TAAK-052) |
 | 29 | `fa.not-contain-nulls` | `x.Should().NotContainNulls()` / `AllBe("EUR")` | `x.ShouldNotContain(i => i == null)` / `x.ShouldAllBe(i => i == "EUR")` | L | open |
 | 30 | `fa.order` | `x.Should().BeInAscendingOrder(p => p.Sku)` / `BeInDescendingOrder` | `x.Select(p => p.Sku).ShouldBeInOrder(SortDirection.Ascending)`; met comparer → Manual | L | open |
 | 31 | `fa.match` | `s.Should().MatchRegex("^SO-[0-9]+$")` / `Match("SO-*")` | `s.ShouldMatch("^SO-[0-9]+$")`; wildcard `Match` → regex (`^` + `Regex.Escape` met `*`→`.*`, `?`→`.` + `$`) of Manual | L | open |

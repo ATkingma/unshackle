@@ -3,7 +3,7 @@ using FluentAssertions;
 
 namespace Proofs;
 
-public class ThrowExactlyCase
+public class SimpleCase
 {
     public void Test(Action act)
     {

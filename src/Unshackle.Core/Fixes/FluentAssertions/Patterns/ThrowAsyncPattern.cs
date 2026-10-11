@@ -14,8 +14,13 @@ public class ThrowAsyncPattern : IPattern
 
     // The node is the `await` around the ThrowAsync call (or around the `.WithMessage(...)` call that directly follows it);
     // without an await it is the invocation itself. A `.ConfigureAwait(...)` between the call and the await is kept.
+    // ThrowExactlyAsync and Awaiting subjects belong to ThrowExactlyPattern and InvokingPattern, which call Rewrite below.
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
+        Find(root, model, t => !ThrowExactlyPattern.IsExactly(t) && !InvokingPattern.IsInvoking(t, model));
+
+    internal static IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model, Func<InvocationExpressionSyntax, bool> owns) =>
         FluentAssertionsSyntax.FindInvocations(root, model, "ThrowAsync", "ThrowExactlyAsync")
+            .Where(owns)
             .Select(t => Follow(t, "WithMessage"))
             .Select(i => Follow(i, "ConfigureAwait"))
             .Select(i => i.Parent is AwaitExpressionSyntax await ? (SyntaxNode)await : i);
@@ -50,11 +55,7 @@ public class ThrowAsyncPattern : IPattern
         bool hasMessage = throwCall != outer;
         var name = (SimpleNameSyntax)((MemberAccessExpressionSyntax)throwCall.Expression).Name;
 
-        if (name.Identifier.ValueText == "ThrowExactlyAsync")
-        {
-            return PatternResult.Manual("ThrowExactlyAsync<T> requires the exact exception type; Shouldly's ThrowAsync<T> also accepts derived types.");
-        }
-
+        bool exactly = name.Identifier.ValueText == "ThrowExactlyAsync";
         if (name is not GenericNameSyntax { TypeArgumentList.Arguments.Count: 1 } generic)
         {
             return PatternResult.Manual("ThrowAsync without exactly one type argument.");
@@ -76,9 +77,20 @@ public class ThrowAsyncPattern : IPattern
             return PatternResult.Manual("The result of the awaited ThrowAsync<T>() is used (.Which/.And/.WithInnerException/.Where or a value); Shouldly's Should.ThrowAsync is not chained like that.");
         }
 
-        if (FluentAssertionsSyntax.IsFluentAssertions(model.GetSymbolInfo(subject).Symbol))
+        ExpressionSyntax action = subject;
+        ExpressionSyntax inspected = subject;
+        if (InvokingPattern.IsInvoking(throwCall, model))
         {
-            return PatternResult.Manual("The subject is built with Invoking(...) or Awaiting(...): pass the delegate to Should.ThrowAsync by hand.");
+            if (!InvokingPattern.TryGetAction(subject, model, out action, out AnonymousFunctionExpressionSyntax lambda, out string reason))
+            {
+                return PatternResult.Manual(reason);
+            }
+
+            inspected = lambda;
+        }
+        else if (FluentAssertionsSyntax.IsFluentAssertions(model.GetSymbolInfo(subject).Symbol))
+        {
+            return PatternResult.Manual("The subject is built with FluentAssertions (e.g. FluentActions.Awaiting): pass the delegate to Should.ThrowAsync by hand.");
         }
 
         // Should.ThrowAsync takes a Func<Task>; Func<Task<T>> converts to it only when T is a reference type.
@@ -89,7 +101,8 @@ public class ThrowAsyncPattern : IPattern
             return PatternResult.Manual("The subject is not a Func<Task> or a Func<Task<T>> with T a reference type, the only delegates Should.ThrowAsync accepts.");
         }
 
-        if (ThrowMessage.MayThrowAggregate(subject, generic.TypeArgumentList.Arguments[0], model))
+        // ThrowExactlyAsync does not unwrap AggregateException, just like Shouldly.
+        if (!exactly && ThrowMessage.MayThrowAggregate(inspected, generic.TypeArgumentList.Arguments[0], model))
         {
             return PatternResult.Manual(ThrowMessage.AggregateReason);
         }
@@ -105,7 +118,7 @@ public class ThrowAsyncPattern : IPattern
                 SyntaxKind.SimpleMemberAccessExpression,
                 SyntaxFactory.IdentifierName("Should"),
                 SyntaxFactory.GenericName(SyntaxFactory.Identifier("ThrowAsync"), generic.TypeArgumentList)),
-            ThrowMessage.Arguments([SyntaxFactory.Argument(subject.WithoutTrivia())], throwBecause));
+            ThrowMessage.Arguments([SyntaxFactory.Argument(action.WithoutTrivia())], throwBecause));
         if (configureAwait is not null)
         {
             // Shouldly's ThrowAsync returns Task<TException>, so the same ConfigureAwait applies.
@@ -113,6 +126,10 @@ public class ThrowAsyncPattern : IPattern
         }
 
         ExpressionSyntax thrown = SyntaxFactory.AwaitExpression(SyntaxFactory.Token(SyntaxKind.AwaitKeyword).WithTrailingTrivia(SyntaxFactory.Space), shouldThrow);
+        if (exactly)
+        {
+            thrown = ThrowMessage.OfType(SyntaxFactory.ParenthesizedExpression(thrown), generic);
+        }
 
         if (!hasMessage)
         {
@@ -130,6 +147,6 @@ public class ThrowAsyncPattern : IPattern
             return PatternResult.Manual("WithMessage(...) pattern is not a string constant, so its wildcards cannot be translated.");
         }
 
-        return ThrowMessage.Check(SyntaxFactory.ParenthesizedExpression(thrown), pattern, because);
+        return ThrowMessage.Check(exactly ? thrown : SyntaxFactory.ParenthesizedExpression(thrown), pattern, because);
     }
 }

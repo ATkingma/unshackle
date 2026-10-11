@@ -56,6 +56,8 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-038-fa-equal-sequence.md` | ✅ `Equal(seq)`/`Equal(params)` → `ShouldBe(seq)` (volgorde-gevoelig), `NotEqual` Manual; patroon `fa.equal-sequence` |
 | `claude/tasks/archief/TAAK-039-fa-have-length.md` | ✅ string `HaveLength(n)` → `Length.ShouldBe(n)`; patroon `fa.have-length` |
 | `claude/tasks/archief/TAAK-050-fa-be-approximately.md` | ✅ `(Not)BeApproximately`/`(Not)BeCloseTo` → `ShouldBe(x, tol)`/`ShouldNotBe`/`Math.Abs(..).ShouldBeGreaterThan`; patroon `fa.be-approximately` |
+| `claude/tasks/archief/TAAK-051-fa-throw-exactly.md` | ✅ `ThrowExactly(Async)<T>` → `Should.Throw(Async)<T>(..).ShouldBeOfType<T>()`; patroon `fa.throw-exactly` |
+| `claude/tasks/archief/TAAK-052-fa-invoking.md` | ✅ `x.Invoking/Awaiting(s => ..)` → `Should.Throw/ThrowAsync/NotThrow(() => ..)`; patroon `fa.invoking` |
 | `claude/tasks/archief/TAAK-023-mediatr-request-handler.md` | ✅ `Task<T> Handle` → `ValueTask<T> Handle`; patroon `mediatr.request-handler` |
 | `claude/tasks/archief/TAAK-043-fa-inactive-preprocessor-branch.md` | ✅ Inactieve `#if`-code: oude using blijft + Manual (`usings`) |
 | `claude/tasks/archief/TAAK-044-fa-global-using.md` | ✅ `global using` projectbreed geswapt, of blijft naast de nieuwe + Manual |

@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 403 proofs (zonder `_Pending`).
+Totaal: 420 proofs (zonder `_Pending`).
 
 ## FluentAssertions
 
@@ -319,6 +319,24 @@ Totaal: 403 proofs (zonder `_Pending`).
 | `simple` | Fixed | `s.Should().HaveLength(5);` → `s.Length.ShouldBe(5);` |
 | `stream` | Manual | `s.Should().HaveLength(5);` — reden: stream |
 
+### Invoking (13)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `aggregate` | Manual | `order.Invoking(o => o.CancelAsync().Wait()).Should().Throw<InvalidOperationException>();` — reden: AggregateException |
+| `assertion-scope` | Manual | `order.Invoking(o => o.Cancel()).Should().Throw<InvalidOperationException>();` — reden: AssertionScope |
+| `awaiting` | Fixed | `await order.Awaiting(o => o.CancelAsync()).Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(() => order.CancelAsync());` |
+| `awaiting-exactly` | Fixed | `await order.Awaiting(o => o.CancelAsync()).Should().ThrowExactlyAsync<InvalidOperationException>();` → `(await Should.ThrowAsync<InvalidOperationException>(() => order.CancelAsync())).ShouldBeOfType<InvalidOperatio…` |
+| `because-args` | Manual | `order.Invoking(o => o.Cancel()).Should().Throw<InvalidOperationException>("a {0}", 1);` — reden: becauseArgs |
+| `because-message` | Fixed | `order.Invoking(o => o.Cancel()).Should().Throw<InvalidOperationException>("it is shipped").WithMessage("*shipp…` → `Should.Throw<InvalidOperationException>(() => order.Cancel(), "it is shipped").Message.ShouldEndWith("shipped"…` |
+| `func` | Fixed | `order.Invoking(o => o.Name()).Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(() => order.Name());` |
+| `method-group` | Manual | `order.Invoking(Run).Should().Throw<InvalidOperationException>();` — reden: one-parameter lambda |
+| `not-throw` | Fixed | `order.Invoking(o => o.Cancel()).Should().NotThrow();` → `Should.NotThrow(() => order.Cancel());` |
+| `side-effect-receiver` | Manual | `Create().Invoking(o => o.Cancel()).Should().Throw<InvalidOperationException>();` — reden: side effects |
+| `simple` | Fixed | `order.Invoking(o => o.Cancel()).Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(() => order.Cancel());` |
+| `throw-exactly` | Fixed | `order.Invoking(o => o.Cancel()).Should().ThrowExactly<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(() => order.Cancel()).ShouldBeOfType<InvalidOperationException>();` |
+| `value-type` | Manual | `date.Invoking(d => d.AddYears(100000)).Should().Throw<ArgumentOutOfRangeException>();` — reden: value type |
+
 ### NotBe (9)
 
 | Proof | Uitkomst | Wat het bewijst |
@@ -333,7 +351,7 @@ Totaal: 403 proofs (zonder `_Pending`).
 | `record` | Fixed | `price.Should().NotBe(new Money(0m, "EUR"));` → `price.ShouldNotBe(new Money(0m, "EUR"));` |
 | `simple` | Fixed | `result.Should().NotBe(41); name.Should().NotBe("timme");` → `result.ShouldNotBe(41); name.ShouldNotBe("timme");` |
 
-### NotThrow (11)
+### NotThrow (10)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -343,7 +361,6 @@ Totaal: 403 proofs (zonder `_Pending`).
 | `edge-expression-bodied` | Fixed | `public void Test(Action act) => act.Should().NotThrow();` → `public void Test(Action act) => Should.NotThrow(act);` |
 | `func` | Fixed | `func.Should().NotThrow();` → `Should.NotThrow(func);` |
 | `generic` | Manual | `act.Should().NotThrow<InvalidOperationException>();` — reden: only forbids exception type |
-| `invoking` | Manual | `o.Invoking(x => x.ToString()).Should().NotThrow();` — reden: Invoking |
 | `result-used` | Manual | `var result = act.Should().NotThrow();` — reden: is used |
 | `simple` | Fixed | `act.Should().NotThrow();` → `Should.NotThrow(act);` |
 | `value-func` | Fixed | `func.Should().NotThrow();` → `Should.NotThrow(func);` |
@@ -415,7 +432,7 @@ Totaal: 403 proofs (zonder `_Pending`).
 | `nullable` | Fixed | `s.Should().StartWith("Ti"); s.Should().NotBeNullOrWhiteSpace();` → `s.ShouldStartWith("Ti", Shouldly.Case.Sensitive); s.ShouldNotBeNullOrWhiteSpace();` |
 | `simple` | Fixed | `s.Should().StartWith("Ti"); s.Should().EndWith("me");` → `s.ShouldStartWith("Ti", Shouldly.Case.Sensitive); s.ShouldEndWith("me", Shouldly.Case.Sensitive);` |
 
-### Throw (28)
+### Throw (26)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -430,7 +447,6 @@ Totaal: 403 proofs (zonder `_Pending`).
 | `edge-multiline-message` | Fixed | `act.Should() .Throw<InvalidOperationException>()` → `Should.Throw<InvalidOperationException>(act).Message.ShouldBe("boom", Shouldly.StringCompareShould.IgnoreCase)…` |
 | `edge-which-message` | Manual | `act.Should().Throw<Exception>().Which.Message.Should().StartWith("x");` — reden: is used |
 | `func` | Fixed | `func.Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(func);` |
-| `invoking` | Manual | `text.Invoking(t => t.ToString()).Should().Throw<InvalidOperationException>();` — reden: Invoking |
 | `lambda` | Fixed | `Action run = () => act.Should().Throw<InvalidOperationException>();` → `Action run = () => Should.Throw<InvalidOperationException>(act);` |
 | `message-because` | Fixed | `act.Should().Throw<InvalidOperationException>("a").WithMessage("*shipped*", "b");` → `Should.Throw<InvalidOperationException>(act, "a").Message.ShouldContain("shipped", Shouldly.Case.Insensitive, …` |
 | `message-because-args` | Manual | `act.Should().Throw<InvalidOperationException>().WithMessage("*a*", "because {0}", 1);` — reden: becauseArgs |
@@ -444,17 +460,15 @@ Totaal: 403 proofs (zonder `_Pending`).
 | `message-variable` | Manual | `act.Should().Throw<InvalidOperationException>().WithMessage(pattern);` — reden: not a string constant |
 | `message-wildcard` | Manual | `act.Should().Throw<InvalidOperationException>().WithMessage("*ship?ed*");` — reden: wildcards other than |
 | `simple` | Fixed | `act.Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(act);` |
-| `throw-exactly` | Manual | `act.Should().ThrowExactly<InvalidOperationException>();` — reden: requires the exact exception type |
 | `value-func` | Manual | `func.Should().Throw<InvalidOperationException>();` — reden: reference type |
 | `value-used` | Manual | `var exception = act.Should().Throw<InvalidOperationException>().Which;` — reden: is used |
 
-### ThrowAsync (25)
+### ThrowAsync (23)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `aggregate-awaited` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
 | `aggregate-result` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>();` — reden: unwraps AggregateException |
-| `awaiting` | Manual | `await text.Awaiting(t => Task.CompletedTask).Should().ThrowAsync<InvalidOperationException>();` — reden: Invoking |
 | `because` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>("a");` → `await Should.ThrowAsync<InvalidOperationException>(act, "a");` |
 | `because-args` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>("a {0}", 1);` — reden: becauseArgs |
 | `edge-configure-await` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>().ConfigureAwait(false);` → `await Should.ThrowAsync<InvalidOperationException>(act).ConfigureAwait(false);` |
@@ -473,10 +487,23 @@ Totaal: 403 proofs (zonder `_Pending`).
 | `message-wildcard` | Manual | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("a*b");` — reden: wildcards other than |
 | `no-await` | Manual | `var task = act.Should().ThrowAsync<InvalidOperationException>();` — reden: not directly awaited |
 | `simple` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
-| `throw-exactly` | Manual | `await act.Should().ThrowExactlyAsync<InvalidOperationException>();` — reden: requires the exact exception type |
 | `value-func` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>();` — reden: reference type |
 | `value-used` | Manual | `var thrown = await act.Should().ThrowAsync<InvalidOperationException>();` — reden: is used |
 | `where` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>().Where(e => e.Message.Length > 0);` — reden: not directly awaited |
+
+### ThrowExactly (9)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `aggregate-wait` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>();` |
+| `assertion-scope` | Manual | `act.Should().ThrowExactly<InvalidOperationException>();` — reden: AssertionScope |
+| `async` | Fixed | `await act.Should().ThrowExactlyAsync<InvalidOperationException>();` → `(await Should.ThrowAsync<InvalidOperationException>(act)).ShouldBeOfType<InvalidOperationException>();` |
+| `async-message` | Fixed | `await act.Should().ThrowExactlyAsync<InvalidOperationException>().WithMessage("Order shipped");` → `(await Should.ThrowAsync<InvalidOperationException>(act)).ShouldBeOfType<InvalidOperationException>().Message.…` |
+| `because` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>("it is shipped");` → `Should.Throw<InvalidOperationException>(act, "it is shipped").ShouldBeOfType<InvalidOperationException>();` |
+| `because-args` | Manual | `act.Should().ThrowExactly<InvalidOperationException>("a {0}", 1);` — reden: becauseArgs |
+| `message` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>().WithMessage("Order*");` → `Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>().Message.ShouldStartWi…` |
+| `simple` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>();` |
+| `value-used` | Manual | `act.Should().ThrowExactly<InvalidOperationException>().Which.Message.Should().Be("x");` — reden: is used |
 
 ### _Combined (6)
 

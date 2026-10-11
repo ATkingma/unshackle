@@ -1,1 +1,0 @@
-requires the exact exception type

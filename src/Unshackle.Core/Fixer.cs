@@ -64,20 +64,23 @@ public class Fixer : IFixer
         foreach (IGrouping<string, DocumentId> file in files)
         {
             DocumentId documentId = file.First();
+            // Every file is fixed against the original solution, so what a pattern finds never depends on which files
+            // were fixed before (a marker interface in an earlier file would already be swapped, TAAK-130).
+            Solution working = original;
             var requiredNamespaces = new HashSet<string>(StringComparer.Ordinal);
             bool changed = false;
             // Patterns run one after another, each on a fresh semantic model of the previous result.
             foreach (IPattern pattern in fix.Patterns)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                Document document = solution.GetDocument(documentId)!;
+                Document document = working.GetDocument(documentId)!;
                 SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken))!;
                 SemanticModel model = (await document.GetSemanticModelAsync(cancellationToken))!;
                 string filePath = document.FilePath ?? document.Name;
                 SyntaxNode newRoot = ApplyPattern(fix, pattern, filePath, root, model, findings, requiredNamespaces);
                 if (newRoot != root)
                 {
-                    solution = solution.WithDocumentSyntaxRoot(documentId, newRoot);
+                    working = working.WithDocumentSyntaxRoot(documentId, newRoot);
                     changed = true;
                 }
             }
@@ -85,7 +88,7 @@ public class Fixer : IFixer
             // A file that only uses swapped types needs no pattern, just the using swap. A file without findings still loses
             // its unused old using: the package may be removed from the project (TAAK-073).
             if (changed
-                || await UsingDirectives.HasUnusedRemovedUsingAsync(solution.GetDocument(documentId)!, fix.RemovedNamespaces, swappedTypes, cancellationToken))
+                || await UsingDirectives.HasUnusedRemovedUsingAsync(working.GetDocument(documentId)!, fix.RemovedNamespaces, swappedTypes, cancellationToken))
             {
                 if (changed || swappedTypes.Count > 0)
                 {
@@ -98,9 +101,9 @@ public class Fixer : IFixer
                     requiredNamespaces.ExceptWith(fix.AddedNamespaces);
                 }
 
-                Document document = solution.GetDocument(documentId)!;
-                solution = await UsingDirectives.UpdateAsync(document, requiredNamespaces, fix.RemovedNamespaces, swappedTypes, cancellationToken);
-                Document updated = solution.GetDocument(documentId)!;
+                Document document = working.GetDocument(documentId)!;
+                working = await UsingDirectives.UpdateAsync(document, requiredNamespaces, fix.RemovedNamespaces, swappedTypes, cancellationToken);
+                Document updated = working.GetDocument(documentId)!;
                 SyntaxNode updatedRoot = (await updated.GetSyntaxRootAsync(cancellationToken))!;
                 if (UsingDirectives.KeepsRemovedUsing(updatedRoot, fix.RemovedNamespaces))
                 {
@@ -111,9 +114,12 @@ public class Fixer : IFixer
                     findings.Add(CreateUsingsFinding(updated.FilePath ?? updated.Name, line, fix, PatternResult.Manual(
                         "Code in an inactive #if branch is not migrated, so the old using stays. Migrate that branch by hand.")));
                 }
+            }
 
-                SourceText text = await updated.GetTextAsync(cancellationToken);
-                foreach (DocumentId copy in file.Skip(1))
+            if (working != original)
+            {
+                SourceText text = await working.GetDocument(documentId)!.GetTextAsync(cancellationToken);
+                foreach (DocumentId copy in file)
                 {
                     solution = solution.WithDocumentText(copy, text);
                 }
@@ -121,9 +127,12 @@ public class Fixer : IFixer
         }
 
         solution = await SwapGlobalUsingsAsync(solution, fix, globalProjects, swappedTypes, findings, cancellationToken);
-        IReadOnlyList<ProjectFileChange> projectFileChanges = _projectFiles is not null && fix.Package is PackageMigration package
-            ? await MigrateProjectFilesAsync(_projectFiles, solution, fix, package, swappedTypes, findings, cancellationToken)
-            : [];
+        IReadOnlyList<ProjectFileChange> projectFileChanges = [];
+        if (_projectFiles is not null && fix.Package is PackageMigration package)
+        {
+            (solution, projectFileChanges) = await MigrateProjectFilesAsync(_projectFiles, original, solution, fix, package, swappedTypes, findings, cancellationToken);
+        }
+
         if (fix.AllOrNothing && findings.Any(f => f.Result is ManualResult))
         {
             return new FixReport { Solution = original, Findings = [.. findings.Select(f => f.Result is FixedResult ? NotApplied(f) : f)], ProjectFileChanges = [] };
@@ -132,19 +141,25 @@ public class Fixer : IFixer
         return new FixReport { Solution = solution, Findings = findings, ProjectFileChanges = projectFileChanges };
     }
 
-    private static Finding NotApplied(Finding finding) => new()
+    private static Finding NotApplied(Finding finding) => CreateFinding(finding, PatternResult.Manual(
+        "Not rewritten: this fix changes nothing while other findings are Manual (a partial migration would break at run time). " +
+        "Fix the manual findings and run the fix again."));
+
+    private static Finding CreateFinding(Finding finding, PatternResult result) => new()
     {
         FilePath = finding.FilePath,
         Line = finding.Line,
         FixId = finding.FixId,
         PatternId = finding.PatternId,
-        Result = PatternResult.Manual("Not rewritten: this fix changes nothing while other findings are Manual (a partial migration would break at run time). " +
-            "Fix the manual findings and run the fix again."),
+        Result = result,
     };
 
     // Runs on the fixed solution: only code that is still there can keep the removed package.
-    private static async Task<IReadOnlyList<ProjectFileChange>> MigrateProjectFilesAsync(
+    // When the project files cannot be edited, the code of those projects stays as it was: rewritten code without the new
+    // package would not build (TAAK-111).
+    private static async Task<(Solution Solution, IReadOnlyList<ProjectFileChange> Changes)> MigrateProjectFilesAsync(
         IProjectFileStore projectFiles,
+        Solution original,
         Solution solution,
         IFix fix,
         PackageMigration package,
@@ -155,7 +170,7 @@ public class Fixer : IFixer
         IReadOnlyList<ProjectMigration> migrations = await ProjectPackages.PlanAsync(solution, fix, package, swappedTypes, cancellationToken);
         if (migrations.Count == 0)
         {
-            return [];
+            return (solution, []);
         }
 
         IReadOnlyList<ProjectFileChange> changes;
@@ -166,16 +181,32 @@ public class Fixer : IFixer
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // Like a pattern: a broken project file is manual work, not a lost run.
-            findings.AddRange(migrations.Select(m => CreateProjectFinding(m.ProjectPath, fix,
-                PatternResult.Manual($"Could not edit the project files: {ex.Message}"))));
-            return [];
+            string reason = $"Could not edit the project files: {ex.Message}";
+            HashSet<string> projectPaths = [.. migrations.Select(m => m.ProjectPath)];
+            List<Document> documents = [.. solution.Projects.Where(p => p.FilePath is not null && projectPaths.Contains(p.FilePath)).SelectMany(p => p.Documents)];
+            HashSet<string> filePaths = [.. documents.Select(d => d.FilePath ?? d.Name)];
+            foreach (Document document in documents)
+            {
+                solution = solution.WithDocumentText(document.Id, await original.GetDocument(document.Id)!.GetTextAsync(cancellationToken));
+            }
+
+            for (int i = 0; i < findings.Count; i++)
+            {
+                if (findings[i].Result is FixedResult && filePaths.Contains(findings[i].FilePath))
+                {
+                    findings[i] = CreateFinding(findings[i], PatternResult.Manual($"Not rewritten: {reason}"));
+                }
+            }
+
+            findings.AddRange(migrations.Select(m => CreateProjectFinding(m.ProjectPath, fix, PatternResult.Manual(reason))));
+            return (solution, []);
         }
 
         findings.AddRange(migrations.Where(m => m.KeepRemovedPackage).Select(m => CreateProjectFinding(m.ProjectPath, fix,
             PatternResult.Manual($"{package.RemovedPackage} is still used in this project, so its package and global usings stay. " +
                 "Fix the manual findings and run the fix again."))));
         findings.AddRange(changes.Select(c => CreateProjectFinding(c.FilePath, fix, PatternResult.Fixed(Array.Empty<SyntaxNode>()))));
-        return changes;
+        return (solution, changes);
     }
 
     // A global using applies to the whole project (every target): it is swapped only when no file still needs it.

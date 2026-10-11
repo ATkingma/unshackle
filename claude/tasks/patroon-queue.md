@@ -70,6 +70,6 @@ Alle Shouldly-doelen gecontroleerd in `Shouldly.dll` 4.3.0. Prio: H = in bijna e
 | Taak | Bug | Gevonden in | Status |
 | --- | --- | --- | --- |
 | TAAK-110 | Niet-herkende `.Should()` → `using FluentAssertions` toch verwijderd | CSharpFunctionalExtensions | open |
-| TAAK-111 | Projectbestand niet aanpasbaar → code toch herschreven | Polly, Ardalis.Result | open |
+| TAAK-111 | Projectbestand niet aanpasbaar → code toch herschreven | Polly, Ardalis.Result | klaar (TAAK-111/134) |
 | TAAK-112 | Bogus laadt niet | Bogus | open |
 | TAAK-113 | `Equal([..])` collection expression | PowerApps-Tooling | open |

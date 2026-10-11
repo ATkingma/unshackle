@@ -35,6 +35,8 @@ de namespace-swap van de fix (`MediatR` → `Mediator`) dekt ze via `MediatRFix.
 
 Vervolg na de end-to-end-run (TAAK-037): TAAK-060 (NotificationPublisher, dubbelzinnige using, klaar), TAAK-061 (pre/post/exception-handlers, klaar), TAAK-062 (stream-behavior, klaar), TAAK-063 (source generator alleen in host-project, klaar).
 
+Corpus-bugs (2026-10-11): TAAK-130 (findings op originele semantiek, bestandsvolgorde) en TAAK-134 (projectbestanden tekstueel splicen) klaar; evo1/evo2 lopen nu door de fix heen (evo1: alleen nog MSG0005 TAAK-136 + IDE0005/IDE0065-usings; evo2: alleen nog TAAK-131).
+
 Alles-of-niets (2026-10-11): `MediatRFix.AllOrNothing`; één Manual-bevinding laat de hele solution ongemoeid (half gemigreerd bouwde wel maar faalde runtime).
 
 ## Zie ook

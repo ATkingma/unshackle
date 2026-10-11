@@ -31,6 +31,13 @@ Gebouwd in TAAK-005 (`src/Unshackle.DataAccess/Reports/`):
 - Groeperen gebeurt op de exacte reden via `CustomAssertionPattern.Group`; de "Not rewritten: …"-Manuals van
   AllOrNothing-fixes (MediatR) hebben een ander patroon-id en blijven per finding.
 
+## Projectbestand niet aan te passen (TAAK-111)
+
+- Kan `XmlProjectFileStore` een projectbestand niet bewerken (geen UTF-8, geen geldige XML, `<Using>` met Alias/Static),
+  dan staat er per project een Manual `project-file` ("Could not edit the project files: …") en worden alle Fixed-findings
+  in de `.cs`-bestanden van die projecten Manual met "Not rewritten: Could not edit the project files: …". Die bestanden
+  blijven ongewijzigd.
+
 ## Zie ook
 
 - `docs/projectinfo/README.md` — overzicht en C4-diagrammen

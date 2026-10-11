@@ -42,6 +42,9 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
 - `IFix`: `Id`, `Patterns`, `RemovedNamespaces`, `AddedNamespaces`.
 - `Fixer`: per document de patterns na elkaar (vers `SemanticModel`), vervangen met `TrackNodes`/`ReplaceNode`
   (buitenste eerst, overlap → Manual), daarna usings via `UsingDirectives`. Exceptions per pattern → Manual.
+  Elk bestand wordt gefixt op de **originele** solution (alleen dat bestand verandert in zijn werkkopie): de semantiek
+  van andere bestanden hangt dus niet af van de volgorde (TAAK-130: marker-interface in een eerder bestand was al geswapt,
+  waardoor een handler in een later bestand stil gemist werd). De eindtekst gaat daarna in de verzamelde solution.
   Per bestandspad één keer: een multi-target project (één Roslyn-project per TFM) wordt in de eerste TFM gefixt
   en gerapporteerd; de kopieën in de andere TFM's krijgen dezelfde tekst. Projectmigraties tellen ook per
   projectbestand (package blijft als één TFM het nog nodig heeft); `fix` telt geschreven bestanden uniek (TAAK-022).
@@ -105,6 +108,15 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
   pattern `project-file`). `FixReport.ProjectFileChanges` bevat de nieuwe tekst; `FixCommand` toont de diff of geeft ze met de broncode aan `SaveAsync`.
 - Implementatie: `XmlProjectFileStore` (DataAccess, `XDocument` + `IFileSystem`), behoudt witruimte, CRLF en BOM en weigert te
   schrijven als het bestand intussen veranderd is. Zie `docs/projectinfo/features/projectbestanden-migreren-plan.md`.
+- Tekstuele splice (TAAK-134/111): `ProjectFile` loopt bij het laden de originele tekst naast het `XDocument` af en onthoudt per
+  node waar hij staat. Bij schrijven komt elke ongewijzigde node letterlijk uit de originele tekst; alleen gewijzigde
+  attribuutwaarden worden in place vervangen, nieuwe elementen op één regel geschreven en verwijderde weggeknipt (met hun
+  inspringing). Zo blijven `/>`, `" >`, `->` in attributen, attributen over meerdere regels, comments, BOM en (gemengde)
+  regeleinden byte-gelijk; de reader normaliseert geen regeleinden, dus gekopieerde inspringing houdt het regeleinde van de buur.
+  Een bestand zonder wijziging (vaak `Directory.Build.props`) levert geen change op.
+- Veiligheidsregel (TAAK-111): faalt `EditAsync` toch, dan zet de Fixer alle `.cs`-bestanden van de betrokken projecten terug
+  naar de originele tekst en worden hun Fixed-findings Manual ("Not rewritten: Could not edit the project files: …"). Nooit
+  herschreven code zonder het nieuwe pakket.
 
 ## Gelijknamige typen (TAAK-024)
 

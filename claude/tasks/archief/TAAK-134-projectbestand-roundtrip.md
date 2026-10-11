@@ -1,6 +1,6 @@
 # TAAK-134 — Projectbestanden: "cannot be edited without changing unrelated text" bij gewone opmaak
 
-**Status**: open
+**Status**: klaar
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: `claude/tasks/CORPUSRUN-mediatr.md` — grootste blokkade: 6 van 9 solutions
 
@@ -38,6 +38,16 @@ Manual overal; evo1 en evo2 worden dan volledig herschreven (en lopen tegen TAAK
 - [ ] Lazy laden
 - [ ] Splice-schrijven
 - [ ] `dotnet build` + `dotnet test` groen
+
+## Uitkomst (2026-10-11)
+
+**Status**: klaar. `ProjectFile` loopt de originele tekst naast het `XDocument` af en schrijft alleen gewijzigde nodes
+(attribuutwaarden in place, nieuwe elementen ingevoegd, verwijderde weggeknipt); de reader normaliseert geen regeleinden.
+Lazy laden bleek overbodig: een ongewijzigd bestand levert geen change op. Tests per opmaakvorm (BOM, `/>`, `" >`,
+`->`, meerregelige attributen, gemengde CRLF/LF, comments, `'`-quotes) + ongewijzigde `Directory.Build.props`.
+De oude test "closing tag in trailing comment gooit" is nu "blijft correct" (de scanner snijdt niet meer op `</Project>`).
+
+Bewijs: evo1 (8 Fixed / 0 Manual) en evo2 (25 / 0) komen door alles-of-niets heen; Polly en Ardalis.Result zie TAAK-111.
 
 ## Zie ook
 

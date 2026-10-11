@@ -11,4 +11,10 @@ public interface ISolutionStore
     /// <exception cref="FileNotFoundException">The file does not exist.</exception>
     /// <exception cref="SolutionLoadException">MSBuild reported one or more load failures.</exception>
     Task<Solution> LoadAsync(string path, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Load problems of the last <see cref="LoadAsync"/> that did not stop it, such as a NuGet warning or a project file
+    /// that is listed in the solution but missing on disk.
+    /// </summary>
+    IReadOnlyList<string> Warnings { get; }
 }

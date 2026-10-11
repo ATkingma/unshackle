@@ -25,7 +25,7 @@ public class MarkdownReportWriter : IReportWriter
         [
             "| File | Line | Fix | Pattern | Status | Reason |",
             "| --- | --- | --- | --- | --- | --- |",
-            .. findings.Select(ReportRow.From).Select(r =>
+            .. ReportRow.FromAll(findings).Select(r =>
                 $"| {Cell(r.File)} | {r.Line} | {Cell(r.Fix)} | {Cell(r.Pattern)} | {r.Status} | {Cell(r.Reason)} |"),
         ];
         await _fileSystem.File.WriteAllLinesAsync(path, lines, cancellationToken);

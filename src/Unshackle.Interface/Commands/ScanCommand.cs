@@ -68,6 +68,11 @@ public class ScanCommand
             throw new CommandException(ExitCodes.Failure, string.Join(Environment.NewLine, [ex.Message, .. ex.Errors]));
         }
 
+        foreach (string warning in _store.Warnings)
+        {
+            _view.ShowMessage($"Warning: {warning}");
+        }
+
         FixReport report;
         try
         {

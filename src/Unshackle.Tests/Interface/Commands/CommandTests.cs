@@ -96,6 +96,21 @@ public class CommandTests
     }
 
     [Fact]
+    public async Task ScanExecuteAsync_LoadWarnings_ShowsThemAndReturnsOk()
+    {
+        // Arrange
+        _store.Warnings.Returns(["Project file not found: 'Gone.csproj'"]);
+        ScanCommand command = CreateScan();
+
+        // Act
+        int exitCode = await command.ExecuteAsync(SolutionPath, "fa", null, false, TestContext.Current.CancellationToken);
+
+        // Assert
+        exitCode.ShouldBe(ExitCodes.Ok);
+        _view.Received(1).ShowMessage("Warning: Project file not found: 'Gone.csproj'");
+    }
+
+    [Fact]
     public async Task ScanExecuteAsync_LoadFails_ShowsErrorsAndReturnsFailure()
     {
         // Arrange

@@ -1,6 +1,7 @@
 using System.Globalization;
 using Spectre.Console;
 using Unshackle.Core.Abstractions;
+using Unshackle.Core.Fixes.FluentAssertions.Patterns;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Interface.Output;
@@ -44,6 +45,16 @@ public class SpectreConsoleView : IConsoleView
         }
 
         _out.Write(table);
+        List<IGrouping<string, Finding>> custom = [.. CustomAssertionPattern.Group(findings).OrderByDescending(g => g.Count())];
+        if (custom.Count > 0)
+        {
+            _out.WriteLine("Custom assertions: rewrite each one to Shouldly once, its calls can stay.");
+            foreach (IGrouping<string, Finding> group in custom)
+            {
+                _out.WriteLine(ConsoleText.Sanitize($"{group.Count(),6}x {group.Key}"));
+            }
+        }
+
         _out.WriteLine(
             $"{findings.Count(f => f.Result is FixedResult)} fixed ({findings.Count(f => f.Result is FixedResult { Warning: not null })} with a warning), " +
             $"{findings.Count(f => f.Result is ManualResult)} manual. " +

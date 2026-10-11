@@ -54,5 +54,6 @@ public class FluentAssertionsFix : IFix
         new AndChainPattern(s_assertions),
         .. s_assertions,
         new AssertionScopePattern(),
+        new CustomAssertionPattern(),
     ];
 }

@@ -138,6 +138,44 @@ public class SampleShopTests
         ex.Errors.ShouldContain(e => e.Contains("dotnet restore", StringComparison.Ordinal), string.Join(" | ", ex.Errors));
     }
 
+    // NuGet audit (vulnerable AutoMapper 14) and a project missing on disk are load warnings, not failures.
+    [Fact]
+    public async Task Load_VulnerablePackageAndMissingProject_LoadsRestWithWarnings()
+    {
+        // Arrange
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using var directory = new TempDirectory();
+        string project = Path.Combine(directory.Path, "Audited.csproj");
+        string solution = Path.Combine(directory.Path, "Audited.slnx");
+        await File.WriteAllTextAsync(project, """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net10.0</TargetFramework>
+              </PropertyGroup>
+              <ItemGroup>
+                <PackageReference Include="FluentAssertions" Version="7.2.2" />
+                <PackageReference Include="AutoMapper" Version="14.0.0" />
+              </ItemGroup>
+            </Project>
+            """, cancellationToken);
+        await File.WriteAllTextAsync(solution, """
+            <Solution>
+              <Project Path="Audited.csproj" />
+              <Project Path="Gone/Gone.csproj" />
+            </Solution>
+            """, cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "T.cs"), "using FluentAssertions; class T { }", cancellationToken);
+        await DotnetAsync(cancellationToken, "restore", project);
+        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem());
+
+        // Act
+        Microsoft.CodeAnalysis.Solution loaded = await store.LoadAsync(solution, cancellationToken);
+
+        // Assert
+        loaded.Projects.ShouldHaveSingleItem().Name.ShouldBe("Audited");
+        store.Warnings.ShouldContain(w => w.Contains("Gone.csproj", StringComparison.Ordinal), string.Join(" | ", store.Warnings));
+    }
+
     // MSBuild loads a multi-target project once per target framework; every finding and file still counts once.
     [Fact]
     public async Task ScanFix_MultiTargetProject_ReportsAndWritesEachFileOnce()

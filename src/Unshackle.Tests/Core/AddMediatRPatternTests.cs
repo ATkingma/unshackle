@@ -127,6 +127,45 @@ public class AddMediatRPatternTests
         }
     }
 
+    [Theory]
+    [InlineData("Library.Registration.T(services, typeof(Use).Assembly);", typeof(ManualResult))]
+    [InlineData("", typeof(FixedResult))]
+    public async Task RewriteAsync_InternalMethodWithFriend_ManualOnlyWhenOtherProjectCallsIt(string call, Type expected)
+    {
+        // Arrange
+        CancellationToken token = TestContext.Current.CancellationToken;
+        var library = ProjectId.CreateNewId();
+        var friend = ProjectId.CreateNewId();
+        var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+        var registration = DocumentId.CreateNewId(library);
+        Solution solution = new AdhocWorkspace().CurrentSolution
+            .AddProject(library, "Library", "Library", LanguageNames.CSharp).WithProjectCompilationOptions(library, options)
+            .AddMetadataReferences(library, TestReferences.MediatR)
+            .AddDocument(registration, "Registration.cs",
+                "using System.Reflection;\nusing Microsoft.Extensions.DependencyInjection;\n[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"Friend\")]\n"
+                + "namespace Library;\ninternal static class Registration { internal static void T(IServiceCollection services, Assembly handlers) { "
+                + "services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(handlers)); } }")
+            .AddProject(friend, "Friend", "Friend", LanguageNames.CSharp).WithProjectCompilationOptions(friend, options)
+            .AddMetadataReferences(friend, TestReferences.MediatR)
+            .AddProjectReference(friend, new ProjectReference(library))
+            .AddDocument(DocumentId.CreateNewId(friend), "Use.cs",
+                "using Microsoft.Extensions.DependencyInjection;\nclass Use { void M(IServiceCollection services) { " + call + " } }", filePath: "Use.cs");
+        Document document = solution.GetDocument(registration)!;
+        SemanticModel model = (await document.GetSemanticModelAsync(token))!;
+        var pattern = new AddMediatRPattern();
+        SyntaxNode node = pattern.Find((await document.GetSyntaxRootAsync(token))!, model).Single();
+
+        // Act
+        PatternResult result = await pattern.RewriteAsync(node, model, solution, token);
+
+        // Assert
+        result.ShouldBeOfType(expected);
+        if (result is ManualResult manual)
+        {
+            manual.Reason.ShouldContain("'handlers' of an internal method that Friend calls (Use.cs:2)");
+        }
+    }
+
     private static (AddMediatRPattern Pattern, SyntaxNode Node, SemanticModel Model) Arrange(string body, string declaration = "class C {")
     {
         string code = "using System.Reflection;\nusing Microsoft.Extensions.DependencyInjection;\n"

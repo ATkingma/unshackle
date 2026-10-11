@@ -50,9 +50,15 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
 ## Contracten naar buiten (TAAK-005)
 
 - `ISolutionStore`: `LoadAsync(path, ct)` → `Solution` (gooit `FileNotFoundException` of `SolutionLoadException` met
-  de MSBuild-fouten), `SaveAsync(solution, ct)` schrijft de gewijzigde documenten. Implementatie: `MsBuildSolutionStore`.
+  de MSBuild-fouten, of als typen niet resolven (CS0246/CS0234: niet gerestored → advies `dotnet restore`). Alleen laden:
+  `FixCommand` schrijft de gewijzigde `.cs`-bestanden samen met de projectbestanden via `IProjectFileStore.SaveAsync`
+  (REVIEW-B H1/H2): eerst worden álle bestanden gecontroleerd (ongewijzigd sinds laden, UTF-8), pas dan geschreven
+  (temp-bestand + move), en bij een fout halverwege worden de al geschreven bestanden teruggezet. Implementatie: `MsBuildSolutionStore`.
 - `IReportWriter`: `Extension` + `WriteAsync(path, findings, ct)`. Zie `rapportage.md`.
 - `ISourceControl`: `HasUncommittedChangesAsync(directory, ct)`; `fix` weigert op een vuile werkmap tenzij `--force`.
+  Geen git-repository, geen git of een git-fout geeft `InvalidOperationException` (nooit "schoon"); `fix` weigert dan
+  ook zonder `--force`. Processen starten via `DataAccess/Processes/ProcessRunner` (killt de procesboom bij annulering).
+- `--report` weigert een bestaand bestand te overschrijven zonder `--force` (`scan` en `fix`).
 - De Fixer zelf is niet veranderd: Interface laadt, roept `FixAsync` aan en laat DataAccess schrijven.
 
 ## Projectbestanden (TAAK-017)
@@ -62,7 +68,7 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
   het pakket na de fix nog semantisch gebruikt (`ProjectPackages`). Alle projecten gaan in één `IProjectFileStore.EditAsync`,
   want `Directory.*.props` is gedeeld.
 - Rapport: Fixed per gewijzigd projectbestand, Manual per project dat het pakket houdt of bij een lees-/XML-fout (Line 0,
-  pattern `project-file`). `FixReport.ProjectFileChanges` bevat de nieuwe tekst; `FixCommand` toont de diff of roept `SaveAsync` aan.
+  pattern `project-file`). `FixReport.ProjectFileChanges` bevat de nieuwe tekst; `FixCommand` toont de diff of geeft ze met de broncode aan `SaveAsync`.
 - Implementatie: `XmlProjectFileStore` (DataAccess, `XDocument` + `IFileSystem`), behoudt witruimte, CRLF en BOM en weigert te
   schrijven als het bestand intussen veranderd is. Zie `docs/projectinfo/features/projectbestanden-migreren-plan.md`.
 

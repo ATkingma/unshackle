@@ -50,8 +50,10 @@ public class ProofTests
     {
         // Arrange
         string[] parts = proof.Split('/');
+        s_fixes.ShouldContainKey(parts[0], $"no fix for proof folder {parts[0]} ({proof})");
         ProofFix proofFix = s_fixes[parts[0]];
-        IPattern pattern = proofFix.Fix.Patterns.Single(p => p.GetType().Name == parts[1] + "Pattern");
+        IPattern? pattern = proofFix.Fix.Patterns.SingleOrDefault(p => p.GetType().Name == parts[1] + "Pattern");
+        pattern.ShouldNotBeNull($"no pattern {parts[1]}Pattern for proof {proof}");
         string basePath = Path.Combine(s_proofsDirectory, proof);
         string before = Normalize(await File.ReadAllTextAsync(basePath + ".before.cs", TestContext.Current.CancellationToken));
         TestSolution.CompileErrors(before, proofFix.Before).ShouldBeEmpty("before must compile against the old library");
@@ -75,6 +77,7 @@ public class ProofTests
         if (File.Exists(basePath + ".manual.txt"))
         {
             string reason = (await File.ReadAllTextAsync(basePath + ".manual.txt", TestContext.Current.CancellationToken)).Trim();
+            reason.ShouldNotBeNullOrWhiteSpace("manual.txt must name the reason");
             report.Findings.ShouldAllBe(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains(reason),
                 string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.Result.GetType().Name)));
             actual.ShouldBe(before);

@@ -1,5 +1,8 @@
 using System.Diagnostics;
 using Shouldly;
+using Unshackle.Core.Abstractions;
+using Unshackle.DataAccess.Processes;
+using Unshackle.DataAccess.Solutions;
 using Unshackle.Interface;
 using Unshackle.Interface.Commands;
 using Unshackle.Tests.Helpers;
@@ -34,7 +37,7 @@ public class SampleShopTests
         string afterScan = await File.ReadAllTextAsync(orderTests, cancellationToken);
         int dryRunExit = await Cli.RunAsync(["fix", solution, "--fix", "fluentassertions", "--dry-run"], cancellationToken);
         string afterDryRun = await File.ReadAllTextAsync(orderTests, cancellationToken);
-        int fixExit = await Cli.RunAsync(["fix", solution, "--fix", "fluentassertions"], cancellationToken);
+        int fixExit = await Cli.RunAsync(["fix", solution, "--fix", "fluentassertions", "--force"], cancellationToken);
         string afterFix = await File.ReadAllTextAsync(orderTests, cancellationToken);
 
         // Assert
@@ -75,7 +78,7 @@ public class SampleShopTests
         await DotnetAsync(cancellationToken, "restore", solution);
 
         // Act
-        int firstExit = await Cli.RunAsync(["fix", solution, "--fix", "fluentassertions", "--report", report], cancellationToken);
+        int firstExit = await Cli.RunAsync(["fix", solution, "--fix", "fluentassertions", "--report", report, "--force"], cancellationToken);
         string[] firstRows = await File.ReadAllLinesAsync(report, cancellationToken);
         string afterFirst = await File.ReadAllTextAsync(testProject, cancellationToken);
         await DotnetAsync(cancellationToken, "build", solution);
@@ -84,7 +87,7 @@ public class SampleShopTests
             repositoryTests,
             code.Replace("repository.All.Should().HaveCount(1);", "repository.All.Count.ShouldBe(1);", StringComparison.Ordinal),
             cancellationToken);
-        int secondExit = await Cli.RunAsync(["fix", solution, "--fix", "fluentassertions"], cancellationToken);
+        int secondExit = await Cli.RunAsync(["fix", solution, "--fix", "fluentassertions", "--force"], cancellationToken);
 
         // Assert
         firstExit.ShouldBe(ExitCodes.Ok);
@@ -103,6 +106,36 @@ public class SampleShopTests
         (await File.ReadAllTextAsync(Path.Combine(samples, "Directory.Packages.props"), cancellationToken)).ShouldContain("\"FluentAssertions\"");
         await DotnetAsync(cancellationToken, "build", solution);
         await DotnetAsync(cancellationToken, "test", "--solution", solution);
+    }
+
+    // Without restore nothing binds: scan would report 0 findings and fix would swap usings blindly.
+    [Fact]
+    public async Task Scan_NotRestored_FailsWithRestoreAdvice()
+    {
+        // Arrange
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using var directory = new TempDirectory();
+        string project = Path.Combine(directory.Path, "NotRestored.csproj");
+        await File.WriteAllTextAsync(project, """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net10.0</TargetFramework>
+                <NoWarn>$(NoWarn);NU1903</NoWarn>
+              </PropertyGroup>
+              <ItemGroup>
+                <PackageReference Include="FluentAssertions" Version="7.2.2" />
+              </ItemGroup>
+            </Project>
+            """, cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "T.cs"), "using FluentAssertions; class T { }", cancellationToken);
+        using var store = new MsBuildSolutionStore(new System.IO.Abstractions.FileSystem());
+
+        // Act
+        Task act() => store.LoadAsync(project, cancellationToken);
+
+        // Assert
+        SolutionLoadException ex = await Should.ThrowAsync<SolutionLoadException>(act);
+        ex.Errors.ShouldContain(e => e.Contains("dotnet restore", StringComparison.Ordinal), string.Join(" | ", ex.Errors));
     }
 
     // MSBuild loads a multi-target project once per target framework; every finding and file still counts once.
@@ -175,7 +208,7 @@ public class SampleShopTests
 
     private static async Task DotnetAsync(CancellationToken cancellationToken, params string[] arguments)
     {
-        var startInfo = new ProcessStartInfo("dotnet") { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
+        var startInfo = new ProcessStartInfo("dotnet");
 
         // Isolate the child from the outer dotnet test (TAAK-045): no MSBuild/testing-platform settings it leaks into the
         // testhost, and no reused MSBuild nodes or build server left over from the cold build of the repository.
@@ -191,11 +224,8 @@ public class SampleShopTests
             startInfo.ArgumentList.Add(argument);
         }
 
-        using Process process = Process.Start(startInfo)!;
-        Task<string> output = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        Task<string> error = process.StandardError.ReadToEndAsync(cancellationToken);
-        await process.WaitForExitAsync(cancellationToken);
-        process.ExitCode.ShouldBe(0, await output + await error);
+        ProcessResult result = await ProcessRunner.RunAsync(startInfo, cancellationToken);
+        result.ExitCode.ShouldBe(0, result.Output + result.Error);
     }
 
     private static bool IsInheritedBuildSetting(string name) =>

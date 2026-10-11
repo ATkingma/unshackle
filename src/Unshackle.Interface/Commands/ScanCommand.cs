@@ -25,11 +25,12 @@ public class ScanCommand
         _view = view;
     }
 
-    public async Task<int> ExecuteAsync(string solutionPath, string fixId, string? reportPath, CancellationToken cancellationToken)
+    public async Task<int> ExecuteAsync(
+        string solutionPath, string fixId, string? reportPath, bool force, CancellationToken cancellationToken)
     {
         try
         {
-            await RunAsync(solutionPath, fixId, reportPath, cancellationToken);
+            await RunAsync(solutionPath, fixId, reportPath, force, cancellationToken);
             return ExitCodes.Ok;
         }
         catch (CommandException ex)
@@ -39,12 +40,18 @@ public class ScanCommand
         }
     }
 
-    // Throws CommandException with the exit code on any expected failure.
-    public async Task<ScanResult> RunAsync(string solutionPath, string fixId, string? reportPath, CancellationToken cancellationToken)
+    // Throws CommandException with the exit code on any expected failure. Force lets the report replace an existing file.
+    public async Task<ScanResult> RunAsync(
+        string solutionPath, string fixId, string? reportPath, bool force, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(solutionPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(fixId);
         IReportWriter? reportWriter = reportPath is null ? null : FindReportWriter(reportPath);
+        // --report README.md must not silently replace a file of the user.
+        if (reportPath is not null && !force && File.Exists(reportPath))
+        {
+            throw new CommandException(ExitCodes.Failure, $"The report file {reportPath} already exists. Use --force to overwrite it.");
+        }
 
         Solution solution;
         try

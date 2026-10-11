@@ -19,6 +19,11 @@ public class XmlProjectFileStore : IProjectFileStore
 
     private static readonly string[] s_versionNames = ["Version", "VersionOverride"];
     private static readonly byte[] s_bom = Encoding.UTF8.GetPreamble();
+    // Windows and macOS file systems ignore case by default: SRC\app and src\App are the same file there.
+    private static readonly StringComparer s_pathComparer =
+        OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+
+    private static readonly UTF8Encoding s_strictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
     private readonly IFileSystem _fileSystem;
 
@@ -36,9 +41,9 @@ public class XmlProjectFileStore : IProjectFileStore
 
         // A shared file keeps the removed package as soon as one project that uses the file keeps it.
         bool Keeps(string path) => projects.Any(p => p.Migration.KeepRemovedPackage
-            && (p.Migration.ProjectPath == path || p.BuildProps == path || p.PackagesProps == path));
+            && (SamePath(p.Migration.ProjectPath, path) || SamePath(p.BuildProps, path) || SamePath(p.PackagesProps, path)));
 
-        var files = new Dictionary<string, ProjectFile>(StringComparer.Ordinal);
+        var files = new Dictionary<string, ProjectFile>(s_pathComparer);
         foreach ((ProjectMigration migration, string? buildProps, string? packagesProps) in projects)
         {
             List<ProjectFile> chain = [await LoadAsync(files, migration.ProjectPath, cancellationToken)];
@@ -85,16 +90,67 @@ public class XmlProjectFileStore : IProjectFileStore
     public async Task SaveAsync(IEnumerable<ProjectFileChange> changes, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(changes);
+        // Check every file before the first write, so a stale file never leaves a half-migrated tree.
+        var checkedFiles = new List<(ProjectFileChange Change, byte[] Original, bool Bom)>();
         foreach (ProjectFileChange change in changes)
         {
-            (string text, bool bom) = await ReadAsync(change.FilePath, cancellationToken);
+            byte[] original = await _fileSystem.File.ReadAllBytesAsync(change.FilePath, cancellationToken);
+            (string text, bool bom) = Decode(change.FilePath, original);
             if (text != change.OldText)
             {
                 throw new InvalidOperationException($"{change.FilePath} changed after it was read; run the fix again.");
             }
 
-            byte[] bytes = Encoding.UTF8.GetBytes(change.NewText);
-            await _fileSystem.File.WriteAllBytesAsync(change.FilePath, bom ? [.. s_bom, .. bytes] : bytes, cancellationToken);
+            checkedFiles.Add((change, original, bom));
+        }
+
+        var written = new List<(string Path, byte[] Original)>();
+        try
+        {
+            foreach ((ProjectFileChange change, byte[] original, bool bom) in checkedFiles)
+            {
+                byte[] bytes = Encoding.UTF8.GetBytes(change.NewText);
+                await ReplaceAsync(change.FilePath, bom ? [.. s_bom, .. bytes] : bytes, CancellationToken.None);
+                written.Add((change.FilePath, original));
+            }
+        }
+        catch
+        {
+            // Put back what was already written; the caller reports the original error.
+            foreach ((string path, byte[] original) in written)
+            {
+                try
+                {
+                    await ReplaceAsync(path, original, CancellationToken.None);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    // Keep restoring the others; the original error is the one to report.
+                }
+            }
+
+            throw;
+        }
+    }
+
+    private bool SamePath(string? a, string b) =>
+        a is not null && s_pathComparer.Equals(_fileSystem.Path.GetFullPath(a), _fileSystem.Path.GetFullPath(b));
+
+    // Temp file plus move: a crash mid-write never leaves a truncated file.
+    private async Task ReplaceAsync(string path, byte[] bytes, CancellationToken cancellationToken)
+    {
+        string temp = path + ".unshackle.tmp";
+        try
+        {
+            await _fileSystem.File.WriteAllBytesAsync(temp, bytes, cancellationToken);
+            _fileSystem.File.Move(temp, path, overwrite: true);
+        }
+        finally
+        {
+            if (_fileSystem.File.Exists(temp))
+            {
+                _fileSystem.File.Delete(temp);
+            }
         }
     }
 
@@ -250,6 +306,7 @@ public class XmlProjectFileStore : IProjectFileStore
 
     private async Task<ProjectFile> LoadAsync(Dictionary<string, ProjectFile> files, string path, CancellationToken cancellationToken)
     {
+        path = _fileSystem.Path.GetFullPath(path);
         if (!files.TryGetValue(path, out ProjectFile? file))
         {
             (string text, _) = await ReadAsync(path, cancellationToken);
@@ -262,8 +319,20 @@ public class XmlProjectFileStore : IProjectFileStore
 
     private async Task<(string Text, bool Bom)> ReadAsync(string path, CancellationToken cancellationToken)
     {
-        byte[] bytes = await _fileSystem.File.ReadAllBytesAsync(path, cancellationToken);
+        return Decode(path, await _fileSystem.File.ReadAllBytesAsync(path, cancellationToken));
+    }
+
+    // Strict: rewriting a Latin-1 or UTF-16 file as UTF-8 would silently lose characters, so such a file is refused.
+    private static (string Text, bool Bom) Decode(string path, byte[] bytes)
+    {
         bool bom = bytes.AsSpan().StartsWith(s_bom);
-        return (Encoding.UTF8.GetString(bom ? bytes[s_bom.Length..] : bytes), bom);
+        try
+        {
+            return (s_strictUtf8.GetString(bom ? bytes[s_bom.Length..] : bytes), bom);
+        }
+        catch (DecoderFallbackException ex)
+        {
+            throw new InvalidDataException($"{path} is not UTF-8; convert it or migrate it by hand.", ex);
+        }
     }
 }

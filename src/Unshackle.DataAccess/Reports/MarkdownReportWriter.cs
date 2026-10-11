@@ -1,4 +1,5 @@
 using System.IO.Abstractions;
+using System.Net;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
@@ -30,6 +31,11 @@ public class MarkdownReportWriter : IReportWriter
         await _fileSystem.File.WriteAllLinesAsync(path, lines, cancellationToken);
     }
 
-    // A pipe or line break would break the table row.
-    private static string Cell(string value) => value.Replace("|", "\\|", StringComparison.Ordinal).ReplaceLineEndings(" ");
+    // Reasons quote user code: HTML must not render (a PR comment or wiki would run it), and a pipe, backtick, trailing
+    // backslash or line break would break the table row. Backslashes first, so the escapes added after stay intact.
+    private static string Cell(string value) => WebUtility.HtmlEncode(value)
+        .Replace("\\", "\\\\", StringComparison.Ordinal)
+        .Replace("|", "\\|", StringComparison.Ordinal)
+        .Replace("`", "\\`", StringComparison.Ordinal)
+        .ReplaceLineEndings(" ");
 }

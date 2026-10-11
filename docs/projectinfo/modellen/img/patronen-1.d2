@@ -15,6 +15,9 @@ count: "x.Should().HaveCount(n)" {style.fill: "#bbdefb"}
 truefalse: "x.Should().BeTrue() / BeFalse()" {style.fill: "#bbdefb"}
 nul: "x.Should().BeNull() / NotBeNull()" {style.fill: "#bbdefb"}
 empty: "x.Should().BeEmpty() / NotBeEmpty()" {style.fill: "#bbdefb"}
+contain: "x.Should().Contain(y) / NotContain(y)" {style.fill: "#bbdefb"}
+scontain: "x.ShouldContain(y) / ShouldNotContain(y)\n(string: + Case.Sensitive)" {style.fill: "#c8e6c9"}
+m6: "Manual: dictionary, meerdere items,\noccurrence, geen string/IEnumerable<T>" {style.fill: "#ffe0b2"}
 sbe: "x.ShouldBe(y)\n(cast bij numeriek type)" {style.fill: "#c8e6c9"}
 scount: "x.Length / x.Count / x.Count().ShouldBe(n)\n(+ using System.Linq)" {style.fill: "#c8e6c9"}
 stf: "x.ShouldBeTrue() / ShouldBeFalse()\nbool?: x.ShouldBe(true)" {style.fill: "#c8e6c9"}
@@ -35,3 +38,5 @@ truefalse -> m3
 nul -> m4
 empty -> sempty
 empty -> m5
+contain -> scontain
+contain -> m6

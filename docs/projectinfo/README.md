@@ -43,10 +43,8 @@ documenten, en elk patroon heeft een eigen plan en verificatie (KingmaDoc) in `p
 
 ## C4 Component: Unshackle.Core
 
-**Figure 3.** Onderdelen van Core, met de vijf patterns die er nu zijn. Contracten en modellen staan in [modellen/klassen.md](modellen/klassen.md).
+**Figure 3.** Onderdelen van Core, met de zes patterns die er nu zijn. Contracten en modellen staan in [modellen/klassen.md](modellen/klassen.md).
 
-<!-- kingmadoc:diagram img/README-3.d2 -->
-<!-- kingmadoc:diagram img/README-3.d2 -->
 <!-- kingmadoc:diagram img/README-3.d2 -->
 ![C4 Component: Unshackle.Core](img/README-3.png)
 
@@ -56,7 +54,7 @@ documenten, en elk patroon heeft een eigen plan en verificatie (KingmaDoc) in `p
 | UsingDirectives | `src/Unshackle.Core/UsingDirectives.cs` | Alleen usings op bovenste niveau |
 | FluentAssertionsFix | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` | Patterns in vaste volgorde |
 | FluentAssertionsSyntax | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde bouwstenen |
-| Patterns (5) | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/` | Zie [modellen/patronen.md](modellen/patronen.md) |
+| Patterns (6) | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/` | Zie [modellen/patronen.md](modellen/patronen.md) |
 
 ## Modellen
 
@@ -79,6 +77,7 @@ Wachtrij en status: `claude/tasks/patroon-queue.md`.
 | `fa.be-true-false` | [plan](patterns/fa-be-true-false-plan.md) | [verify](patterns/fa-be-true-false-verify.md) | TAAK-003 |
 | `fa.be-null` | [plan](patterns/fa-be-null-plan.md) | [verify](patterns/fa-be-null-verify.md) | TAAK-004 |
 | `fa.be-empty` | [plan](patterns/fa-be-empty-plan.md) | [verify](patterns/fa-be-empty-verify.md) | TAAK-006 |
+| `fa.contain` | [plan](patterns/fa-contain-plan.md) | [verify](patterns/fa-contain-verify.md) | TAAK-007 |
 
 ## Zie ook
 

@@ -19,6 +19,8 @@ Agents draaien parallel. De voortgang en keuzes staan in de taakbestanden; de wa
    (`Add <patroon-ID> pattern`, Engels, geen Claude-vermelding) en `git push origin main` (staande opdracht van de
    gebruiker, 2026-10-10). Iets rood → niet pushen (`claude/docs/agent-werkwijze.md` §6), melden.
 7. Geef de gebruiker een kort verslag (wat, waar, keuzes, testresultaat, commit-hash).
+8. **Meteen door**: na de push niet wachten op de volgende tick. Is er een kandidaat (stap 3), claim en start die
+   direct (stap 4–5). De cron blijft daarnaast elke 15 min een extra agent starten (parallel). (Gebruiker, 2026-10-11.)
 
 ## Agent-brief
 

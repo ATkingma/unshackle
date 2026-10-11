@@ -13,8 +13,8 @@ Statussen: `open` · `bezig (TAAK-NNN)` · `geblokkeerd (TAAK-NNN, wacht op TAAK
 | 2   | `fa.be-true-false`           | `x.Should().BeTrue()` / `BeFalse()`               | `x.ShouldBeTrue()` / `ShouldBeFalse()`                                                   | klaar (TAAK-003) |
 | 3   | `fa.be-null`                 | `x.Should().BeNull()` / `NotBeNull()`             | `x.ShouldBeNull()` / `ShouldNotBeNull()`                                                 | klaar (TAAK-004) |
 | 4   | `fa.be-empty`                | `x.Should().BeEmpty()` / `NotBeEmpty()`           | `x.ShouldBeEmpty()` / `ShouldNotBeEmpty()`                                               | klaar (TAAK-006) |
-| 5   | `fa.contain`                 | `x.Should().Contain(item)` / `Contain(predicate)` | `x.ShouldContain(item)` / `ShouldContain(predicate)`                                     | open   |
-| 6   | `fa.throw`                   | `act.Should().Throw<T>()` (+ `.WithMessage`)      | `Should.Throw<T>(act)` (+ message-check)                                                 | open   |
+| 5   | `fa.contain`                 | `x.Should().Contain(item)` / `Contain(predicate)` | `x.ShouldContain(item)` / `ShouldContain(predicate)`                                     | klaar (TAAK-007) |
+| 6   | `fa.throw`                   | `act.Should().Throw<T>()` (+ `.WithMessage`)      | `Should.Throw<T>(act)` (+ message-check)                                                 | bezig (wordt geclaimd)   |
 | 7   | `fa.throw-async`             | `await act.Should().ThrowAsync<T>()`              | `await Should.ThrowAsync<T>(act)`                                                        | open   |
 | 8   | `fa.not-throw`               | `act.Should().NotThrow()`                         | `Should.NotThrow(act)`                                                                   | open   |
 | 9   | `fa.be-equivalent-to-string` | `s.Should().BeEquivalentTo("x")`                  | `s.ShouldBe("x", StringCompareShould.IgnoreCase)`                                        | open   |

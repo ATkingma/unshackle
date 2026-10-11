@@ -1,6 +1,6 @@
 # Patronen: FluentAssertions naar Shouldly
 
-**Figure 1.** Welke FluentAssertions-vorm elk van de vijf patterns omzet, en welke gevallen Manual blijven. Volgorde is die van `FluentAssertionsFix.Patterns`. Alle patterns vragen ook de gedeelde controles van [pattern-beslissing.md](pattern-beslissing.md).
+**Figure 1.** Welke FluentAssertions-vorm elk van de zes patterns omzet, en welke gevallen Manual blijven. Volgorde is die van `FluentAssertionsFix.Patterns`. Alle patterns vragen ook de gedeelde controles van [pattern-beslissing.md](pattern-beslissing.md).
 
 <!-- kingmadoc:diagram img/patronen-1.d2 -->
 ![Patronen: FluentAssertions naar Shouldly](img/patronen-1.png)
@@ -12,6 +12,7 @@
 | `fa.be-true-false` | `BeTrueFalsePattern` | `BeTrue()`, `BeFalse()` | `ShouldBeTrue()`, `ShouldBeFalse()`; `bool?`: `ShouldBe(true)` | `bool` of `bool?` | Elk ander type | TAAK-003 |
 | `fa.be-null` | `BeNullPattern` | `BeNull()`, `NotBeNull()` | `ShouldBeNull()`, `ShouldNotBeNull()` | Geen: dezelfde extension voor referentietypes en `Nullable<T>` | Alleen de gedeelde gevallen | TAAK-004 |
 | `fa.be-empty` | `BeEmptyPattern` | `BeEmpty()`, `NotBeEmpty()` | `ShouldBeEmpty()`, `ShouldNotBeEmpty()` | Geen: Shouldly heeft ze voor string en `IEnumerable<T>` (ook dictionary) | Alleen de gedeelde gevallen | TAAK-006 |
+| `fa.contain` | `ContainPattern` | `Contain(item)`, `Contain(predicate)`, `NotContain(...)` | `ShouldContain(...)`, `ShouldNotContain(...)` | String: extra argument `Shouldly.Case.Sensitive` (FA is hoofdlettergevoelig, Shouldly niet); collectie: geen wijziging | Dictionary, `Contain(IEnumerable)` (meerdere items), occurrence-constraint, subject geen string of `IEnumerable<T>` | TAAK-007 |
 
 De gedeelde Manual-gevallen: andere vorm dan `x.Should().Methode()` (bijv. na `.And`), resultaat gebruikt, `becauseArgs` of benoemde argumenten. Proofs per pattern: `src/Unshackle.Tests/Proofs/FluentAssertions/<Naam>/`. Plan en verificatie: [../README.md](../README.md#patronen).
 

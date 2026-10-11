@@ -1,0 +1,46 @@
+name: Wrong rewrite
+description: Unshackle produced code that does not compile or behaves differently.
+title: "[Rewrite] "
+labels: [bug]
+body:
+  - type: input
+    id: pattern
+    attributes:
+      label: Pattern ID
+      description: From the report (column Pattern), e.g. fa.have-count.
+      placeholder: fa.have-count
+    validations:
+      required: true
+  - type: textarea
+    id: before
+    attributes:
+      label: Code before
+      render: csharp
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What Unshackle produced
+      render: csharp
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      render: csharp
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What goes wrong
+      description: Compile error (paste it), a test that now fails, or different behaviour.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Unshackle version and command
+      placeholder: unshackle 0.1.0, `unshackle fix MyApp.sln --fix fluentassertions`

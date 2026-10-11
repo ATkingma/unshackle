@@ -68,6 +68,12 @@ core: "Unshackle.Core [Container: C# / Roslyn]" {
 
     fa.be-null
   | {class: component}
+  p5: |md
+    **BeEmptyPattern**\
+    [Component: IPattern]
+
+    fa.be-empty
+  | {class: component}
 }
 cli: |md
   **Unshackle.Interface**\
@@ -76,11 +82,9 @@ cli: |md
 cli -> core.fixer: "Roept FixAsync aan\n[in-process]"
 core.fixer -> core.fafix: "Haalt patterns uit\n[IFix]"
 core.fixer -> core.usings: "Past usings aan via"
-core.fixer -> core.p1: "Find / Rewrite\n[IPattern]"
+core.fixer -> core.p1: "Find / Rewrite (elk pattern)\n[IPattern]"
 core.p1 -> core.syntax: "Gebruikt"
 core.p2 -> core.syntax: "Gebruikt"
 core.p3 -> core.syntax: "Gebruikt"
 core.p4 -> core.syntax: "Gebruikt"
-core.fixer -> core.p2: "Find / Rewrite"
-core.fixer -> core.p3: "Find / Rewrite"
-core.fixer -> core.p4: "Find / Rewrite"
+core.p5 -> core.syntax: "Gebruikt"

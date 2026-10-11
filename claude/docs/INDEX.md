@@ -19,6 +19,8 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `docs/projectinfo/modellen/pattern-beslissing.md` | UML-activity: Fixed of Manual |
 | `docs/projectinfo/modellen/patronen.md` | Overzicht alle patterns: FA-vorm, Shouldly-vorm, Manual |
 | `docs/projectinfo/patterns/` | KingmaDoc plan + verify per patroon (`<id>-plan.md`, `<id>-verify.md`) |
+| `docs/issues.md` | Publieke uitleg: issues aanmaken (missend patroon, nieuwe library, foute rewrite) |
+| `.github/ISSUE_TEMPLATE/` | Issue-formulieren: missing-pattern, new-library, wrong-rewrite |
 | `README.md`       | Publieke korte uitleg + projecttabel                                                             |
 
 ## Werkwijze voor agents

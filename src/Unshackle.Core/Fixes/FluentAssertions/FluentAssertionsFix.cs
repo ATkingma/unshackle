@@ -17,5 +17,6 @@ public class FluentAssertionsFix : IFix
         new HaveCountPattern(),
         new BeTrueFalsePattern(),
         new BeNullPattern(),
+        new BeEmptyPattern(),
     ];
 }

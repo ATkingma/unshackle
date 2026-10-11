@@ -1,0 +1,46 @@
+name: New library
+description: Ask Unshackle to support migrating away from another library that changed its license.
+title: "[Library] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Unshackle helps migrate away from libraries that became commercial or restrictive.
+        See [docs/issues.md](https://github.com/ATkingma/unshackle/blob/main/docs/issues.md) for what helps us decide.
+  - type: input
+    id: library
+    attributes:
+      label: Library and NuGet package
+      placeholder: MassTransit (https://www.nuget.org/packages/MassTransit)
+    validations:
+      required: true
+  - type: textarea
+    id: license
+    attributes:
+      label: License change
+      description: Which version changed the license, to what, and a link to the announcement.
+      placeholder: "Version 9 moves to a commercial license; 8.x stays Apache-2.0. Announcement: <link>"
+    validations:
+      required: true
+  - type: input
+    id: target
+    attributes:
+      label: Migration target
+      description: The free alternative people move to (or "plain code").
+      placeholder: Wolverine, Rebus, plain hosted services
+    validations:
+      required: true
+  - type: textarea
+    id: usages
+    attributes:
+      label: Typical usages to rewrite
+      description: The three to five most common API usages, with what they should become.
+      render: csharp
+    validations:
+      required: true
+  - type: input
+    id: scale
+    attributes:
+      label: Scale in your codebase (optional)
+      placeholder: 120 consumers in 3 services

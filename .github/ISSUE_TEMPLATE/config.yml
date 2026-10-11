@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: How to write a good issue
+    url: https://github.com/ATkingma/unshackle/blob/main/docs/issues.md
+    about: What to include for a missing pattern, a new library or a wrong rewrite.

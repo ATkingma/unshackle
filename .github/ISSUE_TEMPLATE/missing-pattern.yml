@@ -1,0 +1,56 @@
+name: Missing pattern
+description: Unshackle does not rewrite (or reports as manual) code that it could handle.
+title: "[Pattern] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! A good pattern request has a small, compilable **before** and the **after** you expect.
+        See [docs/issues.md](https://github.com/ATkingma/unshackle/blob/main/docs/issues.md) for tips.
+  - type: dropdown
+    id: library
+    attributes:
+      label: Library
+      options:
+        - FluentAssertions → Shouldly
+        - MediatR → Mediator
+        - AutoMapper → handwritten mapping
+    validations:
+      required: true
+  - type: textarea
+    id: before
+    attributes:
+      label: Code before
+      description: The smallest snippet that shows the pattern, including the types involved.
+      render: csharp
+      placeholder: |
+        List<Order> orders = GetOrders();
+        orders.Should().ContainSingle(o => o.Id == 1);
+    validations:
+      required: true
+  - type: textarea
+    id: after
+    attributes:
+      label: Expected code after
+      render: csharp
+      placeholder: |
+        orders.ShouldHaveSingleItem(o => o.Id == 1);
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Edge cases or behaviour differences
+      description: Does the result depend on the type (List vs IEnumerable, nullable, dictionary)? Does the new library behave differently (case sensitivity, ordering, messages)?
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Old library version, and the target library version if you know it.
+      placeholder: FluentAssertions 7.2.2 → Shouldly 4.3.0
+  - type: input
+    id: frequency
+    attributes:
+      label: How often does this occur in your code?
+      placeholder: about 200 times in 40 files

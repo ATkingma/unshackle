@@ -16,19 +16,21 @@ Statussen: `open` · `bezig (TAAK-NNN)` · `geblokkeerd (TAAK-NNN, wacht op TAAK
 | 3   | `mediatr.notification-handler` | `INotificationHandler<T>` met `Task Handle(...)`                                                                                                 | `ValueTask Handle(...)`; `Task.CompletedTask` → `ValueTask.CompletedTask` / `default`                                                                       | klaar (TAAK-026) |
 | 4   | `mediatr.pipeline-behavior`    | `IPipelineBehavior<TReq,TRes>`, `RequestHandlerDelegate<T> next`, `next()`                                                                       | `IPipelineBehavior<TMsg,TRes>` met `where TMsg : IMessage`, `MessageHandlerDelegate<TMsg,TRes> next`, `next(message, ct)`, `ValueTask<TRes>`; anders Manual | klaar (TAAK-027) |
 | 5   | `mediatr.add-mediatr`          | `services.AddMediatR(cfg => { RegisterServicesFrom...; AddOpenBehavior(...) })`                                                                  | `services.AddMediator(o => { o.ServiceLifetime = ...; o.PipelineBehaviors = [typeof(...)] })`; onbekende `cfg`-aanroepen → Manual                           | klaar (TAAK-028) |
-| 6   | `mediatr.send-as-task`         | `ISender`/`IMediator`/`IPublisher` `.Send/.Publish` waar het resultaat als `Task` gebruikt wordt (bv. `Func<Task> act = () => sender.Send(...)`) | `.Send(...).AsTask()`; met `await` direct niets te doen                                                                                                     | open             |
-| 7   | `mediatr.unsupported`          | `IStreamRequest`-handlers, `IRequestPreProcessor`/`PostProcessor`, `IRequestExceptionHandler`, `Send(object)`                                    | Manual met reden (rapport)                                                                                                                                  | open             |
+| 6 | `mediatr.send-as-task` | `ISender`/`IMediator`/`IPublisher` `.Send/.Publish` waar het resultaat als `Task` gebruikt wordt (bv. `Func<Task> act = () => sender.Send(...)`) | `.Send(...).AsTask()`; met `await` direct niets te doen | klaar (TAAK-029) |
+| 7 | `mediatr.unsupported` | `IStreamRequest`-handlers, `IRequestPreProcessor`/`PostProcessor`, `IRequestExceptionHandler`, `Send(object)` | Manual met reden (rapport) | klaar (TAAK-037) |
 
 ### Uit het corpus (`docs/projectinfo/architectuur/corpus-mediatr-automapper.md`, vormen in ≥2 projecten)
 
-| #   | Patroon-ID / bug                                   | MediatR 12.x                                                                                                                | Mediator (verwacht)                                                                      | Status          |
+| # | Patroon-ID / bug | MediatR 12.x | Mediator (verwacht) | Status |
 | --- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------- |
-| 8   | `mediatr.behavior-di-registration`                 | `services.AddTransient(typeof(IPipelineBehavior<,>), typeof(X<,>))` buiten `AddMediatR` (jason, ardalis)                    | Mediator 3 leest behaviors ook uit DI: alleen namespace-swap; eerst meten, anders Manual | open            |
-| 9   | bug: handler via eigen marker-interface            | `ICommandHandler<T> : IRequestHandler<T>`, `IIntegrationEventHandler<T> : INotificationHandler<T>` (kgrzybek, evolutionary) | `ValueTask Handle` zoals bij directe implementatie                                       | open (TAAK-080) |
-| 10  | bug: behavior met `IRequest<TResponse>`-constraint | `where TRequest : IRequest<TResponse>` (eShop, ardalis)                                                                     | constraint blijft, geen extra `, IMessage`                                               | open (TAAK-081) |
+| 8 | `mediatr.behavior-di-registration` | `services.AddTransient(typeof(IPipelineBehavior<,>), typeof(X<,>))` buiten `AddMediatR` (jason, ardalis) | Mediator 3 leest behaviors ook uit DI: alleen namespace-swap; eerst meten, anders Manual | open |
+| 9 | bug: handler via eigen marker-interface | `ICommandHandler<T> : IRequestHandler<T>`, `IIntegrationEventHandler<T> : INotificationHandler<T>` (kgrzybek, evolutionary) | `ValueTask Handle` zoals bij directe implementatie | open (TAAK-080) |
+| 10 | bug: behavior met `IRequest<TResponse>`-constraint | `where TRequest : IRequest<TResponse>` (eShop, ardalis) | constraint blijft, geen extra `, IMessage` | open (TAAK-081) |
 
 Interfaces met dezelfde naam (`IRequest<T>`, `INotification`, `ISender`, `IPublisher`, `IMediator`, `Unit`) krijgen geen eigen patroon:
 de namespace-swap van de fix (`MediatR` → `Mediator`) dekt ze via `MediatRFix.SwappedTypes` (TAAK-024).
+
+Vervolg na de end-to-end-run (TAAK-037): TAAK-060 (NotificationPublisher, dubbelzinnige using), TAAK-061 (pre/post/exception-handlers), TAAK-062 (stream-behavior), TAAK-063 (source generator alleen in host-project).
 
 ## Zie ook
 

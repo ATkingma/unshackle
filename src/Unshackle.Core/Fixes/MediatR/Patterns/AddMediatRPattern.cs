@@ -67,6 +67,11 @@ public class AddMediatRPattern : IPattern
                     when target.Identifier.ValueText == config:
                     lifetime = value.ToString();
                     break;
+                // Mediator registers open generic notification handlers itself and has no generic request handlers
+                // (UnsupportedPattern reports those), so the switch has nothing left to do.
+                case AssignmentExpressionSyntax { Left: MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax target, Name.Identifier.ValueText: "RegisterGenericHandlers" } }
+                    when target.Identifier.ValueText == config:
+                    break;
                 default:
                     return PatternResult.Manual($"'{setting}' has no direct Mediator equivalent; configure AddMediator by hand.");
             }

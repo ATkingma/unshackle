@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 394 proofs (zonder `_Pending`).
+Totaal: 403 proofs (zonder `_Pending`).
 
 ## FluentAssertions
 
@@ -491,7 +491,7 @@ Totaal: 394 proofs (zonder `_Pending`).
 
 ## MediatR
 
-### AddMediatR (8)
+### AddMediatR (9)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -500,6 +500,7 @@ Totaal: 394 proofs (zonder `_Pending`).
 | `edge-assemblies` | Fixed | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` → `services.AddMediator(configuration => configuration.ServiceLifetime = ServiceLifetime.Transient);` |
 | `edge-service-type-behavior` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `expression` | Fixed | `services.AddMediatR(options => options.RegisterServicesFromAssembly(typeof(Registration).Assembly));` → `services.AddMediator(options => options.ServiceLifetime = ServiceLifetime.Transient);` |
+| `generic-handlers` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `no-lambda` | Manual | `services.AddMediatR(configuration);` — reden: AddMediatR is not called as services.AddMediatR(cfg => ...) |
 | `publisher` | Manual | `services.AddMediatR(cfg =>` — reden: 'cfg.NotificationPublisher = new TaskWhenAllPublisher()' has no direct Mediator equivalent |
 | `unknown-call` | Manual | `services.AddMediatR(cfg =>` — reden: cfg.AddOpenRequestPreProcessor(...) has no direct Mediator equivalent |
@@ -542,6 +543,24 @@ Totaal: 394 proofs (zonder `_Pending`).
 | `generic` | Fixed | `public Task<T> Handle(Wrapped<T> request, CancellationToken ct) => Task.FromResult(request.Value);` → `public ValueTask<T> Handle(Wrapped<T> request, CancellationToken ct) => ValueTask.FromResult(request.Value);` |
 | `other-return` | Manual | `public Task<int> Handle(Query request, CancellationToken cancellationToken) =>` — reden: not Task.FromResult |
 | `token-name` | Fixed | `public async Task<int> Handle(Query query, CancellationToken token)` → `public async ValueTask<int> Handle(Query query, CancellationToken token)` |
+
+### SendAsTask (2)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `send-object` | Fixed | `return _mediator.Send(message, cancellationToken);` → `return _mediator.Send(message, cancellationToken).AsTask();` |
+| `task-uses` | Fixed | `public Task<int> GetAsync(int id, CancellationToken cancellationToken) => _sender.Send(new Query(id), cancella…` → `public Task<int> GetAsync(int id, CancellationToken cancellationToken) => _sender.Send(new Query(id), cancella…` |
+
+### Unsupported (6)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `exception-handler` | Manual | `public Task Handle(Query request, InvalidOperationException exception, RequestExceptionHandlerState<int> state…` — reden: derive from Mediator.MessageExceptionHandler<TMessage, TResponse, TException> |
+| `generic-handler` | Manual | `public Task<int> Handle(CountQuery<TEntity> request, CancellationToken cancellationToken) => Task.FromResult(0…` — reden: does not support generic messages or request handlers |
+| `notification-publisher` | Manual |  — reden: set NotificationPublisherType in AddMediator |
+| `post-processor` | Manual |  — reden: derive from Mediator.MessagePostProcessor<TMessage, TResponse> |
+| `pre-processor` | Manual |  — reden: derive from Mediator.MessagePreProcessor<TMessage, TResponse> |
+| `stream-behavior` | Manual | `public IAsyncEnumerable<TResponse> Handle(TRequest request, StreamHandlerDelegate<TResponse> next, Cancellatio…` — reden: add it to StreamPipelineBehaviors in AddMediator |
 
 ### VoidRequestHandler (8)
 

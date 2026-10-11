@@ -1,0 +1,11 @@
+title: "[Klassen] SendAsTaskPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+IPattern: {shape: class; "+Id"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
+SendAsTaskPattern: {shape: class; "+Id = mediatr.send-as-task"; "+Find(root, model)"; "+Rewrite(node, model)"; "-IsAwaited(invocation): bool"}
+PatternResult: {shape: class; "+Fixed(node)"}
+MediatR: "MediatR: ISender.Send -> Task<T>\nIPublisher.Publish -> Task"
+Mediator: "Mediator: ISender.Send -> ValueTask<T>\nIPublisher.Publish -> ValueTask\n.AsTask()"
+SendAsTaskPattern -> IPattern: implementeert {style.stroke-dash: 3}
+SendAsTaskPattern -> PatternResult: geeft
+SendAsTaskPattern -> MediatR: herkent
+SendAsTaskPattern -> Mediator: schrijft voor

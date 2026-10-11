@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "mediatr-add-mediatr"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6]
 files_expected:
     - src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs
     - src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs
@@ -33,7 +33,7 @@ mediatr.add-mediatr: `services.AddMediatR(cfg => { ... })` wordt `services.AddMe
 
 **Out of scope (Manual)**
 
-- Behaviors met lifetime-argument, `RegisterGenericHandlers`, `NotificationPublisher`, stream-behaviors, pre/post-processors, exception-handlers en alles wat geen `cfg.X(...)` of `cfg.Lifetime = ...` is.
+- Behaviors met lifetime-argument, `NotificationPublisher`, stream-behaviors, pre/post-processors, exception-handlers en alles wat geen `cfg.X(...)` of `cfg.Lifetime = ...` is.
 - `AddMediatR` zonder lambda (bv. met een `MediatRServiceConfiguration`-variabele).
 
 ## Requirements
@@ -43,6 +43,7 @@ mediatr.add-mediatr: `services.AddMediatR(cfg => { ... })` wordt `services.AddMe
 - **REQ-3**: IF een `cfg`-aanroep geen directe tegenhanger heeft (ook een behavior met lifetime) THEN THE SYSTEM SHALL Manual melden met de naam van de aanroep (proofs `unknown-call`, `behavior-lifetime`).
 - **REQ-4**: IF een toewijzing anders is dan `cfg.Lifetime = ServiceLifetime.X` THEN THE SYSTEM SHALL Manual melden (proof `publisher`).
 - **REQ-5**: IF `AddMediatR` geen lambda krijgt THEN THE SYSTEM SHALL Manual melden (proof `no-lambda`).
+- **REQ-6**: WHEN de lambda `cfg.RegisterGenericHandlers = ...` bevat THE SYSTEM SHALL die regel laten vallen (proof `generic-handlers`; TAAK-037). Mediator registreert open generieke notification-handlers zelf en kent geen generieke request-handlers; die meldt `mediatr.unsupported`.
 
 ## Assumptions
 

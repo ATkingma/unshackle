@@ -31,6 +31,9 @@ public class MediatRFix : IFix
         "MediatR.Unit",
         // Handle differs (ValueTask, MessageHandlerDelegate); PipelineBehaviorPattern rewrites it, the name stays.
         "MediatR.IPipelineBehavior`2",
+        // Same Handle(request, cancellationToken) returning IAsyncEnumerable<TResponse>: the swap is the whole migration.
+        "MediatR.IStreamRequest`1",
+        "MediatR.IStreamRequestHandler`2",
     ];
 
     // The source generator writes AddMediator and the dispatcher; without it the abstractions do nothing.
@@ -46,5 +49,5 @@ public class MediatRFix : IFix
         ],
     };
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern(), new PipelineBehaviorPattern(), new AddMediatRPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern(), new PipelineBehaviorPattern(), new AddMediatRPattern(), new SendAsTaskPattern(), new UnsupportedPattern()];
 }

@@ -1,0 +1,1 @@
+set NotificationPublisherType in AddMediator

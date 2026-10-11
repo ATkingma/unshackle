@@ -1,0 +1,11 @@
+title: "[Klassen] UnsupportedPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+IPattern: {shape: class; "+Id"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
+UnsupportedPattern: {shape: class; "+Id = mediatr.unsupported"; "-s_advice: metadata-naam -> advies"; "-s_noGeneric"; "+Find(root, model)"; "+Rewrite(node, model)"; "-Advice(type, model): string?"}
+PatternResult: {shape: class; "+Manual(reason)"}
+MediatR: "MediatR: IRequestPreProcessor, IRequestPostProcessor,\nIRequestExceptionHandler/Action, INotificationPublisher,\nIStreamPipelineBehavior, generieke berichten"
+Mediator: "Mediator (advies): MessagePreProcessor, MessagePostProcessor,\nMessageExceptionHandler, NotificationPublisherType,\nStreamPipelineBehaviors"
+UnsupportedPattern -> IPattern: implementeert {style.stroke-dash: 3}
+UnsupportedPattern -> PatternResult: geeft
+UnsupportedPattern -> MediatR: herkent
+UnsupportedPattern -> Mediator: adviseert

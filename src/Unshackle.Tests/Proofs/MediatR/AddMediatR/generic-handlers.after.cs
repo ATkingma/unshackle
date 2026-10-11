@@ -1,0 +1,16 @@
+using Microsoft.Extensions.DependencyInjection;
+using Mediator;
+
+namespace Proofs;
+
+public static class Registration
+{
+    public static IServiceCollection AddShop(this IServiceCollection services)
+    {
+        services.AddMediator(cfg =>
+        {
+            cfg.ServiceLifetime = ServiceLifetime.Transient;
+        });
+        return services;
+    }
+}

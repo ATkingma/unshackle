@@ -1,0 +1,1 @@
+derive from Mediator.MessageExceptionHandler<TMessage, TResponse, TException>

@@ -73,6 +73,17 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/mediatr-queue.md` | Wachtrij MediatR → Mediator-patronen; infrastructuur in TAAK-020 |
 | `claude/tasks/automapper-queue.md` | Wachtrij AutoMapper → handgeschreven mapping (voorstel, op frequentie) |
 | `claude/tasks/archief/` | Voltooide taken |
+| `claude/tasks/archief/TAAK-029-mediatr-send-as-task.md` | ✅ niet-ge-awaite `Send`/`Publish` → `.AsTask()`; patroon `mediatr.send-as-task` |
+| `claude/tasks/archief/TAAK-037-mediatr-unsupported.md` | ✅ pre/post/exception/publisher/stream-behavior/generieke berichten → Manual met advies; stream-request-swap; `RegisterGenericHandlers` valt weg; end-to-end SampleShop |
+| `claude/tasks/TAAK-060-mediatr-notification-publisher-config.md` | `NotificationPublisher = new TaskWhenAllPublisher()` → `NotificationPublisherType`; CS0104 na swap |
+| `claude/tasks/TAAK-061-mediatr-processors-exception-handlers.md` | Pre/post-processors en exception-handlers herschrijven i.p.v. Manual |
+| `claude/tasks/TAAK-062-mediatr-stream-pipeline-behavior.md` | `IStreamPipelineBehavior` herschrijven, `AddOpenStreamBehavior` → `StreamPipelineBehaviors` |
+| `claude/tasks/TAAK-063-mediatr-source-generator-alleen-host.md` | Source generator alleen in host-project (CS0436 in testprojecten) |
+| `claude/tasks/TAAK-040-fa-expression-bodied-void.md` | Bug: `void M() => x.Should()...` wordt Manual |
+| `claude/tasks/TAAK-041-fa-null-conditional-subject.md` | Bug: `a?.B.Should()...` wordt Manual "result is used" |
+| `claude/tasks/TAAK-042-fa-throwasync-configure-await.md` | Bug: `ThrowAsync<T>().ConfigureAwait(false)` wordt Manual |
+| `claude/tasks/TAAK-043-fa-inactive-preprocessor-branch.md` | Bug: inactieve `#if`-tak blijft FA, using verdwijnt |
+| `claude/tasks/TAAK-044-fa-global-using.md` | Bug: `global using FluentAssertions;` wordt niet vervangen |
 
 ## Skills
 

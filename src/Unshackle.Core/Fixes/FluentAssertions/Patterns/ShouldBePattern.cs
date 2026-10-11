@@ -79,7 +79,7 @@ public class ShouldBePattern : IPattern
     // ShouldBe<T>(this T actual, T expected) infers T from both sides, and the receiver allows no numeric or nullable
     // conversion. FluentAssertions converted the argument to the subject type instead, e.g. byte b; b.Should().Be(1).
     // Returns the expected expression (cast when needed), or null when no safe form exists.
-    private static ExpressionSyntax? ConvertExpected(ExpressionSyntax expected, ITypeSymbol subjectType, SemanticModel model, int position)
+    internal static ExpressionSyntax? ConvertExpected(ExpressionSyntax expected, ITypeSymbol subjectType, SemanticModel model, int position)
     {
         ITypeSymbol? expectedType = model.GetTypeInfo(expected).Type;
         if (expectedType is null || SymbolEqualityComparer.Default.Equals(expectedType, subjectType)

@@ -96,8 +96,6 @@ public class ThrowPattern : IPattern
             return PatternResult.Manual("WithMessage(...) pattern is not a string constant, so its wildcards cannot be translated.");
         }
 
-        return ThrowMessage.Check(result, pattern, because) is { } check
-            ? PatternResult.Fixed(check)
-            : PatternResult.Manual("WithMessage(...) pattern has wildcards other than a leading or trailing *: use ShouldMatch with a regex by hand.");
+        return ThrowMessage.Check(result, pattern, because);
     }
 }

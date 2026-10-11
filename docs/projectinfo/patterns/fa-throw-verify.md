@@ -33,7 +33,8 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowPattern.cs`; regi
 | # | Area | Plan says | Code does | Impact |
 | - | ---- | --------- | --------- | ------ |
 | 1 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because`; gedocumenteerd verschil | Low |
-| 2 | Behaviour | `WithMessage` gelijk aan FA | Het patroon wordt als string-literal opnieuw opgebouwd (verbatim/raw-opmaak gaat verloren) en FA-newline-normalisatie is niet nagebootst | Low |
+| 2 | Behaviour | `WithMessage` gelijk aan FA | Het patroon wordt als string-literal opnieuw opgebouwd (verbatim/raw-opmaak gaat verloren) | Low |
+| 3 | Behaviour | `WithMessage` gelijk aan FA | FA negeert `\r\n` vs `\n`. Exacte melding met regeleinde → `ShouldBe(.., IgnoreCase \| IgnoreLineEndings)`; `*`-vorm met regeleinde → Manual (Shouldly's ShouldContain/StartWith/EndWith kennen geen regeleinde-optie). Probe FA 7.2.2/Shouldly 4.3.0 (TAAK-047, `message-line-break.*`, `message-contains-line-break.*`) | Low |
 
 ## Validation results
 

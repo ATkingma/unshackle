@@ -45,7 +45,8 @@ public class SpectreConsoleView : IConsoleView
 
         _out.Write(table);
         _out.WriteLine(
-            $"{findings.Count(f => f.Result is FixedResult)} fixed, {findings.Count(f => f.Result is ManualResult)} manual. " +
+            $"{findings.Count(f => f.Result is FixedResult)} fixed ({findings.Count(f => f.Result is FixedResult { Warning: not null })} with a warning), " +
+            $"{findings.Count(f => f.Result is ManualResult)} manual. " +
             "Use --report for every finding.");
     }
 

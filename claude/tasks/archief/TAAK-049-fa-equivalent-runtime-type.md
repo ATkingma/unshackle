@@ -1,6 +1,6 @@
 # TAAK-049 — fa.be-equivalent-to-object: Shouldly eist gelijk runtime-type
 
-**Status**: open
+**Status**: voltooid (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: TAAK-046 (semantische audit)
 
@@ -22,10 +22,18 @@ Gevolg: groene test wordt rood als het subject een afgeleide instantie is (bv. f
 
 ## Stappen
 
-- [ ] Probe: geneste member met afgeleide runtime-instantie (FA vs Shouldly)
-- [ ] Keuze: Manual voor niet-sealed classes, of documenteren
-- [ ] Proofs + `docs/projectinfo/patterns/` bijwerken
-- [ ] `dotnet build` + `dotnet test` groen
+- [x] Probe: geneste member met afgeleide runtime-instantie (FA vs Shouldly)
+- [x] Keuze: Manual voor niet-sealed classes, of documenteren
+- [x] Proofs + `docs/projectinfo/patterns/` bijwerken
+- [x] `dotnet build` + `dotnet test` groen
+
+## Besluit gebruiker
+
+Niet-sealed types worden **niet** Manual: de herschrijving blijft Fixed, met een waarschuwing in het rapport ("ShouldBeEquivalentTo fails when the runtime type differs; FluentAssertions accepted derived types").
+
+## Resultaat
+
+Probe: geneste afgeleide member en beide-afgeleid met verschillend extra member: FA PASS, Shouldly FAIL. `FixedResult` kreeg een optioneel `Warning` (init); `ReportRow` zet het in de kolom Reason (Markdown/Json/Csv), de console-samenvatting telt "with a warning". Geen waarschuwing bij sealed/struct (ook genest) of als beide kanten een `new`-expressie zijn. Unittests `Core/BeEquivalentToObjectPatternTests.cs` en `ReportWriterTests.From_FixedWithWarning_PutsWarningInReason`; proofs `sealed.*` en `both-new.*`. SampleShop ongewijzigd.
 
 ## Zie ook
 

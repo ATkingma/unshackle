@@ -82,6 +82,27 @@ public class ReportWriterTests
     }
 
     [Fact]
+    public void From_FixedWithWarning_PutsWarningInReason()
+    {
+        // Arrange
+        var finding = new Finding
+        {
+            FilePath = "a.cs",
+            Line = 1,
+            FixId = "fluentassertions",
+            PatternId = "fa.be-equivalent-to-object",
+            Result = new FixedResult([SyntaxFactory.ParseExpression("x")], []) { Warning = "runtime type" },
+        };
+
+        // Act
+        var row =ReportRow.From(finding);
+
+        // Assert
+        row.Status.ShouldBe("Fixed");
+        row.Reason.ShouldBe("runtime type");
+    }
+
+    [Fact]
     public async Task JsonWriteAsync_Findings_WritesArrayOfRows()
     {
         // Arrange

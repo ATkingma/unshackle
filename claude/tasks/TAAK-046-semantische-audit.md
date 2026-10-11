@@ -105,6 +105,6 @@ Van de 3 Fixed `fa.be-equivalent-to-object` staat er 1 in de diff-steekproef (de
 ## Zie ook
 
 - `claude/tasks/TAAK-019-lancering.md` — casus
-- `claude/tasks/TAAK-047-fa-withmessage-line-endings.md`
+- `claude/tasks/archief/TAAK-047-fa-withmessage-line-endings.md`
 - `claude/tasks/TAAK-048-fa-throw-aggregate-exception.md`
-- `claude/tasks/TAAK-049-fa-equivalent-runtime-type.md`
+- `claude/tasks/archief/TAAK-049-fa-equivalent-runtime-type.md`

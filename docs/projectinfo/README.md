@@ -110,6 +110,8 @@ Wachtrij en status: `claude/tasks/patroon-queue.md`.
 | `fa.not-be` | [plan](patterns/fa-not-be-plan.md) | [modellen](patterns/fa-not-be-modellen.md) | [verify](patterns/fa-not-be-verify.md) | TAAK-032 |
 | `fa.and-chain` | [plan](patterns/fa-and-chain-plan.md) | [modellen](patterns/fa-and-chain-modellen.md) | [verify](patterns/fa-and-chain-verify.md) | TAAK-033 |
 | `fa.be-of-type` | [plan](patterns/fa-be-of-type-plan.md) | [modellen](patterns/fa-be-of-type-modellen.md) | [verify](patterns/fa-be-of-type-verify.md) | TAAK-034 |
+| `fa.string-start-end` | [plan](patterns/fa-string-start-end-plan.md) | [modellen](patterns/fa-string-start-end-modellen.md) | [verify](patterns/fa-string-start-end-verify.md) | TAAK-035 |
+| `fa.contain-single-which` | [plan](patterns/fa-contain-single-which-plan.md) | [modellen](patterns/fa-contain-single-which-modellen.md) | [verify](patterns/fa-contain-single-which-verify.md) | TAAK-036 |
 | `mediatr.request-handler` | [plan](patterns/mediatr-request-handler-plan.md) | [modellen](patterns/mediatr-request-handler-modellen.md) | [verify](patterns/mediatr-request-handler-verify.md) | TAAK-023 |
 | `mediatr.void-request-handler` | [plan](patterns/mediatr-void-request-handler-plan.md) | [modellen](patterns/mediatr-void-request-handler-modellen.md) | [verify](patterns/mediatr-void-request-handler-verify.md) | TAAK-025 |
 | `mediatr.notification-handler` | [plan](patterns/mediatr-notification-handler-plan.md) | [modellen](patterns/mediatr-notification-handler-modellen.md) | [verify](patterns/mediatr-notification-handler-verify.md) | TAAK-026 |

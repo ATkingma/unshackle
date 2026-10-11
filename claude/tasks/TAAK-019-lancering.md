@@ -55,6 +55,17 @@ Eerst de echte casus: als die faalt, wil je dat weten vóór de publieke lanceri
 - **Tests na fix**: PAModelTests 530 totaal, 524 geslaagd, dezelfde 6 `StressTestApps` gefaald → geen regressie. Persistence.Tests (648 in baseline) niet te draaien: bouwt niet.
 - Conclusie: nog niet lanceerbaar met deze casus; eerst TAAK-021, dan casus opnieuw.
 
+### Herhaling op main `b53e3cc` (2026-10-11)
+
+- Clone gereset naar `630e697` (`git checkout -- . && git clean -fdx`), `global.json` weer naar 10.0.100. Na `git clean` laadt de solution pas na `dotnet restore` (net48-referentieassemblies komen uit NuGet); `fix` vraagt `--force` omdat `global.json` gewijzigd is.
+- **Fix**: tool meldt **239 Fixed / 92 Manual** (331 rijen, 326 unieke file+regel+patroon). TAAK-022 werkt: geen x3 meer per TFM. 24 bestanden geschreven.
+    - Minder Fixed en meer Manual dan de vorige unieke telling (262/53), vooral door de nieuwe AssertionScope-regel: 14x `fa.assertion-scope` + 24x `fa.be-true-false` binnen een scope (bewust Manual).
+    - Dubbele rijen: de 3 csproj's staan zowel als Fixed (Shouldly erbij) als Manual (FA blijft); `PaArchiveTests.cs:400` (contain) en `MsappPackingServiceTests.cs:335` (all-satisfy) geven twee Manual-rijen op één regel (twee aanroepen). Geen fout.
+- **Top Manual-redenen**: AssertionScope (38), `Contain(IEnumerable)`/niet-standaardvorm/resultaat gebruikt (8), `Throw` resultaat gebruikt/ThrowExactly/Invoking (10, + 1 ThrowAsync), BeEquivalentTo onbekend type/verschillende typen/becauseArgs/ImmutableDictionary (10), `Be(...)` becauseArgs of resultaat gebruikt (9), `.And/.Which` na NotBeNull/NotBeEmpty/HaveCount/NotThrow (7), AllSatisfy niet-standaardvorm (4), project-file FA blijft (3).
+- **Build na fix**: groen, 0 fouten, 0 warnings (TAAK-021 opgelost).
+- **Tests na fix**: 1178 totaal, 6 gefaald (dezelfde `StressTestApps` x3 x2 TFM's als baseline), Persistence.Tests nu groen → **geen regressie**.
+- Geen nieuwe patroonfouten gevonden, dus geen nieuwe taken. Casus is lanceerbaar; de cijfers voor de README zijn deze.
+
 ## Stappen
 
 - [ ] 1. Wachten tot TAAK-017 + TAAK-018 gepusht zijn (checks groen)

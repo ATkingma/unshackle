@@ -32,4 +32,4 @@ Extra: `SaveAsync_FileChangedSinceEdit_ThrowsAndKeepsFile` en `CommandTests.FixE
 ## Zie ook
 
 - [projectbestanden-migreren-plan.md](projectbestanden-migreren-plan.md)
-- `claude/tasks/TAAK-017-projectbestanden-migreren.md`
+- `claude/tasks/archief/TAAK-017-projectbestanden-migreren.md`

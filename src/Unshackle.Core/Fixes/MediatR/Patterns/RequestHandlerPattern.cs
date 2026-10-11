@@ -18,9 +18,9 @@ public class RequestHandlerPattern : IPattern
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
         var method = (MethodDeclarationSyntax)node;
-        if (method.ExplicitInterfaceSpecifier is not null)
+        if (MediatRSyntax.RejectExplicit(method, "rename the interface and return type by hand.") is { } explicitHandle)
         {
-            return PatternResult.Manual("Handle is an explicit interface implementation; rename the interface and return type by hand.");
+            return explicitHandle;
         }
 
         TypeSyntax? returnType = method.ReturnType is GenericNameSyntax or QualifiedNameSyntax { Right: GenericNameSyntax }

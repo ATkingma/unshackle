@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.MediatR;
 
@@ -65,6 +66,142 @@ public static class MediatRSyntax
             SyntaxKind.SimpleMemberAccessExpression,
             SyntaxFactory.IdentifierName("ValueTask"),
             taskMember.Name).WithTriviaFrom(taskMember);
+
+    /// <summary>
+    /// Async: unchanged. Otherwise every <c>return Task.CompletedTask</c> → <c>ValueTask.CompletedTask</c>; null when another Task is returned.
+    /// The return type is left to the caller.
+    /// </summary>
+    public static MethodDeclarationSyntax? WithCompletedValueTask(MethodDeclarationSyntax method, SemanticModel model)
+    {
+        if (method.Modifiers.Any(SyntaxKind.AsyncKeyword))
+        {
+            return method;
+        }
+
+        List<ExpressionSyntax?> returned = ReturnedExpressions(method);
+        return returned.Any(e => e is not MemberAccessExpressionSyntax || !IsTaskMember(e, model, "CompletedTask"))
+            ? null
+            : method.ReplaceNodes(returned.OfType<MemberAccessExpressionSyntax>(), (original, _) => OnValueTask(original));
+    }
+
+    /// <summary>The MediatR interface with this metadata name that <paramref name="type"/> declares itself (not through a base class or interface).</summary>
+    public static INamedTypeSymbol? DeclaredInterface(INamedTypeSymbol type, string metadataName) =>
+        type.Interfaces.FirstOrDefault(i => i.OriginalDefinition.MetadataName == metadataName
+            && i.ContainingNamespace.ToDisplayString().StartsWith("MediatR", StringComparison.Ordinal));
+
+    /// <summary>
+    /// Replaces the base-list entry of <paramref name="mediatRInterface"/> with the Mediator base class <paramref name="baseClass"/>, moved to the front
+    /// (a base class comes first). Null when the entry is not found or the type already has a base class. <paramref name="original"/> is the type in
+    /// the tree of <paramref name="model"/>; <paramref name="current"/> is its rewritten copy with the same base list.
+    /// </summary>
+    public static TypeDeclarationSyntax? WithBaseClass(
+        TypeDeclarationSyntax original, TypeDeclarationSyntax current, INamedTypeSymbol mediatRInterface, TypeSyntax baseClass, SemanticModel model)
+    {
+        if (original.BaseList is not { } originalList
+            || current.BaseList is not { } baseList
+            || model.GetDeclaredSymbol(original) is not INamedTypeSymbol { BaseType.SpecialType: SpecialType.System_Object })
+        {
+            return null;
+        }
+
+        int index = originalList.Types.IndexOf(t => SymbolEqualityComparer.Default.Equals(model.GetTypeInfo(t.Type).Type, mediatRInterface));
+        if (index < 0)
+        {
+            return null;
+        }
+
+        SeparatedSyntaxList<BaseTypeSyntax> types = baseList.Types.RemoveAt(index)
+            .Insert(0, SyntaxFactory.SimpleBaseType(baseClass.WithTriviaFrom(baseList.Types[0].Type)));
+        if (index != 0)
+        {
+            // The old first entry keeps its own place, without the leading trivia it gave to the base class.
+            types = types.Replace(types[1], types[1].WithLeadingTrivia(SyntaxFactory.Space));
+        }
+
+        types = types.Replace(types[^1], types[^1].WithTrailingTrivia(baseList.Types[^1].GetTrailingTrivia()));
+        return current.WithBaseList(baseList.WithTypes(types));
+    }
+
+    /// <summary><c>public Task X(...)</c> → <c>protected override &lt;returnType&gt; Handle(...)</c>, keeping <c>async</c> and trivia.</summary>
+    public static MethodDeclarationSyntax AsHandleOverride(MethodDeclarationSyntax method, TypeSyntax returnType)
+    {
+        SyntaxTriviaList leading = method.Modifiers.Count > 0 ? method.Modifiers[0].LeadingTrivia : method.ReturnType.GetLeadingTrivia();
+        List<SyntaxToken> modifiers =
+        [
+            SyntaxFactory.Token(SyntaxKind.ProtectedKeyword).WithLeadingTrivia(leading).WithTrailingTrivia(SyntaxFactory.Space),
+            SyntaxFactory.Token(SyntaxKind.OverrideKeyword).WithTrailingTrivia(SyntaxFactory.Space),
+            .. method.Modifiers.Where(m => m.IsKind(SyntaxKind.AsyncKeyword)).Select(m => m.WithoutTrivia().WithTrailingTrivia(SyntaxFactory.Space)),
+        ];
+        return method
+            .WithModifiers([.. modifiers])
+            .WithReturnType(returnType.WithLeadingTrivia().WithTrailingTrivia(method.ReturnType.GetTrailingTrivia()))
+            .WithIdentifier(SyntaxFactory.Identifier("Handle").WithTriviaFrom(method.Identifier));
+    }
+
+    /// <summary>Manual for a Handle written as an explicit interface implementation, otherwise null.</summary>
+    public static PatternResult? RejectExplicit(MethodDeclarationSyntax method, string todo) =>
+        method.ExplicitInterfaceSpecifier is null ? null : PatternResult.Manual($"{method.Identifier.ValueText} is an explicit interface implementation; {todo}");
+
+    /// <summary>Nodes separated by ", ".</summary>
+    public static SeparatedSyntaxList<T> CommaList<T>(List<T> nodes)
+        where T : SyntaxNode =>
+        SyntaxFactory.SeparatedList(nodes, Enumerable.Repeat(SyntaxFactory.Token(SyntaxKind.CommaToken).WithTrailingTrivia(SyntaxFactory.Space), nodes.Count - 1));
+
+    /// <summary>
+    /// Adds <c>where T : <paramref name="constraint"/></c> (e.g. <c>IMessage</c>) when <paramref name="messageType"/> is a type parameter of
+    /// <paramref name="type"/> whose constraints do not make it one yet: <paramref name="isMessage"/> says which MediatR interfaces already do after the swap.
+    /// </summary>
+    public static TypeDeclarationSyntax WithConstraint(TypeDeclarationSyntax type, ITypeSymbol? messageType, string constraint, Func<INamedTypeSymbol, bool> isMessage)
+    {
+        if (messageType is not ITypeParameterSymbol parameter || parameter.TypeParameterKind != TypeParameterKind.Type)
+        {
+            return type;
+        }
+
+        if (parameter.ConstraintTypes.OfType<INamedTypeSymbol>().SelectMany(t => t.AllInterfaces.Prepend(t)).Any(isMessage))
+        {
+            return type;
+        }
+
+        TypeConstraintSyntax message = SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName(constraint));
+        TypeParameterConstraintClauseSyntax? clause = type.ConstraintClauses.FirstOrDefault(c => c.Name.Identifier.ValueText == parameter.Name);
+        if (clause is null)
+        {
+            TypeParameterConstraintClauseSyntax added = SyntaxFactory.TypeParameterConstraintClause(SyntaxFactory.IdentifierName(parameter.Name))
+                .WithConstraints(SyntaxFactory.SingletonSeparatedList<TypeParameterConstraintSyntax>(message));
+            return AddClause(type, added);
+        }
+
+        if (clause.Constraints.Any(c => c is TypeConstraintSyntax { Type: IdentifierNameSyntax name } && name.Identifier.ValueText == constraint))
+        {
+            return type;
+        }
+
+        // new() must stay last.
+        List<TypeParameterConstraintSyntax> constraints = [.. clause.Constraints.Select(c => c.WithoutTrailingTrivia())];
+        int index = constraints.FindIndex(c => c is ConstructorConstraintSyntax);
+        constraints.Insert(index < 0 ? constraints.Count : index, message);
+        constraints[^1] = constraints[^1].WithTrailingTrivia(clause.Constraints.Last().GetTrailingTrivia());
+        return type.ReplaceNode(clause, clause.WithConstraints(CommaList(constraints)));
+    }
+
+    /// <summary>True for a type of namespace MediatR (or MediatR.Pipeline) with one of these names.</summary>
+    public static bool IsMediatR(INamedTypeSymbol type, params string[] names) =>
+        names.Contains(type.Name, StringComparer.Ordinal) && type.ContainingNamespace.ToDisplayString().StartsWith("MediatR", StringComparison.Ordinal);
+
+    // where T : X on its own line, one level deeper than the type declaration.
+    private static TypeDeclarationSyntax AddClause(TypeDeclarationSyntax type, TypeParameterConstraintClauseSyntax clause)
+    {
+        SyntaxTriviaList indentation = [.. type.GetLeadingTrivia().Reverse().TakeWhile(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).Reverse()];
+        SyntaxToken last = type.ConstraintClauses.LastOrDefault()?.GetLastToken() ?? type.BaseList?.GetLastToken() ?? type.TypeParameterList!.GetLastToken();
+        SyntaxTrivia endOfLine = last.TrailingTrivia.FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia));
+        clause = clause
+            .WithWhereKeyword(SyntaxFactory.Token(SyntaxKind.WhereKeyword).WithLeadingTrivia(indentation.Add(SyntaxFactory.Whitespace("    "))).WithTrailingTrivia(SyntaxFactory.Space))
+            .WithColonToken(SyntaxFactory.Token(SyntaxKind.ColonToken).WithLeadingTrivia(SyntaxFactory.Space).WithTrailingTrivia(SyntaxFactory.Space))
+            .WithTrailingTrivia(last.TrailingTrivia);
+        TypeDeclarationSyntax withoutTrailing = type.ReplaceToken(last, last.WithTrailingTrivia(endOfLine.IsKind(SyntaxKind.None) ? SyntaxFactory.LineFeed : endOfLine));
+        return withoutTrailing.WithConstraintClauses(withoutTrailing.ConstraintClauses.Add(clause));
+    }
 
     private static bool IsMediatRType(INamedTypeSymbol type, string metadataName) =>
         type.OriginalDefinition.MetadataName == metadataName

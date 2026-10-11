@@ -34,6 +34,10 @@ Geen.
 | Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 groen                             |
 | Lint    | _geen_                                                      | _not run_: geen lint-commando ingesteld |
 
+## Bijgewerkt (review B L4, 2026-10-11)
+
+- `_sender?.Send(x)` (MemberBinding) → Manual (proof `null-conditional`).
+
 ## Zie ook
 
 - [mediatr-send-as-task-plan.md](mediatr-send-as-task-plan.md)

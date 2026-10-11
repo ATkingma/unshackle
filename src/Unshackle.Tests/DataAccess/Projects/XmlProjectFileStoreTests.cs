@@ -413,6 +413,22 @@ public class XmlProjectFileStoreTests
         await edit.ShouldThrowAsync<InvalidDataException>();
     }
 
+    [Theory]
+    [InlineData("Alias=\"FA\"")]
+    [InlineData("Static=\"true\"")]
+    public async Task EditAsync_AliasOrStaticUsingOfRemovedNamespace_Throws(string attribute)
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(
+            $"<Project>\n  <ItemGroup>\n    <PackageReference Include=\"FluentAssertions\" />\n    <Using Include=\"FluentAssertions\" {attribute} />\n  </ItemGroup>\n</Project>\n"));
+
+        // Act
+        Func<Task> edit = () => EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        (await edit.ShouldThrowAsync<InvalidDataException>()).Message.ShouldContain("Alias or Static");
+    }
+
     [Fact]
     public async Task SaveAsync_NotUtf8_ThrowsAndKeepsFile()
     {

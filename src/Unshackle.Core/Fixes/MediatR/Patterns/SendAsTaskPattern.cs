@@ -15,7 +15,7 @@ public class SendAsTaskPattern : IPattern
     // CreateStream returns IAsyncEnumerable in both libraries, so only Send and Publish change.
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i =>
-            i.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Send" or "Publish" }
+            i.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Send" or "Publish" } or MemberBindingExpressionSyntax { Name.Identifier.ValueText: "Send" or "Publish" }
             && model.GetSymbolInfo(i).Symbol is IMethodSymbol { ContainingAssembly.Name: "MediatR" }
             && !IsAwaited(i));
 
@@ -23,6 +23,12 @@ public class SendAsTaskPattern : IPattern
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
         var invocation = (InvocationExpressionSyntax)node;
+        if (invocation.Expression is MemberBindingExpressionSyntax)
+        {
+            // mediator?.Send(x) is a ValueTask? after the swap; .AsTask() needs a null check the caller has to choose.
+            return PatternResult.Manual("Send/Publish is called with ?. ; Mediator returns a ValueTask, so handle the null case and convert with .AsTask() by hand.");
+        }
+
         return PatternResult.Fixed(
             SyntaxFactory.InvocationExpression(
                 SyntaxFactory.MemberAccessExpression(

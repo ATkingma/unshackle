@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Proofs;
 
-public class AuditPreProcessor<TRequest>;
+public class LoggingBehavior<TRequest, TResponse>;
 
 public static class Registration
 {
@@ -11,7 +11,7 @@ public static class Registration
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);
-            cfg.AddOpenRequestPreProcessor(typeof(AuditPreProcessor<>));
+            cfg.AddOpenBehaviors([typeof(LoggingBehavior<,>)]);
         });
     }
 }

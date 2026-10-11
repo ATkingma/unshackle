@@ -23,9 +23,9 @@ public class PipelineBehaviorPattern : IPattern
     {
         var type = (TypeDeclarationSyntax)node;
         MethodDeclarationSyntax method = MediatRSyntax.FindHandleMethods(type, model, InterfaceName).First(m => m.Parent == type);
-        if (method.ExplicitInterfaceSpecifier is not null)
+        if (MediatRSyntax.RejectExplicit(method, "rewrite the pipeline behavior by hand.") is { } explicitHandle)
         {
-            return PatternResult.Manual("Handle is an explicit interface implementation; rewrite the pipeline behavior by hand.");
+            return explicitHandle;
         }
 
         TypeSyntax? returnType = method.ReturnType is GenericNameSyntax or QualifiedNameSyntax { Right: GenericNameSyntax }
@@ -61,7 +61,7 @@ public class PipelineBehaviorPattern : IPattern
         }
 
         GenericNameSyntax messageDelegate = SyntaxFactory.GenericName(SyntaxFactory.Identifier("MessageHandlerDelegate"))
-            .WithTypeArgumentList(SyntaxFactory.TypeArgumentList(CommaList([request.Type!.WithoutTrivia(), nextType.TypeArgumentList.Arguments[0]])))
+            .WithTypeArgumentList(SyntaxFactory.TypeArgumentList(MediatRSyntax.CommaList([request.Type!.WithoutTrivia(), nextType.TypeArgumentList.Arguments[0]])))
             .WithTriviaFrom(nextType);
         MethodDeclarationSyntax rewritten = method.ReplaceNodes(
             calls.Cast<SyntaxNode>()
@@ -69,7 +69,7 @@ public class PipelineBehaviorPattern : IPattern
                 .Concat(isAsync ? [] : returned.Where(e => IsTaskFromResult(e, model)).Select(e => ((InvocationExpressionSyntax)e!).Expression)),
             (original, current) => current switch
             {
-                InvocationExpressionSyntax call => call.WithArgumentList(SyntaxFactory.ArgumentList(CommaList(
+                InvocationExpressionSyntax call => call.WithArgumentList(SyntaxFactory.ArgumentList(MediatRSyntax.CommaList(
                 [
                     SyntaxFactory.Argument(SyntaxFactory.IdentifierName(request.Identifier.ValueText)),
                     call.ArgumentList.Arguments.FirstOrDefault() ?? SyntaxFactory.Argument(SyntaxFactory.IdentifierName(token.Identifier.ValueText)),
@@ -84,64 +84,11 @@ public class PipelineBehaviorPattern : IPattern
         return PatternResult.Fixed(WithMessageConstraint(result, request.Type!, model), "System.Threading.Tasks");
     }
 
-    private static SeparatedSyntaxList<T> CommaList<T>(List<T> nodes)
-        where T : SyntaxNode =>
-        SyntaxFactory.SeparatedList(nodes, Enumerable.Repeat(SyntaxFactory.Token(SyntaxKind.CommaToken).WithTrailingTrivia(SyntaxFactory.Space), nodes.Count - 1));
-
     private static bool IsTaskFromResult(ExpressionSyntax? expression, SemanticModel model) =>
         expression is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax } invocation
         && MediatRSyntax.IsTaskMember(invocation, model, "FromResult");
 
-    // Mediator's IPipelineBehavior requires TMessage : IMessage; a closed request type gets it through the IRequest swap.
-    private static TypeDeclarationSyntax WithMessageConstraint(TypeDeclarationSyntax type, TypeSyntax requestType, SemanticModel model)
-    {
-        if (model.GetTypeInfo(requestType).Type is not ITypeParameterSymbol parameter || parameter.TypeParameterKind != TypeParameterKind.Type)
-        {
-            return type;
-        }
-
-        // IRequest<T>, INotification and marker interfaces on them already are an IMessage after the swap.
-        if (parameter.ConstraintTypes.OfType<INamedTypeSymbol>().SelectMany(t => t.AllInterfaces.Prepend(t)).Any(IsMediatRMessage))
-        {
-            return type;
-        }
-
-        TypeConstraintSyntax message = SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName("IMessage"));
-        TypeParameterConstraintClauseSyntax? clause = type.ConstraintClauses.FirstOrDefault(c => c.Name.Identifier.ValueText == parameter.Name);
-        if (clause is null)
-        {
-            TypeParameterConstraintClauseSyntax added = SyntaxFactory.TypeParameterConstraintClause(SyntaxFactory.IdentifierName(parameter.Name))
-                .WithConstraints(SyntaxFactory.SingletonSeparatedList<TypeParameterConstraintSyntax>(message));
-            return AddClause(type, added);
-        }
-
-        if (clause.Constraints.Any(c => c is TypeConstraintSyntax { Type: IdentifierNameSyntax { Identifier.ValueText: "IMessage" } }))
-        {
-            return type;
-        }
-
-        // new() must stay last.
-        List<TypeParameterConstraintSyntax> constraints = [.. clause.Constraints.Select(c => c.WithoutTrailingTrivia())];
-        int index = constraints.FindIndex(c => c is ConstructorConstraintSyntax);
-        constraints.Insert(index < 0 ? constraints.Count : index, message);
-        constraints[^1] = constraints[^1].WithTrailingTrivia(clause.Constraints.Last().GetTrailingTrivia());
-        return type.ReplaceNode(clause, clause.WithConstraints(CommaList(constraints)));
-    }
-
-    private static bool IsMediatRMessage(INamedTypeSymbol type) =>
-        type.Name is "IBaseRequest" or "INotification" && type.ContainingNamespace.ToDisplayString() == "MediatR";
-
-    // where TRequest : IMessage on its own line, one level deeper than the type declaration.
-    private static TypeDeclarationSyntax AddClause(TypeDeclarationSyntax type, TypeParameterConstraintClauseSyntax clause)
-    {
-        SyntaxTriviaList indentation = [.. type.GetLeadingTrivia().Reverse().TakeWhile(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).Reverse()];
-        SyntaxToken last = type.ConstraintClauses.LastOrDefault()?.GetLastToken() ?? type.BaseList?.GetLastToken() ?? type.TypeParameterList!.GetLastToken();
-        SyntaxTrivia endOfLine = last.TrailingTrivia.FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia));
-        clause = clause
-            .WithWhereKeyword(SyntaxFactory.Token(SyntaxKind.WhereKeyword).WithLeadingTrivia(indentation.Add(SyntaxFactory.Whitespace("    "))).WithTrailingTrivia(SyntaxFactory.Space))
-            .WithColonToken(SyntaxFactory.Token(SyntaxKind.ColonToken).WithLeadingTrivia(SyntaxFactory.Space).WithTrailingTrivia(SyntaxFactory.Space))
-            .WithTrailingTrivia(last.TrailingTrivia);
-        TypeDeclarationSyntax withoutTrailing = type.ReplaceToken(last, last.WithTrailingTrivia(endOfLine.IsKind(SyntaxKind.None) ? SyntaxFactory.LineFeed : endOfLine));
-        return withoutTrailing.WithConstraintClauses(withoutTrailing.ConstraintClauses.Add(clause));
-    }
+    // Mediator's IPipelineBehavior requires TMessage : IMessage; IRequest<T>, INotification and marker interfaces on them already are one after the swap.
+    private static TypeDeclarationSyntax WithMessageConstraint(TypeDeclarationSyntax type, TypeSyntax requestType, SemanticModel model) =>
+        MediatRSyntax.WithConstraint(type, model.GetTypeInfo(requestType).Type, "IMessage", t => MediatRSyntax.IsMediatR(t, "IBaseRequest", "INotification"));
 }

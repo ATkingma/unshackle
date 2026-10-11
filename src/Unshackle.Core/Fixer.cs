@@ -41,6 +41,7 @@ public class Fixer : IFixer
             ?? throw new ArgumentException($"Unknown fix '{request.FixId}'.", nameof(request));
 
         var findings = new List<Finding>();
+        Solution original = solution;
         HashSet<string> swappedTypes = [.. fix.SwappedTypes];
         // A multi-target project is loaded once per target framework: the same file is fixed and reported once,
         // and its copies in the other projects get the fixed text.
@@ -123,8 +124,23 @@ public class Fixer : IFixer
         IReadOnlyList<ProjectFileChange> projectFileChanges = _projectFiles is not null && fix.Package is PackageMigration package
             ? await MigrateProjectFilesAsync(_projectFiles, solution, fix, package, swappedTypes, findings, cancellationToken)
             : [];
+        if (fix.AllOrNothing && findings.Any(f => f.Result is ManualResult))
+        {
+            return new FixReport { Solution = original, Findings = [.. findings.Select(f => f.Result is FixedResult ? NotApplied(f) : f)], ProjectFileChanges = [] };
+        }
+
         return new FixReport { Solution = solution, Findings = findings, ProjectFileChanges = projectFileChanges };
     }
+
+    private static Finding NotApplied(Finding finding) => new()
+    {
+        FilePath = finding.FilePath,
+        Line = finding.Line,
+        FixId = finding.FixId,
+        PatternId = finding.PatternId,
+        Result = PatternResult.Manual("Not rewritten: this fix changes nothing while other findings are Manual (a partial migration would break at run time). " +
+            "Fix the manual findings and run the fix again."),
+    };
 
     // Runs on the fixed solution: only code that is still there can keep the removed package.
     private static async Task<IReadOnlyList<ProjectFileChange>> MigrateProjectFilesAsync(

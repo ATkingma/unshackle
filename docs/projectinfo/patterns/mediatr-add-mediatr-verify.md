@@ -48,6 +48,14 @@ TAAK-063: `Mediator.SourceGenerator` alleen in projecten die `AddMediator`/`AddM
 
 End-to-end (`fix --fix mediatr` op een kopie van SampleShop, na restore): 20 Fixed, 8 Manual; build zonder CS0436 (alleen MSG0003/MSG0005 van de generieke `CountQuery`). Manual: pre/post-processor, exception-handler, stream-behavior (TAAK-061/062), generieke `CountQuery`, en daardoor `AddMediatR` (`AddOpenStreamBehavior`). Omdat de registratie MediatR blijft, falen 28/38 sample-tests bij het opstarten (`LoggingBehavior`2 must implement MediatR.IPipelineBehavior`2`); dat lost zich op met TAAK-061/062.
 
+## Bijgewerkt (TAAK-061/062, review B M3/M4, 2026-10-11)
+
+- `AddOpenRequestPreProcessor`/`AddRequestPreProcessor` → `PipelineBehaviors` vóór de behaviors (open: `typeof(X<>)` → `typeof(X<,>)`), post-processors erna; gesloten exception handlers en processors uit het eigen project (MediatR-assembly-scan) vooraan. `AddOpenStreamBehavior`/`AddStreamBehavior` → `StreamPipelineBehaviors`. Proof `processors`.
+- M3: nieuwe statements krijgen alleen de indentatie; comments van alle oude statements komen vóór de eerste (proof `processors`).
+- M4: leeg blok `cfg => { }` → `cfg => cfg.ServiceLifetime = ServiceLifetime.Transient` (proof `empty`).
+- `Find` accepteert ook een candidate-symbool: nadat een ander bestand al herschreven is bindt de lambda niet meer schoon (gevonden met de SampleShop-integratietest).
+- `unknown-call` gebruikt nu `AddOpenBehaviors(...)` (de pre-processor wordt omgezet).
+
 ## Zie ook
 
 - [mediatr-add-mediatr-plan.md](mediatr-add-mediatr-plan.md)

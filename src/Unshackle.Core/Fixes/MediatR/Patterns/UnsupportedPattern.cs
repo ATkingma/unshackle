@@ -18,23 +18,15 @@ public class UnsupportedPattern : IPattern
     // Keyed by metadata name; namespace MediatR or MediatR.Pipeline.
     private static readonly Dictionary<string, string> s_advice = new(StringComparer.Ordinal)
     {
-        ["IRequestPreProcessor`1"] =
-            "IRequestPreProcessor has no Mediator twin; derive from Mediator.MessagePreProcessor<TMessage, TResponse>, override Handle(message, cancellationToken) returning ValueTask, and add it to PipelineBehaviors in AddMediator.",
-        ["IRequestPostProcessor`2"] =
-            "IRequestPostProcessor has no Mediator twin; derive from Mediator.MessagePostProcessor<TMessage, TResponse>, override Handle(message, response, cancellationToken) returning ValueTask, and add it to PipelineBehaviors in AddMediator.",
-        ["IRequestExceptionHandler`3"] =
-            "IRequestExceptionHandler has no Mediator twin; derive from Mediator.MessageExceptionHandler<TMessage, TResponse, TException>, return an ExceptionHandlingResult from Handle, and add it to PipelineBehaviors in AddMediator.",
         ["IRequestExceptionAction`2"] =
             "IRequestExceptionAction has no Mediator twin; derive from Mediator.MessageExceptionHandler<TMessage, TResponse, TException>, run the action and return NotHandled, and add it to PipelineBehaviors in AddMediator.",
         ["INotificationPublisher"] =
             "Mediator.INotificationPublisher has a different Publish(NotificationHandlers<T>, T, CancellationToken) returning ValueTask; rewrite the publisher and set NotificationPublisherType in AddMediator.",
-        ["IStreamPipelineBehavior`2"] =
-            "Mediator.IStreamPipelineBehavior<TMessage, TResponse> needs where TMessage : IStreamMessage and calls next(message, cancellationToken) (StreamHandlerDelegate<TMessage, TResponse>); rewrite Handle and add it to StreamPipelineBehaviors in AddMediator.",
     };
 
     public string Id => "mediatr.unsupported";
 
-    public string Description => "MediatR pre/post-processors, exception handlers/actions, notification publishers, stream behaviors and generic messages and request handlers → Manual with advice";
+    public string Description => "MediatR exception actions, notification publishers and generic messages and request handlers → Manual with advice";
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().OfType<TypeDeclarationSyntax>().Where(t => Advice(t, model) is not null);
@@ -50,20 +42,19 @@ public class UnsupportedPattern : IPattern
             return null;
         }
 
-        foreach (INamedTypeSymbol implemented in symbol.Interfaces.Where(i => i.ContainingNamespace.ToDisplayString().StartsWith("MediatR", StringComparison.Ordinal)))
+        // Advice only on the type that declares the interface; a generic message is reported also when it gets IRequest through a base type.
+        foreach (INamedTypeSymbol implemented in symbol.Interfaces.Where(IsMediatR))
         {
-            string name = implemented.OriginalDefinition.MetadataName;
-            if (s_advice.TryGetValue(name, out string? advice))
+            if (s_advice.TryGetValue(implemented.OriginalDefinition.MetadataName, out string? advice))
             {
                 return advice;
             }
-
-            if (symbol.IsGenericType && s_noGeneric.Contains(name))
-            {
-                return GenericMessageAdvice;
-            }
         }
 
-        return null;
+        return symbol.IsGenericType && symbol.AllInterfaces.Any(i => IsMediatR(i) && s_noGeneric.Contains(i.OriginalDefinition.MetadataName))
+            ? GenericMessageAdvice
+            : null;
     }
+
+    private static bool IsMediatR(INamedTypeSymbol type) => type.ContainingNamespace.ToDisplayString().StartsWith("MediatR", StringComparison.Ordinal);
 }

@@ -1,6 +1,6 @@
 # TAAK-062 — mediatr: stream-pipeline-behavior herschrijven
 
-**Status**: open
+**Status**: klaar (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Doel**: `IStreamPipelineBehavior<TRequest, TResponse>` herschrijven in plaats van Manual, en `cfg.AddOpenStreamBehavior(typeof(X<,>))` → `cfg.StreamPipelineBehaviors = [typeof(X<,>)]`.
 
@@ -12,9 +12,14 @@
 
 ## Stappen
 
-- [ ] 1. Patroon + proofs (`next` doorgegeven/opgeslagen → Manual, zoals bij pipeline-behavior).
-- [ ] 2. `AddMediatRPattern`: `AddOpenStreamBehavior`/`AddStreamBehavior` → `StreamPipelineBehaviors`.
-- [ ] 3. Docs, end-to-end op SampleShop.
+- [x] 1. Patroon + proofs (`next` doorgegeven/opgeslagen → Manual, zoals bij pipeline-behavior).
+- [x] 2. `AddMediatRPattern`: `AddOpenStreamBehavior`/`AddStreamBehavior` → `StreamPipelineBehaviors`.
+- [x] 3. Docs, end-to-end op SampleShop.
+
+## Resultaat
+
+- Patronen + proofs, `AddMediatRPattern` uitgebreid, end-to-end via `SampleShopTests.FixMediatRTwice_...` (build + 38 tests groen na migratie).
+- Nieuw: alles-of-niets (`IFix.AllOrNothing`, `MediatRFix` = true): één Manual → solution en projectbestanden onaangeraakt, Fixed-bevindingen gemeld als Manual "Not rewritten".
 
 ## Zie ook
 

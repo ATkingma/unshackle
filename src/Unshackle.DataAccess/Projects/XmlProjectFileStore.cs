@@ -7,7 +7,8 @@ using Unshackle.Core.Models;
 namespace Unshackle.DataAccess.Projects;
 
 // Edits the project file, the nearest Directory.Build.props and the nearest Directory.Packages.props of each project.
-// shortcut: imported props/targets, <PackageReference Update> and <Using> with Alias or Static are left alone; add them when users need it.
+// shortcut: imported props/targets and <PackageReference Update> are left alone; add them when users need it.
+// A <Using> with Alias or Static of a removed namespace throws (Manual), it would not compile without the package.
 public class XmlProjectFileStore : IProjectFileStore
 {
     private const string BuildProps = "Directory.Build.props";
@@ -215,6 +216,15 @@ public class XmlProjectFileStore : IProjectFileStore
 
     private static void SwapUsings(ProjectFile file, ProjectMigration migration)
     {
+        // An alias or static using of a removed namespace stops compiling once the package goes; the Fixer makes this Manual.
+        XElement? special = file.Document.Descendants(file.Namespace + Using).FirstOrDefault(u => u.Attributes().Any(a => a.Name.LocalName is "Alias" or "Static")
+            && migration.RemovedNamespaces.Contains((string?)u.Attribute(Include), StringComparer.Ordinal));
+        if (special is not null)
+        {
+            throw new InvalidDataException(
+                $"{file.Path} has <Using Include=\"{(string?)special.Attribute(Include)}\"> with Alias or Static; migrate it by hand (the package is removed).");
+        }
+
         var missing = new Queue<string>(migration.AddedNamespaces.Where(ns => Find(file, Using, ns) is null));
         List<XElement> removed =
         [

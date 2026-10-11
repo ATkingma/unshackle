@@ -13,4 +13,15 @@ public static class TestReferences
 
     public static IReadOnlyList<MetadataReference> Shouldly { get; } =
         [.. Net, MetadataReference.CreateFromFile(typeof(global::Shouldly.Should).Assembly.Location)];
+
+    // MediatR 12 keeps IRequest, INotification and Unit in MediatR.Contracts.
+    public static IReadOnlyList<MetadataReference> MediatR { get; } =
+    [
+        .. Net,
+        MetadataReference.CreateFromFile(typeof(global::MediatR.IMediator).Assembly.Location),
+        MetadataReference.CreateFromFile(typeof(global::MediatR.INotification).Assembly.Location),
+    ];
+
+    public static IReadOnlyList<MetadataReference> Mediator { get; } =
+        [.. Net, MetadataReference.CreateFromFile(typeof(global::Mediator.IMediator).Assembly.Location)];
 }

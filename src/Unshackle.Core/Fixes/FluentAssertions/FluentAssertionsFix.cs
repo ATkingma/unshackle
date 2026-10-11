@@ -16,7 +16,7 @@ public class FluentAssertionsFix : IFix
     public IReadOnlyList<string> AddedNamespaces { get; } = ["Shouldly"];
 
     public PackageMigration Package { get; } =
-        new() { RemovedPackage = "FluentAssertions", AddedPackage = "Shouldly", AddedVersion = ShouldlyVersion };
+        new() { RemovedPackage = "FluentAssertions", AddedPackages = [new() { Name = "Shouldly", Version = ShouldlyVersion }] };
 
     public IReadOnlyList<IPattern> Patterns { get; } =
     [

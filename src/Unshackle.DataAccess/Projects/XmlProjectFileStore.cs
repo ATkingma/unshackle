@@ -47,18 +47,22 @@ public class XmlProjectFileStore : IProjectFileStore
                 chain.Add(await LoadAsync(files, buildProps, cancellationToken));
             }
 
-            bool central = EditReferences(chain, migration.Package, Keeps, packagesProps is not null);
             foreach (ProjectFile file in chain.Where(f => !Keeps(f.Path)))
             {
                 SwapUsings(file, migration);
             }
 
-            if (central)
+            string removed = migration.Package.RemovedPackage;
+            // Extra packages first, added next to the removed one as if it stays; the first package then replaces it in place.
+            foreach ((AddedPackage added, bool first) in migration.Package.AddedPackages.Select((p, i) => (p, i == 0)).Reverse())
             {
-                ProjectFile versions = await LoadAsync(files, packagesProps!, cancellationToken);
-                Migrate(versions, PackageVersion, Find(versions, PackageVersion, migration.Package.RemovedPackage),
-                    Keeps(versions.Path), Find(versions, PackageVersion, migration.Package.AddedPackage) is not null,
-                    migration.Package, versioned: true);
+                Func<string, bool> keeps = first ? Keeps : _ => true;
+                if (EditReferences(chain, removed, added, keeps, packagesProps is not null))
+                {
+                    ProjectFile versions = await LoadAsync(files, packagesProps!, cancellationToken);
+                    Migrate(versions, PackageVersion, Find(versions, PackageVersion, removed), keeps(versions.Path),
+                        Find(versions, PackageVersion, added.Name) is not null, added, versioned: true);
+                }
             }
         }
 
@@ -81,11 +85,12 @@ public class XmlProjectFileStore : IProjectFileStore
         }
     }
 
-    // Returns true when the added package needs a <PackageVersion> (central package management).
-    private static bool EditReferences(List<ProjectFile> chain, PackageMigration package, Func<string, bool> keeps, bool hasPackagesProps)
+    // Returns true when this added package needs a <PackageVersion> (central package management).
+    private static bool EditReferences(
+        List<ProjectFile> chain, string removedPackage, AddedPackage package, Func<string, bool> keeps, bool hasPackagesProps)
     {
-        bool hasAdded = chain.Any(f => Find(f, PackageReference, package.AddedPackage) is not null);
-        ProjectFile? owner = chain.FirstOrDefault(f => Find(f, PackageReference, package.RemovedPackage) is not null);
+        bool hasAdded = chain.Any(f => Find(f, PackageReference, package.Name) is not null);
+        ProjectFile? owner = chain.FirstOrDefault(f => Find(f, PackageReference, removedPackage) is not null);
         if (owner is null)
         {
             // The removed package came in transitively: the project itself gets the added one.
@@ -93,7 +98,7 @@ public class XmlProjectFileStore : IProjectFileStore
             return !hasAdded && hasPackagesProps;
         }
 
-        XElement removed = Find(owner, PackageReference, package.RemovedPackage)!;
+        XElement removed = Find(owner, PackageReference, removedPackage)!;
         bool versioned = s_versionNames.Any(n => removed.Attribute(n) is not null || removed.Element(owner.Namespace + n) is not null);
         Migrate(owner, PackageReference, removed, keeps(owner.Path), hasAdded, package, versioned);
         return !versioned && hasPackagesProps;
@@ -101,7 +106,7 @@ public class XmlProjectFileStore : IProjectFileStore
 
     // Swaps the removed package for the added one in place, removes it when the added one is already there,
     // or adds the added one next to it (or next to its kind) when the removed one stays.
-    private static void Migrate(ProjectFile file, string kind, XElement? removed, bool keep, bool hasAdded, PackageMigration package, bool versioned)
+    private static void Migrate(ProjectFile file, string kind, XElement? removed, bool keep, bool hasAdded, AddedPackage package, bool versioned)
     {
         if (removed is not null && !keep)
         {
@@ -111,11 +116,11 @@ public class XmlProjectFileStore : IProjectFileStore
             }
             else
             {
-                removed.SetAttributeValue(Include, package.AddedPackage);
+                removed.SetAttributeValue(Include, package.Name);
                 foreach (string name in s_versionNames)
                 {
-                    removed.Attribute(name)?.SetValue(package.AddedVersion);
-                    removed.Element(file.Namespace + name)?.SetValue(package.AddedVersion);
+                    removed.Attribute(name)?.SetValue(package.Version);
+                    removed.Element(file.Namespace + name)?.SetValue(package.Version);
                 }
             }
 
@@ -124,10 +129,10 @@ public class XmlProjectFileStore : IProjectFileStore
 
         if (!hasAdded)
         {
-            var added = new XElement(file.Namespace + kind, new XAttribute(Include, package.AddedPackage));
+            var added = new XElement(file.Namespace + kind, new XAttribute(Include, package.Name));
             if (versioned)
             {
-                added.Add(new XAttribute("Version", package.AddedVersion));
+                added.Add(new XAttribute("Version", package.Version));
             }
 
             AddNextTo(file, removed ?? file.Document.Descendants(file.Namespace + kind).LastOrDefault(), added);

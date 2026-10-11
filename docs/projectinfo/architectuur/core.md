@@ -52,7 +52,7 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
 
 ## Projectbestanden (TAAK-017)
 
-- `IFix.Package` (default `null`): `PackageMigration` (oud pakket = assembly-naam, nieuw pakket + versie). FA → Shouldly 4.3.0.
+- `IFix.Package` (default `null`): `PackageMigration` (oud pakket = assembly-naam, `AddedPackages`: naam + versie; het eerste vervangt het oude in place, de rest komt ernaast). FA → Shouldly 4.3.0; MediatR → Mediator.Abstractions + Mediator.SourceGenerator 3.0.2.
 - `Fixer` maakt per project dat de oude assembly refereert een `ProjectMigration`; `KeepRemovedPackage` als een `.cs`-bestand
   het pakket na de fix nog semantisch gebruikt (`ProjectPackages`). Alle projecten gaan in één `IProjectFileStore.EditAsync`,
   want `Directory.*.props` is gedeeld.

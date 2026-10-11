@@ -104,6 +104,8 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-118-gedeeld-pakketbestand-niet-geladen-projecten.md` | ✅ TAAK-118 — Gedeeld `Directory.*.props` houdt het oude pakket als een niet-gemigreerd project op schijf het nog gebruikt |
 | `claude/tasks/CORPUSRUN-fa.md` | Corpus-run FA: 2/9 bouwen na fix; blokkades TAAK-110..113 |
 | `claude/tasks/CORPUSRUN-mediatr.md` | Corpus-run MediatR: 0/9 volledig gemigreerd, blokkades en top-10 acties |
+| `claude/tasks/REGRESSIE-corpus.md` | Regressie-run per test: 8/10 identiek; Polly → TAAK-140 |
+| `claude/tasks/TAAK-140-catch-filter-op-fa-exception.md` | Bug: eigen code vangt FA-exception → Shouldly-exception niet gevangen (Polly) |
 | `claude/tasks/patroon-queue.md` | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status (ronde 2: rijen 15-34) |
 | `claude/tasks/mediatr-queue.md` | Wachtrij MediatR → Mediator-patronen; infrastructuur in TAAK-020 |
 | `claude/tasks/automapper-queue.md` | Wachtrij AutoMapper → handgeschreven mapping (voorstel, op frequentie) |

@@ -30,6 +30,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeNullPattern.cs`; reg
 | - | ----- | --------- | --------- | ------ |
 | 1 | Architecture | `.Which` als aparte Manual-proof | `.Which` bestaat niet op `NotBeNull` van `StringAssertions`/`ObjectAssertions` (FA 7.2.2): de `before` compileerde niet; `chain` (`.And`) en `value-used` dekken dezelfde Manual-tak | Low |
 | 2 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because`; gedocumenteerd verschil | Low |
+| 3 | Scope | _(edge case)_ | `a?.B.Should().BeNull()` → `a?.B.ShouldBeNull()` (TAAK-041, `edge-null-conditional.*`). Semantiek gelijk: bij `a == null` slaan FA en Shouldly de check allebei over; ook voor `NotBeNull`. Expression-bodied void-leden worden herschreven (TAAK-040, `edge-expression-bodied.*`) | Low |
 
 ## Validation results
 

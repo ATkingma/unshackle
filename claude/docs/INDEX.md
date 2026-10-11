@@ -43,9 +43,9 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/`         | Actieve taken: `TAAK-NNN-<slug>.md` |
 | `claude/tasks/TAAK-019-lancering.md` | Volgende stap: lancering (echte casus, NuGet, publiek, README-GIF) |
 | `claude/tasks/archief/TAAK-031-fa-assertion-scope.md` | ✅ Assertions in `AssertionScope` → Manual; patroon `fa.assertion-scope` |
-| `claude/tasks/TAAK-040-fa-expression-bodied-void.md` | Bug: `void M() => x.Should()...` wordt Manual |
-| `claude/tasks/TAAK-041-fa-null-conditional-subject.md` | Bug: `a?.B.Should()...` wordt Manual "result is used" |
-| `claude/tasks/TAAK-042-fa-throwasync-configure-await.md` | Bug: `ThrowAsync<T>().ConfigureAwait(false)` wordt Manual |
+| `claude/tasks/archief/TAAK-040-fa-expression-bodied-void.md` | ✅ `void M() => x.Should()...` wordt herschreven |
+| `claude/tasks/archief/TAAK-041-fa-null-conditional-subject.md` | ✅ `a?.B.Should()...` → `a?.B.ShouldX()` (zelfde semantiek) |
+| `claude/tasks/archief/TAAK-042-fa-throwasync-configure-await.md` | ✅ `ThrowAsync<T>().ConfigureAwait(x)` blijft behouden |
 | `claude/tasks/TAAK-043-fa-inactive-preprocessor-branch.md` | Bug: inactieve `#if`-tak blijft FA, using verdwijnt |
 | `claude/tasks/TAAK-044-fa-global-using.md` | Bug: `global using FluentAssertions;` wordt niet vervangen |
 | `claude/tasks/archief/TAAK-032-fa-not-be.md` | ✅ `x.Should().NotBe(y)` → `x.ShouldNotBe(y)`; patroon `fa.not-be` |

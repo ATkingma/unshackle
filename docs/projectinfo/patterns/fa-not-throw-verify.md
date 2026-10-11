@@ -28,6 +28,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotThrowPattern.cs`; r
 | # | Area | Plan says | Code does | Impact |
 | - | ---- | --------- | --------- | ------ |
 | 1 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because`; gedocumenteerd verschil | Low |
+| 2 | Scope | _(edge case)_ | Expression-bodied void-leden worden herschreven (TAAK-040, `edge-expression-bodied.*`) | Low |
 
 ## Validation results
 

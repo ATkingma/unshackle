@@ -32,6 +32,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs`; r
 | --- | ------------ | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------- | ------ |
 | 1   | Requirements | REQ-10: onbekend type en afwijkende vorm worden Manual | Code doet dit (`ShouldBePattern.cs`, begin van `Rewrite`), maar geen proof dekt het        | Low    |
 | 2   | Risk         | TAAK-001 noemt `Guid` tegenover `string` als Manual  | Valt onder dezelfde tak als `nullable-expected` (`ConvertExpected` null); alleen `int?` bewezen | Low    |
+| 3 | Scope | _(edge case)_ | Expression-bodied void-methode/local function/accessor (`void M() => x.Should().Be(1);`) telt als discarded resultaat (TAAK-040, `edge-expression-bodied.*`); `a?.B.Should()` idem (TAAK-041) | Low |
 
 Verder geen afwijkingen: alle `files_expected` bestaan en zijn aangeraakt, geen nieuwe containers of externe systemen, scope niet overschreden (geen `NotBe`, geen ketensplitsing).
 

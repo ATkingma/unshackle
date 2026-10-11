@@ -35,6 +35,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowAsyncPattern.cs` 
 | 1 | Shared code | Eigen patroonbestand | Wildcard-vertaling verhuisd naar `ThrowMessage` (gedeeld met `ThrowPattern`, gedrag ongewijzigd; Throw-proofs groen); `FluentAssertionsSyntax.TryGetArguments` slaat de receiver van extensiemethoden over | Low |
 | 2 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because` | Low |
 | 3 | Scope | `.Where`/`.WithInnerException` | Manual met reden "not directly awaited" | Low |
+| 4 | Scope | _(edge case)_ | `await ...ThrowAsync<T>()[.WithMessage(p)].ConfigureAwait(x)`: de ConfigureAwait blijft staan achter `Should.ThrowAsync<T>(act)` (TAAK-042, `edge-configure-await.*`) | Low |
 
 ## Validation results
 

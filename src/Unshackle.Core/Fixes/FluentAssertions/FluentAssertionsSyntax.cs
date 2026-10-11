@@ -44,14 +44,25 @@ public static class FluentAssertionsSyntax
                 SyntaxKind.SimpleMemberAccessExpression, subject.WithoutTrailingTrivia(), SyntaxFactory.IdentifierName("ShouldNotBeNull")))
             : subject;
 
-    // True when nothing uses the AndConstraint the assertion returns: a statement, or the body of a void lambda.
-    public static bool IsResultDiscarded(InvocationExpressionSyntax assertion, SemanticModel model) => assertion.Parent switch
+    // True when nothing uses the AndConstraint the assertion returns: a statement, the body of a void lambda or the
+    // expression body of a void member. `a?.B.Should()...` counts too: the `?.` only skips the assertion, as it does after rewriting.
+    public static bool IsResultDiscarded(InvocationExpressionSyntax assertion, SemanticModel model)
     {
-        ExpressionStatementSyntax => true,
-        AnonymousFunctionExpressionSyntax lambda =>
-            model.GetTypeInfo(lambda).ConvertedType is INamedTypeSymbol { DelegateInvokeMethod.ReturnsVoid: true },
-        _ => false,
-    };
+        SyntaxNode node = assertion;
+        while (node.Parent is ConditionalAccessExpressionSyntax conditional && conditional.WhenNotNull == node)
+        {
+            node = conditional;
+        }
+
+        return node.Parent switch
+        {
+            ExpressionStatementSyntax => true,
+            AnonymousFunctionExpressionSyntax lambda =>
+                model.GetTypeInfo(lambda).ConvertedType is INamedTypeSymbol { DelegateInvokeMethod.ReturnsVoid: true },
+            ArrowExpressionClauseSyntax { Parent: { } member } => model.GetDeclaredSymbol(member) is IMethodSymbol { ReturnsVoid: true },
+            _ => false,
+        };
+    }
 
     // Splits the arguments into the value arguments (in order) and the `because` argument, which maps to Shouldly's
     // customMessage. False when becauseArgs or named arguments are used: Shouldly cannot format the message.

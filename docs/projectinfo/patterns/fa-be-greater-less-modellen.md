@@ -45,10 +45,10 @@ Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeGreaterLessPatt
 | Manual "is used" | resultaat gebruikt | `value-used` |
 | Fixed met cast | waarde van een ander type dan `byte`/`short`-subject | `byte-short` |
 | Manual "nullable or has an unknown type" | `int?`, `DateTime?` | `nullable`, `dates-nullable` |
-| Manual "named arguments, or becauseArgs" | named args of niet-constante `because` | geen proof (`because-args` is sinds TAAK-097 Fixed) |
+| Manual "named arguments, or becauseArgs" | named args of niet-constante `because` | `named-because`, `because-variable` (`because-args` is sinds TAAK-097 Fixed) |
 | Manual "only exists for" | `BePositive` op `byte` | `sign-byte` |
 | Manual "NaN" | `BeNegative` op double/float | `negative-double` |
-| Manual "Value type ... differs" | waarde niet naar het subjecttype te converteren | geen proof |
+| Manual "Value type ... differs" | waarde niet naar het subjecttype te converteren | `value-type-differs` |
 
 ## Zie ook
 

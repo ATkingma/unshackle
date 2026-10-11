@@ -23,6 +23,8 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`, registra
 | Uitbreiding TAAK-060 | Gehaald | `publisher`, `edge-publisher-qualified` |
 | Uitbreiding TAAK-061/062 | Gehaald | `processors`, `empty` |
 
+TAAK-117: een parameter die alleen naar een weggevallen `RegisterServicesFrom...` ging (IDE0060) blijft staan; `Fixed` met een waarschuwing in het rapport (`AddMediatRPatternTests`, proof `edge-assemblies` laat zien dat de code compileert).
+
 Regressie-edges bij REQ-1/REQ-2: `edge-assemblies` (`RegisterServicesFromAssemblies`), `edge-service-type-behavior` (`AddBehavior(typeof(IPipelineBehavior<,>), typeof(X<,>))`).
 
 `after` compileert alleen met de Mediator-source-generator (die schrijft `AddMediator`); de proof-runner draait hem (`ProofFix.AfterGenerators`). De Fixer voegt `using Mediator;` toe, ook al is hij in `behaviors`/`expression` ongebruikt (onschuldig).

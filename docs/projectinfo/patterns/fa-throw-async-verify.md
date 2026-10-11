@@ -33,7 +33,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowAsyncPattern.cs` 
 | ConfigureAwait | Gehaald | `edge-configure-await.*` |
 | AggregateException | Gehaald | `aggregate-result` (Manual), `aggregate-awaited` (Fixed) |
 | Regeleinden | Gehaald | `message-line-break` (Fixed), `message-contains-line-break` (Manual) |
-| TAAK-100 | Gehaald | `IsInsideAssertionScope` als eerste controle; geen eigen proof |
+| TAAK-100 | Gehaald | `IsInsideAssertionScope` als eerste controle; proof `ThrowAsync/assertion-scope` |
 
 ## Deviations
 

@@ -55,6 +55,8 @@ public class ProofTests
         IPattern? pattern = proofFix.Fix.Patterns.SingleOrDefault(p => p.GetType().Name == parts[1] + "Pattern");
         pattern.ShouldNotBeNull($"no pattern {parts[1]}Pattern for proof {proof}");
         string basePath = Path.Combine(s_proofsDirectory, proof);
+        (File.Exists(basePath + ".after.cs") && File.Exists(basePath + ".manual.txt"))
+            .ShouldBeFalse($"{proof} has both .after.cs and .manual.txt; one of them is dead");
         string before = Normalize(await File.ReadAllTextAsync(basePath + ".before.cs", TestContext.Current.CancellationToken));
         TestSolution.CompileErrors(before, proofFix.Before).ShouldBeEmpty("before must compile against the old library");
 

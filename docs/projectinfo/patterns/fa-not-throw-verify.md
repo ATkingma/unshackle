@@ -24,7 +24,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotThrowPattern.cs`; r
 | REQ-8 | Vervangen | door Uitbreiding Invoking; `NotThrow/invoking.*` bestaat niet |
 | TAAK-097 | Gehaald | `because-args.after.cs` |
 | Invoking | Gehaald | `Invoking/not-throw.*` (Fixed); `Invoking/side-effect-receiver`, `value-type`, `method-group` (Manual) |
-| TAAK-100 | Gehaald | `IsInsideAssertionScope` als eerste controle in de code (proof alleen voor Throw: `Invoking/assertion-scope`) |
+| TAAK-100 | Gehaald | `IsInsideAssertionScope` als eerste controle in de code (proof `NotThrow/assertion-scope`) |
 
 ## Deviations
 

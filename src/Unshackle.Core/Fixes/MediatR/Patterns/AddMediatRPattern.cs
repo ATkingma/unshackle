@@ -53,6 +53,7 @@ public class AddMediatRPattern : IPattern
         List<string> postProcessors = [];
         List<string> streamBehaviors = [];
         string? publisher = null;
+        List<InvocationExpressionSyntax> dropped = [];
         foreach (ExpressionSyntax setting in settings)
         {
             switch (setting)
@@ -61,6 +62,7 @@ public class AddMediatRPattern : IPattern
                     string name = call.Name.Identifier.ValueText;
                     if (s_dropped.Contains(name))
                     {
+                        dropped.Add((InvocationExpressionSyntax)setting);
                         continue;
                     }
 
@@ -133,11 +135,39 @@ public class AddMediatRPattern : IPattern
             return PatternResult.Manual("Several settings in an AddMediatR expression lambda; write AddMediator(cfg => { ... }) by hand.");
         }
 
-        return PatternResult.Fixed(
+        var result = (FixedResult)PatternResult.Fixed(
             invocation
                 .WithExpression(member.WithName(SyntaxFactory.IdentifierName("AddMediator").WithTriviaFrom(member.Name)))
                 .WithArgumentList(invocation.ArgumentList.WithArguments([invocation.ArgumentList.Arguments[0].WithExpression(rewritten)])),
             "Microsoft.Extensions.DependencyInjection");
+        List<string> unused = UnusedParameters(invocation, dropped, model);
+        return unused.Count == 0
+            ? result
+            : result with
+            {
+                Warning = string.Join(" ", unused.Select(p =>
+                    $"Parameter '{p}' is no longer used now that assembly scanning is gone (IDE0060); remove it and its argument at the callers."))
+            };
+    }
+
+    // Parameters that were only passed to a dropped RegisterServicesFrom... call. Removing them changes the method's signature
+    // and its callers, so the report advises it instead of rewriting.
+    private static List<string> UnusedParameters(InvocationExpressionSyntax invocation, List<InvocationExpressionSyntax> dropped, SemanticModel model)
+    {
+        if (invocation.FirstAncestorOrSelf<BaseMethodDeclarationSyntax>() is not { } method)
+        {
+            return [];
+        }
+
+        List<IdentifierNameSyntax> references = [.. method.DescendantNodes().OfType<IdentifierNameSyntax>()];
+        return [.. dropped.SelectMany(d => d.ArgumentList.DescendantNodes().OfType<IdentifierNameSyntax>())
+            .Select(i => model.GetSymbolInfo(i).Symbol)
+            .OfType<IParameterSymbol>()
+            .Distinct(SymbolEqualityComparer.Default)
+            .Cast<IParameterSymbol>()
+            .Where(p => references.All(r => dropped.Any(d => d.Span.Contains(r.Span))
+                || !SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(r).Symbol, p)))
+            .Select(p => p.Name)];
     }
 
     // Each statement gets only the indentation of the block; comments of the old statements go in front of the first new one.

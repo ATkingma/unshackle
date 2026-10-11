@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 502 proofs (zonder `_Pending`).
+Totaal: 512 proofs (zonder `_Pending`).
 
 ## FluentAssertions
 
@@ -30,7 +30,7 @@ Totaal: 502 proofs (zonder `_Pending`).
 | `typed-parameter` | Fixed | `x.Should().AllSatisfy((int i) => Check(i));` → `x.ShouldNotBeEmpty(); foreach (int i in x)` |
 | `used` | Manual | `x.Should().AllSatisfy(i => Check(i)).And.NotBeEmpty();` — reden: is used |
 
-### AndChain (22)
+### AndChain (23)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -45,6 +45,7 @@ Totaal: 502 proofs (zonder `_Pending`).
 | `greater-less` | Fixed | `order.Total.Should().BeGreaterThan(20m).And.BeLessThan(30m); order.Total.Should().BeGreaterThan(1m, "above").A…` → `order.Total.ShouldBeGreaterThan(20m); order.Total.ShouldBeLessThan(30m);` |
 | `lambda` | Manual | `Action a = () => x.Should().BeGreaterThan(1).And.BeLessThan(5);` — reden: is used |
 | `link-because-args` | Fixed | `items.Should().NotBeEmpty().And.HaveCount(2, "of {0}", 2);` → `items.ShouldNotBeEmpty(); items.Count.ShouldBe(2, string.Format(System.Globalization.CultureInfo.InvariantCult…` |
+| `manual-link` | Manual | `x.Should().NotBeNull().And.BeGreaterThan(1);` — reden: of the .And chain: |
 | `member-subject` | Fixed | `_order.Lines.Should().NotBeEmpty().And.HaveCount(1);` → `_order.Lines.ShouldNotBeEmpty(); _order.Lines.Count.ShouldBe(1);` |
 | `no-block` | Manual | `if (items.Count > 0) items.Should().NotBeEmpty().And.HaveCount(2);` — reden: not directly in a block |
 | `nullable` | Fixed | `name.Should().NotBeNull().And.Be("Ann");` → `name.ShouldNotBeNull(); name.ShouldBe("Ann");` |
@@ -151,12 +152,13 @@ Totaal: 502 proofs (zonder `_Pending`).
 | `simple` | Fixed | `s.Should().BeEquivalentTo("ab");` → `s.ShouldBe("ab", StringCompareShould.IgnoreCase);` |
 | `value-used` | Manual | `var c = s.Should().BeEquivalentTo("ab");` — reden: is used |
 
-### BeGreaterLess (16)
+### BeGreaterLess (19)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `because` | Fixed | `x.Should().BeGreaterThan(1, "it grew"); x.Should().BeInRange(1, 5, "it is small");` → `x.ShouldBeGreaterThan(1, "it grew"); x.ShouldBeInRange(1, 5, "it is small");` |
 | `because-args` | Fixed | `x.Should().BeGreaterThan(1, "it is {0}", 1);` → `x.ShouldBeGreaterThan(1, string.Format(System.Globalization.CultureInfo.InvariantCulture, "it is {0}", 1));` |
+| `because-variable` | Manual | `x.Should().BeGreaterThan(1, why, 1);` — reden: becauseArgs whose because is no constant format string |
 | `byte-short` | Fixed | `b.Should().BeGreaterThan(1); s.Should().BeLessOrEqualTo(10, "small");` → `b.ShouldBeGreaterThan((byte)1); s.ShouldBeLessThanOrEqualTo((short)10, "small");` |
 | `comparable` | Fixed | `t.Should().BeGreaterThan(TimeSpan.Zero); v.Should().BeLessThan(new Version(2, 0));` → `t.ShouldBeGreaterThan(TimeSpan.Zero); v.ShouldBeLessThan(new Version(2, 0));` |
 | `dates` | Fixed | `a.Should().BeAfter(b); a.Should().BeOnOrAfter(b);` → `a.ShouldBeGreaterThan(b); a.ShouldBeGreaterThanOrEqualTo(b);` |
@@ -165,11 +167,13 @@ Totaal: 502 proofs (zonder `_Pending`).
 | `edge-interpolated-because` | Fixed | `age.Should().BeLessThan(150, $"{name} is human");` → `age.ShouldBeLessThan(150, $"{name} is human");` |
 | `in-range` | Fixed | `x.Should().BeInRange(1, 5); x.Should().NotBeInRange(6, 9);` → `x.ShouldBeInRange(1, 5); x.ShouldNotBeInRange(6, 9);` |
 | `lambda` | Fixed | `Action a = () => x.Should().BeGreaterThan(1);` → `Action a = () => x.ShouldBeGreaterThan(1);` |
+| `named-because` | Manual | `x.Should().BeGreaterThan(1, because: "it is positive");` — reden: named arguments |
 | `negative-double` | Manual | `d.Should().BeNegative();` — reden: NaN |
 | `nullable` | Manual | `x.Should().BeGreaterThan(1);` — reden: nullable or has an unknown type |
 | `sign` | Fixed | `x.Should().BePositive(); d.Should().BePositive("it dropped");` → `x.ShouldBePositive(); d.ShouldBePositive("it dropped");` |
 | `sign-byte` | Manual | `b.Should().BePositive();` — reden: only exists for |
 | `simple` | Fixed | `x.Should().BeGreaterThan(1); x.Should().BeGreaterThanOrEqualTo(2);` → `x.ShouldBeGreaterThan(1); x.ShouldBeGreaterThanOrEqualTo(2);` |
+| `value-type-differs` | Manual | `score.Should<int>().BeGreaterThan(5);` — reden: differs from subject type |
 | `value-used` | Manual | `var c = x.Should().BeGreaterThan(1);` — reden: is used |
 
 ### BeNull (14)
@@ -235,13 +239,14 @@ Totaal: 502 proofs (zonder `_Pending`).
 | `nullable` | Fixed | `flag.Should().BeTrue(); flag.Should().BeFalse("why");` → `flag.ShouldBe(true); flag.ShouldBe(false, "why");` |
 | `value-used` | Manual | `var c = flag.Should().BeFalse();` — reden: is used |
 
-### Contain (17)
+### Contain (19)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `and-chain` | Manual | `x.Should().NotBeEmpty().And.Contain(2);` — reden: is not in the form |
 | `because` | Fixed | `x.Should().Contain(2, "it was added"); text.Should().Contain("ab", "the prefix");` → `x.ShouldContain(2, "it was added"); text.ShouldContain("ab", Shouldly.Case.Sensitive, "the prefix");` |
 | `because-args` | Fixed | `x.Should().Contain(2, "it was {0}", "added");` → `x.ShouldContain(2, string.Format(System.Globalization.CultureInfo.InvariantCulture, "it was {0}", "added"));` |
+| `because-variable` | Manual | `x.Should().Contain(2, why, "added");` — reden: becauseArgs whose because is no constant format string |
 | `chain` | Manual | `x.Should().Contain(2).And.HaveCount(3);` — reden: is used |
 | `dictionary` | Manual | `x.Should().Contain(new KeyValuePair<string, int>("a", 1));` — reden: Dictionary: |
 | `edge-generic-list` | Fixed | `items.Should().Contain(item);` → `items.ShouldContain(item);` |
@@ -250,6 +255,7 @@ Totaal: 502 proofs (zonder `_Pending`).
 | `items` | Manual | `x.Should().Contain(new[] { 1, 2 });` — reden: several items |
 | `lambda` | Fixed | `System.Action act = () => x.Should().Contain(1);` → `System.Action act = () => x.ShouldContain(1);` |
 | `list` | Fixed | `x.Should().Contain(2);` → `x.ShouldContain(2);` |
+| `named-because` | Manual | `x.Should().Contain(2, because: "it was added");` — reden: named arguments |
 | `not-contain` | Fixed | `x.Should().NotContain(2); text.Should().NotContain("bad");` → `x.ShouldNotContain(2); text.ShouldNotContain("bad", Shouldly.Case.Sensitive);` |
 | `nullable-string` | Fixed | `text.Should().Contain("ab");` → `text.ShouldNotBeNull().ShouldContain("ab", Shouldly.Case.Sensitive);` |
 | `occurrence` | Manual | `text.Should().Contain("ab", Exactly.Twice());` — reden: occurrence constraint |
@@ -417,11 +423,12 @@ Totaal: 502 proofs (zonder `_Pending`).
 | `record` | Fixed | `price.Should().NotBe(new Money(0m, "EUR"));` → `price.ShouldNotBe(new Money(0m, "EUR"));` |
 | `simple` | Fixed | `result.Should().NotBe(41); name.Should().NotBe("timme");` → `result.ShouldNotBe(41); name.ShouldNotBe("timme");` |
 
-### NotThrow (10)
+### NotThrow (11)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `after` | Manual | `act.Should().NotThrowAfter(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(10));` — reden: NotThrowAfter |
+| `assertion-scope` | Manual | `act.Should().NotThrow();` — reden: Inside an AssertionScope |
 | `because` | Fixed | `act.Should().NotThrow("it is valid");` → `Should.NotThrow(act, "it is valid");` |
 | `because-args` | Fixed | `act.Should().NotThrow("because {0}", 1);` → `Should.NotThrow(act, string.Format(System.Globalization.CultureInfo.InvariantCulture, "because {0}", 1));` |
 | `edge-expression-bodied` | Fixed | `public void Test(Action act) => act.Should().NotThrow();` → `public void Test(Action act) => Should.NotThrow(act);` |
@@ -550,14 +557,16 @@ Totaal: 502 proofs (zonder `_Pending`).
 | `value-func` | Manual | `func.Should().Throw<InvalidOperationException>();` — reden: reference type |
 | `value-used` | Fixed | `var exception = act.Should().Throw<InvalidOperationException>().Which;` → `var exception = Should.Throw<InvalidOperationException>(act);` |
 
-### ThrowAsync (23)
+### ThrowAsync (26)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `aggregate-awaited` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
 | `aggregate-result` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>();` — reden: unwraps AggregateException |
+| `assertion-scope` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>();` — reden: Inside an AssertionScope |
 | `because` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>("a");` → `await Should.ThrowAsync<InvalidOperationException>(act, "a");` |
 | `because-args` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>("a {0}", 1);` → `await Should.ThrowAsync<InvalidOperationException>(act, string.Format(System.Globalization.CultureInfo.Invaria…` |
+| `because-variable` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>(why, 1);` — reden: becauseArgs whose because is no constant format string |
 | `edge-configure-await` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>().ConfigureAwait(false);` → `await Should.ThrowAsync<InvalidOperationException>(act).ConfigureAwait(false);` |
 | `edge-local-async-lambda` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
 | `func-task-reference` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
@@ -572,6 +581,7 @@ Totaal: 502 proofs (zonder `_Pending`).
 | `message-starts` | Fixed | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("order*");` → `(await Should.ThrowAsync<ArgumentException>(act)).Message.ShouldStartWith("order", Shouldly.Case.Insensitive);` |
 | `message-variable` | Manual | `await act.Should().ThrowAsync<ArgumentException>().WithMessage(pattern);` — reden: not a string constant |
 | `message-wildcard` | Manual | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("a*b");` — reden: wildcards other than |
+| `named-because` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>(because: "it is invalid");` — reden: named arguments |
 | `no-await` | Manual | `var task = act.Should().ThrowAsync<InvalidOperationException>();` — reden: not directly awaited |
 | `simple` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
 | `value-func` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>();` — reden: reference type |

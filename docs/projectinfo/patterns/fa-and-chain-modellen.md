@@ -42,7 +42,7 @@
 | Elke `.And` op hetzelfde subject? | continues on another subject | geen proof (geen compileerbaar FA 7-voorbeeld gevonden) |
 | Subject veilig twee keer te evalueren? | geen Manual: hoist naar `var subject = x;` | `subject-call`, `subject-indexer`, `subject-call-twice` (Fixed) |
 | Schakel gevonden? | which no pattern rewrites | `unsupported-link` |
-| Schakel Fixed? | Link X of the .And chain: reden | geen proof |
+| Schakel Fixed? | Link X of the .And chain: reden | `manual-link` |
 
 ## Zie ook
 

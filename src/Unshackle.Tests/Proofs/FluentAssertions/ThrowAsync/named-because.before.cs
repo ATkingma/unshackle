@@ -1,0 +1,13 @@
+using System;
+using System.Threading.Tasks;
+using FluentAssertions;
+
+namespace Proofs;
+
+public class NamedBecauseCase
+{
+    public async Task Test(Func<Task> act)
+    {
+        await act.Should().ThrowAsync<InvalidOperationException>(because: "it is invalid");
+    }
+}

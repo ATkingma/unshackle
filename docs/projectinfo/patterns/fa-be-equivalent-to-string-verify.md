@@ -14,13 +14,14 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToStringPa
 
 | REQ   | Oordeel | Bewijs |
 | ----- | ------- | ------ |
-| REQ-1 | Gehaald | `simple.*.cs` (after compileert tegen Shouldly) |
+| REQ-1 | Gehaald | `simple.*.cs`, `edge-interpolated.*.cs` (after compileert tegen Shouldly) |
 | REQ-2 | Gehaald | `because.*.cs` |
 | REQ-3 | Gehaald | `lambda.*.cs` |
 | REQ-4 | Gehaald | `not-equivalent.*` |
-| REQ-5 | Gehaald | `because-args.*` |
+| REQ-5 | Vervangen | door REQ-8 (TAAK-097): `because-args` is nu Fixed |
 | REQ-6 | Gehaald | `chain.*`, `value-used.*` |
 | REQ-7 | Gehaald | `and-chain.*` |
+| REQ-8 | Gehaald | `because-args.*.cs` (`string.Format`) |
 
 ## Deviations
 

@@ -1,10 +1,10 @@
 title: "[Klassen] AddMediatRPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: right
 IPattern: {shape: class; "+Id"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
-AddMediatRPattern: {shape: class; "+Id = mediatr.add-mediatr"; "-s_dropped: RegisterServicesFrom*"; "+Find(root, model)"; "+Rewrite(node, model)"; "-ParameterName(lambda)"; "-Behavior(call, arguments): string?"}
+AddMediatRPattern: {shape: class; "+Id = mediatr.add-mediatr"; "-s_dropped: RegisterServicesFrom*"; "+Find(root, model)"; "+Rewrite(node, model)"; "-ParameterName(lambda)"; "-Registered(call, arguments, open): string?"; "-IsBuiltInPublisher(type, out name)"; "-Scanned(model, registered)"; "-IsScanned(type)"; "-BlockStatements(body, assignments)"}
 PatternResult: {shape: class; "+Fixed(node, namespaces)"; "+Manual(reason)"}
-MediatR: "MediatR: services.AddMediatR(Action<MediatRServiceConfiguration>)\nRegisterServicesFrom*, AddOpenBehavior, AddBehavior, Lifetime"
-Mediator: "Mediator (source generator): services.AddMediator(Action<MediatorOptions>)\nServiceLifetime, PipelineBehaviors"
+MediatR: "MediatR: services.AddMediatR(Action<MediatRServiceConfiguration>)\nRegisterServicesFrom*, Add(Open)Behavior, Add(Open)StreamBehavior,\nAdd(Open)RequestPre/PostProcessor, Lifetime, RegisterGenericHandlers,\nNotificationPublisher = new TaskWhenAll/ForeachAwaitPublisher()"
+Mediator: "Mediator (source generator): services.AddMediator(Action<MediatorOptions>)\nServiceLifetime, PipelineBehaviors, StreamPipelineBehaviors,\nNotificationPublisherType"
 AddMediatRPattern -> IPattern: implementeert {style.stroke-dash: 3}
 AddMediatRPattern -> PatternResult: geeft
 AddMediatRPattern -> MediatR: herkent

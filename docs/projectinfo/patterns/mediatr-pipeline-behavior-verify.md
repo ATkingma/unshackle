@@ -19,6 +19,7 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/PipelineBehaviorPattern.cs`, `M
 | REQ-3 | Gehaald | `closed`                                 |
 | REQ-4 | Gehaald | `next-token`                             |
 | REQ-5 | Gehaald | `next-stored`, `next-passed`, `explicit` |
+| Uitbreiding TAAK-081 | Gehaald | `edge-request-constraint`, `edge-notnull-constraint` |
 
 Elke `after` compileert tegen Mediator 3.0.2 mét de Mediator-source-generator (zie TAAK-027, Keuzes).
 

@@ -20,12 +20,13 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainPattern.cs`; re
 | REQ-4  | Gehaald | `string.*.cs` (after bevat `Shouldly.Case.Sensitive`, compileert tegen Shouldly) |
 | REQ-5  | Gehaald | `because.*.cs` |
 | REQ-6  | Gehaald | `lambda.*.cs` |
-| REQ-7  | Gehaald | `because-args.before.cs` / `.manual.txt` |
+| REQ-7  | Vervangen | Door Uitbreiding TAAK-097: `because-args` is nu Fixed |
 | REQ-8  | Gehaald | `chain.*`, `value-used.*` |
 | REQ-9  | Gehaald | `and-chain.*` |
 | REQ-10 | Gehaald | `dictionary.*` |
 | REQ-11 | Gehaald | `items.*`, `occurrence.*` |
 | REQ-12 | Gehaald | `nullable-string.*` |
+| Uitbreiding TAAK-097 | Gehaald | `because-args.before.cs` / `because-args.after.cs` |
 
 ## Deviations
 

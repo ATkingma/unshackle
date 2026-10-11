@@ -1,13 +1,22 @@
-title: "[Beslisboom] IsInsideAssertionScope" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Beslisboom] AssertionScopePattern.Rewrite en IsInsideAssertionScope" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
-q0: "Volgende voorouder?" {shape: diamond}
-q1: "using-statement, node in body,\ntype AssertionScope?" {shape: diamond}
-q2: "Blok met eerdere using var\nvan type AssertionScope?" {shape: diamond}
-m: "Manual: Inside an AssertionScope"
+r1: "using (new AssertionScope()) { }\nof één using var-scope in het blok?" {shape: diamond}
+r2: "Zonder argumenten/initializer\n(geen context-string)?" {shape: diamond}
+r3: "Scope-variabele verder ongebruikt\n(geen Discard)?" {shape: diamond}
+r4: "Elk statement een FA-assertion,\nzonder await of ref-locals?" {shape: diamond}
+fx: "Fixed: x.ShouldSatisfyAllConditions(\n() => { a; }, () => { b; })\n(_Combined/scope-using-block, scope-using-var)"
+ms: "Manual: Shouldly has no scope\n(context, discard, other-statement, await)"
+r1 -> r2: ja
+r1 -> ms: nee
+r2 -> r3: ja
+r2 -> ms: nee
+r3 -> r4: ja
+r3 -> ms: nee
+r4 -> fx: ja
+r4 -> ms: nee
+q1: "Assertion: voorouder is body van een\nscope-using, of blok met eerdere using var-scope?" {shape: diamond}
+ms -> q1: "assertions in de scope"
+m: "Manual: Inside an AssertionScope\n(ShouldBe/assertion-scope-*)"
 f: "Patroon gaat gewoon door"
-q0 -> q1: ja
-q0 -> f: nee
 q1 -> m: ja
-q1 -> q2: nee
-q2 -> m: ja
-q2 -> q0: nee
+q1 -> f: nee

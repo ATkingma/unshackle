@@ -44,6 +44,8 @@ mediatr.add-mediatr: `services.AddMediatR(cfg => { ... })` wordt `services.AddMe
 - **REQ-4**: IF een toewijzing anders is dan `cfg.Lifetime = ServiceLifetime.X` THEN THE SYSTEM SHALL Manual melden (proof `publisher`).
 - **REQ-5**: IF `AddMediatR` geen lambda krijgt THEN THE SYSTEM SHALL Manual melden (proof `no-lambda`).
 - **REQ-6**: WHEN de lambda `cfg.RegisterGenericHandlers = ...` bevat THE SYSTEM SHALL die regel laten vallen (proof `generic-handlers`; TAAK-037). Mediator registreert open generieke notification-handlers zelf en kent geen generieke request-handlers; die meldt `mediatr.unsupported`.
+- **Uitbreiding TAAK-060**: WHEN `cfg.NotificationPublisher = new TaskWhenAllPublisher()` of `new ForeachAwaitPublisher()` (ook MediatR-gekwalificeerd) THE SYSTEM SHALL `cfg.NotificationPublisherType = typeof(global::Mediator.X)` schrijven (proofs `publisher`, `edge-publisher-qualified`); REQ-4 geldt nog voor een eigen publisher.
+- **Uitbreiding TAAK-061/062**: WHEN `Add(Open)RequestPreProcessor`/`Add(Open)RequestPostProcessor` of `Add(Open)StreamBehavior` aangeroepen wordt THE SYSTEM SHALL ze in `PipelineBehaviors` (open pre-processor `X<>` → `X<,>`) resp. `StreamPipelineBehaviors` zetten, met gesloten exception handlers en processors uit het eigen project vooraan (proof `processors`); een leeg blok wordt `cfg => cfg.ServiceLifetime = ServiceLifetime.Transient` (proof `empty`).
 
 ## Assumptions
 

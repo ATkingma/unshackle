@@ -46,6 +46,7 @@ fa.contain-key: `ContainKey`/`NotContainKey` met één sleutel wordt `ShouldCont
 - **REQ-8**: IF `ContainKeys`/`NotContainKeys` wordt gebruikt THEN THE SYSTEM SHALL Manual geven (proofs `keys.*`, `not-contain-keys.*`).
 - **REQ-9**: IF `ContainValue(s)`/`NotContainValue` wordt gebruikt THEN THE SYSTEM SHALL Manual geven, omdat Shouldly geen losse waarde-assertie kent (proofs `contain-value.*`, `contain-values.*`, `not-contain-value.*`).
 - **REQ-10**: IF het subject in een nullable-enabled context mogelijk null is THEN THE SYSTEM SHALL `x.ShouldNotBeNull().ShouldContainKey(k)` schrijven (TAAK-021: FluentAssertions accepteert een nullable subject, Shouldly's receiver niet; zonder dit CS8602/CS8604 in projecten met warnings-as-errors. `ShouldNotBeNull()` behoudt FA's falen op null) (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ContainKey/nullable.*`).
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als `customMessage` geven (proof `because-args.after.cs`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt REQ-6 voor dit geval.
 
 ## Assumptions
 

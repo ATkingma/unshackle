@@ -17,7 +17,8 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/SendAsTaskPattern.cs`, registra
 | REQ-1 | Gehaald | `task-uses`                                     |
 | REQ-2 | Gehaald | `task-uses` (await en `.ConfigureAwait(false)`) |
 | REQ-3 | Gehaald | `send-object`                                   |
-| REQ-4 | Gehaald | `Rewrite` geeft altijd `Fixed`                  |
+| REQ-4 | Gehaald | `Rewrite` geeft `Fixed`, behalve bij `?.` (uitbreiding) |
+| Uitbreiding review B L4 | Gehaald | `null-conditional` |
 
 Scan op SampleShop: 5 Fixed (`OrderFacade` 2×, `Func<Task> act = () => Sender.Send(...)` 3× in de testprojecten).
 

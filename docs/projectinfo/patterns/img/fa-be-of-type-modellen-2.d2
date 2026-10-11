@@ -1,6 +1,7 @@
 title: "[Sequence] BeOfTypePattern - Find en Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 shape: sequence_diagram
 fixer: Fixer
+base: FluentAssertionPattern
 pattern: BeOfTypePattern
 syntax: FluentAssertionsSyntax
 model: SemanticModel
@@ -9,12 +10,14 @@ fixer -> pattern: "Find(root, model)"
 pattern -> syntax: "FindInvocations(root, model, s_methods.Keys)"
 pattern -> fixer: "invocation, of .Which/.Subject in een initializer" {style.stroke-dash: 3}
 each: "loop [elke node]" {
-  fixer -> pattern: "Rewrite(node, model)"
-  pattern -> syntax: "IsInsideAssertionScope(node, model)"
-  pattern -> syntax: "GetSubject(assertion)"
-  pattern -> syntax: "IsResultDiscarded(assertion, model) of var-declarator-check"
+  fixer -> base: "Rewrite(node, model)"
+  base -> syntax: "IsInsideAssertionScope(node, model)"
+  base -> syntax: "GetSubject(AssertionOfWhich(node))"
+  base -> syntax: "IsResultDiscardedOrWhich(context)"
+  base -> syntax: "TryGetArguments(assertion, model)"
+  base -> pattern: "RewriteAssertion(context)"
   pattern -> model: "GetSymbolInfo(assertion): FluentAssertions.Types?"
-  pattern -> syntax: "TryGetArguments(assertion, model)"
   pattern -> result: "Fixed(subject.ShouldX<T>(..)) of Manual(reden)"
-  pattern -> fixer: "PatternResult" {style.stroke-dash: 3}
+  pattern -> base: "PatternResult" {style.stroke-dash: 3}
+  base -> fixer: "PatternResult" {style.stroke-dash: 3}
 }

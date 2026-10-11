@@ -14,17 +14,24 @@ ipattern: "«interface» IPattern" {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+base: "FluentAssertionPattern (abstract)" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
+}
 BeNullPattern: BeNullPattern {
   shape: class
   "+Id": "fa.be-null"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
 }
 syntax: FluentAssertionsSyntax {
   shape: class
   "+FindInvocations(root, model, names)": "IEnumerable<InvocationExpressionSyntax>"
   "+GetSubject(assertion)": "ExpressionSyntax?"
+  "+IsInsideAssertionScope(node, model)": bool
   "+IsResultDiscarded(assertion, model)": bool
+  "+Invoke(receiver, name, args)": InvocationExpressionSyntax
   "+TryGetArguments(assertion, model, values, because)": bool
 }
 result: "PatternResult (abstract)" {
@@ -51,7 +58,9 @@ sh: "«Shouldly» aangemaakt" {
   "ShouldBeNull([because])": ""
   "ShouldNotBeNull([because])": ""
 }
-BeNullPattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+BeNullPattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base -> syntax: gebruikt {style.stroke-dash: 3}
 BeNullPattern -> syntax: gebruikt {style.stroke-dash: 3}
 BeNullPattern -> result: levert {style.stroke-dash: 3}
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}

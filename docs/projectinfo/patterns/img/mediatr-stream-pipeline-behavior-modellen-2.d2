@@ -1,0 +1,16 @@
+title: "[Sequence] StreamPipelineBehaviorPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: StreamPipelineBehaviorPattern
+syntax: MediatRSyntax
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "FindHandleMethods(root, model, IStreamPipelineBehavior`2)"
+pattern -> fixer: "TypeDeclarationSyntax (Parent van Handle)" {style.stroke-dash: 3}
+fixer -> pattern: "Rewrite(node, model)"
+pattern -> syntax: "RejectExplicit(method)"
+pattern -> model: "GetDeclaredSymbol(next) / GetSymbolInfo: elk gebruik van next"
+pattern -> pattern: "next() -> next(request, token); StreamHandlerDelegate<TRes> -> <TReq, TRes>"
+pattern -> syntax: "WithConstraint(IStreamMessage; niet bij IStreamRequest-constraint)"
+pattern -> fixer: "Fixed(type) of Manual(reden)" {style.stroke-dash: 3}
+fixer -> fixer: "AllOrNothing: een Manual -> niets geschreven"

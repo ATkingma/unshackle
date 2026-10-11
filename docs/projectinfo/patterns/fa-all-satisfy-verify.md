@@ -14,18 +14,19 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AllSatisfyPattern.cs`;
 
 | REQ    | Oordeel | Bewijs |
 | ------ | ------- | ------ |
-| REQ-1  | Gehaald | `simple.*.cs` |
+| REQ-1  | Gehaald | `simple.*.cs`, `edge-expression-lambda.*.cs`, `nullable.*.cs` |
 | REQ-2  | Gehaald | `block.*.cs` |
 | REQ-3  | Gehaald | `typed-parameter.*.cs` |
 | REQ-4  | Gehaald | `member-subject.*.cs` |
 | REQ-5  | Gehaald | `because.before.cs` / `.manual.txt` |
-| REQ-6  | Gehaald | `because-args.*` |
+| REQ-6  | Gehaald | `because-args.*` (Manual "because message": sinds TAAK-097 slagen de argumenten, maar elke `because` blijft Manual) |
 | REQ-7  | Gehaald | `method-group.*` |
 | REQ-8  | Gehaald | `return.*`, `async.*` |
-| REQ-9  | Gehaald | `subject-call.*` |
+| REQ-9  | Vervangen | door REQ-13 (TAAK-098): `subject-call` is nu Fixed |
 | REQ-10 | Gehaald | `used.*`, `and-chain.*` |
 | REQ-11 | Gehaald | `not-in-block.*` |
 | REQ-12 | Gehaald | `CombinedProofTests` met `_Combined/all-satisfy-be.*` (het sample-geval: `ShouldNotBeEmpty(); foreach (var o in orders) { o.Total.ShouldBe(20m); }`) en `all-satisfy-other.*`; de volgorde (AllSatisfy eerst) wordt vastgelegd door `CombinedProofTests.AllSatisfyPattern_IsFirstInFix`. Eerder alleen handmatig bewezen |
+| REQ-13 | Gehaald | `subject-call.*.cs` (`var subject = f();` voor de check en de loop) |
 
 ## Deviations
 

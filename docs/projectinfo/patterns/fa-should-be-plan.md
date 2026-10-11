@@ -51,6 +51,8 @@ fa.should-be: x.Should().Be(y) wordt x.ShouldBe(y), met behoud van het because-a
 - **REQ-8**: IF het verwachte type niet veilig naar het subjecttype te brengen is (bijv. `int` tegenover `int?`) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/nullable-expected.*`).
 - **REQ-9**: IF `Be` uit `FluentAssertions.Xml` of `FluentAssertions.Types` komt THEN THE SYSTEM SHALL Manual geven omdat de gelijkheid anders is (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/xml.*`).
 - **REQ-10**: IF het type van het subject onbekend is (error type) of `Be` niet in de vorm `x.Should().Be(...)` staat THEN THE SYSTEM SHALL Manual geven. _Geen proof: alleen via code bewaakt._
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `x.ShouldBe(y, string.Format(CultureInfo.InvariantCulture, because, args))` geven (proof `because-args.*`, nu `.after.cs`); benoemde argumenten, een niet-constante of niet-formatteerbare `because` blijven Manual (proofs `edge-named-because.*`, `because-args-variable.*`, `because-args-bad-format.*`). Vervangt REQ-6.
+- **Uitbreiding TAAK-100**: IF de assertie in een `AssertionScope` staat die niet door `fa.assertion-scope` wordt omgezet THEN THE SYSTEM SHALL Manual "Inside an AssertionScope" geven (proofs `assertion-scope-nested.*`, `assertion-scope-using-block.*`, `assertion-scope-using-var.*`).
 
 ## Assumptions
 

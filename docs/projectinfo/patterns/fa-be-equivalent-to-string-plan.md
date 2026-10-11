@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "fa-be-equivalent-to-string"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
 files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToStringPattern.cs
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
@@ -27,7 +27,7 @@ fa.be-equivalent-to-string: `BeEquivalentTo(string)` op een string wordt `Should
 **In scope**
 
 - `s.Should().BeEquivalentTo("x")` (met optionele `because` zonder `becauseArgs`) als losse assertion op een `string`.
-- `Manual(reden)` voor `NotBeEquivalentTo`, `becauseArgs`, ketens en gebruikt resultaat.
+- `Manual(reden)` voor `NotBeEquivalentTo`, named arguments of `becauseArgs` met niet-constante `because` (sinds TAAK-097), ketens en gebruikt resultaat.
 
 **Out of scope**
 
@@ -40,9 +40,10 @@ fa.be-equivalent-to-string: `BeEquivalentTo(string)` op een string wordt `Should
 - **REQ-2**: WHEN een `because` zonder `becauseArgs` staat THE SYSTEM SHALL die als `customMessage` tussen expected en `StringCompareShould.IgnoreCase` zetten, want zo is de Shouldly-overload (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToString/because.*.cs`).
 - **REQ-3**: WHEN de assertion de body van een void-lambda is THE SYSTEM SHALL het herschrijven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToString/lambda.*.cs`).
 - **REQ-4**: IF `NotBeEquivalentTo` wordt gebruikt THEN THE SYSTEM SHALL Manual geven, omdat `ShouldNotBe` geen hoofdletterongevoelige string-overload heeft (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToString/not-equivalent.*`).
-- **REQ-5**: IF `becauseArgs` gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToString/because-args.*`).
+- **REQ-5** (vervangen door REQ-8): IF `becauseArgs` gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToString/because-args.*`).
 - **REQ-6**: IF het resultaat wordt gebruikt (`.And`/`.Which`, variabele) THEN THE SYSTEM SHALL Manual geven (proofs `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToString/chain.*`, `value-used.*`).
 - **REQ-7**: IF de assertion zelf een vervolg op een andere assertion is THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToString/and-chain.*`).
+- **REQ-8** (Uitbreiding TAAK-097): WHEN `becauseArgs` met een constante, formatteerbare `because` staat THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (proof `because-args.*.cs`); named arguments of een niet-constante `because` blijven Manual.
 
 ## Assumptions
 

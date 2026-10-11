@@ -1,0 +1,28 @@
+title: "[Sequence] DirectMappingPattern - Find en Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+base: FluentAssertionPattern
+pattern: DirectMappingPattern
+syntax: FluentAssertionsSyntax
+model: SemanticModel
+result: PatternResult
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "FindInvocations(root, model, BeOneOf, BeSubsetOf, OnlyHaveUniqueItems, HaveValue, NotHaveValue, ContainInOrder)"
+pattern -> fixer: "nodes" {style.stroke-dash: 3}
+each: "loop [elke node]" {
+  fixer -> base: "Rewrite(node, model)"
+  base -> syntax: "IsInsideAssertionScope(node, model)"
+  base -> syntax: "GetSubject(assertion)"
+  base -> syntax: "IsResultDiscarded(assertion, model)"
+  base -> pattern: "RewriteBeforeArguments(context)"
+  pattern -> pattern: "ContainInOrder? BeOneOf(params)?"
+  pattern -> syntax: "ConvertExpected(value, type, ...)"
+  base -> syntax: "TryGetArguments(assertion, model)"
+  base -> pattern: "RewriteAssertion(context)"
+  pattern -> model: "GetTypeInfo(subject): Nullable<T>?"
+  pattern -> syntax: "NotNull(subject, model)"
+  pattern -> syntax: "Invoke(receiver, Should..., arguments)"
+  pattern -> result: "Fixed(..) of Manual(reden)"
+  pattern -> base: "PatternResult" {style.stroke-dash: 3}
+  base -> fixer: "PatternResult" {style.stroke-dash: 3}
+}

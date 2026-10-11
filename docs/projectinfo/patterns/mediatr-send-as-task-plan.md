@@ -41,6 +41,7 @@ mediatr.send-as-task: een `Send`/`Publish` van MediatR waarvan het resultaat nie
 - **REQ-2**: WHEN het resultaat direct ge-`await` wordt, ook met `.ConfigureAwait(...)` THE SYSTEM SHALL het laten staan (proof `task-uses`, laatste regel).
 - **REQ-3**: WHEN `Send(object)` als Task teruggegeven wordt THE SYSTEM SHALL `.AsTask()` toevoegen (proof `send-object`).
 - **REQ-4**: THE SYSTEM SHALL nooit Manual melden: `.AsTask()` behoudt elke Task-semantiek.
+- **Uitbreiding review B L4**: IF `Send`/`Publish` met `?.` aangeroepen wordt (`_sender?.Send(x)`) THEN THE SYSTEM SHALL Manual melden: de null-case moet met de hand (proof `null-conditional`). Dit is de enige uitzondering op REQ-4.
 
 ## Assumptions
 

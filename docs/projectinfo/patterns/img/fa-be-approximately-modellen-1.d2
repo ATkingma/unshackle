@@ -22,13 +22,18 @@ ipattern: "«interface» IPattern" {
 }
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
 manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base: "«abstract» FluentAssertionPattern" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
+}
 pattern: BeApproximatelyPattern {
   shape: class
   "-s_numbers": "double, float, decimal"
   "-s_times": "DateTime, DateTimeOffset, TimeSpan"
   "+Id": "fa.be-approximately"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
 }
 syntax: FluentAssertionsSyntax {
   shape: class
@@ -49,7 +54,8 @@ sh: "«Shouldly» aangemaakt" {
   "ShouldBe(y, tol) / Math.Abs(x - y).ShouldBeGreaterThan(tol)": ""
   "ShouldBe / ShouldNotBe(u, span)": ""
 }
-pattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+pattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
 pattern -> syntax: gebruikt {style.stroke-dash: 3}
 pattern -> result: levert {style.stroke-dash: 3}
 pattern -> fa: herkent {style.stroke-dash: 3}

@@ -6,11 +6,17 @@ ipattern: "«interface» IPattern" {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+base: "FluentAssertionPattern (abstract)" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#GetAssertion(node)": InvocationExpressionSyntax
+  "#RewriteAssertion(context)": PatternResult
+}
 pattern: OnlyContainPattern {
   shape: class
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
-  "-IsSimple(e)": bool
+  "#GetAssertion(node)": InvocationExpressionSyntax
+  "#RewriteAssertion(context)": PatternResult
 }
 syntax: FluentAssertionsSyntax {
   shape: class
@@ -18,6 +24,9 @@ syntax: FluentAssertionsSyntax {
   "+GetSubject(assertion)": ExpressionSyntax
   "+IsResultDiscarded(assertion, model)": bool
   "+TryGetArguments(...)": bool
+  "+TryGetSplittableStatement(node, out)": bool
+  "+IsSafeToEvaluateTwice(e, model)": bool
+  "+Hoist(e, model)": "(StatementSyntax, ExpressionSyntax)"
 }
 result: PatternResult {
   shape: class
@@ -28,7 +37,8 @@ fixed: FixedResult {shape: class; "+NewNodes": ""}
 manual: ManualResult {shape: class; "+Reason": string}
 fa: "FluentAssertions\nOnlyContain(predicate)\n(faalt op lege collectie)"
 sh: "Shouldly\nShouldNotBeEmpty\nShouldAllBe(predicate)"
-pattern -> ipattern: {style.stroke-dash: 0; target-arrowhead.shape: triangle}
+pattern -> base: {target-arrowhead.shape: triangle}
+base -> ipattern: {style.stroke-dash: 3; target-arrowhead.shape: triangle}
 pattern -> syntax: gebruikt {style.stroke-dash: 3}
 pattern -> result: maakt {style.stroke-dash: 3}
 fixed -> result: {target-arrowhead.shape: triangle}

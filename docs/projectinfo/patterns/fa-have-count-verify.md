@@ -22,15 +22,17 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveCountPattern.cs`; 
 | REQ-5  | Gehaald | `enumerable.before.cs` / `enumerable.after.cs` (`Count()` + `System.Linq`) |
 | REQ-6  | Gehaald | `enumerable-existing-using.before.cs` / `.after.cs` |
 | REQ-7  | Gehaald | `enumerable-because.before.cs` / `.after.cs` |
-| REQ-8  | Gehaald | `receiver-parens.before.cs` / `.after.cs` (`IsSafeReceiver`) |
+| REQ-8  | Gehaald | `receiver-parens.before.cs` / `.after.cs` (`FluentAssertionsSyntax.NotNullReceiver`) |
 | REQ-9  | Gehaald | `dictionary.before.cs` / `dictionary.manual.txt` |
 | REQ-10 | Gehaald | `predicate.before.cs` / `predicate.manual.txt` (eerste parameter van het resolved symbool is geen `int`) |
-| REQ-11 | Gehaald | `because-args.before.cs` / `because-args.manual.txt` |
+| REQ-11 | Vervangen | becauseArgs is sinds TAAK-097 Fixed: `because-args.before.cs` / `because-args.after.cs` |
 | REQ-12 | Gehaald | `chain.before.cs` / `chain.manual.txt` |
 | REQ-13 | Gehaald in code, geen proof | Laatste `else` in `Rewrite` (geen generieke `IEnumerable`); FA 7.2.2 laat een before-proof niet compileren |
 | REQ-14 | Gehaald in code, geen proof | `subject is ConditionalAccessExpressionSyntax` geeft Manual |
 | REQ-15 | Gehaald in code, geen proof | `type is null or IErrorTypeSymbol` geeft Manual |
 | REQ-16 | Gehaald | `nullable.*` (after-compileercheck faalt op CS8602/CS8604) |
+| Uitbreiding TAAK-095 | Gehaald | `count-comparisons.*`, `count-comparison-because-args.*` |
+| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs`, `count-comparison-because-args.after.cs` (`string.Format(CultureInfo.InvariantCulture, ...)`) |
 
 ## Deviations
 

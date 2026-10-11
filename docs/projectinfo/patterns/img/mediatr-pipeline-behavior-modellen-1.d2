@@ -1,8 +1,8 @@
 title: "[Klassen] PipelineBehaviorPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: right
 IPattern: {shape: class; "+Id"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
-PipelineBehaviorPattern: {shape: class; "+Id = mediatr.pipeline-behavior"; "+Find(root, model)"; "+Rewrite(node, model)"; "-WithMessageConstraint(type, requestType, model)"; "-AddClause(type, clause)"; "-CommaList(nodes)"; "-IsTaskFromResult(expr, model)"}
-MediatRSyntax: {shape: class; "+FindHandleMethods(root, model, name)"; "+ToValueTask(type): TypeSyntax?"; "+ReturnedExpressions(method)"; "+IsTaskMember(expr, model, name): bool"; "+OnValueTask(member)"}
+PipelineBehaviorPattern: {shape: class; "+Id = mediatr.pipeline-behavior"; "+Find(root, model)"; "+Rewrite(node, model)"; "-WithMessageConstraint(type, requestType, model)"; "-IsTaskFromResult(expr, model)"}
+MediatRSyntax: {shape: class; "+FindHandleMethods(root, model, name)"; "+ToValueTask(type): TypeSyntax?"; "+ReturnedExpressions(method)"; "+IsTaskMember(expr, model, name): bool"; "+OnValueTask(member)"; "+RejectExplicit(method, todo)"; "+CommaList(nodes)"; "+WithConstraint(type, messageType, constraint, isMessage)"; "+IsMediatR(type, names)"}
 PatternResult: {shape: class; "+Fixed(node, namespaces)"; "+Manual(reason)"}
 MediatR: "MediatR.IPipelineBehavior<TRequest, TResponse>\nTask<TResponse> Handle(request, RequestHandlerDelegate<TResponse> next, ct)"
 Mediator: "Mediator.IPipelineBehavior<TMessage, TResponse>\nwhere TMessage : IMessage\nValueTask<TResponse> Handle(message, MessageHandlerDelegate<TMessage, TResponse> next, ct)"

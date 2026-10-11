@@ -10,6 +10,7 @@
 | Element | Pad | Rol |
 | --- | --- | --- |
 | `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Basisklasse (Template Method): scope, vorm, resultaat, `RewriteBeforeArguments`, argumenten, dan `RewriteAssertion` |
 | `StringStartEndPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/StringStartEndPattern.cs` | Dit patroon, Id `fa.string-start-end` |
 | `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde controles |
 | `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst |
@@ -22,7 +23,7 @@
 | Stap | Plek | Wat gebeurt er |
 | --- | --- | --- |
 | Find | `StringStartEndPattern.Find` | `FindInvocations` op de FA-namen |
-| Controles | `StringStartEndPattern.Rewrite` | scope, vorm, gebruik van het resultaat, type, argumenten |
+| Controles | `FluentAssertionPattern.Rewrite` → `StringStartEndPattern.RewriteBeforeArguments` (type) → `RewriteAssertion` | scope, vorm, gebruik van het resultaat, type, argumenten, Shouldly-naam en `Case` |
 | Uitkomst | `PatternResult.Fixed` / `Manual` | Shouldly-aanroep of reden |
 
 **Figure 3.** Beslisboom van `Rewrite`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/StringStartEnd/`.
@@ -36,9 +37,9 @@
 | Vorm s.Should().M(..)? | is not in the form s.Should() | `and` |
 | Resultaat weggegooid? | is used | `geen eigen proof; .And wordt eerst gesplitst` |
 | Op StringAssertions? | non-string subject | `collection` |
-| Geen becauseArgs? | becauseArgs | `because-args` |
+| Geen named args; becauseArgs alleen bij constante `because`? | named arguments, or becauseArgs whose because is no constant format string | geen proof |
 | NullOr-methode, of één verwachte waarde? | equivalency options | `geen proof` |
-| Fixed | `s.ShouldStartWith(x, Shouldly.Case.Sensitive[, because]) e.d.` | simple, equivalent-of, because, null-or, nullable, edge-member-subject |
+| Fixed | `s.ShouldStartWith(x, Shouldly.Case.Sensitive[, because]) e.d.` | simple, equivalent-of, because, because-args (`string.Format(CultureInfo.InvariantCulture, because, args)`), null-or, nullable, edge-member-subject |
 
 ## Zie ook
 

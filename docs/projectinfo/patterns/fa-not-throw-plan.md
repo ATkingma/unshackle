@@ -44,6 +44,9 @@ fa.not-throw: `act.Should().NotThrow()` op een `Action` of `Func<T>` wordt `Shou
 - **REQ-6**: IF `NotThrow<T>()` of `NotThrowAfter(...)` wordt gebruikt THEN THE SYSTEM SHALL Manual geven, omdat Shouldly geen equivalent heeft (proofs `generic.*`, `after.*`).
 - **REQ-7**: IF het resultaat wordt gebruikt of geketend (`.Which`, `.And`, variabele) THEN THE SYSTEM SHALL Manual geven (proofs `value-used.*`, `result-used.*`).
 - **REQ-8**: IF het subject met `Invoking(...)` is gebouwd THEN THE SYSTEM SHALL Manual geven (proof `invoking.*`).
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `Should.NotThrow(act, string.Format(CultureInfo.InvariantCulture, because, args))` geven (proof `because-args.*`, nu `.after.cs`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt REQ-5.
+- **Uitbreiding Invoking**: `x.Invoking(s => ...)`-subjects worden niet door `Find` van dit patroon gevonden maar door `fa.invoking` (`InvokingPattern`), dat `NotThrowPattern.Rewrite` aanroept: met stabiele referentie-receiver en een lambda wordt het `Should.NotThrow(() => ...)` (proof `Invoking/not-throw.*`); anders Manual (`Invoking/side-effect-receiver`, `value-type`, `method-group`). Een ander met FluentAssertions gebouwd subject (bv. `FluentActions.Invoking`) blijft Manual. Vervangt REQ-8; er is geen `NotThrow/invoking.*`-proof.
+- **Uitbreiding TAAK-100**: IF de assertie in een `AssertionScope` staat die niet door `fa.assertion-scope` wordt omgezet THEN THE SYSTEM SHALL Manual "Inside an AssertionScope" geven (geen eigen proof; `Invoking/assertion-scope.*` toont dezelfde controle voor Throw).
 
 ## Assumptions
 

@@ -9,7 +9,7 @@
 
 | Element | Pad | Rol |
 | --- | --- | --- |
-| `FluentAssertionPattern` | `src/Unshackle.Core/` | Basis/contract |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` doet de gedeelde controles en roept `RewriteAssertion` aan |
 | `BeSameAsPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeSameAsPattern.cs` | Dit patroon, Id `fa.be-same-as` |
 | `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde controles |
 | `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst |
@@ -22,10 +22,11 @@
 | Stap | Plek | Wat gebeurt er |
 | --- | --- | --- |
 | Find | `BeSameAsPattern.Find` | `FindInvocations` op de FA-namen |
-| Controles | `BeSameAsPattern.Rewrite` | `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments`, `Invoke` |
+| Controles | `FluentAssertionPattern.Rewrite` | `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments` |
+| Herschrijven | `BeSameAsPattern.RewriteAssertion` | aantal waarden, `Invoke(subject, "Should" + naam, y, because)` |
 | Uitkomst | `PatternResult.Fixed` / `Manual` | Shouldly-aanroep of reden |
 
-**Figure 3.** Beslisboom van `Rewrite`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/BeSameAs/`.
+**Figure 3.** Beslisboom van `FluentAssertionPattern.Rewrite` en `BeSameAsPattern.RewriteAssertion`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/BeSameAs/`.
 
 <!-- kingmadoc:diagram img/fa-be-same-as-modellen-3.d2 -->
 ![Modellen: fa.be-same-as](img/fa-be-same-as-modellen-3.png)
@@ -35,9 +36,9 @@
 | Buiten een AssertionScope? | Inside an AssertionScope | `assertion-scope` |
 | Vorm x.Should().M(..)? | is not in the form x.Should() | `geen proof; .And via fa.and-chain` |
 | Resultaat weggegooid? | is used | `result-used` |
-| Geen becauseArgs? | becauseArgs | `because-args` |
+| Geen benoemde argumenten; becauseArgs alleen met constante `because`? | named arguments, or becauseArgs whose because is no constant format string | geen proof (`because-args` is Fixed, TAAK-097) |
 | Precies één waarde-argument? | unexpected argument list | `geen proof` |
-| Fixed | `x.ShouldBeSameAs / ShouldNotBeSameAs(y[, because])` | simple, not, because, nullable |
+| Fixed | `x.ShouldBeSameAs / ShouldNotBeSameAs(y[, because])` | simple, not, because, because-args, nullable |
 
 ## Zie ook
 

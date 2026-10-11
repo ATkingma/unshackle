@@ -44,6 +44,7 @@ mediatr.void-request-handler: in klassen die `MediatR.IRequestHandler<TReq>` imp
 - **REQ-3**: WHEN het einde van de body onbereikbaar is (bv. `throw`) THE SYSTEM SHALL geen return toevoegen (proof `throw-at-end`).
 - **REQ-4**: WHEN een niet-async `Handle` alleen `Task.CompletedTask` teruggeeft THE SYSTEM SHALL `ValueTask<Unit>` + `Unit.ValueTask` schrijven (proofs `completed-task`, `completed-task-expression`).
 - **REQ-5**: IF `Handle` een andere `Task` teruggeeft, async is met expression body, of expliciet geïmplementeerd is THEN THE SYSTEM SHALL Manual melden (proofs `other-return`, `async-expression`, `explicit`).
+- **Uitbreiding TAAK-080**: WHEN de handler `IRequestHandler<T>` via een eigen marker-interface implementeert (`IAppCommandHandler<T> : IRequestHandler<T>`) THE SYSTEM SHALL hem hetzelfde herschrijven (proof `edge-marker-interface`).
 
 ## Assumptions
 

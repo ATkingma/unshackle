@@ -14,21 +14,24 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeGreaterLessPattern.c
 
 | REQ    | Oordeel | Bewijs |
 | ------ | ------- | ------ |
-| REQ-1  | Gehaald | `simple.*.cs` |
+| REQ-1  | Gehaald | `simple.*.cs`, `edge-double.*.cs` |
 | REQ-2  | Gehaald | `comparable.*.cs` |
 | REQ-3  | Gehaald | `in-range.*.cs` |
 | REQ-4  | Gehaald | `sign.*.cs` |
-| REQ-5  | Gehaald | `because.*.cs`, `sign.*.cs` |
+| REQ-5  | Gehaald | `because.*.cs`, `sign.*.cs`, `edge-interpolated-because.*.cs` |
 | REQ-6  | Gehaald | `lambda.*.cs` |
 | REQ-7  | Gehaald | Sinds REVIEW-A via `fa.and-chain`: `AndChain/greater-less.*.cs` (twee ketens, ook met `because` en drie schakels) |
 | REQ-8  | Gehaald | `nullable.*` |
 | REQ-9  | Gehaald | `sign-byte.*` |
-| REQ-10 | Gehaald | `because-args.*` |
+| REQ-10 | Vervangen | door REQ-17 (TAAK-097): `because-args` is nu Fixed |
 | REQ-11 | Gehaald | `value-used.*`; keten in een lambda: `AndChain/lambda.*` |
 | REQ-12 | Vervallen (REVIEW-A M4) | Ketens zijn van `fa.and-chain`, dat elke schakel aan zijn eigen patroon geeft: een niet-vergelijking in de keten is geen Manual meer |
-| REQ-13 | Gehaald | Via `fa.and-chain`: `AndChain/subject-call.*` |
+| REQ-13 | Vervangen | Via `fa.and-chain` sinds TAAK-098 Fixed met hoist: `AndChain/subject-call.*` |
 | REQ-14 | Gehaald | Via `fa.and-chain`: `AndChain/no-block.*` |
 | REQ-15 | Gehaald (REVIEW-A H1) | `byte-short.*.cs`: waarden worden naar het subjecttype gecast (`(byte)1`), anders leidt Shouldly `T = int` af en compileert het niet |
+| REQ-16 | Gehaald | `negative-double.*` (Manual "NaN") |
+| REQ-17 | Gehaald | `because-args.*.cs` (`string.Format`) |
+| TAAK-095 | Gehaald | `dates.*.cs`, `dates-nullable.*` (Manual), `AndChain/dates.*.cs` |
 
 ## Deviations
 

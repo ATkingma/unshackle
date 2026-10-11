@@ -48,6 +48,7 @@ fa.contain: `Contain`/`NotContain` met één item, predicate of substring wordt 
 - **REQ-10**: IF het subject een dictionary is THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/dictionary.*`).
 - **REQ-11**: IF `Contain(IEnumerable)` (alle items) of een occurrence-constraint wordt gebruikt THEN THE SYSTEM SHALL Manual geven (proofs `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/items.*`, `occurrence.*`).
 - **REQ-12**: IF het subject in een nullable-enabled context mogelijk null is THEN THE SYSTEM SHALL `x.ShouldNotBeNull().ShouldContain(...)` schrijven (TAAK-021: FluentAssertions accepteert een nullable subject, Shouldly's receiver niet; zonder dit CS8602/CS8604 in projecten met warnings-as-errors. `ShouldNotBeNull()` behoudt FA's falen op null) (proof `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/nullable-string.*`).
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als `customMessage` geven (proof `.../Contain/because-args.after.cs`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt REQ-7 voor dit geval.
 
 ## Assumptions
 

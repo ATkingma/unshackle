@@ -45,6 +45,7 @@ mediatr.pipeline-behavior: `Task<TRes> Handle(TReq request, RequestHandlerDelega
 - **REQ-3**: WHEN een gesloten behavior niet-async `next()` of `Task.FromResult` teruggeeft THE SYSTEM SHALL `next(request, token)` en `ValueTask.FromResult` schrijven, zonder constraint (proof `closed`).
 - **REQ-4**: WHEN `next(token)` wordt aangeroepen THE SYSTEM SHALL `next(request, token)` schrijven (proof `next-token`).
 - **REQ-5**: IF `next` anders gebruikt wordt dan aangeroepen, een niet-async return iets anders is, of `Handle` expliciet geïmplementeerd is THEN THE SYSTEM SHALL Manual melden (proofs `next-stored`, `next-passed`, `explicit`).
+- **Uitbreiding TAAK-081**: WHEN de constraint van de request-typeparameter na de swap al `IMessage` is (`IRequest<TResponse>`, `INotification` of een eigen interface daarop) THE SYSTEM SHALL geen extra `IMessage` toevoegen (proof `edge-request-constraint`); een andere constraint zoals `notnull` krijgt `IMessage` erachter (proof `edge-notnull-constraint`).
 
 ## Assumptions
 

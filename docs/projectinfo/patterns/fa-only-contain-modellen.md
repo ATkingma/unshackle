@@ -11,8 +11,9 @@ Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/OnlyContainPatter
 
 | Element | Rol |
 | ------- | --- |
-| `OnlyContainPattern` | Vindt `OnlyContain` (`Find`, de hele statement als die in een blok staat) en bouwt twee statements (`Rewrite`) |
-| `FluentAssertionsSyntax` | Gedeelde stappen: onderwerp, weggegooid resultaat, `because`-argumenten |
+| `FluentAssertionPattern` | Basisklasse (Template Method): `Rewrite` doet scope-, subject-, resultaat- en argumentcontroles en roept dan `RewriteAssertion` aan |
+| `OnlyContainPattern` | Vindt `OnlyContain` (`Find`, de hele statement als die in een blok staat) en bouwt twee statements (`RewriteAssertion`) |
+| `FluentAssertionsSyntax` | Gedeelde stappen: onderwerp, weggegooid resultaat, `because`-argumenten, splitsbaar statement, `IsSafeToEvaluateTwice`/`Hoist` |
 | `PatternResult` | `Fixed` met twee statements, of `Manual(reden)` |
 | FA- en Shouldly-methoden | `OnlyContain` faalt op een lege collectie, `ShouldAllBe` niet: `ShouldNotBeEmpty` vult dat aan |
 
@@ -26,10 +27,12 @@ Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/OnlyContainPatter
 | Stap | Methode in de code | Wat gebeurt er |
 | ---- | ------------------ | -------------- |
 | Vinden | `Find` | `FindInvocations` met `OnlyContain`; staat de aanroep als statement in een blok, dan is de statement de node |
-| Subject | `GetSubject` | Moet `x.Should()` zijn, anders Manual |
+| Scope en subject | `FluentAssertionPattern.Rewrite`: `IsInsideAssertionScope`, `GetSubject` | Niet in een (niet omgezette) `AssertionScope`; moet `x.Should()` zijn, anders Manual |
 | Resultaat | `IsResultDiscarded` | Gebruikt resultaat geeft Manual |
-| Argumenten | `TryGetArguments` | Predicaat en `because`; `becauseArgs` geeft Manual |
-| Type | `SemanticModel.GetTypeInfo` | Moet generieke `IEnumerable<T>` zijn |
+| Argumenten | `TryGetArguments` | Predicaat en `because`; `becauseArgs` bij constante `because` worden `string.Format(CultureInfo.InvariantCulture, because, args)`; named args of niet-constante `because` geven Manual |
+| Type | `OnlyContainPattern.RewriteAssertion`: `GetTypeInfo` | Moet generieke `IEnumerable<T>` zijn |
+| Splitsen | `TryGetSplittableStatement` | Statement direct in een blok, anders Manual |
+| Hoisting | `IsSafeToEvaluateTwice`, `Hoist` | Subject met mogelijke bijwerkingen wordt eerst `var subject = x;` |
 
 ## Figuur 3: beslisboom
 
@@ -42,11 +45,11 @@ Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/OnlyContainPatter
 | ---- | ---------- | ---------------------------------------------- |
 | Fixed | statement in blok, eenvoudig subject | `simple`, `enumerable`, `array`, `dictionary`, `member-subject` |
 | Fixed | met `because` (op beide statements) | `because` |
+| Fixed | `becauseArgs` bij constante `because` (`string.Format`) | `because-args` |
+| Fixed met hoisting | subject is een aanroep: `var subject = x;` ervoor | `subject-call` |
 | Manual "is not in the form" | na `.And` | `and-chain` |
 | Manual "is used" | `.And`, variabele | `chain`, `used` |
-| Manual "becauseArgs" | format-argumenten | `because-args` |
 | Manual "cannot hold two statements" | lambda-body, `if` zonder accolades | `lambda`, `no-block` |
-| Manual "evaluate the subject twice" | subject is een aanroep | `subject-call` |
 
 ## Zie ook
 

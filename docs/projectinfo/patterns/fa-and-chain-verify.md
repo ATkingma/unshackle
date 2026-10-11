@@ -17,10 +17,12 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AndChainPattern.cs`; r
 | REQ-1 | Gehaald | `simple`, `three-links`, `be-of-type`, `edge-multiline` |
 | REQ-2 | Gehaald | `because` |
 | REQ-3 | Gehaald | `member-subject`, `nullable` |
-| REQ-4 | Gehaald | `subject-call`, `subject-indexer` |
-| REQ-5 | Gehaald | `unsupported-link`, `link-manual` |
+| REQ-4 | Vervangen | door REQ-8 (TAAK-098): `subject-call`, `subject-indexer` zijn nu Fixed |
+| REQ-5 | Gehaald | `unsupported-link`; Manual-schakel zonder eigen proof (`link-manual` bestaat niet meer, `link-because-args` is sinds TAAK-097 Fixed) |
 | REQ-6 | Gehaald | `used`, `which`, `no-block` |
 | REQ-7 | Gehaald | `assertion-scope` |
+| REQ-8 | Gehaald | `subject-call`, `subject-indexer`, `subject-call-twice` (`subject`, `subject2`) |
+| REQ-9 | Gehaald | `be-same-as`, `dates`, `equal-length-approximately`, `equivalent-collection`, `greater-less`, `link-because-args` |
 | REVIEW-A | Gehaald | `greater-less`, `lambda` (verhuisd uit BeGreaterLess); `AndChainPatternTests`: de `Warning` van een schakel blijft staan (H2) en een schakel van meerdere statements (OnlyContain) wordt overgenomen (L3) |
 
 ## Deviations

@@ -43,6 +43,7 @@ files_expected:
 - **REQ-4**: WHEN het subject nullable is THE SYSTEM SHALL zonder null-check herschrijven; Shouldly faalt zelf op null (proof `nullable`).
 - **REQ-5**: IF NotEqual, een dictionary, een predicate, becauseArgs, een AssertionScope of `.And` THEN THE SYSTEM SHALL Manual geven (proofs `not-equal`, `dictionary`, `predicate`, `because-args`, `assertion-scope`, `and`).
 - **REQ-6**: WHEN `Equal` een schakel na `.And` is THE SYSTEM SHALL via `fa.and-chain` een los `ShouldBe`-statement geven (proof `AndChain/equal-length-approximately`).
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `ShouldBe(y, ignoreOrder: false, string.Format(CultureInfo.InvariantCulture, because, args))` geven (Fixed, proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. REQ-5 geldt daarmee niet meer voor becauseArgs.
 
 ## Assumptions
 

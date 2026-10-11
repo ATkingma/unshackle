@@ -6,10 +6,17 @@ ipattern: "«interface» IPattern" {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+base: "FluentAssertionPattern (abstract)" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteBeforeArguments(context)": "PatternResult?"
+  "#RewriteAssertion(context)": PatternResult
+}
 pattern: ContainKeyPattern {
   shape: class
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
+  "#RewriteBeforeArguments(context)": "PatternResult?"
+  "#RewriteAssertion(context)": PatternResult
 }
 syntax: FluentAssertionsSyntax {
   shape: class
@@ -27,7 +34,9 @@ fixed: FixedResult {shape: class; "+NewNodes": ""}
 manual: ManualResult {shape: class; "+Reason": string}
 fa: "FluentAssertions\nContainKey, NotContainKey (Fixed)\nContainKeys, NotContainKeys,\nContainValue(s), NotContainValue(s) (Manual)"
 sh: "Shouldly\nShouldContainKey, ShouldNotContainKey"
-pattern -> ipattern: {style.stroke-dash: 0; target-arrowhead.shape: triangle}
+pattern -> base: erft {target-arrowhead.shape: triangle}
+base -> ipattern: realiseert {style.stroke-dash: 3; target-arrowhead.shape: triangle}
+base -> syntax: gebruikt {style.stroke-dash: 3}
 pattern -> syntax: gebruikt {style.stroke-dash: 3}
 pattern -> result: maakt {style.stroke-dash: 3}
 fixed -> result: {target-arrowhead.shape: triangle}

@@ -15,14 +15,16 @@ manual: ManualResult {
 }
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
 manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
-base: "FluentAssertionPattern" {
+base: "FluentAssertionPattern (abstract)" {
   shape: class
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
 }
 pattern: BeSameAsPattern {
   shape: class
   "+Id": "fa.be-same-as"
+  "#RewriteAssertion(context)": PatternResult
 }
 syntax: FluentAssertionsSyntax {
   shape: class

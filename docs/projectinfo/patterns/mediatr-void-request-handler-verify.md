@@ -19,6 +19,7 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/VoidRequestHandlerPattern.cs`, 
 | REQ-3 | Gehaald | `throw-at-end`                                 |
 | REQ-4 | Gehaald | `completed-task`, `completed-task-expression`  |
 | REQ-5 | Gehaald | `other-return`, `async-expression`, `explicit` |
+| Uitbreiding TAAK-080 | Gehaald | `edge-marker-interface` |
 
 Mediator 3.0.2 bevat `IRequestHandler\`1`en`Unit.ValueTask`(assembly); de`after`-proofs compileren ertegen.
 Scan op SampleShop (na `dotnet restore`): `mediatr.void-request-handler` 1 Fixed, 0 Manual (`CancelOrderHandler`).

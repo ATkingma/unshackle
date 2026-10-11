@@ -1,0 +1,45 @@
+title: "[Class] CustomAssertionPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: "Realisatie (holle driehoek), dependency (gestreept)"
+  }
+}
+ipattern: "«interface» IPattern" {
+  shape: class
+  "+Id": string
+  "+Description": string
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+pattern: CustomAssertionPattern {
+  shape: class
+  "+PatternId": "fa.custom-assertion (const)"
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+  "+Group(findings)$": "IEnumerable<IGrouping<string, Finding>>"
+  "-IsCustomAssertion(method)": bool
+}
+syntax: FluentAssertionsSyntax {
+  shape: class
+  "+IsFluentAssertions(symbol)": bool
+}
+manual: ManualResult {
+  shape: class
+  "+Reason": string
+}
+row: "ReportRow (DataAccess)" {
+  shape: class
+  "+FromAll(findings)$": "IEnumerable<ReportRow>"
+}
+view: "SpectreConsoleView (Interface)" {
+  shape: class
+  "+ShowSummary(findings)": void
+}
+pattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+pattern -> syntax: gebruikt {style.stroke-dash: 3}
+pattern -> manual: levert {style.stroke-dash: 3}
+row -> pattern: Group {style.stroke-dash: 3}
+view -> pattern: Group {style.stroke-dash: 3}

@@ -1,35 +1,37 @@
-title: "[Activity] BeGreaterLessPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] FluentAssertionPattern.Rewrite → BeGreaterLessPattern.RewriteAssertion" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 start: "" {shape: circle; width: 20; style: {fill: black}}
-form: "Keten begint met x.Should()?" {shape: diamond}
-cmp: "Alle schakels zijn vergelijkingen?" {shape: diamond}
-used: "Eén schakel: resultaat weggegooid?\nMeer: statement?" {shape: diamond}
-split: "Meer schakels: in blok, simpel subject?" {shape: diamond}
-type: "Subject non-nullable IComparable<T>?" {shape: diamond}
-args: "Geen becauseArgs, juiste aantal waarden?" {shape: diamond}
+form: "Vorm x.Should().M(..)?\n(.And-ketens: fa.and-chain)" {shape: diamond}
+used: "Resultaat weggegooid?" {shape: diamond}
+args: "Argumenten splitsbaar?\n(becauseArgs alleen met constante because)" {shape: diamond}
+type: "Subject non-nullable IComparable<T> van zichzelf?" {shape: diamond}
+count: "Juiste aantal waarden?" {shape: diamond}
 sign: "BePositive/BeNegative: int, long, short, decimal, double, float?" {shape: diamond}
-one: "Fixed: x.ShouldBe...(waarden[, because])" {style.fill: "#c8e6c9"; style.border-radius: 12}
-many: "Fixed: één statement per schakel" {style.fill: "#c8e6c9"; style.border-radius: 12}
+nan: "BeNegative op double/float?" {shape: diamond}
+conv: "Waarde naar subjecttype te converteren?" {shape: diamond}
+one: "Fixed: x.ShouldBe...(waarden[, because])\n(simple, because, because-args, in-range, sign, comparable,\nlambda, byte-short, dates, edge-double, edge-interpolated-because)" {style.fill: "#c8e6c9"; style.border-radius: 12}
 m1: "Manual: not in the form" {style.fill: "#ffe0b2"; style.border-radius: 12}
-m2: "Manual: not a comparison" {style.fill: "#ffe0b2"; style.border-radius: 12}
-m3: "Manual: is used" {style.fill: "#ffe0b2"; style.border-radius: 12}
-m4: "Manual: not directly in a block /\nevaluate it twice" {style.fill: "#ffe0b2"; style.border-radius: 12}
-m5: "Manual: nullable or unknown type /\nIComparable<T>" {style.fill: "#ffe0b2"; style.border-radius: 12}
-m6: "Manual: becauseArgs" {style.fill: "#ffe0b2"; style.border-radius: 12}
-m7: "Manual: only exists for" {style.fill: "#ffe0b2"; style.border-radius: 12}
+m3: "Manual: is used\n(value-used)" {style.fill: "#ffe0b2"; style.border-radius: 12}
+m6: "Manual: named arguments, or becauseArgs\n(geen proof)" {style.fill: "#ffe0b2"; style.border-radius: 12}
+m5: "Manual: nullable or unknown type /\nIComparable<T>\n(nullable, dates-nullable)" {style.fill: "#ffe0b2"; style.border-radius: 12}
+mc: "Manual: unexpected argument list" {style.fill: "#ffe0b2"; style.border-radius: 12}
+m7: "Manual: only exists for\n(sign-byte)" {style.fill: "#ffe0b2"; style.border-radius: 12}
+m8: "Manual: NaN\n(negative-double)" {style.fill: "#ffe0b2"; style.border-radius: 12}
+m9: "Manual: Value type differs" {style.fill: "#ffe0b2"; style.border-radius: 12}
 start -> form
-form -> cmp: ja
+form -> used: ja
 form -> m1: nee
-cmp -> used: ja
-cmp -> m2: nee
-used -> split: ja
+used -> args: ja
 used -> m3: nee
-split -> type: ja
-split -> m4: nee
-type -> args: ja
-type -> m5: nee
-args -> sign: ja
+args -> type: ja
 args -> m6: nee
-sign -> one: "ja (1 schakel)"
-sign -> many: "ja (meer)"
+type -> count: ja
+type -> m5: nee
+count -> sign: ja
+count -> mc: nee
+sign -> nan: ja
 sign -> m7: nee
+nan -> conv: nee
+nan -> m8: ja
+conv -> one: ja
+conv -> m9: nee

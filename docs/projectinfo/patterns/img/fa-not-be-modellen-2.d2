@@ -1,34 +1,25 @@
 title: "[Sequence] NotBePattern - Find en Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 shape: sequence_diagram
 fixer: Fixer
+base: FluentAssertionPattern
 pattern: NotBePattern
 syntax: FluentAssertionsSyntax
-shouldbe: ShouldBePattern
 model: SemanticModel
 result: PatternResult
 fixer -> pattern: "Find(root, model)"
 pattern -> syntax: "FindInvocations(root, model, \"NotBe\")"
-syntax -> model: "GetSymbolInfo(invocation): IsFluentAssertions"
-syntax -> pattern: "InvocationExpressionSyntax-nodes" {style.stroke-dash: 3}
 pattern -> fixer: "nodes" {style.stroke-dash: 3}
 each: "loop [elke node]" {
-  fixer -> pattern: "Rewrite(node, model)"
-  checks: "opt [controles]" {
-    pattern -> syntax: "IsInsideAssertionScope(node, model)"
-    pattern -> syntax: "GetSubject(assertion)"
-    pattern -> syntax: "IsResultDiscarded(assertion, model)"
-    pattern -> model: "GetSymbolInfo(assertion): namespace Xml of Types?"
-    pattern -> syntax: "TryGetArguments(assertion, model)"
-    pattern -> model: "GetTypeInfo(subject): bekend type?"
-    pattern -> shouldbe: "ConvertExpected(unexpected, subjectType, ...)"
-    shouldbe -> model: "ClassifyConversion(unexpected, subjectType)"
-  }
-  manual: "alt [een controle faalt]" {
-    pattern -> result: "Manual(reden)"
-    pattern -> fixer: "ManualResult" {style.stroke-dash: 3}
-  }
-  fixed: "alt [alle controles slagen]" {
-    pattern -> result: "Fixed(nieuwe node)"
-    pattern -> fixer: "FixedResult" {style.stroke-dash: 3}
-  }
+  fixer -> base: "Rewrite(node, model)"
+  base -> syntax: "IsInsideAssertionScope(node, model)"
+  base -> syntax: "GetSubject(assertion)"
+  base -> syntax: "IsResultDiscarded(assertion, model)"
+  base -> syntax: "TryGetArguments(assertion, model)"
+  base -> pattern: "RewriteAssertion(context)"
+  pattern -> model: "ShouldBePattern.RewriteAssertion: GetSymbolInfo(assertion): namespace Xml of Types?"
+  pattern -> model: "GetTypeInfo(subject): bekend type?"
+  pattern -> syntax: "ConvertExpected(unexpected, subjectType, ...)"
+  pattern -> result: "Fixed(..) of Manual(reden)"
+  pattern -> base: "PatternResult" {style.stroke-dash: 3}
+  base -> fixer: "PatternResult" {style.stroke-dash: 3}
 }

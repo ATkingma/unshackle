@@ -20,6 +20,9 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerPattern.cs`, regi
 | REQ-4 | Gehaald | `generic`                                             |
 | REQ-5 | Gehaald | `token-name`                                          |
 | REQ-6 | Gehaald | `other-return`, `explicit`                            |
+| Uitbreiding TAAK-080 | Gehaald | `edge-marker-interface` |
+
+Regressie-edges: `edge-nested-generic` (geneste generieke response bij REQ-1), `edge-primary-ctor` (primary constructor bij REQ-2).
 
 Scan op SampleShop (`scan samples/SampleShop/SampleShop.slnx --fix mediatr`, na `dotnet restore`): `mediatr.request-handler` 5 Fixed, 0 Manual (`CountQuery`, `RegisterCustomerCommand`, `GetOrderHandler`, `ListOrdersHandler`, `PlaceOrderHandler`); `project-file` Manual voor `SampleShop.csproj` omdat MediatR daar nog gebruikt wordt (notification-handler, `AddMediatR`: latere patronen).
 

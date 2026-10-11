@@ -36,15 +36,17 @@ AndChainPattern: AndChainPattern {
   "+Id": "fa.and-chain"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
-  "-RewriteLink(statement, root, model)": "PatternResult?"
+  "-RewriteLink(statement, model)": "PatternResult?"
   "-GetPrevious(link)": "InvocationExpressionSyntax?"
-  "-IsFreeOfSideEffects(expression, model)": bool
 }
 syntax: FluentAssertionsSyntax {
   shape: class
   "+IsFluentAssertions(symbol)": bool
   "+IsInsideAssertionScope(node, model)": bool
   "+GetSubject(assertion)": "ExpressionSyntax?"
+  "+TryGetSplittableStatement(node, out statement)": bool
+  "+IsSafeToEvaluateTwice(expression, model)": bool
+  "+Hoist(subject, model)": "(StatementSyntax, IdentifierNameSyntax)"
 }
 fix: FluentAssertionsFix {
   shape: class

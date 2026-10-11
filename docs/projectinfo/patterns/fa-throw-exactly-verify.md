@@ -19,7 +19,9 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowExactlyPattern.cs
 | REQ-3 | Gehaald | `message, async-message` |
 | REQ-4 | Gehaald | `async` |
 | REQ-5 | Gehaald | `aggregate-wait` |
-| REQ-6 | Gehaald | `because-args, assertion-scope, value-used` |
+| REQ-6 | Gehaald (deels vervangen) | `assertion-scope` |
+| TAAK-097 | Gehaald | `because-args.after.cs` |
+| TAAK-096 | Gehaald | `value-used.after.cs` |
 
 ## Deviations
 

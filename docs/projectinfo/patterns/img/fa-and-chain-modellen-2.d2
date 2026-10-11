@@ -14,12 +14,12 @@ each: "loop [elke node]" {
   pattern -> syntax: "IsInsideAssertionScope(node, model)"
   pattern -> syntax: "GetSubject(links[0])"
   pattern -> model: "GetTypeInfo(.And-ontvanger) == GetTypeInfo(x.Should())"
-  pattern -> pattern: "IsFreeOfSideEffects(subject, model)"
+  pattern -> syntax: "IsSafeToEvaluateTwice(subject) / Hoist(subject)"
   pattern -> model: "Compilation.ReplaceSyntaxTree(tree, splitTree)"
   model -> split: "GetSemanticModel(splitTree)" {style.stroke-dash: 3}
   links: "loop [elke schakel]" {
-    pattern -> pattern: "RewriteLink(statement, splitRoot, splitModel)"
-    pattern -> schakel: "Find(splitRoot, splitModel) / Rewrite(found, splitModel)"
+    pattern -> pattern: "RewriteLink(statement, splitModel)"
+    pattern -> schakel: "Find(statement.Parent, splitModel) / Rewrite(found, splitModel)"
     schakel -> pattern: "FixedResult of ManualResult" {style.stroke-dash: 3}
   }
   pattern -> fixer: "Fixed(statements, namespaces) of Manual(reden)" {style.stroke-dash: 3}

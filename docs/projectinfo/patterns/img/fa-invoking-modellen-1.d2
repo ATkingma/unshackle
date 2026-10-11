@@ -11,15 +11,15 @@ pattern: InvokingPattern {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
-inv: InvokingPattern {
+inv: "ThrowSyntax (static)" {
   shape: class
-  "~RewriteAssertion(node, model)": PatternResult
-  "~IsInvoking(assertion, model)": bool
-  "~TryGetAction(subject, model, action, lambda, reason)": bool
+  "+FindThrow / FindThrowAsync / FindNotThrow(root, model, owns)": "IEnumerable<SyntaxNode>"
+  "+IsInvoking(assertion, model)": bool
+  "+Rewrite(node, model)": PatternResult
+  "+TryGetAction(...)": bool
 }
 throw: "ThrowPattern / ThrowAsyncPattern / NotThrowPattern" {
   shape: class
-  "~Find(root, model, owns)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
 msg: ThrowMessage {
@@ -42,8 +42,7 @@ sh: "«Shouldly» aangemaakt" {
   "Should.NotThrow(() => x.M())": ""
 }
 pattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
-pattern -> throw: Find {style.stroke-dash: 3}
-pattern -> inv: Rewrite {style.stroke-dash: 3}
+pattern -> inv: "Find + Rewrite" {style.stroke-dash: 3}
 inv -> throw: delegeert {style.stroke-dash: 3}
 throw -> msg: gebruikt {style.stroke-dash: 3}
 throw -> result: levert {style.stroke-dash: 3}

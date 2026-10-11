@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "fa-all-satisfy"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13]
 files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AllSatisfyPattern.cs
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
@@ -26,8 +26,8 @@ fa.all-satisfy: `x.Should().AllSatisfy(a => body)` wordt `x.ShouldNotBeEmpty(); 
 
 **In scope**
 
-- Losse `x.Should().AllSatisfy(lambda)` als statement, met een inline lambda met één parameter (expressie- of blok-body, ook met getypeerde parameter), een simpel subject (naam of member access) en direct in een blok.
-- `Manual(reden)` voor `because`/`becauseArgs`, methodgroep, `return` in de body, async lambda, subject met aanroep, resultaat gebruikt, `.And`-vervolg en een statement buiten een blok.
+- Losse `x.Should().AllSatisfy(lambda)` als statement, met een inline lambda met één parameter (expressie- of blok-body, ook met getypeerde parameter), direct in een blok; een subject met bijwerkingen wordt eerst gehoist (TAAK-098).
+- `Manual(reden)` voor `because`/`becauseArgs`, methodgroep, `return` in de body, async lambda, resultaat gebruikt, `.And`-vervolg en een statement buiten een blok.
 
 **Out of scope**
 
@@ -44,10 +44,11 @@ fa.all-satisfy: `x.Should().AllSatisfy(a => body)` wordt `x.ShouldNotBeEmpty(); 
 - **REQ-6**: IF `becauseArgs` of named arguments gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `because-args.*`).
 - **REQ-7**: IF het argument geen inline lambda is (methodgroep) THEN THE SYSTEM SHALL Manual geven (proof `method-group.*`).
 - **REQ-8**: IF de body een `return` bevat, of de lambda async is THEN THE SYSTEM SHALL Manual geven (proofs `return.*`, `async.*`).
-- **REQ-9**: IF het subject geen naam of member access is THEN THE SYSTEM SHALL Manual geven, omdat het twee keer geëvalueerd zou worden (proof `subject-call.*`).
+- **REQ-9** (vervangen door REQ-13): IF het subject geen naam of member access is THEN THE SYSTEM SHALL Manual geven, omdat het twee keer geëvalueerd zou worden (proof `subject-call.*`).
 - **REQ-10**: IF het resultaat gebruikt wordt of de assertion op `.And` volgt THEN THE SYSTEM SHALL Manual geven (proofs `used.*`, `and-chain.*`).
 - **REQ-11**: IF het statement niet direct in een blok staat THEN THE SYSTEM SHALL Manual geven (proof `not-in-block.*`).
 - **REQ-12**: WHEN de body een FluentAssertions-assertion bevat (sample `OrderHandlerTests`) THE SYSTEM SHALL na de hele Fix een compileerbare loop met een Shouldly-assertion opleveren (integratietest op `samples/`, handmatig gecontroleerd met `fix` op een kopie).
+- **REQ-13** (Uitbreiding TAAK-098): WHEN het subject niet veilig twee keer te evalueren is (bv. een aanroep) en het statement direct in een blok staat THE SYSTEM SHALL het subject hoisten naar `var subject = x;` voor `ShouldNotBeEmpty()` en de loop, i.p.v. Manual (vervangt REQ-9; proof `subject-call.*.cs`).
 
 ## Assumptions
 

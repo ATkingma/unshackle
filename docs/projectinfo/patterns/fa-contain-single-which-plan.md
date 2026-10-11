@@ -43,6 +43,8 @@ files_expected:
 - **REQ-4**: WHEN `var y = x.Should().ContainSingle([lambda]).Which` staat THE SYSTEM SHALL `var y = x[.Where(lambda)].ShouldHaveSingleItem()` geven, met `using System.Linq` (proof `which`).
 - **REQ-5**: WHEN het subject nullable is THE SYSTEM SHALL `ShouldNotBeNull()` ervoor zetten als de flow-state MaybeNull is (proof `nullable`).
 - **REQ-6**: IF het resultaat verder wordt gebruikt, de predicate een Expression-variabele bij `.Which` is, becauseArgs of een AssertionScope THEN THE SYSTEM SHALL Manual geven (proofs `which-chain`, `expression-variable`, `because-args`, `assertion-scope`).
+- **Uitbreiding TAAK-096**: WHEN `.Which`/`.Subject` verder gebruikt wordt (`….Which.Price`) THE SYSTEM SHALL `.Which` vervangen door de Shouldly-aanroep, die het item teruggeeft (proof `which-chain`); `.And` en ander gebruik blijven Manual. Vervangt dat deel van REQ-6.
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt dat deel van REQ-6.
 
 ## Assumptions
 

@@ -14,12 +14,12 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/UnsupportedPattern.cs`, registr
 
 | REQ   | Oordeel | Bewijs                   |
 | ----- | ------- | ------------------------ |
-| REQ-1 | Gehaald | `pre-processor`          |
-| REQ-2 | Gehaald | `post-processor`         |
-| REQ-3 | Gehaald | `exception-handler`      |
+| REQ-1 | Vervallen | eigen patroon `mediatr.request-processor` (TAAK-061) |
+| REQ-2 | Vervallen | eigen patroon `mediatr.request-processor` (TAAK-061) |
+| REQ-3 | Gehaald (alleen `IRequestExceptionAction`) | `exception-action`; `IRequestExceptionHandler` → `mediatr.exception-handler` |
 | REQ-4 | Gehaald | `notification-publisher` |
-| REQ-5 | Gehaald | `stream-behavior`        |
-| REQ-6 | Gehaald | `generic-handler`        |
+| REQ-5 | Vervallen | eigen patroon `mediatr.stream-pipeline-behavior` (TAAK-062) |
+| REQ-6 | Gehaald | `generic-handler`, `derived-generic-message` |
 
 Scan op SampleShop: 6 Manual (pre- en post-processor, stream-behavior, exception-handler, `CountQuery<TEntity>`, `CountHandler<TEntity>`). Met deze adviezen met de hand opgelost op een kopie bouwt SampleShop en slagen 38/38 tests (TAAK-037).
 

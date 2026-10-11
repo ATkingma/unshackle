@@ -12,7 +12,7 @@
 | `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract; ook het type van de schakel-patronen |
 | `AndChainPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AndChainPattern.cs` | Dit patroon, Id `fa.and-chain` |
 | `FluentAssertionsFix` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` | Geeft `s_assertions` mee; zet het patroon vóór de assertion-patronen |
-| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | `IsFluentAssertions`, `IsInsideAssertionScope`, `GetSubject` |
+| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | `IsFluentAssertions`, `IsInsideAssertionScope`, `GetSubject`, `TryGetSplittableStatement`, `IsSafeToEvaluateTwice`, `Hoist` |
 | `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst |
 
 **Figure 2.** `Rewrite` splitst de keten in losse FA-statements, compileert die speculatief (`Compilation.ReplaceSyntaxTree`) en laat per statement het eerste patroon dat iets vindt herschrijven.
@@ -23,10 +23,10 @@
 | Stap | Plek | Wat gebeurt er |
 | --- | --- | --- |
 | Find | `AndChainPattern.Find` | FA-invocations op `….And.M(..)` die zelf niet verder ketenen; het statement, anders de invocation |
-| Controles | `AndChainPattern.Rewrite` | scope, statement, blok, `x.Should()`-begin, `.And`-type, bijwerkingen |
-| Splitsen | `AndChainPattern.Rewrite` | `x.Should().M(args);` per schakel, met annotatie |
+| Controles | `AndChainPattern.Rewrite` | scope, statement, blok, `x.Should()`-begin, `.And`-type |
+| Splitsen | `AndChainPattern.Rewrite` | subject met bijwerkingen eerst naar `var subject = x;` (`Hoist`); dan `x.Should().M(args);` per schakel, met annotatie |
 | Schakel | `AndChainPattern.RewriteLink` | `Find` + `Rewrite` van de schakel-patronen op het gesplitste model |
-| Fixed | `PatternResult.Fixed` | de Shouldly-statements + namespaces van de schakels |
+| Fixed | `PatternResult.Fixed` | eventueel de hoist-declaratie, de Shouldly-statements (een schakel mag meerdere statements geven) + namespaces en warnings van de schakels |
 
 **Figure 3.** Beslisboom van `Rewrite`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/AndChain/`.
 
@@ -40,9 +40,9 @@
 | Direct in een blok? | not directly in a block | `no-block` |
 | Begint met `x.Should().A(..)`? | does not start with x.Should() | geen proof, bewaakt in code |
 | Elke `.And` op hetzelfde subject? | continues on another subject | geen proof (geen compileerbaar FA 7-voorbeeld gevonden) |
-| Subject zonder bijwerkingen? | evaluate it twice | `subject-call`, `subject-indexer` |
+| Subject veilig twee keer te evalueren? | geen Manual: hoist naar `var subject = x;` | `subject-call`, `subject-indexer`, `subject-call-twice` (Fixed) |
 | Schakel gevonden? | which no pattern rewrites | `unsupported-link` |
-| Schakel Fixed? | Link X of the .And chain: reden | `link-manual` |
+| Schakel Fixed? | Link X of the .And chain: reden | geen proof |
 
 ## Zie ook
 

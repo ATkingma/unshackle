@@ -43,6 +43,7 @@ mediatr.request-handler: in klassen die `MediatR.IRequestHandler<TReq,TRes>` imp
 - **REQ-4**: WHEN de handler generiek is THE SYSTEM SHALL hem hetzelfde herschrijven (proof `generic`).
 - **REQ-5**: WHEN de `CancellationToken`-parameter een andere naam heeft THE SYSTEM SHALL de parameters ongemoeid laten (proof `token-name`).
 - **REQ-6**: IF een niet-async `Handle` iets anders dan `Task.FromResult` teruggeeft, of `Handle` expliciet geïmplementeerd is THEN THE SYSTEM SHALL Manual melden (proofs `other-return`, `explicit`).
+- **Uitbreiding TAAK-080**: WHEN de handler `IRequestHandler<,>` via een eigen marker-interface implementeert (`IAppQueryHandler<TQ, TR> : IRequestHandler<TQ, TR>`) THE SYSTEM SHALL hem hetzelfde herschrijven (`MediatRSyntax.FindHandleMethods` kijkt naar `AllInterfaces`; proof `edge-marker-interface`).
 
 ## Assumptions
 

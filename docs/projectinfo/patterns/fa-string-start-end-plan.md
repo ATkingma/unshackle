@@ -43,6 +43,7 @@ files_expected:
 - **REQ-4**: WHEN `(Not)BeNullOr(Empty|WhiteSpace)` staat THE SYSTEM SHALL `Should(Not)BeNullOr…` geven (proof `null-or`).
 - **REQ-5**: WHEN het subject nullable of een member/interpolatie is THE SYSTEM SHALL zonder extra null-check herschrijven (proofs `nullable`, `edge-member-subject`).
 - **REQ-6**: IF becauseArgs, een AssertionScope, `.And` of een niet-string subject THEN THE SYSTEM SHALL Manual geven (proofs `because-args`, `assertion-scope`, `and`, `collection`).
+- **Uitbreiding TAAK-097**: WHEN becauseArgs bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage zetten (proof `because-args`, nu `.after.cs`); named arguments of een niet-constante `because` blijven Manual. Vervangt het becauseArgs-deel van REQ-6.
 
 ## Assumptions
 

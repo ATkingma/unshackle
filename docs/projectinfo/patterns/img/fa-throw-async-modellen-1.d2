@@ -11,17 +11,27 @@ pattern: ThrowAsyncPattern {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+throwsyntax: "«internal static» ThrowSyntax" {
+  shape: class
+  "+FindThrowAsync(root, model, owns)": "IEnumerable<SyntaxNode>"
+  "+IsExactly(assertion)": bool
+  "+IsInvoking(assertion, model)": bool
+  "+TryGetAction(subject, model, ...)": bool
+}
 syntax: FluentAssertionsSyntax {
   shape: class
   "+FindInvocations(root, model, names)": ""
+  "+IsInsideAssertionScope(node, model)": bool
   "+GetSubject(assertion)": ExpressionSyntax
   "+IsFluentAssertions(symbol)": bool
   "+TryGetArguments(...)": bool
 }
 msg: ThrowMessage {
   shape: class
-  "+Check(thrown, pattern, because)": "ExpressionSyntax?"
+  "+Check(thrown, pattern, because)": PatternResult
   "+Arguments(first, because)": ArgumentListSyntax
+  "+MayThrowAggregate(action, exceptionType, model)": bool
+  "+OfType(thrown, throwName)": ExpressionSyntax
 }
 result: PatternResult {
   shape: class
@@ -30,11 +40,12 @@ result: PatternResult {
 }
 fixed: FixedResult {shape: class; "+NewNodes": ""}
 manual: ManualResult {shape: class; "+Reason": string}
-fa: "FluentAssertions\nThrowAsync<T> (Fixed)\n.WithMessage (Fixed)\nThrowExactlyAsync (Manual)"
+fa: "FluentAssertions\nThrowAsync<T> (Fixed)\n.WithMessage (Fixed)\nThrowExactlyAsync (via ThrowExactlyPattern)"
 sh: "Shouldly\nShould.ThrowAsync<T>\nMessage.ShouldContain/StartWith/EndWith/Be"
 pattern -> ipattern: {style.stroke-dash: 0; target-arrowhead.shape: triangle}
 pattern -> syntax: gebruikt {style.stroke-dash: 3}
 pattern -> msg: gebruikt {style.stroke-dash: 3}
+pattern -> throwsyntax: gebruikt {style.stroke-dash: 3}
 pattern -> result: maakt {style.stroke-dash: 3}
 fixed -> result: {target-arrowhead.shape: triangle}
 manual -> result: {target-arrowhead.shape: triangle}

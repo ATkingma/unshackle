@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "fa-be-equivalent-to-object"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15]
 files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPattern.cs
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
@@ -42,7 +42,7 @@ fa.be-equivalent-to-object: `BeEquivalentTo` op een object wordt alleen `ShouldB
 - **REQ-3**: WHEN de assertion de body van een void-lambda is THE SYSTEM SHALL het herschrijven (proof `.../lambda.*.cs`).
 - **REQ-4**: IF `NotBeEquivalentTo` wordt gebruikt THEN THE SYSTEM SHALL Manual geven, omdat Shouldly geen `ShouldNotBeEquivalentTo` heeft (proof `.../not-equivalent.*`).
 - **REQ-5**: IF de assertion een vervolg op een andere assertion is of het resultaat wordt gebruikt THEN THE SYSTEM SHALL Manual geven (proofs `.../and-chain.*`, `.../value-used.*`).
-- **REQ-6**: IF `becauseArgs` worden gebruikt THEN THE SYSTEM SHALL Manual geven (proof `.../because-args.*`).
+- **REQ-6** (vervangen door REQ-14): IF `becauseArgs` worden gebruikt THEN THE SYSTEM SHALL Manual geven (proof `.../because-args.*`).
 - **REQ-7**: IF een `options =>`-configuratie wordt meegegeven THEN THE SYSTEM SHALL Manual geven (proof `.../options.*`).
 - **REQ-8**: IF subject en verwachting een verschillend compile-time type hebben (ook een anoniem type of basis- versus afgeleide klasse) THEN THE SYSTEM SHALL Manual geven, omdat FluentAssertions alleen de leden van de verwachting vergelijkt en Shouldly gelijke typen eist (proofs `.../anonymous.*`, `.../different-types.*`, `.../base-vs-derived.*`).
 - **REQ-9**: IF het type een collectie is of een collectie als bereikbaar lid heeft THEN THE SYSTEM SHALL Manual geven, omdat FluentAssertions de volgorde standaard negeert en Shouldly niet (proofs `.../collection.*`, `.../collection-member.*`).
@@ -51,6 +51,8 @@ fa.be-equivalent-to-object: `BeEquivalentTo` op een object wordt alleen `ShouldB
 - **REQ-12**: IF het type deel is van een cyclische objectgraaf THEN THE SYSTEM SHALL Manual geven, omdat FluentAssertions faalt en Shouldly slaagt (proof `.../cyclic.*`).
 - **REQ-13**: IF het type geen publieke leden heeft THEN THE SYSTEM SHALL Manual geven, omdat FluentAssertions een uitzondering gooit en Shouldly slaagt (proof `.../no-members.*`).
 - **Uitbreiding TAAK-092**: WHEN subject en verwachting een `IEnumerable<T>` met hetzelfde leaf-elementtype zijn (primitives, string, enum, DateTime(Offset), Guid, … ook nullable) THE SYSTEM SHALL `x.ShouldBe(expected, ignoreOrder: true[, because])` geven (proofs `collection-ints`, `collection-strings-because`, `collection-nullable-enum`, `edge-array-literal`, `AndChain/equivalent-collection`); ander elementtype of niet-leaf-elementen blijven Manual (`collection-element-types`, `collection`). Probe: duplicaten, null-elementen, leeg, andere lengte, null-subject/-verwachting geven hetzelfde oordeel.
+- **REQ-14** (Uitbreiding TAAK-097): WHEN `becauseArgs` met een constante, formatteerbare `because` staat THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven, ook in de collectie-vorm (proofs `because-args`, `collection-because-args`); named arguments of een niet-constante `because` blijven Manual.
+- **REQ-15**: IF de `params`-overload `BeEquivalentTo(params items)` op een collectie gebruikt wordt THEN THE SYSTEM SHALL Manual geven vóór de argumentsplitsing (`RewriteBeforeArguments`), omdat de extra argumenten items zijn en geen becauseArgs (proof `edge-collection-params`).
 
 ## Assumptions
 

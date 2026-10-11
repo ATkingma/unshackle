@@ -10,6 +10,7 @@
 | Element | Pad | Rol |
 | --- | --- | --- |
 | `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` doet scope, vorm, resultaat en because(-args), dan `RewriteAssertion` |
 | `EqualSequencePattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EqualSequencePattern.cs` | Dit patroon, Id `fa.equal-sequence` |
 | `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde controles |
 | `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst |
@@ -22,10 +23,10 @@
 | Stap | Plek | Wat gebeurt er |
 | --- | --- | --- |
 | Find | `EqualSequencePattern.Find` | `FindInvocations` op de FA-namen |
-| Controles | `EqualSequencePattern.Rewrite` | scope, vorm, gebruik van het resultaat, type, argumenten |
+| Controles | `FluentAssertionPattern.Rewrite` → `EqualSequencePattern.RewriteBeforeArguments` / `RewriteAssertion` | scope, vorm, resultaat; vóór de argumentsplitsing type, NotEqual, losse params, predicate; dan `TryGetArguments` |
 | Uitkomst | `PatternResult.Fixed` / `Manual` | Shouldly-aanroep of reden |
 
-**Figure 3.** Beslisboom van `Rewrite`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/EqualSequence/`.
+**Figure 3.** Beslisboom van `FluentAssertionPattern.Rewrite` + `EqualSequencePattern`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/EqualSequence/`.
 
 <!-- kingmadoc:diagram img/fa-equal-sequence-modellen-3.d2 -->
 ![Modellen: fa.equal-sequence](img/fa-equal-sequence-modellen-3.png)
@@ -38,9 +39,9 @@
 | Op Generic/StringCollectionAssertions? | dictionary compares without order | `dictionary` |
 | Equal (niet NotEqual)? | Shouldly has no ShouldNotBe for sequences | `not-equal` |
 | Geen predicate? | with a predicate | `predicate` |
-| Geen becauseArgs? | becauseArgs | `because-args` |
-| Fixed | `x.ShouldBe(new T[] { a, b }) (losse params)` | params |
-| Fixed | `x.ShouldBe(y[, ignoreOrder: false, because])` | simple, params-array, because, nullable |
+| Geen benoemde argumenten; because constant formatteerbaar? | named arguments, or becauseArgs whose because is no constant format string | `geen proof` |
+| Fixed (vóór predicate-controle) | `x.ShouldBe(new T[] { a, b })` (losse params) | params |
+| Fixed | `x.ShouldBe(y[, ignoreOrder: false, because])`; becauseArgs via `string.Format(CultureInfo.InvariantCulture, ...)` | simple, params-array, because, because-args, nullable |
 
 ## Zie ook
 

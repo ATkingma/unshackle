@@ -14,11 +14,16 @@ ipattern: "«interface» IPattern" {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+base: "FluentAssertionPattern (abstract)" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
+}
 BeTrueFalsePattern: BeTrueFalsePattern {
   shape: class
   "+Id": "fa.be-true-false"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
 }
 syntax: FluentAssertionsSyntax {
   shape: class
@@ -57,7 +62,9 @@ rec: "Herkende typen" {
   "bool": ""
   "bool? (Nullable<bool>)": ""
 }
-BeTrueFalsePattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+BeTrueFalsePattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base -> syntax: gebruikt {style.stroke-dash: 3}
 BeTrueFalsePattern -> syntax: gebruikt {style.stroke-dash: 3}
 BeTrueFalsePattern -> result: levert {style.stroke-dash: 3}
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}

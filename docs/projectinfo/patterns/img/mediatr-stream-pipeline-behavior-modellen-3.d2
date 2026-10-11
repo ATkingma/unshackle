@@ -1,0 +1,19 @@
+title: "[Beslisboom] StreamPipelineBehaviorPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q1: "Expliciete interface-\nimplementatie?" {shape: diamond}
+q2: "Handle(request,\nStreamHandlerDelegate<T> next, ct)?" {shape: diamond}
+q3: "Elk gebruik van next\nis next()?" {shape: diamond}
+q4: "Request is typeparameter zonder\nIStreamRequest-constraint?" {shape: diamond}
+m1: "Manual: explicit interface\n(geen proof)"
+m2: "Manual: does not have the form\n(geen proof)"
+m3: "Manual: next is used other than next()\n(next-passed)"
+f1: "next(request, token) + where T : IStreamMessage\n(open)"
+f2: "next(request, token), constraint ongemoeid\n(request-constraint)"
+q1 -> m1: ja
+q1 -> q2: nee
+q2 -> m2: nee
+q2 -> q3: ja
+q3 -> m3: nee
+q3 -> q4: ja
+q4 -> f1: ja
+q4 -> f2: nee

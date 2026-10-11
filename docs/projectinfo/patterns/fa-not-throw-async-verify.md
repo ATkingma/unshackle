@@ -17,7 +17,8 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotThrowAsyncPattern.c
 | REQ-1 | Gehaald | `simple, lambda, reference-result` |
 | REQ-2 | Gehaald | `because` |
 | REQ-3 | Gehaald | `configure-await` |
-| REQ-4 | Gehaald | `generic, not-awaited, result-used, value-result, awaiting, because-args, assertion-scope` |
+| REQ-4 | Gehaald | `generic, not-awaited, result-used, value-result, awaiting, assertion-scope` |
+| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` (`string.Format(CultureInfo.InvariantCulture, ...)`) |
 
 ## Deviations
 

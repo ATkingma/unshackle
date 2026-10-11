@@ -18,6 +18,7 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/NotificationHandlerPattern.cs`,
 | REQ-2 | Gehaald | `completed-task` (twee returns), `completed-task-expression` |
 | REQ-3 | Gehaald | `two-handlers`                                               |
 | REQ-4 | Gehaald | `other-return`, `explicit`                                   |
+| Uitbreiding TAAK-080 | Gehaald | `edge-marker-interface` |
 
 Scan op SampleShop (na `dotnet restore`): `mediatr.notification-handler` 3 Fixed, 0 Manual (`OrderCancelledAuditHandler`, `OrderCancelledMailHandler`, `OrderPlacedHandler`).
 

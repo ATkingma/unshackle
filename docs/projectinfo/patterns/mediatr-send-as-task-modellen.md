@@ -39,6 +39,7 @@ Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/SendAsTaskPattern.cs`.
 | Blad                   | Voorwaarde                        | Bewijs                     |
 | ---------------------- | --------------------------------- | -------------------------- |
 | niet gevonden          | geen `Send`/`Publish` van MediatR | n.v.t.                     |
+| Manual "called with ?." | `x?.Send(...)` (MemberBinding)  | `null-conditional`         |
 | blijft staan           | direct ge-await                   | `task-uses`                |
 | `.AsTask()` toegevoegd | elk ander gebruik                 | `task-uses`, `send-object` |
 

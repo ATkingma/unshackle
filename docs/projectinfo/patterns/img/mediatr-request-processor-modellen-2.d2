@@ -1,0 +1,17 @@
+title: "[Sequence] RequestProcessorPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: RequestProcessorPattern
+syntax: MediatRSyntax
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "DeclaredInterface(symbol, IRequestPreProcessor`1 / IRequestPostProcessor`2)"
+pattern -> fixer: "ClassDeclarationSyntax" {style.stroke-dash: 3}
+fixer -> pattern: "Rewrite(node, model)"
+pattern -> model: "FindImplementationForInterfaceMember(Process)"
+pattern -> syntax: "RejectExplicit / WithCompletedValueTask(method)"
+pattern -> pattern: "response: TRes (post), TResponse erbij (open pre, HasOtherUses), ResponseOf (gesloten pre)"
+pattern -> syntax: "AsHandleOverride(ValueTask), WithBaseClass(MessagePre/PostProcessor<...>)"
+pattern -> syntax: "WithConstraint(IMessage)"
+pattern -> fixer: "Fixed(type, System.Threading.Tasks) of Manual(reden)" {style.stroke-dash: 3}
+fixer -> fixer: "AllOrNothing: een Manual -> niets geschreven"

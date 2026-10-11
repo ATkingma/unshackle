@@ -25,8 +25,8 @@ q5: "Geen Wait/Result in de lambda (alleen Throw<T>)?" {shape: diamond}
 m5: "Manual: AggregateException\n(proof: aggregate)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q4 -> q5: ja
 q5 -> m5: nee
-q6: "Geen becauseArgs?" {shape: diamond}
-m6: "Manual: becauseArgs\n(proof: because-args)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q6: "Geen benoemde argumenten; because constant formatteerbaar?" {shape: diamond}
+m6: "Manual: becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q5 -> q6: ja
 q6 -> m6: nee
 f0: "Fixed: Should.Throw<T>(() => x.M()) / await Should.ThrowAsync<T>(() => x.M()) / Should.NotThrow(() => x.M())\n(simple, func, because-message, throw-exactly, not-throw, awaiting, awaiting-exactly)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}

@@ -19,8 +19,9 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeApproximatelyPattern
 | REQ-3 | Gehaald | `not` |
 | REQ-4 | Gehaald | `close-to` |
 | REQ-5 | Gehaald | `nullable` |
-| REQ-6 | Gehaald | `int-close-to`, `nullable-not`, `because-args`, `assertion-scope` |
+| REQ-6 | Gehaald | `int-close-to`, `nullable-not`, `assertion-scope`; becauseArgs vervangen door REQ-8 |
 | REQ-7 | Gehaald | `AndChain/equal-length-approximately` |
+| REQ-8 | Gehaald | `because-args` (Fixed met `string.Format`) |
 
 ## Deviations
 

@@ -13,6 +13,6 @@ pattern -> model: "GetDeclaredSymbol(next) / GetSymbolInfo: elk gebruik van next
 pattern -> syntax: "ReturnedExpressions / IsTaskMember FromResult (niet-async)"
 pattern -> pattern: "next(...) -> next(request, token); RequestHandlerDelegate -> MessageHandlerDelegate"
 pattern -> model: "GetTypeInfo(request.Type): typeparameter?"
-pattern -> pattern: "WithMessageConstraint: where TRequest : IMessage"
+pattern -> syntax: "WithConstraint: where TRequest : IMessage (niet als de constraint al IRequest/INotification is)"
 pattern -> fixer: "Fixed(type, System.Threading.Tasks) of Manual(reden)" {style.stroke-dash: 3}
 fixer -> fixer: "UsingDirectives.UpdateAsync (SwappedTypes incl. IPipelineBehavior`2)"

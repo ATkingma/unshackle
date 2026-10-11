@@ -1,0 +1,21 @@
+title: "[Activity] CustomAssertionPattern.Find + Rewrite - match of niet" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+    n: "Geen match" {style.fill: "#e5e7eb"; style.font-color: "#000000"}
+  }
+}
+start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
+q0: "Invocation x.M(...) met member access?" {shape: diamond}
+q1: "M zelf uit een FluentAssertions-namespace?" {shape: diamond}
+q2: "Receiver (extensie) of declarerend type (instance), of een basistype daarvan: FA-type *Assertions?" {shape: diamond}
+n: "Geen match: een ander patroon of niets" {style.fill: "#e5e7eb"; style.font-color: "#000000"; style.border-radius: 12}
+m: "Manual: Custom assertion `Type.M` (bestand of assembly)\n(proof: extension, subclass, in-assertion-scope)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+start -> q0
+q0 -> n: nee
+q0 -> q1: ja
+q1 -> n: ja
+q1 -> q2: nee
+q2 -> n: nee
+q2 -> m: ja

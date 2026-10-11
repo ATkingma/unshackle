@@ -1,20 +1,24 @@
 title: "[Sequence] EqualSequencePattern - Find en Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 shape: sequence_diagram
 fixer: Fixer
+base: FluentAssertionPattern
 pattern: EqualSequencePattern
 syntax: FluentAssertionsSyntax
 model: SemanticModel
 result: PatternResult
 fixer -> pattern: "Find(root, model)"
-pattern -> syntax: "FindInvocations(root, model, ...)"
+pattern -> syntax: "FindInvocations(root, model, \"Equal\", \"NotEqual\")"
 pattern -> fixer: "nodes" {style.stroke-dash: 3}
 each: "loop [elke node]" {
-  fixer -> pattern: "Rewrite(node, model)"
-  pattern -> syntax: "IsInsideAssertionScope(node, model)"
-  pattern -> syntax: "GetSubject(assertion)"
-  pattern -> syntax: "IsResultDiscarded(assertion, model)"
-  pattern -> model: "GetSymbolInfo(assertion): collectie-assertions, params?"
-  pattern -> syntax: "TryGetArguments(assertion, model)"
+  fixer -> base: "Rewrite(node, model)"
+  base -> syntax: "IsInsideAssertionScope(node, model)"
+  base -> syntax: "GetSubject(assertion)"
+  base -> syntax: "IsResultDiscarded(assertion, model)"
+  base -> pattern: "RewriteBeforeArguments(context)"
+  pattern -> model: "GetSymbolInfo(assertion): collectie-assertions, NotEqual, params, predicate?"
+  base -> syntax: "TryGetArguments(assertion, model)"
+  base -> pattern: "RewriteAssertion(context)"
   pattern -> result: "Fixed(..) of Manual(reden)"
-  pattern -> fixer: "PatternResult" {style.stroke-dash: 3}
+  pattern -> base: "PatternResult" {style.stroke-dash: 3}
+  base -> fixer: "PatternResult" {style.stroke-dash: 3}
 }

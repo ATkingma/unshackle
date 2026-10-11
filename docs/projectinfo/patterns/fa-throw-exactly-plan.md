@@ -42,6 +42,8 @@ files_expected:
 - **REQ-4**: WHEN `await act.Should().ThrowExactlyAsync<T>()` staat THE SYSTEM SHALL `(await Should.ThrowAsync<T>(act)).ShouldBeOfType<T>()` geven (proof `async`).
 - **REQ-5**: WHEN de actie `Wait()`/`.Result` gebruikt THE SYSTEM SHALL toch herschrijven: ThrowExactly pakt AggregateException niet uit, Shouldly ook niet (proof `aggregate-wait`).
 - **REQ-6**: IF becauseArgs, een AssertionScope of een gebruikt resultaat THEN THE SYSTEM SHALL Manual geven (proof `because-args, assertion-scope, value-used`).
+- **Uitbreiding TAAK-097**: WHEN becauseArgs bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `Should.Throw<T>(act, string.Format(CultureInfo.InvariantCulture, because, args)).ShouldBeOfType<T>()` geven (proof `because-args`, nu `.after.cs`); named arguments of een niet-constante `because` blijven Manual.
+- **Uitbreiding TAAK-096**: WHEN `.Which` direct volgt THE SYSTEM SHALL `.Which` laten vervallen: `ShouldBeOfType<T>()` geeft de exception terug (proof `value-used`, nu `.after.cs`). Samen met TAAK-097 blijft van REQ-6 alleen de AssertionScope Manual.
 
 ## Assumptions
 

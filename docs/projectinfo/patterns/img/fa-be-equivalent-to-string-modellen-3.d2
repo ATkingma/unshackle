@@ -1,4 +1,4 @@
-title: "[Activity] BeEquivalentToStringPattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] FluentAssertionPattern.Rewrite → BeEquivalentToStringPattern.RewriteAssertion - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 vars: {
   d2-legend: {
@@ -13,19 +13,19 @@ q2: "BeEquivalentTo, niet NotBeEquivalentTo?" {shape: diamond}
 m2: "Manual: NotBeEquivalentTo has no Shouldly equivalent\n(proof: not-equivalent)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q3: "Resultaat weggegooid?" {shape: diamond}
 m3: "Manual: The result of BeEquivalentTo(...) is used\n(proof: chain, value-used)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q4: "Geen becauseArgs, precies één waarde?" {shape: diamond}
-m4: "Manual: becauseArgs of benoemde argumenten\n(proof: because-args)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q4: "Argumenten splitsbaar?\n(becauseArgs alleen met constante because)" {shape: diamond}
+m4: "Manual: named arguments, or becauseArgs\n(geen proof; because-args is Fixed)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 s: "Is er een because?" {shape: diamond}
-f1: "Fixed: s.ShouldBe(\"x\", StringCompareShould.IgnoreCase)\n(proof: simple, lambda)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-f2: "Fixed: s.ShouldBe(\"x\", because, StringCompareShould.IgnoreCase)\n(proof: because)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+f1: "Fixed: s.ShouldBe(\"x\", StringCompareShould.IgnoreCase)\n(proof: simple, lambda, edge-interpolated)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+f2: "Fixed: s.ShouldBe(\"x\", because, StringCompareShould.IgnoreCase)\nbecauseArgs → string.Format(...)\n(proof: because, because-args)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
 start -> q1
 q1 -> m1: nee
-q1 -> q2: ja
-q2 -> m2: nee
-q2 -> q3: ja
+q1 -> q3: ja
 q3 -> m3: nee
 q3 -> q4: ja
 q4 -> m4: nee
-q4 -> s: ja
+q4 -> q2: ja
+q2 -> m2: nee
+q2 -> s: ja
 s -> f1: "nee"
 s -> f2: "ja"

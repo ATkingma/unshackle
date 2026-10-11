@@ -39,8 +39,8 @@
 | Vorm act.Should()? | is not in the form | `geen proof` |
 | Subject niet via FluentAssertions? | built with FluentAssertions | `awaiting` |
 | Func<Task> of Func<Task<ref>>? | the only delegates Should.NotThrowAsync accepts | `value-result` |
-| Geen becauseArgs? | becauseArgs | `because-args` |
-| Fixed | `await Should.NotThrowAsync(act[, because])[.ConfigureAwait(x)]` | simple, because, configure-await, lambda, reference-result |
+| Geen benoemde argumenten; because constant formatteerbaar? | named arguments, or becauseArgs whose because is no constant format string | `geen proof` |
+| Fixed | `await Should.NotThrowAsync(act[, because])[.ConfigureAwait(x)]`; becauseArgs via `string.Format(CultureInfo.InvariantCulture, because, args)` (TAAK-097) | simple, because, because-args, configure-await, lambda, reference-result |
 
 ## Zie ook
 

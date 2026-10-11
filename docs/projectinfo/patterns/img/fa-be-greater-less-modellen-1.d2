@@ -6,12 +6,17 @@ ipattern: "«interface» IPattern" {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+base: "«abstract» FluentAssertionPattern" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
+}
 pattern: BeGreaterLessPattern {
   shape: class
   "-s_methods": "Dictionary<string, (Should, Values)>"
+  "-s_signTypes": "SpecialType[]"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
-  "-IsSimple(e)": bool
+  "#RewriteAssertion(context)": PatternResult
 }
 syntax: FluentAssertionsSyntax {
   shape: class
@@ -19,17 +24,19 @@ syntax: FluentAssertionsSyntax {
   "+GetSubject(assertion)": ExpressionSyntax
   "+IsResultDiscarded(assertion, model)": bool
   "+TryGetArguments(...)": bool
+  "+ConvertExpected(expected, subjectType, model, position)": "ExpressionSyntax?"
 }
 result: PatternResult {
   shape: class
-  "+Fixed(node | nodes, namespaces)": ""
+  "+Fixed(node, namespaces)": ""
   "+Manual(reason)": ""
 }
 fixed: FixedResult {shape: class; "+NewNodes": ""}
 manual: ManualResult {shape: class; "+Reason": string}
-fa: "FluentAssertions\nBeGreaterThan, BeGreaterThanOrEqualTo, BeGreaterOrEqualTo,\nBeLessThan, BeLessThanOrEqualTo, BeLessOrEqualTo,\nBeInRange, NotBeInRange, BePositive, BeNegative"
+fa: "FluentAssertions\nBeGreaterThan, BeGreaterThanOrEqualTo, BeGreaterOrEqualTo,\nBeLessThan, BeLessThanOrEqualTo, BeLessOrEqualTo,\nBeInRange, NotBeInRange, BePositive, BeNegative,\nBeAfter, BeOnOrAfter, BeBefore, BeOnOrBefore"
 sh: "Shouldly\nShouldBeGreaterThan, ShouldBeGreaterThanOrEqualTo, ShouldBeLessThan,\nShouldBeLessThanOrEqualTo, ShouldBeInRange, ShouldNotBeInRange,\nShouldBePositive, ShouldBeNegative"
-pattern -> ipattern: {style.stroke-dash: 0; target-arrowhead.shape: triangle}
+pattern -> base: {style.stroke-dash: 0; target-arrowhead.shape: triangle}
+base -> ipattern: {style.stroke-dash: 0; target-arrowhead.shape: triangle}
 pattern -> syntax: gebruikt {style.stroke-dash: 3}
 pattern -> result: maakt {style.stroke-dash: 3}
 fixed -> result: {target-arrowhead.shape: triangle}

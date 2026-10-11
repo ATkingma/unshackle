@@ -45,6 +45,8 @@ fa.be-null: x.Should().BeNull()/NotBeNull() wordt x.ShouldBeNull()/ShouldNotBeNu
 - **REQ-6**: IF `becauseArgs` of benoemde argumenten gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `.../BeNull/because-args.*`).
 - **REQ-7**: IF een vervolg op de assertion staat (`.And`, `.Which`) of het resultaat als waarde wordt gebruikt THEN THE SYSTEM SHALL Manual geven (proofs `.../BeNull/chain.*`, `value-used.*`).
 - **REQ-8**: IF de assertion zelf een vervolg op een andere assertion is (`x.Should().NotBeEmpty().And.NotBeNull()`) THEN THE SYSTEM SHALL Manual geven (proof `.../BeNull/and-chain.*`).
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als `customMessage` geven (proof `.../BeNull/because-args.after.cs`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt REQ-6 voor dit geval.
+- **Uitbreiding TAAK-100**: IF de assertion in een `AssertionScope` staat die `fa.assertion-scope` niet omzet THEN THE SYSTEM SHALL Manual geven ("Inside an AssertionScope").
 
 ## Assumptions
 

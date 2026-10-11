@@ -22,13 +22,20 @@ ipattern: "«interface» IPattern" {
 }
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
 manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base: "FluentAssertionPattern (abstract)" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteBeforeArguments(context)": "PatternResult?"
+  "#RewriteAssertion(context)": PatternResult
+}
 pattern: StringStartEndPattern {
   shape: class
   "-s_affixes": "FA-naam -> (Shouldly-naam, CaseSensitive)"
   "-s_nullOr": "FA-naam -> Shouldly-naam"
   "+Id": "fa.string-start-end"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
+  "#RewriteBeforeArguments(context)": "PatternResult?"
+  "#RewriteAssertion(context)": PatternResult
 }
 syntax: FluentAssertionsSyntax {
   shape: class
@@ -37,7 +44,7 @@ syntax: FluentAssertionsSyntax {
   "+GetSubject(assertion)": "ExpressionSyntax?"
   "+IsResultDiscarded(assertion, model)": bool
   "+TryGetArguments(assertion, model, values, because)": bool
-  "+NotNull(subject, model)": ExpressionSyntax
+  "+Invoke(subject, name, arguments)": InvocationExpressionSyntax
 }
 fa: "«FluentAssertions» herkend" {
   shape: class
@@ -49,7 +56,8 @@ sh: "«Shouldly» aangemaakt" {
   "ShouldStartWith(x, Shouldly.Case.Sensitive) e.d.": ""
   "ShouldNotBeNullOrEmpty() e.d.": ""
 }
-pattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+pattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
 pattern -> syntax: gebruikt {style.stroke-dash: 3}
 pattern -> result: levert {style.stroke-dash: 3}
 pattern -> fa: herkent {style.stroke-dash: 3}

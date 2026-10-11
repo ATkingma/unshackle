@@ -6,17 +6,19 @@ syntax: FluentAssertionsSyntax
 model: SemanticModel
 result: PatternResult
 fixer -> pattern: "Find(root, model)"
-pattern -> syntax: "FindInvocations(root, model, \"NotThrow\", \"NotThrowAfter\")"
+pattern -> syntax: "ThrowSyntax.FindNotThrow → FindInvocations(root, model, \"NotThrow\", \"NotThrowAfter\"), zonder Invoking-subjects"
 syntax -> model: "GetSymbolInfo(invocation): IsFluentAssertions"
 syntax -> pattern: "InvocationExpressionSyntax-nodes" {style.stroke-dash: 3}
 pattern -> fixer: "nodes" {style.stroke-dash: 3}
 each: "loop [elke node]" {
   fixer -> pattern: "Rewrite(node, model)"
   checks: "opt [controles]" {
+    pattern -> syntax: "IsInsideAssertionScope(node, model)"
     pattern -> pattern: "naam: NotThrowAfter? generiek?"
     pattern -> syntax: "GetSubject(call)"
     pattern -> syntax: "IsResultDiscarded(call, model)"
-    pattern -> syntax: "IsFluentAssertions(GetSymbolInfo(subject))"
+    pattern -> pattern: "ThrowSyntax.IsInvoking? dan TryGetAction"
+    pattern -> syntax: "anders IsFluentAssertions(GetSymbolInfo(subject))"
     pattern -> model: "GetTypeInfo(subject): parameterloze delegate?"
     pattern -> syntax: "TryGetArguments(call, model)"
   }

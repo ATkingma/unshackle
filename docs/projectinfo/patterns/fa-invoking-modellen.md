@@ -10,7 +10,7 @@
 | Element | Pad | Rol |
 | --- | --- | --- |
 | `InvokingPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` | Dit patroon, Id `fa.invoking`: claimt de nodes |
-| `InvokingPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` | `RewriteAssertion` kiest het herschrijvende patroon; `TryGetAction` maakt `() => ...` |
+| `ThrowSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowSyntax.cs` | `FindThrow`/`FindThrowAsync`/`FindNotThrow` met filter `IsInvoking`; `Rewrite` kiest het herschrijvende patroon; `TryGetAction` maakt `() => ...` |
 | `ThrowPattern`, `ThrowAsyncPattern`, `NotThrowPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/` | Herschrijven (ook ThrowExactly en Invoking) |
 | `ThrowMessage` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowMessage.cs` | `OfType`, message-check, AggregateException-heuristiek |
 
@@ -21,8 +21,8 @@
 
 | Stap | Plek | Wat gebeurt er |
 | --- | --- | --- |
-| Find | `InvokingPattern.Find` | `Find(root, model, owns)` van de Throw-patterns met het eigen filter |
-| Rewrite | `InvokingPattern.RewriteAssertion` | Kiest Throw/ThrowAsync/NotThrow op de naam van de assertion |
+| Find | `InvokingPattern.Find` | `ThrowSyntax.FindThrow`/`FindThrowAsync`/`FindNotThrow` met filter `ThrowSyntax.IsInvoking` |
+| Rewrite | `InvokingPattern.Rewrite` → `ThrowSyntax.Rewrite` | Kiest Throw/ThrowAsync/NotThrow op de naam van de assertion |
 | Uitkomst | `PatternResult.Fixed` / `Manual` | Shouldly-aanroep of reden |
 
 **Figure 3.** Beslisboom; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/Invoking/`.
@@ -38,7 +38,7 @@
 | Receiver reference type? | is a value type | `value-type` |
 | Lambda met één parameter? | one-parameter lambda | `method-group` |
 | Geen Wait/Result in de lambda (alleen Throw<T>)? | AggregateException | `aggregate` |
-| Geen becauseArgs? | becauseArgs | `because-args` |
+| Geen benoemde argumenten; because constant formatteerbaar? | becauseArgs whose because is no constant format string | geen proof (becauseArgs met constante because is Fixed: `because-args`) |
 
 ## Zie ook
 

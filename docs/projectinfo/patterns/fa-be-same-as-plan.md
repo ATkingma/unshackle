@@ -41,6 +41,7 @@ files_expected:
 - **REQ-3**: WHEN `because` zonder becauseArgs staat THE SYSTEM SHALL die als customMessage achteraan zetten (proof `because`).
 - **REQ-4**: IF becauseArgs, een gebruikt resultaat of een AssertionScope THEN THE SYSTEM SHALL Manual geven (proof `because-args, result-used, assertion-scope`).
 - **REQ-5**: WHEN `BeSameAs` een schakel na `.And` is THE SYSTEM SHALL via `fa.and-chain` een los statement geven (proof `AndChain/be-same-as`).
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt dat deel van REQ-4.
 
 ## Assumptions
 

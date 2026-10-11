@@ -1,0 +1,13 @@
+title: "[Klassen] ExceptionHandlerPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+IPattern: {shape: class; "+Id"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
+ExceptionHandlerPattern: {shape: class; "+Id = mediatr.exception-handler"; "+Find(root, model)"; "+Rewrite(node, model)"; "-Result(setHandled): ExpressionSyntax"}
+MediatRSyntax: {shape: class; "+DeclaredInterface(type, name)"; "+RejectExplicit(method, todo)"; "+IsTaskMember(expr, model, name)"; "+AsHandleOverride(method, returnType)"; "+WithBaseClass(...)"; "+CommaList(nodes)"; "+WithConstraint(type, messageType, constraint, isMessage)"}
+PatternResult: {shape: class; "+Fixed(node, namespaces)"; "+Manual(reason)"}
+MediatR: "MediatR.Pipeline.IRequestExceptionHandler<TRequest, TResponse, TException>\nTask Handle(request, exception, RequestExceptionHandlerState<TResponse> state, ct)"
+Mediator: "Mediator.MessageExceptionHandler<TMessage, TResponse, TException>\nprotected override ValueTask<ExceptionHandlingResult<TResponse>> Handle(message, exception, ct)\nHandled(x) / NotHandled"
+ExceptionHandlerPattern -> IPattern: implementeert {style.stroke-dash: 3}
+ExceptionHandlerPattern -> MediatRSyntax: gebruikt
+ExceptionHandlerPattern -> PatternResult: geeft
+ExceptionHandlerPattern -> MediatR: herkent
+ExceptionHandlerPattern -> Mediator: schrijft voor

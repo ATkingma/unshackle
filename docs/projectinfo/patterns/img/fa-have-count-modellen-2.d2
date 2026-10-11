@@ -1,31 +1,39 @@
 title: "[Sequence] HaveCountPattern - Find en Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 shape: sequence_diagram
 fixer: Fixer
+base: FluentAssertionPattern
 pattern: HaveCountPattern
 syntax: FluentAssertionsSyntax
 model: SemanticModel
 result: PatternResult
 fixer -> pattern: "Find(root, model)"
-pattern -> syntax: "FindInvocations(root, model, \"HaveCount\")"
+pattern -> syntax: "FindInvocations(root, model, HaveCount, HaveCountGreaterThan, ...)"
 syntax -> model: "GetSymbolInfo(invocation): IsFluentAssertions"
 syntax -> pattern: "InvocationExpressionSyntax-nodes" {style.stroke-dash: 3}
 pattern -> fixer: "nodes" {style.stroke-dash: 3}
 each: "loop [elke node]" {
-  fixer -> pattern: "Rewrite(node, model)"
-  checks: "opt [controles]" {
-    pattern -> syntax: "GetSubject(assertion)"
-    pattern -> syntax: "IsResultDiscarded(assertion, model)"
+  fixer -> base: "Rewrite(node, model)"
+  checks: "opt [gedeelde controles]" {
+    base -> syntax: "IsInsideAssertionScope(node, model)"
+    base -> syntax: "GetSubject(assertion)"
+    base -> syntax: "IsResultDiscarded(assertion, model)"
+    base -> syntax: "TryGetArguments(assertion, model)"
+  }
+  base -> pattern: "RewriteAssertion(context)"
+  own: "opt [eigen controles]" {
     pattern -> model: "GetSymbolInfo(assertion): eerste parameter int?"
-    pattern -> syntax: "TryGetArguments(assertion, model)"
     pattern -> model: "GetTypeInfo(subject): bekend type?"
-    pattern -> pattern: "Implements / HasIntProperty / IsSafeReceiver"
+    pattern -> pattern: "Implements / HasIntProperty"
+    pattern -> syntax: "NotNullReceiver(subject, model)"
   }
   manual: "alt [een controle faalt]" {
     pattern -> result: "Manual(reden)"
-    pattern -> fixer: "ManualResult" {style.stroke-dash: 3}
+    pattern -> base: "ManualResult" {style.stroke-dash: 3}
+    base -> fixer: "ManualResult" {style.stroke-dash: 3}
   }
   fixed: "alt [alle controles slagen]" {
     pattern -> result: "Fixed(nieuwe node, namespaces)"
-    pattern -> fixer: "FixedResult" {style.stroke-dash: 3}
+    pattern -> base: "FixedResult" {style.stroke-dash: 3}
+    base -> fixer: "FixedResult" {style.stroke-dash: 3}
   }
 }

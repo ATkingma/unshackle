@@ -1,22 +1,29 @@
-title: "[Overzicht] Equivalentie" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Overzicht] Exceptions" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: right
 vars: {
   d2-legend: {
     f: FluentAssertions {style.fill: "#bbdefb"}
     s: Shouldly {style.fill: "#c8e6c9"}
-    m: Manual {style.fill: "#ffe0b2"}
     a: "" {style.opacity: 0}
     b: "" {style.opacity: 0}
     a -> b: Wordt
   }
 }
-bes: "s.Should().BeEquivalentTo(y)\n(string)" {style.fill: "#bbdefb"}
-bess: "s.ShouldBe(y, StringCompareShould.IgnoreCase)" {style.fill: "#c8e6c9"}
-besm: "Manual: NotBeEquivalentTo, resultaat gebruikt,\nbecauseArgs" {style.fill: "#ffe0b2"}
-beo: "a.Should().BeEquivalentTo(b)\n(object)" {style.fill: "#bbdefb"}
-beos: "a.ShouldBeEquivalentTo(b)\n(alleen gelijk type en eenvoudige leden)" {style.fill: "#c8e6c9"}
-beom: "Manual: verschillend type, collectie,\nEquals-override, cyclus, options =>" {style.fill: "#ffe0b2"}
-bes -> bess
-bes -> besm
-beo -> beos
-beo -> beom
+f0: "fa.throw\nact.Should().Throw<T>()[.WithMessage(p)][.Which]" {style.fill: "#bbdefb"}
+s0: "Should.Throw<T>(act)[.Message.ShouldBe/ShouldContain/...]" {style.fill: "#c8e6c9"}
+f0 -> s0
+f1: "fa.throw-async\nawait act.Should().ThrowAsync<T>()[.WithMessage(p)]" {style.fill: "#bbdefb"}
+s1: "await Should.ThrowAsync<T>(act)" {style.fill: "#c8e6c9"}
+f1 -> s1
+f2: "fa.throw-exactly\nThrowExactly<T>(), ThrowExactlyAsync<T>()" {style.fill: "#bbdefb"}
+s2: "Should.Throw<T>(act).ShouldBeOfType<T>()" {style.fill: "#c8e6c9"}
+f2 -> s2
+f3: "fa.invoking\nx.Invoking(s => s.M()).Should().Throw<T>() / Awaiting / NotThrow" {style.fill: "#bbdefb"}
+s3: "Should.Throw<T>(() => x.M()) e.d." {style.fill: "#c8e6c9"}
+f3 -> s3
+f4: "fa.not-throw\nact.Should().NotThrow()" {style.fill: "#bbdefb"}
+s4: "Should.NotThrow(act)" {style.fill: "#c8e6c9"}
+f4 -> s4
+f5: "fa.not-throw-async\nawait act.Should().NotThrowAsync()" {style.fill: "#bbdefb"}
+s5: "await Should.NotThrowAsync(act)" {style.fill: "#c8e6c9"}
+f5 -> s5

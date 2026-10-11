@@ -14,11 +14,16 @@ ipattern: "«interface» IPattern" {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+base: "«abstract» FluentAssertionPattern" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
+}
 BeEquivalentToObjectPattern: BeEquivalentToObjectPattern {
   shape: class
   "+Id": "fa.be-equivalent-to-object"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
   "-Unsupported(type, requireMembers, path)": "string?"
   "-IsLeaf(type)": bool
   "-HasEqualsOverride(type)": bool
@@ -57,7 +62,8 @@ rec: "Uitgesloten typen" {
   shape: class
   "StringAssertions (rij 9)": ""
 }
-BeEquivalentToObjectPattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+BeEquivalentToObjectPattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
 BeEquivalentToObjectPattern -> syntax: gebruikt {style.stroke-dash: 3}
 BeEquivalentToObjectPattern -> result: levert {style.stroke-dash: 3}
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}

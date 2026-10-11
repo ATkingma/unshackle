@@ -14,15 +14,22 @@ ipattern: "«interface» IPattern" {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+base: "FluentAssertionPattern (abstract)" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteBeforeArguments(context)": "PatternResult?"
+  "#RewriteAssertion(context)": "PatternResult (abstract)"
+}
 NotBePattern: NotBePattern {
   shape: class
   "+Id": "fa.not-be"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
+  "#ShouldName": "\"ShouldNotBe\""
 }
 ShouldBePattern: ShouldBePattern {
   shape: class
-  "~ConvertExpected(expected, subjectType, model, position)": "ExpressionSyntax?"
+  "#ShouldName": "\"ShouldBe\" (virtual)"
+  "#RewriteAssertion(context)": PatternResult
 }
 syntax: FluentAssertionsSyntax {
   shape: class
@@ -31,6 +38,7 @@ syntax: FluentAssertionsSyntax {
   "+GetSubject(assertion)": "ExpressionSyntax?"
   "+IsResultDiscarded(assertion, model)": bool
   "+TryGetArguments(assertion, model, values, because)": bool
+  "+ConvertExpected(expected, subjectType, model, position)": "ExpressionSyntax?"
 }
 result: "PatternResult (abstract)" {
   shape: class
@@ -56,9 +64,10 @@ sh: "«Shouldly» aangemaakt" {
   "ShouldNotBe(unexpected[, because])": ""
   "cast naar het subjecttype": ""
 }
-NotBePattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
-NotBePattern -> syntax: gebruikt {style.stroke-dash: 3}
-NotBePattern -> ShouldBePattern: "ConvertExpected" {style.stroke-dash: 3}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+ShouldBePattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+NotBePattern -> ShouldBePattern: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+ShouldBePattern -> syntax: "gebruikt (ConvertExpected)" {style.stroke-dash: 3}
 NotBePattern -> result: levert {style.stroke-dash: 3}
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
 manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}

@@ -1,0 +1,19 @@
+title: "[Sequence] CustomAssertionPattern - Find, Rewrite en groeperen" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+scan: ScanCommand
+fixer: Fixer
+pattern: CustomAssertionPattern
+view: SpectreConsoleView
+writer: ReportWriter
+row: ReportRow
+fixer -> pattern: "Find(root, model)"
+pattern -> fixer: "invocations van een eigen methode op een FA-*Assertions-type" {style.stroke-dash: 3}
+each: "loop [elke node]" {
+  fixer -> pattern: "Rewrite(node, model)"
+  pattern -> fixer: "Manual(Custom assertion `Type.Method` (bestand))" {style.stroke-dash: 3}
+}
+scan -> view: "ShowSummary(findings)"
+view -> pattern: "Group(findings): aantal per extensie"
+scan -> writer: "WriteAsync(path, findings, ct)"
+writer -> row: "FromAll(findings)"
+row -> pattern: "Group(findings): één rij per extensie met aantal"

@@ -4,10 +4,12 @@ fixer: Fixer
 pattern: AddMediatRPattern
 model: SemanticModel
 fixer -> pattern: "Find(root, model)"
-pattern -> model: "GetSymbolInfo(invocation): AddMediatR uit assembly MediatR?"
+pattern -> model: "GetSymbolInfo(invocation): AddMediatR (ook candidate) uit assembly MediatR?"
 pattern -> fixer: "InvocationExpressionSyntax" {style.stroke-dash: 3}
 fixer -> pattern: "Rewrite(node, model)"
-pattern -> pattern: "ParameterName(lambda); instellingen uit blok of expression body"
-pattern -> pattern: "per instelling: s_dropped / Behavior(call, args) / Lifetime = ServiceLifetime.X"
-pattern -> pattern: "ParseStatement: cfg.ServiceLifetime = ..., cfg.PipelineBehaviors = [...]"
+pattern -> pattern: "ParameterName(lambda); instellingen uit blok (ook leeg) of expression body"
+pattern -> pattern: "per instelling: s_dropped / Registered(call, args, open) / Lifetime / RegisterGenericHandlers"
+pattern -> model: "GetTypeInfo(new X()): IsBuiltInPublisher?"
+pattern -> model: "Scanned: gesloten exception handlers en processors in de compilation"
+pattern -> pattern: "BlockStatements: ServiceLifetime, PipelineBehaviors, StreamPipelineBehaviors, NotificationPublisherType"
 pattern -> fixer: "Fixed(AddMediator(...), Microsoft.Extensions.DependencyInjection) of Manual(reden)" {style.stroke-dash: 3}

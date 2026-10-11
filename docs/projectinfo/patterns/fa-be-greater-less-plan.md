@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "fa-be-greater-less"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17]
 files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeGreaterLessPattern.cs
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
@@ -27,12 +27,12 @@ fa.be-greater-less: vergelijkingen (`BeGreaterThan`, `BeLessThan`, `...OrEqualTo
 **In scope**
 
 - `BeGreaterThan`, `BeGreaterThanOrEqualTo` (+ alias `BeGreaterOrEqualTo`), `BeLessThan`, `BeLessThanOrEqualTo` (+ alias `BeLessOrEqualTo`), `BeInRange`, `NotBeInRange`, `BePositive`, `BeNegative`, op niet-nullable numerieke types en andere `IComparable<T>`-types, met optionele `because`.
-- `.And`-ketens van alleen deze assertions: splitsen naar één statement per schakel als het subject zonder bijwerkingen twee keer geëvalueerd mag worden.
+- `.And`-ketens: sinds REVIEW-A gesplitst door `fa.and-chain`, dat elke schakel aan dit patroon geeft.
 - `Manual(reden)` voor nullable subjects, `becauseArgs`, gebruikt resultaat, ketens met andere assertions, subjects met aanroepen en ketens buiten een blok.
 
 **Out of scope**
 
-- `BeAfter`/`BeBefore`/`BeOnOrAfter` op `DateTime` (andere FA-methoden, eigen patroon), `BeCloseTo`, `BeApproximately`.
+- `BeCloseTo`, `BeApproximately` (`fa.be-approximately`). `BeAfter`/`BeBefore`/… zijn sinds TAAK-095 in scope.
 - Beheer van `using`-directives: de `Fixer` doet dat via `IFix`.
 
 ## Requirements
@@ -46,12 +46,15 @@ fa.be-greater-less: vergelijkingen (`BeGreaterThan`, `BeLessThan`, `...OrEqualTo
 - **REQ-7**: WHEN een `.And`-keten uitsluitend uit vergelijkingen bestaat, als statement in een blok staat en het subject een naam of member-access op namen is THE SYSTEM SHALL de keten splitsen in één statement per schakel, elk met eigen `because` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/and-chain.*.cs`).
 - **REQ-8**: IF het subject een nullable (`int?`) of onbekend type is THEN THE SYSTEM SHALL Manual geven, omdat `ShouldBeGreaterThan<T>` `IComparable<T>` van een non-nullable T eist (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/nullable.*`).
 - **REQ-9**: IF `BePositive`/`BeNegative` op een ander type dan int, long, short, decimal, double of float staat THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/sign-byte.*`).
-- **REQ-10**: IF `becauseArgs` gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/because-args.*`).
+- **REQ-10** (vervangen door REQ-17): IF `becauseArgs` gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/because-args.*`).
 - **REQ-11**: IF het resultaat wordt gebruikt (variabele of lambda met waarde, of keten in een lambda) THEN THE SYSTEM SHALL Manual geven (proofs `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/value-used.*`, `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-used.*`, `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-lambda.*`).
-- **REQ-12**: IF een `.And`-keten een andere assertion bevat THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-other.*`).
-- **REQ-13**: IF het subject van een keten een aanroep of ander expressie met mogelijke bijwerkingen is THEN THE SYSTEM SHALL Manual geven, omdat splitsen het twee keer evalueert (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-subject-call.*`).
+- **REQ-12** (vervallen, REVIEW-A): IF een `.And`-keten een andere assertion bevat THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-other.*`).
+- **REQ-13** (vervangen: `fa.and-chain` hoist het subject, TAAK-098): IF het subject van een keten een aanroep of ander expressie met mogelijke bijwerkingen is THEN THE SYSTEM SHALL Manual geven, omdat splitsen het twee keer evalueert (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-subject-call.*`).
 - **REQ-14**: IF een gesplitste keten niet direct in een blok staat (bijv. `if` zonder accolades) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-no-block.*`).
 - **Uitbreiding TAAK-095**: WHEN `BeAfter`/`BeOnOrAfter`/`BeBefore`/`BeOnOrBefore` staat THE SYSTEM SHALL `ShouldBeGreaterThan`/`…OrEqualTo`/`ShouldBeLessThan`/`…OrEqualTo` geven (proofs `dates`, `dates-nullable`, `AndChain/dates`). Probe: gelijk, ±1 tick, andere Kind, zelfde instant met andere offset, DateOnly: gelijk oordeel.
+- **REQ-15** (Uitbreiding REVIEW-A): WHEN de waarde een ander type heeft dan het subject (`byte`/`short`) THE SYSTEM SHALL de waarde naar het subjecttype casten (`ConvertExpected`), anders Manual (proof `byte-short`).
+- **REQ-16**: IF `BeNegative()` op double/float staat THEN THE SYSTEM SHALL Manual geven, omdat FA faalt op NaN en `ShouldBeNegative` slaagt (proof `negative-double`).
+- **REQ-17** (Uitbreiding TAAK-097): WHEN `becauseArgs` met een constante, formatteerbare `because` staat THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (proof `because-args`); named arguments of een niet-constante `because` blijven Manual.
 
 ## Assumptions
 

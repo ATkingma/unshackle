@@ -1,20 +1,24 @@
-title: "[Beslisboom] ContainKeyPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Beslisboom] FluentAssertionPattern.Rewrite + ContainKeyPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
+q0: "In een AssertionScope?" {shape: diamond}
 q1: "x.Should().Methode(...)?" {shape: diamond}
+q4: "Resultaat gebruikt?" {shape: diamond}
 q2: "Meervoud (…Keys)?" {shape: diamond}
 q3: "…Value / …Values?" {shape: diamond}
-q4: "Resultaat gebruikt?" {shape: diamond}
-q5: "becauseArgs of named args?" {shape: diamond}
-q1 -> q2: ja
+q5: "Named args, of becauseArgs zonder constante because?" {shape: diamond}
+q0 -> q1: nee
+q1 -> q4: ja
+q4 -> q2: nee
 q2 -> q3: nee
-q3 -> q4: nee
-q4 -> q5: nee
-m1: "Manual: is not in the form"
-m2: "Manual: several keys"
-m3: "Manual: has no Shouldly equivalent"
-m4: "Manual: is used"
-m5: "Manual: becauseArgs"
-f: "Fixed: x.ShouldContainKey(k[, because])\nx.ShouldNotContainKey(k[, because])"
+q3 -> q5: nee
+m0: "Manual: Inside an AssertionScope"
+m1: "Manual: is not in the form\n(and-chain)"
+m2: "Manual: several keys\n(keys, not-contain-keys)"
+m3: "Manual: has no Shouldly equivalent\n(contain-value, contain-values, not-contain-value)"
+m4: "Manual: is used\n(chain, which)"
+m5: "Manual: named arguments, or becauseArgs whose because is no constant format string"
+f: "Fixed: [x.ShouldNotBeNull().]ShouldContainKey(k[, because])\nx.ShouldNotContainKey(k[, because])\n(because-args: string.Format(...))"
+q0 -> m0: ja
 q1 -> m1: nee
 q2 -> m2: ja
 q3 -> m3: ja

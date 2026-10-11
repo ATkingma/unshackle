@@ -17,9 +17,13 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`, registra
 | REQ-1 | Gehaald | `behaviors`                         |
 | REQ-2 | Gehaald | `expression`                        |
 | REQ-3 | Gehaald | `unknown-call`, `behavior-lifetime` |
-| REQ-4 | Gehaald | `publisher`                         |
+| REQ-4 | Gehaald | eigen publisher (geen proof; `publisher` is sinds TAAK-060 Fixed) |
 | REQ-5 | Gehaald | `no-lambda`                         |
 | REQ-6 | Gehaald | `generic-handlers` (TAAK-037)       |
+| Uitbreiding TAAK-060 | Gehaald | `publisher`, `edge-publisher-qualified` |
+| Uitbreiding TAAK-061/062 | Gehaald | `processors`, `empty` |
+
+Regressie-edges bij REQ-1/REQ-2: `edge-assemblies` (`RegisterServicesFromAssemblies`), `edge-service-type-behavior` (`AddBehavior(typeof(IPipelineBehavior<,>), typeof(X<,>))`).
 
 `after` compileert alleen met de Mediator-source-generator (die schrijft `AddMediator`); de proof-runner draait hem (`ProofFix.AfterGenerators`). De Fixer voegt `using Mediator;` toe, ook al is hij in `behaviors`/`expression` ongebruikt (onschuldig).
 

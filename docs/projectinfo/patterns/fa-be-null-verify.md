@@ -20,9 +20,11 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeNullPattern.cs`; reg
 | REQ-3 | Gehaald | `because.before.cs` / `because.after.cs` |
 | REQ-4 | Gehaald | `nullable-value.before.cs` / `nullable-value.after.cs` (`int?`, `bool?`; after compileert tegen Shouldly) |
 | REQ-5 | Gehaald | `collection.*.cs` (List, array), `lambda.*.cs` |
-| REQ-6 | Gehaald | `because-args.before.cs` / `because-args.manual.txt` |
+| REQ-6 | Vervangen | Door Uitbreiding TAAK-097: `because-args` is nu Fixed |
 | REQ-7 | Gehaald | `chain.*` (`.And`), `value-used.*` (variabele) |
 | REQ-8 | Gehaald | `and-chain.before.cs` / `and-chain.manual.txt` |
+| Uitbreiding TAAK-097 | Gehaald | `because-args.before.cs` / `because-args.after.cs` (`string.Format(...)`) |
+| Uitbreiding TAAK-100 | Gehaald | Gedeelde check in `FluentAssertionPattern.Rewrite`; proofs in `AssertionScope/` |
 
 ## Deviations
 

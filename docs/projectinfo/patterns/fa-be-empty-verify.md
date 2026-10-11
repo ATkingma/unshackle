@@ -14,16 +14,17 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEmptyPattern.cs`; re
 
 | REQ   | Oordeel | Bewijs |
 | ----- | ------- | ------ |
-| REQ-1 | Gehaald | `be-empty-list.before.cs` / `.after.cs` |
+| REQ-1 | Gehaald | `be-empty-list.before.cs` / `.after.cs`; ook `nullable`, `edge-linq-subject`, `edge-await-subject` |
 | REQ-2 | Gehaald | `not-be-empty-list.before.cs` / `.after.cs` |
 | REQ-3 | Gehaald | `string.before.cs` / `.after.cs` |
 | REQ-4 | Gehaald | `dictionary.*.cs`, `enumerable.*.cs` (IEnumerable, array); after compileert tegen Shouldly |
 | REQ-5 | Gehaald | `because.before.cs` / `.after.cs` |
 | REQ-6 | Gehaald | `lambda.before.cs` / `.after.cs` |
-| REQ-7 | Gehaald | `because-args.before.cs` / `.manual.txt` |
+| REQ-7 | Vervangen | door REQ-10 (TAAK-097): `because-args` is nu Fixed |
 | REQ-8 | Gehaald | `chain.*`, `value-used.*` |
 | REQ-9 | Gehaald | `and-chain.before.cs` / `.manual.txt` |
 | TAAK-114 | Gehaald | `guid.*` (`Guid`/`Guid?` → `ShouldBe(Guid.Empty)` / `ShouldNotBe(Guid.Empty)`), `guid-nullable-not-empty.*` (Manual: FA faalt ook op null) |
+| REQ-10 | Gehaald | `because-args.before.cs` / `.after.cs` (`string.Format(...InvariantCulture, "because {0}", 1)`) |
 
 ## Deviations
 

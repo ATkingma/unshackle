@@ -50,6 +50,13 @@ fa.throw-async: `await act.Should().ThrowAsync<T>()` wordt `await Should.ThrowAs
 - **REQ-11**: IF de aanroep niet direct geawaite wordt (geen `await`, of gevolgd door `.Where`/…) THEN THE SYSTEM SHALL Manual geven (proofs `no-await.*`, `where.*`).
 - **REQ-12**: IF de uitkomst van de await wordt gebruikt (variabele) THEN THE SYSTEM SHALL Manual geven (proof `value-used.*`).
 - **REQ-13**: IF het subject met `Awaiting(...)` is gebouwd, of een `Func<Task<ValueType>>` is THEN THE SYSTEM SHALL Manual geven (proofs `awaiting.*`, `value-func.*`).
+- **Uitbreiding ThrowExactly**: `ThrowExactlyAsync<T>` wordt niet meer Manual: `fa.throw-exactly` vindt het en laat deze `Rewrite` `(await Should.ThrowAsync<T>(act)).ShouldBeOfType<T>()` bouwen (proofs `ThrowExactly/async.*`, `async-message.*`). Vervangt REQ-8; er is geen `ThrowAsync/throw-exactly.*`-proof.
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan (op `ThrowAsync` of `WithMessage`) THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als `customMessage` geven (proofs `because-args.*`, `message-because-args.*`, nu `.after.cs`); named arguments of een niet-constante `because` blijven Manual. Vervangt REQ-9.
+- **Uitbreiding Awaiting**: `x.Awaiting(s => ...)`-subjects vindt `fa.invoking` (`InvokingPattern`), dat deze `Rewrite` aanroept: stabiele referentie-receiver plus lambda wordt `await Should.ThrowAsync<T>(async () => ...)` (proofs `Invoking/awaiting.*`, `awaiting-exactly.*`); anders Manual. Vervangt het Awaiting-deel van REQ-13; er is geen `ThrowAsync/awaiting.*`-proof.
+- **Uitbreiding ConfigureAwait**: WHEN `.ConfigureAwait(...)` tussen de aanroep en de `await` staat THE SYSTEM SHALL die op `Should.ThrowAsync` houden (proof `edge-configure-await.*`).
+- **Uitbreiding AggregateException**: IF de actie zichtbaar blokkeert (`.Result`, `Wait`, ...) en T geen `AggregateException` accepteert THEN THE SYSTEM SHALL Manual geven (proof `aggregate-result.*`); een geawaite taak blijft Fixed (proof `aggregate-awaited.*`). Niet bij ThrowExactlyAsync.
+- **Uitbreiding regeleinden**: WHEN het `WithMessage`-patroon zonder wildcards een regeleinde bevat THE SYSTEM SHALL `ShouldBe(lit, StringCompareShould.IgnoreCase | StringCompareShould.IgnoreLineEndings)` geven (proof `message-line-break.*`); met een `*` erbij Manual (proof `message-contains-line-break.*`).
+- **Uitbreiding TAAK-100**: IF de assertie in een niet omgezette `AssertionScope` staat THEN THE SYSTEM SHALL Manual "Inside an AssertionScope" geven (geen eigen proof; zie `ThrowExactly/assertion-scope`).
 
 ## Assumptions
 

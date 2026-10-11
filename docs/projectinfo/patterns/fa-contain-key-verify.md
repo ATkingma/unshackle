@@ -19,11 +19,12 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainKeyPattern.cs`;
 | REQ-3 | Gehaald | `not-contain-key.*.cs` |
 | REQ-4 | Gehaald | `because.*.cs` |
 | REQ-5 | Gehaald | `lambda.*.cs` |
-| REQ-6 | Gehaald | `because-args.before.cs` / `.manual.txt` |
+| REQ-6 | Vervangen | Door Uitbreiding TAAK-097: `because-args` is nu Fixed |
 | REQ-7 | Gehaald | `chain.*`, `which.*`, `and-chain.*` |
 | REQ-8 | Gehaald | `keys.*`, `not-contain-keys.*` |
 | REQ-9 | Gehaald | `contain-value.*`, `contain-values.*`, `not-contain-value.*` |
 | REQ-10 | Gehaald | `nullable.*` |
+| Uitbreiding TAAK-097 | Gehaald | `because-args.before.cs` / `because-args.after.cs` |
 
 ## Deviations
 

@@ -1,32 +1,29 @@
-title: "[Overzicht] Collecties" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Overzicht] Getallen, datums, tellen, strings" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: right
 vars: {
   d2-legend: {
     f: FluentAssertions {style.fill: "#bbdefb"}
     s: Shouldly {style.fill: "#c8e6c9"}
-    m: Manual {style.fill: "#ffe0b2"}
     a: "" {style.opacity: 0}
     b: "" {style.opacity: 0}
     a -> b: Wordt
   }
 }
-con: "x.Should().Contain(y) / NotContain(y)" {style.fill: "#bbdefb"}
-cons: "x.ShouldContain(y) / ShouldNotContain(y)\n(string: + Case.Sensitive)" {style.fill: "#c8e6c9"}
-conm: "Manual: dictionary, meerdere items,\noccurrence, geen string/IEnumerable<T>" {style.fill: "#ffe0b2"}
-key: "d.Should().ContainKey(k) / NotContainKey(k)" {style.fill: "#bbdefb"}
-keys: "d.ShouldContainKey(k) / ShouldNotContainKey(k)" {style.fill: "#c8e6c9"}
-keym: "Manual: ContainKeys, ContainValue(s),\nresultaat gebruikt (WhoseValue)" {style.fill: "#ffe0b2"}
-onl: "x.Should().OnlyContain(pred)" {style.fill: "#bbdefb"}
-onls: "x.ShouldNotBeEmpty();\nx.ShouldAllBe(pred);" {style.fill: "#c8e6c9"}
-onlm: "Manual: niet direct in een blok,\nsubject niet eenvoudig, niet IEnumerable<T>" {style.fill: "#ffe0b2"}
-all: "x.Should().AllSatisfy(a => { ... })" {style.fill: "#bbdefb"}
-alls: "x.ShouldNotBeEmpty();\nforeach (var a in x) { ... }" {style.fill: "#c8e6c9"}
-allm: "Manual: because/becauseArgs, return in body,\nmethodgroep, async lambda,\nsubject niet eenvoudig" {style.fill: "#ffe0b2"}
-con -> cons
-con -> conm
-key -> keys
-key -> keym
-onl -> onls
-onl -> onlm
-all -> alls
-all -> allm
+f0: "fa.be-greater-less\nBeGreaterThan, BeLessThan, BeInRange, BePositive, BeAfter, ..." {style.fill: "#bbdefb"}
+s0: "ShouldBeGreaterThan, ShouldBeInRange, ShouldBePositive, ..." {style.fill: "#c8e6c9"}
+f0 -> s0
+f1: "fa.be-approximately\nBeApproximately(y, tol), BeCloseTo(t, span), Not..." {style.fill: "#bbdefb"}
+s1: "ShouldBe(y, tol); Not: ShouldNotBe of Math.Abs(x - y).ShouldBeGreaterThan(tol)" {style.fill: "#c8e6c9"}
+f1 -> s1
+f2: "fa.have-count\nHaveCount(n), HaveCountGreaterThan(n), ..." {style.fill: "#bbdefb"}
+s2: ".Length/.Count/.Count() plus ShouldBe(n) / ShouldBeGreaterThan(n)" {style.fill: "#c8e6c9"}
+f2 -> s2
+f3: "fa.have-length\nHaveLength(n)" {style.fill: "#bbdefb"}
+s3: "s.Length.ShouldBe(n)" {style.fill: "#c8e6c9"}
+f3 -> s3
+f4: "fa.string-start-end\nStartWith, EndWith, NotBeNullOrEmpty, ..." {style.fill: "#bbdefb"}
+s4: "ShouldStartWith(x, Case.Sensitive), ShouldNotBeNullOrEmpty(), ..." {style.fill: "#c8e6c9"}
+f4 -> s4
+f5: "fa.match\nMatchRegex(r), Match(\"SO-*\"), Not..." {style.fill: "#bbdefb"}
+s5: "ShouldMatch(r), ShouldMatch(@\"(?s)\\ASO-.*\$\")" {style.fill: "#c8e6c9"}
+f5 -> s5

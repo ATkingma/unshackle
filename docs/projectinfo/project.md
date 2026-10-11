@@ -71,12 +71,16 @@ En `BeEquivalentTo` op strings negeert hoofdletters. Met tekstvervanging worden 
 `_mapper.Map<B>(a)` wordt `a.ToDto()`. `ProjectTo<>` komt in het rapport als handwerk.
 
 ## Roadmap
-1. Scan + rapport (CSV/JSON/Markdown), solution laden, aanroepen tellen
-2. FluentAssertions → Shouldly: de 15 meest gebruikte assertions, `--dry-run` met diff
-3. MediatR → Mediator: handlers, `ValueTask`, DI-registratie (behaviors → rapport)
-4. Lancering: README met GIF, NuGet, testen op een echt open-source project, post op r/dotnet
-5. AutoMapper: eerst eenvoudige profielen
-6. Later: de motor los beschikbaar maken als algemeen zoek-en-vervang (werktitel SharpGrep)
+Stand op 2026-10-11.
+
+| Stap | Doel | Stand |
+| --- | --- | --- |
+| 1 | Scan + rapport (CSV/JSON/Markdown), solution laden, aanroepen tellen | Klaar |
+| 2 | FluentAssertions → Shouldly: de 15 meest gebruikte assertions, `--dry-run` met diff | Ruim klaar: 31 patterns, 94,9% van de corpus-calls herkend, 92,5% Fixed op de scanbare projecten ([corpus.md](architectuur/corpus.md)). Open: TAAK-070, -110, -112, -113 en een herhaalde corpus-run |
+| 3 | MediatR → Mediator: handlers, `ValueTask`, DI-registratie (behaviors → rapport) | Bijna: 10 patterns, alles-of-niets per solution. Open: TAAK-131, -132, -133, -135, -136 uit de corpus-run (0 van 9 projecten volledig gemigreerd) |
+| 4 | Lancering: README met GIF, NuGet, testen op een echt open-source project, post op r/dotnet | Inhoudelijk klaar (TAAK-019); wacht op de gebruiker (publiceren, post) |
+| 5 | AutoMapper: eerst eenvoudige profielen | Niet begonnen (alleen `claude/tasks/automapper-queue.md`) |
+| 6 | Later: de motor los beschikbaar maken als algemeen zoek-en-vervang (werktitel SharpGrep) | Niet begonnen |
 
 ## Risico's
 - **De hype zakt weg.** Daarom de motor generiek houden (zie stap 6).

@@ -14,11 +14,16 @@ ipattern: "«interface» IPattern" {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+base: "«abstract» FluentAssertionPattern" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
+}
 BeEquivalentToStringPattern: BeEquivalentToStringPattern {
   shape: class
   "+Id": "fa.be-equivalent-to-string"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
 }
 syntax: FluentAssertionsSyntax {
   shape: class
@@ -54,7 +59,8 @@ rec: "Herkende typen" {
   shape: class
   "StringAssertions (alleen string-overloads)": ""
 }
-BeEquivalentToStringPattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+BeEquivalentToStringPattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
 BeEquivalentToStringPattern -> syntax: gebruikt {style.stroke-dash: 3}
 BeEquivalentToStringPattern -> result: levert {style.stroke-dash: 3}
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}

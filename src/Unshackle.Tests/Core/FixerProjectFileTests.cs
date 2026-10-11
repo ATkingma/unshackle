@@ -18,7 +18,7 @@ public class FixerProjectFileTests
     private const string NoFluentAssertions = "using FluentAssertions; class C { void M() { } }";
 
     private static readonly PackageMigration s_package =
-        new() { RemovedPackage = "FluentAssertions", AddedPackage = "Shouldly", AddedVersion = "4.3.0" };
+        new() { RemovedPackage = "FluentAssertions", AddedPackages = [new() { Name = "Shouldly", Version = "4.3.0" }] };
 
     private readonly IProjectFileStore _projectFiles = Substitute.For<IProjectFileStore>();
     private readonly ProjectFileChange _change = new() { FilePath = ProjectPath, OldText = "<Project />", NewText = "<Project></Project>" };

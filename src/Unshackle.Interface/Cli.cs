@@ -4,6 +4,7 @@ using Spectre.Console;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.FluentAssertions;
+using Unshackle.Core.Fixes.MediatR;
 using Unshackle.DataAccess.Projects;
 using Unshackle.DataAccess.Reports;
 using Unshackle.DataAccess.Solutions;
@@ -21,7 +22,7 @@ public static class Cli
     public static async Task<int> RunAsync(string[] args, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(args);
-        IReadOnlyList<IFix> fixes = [new FluentAssertionsFix()];
+        IReadOnlyList<IFix> fixes = [new FluentAssertionsFix(), new MediatRFix()];
         var fileSystem = new FileSystem();
         IReportWriter[] reportWriters =
             [new CsvReportWriter(fileSystem), new JsonReportWriter(fileSystem), new MarkdownReportWriter(fileSystem)];

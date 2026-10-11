@@ -61,6 +61,38 @@ public class XmlProjectFileStoreTests
     }
 
     [Fact]
+    public async Task EditAsync_TwoAddedPackagesCentral_SwapsFirstInPlaceAndAddsSecondAfterIt()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(CentralProject));
+        _fileSystem.AddFile(PackagesProps, new MockFileData(CentralVersions));
+        var migration = new ProjectMigration
+        {
+            ProjectPath = Project,
+            Package = new PackageMigration
+            {
+                RemovedPackage = "FluentAssertions",
+                AddedPackages = [new() { Name = "Shouldly", Version = "4.3.0" }, new() { Name = "Extra", Version = "1.0.0" }],
+            },
+            KeepRemovedPackage = false,
+            RemovedNamespaces = ["FluentAssertions"],
+            AddedNamespaces = ["Shouldly"],
+        };
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(migration);
+
+        // Assert
+        Text(changes, Project).ShouldBe(CentralProject
+            .Replace("<PackageReference Include=\"FluentAssertions\" />",
+                "<PackageReference Include=\"Shouldly\" />\n    <PackageReference Include=\"Extra\" />", StringComparison.Ordinal)
+            .Replace("<Using Include=\"FluentAssertions\" />", "<Using Include=\"Shouldly\" />", StringComparison.Ordinal));
+        Text(changes, PackagesProps).ShouldBe(CentralVersions.Replace(
+            "Include=\"FluentAssertions\" Version=\"7.2.2\" />",
+            "Include=\"Shouldly\" Version=\"4.3.0\" />\n    <PackageVersion Include=\"Extra\" Version=\"1.0.0\" />", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task EditAsync_VersionOnReference_SwapsVersionAndLeavesOtherFilesAlone()
     {
         // Arrange
@@ -290,7 +322,7 @@ public class XmlProjectFileStoreTests
     private static ProjectMigration Migration(string projectPath, bool keep) => new()
     {
         ProjectPath = projectPath,
-        Package = new PackageMigration { RemovedPackage = "FluentAssertions", AddedPackage = "Shouldly", AddedVersion = "4.3.0" },
+        Package = new PackageMigration { RemovedPackage = "FluentAssertions", AddedPackages = [new() { Name = "Shouldly", Version = "4.3.0" }] },
         KeepRemovedPackage = keep,
         RemovedNamespaces = ["FluentAssertions"],
         AddedNamespaces = ["Shouldly"],

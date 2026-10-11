@@ -36,14 +36,17 @@ public class CliTests
         exitCode.ShouldBe(ExitCodes.Ok);
     }
 
-    [Fact]
-    public async Task RunAsync_ScanMissingSolution_ReturnsFailure()
+    // Failure, not InvalidArguments: the fix id is accepted.
+    [Theory]
+    [InlineData("fluentassertions")]
+    [InlineData("mediatr")]
+    public async Task RunAsync_ScanMissingSolution_ReturnsFailure(string fixId)
     {
         // Arrange
         string path = Path.Combine(Path.GetTempPath(), "unshackle tests", Guid.NewGuid().ToString("N"), "Missing App.slnx");
 
         // Act
-        int exitCode = await Cli.RunAsync(["scan", path, "--fix", "fluentassertions"], TestContext.Current.CancellationToken);
+        int exitCode = await Cli.RunAsync(["scan", path, "--fix", fixId], TestContext.Current.CancellationToken);
 
         // Assert
         exitCode.ShouldBe(ExitCodes.Failure);

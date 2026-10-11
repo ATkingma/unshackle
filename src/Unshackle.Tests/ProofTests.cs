@@ -4,6 +4,7 @@ using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.FluentAssertions;
+using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
 using Xunit;
@@ -23,6 +24,12 @@ public class ProofTests
             Fix = new FluentAssertionsFix(),
             Before = TestReferences.FluentAssertions,
             After = TestReferences.Shouldly,
+        },
+        ["MediatR"] = new()
+        {
+            Fix = new MediatRFix(),
+            Before = TestReferences.MediatR,
+            After = TestReferences.Mediator,
         },
     };
 

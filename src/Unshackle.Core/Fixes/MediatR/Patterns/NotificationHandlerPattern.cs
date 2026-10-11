@@ -10,7 +10,7 @@ public class NotificationHandlerPattern : IPattern
 {
     public string Id => "mediatr.notification-handler";
 
-    public string Description => "INotificationHandler<T>: Task Handle(...) → ValueTask Handle(...), Task.CompletedTask → ValueTask.CompletedTask";
+    public string Description => "INotificationHandler<T>: Task Handle(...) → ValueTask Handle(...), Task.CompletedTask → ValueTask.CompletedTask, another Task → new ValueTask(task)";
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         MediatRSyntax.FindHandleMethods(root, model, "INotificationHandler`1");

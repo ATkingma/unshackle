@@ -10,7 +10,7 @@ public class RequestHandlerPattern : IPattern
 {
     public string Id => "mediatr.request-handler";
 
-    public string Description => "IRequestHandler<TReq, TRes>: Task<TRes> Handle(...) → ValueTask<TRes> Handle(...), Task.FromResult → ValueTask.FromResult";
+    public string Description => "IRequestHandler<TReq, TRes>: Task<TRes> Handle(...) → ValueTask<TRes> Handle(...), Task.FromResult → ValueTask.FromResult, another Task<TRes> → new ValueTask<TRes>(task)";
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         MediatRSyntax.FindHandleMethods(root, model, "IRequestHandler`2");
@@ -38,14 +38,23 @@ public class RequestHandlerPattern : IPattern
         }
 
         List<ExpressionSyntax?> returned = MediatRSyntax.ReturnedExpressions(method);
-        if (returned.Any(e => e is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax } || !MediatRSyntax.IsTaskMember(e, model, "FromResult")))
+        ITypeSymbol? taskType = model.GetDeclaredSymbol(method)?.ReturnType;
+        if (returned.Any(e => e is null || !IsFromResult(e, model) && !SymbolEqualityComparer.Default.Equals(model.GetTypeInfo(e).Type, taskType)))
         {
-            return PatternResult.Manual("Handle returns a Task that is not Task.FromResult(...); Mediator needs a ValueTask<T>, convert it by hand (e.g. make the method async).");
+            return PatternResult.Manual("Handle returns something that is not a Task<T>; Mediator needs a ValueTask<T>, convert it by hand (e.g. make the method async).");
         }
 
+        // Another Task<T> (=> repository.GetAsync(...)) is wrapped, not awaited: no state machine, a synchronous throw stays synchronous (TAAK-154).
+        TypeSyntax valueTask = returnType.WithoutTrivia().WithLeadingTrivia(SyntaxFactory.Space);
         MethodDeclarationSyntax rewritten = method.ReplaceNodes(
-            returned.Select(e => (MemberAccessExpressionSyntax)((InvocationExpressionSyntax)e!).Expression),
-            (original, _) => MediatRSyntax.OnValueTask(original));
+            returned.OfType<ExpressionSyntax>(),
+            (original, _) => IsFromResult(original, model)
+                ? ((InvocationExpressionSyntax)original).WithExpression(MediatRSyntax.OnValueTask((MemberAccessExpressionSyntax)((InvocationExpressionSyntax)original).Expression))
+                : SyntaxFactory.ObjectCreationExpression(valueTask, SyntaxFactory.ArgumentList([SyntaxFactory.Argument(original.WithoutTrivia())]), null)
+                    .WithTriviaFrom(original));
         return PatternResult.Fixed(rewritten.WithReturnType(returnType.WithTriviaFrom(method.ReturnType)), "System.Threading.Tasks");
     }
+
+    private static bool IsFromResult(ExpressionSyntax expression, SemanticModel model) =>
+        expression is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax } && MediatRSyntax.IsTaskMember(expression, model, "FromResult");
 }

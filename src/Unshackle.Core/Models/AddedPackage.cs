@@ -12,4 +12,7 @@ public class AddedPackage
 
     // PrivateAssets of a newly added reference, e.g. "all" so an analyzer does not flow to projects referencing this one.
     public string? PrivateAssets { get; init; }
+
+    // Warnings of this package that stay warnings under TreatWarningsAsErrors, added to the file that gets the new reference.
+    public IReadOnlyList<string> WarningsNotAsErrors { get; init; } = [];
 }

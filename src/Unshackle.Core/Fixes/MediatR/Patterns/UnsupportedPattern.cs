@@ -26,7 +26,7 @@ public class UnsupportedPattern : IPattern
 
     public string Id => "mediatr.unsupported";
 
-    public string Description => "MediatR exception actions, notification publishers and generic messages and request handlers → Manual with advice";
+    public string Description => "MediatR exception actions, notification publishers, concrete generic messages and request handlers, and packages that build on MediatR → Manual with advice";
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().OfType<TypeDeclarationSyntax>().Where(t => Advice(t, model) is not null);
@@ -51,7 +51,17 @@ public class UnsupportedPattern : IPattern
             }
         }
 
-        return symbol.IsGenericType && symbol.AllInterfaces.Any(i => IsMediatR(i) && s_noGeneric.Contains(i.OriginalDefinition.MetadataName))
+        // A package that builds on MediatR (Ardalis.SharedKernel: DomainEventBase : INotification) keeps MediatR's types after the swap (TAAK-133).
+        // Metadata only: a project in the solution is a source reference and gets migrated itself.
+        INamedTypeSymbol? package = symbol.Interfaces.Append(symbol.BaseType).OfType<INamedTypeSymbol>().FirstOrDefault(t =>
+            t.Locations.Any(l => l.IsInMetadata) && t.ContainingAssembly.Name is not ("MediatR" or "MediatR.Contracts") && t.AllInterfaces.Any(IsMediatR));
+        if (package is not null)
+        {
+            return $"{package.ContainingAssembly.Name} builds on MediatR ({package.ToDisplayString()}); Mediator cannot swap its types. Replace the package or migrate it to Mediator first.";
+        }
+
+        // The generator only registers concrete types: an abstract generic base (CommandBase<TResult> : IRequest<TResult>) is fine (TAAK-132).
+        return symbol.IsGenericType && !symbol.IsAbstract && symbol.AllInterfaces.Any(i => IsMediatR(i) && s_noGeneric.Contains(i.OriginalDefinition.MetadataName))
             ? GenericMessageAdvice
             : null;
     }

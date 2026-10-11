@@ -54,7 +54,12 @@ public class MediatRFix : IFix
             new() { Name = "Mediator.Abstractions", Version = MediatorVersion },
             // In every project it generates its own Mediator class: a project referencing the host's would get CS0436 (TAAK-063).
             // So only the host (AddMediatR: its registration may still be Manual), and PrivateAssets keeps it from flowing on.
-            new() { Name = "Mediator.SourceGenerator", Version = MediatorVersion, OnlyWithCallTo = ["AddMediator", "AddMediatR"], PrivateAssets = "all" },
+            // MSG0005 (message without handler; MediatR allows it): an error under TreatWarningsAsErrors breaks a migration that behaves the same (TAAK-136).
+            new()
+            {
+                Name = "Mediator.SourceGenerator", Version = MediatorVersion, OnlyWithCallTo = ["AddMediator", "AddMediatR"], PrivateAssets = "all",
+                WarningsNotAsErrors = ["MSG0005"],
+            },
         ],
     };
 

@@ -1,6 +1,6 @@
 # TAAK-132 — MediatR: abstracte generieke basisklasse onterecht Manual ("generic messages")
 
-**Status**: open
+**Status**: klaar (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: `claude/tasks/CORPUSRUN-mediatr.md` (kgrzybek modular-monolith: 10 van 12 `mediatr.unsupported`)
 
@@ -17,13 +17,13 @@ de hele solution.
 - **Waar**: `src/Unshackle.Core/Fixes/MediatR/Patterns/UnsupportedPattern.cs`.
 - **Hoe**: `symbol.IsAbstract` (en interfaces) uitzonderen; concrete generieke messages en generieke handlers blijven Manual.
   `derived-generic-message` (generiek concreet type onder niet-generieke basis) blijft Manual.
-- Proof (pending): `src/Unshackle.Tests/Proofs/_Pending/MediatR/Unsupported/edge-abstract-generic-base.*`.
+- Proof: `src/Unshackle.Tests/Proofs/MediatR/RequestHandler/edge-abstract-generic-base.*` (swap-only, bouwt met de generator).
 
 ## Stappen
 
-- [ ] `IsAbstract`-uitzondering
-- [ ] Proof uit `_Pending` terugzetten, groen
-- [ ] `dotnet build` + `dotnet test` groen
+- [x] `IsAbstract`-uitzondering
+- [x] Proof uit `_Pending` terugzetten, groen
+- [x] `dotnet build` + `dotnet test` groen
 
 ## Zie ook
 

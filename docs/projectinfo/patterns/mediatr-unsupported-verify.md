@@ -41,6 +41,11 @@ Scan op SampleShop: 6 Manual (pre- en post-processor, stream-behavior, exception
 - Pre/post-processors, exception handlers en stream behaviors zijn eigen patronen (`mediatr.request-processor`, `mediatr.exception-handler`, `mediatr.stream-pipeline-behavior`); proofs `pre-processor`, `post-processor`, `stream-behavior` weg, `exception-handler` → `exception-action`.
 - M5: advies alleen op het type dat de interface zelf declareert; een generieke message wordt ook gemeld als `IRequest` via een basistype komt (`AllInterfaces`, proof `derived-generic-message`).
 
+## Bijgewerkt (TAAK-132/133, corpus-run, 2026-10-11)
+
+- TAAK-132: een **abstract** generiek type (`CommandBase<TResult> : IRequest<TResult>`) is geen generieke message: de generator registreert alleen concrete typen (gecontroleerd met Mediator 3.0.2). Proof `RequestHandler/edge-abstract-generic-base` (bouwt met de generator).
+- TAAK-133: een type in eigen code waarvan een direct basistype of interface uit **metadata** komt (een pakket, niet MediatR/MediatR.Contracts zelf) en MediatR implementeert → Manual "`<pakket>` builds on MediatR …". Een project in de solution is een bronreferentie en wordt zelf gemigreerd. Geen proof mogelijk (tweede assembly): `UnsupportedPatternTests`. ardalis 9.1: 11 Manual, alles-of-niets laat de solution heel.
+
 ## Zie ook
 
 - [mediatr-unsupported-plan.md](mediatr-unsupported-plan.md)

@@ -36,7 +36,19 @@ public class EqualSequencePattern : FluentAssertionPattern
                 && SymbolEqualityComparer.Default.Equals(model.GetTypeInfo(assertion.ArgumentList.Arguments[0].Expression).ConvertedType, arrayType)
                 && model.GetTypeInfo(assertion.ArgumentList.Arguments[0].Expression).Type is IArrayTypeSymbol))
         {
-            string elements = string.Join(", ", assertion.ArgumentList.Arguments.Select(a => a.Expression.WithoutTrivia().ToString()));
+            // Equal(["a", "b"]): the collection expression is the array itself, not one element of it (TAAK-113).
+            IEnumerable<ExpressionSyntax> values = assertion.ArgumentList.Arguments.Select(a => a.Expression);
+            if (assertion.ArgumentList.Arguments is [{ Expression: CollectionExpressionSyntax collection }])
+            {
+                if (!collection.Elements.All(e => e is ExpressionElementSyntax))
+                {
+                    return PatternResult.Manual("Equal([...]) with a spread element: write the expected sequence as an array by hand.");
+                }
+
+                values = collection.Elements.Cast<ExpressionElementSyntax>().Select(e => e.Expression);
+            }
+
+            string elements = string.Join(", ", values.Select(v => v.WithoutTrivia().ToString()));
             ExpressionSyntax array = SyntaxFactory.ParseExpression(
                 $"new {arrayType.ToMinimalDisplayString(model, assertion.SpanStart)} {{ {elements}{(elements.Length == 0 ? "" : " ")}}}");
             return Fixed(context, SyntaxFactory.Argument(array));

@@ -69,7 +69,9 @@ Alle Shouldly-doelen gecontroleerd in `Shouldly.dll` 4.3.0. Prio: H = in bijna e
 
 | Taak | Bug | Gevonden in | Status |
 | --- | --- | --- | --- |
-| TAAK-110 | Niet-herkende `.Should()` → `using FluentAssertions` toch verwijderd | CSharpFunctionalExtensions | open |
+| TAAK-110 | Niet-herkende `.Should()` → `using FluentAssertions` toch verwijderd | CSharpFunctionalExtensions | klaar (using + Manual; CSFE bouwt) |
 | TAAK-111 | Projectbestand niet aanpasbaar → code toch herschreven | Polly, Ardalis.Result | klaar (TAAK-111/134) |
-| TAAK-112 | Bogus laadt niet | Bogus | open |
-| TAAK-113 | `Equal([..])` collection expression | PowerApps-Tooling | open |
+| TAAK-112 | Bogus laadt niet | Bogus | klaar (Builder weggelaten met waarschuwing; Bogus bouwt) |
+| TAAK-113 | `Equal([..])` collection expression | PowerApps-Tooling | klaar (proof; corpus niet herbewezen) |
+| TAAK-114 | `Guid` `NotBeEmpty()` → `ShouldNotBeEmpty()` (CS1061) | Polly | klaar (Polly bouwt) |
+| TAAK-115 | Toegevoegde usings buiten namespace / overbodig (IDE0065/IDE0005) | evo1 (MediatR) | klaar |

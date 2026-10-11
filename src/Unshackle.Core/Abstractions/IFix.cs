@@ -34,6 +34,13 @@ public interface IFix
     IReadOnlyList<string> SwappedTypes => [];
 
     /// <summary>
+    /// Extension methods of <see cref="RemovedNamespaces"/> that the patterns start from, called as <c>x.Name()</c> (for example
+    /// <c>Should</c>). One that binds to nothing after the fix was seen by no pattern: its file keeps the removed using and package,
+    /// and gets a Manual finding. Empty (the default) when the fix has none.
+    /// </summary>
+    IReadOnlyList<string> RemovedExtensionMethods => [];
+
+    /// <summary>
     /// True when a partial migration is unsafe (for example code rewritten while its registration stays): if any finding is Manual,
     /// the solution and project files are left as they are and every Fixed finding is reported as Manual. False (the default): fix what can be fixed.
     /// </summary>

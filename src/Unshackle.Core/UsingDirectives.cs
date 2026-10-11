@@ -13,6 +13,7 @@ internal static class UsingDirectives
         IEnumerable<string> addedNamespaces,
         IEnumerable<string> removedNamespaces,
         IReadOnlyCollection<string> swappedTypes,
+        IReadOnlyCollection<string> removedExtensionMethods,
         CancellationToken cancellationToken)
     {
         if (await document.GetSyntaxRootAsync(cancellationToken) is not CompilationUnitSyntax root
@@ -27,6 +28,11 @@ internal static class UsingDirectives
         List<string> missing = [.. addedNamespaces.Distinct().Where(ns => !imported.Contains(ns)).Order(StringComparer.Ordinal)];
 
         HashSet<string> used = UsedRemovedNamespaces(root, model, removedNamespaces, swappedTypes, cancellationToken);
+        if (UnboundCalls(root, model, removedExtensionMethods, cancellationToken).Any())
+        {
+            used.UnionWith(removedNamespaces);
+        }
+
         List<UsingDirectiveSyntax> unused = HasInactiveCode(root)
             ? []
             : [.. AllUsings(root).Where(d => IsPlainUsing(d) && d.GlobalKeyword.IsKind(SyntaxKind.None)
@@ -49,6 +55,21 @@ internal static class UsingDirectives
         if (endOfLine.IsKind(SyntaxKind.None))
         {
             endOfLine = SyntaxFactory.LineFeed;
+        }
+
+        // The file keeps its usings inside the namespace (IDE0065): the new ones go there too, with the same indentation (TAAK-115).
+        // Not when a name inside it would shadow the new namespace (an own *.Mediator namespace, TAAK-131): then on top.
+        if (missing.Count > 0 && usings.Count == 0
+            && updated.Members.OfType<BaseNamespaceDeclarationSyntax>().FirstOrDefault(n => n.Usings.Count > 0) is BaseNamespaceDeclarationSyntax target
+            && root.Members[updated.Members.IndexOf(target)] is BaseNamespaceDeclarationSyntax original
+            && !missing.Any(ns => model.LookupNamespacesAndTypes(original.Members.FirstOrDefault()?.SpanStart ?? original.Span.End, name: ns.Split('.')[0])
+                .Any(s => s is not INamespaceSymbol { ContainingNamespace.IsGlobalNamespace: true })))
+        {
+            SyntaxTriviaList indentation = [.. target.Usings.Last().GetLeadingTrivia().Where(t => t.IsKind(SyntaxKind.WhitespaceTrivia))];
+            IEnumerable<UsingDirectiveSyntax> added = missing.Select(ns => SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(ns).WithLeadingTrivia(SyntaxFactory.Space))
+                .WithLeadingTrivia(indentation)
+                .WithTrailingTrivia(endOfLine));
+            return document.WithSyntaxRoot(updated.ReplaceNode(target, target.WithUsings(target.Usings.AddRange(added)))).Project.Solution;
         }
 
         // shortcut: new usings go after the existing ones (or on top of the file), not sorted. Fine for the CLI diff.
@@ -79,6 +100,23 @@ internal static class UsingDirectives
             && await document.GetSemanticModelAsync(cancellationToken) is SemanticModel model
             && candidates.Except(UsedRemovedNamespaces(root, model, removedNamespaces, swappedTypes, cancellationToken)).Any();
     }
+
+    // `x.Should()` of a removed namespace that binds to nothing: a rewrite earlier in the file left the type of its receiver unknown
+    // (e.g. inside a lambda argument, TAAK-110), so no pattern saw it and it still needs the removed using.
+    public static IEnumerable<SimpleNameSyntax> UnboundCalls(
+        SyntaxNode root, SemanticModel model, IReadOnlyCollection<string> extensionMethods, CancellationToken cancellationToken) =>
+        root.DescendantNodes()
+            .OfType<MemberAccessExpressionSyntax>()
+            .Where(m => m.Parent is InvocationExpressionSyntax && extensionMethods.Contains(m.Name.Identifier.ValueText)
+                && model.GetSymbolInfo(m.Name, cancellationToken).Symbol is null)
+            .Select(m => m.Name);
+
+    // True when the document names a type or member of a removed namespace (swapped types too), or has inactive code that may:
+    // only then does it need the added ones.
+    public static async Task<bool> NamesRemovedNamespaceAsync(Document document, IEnumerable<string> removedNamespaces, CancellationToken cancellationToken) =>
+        await document.GetSyntaxRootAsync(cancellationToken) is CompilationUnitSyntax root
+        && await document.GetSemanticModelAsync(cancellationToken) is SemanticModel model
+        && (HasInactiveCode(root) || UsedNamespaces(root, model, [], cancellationToken).Overlaps(removedNamespaces));
 
     // Code in an inactive #if branch is only trivia: nothing binds there, so a removed using may still be needed by it.
     public static bool HasInactiveCode(SyntaxNode root) =>

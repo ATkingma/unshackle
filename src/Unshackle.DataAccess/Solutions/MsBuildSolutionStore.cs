@@ -72,6 +72,30 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
             throw new SolutionLoadException([.. errors, .. warnings]);
         }
 
+        // A project the solution restore skipped (Bogus' NUKE 'Builder', TAAK-112) resolves not even System, while the others do.
+        // Nothing binds in it, so the fix could only damage it: with no project depending on it, it is left out with a warning.
+        // A lone unrestored project, or one others depend on, stays fatal below. A shared package file may still change for the
+        // others; the left-out project does not build with the solution anyway (the restore that skipped it is the solution's).
+        List<Project> unresolved = [];
+        foreach (Project project in solution.Projects)
+        {
+            Compilation? compilation = await project.GetCompilationAsync(cancellationToken);
+            if (compilation?.GetSpecialType(SpecialType.System_Object).TypeKind == TypeKind.Error)
+            {
+                unresolved.Add(project);
+            }
+        }
+
+        if (unresolved.Count < solution.ProjectIds.Count)
+        {
+            HashSet<ProjectId> referenced = [.. solution.Projects.SelectMany(p => p.ProjectReferences).Select(r => r.ProjectId)];
+            foreach (Project project in unresolved.Where(u => !referenced.Contains(u.Id)))
+            {
+                warnings.Add($"{project.Name}: not even System resolves (not restored with the solution?), so its code is left alone.");
+                solution = solution.RemoveProject(project.Id);
+            }
+        }
+
         // An unrestored solution loads without a failure, but package types do not bind: the fix would find nothing and
         // still swap usings and packages blindly. A missing namespace or type is the symptom we can see.
         foreach (Project project in solution.Projects)

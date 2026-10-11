@@ -23,6 +23,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEmptyPattern.cs`; re
 | REQ-7 | Gehaald | `because-args.before.cs` / `.manual.txt` |
 | REQ-8 | Gehaald | `chain.*`, `value-used.*` |
 | REQ-9 | Gehaald | `and-chain.before.cs` / `.manual.txt` |
+| TAAK-114 | Gehaald | `guid.*` (`Guid`/`Guid?` → `ShouldBe(Guid.Empty)` / `ShouldNotBe(Guid.Empty)`), `guid-nullable-not-empty.*` (Manual: FA faalt ook op null) |
 
 ## Deviations
 

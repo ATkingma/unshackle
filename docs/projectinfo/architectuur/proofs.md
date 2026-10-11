@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 496 proofs (zonder `_Pending`).
+Totaal: 501 proofs (zonder `_Pending`).
 
 ## FluentAssertions
 
@@ -80,7 +80,7 @@ Totaal: 496 proofs (zonder `_Pending`).
 | `nullable-not` | Manual | `d.Should().NotBeApproximately(1.5, 0.01);` — reden: nullable subject |
 | `simple` | Fixed | `d.Should().BeApproximately(1.5, 0.01); f.Should().BeApproximately(1.5f, 0.01f);` → `d.ShouldBe(1.5, 0.01); f.ShouldBe(1.5f, 0.01f);` |
 
-### BeEmpty (14)
+### BeEmpty (16)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -93,6 +93,8 @@ Totaal: 496 proofs (zonder `_Pending`).
 | `edge-await-subject` | Fixed | `(await load()).Should().BeEmpty();` → `(await load()).ShouldBeEmpty();` |
 | `edge-linq-subject` | Fixed | `items.Where(x => x < 0).Should().BeEmpty();` → `items.Where(x => x < 0).ShouldBeEmpty();` |
 | `enumerable` | Fixed | `items.Should().BeEmpty(); array.Should().NotBeEmpty();` → `items.ShouldBeEmpty(); array.ShouldNotBeEmpty();` |
+| `guid` | Fixed | `id.Should().NotBeEmpty(); id.Should().BeEmpty("it is new");` → `id.ShouldNotBe(Guid.Empty); id.ShouldBe(Guid.Empty, "it is new");` |
+| `guid-nullable-not-empty` | Manual | `id.Should().NotBeEmpty();` — reden: fails on null |
 | `lambda` | Fixed | `Action act = () => text.Should().BeEmpty();` → `Action act = () => text.ShouldBeEmpty();` |
 | `not-be-empty-list` | Fixed | `list.Should().NotBeEmpty();` → `list.ShouldNotBeEmpty();` |
 | `nullable` | Fixed | `x.Should().BeEmpty();` → `x.ShouldBeEmpty();` |
@@ -315,7 +317,7 @@ Totaal: 496 proofs (zonder `_Pending`).
 | `unique` | Fixed | `x.Should().OnlyHaveUniqueItems();` → `x.ShouldBeUnique();` |
 | `unique-key` | Manual | `x.Should().OnlyHaveUniqueItems(s => s.Length);` — reden: key selector |
 
-### EqualSequence (11)
+### EqualSequence (13)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -323,6 +325,8 @@ Totaal: 496 proofs (zonder `_Pending`).
 | `assertion-scope` | Manual | `x.Should().Equal(y);` — reden: AssertionScope |
 | `because` | Fixed | `x.Should().Equal(y, "order matters");` → `x.ShouldBe(y, ignoreOrder: false, "order matters");` |
 | `because-args` | Fixed | `x.Should().Equal(y, "of {0}", 2);` → `x.ShouldBe(y, ignoreOrder: false, string.Format(System.Globalization.CultureInfo.InvariantCulture, "of {0}", 2…` |
+| `collection-expression` | Fixed | `s.Should().Equal(["a", "b"]); x.Should().Equal([1]);` → `s.ShouldBe(new string[] { "a", "b" }); x.ShouldBe(new int[] { 1 });` |
+| `collection-expression-spread` | Manual | `s.Should().Equal([.. t, "b"]);` — reden: spread |
 | `dictionary` | Manual | `x.Should().Equal(y);` — reden: dictionary |
 | `not-equal` | Manual | `x.Should().NotEqual(y);` — reden: NotEqual |
 | `nullable` | Fixed | `x.Should().Equal(y);` → `x.ShouldBe(y);` |
@@ -588,7 +592,7 @@ Totaal: 496 proofs (zonder `_Pending`).
 | `simple` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>();` |
 | `value-used` | Fixed | `string message = act.Should().ThrowExactly<InvalidOperationException>().Which.Message;` → `string message = Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>().Mess…` |
 
-### _Combined (8)
+### _Combined (9)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -598,6 +602,7 @@ Totaal: 496 proofs (zonder `_Pending`).
 | `mixed` | Fixed | `order.Id.Should().Be(1); order.Total.Should().BeGreaterThan(10m).And.BeLessThan(30m);` → `order.Id.ShouldBe(1); order.Total.ShouldBeGreaterThan(10m);` |
 | `scope-using-block` | Fixed | `{ x.Should().Be(1);` → `x.ShouldSatisfyAllConditions( () => { x.ShouldBe(1); },` |
 | `scope-using-var` | Fixed | `y.Should().Be(2); name.Should().StartWith("a");` → `y.ShouldSatisfyAllConditions( () => { y.ShouldBe(2); },` |
+| `unbound-should` | Fixed | `ctx.Should().Be(context);` → `ctx.ShouldBe(context);` |
 | `usings` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
 | `usings-existing` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
 
@@ -727,6 +732,20 @@ Totaal: 496 proofs (zonder `_Pending`).
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `edge-assertion-in-throw-lambda` | Manual | `Action act = () => total.Should().Be(3);` — reden: exception type |
+
+### _Pending / MediatR
+
+#### Unsupported (1)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `edge-abstract-generic-base` | Fixed | alleen usings |
+
+#### Usings (1)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `edge-namespace-shadow` | Fixed | alleen usings |
 
 ## Zie ook
 

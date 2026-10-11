@@ -173,11 +173,100 @@ public class FixerTests
         var fixer = new Fixer([CreateFix(pattern, removed: ["System.Text"], added: ["System.IO"])]);
 
         // Act
-        FixReport report = await FixAsync(fixer, Code);
+        FixReport report = await FixAsync(fixer, Code.Replace("Foo();", "new StringBuilder().Append(1);", StringComparison.Ordinal));
 
         // Assert
         string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
         text.ShouldStartWith("using System.IO;\nusing System.Linq;\n\npublic class C");
+    }
+
+    [Fact]
+    public async Task FixAsync_FileNamesNothingOfRemovedNamespace_AddsNoNamespace()
+    {
+        // Arrange
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        var fixer = new Fixer([CreateFix(pattern, removed: ["System.Text"], added: ["System.IO"])]);
+
+        // Act
+        FixReport report = await FixAsync(fixer, Code.Replace("using System.Text;", "using System;", StringComparison.Ordinal));
+
+        // Assert
+        string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        text.ShouldStartWith("using System;\n\npublic class C", customMessage: "the file uses the old library only through its own types (IDE0005)");
+    }
+
+    [Fact]
+    public async Task FixAsync_UsingsInsideNamespace_AddsNewOneThere()
+    {
+        // Arrange
+        const string code = """
+            namespace N;
+
+            using System.Collections.Generic;
+
+            public class C
+            {
+                public void M()
+                {
+                    new System.Text.StringBuilder().Append(1);
+                }
+
+                private static void Bar()
+                {
+                }
+            }
+
+            """;
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        var fixer = new Fixer([CreateFix(pattern, removed: ["System.Text"], added: ["System.IO"])]);
+
+        // Act
+        FixReport report = await FixAsync(fixer, code);
+
+        // Assert
+        string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        text.ShouldStartWith("namespace N;\n\nusing System.Collections.Generic;\nusing System.IO;\n\npublic class C", customMessage: "IDE0065");
+    }
+
+    [Fact]
+    public async Task FixAsync_UsingsInsideNamespaceThatShadowsAddedOne_AddsNewOneOnTop()
+    {
+        // Arrange
+        const string code = """
+            namespace N
+            {
+                using System.Collections.Generic;
+
+                public class C
+                {
+                    public void M()
+                    {
+                        new System.Text.StringBuilder().Append(1);
+                    }
+
+                    private static void Bar()
+                    {
+                    }
+                }
+            }
+
+            namespace N.Other
+            {
+                public class X
+                {
+                }
+            }
+
+            """;
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        var fixer = new Fixer([CreateFix(pattern, removed: ["System.Text"], added: ["Other"])]);
+
+        // Act
+        FixReport report = await FixAsync(fixer, code);
+
+        // Assert
+        string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        text.ShouldStartWith("using Other;\n\nnamespace N\n{\n    using System.Collections.Generic;\n\n", customMessage: "inside N, Other is N.Other (TAAK-131)");
     }
 
     [Fact]

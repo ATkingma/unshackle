@@ -67,6 +67,6 @@ Optie B, automatisch herschrijven naar `x.ShouldSatisfyAllConditions(() => ..., 
 
 ## Zie ook
 
-- `claude/tasks/TAAK-030-sampleshop-uitbreiden.md` (vondst)
+- `claude/tasks/archief/TAAK-030-sampleshop-uitbreiden.md` (vondst)
 - `claude/tasks/patroon-queue.md`
 - `docs/projectinfo/architectuur/core.md`

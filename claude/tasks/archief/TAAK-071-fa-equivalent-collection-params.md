@@ -1,6 +1,6 @@
 # TAAK-071 — fa.be-equivalent-to-object: `BeEquivalentTo(params T[])` op een collectie
 
-**Status**: open
+**Status**: voltooid
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: corpus-run FluentResults (50× in één project, `docs/projectinfo/architectuur/corpus.md`)
 
@@ -20,9 +20,13 @@ Manual "with becauseArgs or named arguments". Die reden is fout: er is geen `bec
 
 ## Stappen
 
-- [ ] Overload-herkenning via `IMethodSymbol.Parameters[0].IsParams`
-- [ ] Proof terugzetten, groen; keuze Fixed-variant vastleggen
-- [ ] `dotnet build` + `dotnet test` groen
+- [x] Overload-herkenning via `IMethodSymbol.Parameters[0].IsParams`
+- [x] Proof terugzetten, groen; keuze Fixed-variant vastleggen
+- [x] `dotnet build` + `dotnet test` groen
+
+## Resultaat
+
+Params-overload → Manual met collectie-reden. Fixed-variant (`ShouldBe(..., ignoreOrder: true)`) niet gebouwd en niet geprobed.
 
 ## Zie ook
 

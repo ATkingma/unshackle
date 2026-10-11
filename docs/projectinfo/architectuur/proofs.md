@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 403 proofs (zonder `_Pending`).
+Totaal: 405 proofs (zonder `_Pending`).
 
 ## FluentAssertions
 
@@ -93,7 +93,7 @@ Totaal: 403 proofs (zonder `_Pending`).
 | `string` | Fixed | `text.Should().BeEmpty(); text.Should().NotBeEmpty();` → `text.ShouldBeEmpty(); text.ShouldNotBeEmpty();` |
 | `value-used` | Manual | `var result = text.Should().BeEmpty();` — reden: is used |
 
-### BeEquivalentToObject (25)
+### BeEquivalentToObject (26)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -108,6 +108,7 @@ Totaal: 403 proofs (zonder `_Pending`).
 | `cyclic` | Manual | `a.Should().BeEquivalentTo(b);` — reden: cyclic object graph |
 | `different-types` | Manual | `a.Should().BeEquivalentTo(b);` — reden: Different compile-time types |
 | `edge-array-literal` | Manual | `result.Should().BeEquivalentTo(new[] { 1, 2 });` — reden: collection |
+| `edge-collection-params` | Manual | `numbers.Select(n => n.ToString()).Should().BeEquivalentTo("1", "2");` — reden: is a collection |
 | `equals-member` | Manual | `a.Should().BeEquivalentTo(b);` — reden: overrides Equals |
 | `equals-override` | Manual | `a.Should().BeEquivalentTo(b);` — reden: overrides Equals |
 | `lambda` | Fixed | `System.Action act = () => a.Should().BeEquivalentTo(b);` → `System.Action act = () => a.ShouldBeEquivalentTo(b);` |
@@ -255,13 +256,14 @@ Totaal: 403 proofs (zonder `_Pending`).
 | `read-only` | Fixed | `x.Should().ContainKey(1);` → `x.ShouldContainKey(1);` |
 | `which` | Manual | `var v = x.Should().ContainKey("a").WhoseValue;` — reden: is used |
 
-### ContainSingle (10)
+### ContainSingle (11)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `assertion-scope` | Manual | `x.Should().ContainSingle();` — reden: AssertionScope |
 | `because` | Fixed | `x.Should().ContainSingle("one"); x.Should().ContainSingle(i => i > 2, "one");` → `x.ShouldHaveSingleItem("one"); x.ShouldContain(i => i > 2, 1, "one");` |
 | `because-args` | Manual | `x.Should().ContainSingle("of {0}", 1);` — reden: becauseArgs |
+| `edge-subject` | Fixed | `var name = names.Should().ContainSingle().Subject;` → `var name = names.ShouldHaveSingleItem();` |
 | `enumerable` | Fixed | `x.Should().ContainSingle(s => s == "a");` → `x.ShouldContain(s => s == "a", 1);` |
 | `expression-variable` | Manual | `var one = x.Should().ContainSingle(p).Which;` — reden: Expression variable |
 | `nullable` | Fixed | `x.Should().ContainSingle(); int one = x.Should().ContainSingle().Which;` → `x.ShouldNotBeNull().ShouldHaveSingleItem(); int one = x.ShouldHaveSingleItem();` |
@@ -578,18 +580,6 @@ Totaal: 403 proofs (zonder `_Pending`).
 ## _Pending (bekende fouten)
 
 ### _Pending / FluentAssertions
-
-#### BeEquivalentToObject (1)
-
-| Proof | Uitkomst | Wat het bewijst |
-| --- | --- | --- |
-| `edge-collection-params` | Manual | `numbers.Select(n => n.ToString()).Should().BeEquivalentTo("1", "2");` — reden: is a collection |
-
-#### ContainSingle (1)
-
-| Proof | Uitkomst | Wat het bewijst |
-| --- | --- | --- |
-| `edge-subject` | Fixed | `var name = names.Should().ContainSingle().Subject;` → `var name = names.ShouldHaveSingleItem();` |
 
 #### ShouldBe (1)
 

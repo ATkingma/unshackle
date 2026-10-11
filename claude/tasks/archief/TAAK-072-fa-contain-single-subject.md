@@ -1,6 +1,6 @@
 # TAAK-072 — fa.contain-single-which: `.Subject` naast `.Which`
 
-**Status**: open
+**Status**: voltooid
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: corpus-grep (`ContainSingle(...).Subject` 63×, vooral Akka.NET; `docs/projectinfo/architectuur/corpus.md`)
 
@@ -17,9 +17,9 @@ herkent alleen `.Which` en geeft Manual. `BeOfTypePattern` kent `.Subject` al (p
 
 ## Stappen
 
-- [ ] `.Subject` toevoegen
-- [ ] Proof terugzetten, groen
-- [ ] `dotnet build` + `dotnet test` groen
+- [x] `.Subject` toevoegen
+- [x] Proof terugzetten, groen
+- [x] `dotnet build` + `dotnet test` groen
 
 ## Zie ook
 

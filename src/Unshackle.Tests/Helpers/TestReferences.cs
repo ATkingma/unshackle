@@ -12,8 +12,11 @@ public static class TestReferences
     public static IReadOnlyList<MetadataReference> FluentAssertions { get; } =
         [.. Net, MetadataReference.CreateFromFile(typeof(global::FluentAssertions.AssertionExtensions).Assembly.Location)];
 
-    public static IReadOnlyList<MetadataReference> Shouldly { get; } =
-        [.. Net, MetadataReference.CreateFromFile(typeof(global::Shouldly.Should).Assembly.Location)];
+    // Only Shouldly itself, as the composition root hands it to FluentAssertionsFix.
+    public static IReadOnlyList<MetadataReference> ShouldlyAssembly { get; } =
+        [MetadataReference.CreateFromFile(typeof(global::Shouldly.Should).Assembly.Location)];
+
+    public static IReadOnlyList<MetadataReference> Shouldly { get; } = [.. Net, .. ShouldlyAssembly];
 
     // MediatR 12 keeps IRequest, INotification and Unit in MediatR.Contracts.
     public static IReadOnlyList<MetadataReference> MediatR { get; } =

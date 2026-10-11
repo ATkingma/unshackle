@@ -34,7 +34,7 @@ public class CombinedProofTests
             ? TestReferences.FluentAssertions.Concat(TestReferences.Shouldly).DistinctBy(r => r.Display)
             : TestReferences.Shouldly;
         TestSolution.CompileErrors(before, TestReferences.FluentAssertions).ShouldBeEmpty("before must compile against FluentAssertions");
-        var fixer = new Fixer([new FluentAssertionsFix()]);
+        var fixer = new Fixer([new FluentAssertionsFix(TestReferences.ShouldlyAssembly)]);
         Solution solution = TestSolution.Create(before, TestReferences.FluentAssertions);
 
         // Act

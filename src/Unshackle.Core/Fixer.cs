@@ -42,6 +42,7 @@ public class Fixer : IFixer
 
         var findings = new List<Finding>();
         Solution original = solution;
+        Solution baseline = AddReferences(original, fix.AddedReferences, fix.AddedNamespaces);
         HashSet<string> swappedTypes = [.. fix.SwappedTypes];
         // A multi-target project is loaded once per target framework: the same file is fixed and reported once,
         // and its copies in the other projects get the fixed text.
@@ -66,7 +67,7 @@ public class Fixer : IFixer
             DocumentId documentId = file.First();
             // Every file is fixed against the original solution, so what a pattern finds never depends on which files
             // were fixed before (a marker interface in an earlier file would already be swapped, TAAK-130).
-            Solution working = original;
+            Solution working = baseline;
             var requiredNamespaces = new HashSet<string>(StringComparer.Ordinal);
             bool changed = false;
             // Patterns run one after another, each on a fresh semantic model of the previous result.
@@ -125,7 +126,7 @@ public class Fixer : IFixer
                 }
             }
 
-            if (working != original)
+            if (working != baseline)
             {
                 SourceText text = await working.GetDocument(documentId)!.GetTextAsync(cancellationToken);
                 foreach (DocumentId copy in file)
@@ -148,6 +149,32 @@ public class Fixer : IFixer
         }
 
         return new FixReport { Solution = solution, Findings = findings, ProjectFileChanges = projectFileChanges };
+    }
+
+    // Only for the semantic model the patterns see: the added namespaces are imported by a global using in an extra document,
+    // because a file gets its new usings after all patterns ran. A project that already references the assembly (by file name)
+    // keeps its own copy.
+    private static Solution AddReferences(Solution solution, IReadOnlyList<MetadataReference> references, IReadOnlyList<string> namespaces)
+    {
+        if (references.Count == 0)
+        {
+            return solution;
+        }
+
+        string usings = string.Concat(namespaces.Select(ns => $"global using {ns};\n"));
+        foreach (Project project in solution.Projects.Where(p => p.Language == LanguageNames.CSharp).ToList())
+        {
+            solution = solution.AddDocument(
+                DocumentId.CreateNewId(project.Id), UsingDirectives.AddedUsingsPath, SourceText.From(usings), filePath: UsingDirectives.AddedUsingsPath);
+            HashSet<string> present = [.. project.MetadataReferences.Select(r => Path.GetFileName(r.Display ?? string.Empty))];
+            List<MetadataReference> missing = [.. references.Where(r => !present.Contains(Path.GetFileName(r.Display ?? string.Empty)))];
+            if (missing.Count > 0)
+            {
+                solution = solution.AddMetadataReferences(project.Id, missing);
+            }
+        }
+
+        return solution;
     }
 
     private static Finding NotApplied(Finding finding) => CreateFinding(finding, PatternResult.Manual(

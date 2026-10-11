@@ -24,7 +24,7 @@ Vermoeden: subject/aanroep bindt niet (type via lambda-inferentie van `maybe2`),
 - Fix: `IFix.RemovedExtensionMethods` (FA: `Should`). `UsingDirectives.UnboundCalls` vindt `x.Should()` die nergens aan bindt;
   dan blijft de oude using (`UpdateAsync`), blijft het pakket (`ProjectPackages`) en komt er een Manual-finding `usings`
   ("Run the fix again once the project builds"). Een tweede run herschrijft de rest.
-- Proof: `src/Unshackle.Tests/Proofs/FluentAssertions/_Combined/unbound-should.*` (Maybe/Bind-nabootsing).
+- Proof: `src/Unshackle.Tests/Proofs/FluentAssertions/_Combined/unbound-should.*` (Maybe/Bind-nabootsing; sinds TAAK-116 `lambda-overload-one-run.*`, in één run Fixed).
 - Corpus: verse kopie CSFE (`scratchpad/v110/work/csfe`): fix 4481 Fixed / 70 Manual (21 `usings`), **build groen** (was 42x CS1061).
 
 ## Zie ook

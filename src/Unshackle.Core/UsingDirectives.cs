@@ -197,8 +197,12 @@ internal static class UsingDirectives
     private static bool IsPlainUsing(UsingDirectiveSyntax directive) =>
         directive.Alias is null && directive.StaticKeyword.IsKind(SyntaxKind.None) && directive.Name is not null;
 
+    // The Fixer's own document (see Fixer.AddReferences) imports for the model only: it is no using the files have (TAAK-116).
+    public const string AddedUsingsPath = "Unshackle.AddedUsings.g.cs";
+
     private static IEnumerable<UsingDirectiveSyntax> GlobalUsings(Compilation compilation, CancellationToken cancellationToken) =>
         compilation.SyntaxTrees
+            .Where(t => t.FilePath != AddedUsingsPath)
             .Select(t => t.GetRoot(cancellationToken))
             .OfType<CompilationUnitSyntax>()
             .SelectMany(r => r.Usings)

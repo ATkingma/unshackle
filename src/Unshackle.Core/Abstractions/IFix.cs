@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Abstractions;
@@ -45,4 +46,11 @@ public interface IFix
     /// the solution and project files are left as they are and every Fixed finding is reported as Manual. False (the default): fix what can be fixed.
     /// </summary>
     bool AllOrNothing => false;
+
+    /// <summary>
+    /// Assemblies of the new library, added to each project's semantic model while fixing (not to the result). Without them a
+    /// rewrite in a lambda binds to nothing, overload resolution of the call around it fails and patterns after it miss code
+    /// that depends on that call (TAAK-116). Empty (the default): the patterns see only what the project references.
+    /// </summary>
+    IReadOnlyList<MetadataReference> AddedReferences => [];
 }

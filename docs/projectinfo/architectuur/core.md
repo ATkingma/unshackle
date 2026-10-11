@@ -66,6 +66,11 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
   dat de oude bibliotheek bij naam noemt (IDE0005, TAAK-115).
 - `IFix.RemovedExtensionMethods` (FA: `Should`): een `x.Should()` die na de fix nergens aan bindt (ontvanger onbekend, bv. na een
   herschreven lambda-argument) houdt de oude using en het pakket en geeft een Manual-finding `usings` (TAAK-110).
+- `IFix.AddedReferences` (FA: Shouldly, netstandard2.0-build uit `Interface/References/`, aangeleverd door de composition root):
+  de `Fixer` voegt ze, plus een eigen document `Unshackle.AddedUsings.g.cs` met `global using` van de `AddedNamespaces`, toe aan
+  de werkkopie waarop de patronen draaien, niet aan het resultaat. Zo bindt een al herschreven `ctx.ShouldBe(..)` in een
+  lambda-argument, slaagt de overload-resolutie van de omringende aanroep en herkent een later patroon de buitenste assertion
+  in dezelfde run (TAAK-116). `UsingDirectives` telt dat document niet als import van het bestand.
 
 ## Contracten naar buiten (TAAK-005)
 

@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Shouldly;
 
 namespace Proofs;
@@ -17,7 +16,7 @@ public class Case
                 return Maybe.From(value);
             },
             context);
-        maybe2.HasValue.Should().BeTrue();
+        maybe2.HasValue.ShouldBeTrue();
     }
 }
 

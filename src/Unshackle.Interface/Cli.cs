@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.IO.Abstractions;
+using Microsoft.CodeAnalysis;
 using Spectre.Console;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
@@ -22,7 +23,11 @@ public static class Cli
     public static async Task<int> RunAsync(string[] args, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(args);
-        IReadOnlyList<IFix> fixes = [new FluentAssertionsFix(), new MediatRFix()];
+        IReadOnlyList<IFix> fixes =
+        [
+            new FluentAssertionsFix([MetadataReference.CreateFromFile(Path.Combine(AppContext.BaseDirectory, "References", "Shouldly.dll"))]),
+            new MediatRFix(),
+        ];
         var fileSystem = new FileSystem();
         IReportWriter[] reportWriters =
             [new CsvReportWriter(fileSystem), new JsonReportWriter(fileSystem), new MarkdownReportWriter(fileSystem)];

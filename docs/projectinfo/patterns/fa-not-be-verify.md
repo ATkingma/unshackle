@@ -10,7 +10,7 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotBePattern.cs`; registratie in `FluentAssertionsFix.cs`; `FluentAssertionsSyntax.ConvertExpected` van private naar internal. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/NotBe/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotBePattern.cs`; registratie in `FluentAssertionsFix.cs`; `ConvertExpected` (nu publiek in `FluentAssertionsSyntax`) gedeeld. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/NotBe/`, gedraaid door `ProofTests`.
 
 | REQ   | Oordeel | Bewijs                         |
 | ----- | ------- | ------------------------------ |
@@ -20,8 +20,9 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotBePattern.cs`; regi
 | REQ-4 | Gehaald | `record.*.cs`                  |
 | REQ-5 | Gehaald | `constant-cast.*.cs`           |
 | REQ-6 | Gehaald | `assertion-scope.*`            |
-| REQ-7 | Gehaald | `because-args.*`, `comparer.*` |
+| REQ-7 | Gehaald (becauseArgs vervangen) | `comparer.*` |
 | REQ-8 | Gehaald | `chain.*`                      |
+| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` (`string.Format(CultureInfo.InvariantCulture, ...)`) |
 
 ## Deviations
 

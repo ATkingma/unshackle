@@ -20,9 +20,16 @@ NotThrowPattern: NotThrowPattern {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+throwsyntax: "ThrowSyntax (internal static)" {
+  shape: class
+  "+FindNotThrow(root, model, owns)": "IEnumerable<SyntaxNode>"
+  "+IsInvoking(assertion, model)": bool
+  "+TryGetAction(subject, model, ...)": bool
+}
 syntax: FluentAssertionsSyntax {
   shape: class
   "+FindInvocations(root, model, names)": "IEnumerable<InvocationExpressionSyntax>"
+  "+IsInsideAssertionScope(node, model)": bool
   "+GetSubject(assertion)": "ExpressionSyntax?"
   "+IsResultDiscarded(assertion, model)": bool
   "+IsFluentAssertions(symbol)": bool
@@ -56,10 +63,11 @@ rec: "Herkende typen" {
   shape: class
   "Action": ""
   "Func<T>": ""
-  "Invoking(...) (Manual)": ""
+  "Invoking(...) (via InvokingPattern)": ""
 }
 NotThrowPattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
 NotThrowPattern -> syntax: gebruikt {style.stroke-dash: 3}
+NotThrowPattern -> throwsyntax: gebruikt {style.stroke-dash: 3}
 NotThrowPattern -> result: levert {style.stroke-dash: 3}
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
 manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}

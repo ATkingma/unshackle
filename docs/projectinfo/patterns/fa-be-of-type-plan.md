@@ -44,6 +44,8 @@ fa.be-of-type: `BeOfType<T>()`, `BeAssignableTo<T>()`, `NotBeOfType<T>()`, `NotB
 - **REQ-5**: WHEN het subject nullable is THE SYSTEM SHALL zonder extra null-check herschrijven (proof `nullable`).
 - **REQ-6**: IF het resultaat anders wordt gebruikt (`.And`, `.Which.P`, meerdere declarators) THEN THE SYSTEM SHALL Manual geven (proofs `and`, `which-chain`, `which-multiple`).
 - **REQ-7**: IF becauseArgs, een AssertionScope of een `Type`-subject THEN THE SYSTEM SHALL Manual geven (proofs `because-args`, `assertion-scope`, `type-subject`).
+- **Uitbreiding TAAK-096**: WHEN `.Which`/`.Subject` verder gebruikt wordt (`….Which.Name`, meerdere declarators) THE SYSTEM SHALL `.Which` vervangen door de Shouldly-aanroep, die de cast-waarde teruggeeft (proofs `which-chain`, `which-multiple`); alleen `.And` en ander gebruik blijven Manual (`and`). Vervangt dat deel van REQ-6.
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt dat deel van REQ-7.
 
 ## Assumptions
 

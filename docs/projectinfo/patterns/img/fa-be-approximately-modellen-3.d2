@@ -1,4 +1,4 @@
-title: "[Activity] BeApproximatelyPattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] FluentAssertionPattern.Rewrite → BeApproximatelyPattern.RewriteAssertion - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
 q0: "Buiten een AssertionScope?" {shape: diamond}
@@ -13,8 +13,8 @@ q2: "Resultaat weggegooid?" {shape: diamond}
 m2: "Manual: is used\n(proof: geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q1 -> q2: ja
 q2 -> m2: nee
-q3: "Geen becauseArgs?" {shape: diamond}
-m3: "Manual: becauseArgs\n(proof: because-args)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q3: "Argumenten splitsbaar?\n(geen named args; becauseArgs alleen bij constante because)" {shape: diamond}
+m3: "Manual: named arguments, or becauseArgs\n(geen proof; because-args is Fixed)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q2 -> q3: ja
 q3 -> m3: nee
 q4: "Subject double/float/decimal/DateTime(Offset)/TimeSpan?" {shape: diamond}
@@ -31,5 +31,5 @@ q5 -> q6: ja
 q6 -> m6: nee
 f0: "Fixed: System.Math.Abs(x - y).ShouldBeGreaterThan(tol) (NotBeApproximately)\n(not)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
 q6 -> f0: ja
-f1: "Fixed: x[.ShouldNotBeNull()].ShouldBe / ShouldNotBe(y, tol|span[, because])\n(simple, because, close-to, nullable)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+f1: "Fixed: x[.ShouldNotBeNull()].ShouldBe / ShouldNotBe(y, tol|span[, because])\n(simple, because, because-args, close-to, nullable)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
 q6 -> f1: ja

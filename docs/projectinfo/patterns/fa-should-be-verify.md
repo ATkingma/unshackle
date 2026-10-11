@@ -20,11 +20,13 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs`; r
 | REQ-3  | Gehaald                     | `lambda.before.cs` / `lambda.after.cs` (`IsResultDiscarded` accepteert void-lambda)                                  |
 | REQ-4  | Gehaald                     | `constant-cast.before.cs` / `constant-cast.after.cs`: `(byte)1`, `(Status)0`, `long` zonder cast (`ConvertExpected`) |
 | REQ-5  | Gehaald                     | `chain.before.cs` / `chain.manual.txt` (reden "is used")                                                             |
-| REQ-6  | Gehaald                     | `because-args.before.cs` / `because-args.manual.txt` (`TryGetArguments` geeft false)                                 |
+| REQ-6  | Vervangen                   | door Uitbreiding TAAK-097                                                                                            |
 | REQ-7  | Gehaald                     | `comparer.before.cs` / `comparer.manual.txt` (`values.Count != 1`)                                                   |
 | REQ-8  | Gehaald                     | `nullable-expected.before.cs` / `nullable-expected.manual.txt` (`ConvertExpected` geeft null)                        |
 | REQ-9  | Gehaald                     | `xml.before.cs` / `xml.manual.txt` (namespace `FluentAssertions.Xml`/`.Types`)                                       |
-| REQ-10 | Gehaald in code, geen proof | `subject is null` en `IErrorTypeSymbol` geven Manual in `Rewrite`; geen proof-bestand                                |
+| REQ-10 | Gehaald in code, geen proof | `subject is null` (`FluentAssertionPattern.Rewrite`) en `IErrorTypeSymbol` (`RewriteAssertion`) geven Manual; geen proof-bestand |
+| TAAK-097 | Gehaald | `because-args.after.cs` (`string.Format`); Manual: `edge-named-because`, `because-args-variable`, `because-args-bad-format` |
+| TAAK-100 | Gehaald | `assertion-scope-nested`, `assertion-scope-using-block`, `assertion-scope-using-var` (`.manual.txt`) |
 
 ## Deviations
 

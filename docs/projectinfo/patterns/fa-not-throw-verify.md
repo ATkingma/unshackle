@@ -18,10 +18,13 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotThrowPattern.cs`; r
 | REQ-2 | Gehaald | `func.*.cs` |
 | REQ-3 | Gehaald | `value-func.*.cs` |
 | REQ-4 | Gehaald | `because.*.cs` |
-| REQ-5 | Gehaald | `because-args.*` |
+| REQ-5 | Vervangen | door Uitbreiding TAAK-097: `because-args` is nu Fixed |
 | REQ-6 | Gehaald | `generic.*`, `after.*` |
 | REQ-7 | Gehaald | `value-used.*`, `result-used.*` |
-| REQ-8 | Gehaald | `invoking.*` |
+| REQ-8 | Vervangen | door Uitbreiding Invoking; `NotThrow/invoking.*` bestaat niet |
+| TAAK-097 | Gehaald | `because-args.after.cs` |
+| Invoking | Gehaald | `Invoking/not-throw.*` (Fixed); `Invoking/side-effect-receiver`, `value-type`, `method-group` (Manual) |
+| TAAK-100 | Gehaald | `IsInsideAssertionScope` als eerste controle in de code (proof alleen voor Throw: `Invoking/assertion-scope`) |
 
 ## Deviations
 

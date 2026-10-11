@@ -12,7 +12,7 @@ Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/UnsupportedPattern.cs`.
 | Element              | Rol                                                                  |
 | -------------------- | -------------------------------------------------------------------- |
 | `UnsupportedPattern` | Vindt typedeclaraties met een MediatR-interface zonder tweeling      |
-| `s_advice`           | Metadata-naam → adviestekst (pre/post, exception, publisher, stream) |
+| `s_advice`           | Metadata-naam → adviestekst (`IRequestExceptionAction`, `INotificationPublisher`) |
 | `s_noGeneric`        | Berichten en request-handlers die niet generiek mogen zijn           |
 | `PatternResult`      | Altijd `Manual(advies)`                                              |
 
@@ -25,7 +25,7 @@ Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/UnsupportedPattern.cs`.
 
 | Stap   | Methode in de code                        | Wat gebeurt er                               |
 | ------ | ----------------------------------------- | -------------------------------------------- |
-| Vinden | `Find` → `Advice` met `GetDeclaredSymbol` | Interfaces uit namespace `MediatR*` per type |
+| Vinden | `Find` → `Advice` met `GetDeclaredSymbol` | Interface-declaraties overgeslagen; eigen `Interfaces` uit `MediatR*` voor `s_advice`, `AllInterfaces` voor generieke berichten |
 | Melden | `Rewrite` → `Advice`                      | `Manual` met de adviestekst                  |
 
 ## Figuur 3: beslisboom
@@ -37,13 +37,10 @@ Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/UnsupportedPattern.cs`.
 
 | Blad                               | Voorwaarde                                             | Bewijs                   |
 | ---------------------------------- | ------------------------------------------------------ | ------------------------ |
-| Manual `MessagePreProcessor`       | `IRequestPreProcessor`                                 | `pre-processor`          |
-| Manual `MessagePostProcessor`      | `IRequestPostProcessor`                                | `post-processor`         |
-| Manual `MessageExceptionHandler`   | `IRequestExceptionHandler` / `IRequestExceptionAction` | `exception-handler`      |
+| Manual `MessageExceptionHandler`   | `IRequestExceptionAction` (zelf gedeclareerd)          | `exception-action`       |
 | Manual `NotificationPublisherType` | `INotificationPublisher`                               | `notification-publisher` |
-| Manual `StreamPipelineBehaviors`   | `IStreamPipelineBehavior`                              | `stream-behavior`        |
-| Manual generieke berichten         | generiek type + bericht of request-handler             | `generic-handler`        |
-| niet gevonden                      | anders                                                 | n.v.t.                   |
+| Manual generieke berichten         | generiek type + bericht of request-handler (ook via basistype) | `generic-handler`, `derived-generic-message` |
+| niet gevonden                      | interface-declaratie of anders (pre/post-processor, exception handler en stream behavior zijn eigen patronen) | n.v.t.                   |
 
 ## Zie ook
 

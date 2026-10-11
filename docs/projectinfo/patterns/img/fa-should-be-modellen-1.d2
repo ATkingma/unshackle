@@ -14,12 +14,17 @@ ipattern: "«interface» IPattern" {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+base: "FluentAssertionPattern (abstract)" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
+}
 ShouldBePattern: ShouldBePattern {
   shape: class
   "+Id": "fa.should-be"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
-  "-ConvertExpected(expected, subjectType, model, position)": ""
+  "#RewriteAssertion(context)": PatternResult
+  "#ShouldName": "ShouldBe"
 }
 syntax: FluentAssertionsSyntax {
   shape: class
@@ -27,6 +32,8 @@ syntax: FluentAssertionsSyntax {
   "+GetSubject(assertion)": "ExpressionSyntax?"
   "+IsResultDiscarded(assertion, model)": bool
   "+TryGetArguments(assertion, model, values, because)": bool
+  "+IsInsideAssertionScope(node, model)": bool
+  "+ConvertExpected(expected, subjectType, model, position)": "ExpressionSyntax?"
 }
 result: "PatternResult (abstract)" {
   shape: class
@@ -52,7 +59,8 @@ sh: "«Shouldly» aangemaakt" {
   "ShouldBe(expected[, because])": ""
   "cast naar het subjecttype": ""
 }
-ShouldBePattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+ShouldBePattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
 ShouldBePattern -> syntax: gebruikt {style.stroke-dash: 3}
 ShouldBePattern -> result: levert {style.stroke-dash: 3}
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}

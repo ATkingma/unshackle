@@ -10,7 +10,7 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` (claimt de nodes), herschrijving in `ThrowPattern`, `ThrowAsyncPattern`, `NotThrowPattern` en `ThrowMessage`; registratie in `FluentAssertionsFix.cs` (`s_assertions`, dus ook schakel van `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/Invoking/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` (claimt de nodes), herschrijving via `ThrowSyntax.Rewrite` in `ThrowPattern`, `ThrowAsyncPattern`, `NotThrowPattern` en `ThrowMessage`; registratie in `FluentAssertionsFix.cs` (`s_assertions`, dus ook schakel van `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/Invoking/`, gedraaid door `ProofTests`.
 
 | REQ | Oordeel | Bewijs |
 | --- | --- | --- |
@@ -20,7 +20,8 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` (c
 | REQ-4 | Gehaald | `not-throw` |
 | REQ-5 | Gehaald | `awaiting` |
 | REQ-6 | Gehaald | `side-effect-receiver, value-type, method-group` |
-| REQ-7 | Gehaald | `because-args, assertion-scope, aggregate` |
+| REQ-7 | Gehaald (becauseArgs vervangen) | `assertion-scope, aggregate` |
+| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` |
 
 ## Deviations
 

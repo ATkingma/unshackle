@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "fa-be-approximately"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
 files_expected:
     - src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeApproximatelyPattern.cs
     - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
@@ -43,8 +43,9 @@ files_expected:
 - **REQ-3**: WHEN `NotBeApproximately(y, tol)` staat THE SYSTEM SHALL `System.Math.Abs(x - y).ShouldBeGreaterThan(tol)` geven, samengestelde operanden tussen haakjes (proof `not`).
 - **REQ-4**: WHEN `(Not)BeCloseTo(u, span)` op DateTime/DateTimeOffset/TimeSpan staat THE SYSTEM SHALL `ShouldBe`/`ShouldNotBe(u, span)` geven (proof `close-to`).
 - **REQ-5**: WHEN het subject `Nullable<T>` is THE SYSTEM SHALL `x.ShouldNotBeNull().ShouldBe(..)` geven (proof `nullable`).
-- **REQ-6**: IF een integer-subject, `Not…` op nullable, becauseArgs of een AssertionScope THEN THE SYSTEM SHALL Manual geven (proofs `int-close-to`, `nullable-not`, `because-args`, `assertion-scope`).
+- **REQ-6**: IF een integer-subject, `Not…` op nullable, becauseArgs of een AssertionScope THEN THE SYSTEM SHALL Manual geven (proofs `int-close-to`, `nullable-not`, `because-args`, `assertion-scope`). becauseArgs: vervangen door REQ-8.
 - **REQ-7**: WHEN `BeApproximately` een schakel na `.And` is THE SYSTEM SHALL via `fa.and-chain` een los statement geven (proof `AndChain/equal-length-approximately`).
+- **REQ-8** (Uitbreiding TAAK-097): WHEN `becauseArgs` met een constante, formatteerbare `because` staat THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (proof `because-args`); named arguments of een niet-constante `because` blijven Manual.
 
 ## Assumptions
 

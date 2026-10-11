@@ -1,0 +1,13 @@
+title: "[Klassen] StreamPipelineBehaviorPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+IPattern: {shape: class; "+Id"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
+StreamPipelineBehaviorPattern: {shape: class; "+Id = mediatr.stream-pipeline-behavior"; "+Find(root, model)"; "+Rewrite(node, model)"}
+MediatRSyntax: {shape: class; "+FindHandleMethods(root, model, name)"; "+RejectExplicit(method, todo)"; "+CommaList(nodes)"; "+WithConstraint(type, messageType, constraint, isMessage)"; "+IsMediatR(type, names)"}
+PatternResult: {shape: class; "+Fixed(node)"; "+Manual(reason)"}
+MediatR: "MediatR.IStreamPipelineBehavior<TRequest, TResponse>\nIAsyncEnumerable<TResponse> Handle(request, StreamHandlerDelegate<TResponse> next, ct)"
+Mediator: "Mediator.IStreamPipelineBehavior<TMessage, TResponse>\nwhere TMessage : IStreamMessage\nHandle(message, StreamHandlerDelegate<TMessage, TResponse> next, ct)"
+StreamPipelineBehaviorPattern -> IPattern: implementeert {style.stroke-dash: 3}
+StreamPipelineBehaviorPattern -> MediatRSyntax: gebruikt
+StreamPipelineBehaviorPattern -> PatternResult: geeft
+StreamPipelineBehaviorPattern -> MediatR: herkent
+StreamPipelineBehaviorPattern -> Mediator: schrijft voor

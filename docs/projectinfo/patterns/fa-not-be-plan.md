@@ -44,6 +44,7 @@ fa.not-be: `x.Should().NotBe(y[, because])` wordt `x.ShouldNotBe(y[, because])`,
 - **REQ-6**: IF de assertion in een AssertionScope staat THEN THE SYSTEM SHALL Manual geven (proof `assertion-scope.*`).
 - **REQ-7**: IF `becauseArgs` of een comparer worden gebruikt THEN THE SYSTEM SHALL Manual geven (proofs `because-args.*`, `comparer.*`).
 - **REQ-8**: IF het resultaat wordt gebruikt (`.And`) THEN THE SYSTEM SHALL Manual geven (proof `chain.*`).
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (Fixed, proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. REQ-7 geldt daarmee alleen nog voor de comparer.
 
 ## Assumptions
 

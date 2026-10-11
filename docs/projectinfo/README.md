@@ -86,7 +86,7 @@ documenten, en elk patroon heeft een eigen plan en verificatie (KingmaDoc) in `p
 | UML-klassendiagram: contracten, modellen, I/O-contracten en implementaties | [modellen/klassen.md](modellen/klassen.md)                       |
 | UML-sequence: `FixAsync`                                                   | [modellen/fix-flow.md](modellen/fix-flow.md)                     |
 | UML-activity: Fixed of Manual                                              | [modellen/pattern-beslissing.md](modellen/pattern-beslissing.md) |
-| Overzicht van alle 15 patterns in vier groepen                             | [modellen/patronen.md](modellen/patronen.md)                     |
+| Overzicht van alle 31 FA-patterns in zes groepen                           | [modellen/patronen.md](modellen/patronen.md)                     |
 
 ## Patronen
 

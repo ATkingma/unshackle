@@ -18,8 +18,9 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveLengthPattern.cs`;
 | REQ-2 | Gehaald | `because` |
 | REQ-3 | Gehaald | `nullable` |
 | REQ-4 | Gehaald | `receiver-parens` |
-| REQ-5 | Gehaald | `stream`, `because-args`, `assertion-scope` |
+| REQ-5 | Gehaald (becauseArgs vervangen) | `stream`, `assertion-scope` |
 | REQ-6 | Gehaald | `AndChain/equal-length-approximately` |
+| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` (`string.Format(CultureInfo.InvariantCulture, ...)`) |
 
 ## Deviations
 

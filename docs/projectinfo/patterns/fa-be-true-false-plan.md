@@ -49,6 +49,8 @@ fa.be-true-false: x.Should().BeTrue()/BeFalse() wordt x.ShouldBeTrue()/ShouldBeF
 - **REQ-6**: IF de assertion in een keten staat (`.BeTrue().And...`) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/chain.*`).
 - **REQ-7**: IF het resultaat van `BeTrue`/`BeFalse` als waarde wordt gebruikt (`var c = ...`) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/value-used.*`).
 - **REQ-8**: IF het type van het subject onbekend is of niet `bool`/`bool?` THEN THE SYSTEM SHALL Manual geven. _Geen proof: before compileert dan niet; alleen via code bewaakt._
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als `customMessage` geven (proof `.../BeTrueFalse/because-args.after.cs`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt REQ-5 voor dit geval.
+- **Uitbreiding TAAK-100**: IF de assertion in een `AssertionScope` staat die `fa.assertion-scope` niet omzet THEN THE SYSTEM SHALL Manual geven ("Inside an AssertionScope").
 
 ## Assumptions
 

@@ -1,4 +1,4 @@
-title: "[Activity] Pattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] FluentAssertionPattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 vars: {
   d2-legend: {
@@ -10,15 +10,18 @@ vars: {
   }
 }
 start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
+scope: "Buiten een (niet-omgezette) AssertionScope?" {shape: diamond}
 subject: "Vorm x.Should().Methode()?" {shape: diamond}
 discarded: "Resultaat weggegooid?" {shape: diamond}
-args: "Geen becauseArgs of benoemde argumenten?" {shape: diamond}
-own: "Eigen controles geslaagd?" {shape: diamond}
+args: "Geen benoemde argumenten; becauseArgs\nalleen met constante formatstring?" {shape: diamond}
+own: "Eigen controles geslaagd?\n(RewriteAssertion)" {shape: diamond}
 rewrite: Bouw de Shouldly-aanroep {style.border-radius: 12}
 fixed: Fixed {style.fill: "#c8e6c9"; style.border-radius: 12}
 manual: Manual met reden {style.fill: "#ffe0b2"; style.border-radius: 12}
 end: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"; double-border: true}}
-start -> subject
+start -> scope
+scope -> subject: ja
+scope -> manual: nee
 subject -> discarded: ja
 subject -> manual: "nee (bijv. na .And)"
 discarded -> args: ja

@@ -11,15 +11,17 @@ pattern: ThrowExactlyPattern {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
-inv: InvokingPattern {
+inv: "«internal static» ThrowSyntax" {
   shape: class
-  "~RewriteAssertion(node, model)": PatternResult
-  "~IsInvoking(assertion, model)": bool
-  "~TryGetAction(subject, model, action, lambda, reason)": bool
+  "+FindThrow(root, model, owns)": "IEnumerable<SyntaxNode>"
+  "+FindThrowAsync(root, model, owns)": "IEnumerable<SyntaxNode>"
+  "+IsExactly(assertion)": bool
+  "+IsInvoking(assertion, model)": bool
+  "+Rewrite(node, model)": PatternResult
+  "+TryGetAction(subject, model, action, lambda, reason)": bool
 }
 throw: "ThrowPattern / ThrowAsyncPattern / NotThrowPattern" {
   shape: class
-  "~Find(root, model, owns)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
 msg: ThrowMessage {
@@ -41,8 +43,7 @@ sh: "«Shouldly» aangemaakt" {
   "(await Should.ThrowAsync<T>(act)).ShouldBeOfType<T>()": ""
 }
 pattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
-pattern -> throw: Find {style.stroke-dash: 3}
-pattern -> inv: Rewrite {style.stroke-dash: 3}
+pattern -> inv: "Find en Rewrite" {style.stroke-dash: 3}
 inv -> throw: delegeert {style.stroke-dash: 3}
 throw -> msg: gebruikt {style.stroke-dash: 3}
 throw -> result: levert {style.stroke-dash: 3}

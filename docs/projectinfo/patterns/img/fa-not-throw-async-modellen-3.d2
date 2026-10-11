@@ -29,9 +29,9 @@ q6: "Func<Task> of Func<Task<ref>>?" {shape: diamond}
 m6: "Manual: the only delegates Should.NotThrowAsync accepts\n(proof: value-result)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q5 -> q6: ja
 q6 -> m6: nee
-q7: "Geen becauseArgs?" {shape: diamond}
-m7: "Manual: becauseArgs\n(proof: because-args)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q7: "Geen benoemde argumenten; because constant formatteerbaar?" {shape: diamond}
+m7: "Manual: named arguments, or becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q6 -> q7: ja
 q7 -> m7: nee
-ok: "Fixed: await Should.NotThrowAsync(act[, because])[.ConfigureAwait(x)]\n(proof: simple, because, configure-await, lambda, reference-result)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+ok: "Fixed: await Should.NotThrowAsync(act[, because])[.ConfigureAwait(x)]\nbecauseArgs: string.Format(InvariantCulture, because, args)\n(proof: simple, because, because-args, configure-await, lambda, reference-result)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
 q7 -> ok: ja

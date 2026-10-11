@@ -32,14 +32,15 @@ files_expected:
 
 **Out of scope**
 
-- `NotThrowAsync<T>()`, `NotThrowAfterAsync`, niet-awaited of gebruikt resultaat, `Func<Task<int>>`, `FluentActions.Awaiting`, becauseArgs, AssertionScope: Manual.
+- `NotThrowAsync<T>()`, `NotThrowAfterAsync`, niet-awaited of gebruikt resultaat, `Func<Task<int>>`, `FluentActions.Awaiting`, AssertionScope: Manual. (becauseArgs: zie Uitbreiding TAAK-097.)
 
 ## Requirements
 
 - **REQ-1**: WHEN `await act.Should().NotThrowAsync()` een statement is THE SYSTEM SHALL `await Should.NotThrowAsync(act)` geven (proof `simple, lambda, reference-result`).
 - **REQ-2**: WHEN `because` zonder becauseArgs staat THE SYSTEM SHALL die als customMessage meegeven (proof `because`).
 - **REQ-3**: WHEN `.ConfigureAwait(x)` volgt THE SYSTEM SHALL die op `Should.NotThrowAsync` houden (proof `configure-await`).
-- **REQ-4**: IF generiek, niet-awaited, resultaat gebruikt, waarde-Task, FA-subject, becauseArgs of AssertionScope THEN THE SYSTEM SHALL Manual geven (proof `generic, not-awaited, result-used, value-result, awaiting, because-args, assertion-scope`).
+- **REQ-4**: IF generiek, niet-awaited, resultaat gebruikt, waarde-Task, FA-subject of AssertionScope THEN THE SYSTEM SHALL Manual geven (proof `generic, not-awaited, result-used, value-result, awaiting, assertion-scope`).
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (Fixed, proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual.
 
 ## Assumptions
 

@@ -14,11 +14,18 @@ ipattern: "«interface» IPattern" {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+base: "FluentAssertionPattern (abstract)" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteBeforeArguments(context)": "PatternResult?"
+  "#RewriteAssertion(context)": PatternResult
+}
 ContainPattern: ContainPattern {
   shape: class
   "+Id": "fa.contain"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
+  "#RewriteBeforeArguments(context)": "PatternResult?"
+  "#RewriteAssertion(context)": PatternResult
   "-IsGenericEnumerable(type)": ""
 }
 syntax: FluentAssertionsSyntax {
@@ -59,7 +66,9 @@ rec: "Herkende typen" {
   "IEnumerable<T>": ""
   "IDictionary / IReadOnlyDictionary (Manual)": ""
 }
-ContainPattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+ContainPattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base -> syntax: gebruikt {style.stroke-dash: 3}
 ContainPattern -> syntax: gebruikt {style.stroke-dash: 3}
 ContainPattern -> result: levert {style.stroke-dash: 3}
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}

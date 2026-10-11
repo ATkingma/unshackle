@@ -13,8 +13,10 @@ Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`.
 | ------------------- | ----------------------------------------------------------------------------- |
 | `AddMediatRPattern` | Vindt `AddMediatR` (symbool uit assembly `MediatR`) en schrijft `AddMediator` |
 | `s_dropped`         | `RegisterServicesFrom*`: vervallen, de source generator vindt handlers        |
-| `Behavior`          | `AddOpenBehavior`/`AddBehavior` → `typeof(...)` van de implementatie          |
-| `MediatorOptions`   | Door de generator geschreven; `ServiceLifetime`, `PipelineBehaviors`          |
+| `Registered`        | `Add(Open)Behavior`, `Add(Open)StreamBehavior`, `Add(Open)RequestPre/PostProcessor` → `typeof(...)` van de implementatie |
+| `Scanned`           | Gesloten exception handlers en processors uit het eigen project (MediatR-assembly-scan) |
+| `IsBuiltInPublisher` | `TaskWhenAllPublisher`/`ForeachAwaitPublisher` → `NotificationPublisherType` |
+| `MediatorOptions`   | Door de generator geschreven; `ServiceLifetime`, `PipelineBehaviors`, `StreamPipelineBehaviors`, `NotificationPublisherType` |
 
 ## Figuur 2: sequence
 
@@ -25,9 +27,10 @@ Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`.
 
 | Stap         | Methode in de code                       | Wat gebeurt er                                          |
 | ------------ | ---------------------------------------- | ------------------------------------------------------- |
-| Vinden       | `Find` met `GetSymbolInfo`               | Alleen de echte `AddMediatR` van MediatR                |
-| Instellingen | `ParameterName`, `Behavior`, `s_dropped` | Elke instelling: vervalt, behavior, lifetime of Manual  |
-| Schrijven    | `SyntaxFactory.ParseStatement`           | Letterlijke toewijzingen, inspringing van het origineel |
+| Vinden       | `Find` met `GetSymbolInfo`               | Alleen de echte `AddMediatR` van MediatR (ook als candidate-symbool) |
+| Instellingen | `ParameterName`, `Registered`, `s_dropped`, `IsBuiltInPublisher` | Elke instelling: vervalt, behavior/processor/stream behavior, lifetime, publisher of Manual |
+| Scan         | `Scanned`, `IsScanned`                   | Volgorde: exception handlers, pre-processors, behaviors, post-processors |
+| Schrijven    | `BlockStatements`, `SyntaxFactory.ParseStatement` | Letterlijke toewijzingen, alleen de inspringing; comments vóór de eerste |
 
 ## Figuur 3: beslisboom
 
@@ -41,9 +44,9 @@ Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`.
 | Manual "not called as AddMediatR(cfg => ...)" | geen lambda                            | `AddMediatR/no-lambda`              |
 | Manual "not a list of cfg calls"              | blok met andere statements             | geen proof                          |
 | Manual "cfg.X(...) has no direct equivalent"  | onbekende aanroep of lifetime-argument | `unknown-call`, `behavior-lifetime` |
-| Manual "'...' has no direct equivalent"       | andere toewijzing/expressie            | `publisher`                         |
-| Manual "behaviors in expression lambda"       | expression body met behavior           | geen proof                          |
-| `AddMediator(cfg => ...)`                     | alles bekend                           | `behaviors`, `expression`           |
+| Manual "'...' has no direct equivalent"       | andere toewijzing/expressie (eigen publisher) | geen proof                   |
+| Manual "several settings in an expression lambda" | expression body met meer dan één toewijzing | geen proof                   |
+| `AddMediator(cfg => ...)`                     | alles bekend                           | `behaviors`, `expression`, `empty`, `processors`, `publisher`, `edge-publisher-qualified`, `edge-assemblies`, `edge-service-type-behavior`, `generic-handlers` |
 
 ## Zie ook
 

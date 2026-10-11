@@ -2,16 +2,24 @@ title: "[Sequence] AssertionScope" {shape: text; near: top-center; style: {font-
 shape: sequence_diagram
 fixer: Fixer
 scope: AssertionScopePattern
-other: ShouldBePattern
+other: "Assertion-patronen"
 syntax: FluentAssertionsSyntax
 model: SemanticModel
 fixer -> scope: "Find(root, model)"
 scope -> model: "GetTypeInfo(creation)"
 scope -> syntax: "IsAssertionScope(type)"
+scope -> fixer: "using-statement, blok (using var) of creatie" {style.stroke-dash: 3}
 fixer -> scope: "Rewrite(node, model)"
-scope -> fixer: "Manual(ShouldSatisfyAllConditions)" {style.stroke-dash: 3}
-fixer -> other: "Rewrite(node, model)"
-other -> syntax: "IsInsideAssertionScope(node, model)"
-syntax -> model: "GetTypeInfo(declaration)"
-syntax -> other: "true" {style.stroke-dash: 3}
-other -> fixer: "Manual(Inside an AssertionScope)" {style.stroke-dash: 3}
+scope -> scope: "IsPlain(creation), TryConvert(statements)"
+scope -> syntax: "IsFluentAssertions, IsSafeToEvaluateTwice"
+alt: "alt [alleen FA-assertion-statements, zonder argumenten]" {
+  scope -> fixer: "Fixed(x.ShouldSatisfyAllConditions(() => { a; }, ...))" {style.stroke-dash: 3}
+  fixer -> other: "Rewrite(assertion in lambda)"
+  other -> fixer: "Fixed (geen scope meer)" {style.stroke-dash: 3}
+}
+else: "else" {
+  scope -> fixer: "Manual(ShouldSatisfyAllConditions-advies)" {style.stroke-dash: 3}
+  fixer -> other: "Rewrite(assertion in scope)"
+  other -> syntax: "IsInsideAssertionScope(node, model)"
+  other -> fixer: "Manual(Inside an AssertionScope)" {style.stroke-dash: 3}
+}

@@ -19,8 +19,10 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeOfTypePattern.cs`; r
 | REQ-3 | Gehaald | `type-argument` |
 | REQ-4 | Gehaald | `which` |
 | REQ-5 | Gehaald | `nullable` |
-| REQ-6 | Gehaald | `and`, `which-chain`, `which-multiple` |
-| REQ-7 | Gehaald | `because-args`, `assertion-scope`, `type-subject` |
+| REQ-6 | Deels vervangen | `and` (Manual); `which-chain`, `which-multiple` zijn nu Fixed (TAAK-096) |
+| REQ-7 | Deels vervangen | `assertion-scope`, `type-subject` (Manual); `because-args` is nu Fixed (TAAK-097) |
+| Uitbreiding TAAK-096 | Gehaald | `which-chain.after.cs`, `which-multiple.after.cs` |
+| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` |
 
 ## Deviations
 

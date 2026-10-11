@@ -19,10 +19,12 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeTrueFalsePattern.cs`
 | REQ-2 | Gehaald                     | `be-false.before.cs` / `be-false.after.cs` (`(a == b).Should().BeFalse()`) |
 | REQ-3 | Gehaald                     | `because.before.cs` / `because.after.cs` |
 | REQ-4 | Gehaald                     | `nullable.before.cs` / `nullable.after.cs` (`ShouldBe(true)`, `ShouldBe(false, "why")`) |
-| REQ-5 | Gehaald                     | `because-args.before.cs` / `because-args.manual.txt` |
+| REQ-5 | Vervangen | Door Uitbreiding TAAK-097: `because-args` is nu Fixed |
 | REQ-6 | Gehaald                     | `chain.before.cs` / `chain.manual.txt` |
 | REQ-7 | Gehaald                     | `value-used.before.cs` / `value-used.manual.txt` |
-| REQ-8 | Gehaald in code, geen proof | Type-check (`bool`/`bool?`) in `Rewrite`; een onbekend type laat `before` niet compileren |
+| REQ-8 | Gehaald in code, geen proof | Type-check (`bool`/`bool?`) in `RewriteAssertion`; een onbekend type laat `before` niet compileren |
+| Uitbreiding TAAK-097 | Gehaald | `because-args.before.cs` / `because-args.after.cs` (`string.Format(...)`) |
+| Uitbreiding TAAK-100 | Gehaald | Gedeelde check in `FluentAssertionPattern.Rewrite`; proofs in `AssertionScope/` |
 
 ## Deviations
 

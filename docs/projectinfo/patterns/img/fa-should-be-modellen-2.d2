@@ -13,12 +13,13 @@ pattern -> fixer: "nodes" {style.stroke-dash: 3}
 each: "loop [elke node]" {
   fixer -> pattern: "Rewrite(node, model)"
   checks: "opt [controles]" {
+    pattern -> syntax: "FluentAssertionPattern.Rewrite: IsInsideAssertionScope(node, model)"
     pattern -> syntax: "GetSubject(assertion)"
     pattern -> syntax: "IsResultDiscarded(assertion, model)"
-    pattern -> model: "GetSymbolInfo(assertion): namespace Xml of Types?"
     pattern -> syntax: "TryGetArguments(assertion, model)"
+    pattern -> model: "RewriteAssertion: GetSymbolInfo(assertion): namespace Xml of Types?"
     pattern -> model: "GetTypeInfo(subject): bekend type?"
-    pattern -> pattern: "ConvertExpected(expected, subjectType, ...)"
+    pattern -> syntax: "ConvertExpected(expected, subjectType, ...)"
     pattern -> model: "ClassifyConversion(expected, subjectType)"
   }
   manual: "alt [een controle faalt]" {

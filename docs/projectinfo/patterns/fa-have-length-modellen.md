@@ -10,6 +10,7 @@
 | Element | Pad | Rol |
 | --- | --- | --- |
 | `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` doet scope, vorm, resultaat en because(-args), dan `RewriteAssertion` |
 | `HaveLengthPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveLengthPattern.cs` | Dit patroon, Id `fa.have-length` |
 | `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde controles |
 | `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst |
@@ -22,10 +23,10 @@
 | Stap | Plek | Wat gebeurt er |
 | --- | --- | --- |
 | Find | `HaveLengthPattern.Find` | `FindInvocations` op de FA-namen |
-| Controles | `HaveLengthPattern.Rewrite` | scope, vorm, gebruik van het resultaat, type, argumenten |
+| Controles | `FluentAssertionPattern.Rewrite` → `HaveLengthPattern.RewriteAssertion` | scope, vorm, gebruik van het resultaat, argumenten (`TryGetArguments`); dan `?.`, type, `NotNullReceiver` |
 | Uitkomst | `PatternResult.Fixed` / `Manual` | Shouldly-aanroep of reden |
 
-**Figure 3.** Beslisboom van `Rewrite`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/HaveLength/`.
+**Figure 3.** Beslisboom van `FluentAssertionPattern.Rewrite` + `RewriteAssertion`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/HaveLength/`.
 
 <!-- kingmadoc:diagram img/fa-have-length-modellen-3.d2 -->
 ![Modellen: fa.have-length](img/fa-have-length-modellen-3.png)
@@ -35,10 +36,10 @@
 | Buiten een AssertionScope? | Inside an AssertionScope | `assertion-scope` |
 | Vorm s.Should().HaveLength(..)? | is not in the form s.Should() | `geen proof; .And via fa.and-chain` |
 | Resultaat weggegooid? | is used | `geen proof` |
+| Geen benoemde argumenten; because constant formatteerbaar? | named arguments, or becauseArgs whose because is no constant format string | `geen proof` |
 | Geen ?. in het subject? | uses ?. | `geen proof` |
 | Op StringAssertions? | on a stream | `stream` |
-| Geen becauseArgs? | becauseArgs | `because-args` |
-| Fixed | `s[.ShouldNotBeNull()].Length.ShouldBe(n[, because])` | simple, because, nullable, receiver-parens |
+| Fixed | `s[.ShouldNotBeNull()].Length.ShouldBe(n[, because])` | simple, because, because-args, nullable, receiver-parens |
 
 ## Zie ook
 

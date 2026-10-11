@@ -14,13 +14,17 @@ ipattern: "«interface» IPattern" {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+base: "FluentAssertionPattern (abstract)" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": "PatternResult (abstract)"
+}
 HaveCountPattern: HaveCountPattern {
   shape: class
   "+Id": "fa.have-count"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
   "-Member(expression, name)": ""
-  "-IsSafeReceiver(subject)": ""
   "-Implements(type, names)": ""
   "-HasIntProperty(type, name)": ""
 }
@@ -30,6 +34,7 @@ syntax: FluentAssertionsSyntax {
   "+GetSubject(assertion)": "ExpressionSyntax?"
   "+IsResultDiscarded(assertion, model)": bool
   "+TryGetArguments(assertion, model, values, because)": bool
+  "+NotNullReceiver(subject, model)": ExpressionSyntax
 }
 result: "PatternResult (abstract)" {
   shape: class
@@ -48,11 +53,13 @@ manual: ManualResult {
 fa: "«FluentAssertions» herkend" {
   shape: class
   "HaveCount(int expected[, because])": ""
+  "HaveCountGreaterThan / ...OrEqualTo / HaveCountLessThan / ...OrEqualTo (int)": ""
   "HaveCount(Expression predicate)": ""
 }
 sh: "«Shouldly» aangemaakt" {
   shape: class
   "Length / Count / Count() + ShouldBe(n[, because])": ""
+  "... + ShouldBeGreaterThan / ShouldBeLessThan (OrEqualTo)": ""
   "using System.Linq (bij Count())": ""
 }
 rec: "Herkende typen" {
@@ -62,7 +69,8 @@ rec: "Herkende typen" {
   "IEnumerable<T>": ""
   "publieke int Count of Length": ""
 }
-HaveCountPattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+HaveCountPattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
 HaveCountPattern -> syntax: gebruikt {style.stroke-dash: 3}
 HaveCountPattern -> result: levert {style.stroke-dash: 3}
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}

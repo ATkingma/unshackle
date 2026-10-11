@@ -5,15 +5,18 @@ pattern: ThrowAsyncPattern
 syntax: FluentAssertionsSyntax
 msg: ThrowMessage
 fixer -> pattern: "Find(root, model)"
-pattern -> syntax: "FindInvocations(root, model, ThrowAsync, ThrowExactlyAsync)"
+pattern -> syntax: "ThrowSyntax.FindThrowAsync → FindInvocations(root, model, ThrowAsync, ThrowExactlyAsync), zonder Exactly/Awaiting"
 syntax -> pattern: "aanroepen" {style.stroke-dash: 3}
 pattern -> fixer: "await-expressies" {style.stroke-dash: 3}
 loop: "loop [elke node]" {
   fixer -> pattern: "Rewrite(node, model)"
+  pattern -> syntax: "IsInsideAssertionScope(node, model)"
   pattern -> syntax: "GetSubject(throwCall)"
+  pattern -> pattern: "IsInvoking? TryGetAction; subjecttype"
+  pattern -> msg: "MayThrowAggregate (niet bij ThrowExactlyAsync)"
   pattern -> syntax: "TryGetArguments(throwCall, model)"
   pattern -> msg: "Check(thrown, pattern, because)"
-  msg -> pattern: "Message.ShouldX(...) of null" {style.stroke-dash: 3}
+  msg -> pattern: "Fixed(Message.ShouldX(...)) of Manual" {style.stroke-dash: 3}
   alt: "alt" {
     pattern -> fixer: "Fixed(await Should.ThrowAsync<T>(act))" {style.stroke-dash: 3}
   }

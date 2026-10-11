@@ -19,7 +19,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPa
 | REQ-3  | Gehaald | `lambda.*.cs` |
 | REQ-4  | Gehaald | `not-equivalent.*` |
 | REQ-5  | Gehaald | `and-chain.*`, `value-used.*` |
-| REQ-6  | Gehaald | `because-args.*` |
+| REQ-6  | Vervangen | door REQ-14 (TAAK-097): `because-args` is nu Fixed |
 | REQ-7  | Gehaald | `options.*` |
 | REQ-8  | Gehaald | `anonymous.*`, `different-types.*`, `base-vs-derived.*` |
 | REQ-9  | Gehaald | `collection.*`, `collection-member.*` |
@@ -27,6 +27,9 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPa
 | REQ-11 | Gehaald | `equals-override.*`, `equals-member.*` |
 | REQ-12 | Gehaald | `cyclic.*` |
 | REQ-13 | Gehaald | `no-members.*` |
+| TAAK-092 | Gehaald | `collection-ints`, `collection-strings-because`, `collection-nullable-enum`, `edge-array-literal`, `AndChain/equivalent-collection`; Manual: `collection-element-types`, `collection` |
+| REQ-14 | Gehaald | `because-args.*.cs`, `collection-because-args.*.cs` |
+| REQ-15 | Gehaald | `edge-collection-params.*` (Manual "is a collection") |
 
 ## Deviations
 

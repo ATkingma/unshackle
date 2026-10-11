@@ -1,13 +1,15 @@
 title: "[Klassen] AssertionScopePattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 IPattern: {shape: class; "+Id: string"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
-AssertionScopePattern: {shape: class; "+Id = fa.assertion-scope"; "+Find(root, model)"; "+Rewrite(node, model)"}
-FluentAssertionsSyntax: {shape: class; "+InsideAssertionScopeReason"; "+IsAssertionScope(type): bool"; "+IsInsideAssertionScope(node, model): bool"}
-OtherPatterns: "Andere FA-patronen\n(ShouldBePattern, ...)" {shape: class}
-PatternResult: {shape: class; "+Manual(reason)"}
+AssertionScopePattern: {shape: class; "+Id = fa.assertion-scope"; "+Find(root, model)"; "+Rewrite(node, model)"; "-IsPlain(creation): bool"; "-TryConvert(statements, replaced, model, out converted): bool"}
+FluentAssertionsSyntax: {shape: class; "+InsideAssertionScopeReason"; "+IsAssertionScope(type): bool"; "+IsInsideAssertionScope(node, model): bool"; "+IsFluentAssertions(symbol): bool"; "+IsSafeToEvaluateTwice(expression, model): bool"}
+OtherPatterns: "Andere FA-patronen\n(FluentAssertionPattern.Rewrite, AndChainPattern, ...)" {shape: class}
+PatternResult: {shape: class; "+Fixed(nodes)"; "+Manual(reason)"}
 AssertionScope: "FluentAssertions.Execution.AssertionScope\n(sealed)" {shape: class}
+Shouldly: "Shouldly\nx.ShouldSatisfyAllConditions(() => {..}, ...)" {shape: class}
 AssertionScopePattern -> IPattern: implementeert
 OtherPatterns -> IPattern: implementeert
-AssertionScopePattern -> FluentAssertionsSyntax: IsAssertionScope
+AssertionScopePattern -> FluentAssertionsSyntax: "IsAssertionScope, IsFluentAssertions, IsSafeToEvaluateTwice"
 OtherPatterns -> FluentAssertionsSyntax: IsInsideAssertionScope
 FluentAssertionsSyntax -> AssertionScope: herkent
-AssertionScopePattern -> PatternResult: Manual
+AssertionScopePattern -> PatternResult: "Fixed of Manual"
+AssertionScopePattern -> Shouldly: bouwt

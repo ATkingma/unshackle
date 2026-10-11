@@ -14,11 +14,16 @@ ipattern: "«interface» IPattern" {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+base: "«abstract» FluentAssertionPattern" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
+}
 BeEmptyPattern: BeEmptyPattern {
   shape: class
   "+Id": "fa.be-empty"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
 }
 syntax: FluentAssertionsSyntax {
   shape: class
@@ -56,7 +61,8 @@ rec: "Herkende typen" {
   "string": ""
   "IEnumerable<T> (ook dictionaries)": ""
 }
-BeEmptyPattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+BeEmptyPattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
 BeEmptyPattern -> syntax: gebruikt {style.stroke-dash: 3}
 BeEmptyPattern -> result: levert {style.stroke-dash: 3}
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}

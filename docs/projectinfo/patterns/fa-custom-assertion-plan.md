@@ -45,6 +45,7 @@ Een aanroep van een niet-FA-methode op een FA-assertions-type (`result.Should().
 - **REQ-3**: WHEN een FA-methode zelf wordt aangeroepen THE SYSTEM SHALL dit patroon niet laten matchen (`IsFluentAssertions` op de methode).
 - **REQ-4**: WHEN het rapport wordt geschreven THE SYSTEM SHALL de aanroepen van één extensie samenvoegen tot één rij met aantal (unittest `FromAll_CustomAssertionCalls_OneRowPerAssertionWithCount`).
 - **REQ-5**: WHEN de console de samenvatting toont THE SYSTEM SHALL per extensie aantal en reden tonen, met één advieskop.
+- **Uitbreiding**: WHEN een eigen extensie binnen een `AssertionScope` staat THE SYSTEM SHALL dezelfde custom-reden geven (niet "Inside an AssertionScope"); `fa.assertion-scope` zet zo'n scope niet om, omdat de aanroep geen FA-methode is (proof `CustomAssertion/in-assertion-scope`).
 
 ## Risks
 

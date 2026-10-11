@@ -9,17 +9,17 @@ q1: "Vorm act.Should().ThrowExactly<T>()?" {shape: diamond}
 m1: "Manual: is not in the form\n(proof: geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q0 -> q1: ja
 q1 -> m1: nee
-q2: "Resultaat weggegooid?" {shape: diamond}
-m2: "Manual: is used\n(proof: value-used)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q2: "Node is .Which, of resultaat weggegooid?" {shape: diamond}
+m2: "Manual: is used\n(geen eigen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q1 -> q2: ja
 q2 -> m2: nee
 q3: "Delegate die Should.Throw(Async) accepteert?" {shape: diamond}
 m3: "Manual: The subject is not\n(proof: geen proof (fa.throw: value-func))" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q2 -> q3: ja
 q3 -> m3: nee
-q4: "Geen becauseArgs?" {shape: diamond}
-m4: "Manual: becauseArgs\n(proof: because-args)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q4: "Geen named args; becauseArgs\nalleen bij constante because?" {shape: diamond}
+m4: "Manual: named arguments or becauseArgs\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q3 -> q4: ja
 q4 -> m4: nee
-f0: "Fixed: Should.Throw<T>(act[, because]).ShouldBeOfType<T>()[.Message.ShouldX(..)]\n(simple, because, message, async, async-message, aggregate-wait)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+f0: "Fixed: Should.Throw<T>(act[, because]).ShouldBeOfType<T>()[.Message.ShouldX(..)]\nbecauseArgs: string.Format(InvariantCulture, because, args); .Which vervalt\n(simple, because, because-args, value-used, message, async, async-message, aggregate-wait)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
 q4 -> f0: ja

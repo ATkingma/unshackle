@@ -1,10 +1,13 @@
 title: "[Beslisboom] UnsupportedPattern.Advice" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
-q1: "Interface in s_advice?" {shape: diamond}
-q2: "Generiek type en\ninterface in s_noGeneric?" {shape: diamond}
-a: "Manual: advies uit s_advice\n(pre-processor, post-processor, exception-handler,\nnotification-publisher, stream-behavior)"
-g: "Manual: geen generieke berichten/handlers\n(generic-handler)"
+q0: "Klasse/struct/record\n(geen interface)?" {shape: diamond}
+q1: "Zelf gedeclareerde interface\nin s_advice?" {shape: diamond}
+q2: "Generiek type en\ninterface (AllInterfaces) in s_noGeneric?" {shape: diamond}
+a: "Manual: advies uit s_advice\n(exception-action, notification-publisher)"
+g: "Manual: geen generieke berichten/handlers\n(generic-handler, derived-generic-message)"
 n: "niet gevonden"
+q0 -> q1: ja
+q0 -> n: nee
 q1 -> a: ja
 q1 -> q2: nee
 q2 -> g: ja

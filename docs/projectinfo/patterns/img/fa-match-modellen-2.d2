@@ -1,0 +1,26 @@
+title: "[Sequence] MatchPattern - Find en Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+base: FluentAssertionPattern
+pattern: MatchPattern
+syntax: FluentAssertionsSyntax
+model: SemanticModel
+result: PatternResult
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "FindInvocations(root, model, Match, NotMatch, MatchRegex, NotMatchRegex)"
+pattern -> fixer: "nodes" {style.stroke-dash: 3}
+each: "loop [elke node]" {
+  fixer -> base: "Rewrite(node, model)"
+  base -> syntax: "IsInsideAssertionScope(node, model)"
+  base -> syntax: "GetSubject(assertion)"
+  base -> syntax: "IsResultDiscarded(assertion, model)"
+  base -> syntax: "TryGetArguments(assertion, model)"
+  base -> pattern: "RewriteAssertion(context)"
+  pattern -> model: "GetTypeInfo(subject): string?"
+  pattern -> model: "GetConstantValue(value): niet-lege string?"
+  pattern -> syntax: "NotNull(subject, model)"
+  pattern -> syntax: "Invoke(receiver, ShouldMatch / ShouldNotMatch, ...)"
+  pattern -> result: "Fixed(..) of Manual(reden)"
+  pattern -> base: "PatternResult" {style.stroke-dash: 3}
+  base -> fixer: "PatternResult" {style.stroke-dash: 3}
+}

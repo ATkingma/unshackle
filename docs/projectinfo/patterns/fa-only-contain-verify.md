@@ -18,11 +18,14 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/OnlyContainPattern.cs`
 | REQ-2 | Gehaald | `enumerable.*`, `array.*`, `dictionary.*` (after compileert tegen Shouldly) |
 | REQ-3 | Gehaald | `member-subject.*.cs` |
 | REQ-4 | Gehaald | `because.*.cs` |
-| REQ-5 | Gehaald | `because-args.before.cs` / `.manual.txt` |
+| REQ-5 | Vervangen | door Uitbreiding TAAK-097 |
 | REQ-6 | Gehaald | `chain.*`, `used.*` |
 | REQ-7 | Gehaald | `and-chain.*` |
-| REQ-8 | Gehaald | `subject-call.*` |
+| REQ-8 | Vervangen | door Uitbreiding TAAK-098 |
 | REQ-9 | Gehaald | `lambda.*`, `no-block.*` |
+| TAAK-097 | Gehaald | `because-args.after.cs` (`string.Format` op beide statements) |
+| TAAK-098 | Gehaald | `subject-call.after.cs` (`var subject = Load();`) |
+| TAAK-100 | Gehaald | `FluentAssertionPattern.Rewrite` (`IsInsideAssertionScope`); geen eigen proof |
 
 ## Deviations
 

@@ -6,37 +6,45 @@ vars: {
     m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
   }
 }
+classes: {
+  m: {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+  f: {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+  q: {shape: diamond}
+}
 start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
-q1: "Throw<T>, niet ThrowExactly?" {shape: diamond}
-m1: "Manual: ThrowExactly<T> requires the exact exception type\n(proof: throw-exactly)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q2: "Precies één typeargument?" {shape: diamond}
-m2: "Manual: Throw without exactly one type argument\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q3: "Vorm x.Should().Throw<T>()?" {shape: diamond}
-m3: "Manual: Throw<T>(...) is not in the form x.Should().Throw<T>()\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q4: "Resultaat weggegooid?" {shape: diamond}
-m4: "Manual: The result of Throw<T>() is used (.Which, .And, ...)\n(proof: chain, value-used)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q5: "Subject niet gebouwd met Invoking(...)?" {shape: diamond}
-m5: "Manual: The subject is built with Invoking(...)\n(proof: invoking)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q6: "Subject is Action of Func naar referentietype?" {shape: diamond}
-m6: "Manual: The subject is not an Action or a Func returning a reference type\n(proof: value-func)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q7: "Geen becauseArgs, geen waarde-argumenten op Throw?" {shape: diamond}
-m7: "Manual: becauseArgs of benoemde argumenten\n(proof: because-args)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q8: "Volgt .WithMessage(...) direct?" {shape: diamond}
-f0: "Fixed: Should.Throw<T>(act[, because])\n(proof: simple, because, func, lambda)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-w1: "Geen becauseArgs, één waarde op WithMessage?" {shape: diamond}
-mw1: "Manual: WithMessage(...) with becauseArgs\n(proof: message-because-args)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-w2: "Patroon is een constante string?" {shape: diamond}
-mw2: "Manual: pattern is not a string constant\n(proof: message-variable)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-w3: "Alleen een * vooraan of achteraan?" {shape: diamond}
-mw3: "Manual: wildcards other than a leading or trailing *\n(proof: message-wildcard)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-sel: "Welk patroon?" {shape: diamond}
-f1: "Fixed: Should.Throw<T>(act).Message.ShouldContain(lit, Case.Insensitive)\n(proof: message-contains)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-f2: "Fixed: ...Message.ShouldStartWith(lit, Case.Insensitive)\n(proof: message-starts)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-f3: "Fixed: ...Message.ShouldEndWith(lit, Case.Insensitive)\n(proof: message-ends)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-f4: "Fixed: ...Message.ShouldBe(lit[, because], StringCompareShould.IgnoreCase)\n(proof: message-exact, message-exact-because, message-because)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-start -> q1
-q1 -> m1: nee
-q1 -> q2: ja
+q0: "Buiten een AssertionScope?" {class: q}
+m0: "Manual: Inside an AssertionScope\n(proof: ThrowExactly/assertion-scope, Invoking/assertion-scope)" {class: m}
+q2: "Precies één typeargument?" {class: q}
+m2: "Manual: Throw without exactly one type argument\n(geen proof)" {class: m}
+q3: "Vorm x.Should().Throw<T>()?" {class: q}
+m3: "Manual: is not in the form x.Should().Throw<T>()\n(geen proof)" {class: m}
+q4: "Node is .Which, of resultaat weggegooid?" {class: q}
+m4: "Manual: The result of Throw<T>() is used\n(proof: chain, edge-inner-exception)" {class: m}
+q5: "Invoking: TryGetAction lukt;\nanders niet met FluentAssertions gebouwd?" {class: q}
+m5: "Manual: Invoking-receiver/lambda, of FA-subject\n(proof: Invoking/side-effect-receiver, value-type, method-group)" {class: m}
+q6: "Action of Func naar referentietype?" {class: q}
+m6: "Manual: not an Action or a Func returning a reference type\n(proof: value-func)" {class: m}
+qa: "ThrowExactly, of geen AggregateException-risico\n(ThrowMessage.MayThrowAggregate)?" {class: q}
+ma: "Manual: FluentAssertions unwraps AggregateException\n(proof: aggregate-wait, aggregate-method-group)" {class: m}
+q7: "Geen named args op Throw; becauseArgs\nalleen bij constante because?" {class: q}
+m7: "Manual: named arguments or becauseArgs\n(geen proof)" {class: m}
+q8: "Volgt .WithMessage(...) direct?" {class: q}
+f0: "Fixed: Should.Throw<T>(act[, because])\n[.ShouldBeOfType<T>() bij ThrowExactly]\n(proof: simple, because, because-args, func, lambda,\nvalue-used, aggregate-expected, aggregate-get-result)" {class: f}
+w1: "Geen named args, één waarde op WithMessage?" {class: q}
+mw1: "Manual: WithMessage(...) with named arguments or becauseArgs\n(geen proof)" {class: m}
+w2: "Patroon is een constante string?" {class: q}
+mw2: "Manual: pattern is not a string constant\n(proof: message-variable)" {class: m}
+w3: "Alleen een * vooraan of achteraan?" {class: q}
+mw3: "Manual: wildcards other than a leading or trailing *\n(proof: message-wildcard)" {class: m}
+w4: "Geen regeleinde naast een *?" {class: q}
+mw4: "Manual: pattern contains a line break\n(proof: message-contains-line-break)" {class: m}
+sel: "Welk patroon?" {class: q}
+f1: "Fixed: ...Message.ShouldContain(lit, Case.Insensitive)\n(proof: message-contains)" {class: f}
+f2: "Fixed: ...Message.ShouldStartWith / ShouldEndWith(lit, Case.Insensitive)\n(proof: message-starts, message-ends)" {class: f}
+f4: "Fixed: ...Message.ShouldBe(lit[, because], IgnoreCase[ | IgnoreLineEndings])\n(proof: message-exact, message-exact-because, message-because,\nmessage-because-args, message-line-break, edge-multiline-message, edge-which-message)" {class: f}
+start -> q0
+q0 -> m0: nee
+q0 -> q2: ja
 q2 -> m2: nee
 q2 -> q3: ja
 q3 -> m3: nee
@@ -46,7 +54,9 @@ q4 -> q5: ja
 q5 -> m5: nee
 q5 -> q6: ja
 q6 -> m6: nee
-q6 -> q7: ja
+q6 -> qa: ja
+qa -> ma: nee
+qa -> q7: ja
 q7 -> m7: nee
 q7 -> q8: ja
 q8 -> f0: nee
@@ -56,8 +66,9 @@ w1 -> w2: ja
 w2 -> mw2: nee
 w2 -> w3: ja
 w3 -> mw3: nee
-w3 -> sel: ja
+w3 -> w4: ja
+w4 -> mw4: nee
+w4 -> sel: ja
 sel -> f1: "*lit*"
-sel -> f2: "lit*"
-sel -> f3: "*lit"
+sel -> f2: "lit* / *lit"
 sel -> f4: "lit"

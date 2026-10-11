@@ -1,0 +1,19 @@
+title: "[Sequence] ExceptionHandlerPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: ExceptionHandlerPattern
+syntax: MediatRSyntax
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "DeclaredInterface(symbol, IRequestExceptionHandler`3)"
+pattern -> fixer: "ClassDeclarationSyntax" {style.stroke-dash: 3}
+fixer -> pattern: "Rewrite(node, model)"
+pattern -> model: "FindImplementationForInterfaceMember(Handle)"
+pattern -> syntax: "RejectExplicit(method)"
+pattern -> model: "GetSymbolInfo: elk gebruik van state"
+pattern -> syntax: "IsTaskMember(return, CompletedTask)"
+pattern -> pattern: "SetHandled(x); return -> return new(Handled(x)); overige returns -> new(NotHandled)"
+pattern -> syntax: "AsHandleOverride, state-parameter weg, WithBaseClass(MessageExceptionHandler<...>)"
+pattern -> syntax: "WithConstraint(IMessage)"
+pattern -> fixer: "Fixed(type, System.Threading.Tasks) of Manual(reden)" {style.stroke-dash: 3}
+fixer -> fixer: "AllOrNothing: een Manual -> niets geschreven"

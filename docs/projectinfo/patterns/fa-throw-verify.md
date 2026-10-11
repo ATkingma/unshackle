@@ -22,11 +22,18 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowPattern.cs`; regi
 | REQ-6  | Gehaald | `message-starts.*.cs`, `message-ends.*.cs` |
 | REQ-7  | Gehaald | `message-exact.*.cs` |
 | REQ-8  | Gehaald | `message-because.*.cs`, `message-exact-because.*.cs` |
-| REQ-9  | Gehaald | `throw-exactly.*` |
-| REQ-10 | Gehaald | `because-args.*`, `message-because-args.*` |
+| REQ-9  | Vervangen | door Uitbreiding ThrowExactly (`fa.throw-exactly`) |
+| REQ-10 | Vervangen | door Uitbreiding TAAK-097 |
 | REQ-11 | Gehaald | `message-wildcard.*`, `message-variable.*` |
-| REQ-12 | Deels   | `chain.*`, `value-used.*`; de `.And.Throw`-vorm heeft geen proof (compileert niet met FA 7.2.2), de code-tak (`GetSubject` is null) wordt wel doorlopen via de gedeelde helper |
-| REQ-13 | Gehaald | `invoking.*`, `value-func.*` |
+| REQ-12 | Deels   | `chain.*`, `edge-inner-exception.*` (`.Which`-deel vervangen door TAAK-096); de `.And.Throw`-vorm heeft geen proof (compileert niet met FA 7.2.2), de code-tak (`GetSubject` is null) wordt wel doorlopen via de gedeelde helper |
+| REQ-13 | Gehaald (Invoking-deel vervangen) | `value-func.*` |
+| ThrowExactly | Gehaald | `ThrowExactly/*.after.cs` |
+| TAAK-097 | Gehaald | `because-args.after.cs`, `message-because-args.after.cs` |
+| TAAK-096 | Gehaald | `value-used.after.cs`, `edge-which-message.after.cs`; Manual: `chain`, `edge-inner-exception` |
+| Invoking | Gehaald | `Invoking/simple`, `func`, `throw-exactly` (Fixed); `Invoking/side-effect-receiver`, `value-type`, `method-group` (Manual) |
+| AggregateException | Gehaald | `aggregate-wait`, `aggregate-method-group` (Manual); `aggregate-expected`, `aggregate-get-result` (Fixed) |
+| Regeleinden | Gehaald | `message-line-break`, `edge-multiline-message` (Fixed); `message-contains-line-break` (Manual) |
+| TAAK-100 | Gehaald | `ThrowExactly/assertion-scope`, `Invoking/assertion-scope` |
 
 ## Deviations
 

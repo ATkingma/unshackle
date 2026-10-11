@@ -19,7 +19,9 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainSinglePattern.c
 | REQ-3 | Gehaald | `because` |
 | REQ-4 | Gehaald | `which` |
 | REQ-5 | Gehaald | `nullable` |
-| REQ-6 | Gehaald | `which-chain`, `expression-variable`, `because-args`, `assertion-scope` |
+| REQ-6 | Deels vervangen | `expression-variable`, `assertion-scope` (Manual); `which-chain` en `because-args` zijn nu Fixed |
+| Uitbreiding TAAK-096 | Gehaald | `which-chain.after.cs` |
+| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` |
 
 ## Deviations
 

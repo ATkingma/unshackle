@@ -47,6 +47,7 @@ mediatr.unsupported: typen die een MediatR-interface implementeren zonder 1-op-1
 - **REQ-4**: WHEN een type MediatR's `INotificationPublisher` implementeert THE SYSTEM SHALL Manual melden met `NotificationPublisherType` (proof `notification-publisher`).
 - **REQ-5**: WHEN een type `IStreamPipelineBehavior` implementeert THE SYSTEM SHALL Manual melden met `StreamPipelineBehaviors` (proof `stream-behavior`).
 - **REQ-6**: WHEN een generiek type een request, notification of request-handler is THE SYSTEM SHALL Manual melden (proof `generic-handler`).
+- **Uitbreiding TAAK-061/062**: REQ-1, REQ-2, REQ-3 (`IRequestExceptionHandler`) en REQ-5 vervallen hier: pre/post-processors, exception handlers en stream behaviors zijn eigen patronen (`mediatr.request-processor`, `mediatr.exception-handler`, `mediatr.stream-pipeline-behavior`). `IRequestExceptionAction` blijft Manual met `MessageExceptionHandler`-advies (proof `exception-action`). Advies alleen op het type dat de interface zelf declareert; een generiek bericht wordt ook gemeld als het `IRequest` via een basistype krijgt (proof `derived-generic-message`). Interface-declaraties (eigen marker-interfaces, TAAK-080) worden overgeslagen.
 
 ## Assumptions
 

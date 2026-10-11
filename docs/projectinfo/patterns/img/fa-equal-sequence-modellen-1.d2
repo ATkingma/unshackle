@@ -27,7 +27,8 @@ pattern: EqualSequencePattern {
 
   "+Id": "fa.equal-sequence"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
+  "#RewriteBeforeArguments(context)": "PatternResult?"
+  "#RewriteAssertion(context)": PatternResult
 }
 syntax: FluentAssertionsSyntax {
   shape: class
@@ -36,7 +37,6 @@ syntax: FluentAssertionsSyntax {
   "+GetSubject(assertion)": "ExpressionSyntax?"
   "+IsResultDiscarded(assertion, model)": bool
   "+TryGetArguments(assertion, model, values, because)": bool
-  "+NotNull(subject, model)": ExpressionSyntax
 }
 fa: "«FluentAssertions» herkend" {
   shape: class
@@ -48,7 +48,14 @@ sh: "«Shouldly» aangemaakt" {
   "ShouldBe(seq) / ShouldBe(new T[] { .. })": ""
   "ShouldBe(seq, ignoreOrder: false, because)": ""
 }
-pattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+base: "FluentAssertionPattern (abstract)" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteBeforeArguments(context)": "PatternResult?"
+  "#RewriteAssertion(context)": "PatternResult (abstract)"
+}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+pattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
 pattern -> syntax: gebruikt {style.stroke-dash: 3}
 pattern -> result: levert {style.stroke-dash: 3}
 pattern -> fa: herkent {style.stroke-dash: 3}

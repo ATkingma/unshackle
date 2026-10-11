@@ -15,6 +15,7 @@
 | REQ-3 | Gehaald | `IsFluentAssertions(method)` als eerste check; alle bestaande FA-proofs blijven groen |
 | REQ-4 | Gehaald | unittest `ReportWriterTests.FromAll_CustomAssertionCalls_OneRowPerAssertionWithCount` |
 | REQ-5 | Gehaald | handmatig op corpus FluentResults: 7 extensies (`BeFailure` 31x, `HaveReason` 25x, …) |
+| Uitbreiding | Gehaald | proof `CustomAssertion/in-assertion-scope` (reden: Custom assertion `ScopedResultAssertions.BeFailure`) |
 
 ## Deviations
 

@@ -29,12 +29,17 @@ ipattern: "«interface» IPattern" {
 }
 fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
 manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base: "FluentAssertionPattern (abstract)" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
+}
 BeOfTypePattern: BeOfTypePattern {
   shape: class
   "-s_methods": "Dictionary<string, string>"
   "+Id": "fa.be-of-type"
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
-  "+Rewrite(node, model)": PatternResult
+  "#RewriteAssertion(context)": PatternResult
 }
 syntax: FluentAssertionsSyntax {
   shape: class
@@ -54,7 +59,9 @@ sh: "«Shouldly» aangemaakt" {
   "ShouldBeOfType / ShouldBeAssignableTo / ShouldNotBeOfType / ShouldNotBeAssignableTo": ""
   "var v = x.ShouldBeOfType<T>()": ""
 }
-BeOfTypePattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+BeOfTypePattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base -> syntax: gebruikt {style.stroke-dash: 3}
 BeOfTypePattern -> syntax: gebruikt {style.stroke-dash: 3}
 BeOfTypePattern -> result: levert {style.stroke-dash: 3}
 BeOfTypePattern -> fa: herkent {style.stroke-dash: 3}

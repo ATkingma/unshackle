@@ -42,6 +42,7 @@ mediatr.notification-handler: in klassen die `MediatR.INotificationHandler<T>` i
 - **REQ-2**: WHEN een niet-async `Handle` alleen `Task.CompletedTask` teruggeeft THE SYSTEM SHALL `ValueTask` + `ValueTask.CompletedTask` schrijven (proofs `completed-task`, `completed-task-expression`).
 - **REQ-3**: WHEN een bestand meerdere handlers voor één notification heeft THE SYSTEM SHALL elk herschrijven (proof `two-handlers`).
 - **REQ-4**: IF `Handle` een andere `Task` teruggeeft of expliciet geïmplementeerd is THEN THE SYSTEM SHALL Manual melden (proofs `other-return`, `explicit`).
+- **Uitbreiding TAAK-080**: WHEN de handler `INotificationHandler<T>` via een eigen marker-interface implementeert (`IAppEventHandler<T> : INotificationHandler<T>`) THE SYSTEM SHALL hem hetzelfde herschrijven (proof `edge-marker-interface`).
 
 ## Assumptions
 

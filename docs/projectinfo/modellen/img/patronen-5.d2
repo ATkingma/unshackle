@@ -1,0 +1,20 @@
+title: "[Overzicht] Typen en equivalentie" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+vars: {
+  d2-legend: {
+    f: FluentAssertions {style.fill: "#bbdefb"}
+    s: Shouldly {style.fill: "#c8e6c9"}
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: Wordt
+  }
+}
+f0: "fa.be-of-type\nBeOfType<T>()[.Which], BeAssignableTo<T>(), NotBeOfType<T>()" {style.fill: "#bbdefb"}
+s0: "ShouldBeOfType<T>(), ShouldBeAssignableTo<T>(), ..." {style.fill: "#c8e6c9"}
+f0 -> s0
+f1: "fa.be-equivalent-to-string\nBeEquivalentTo(\"x\") op een string" {style.fill: "#bbdefb"}
+s1: "ShouldBe(\"x\", StringCompareShould.IgnoreCase)" {style.fill: "#c8e6c9"}
+f1 -> s1
+f2: "fa.be-equivalent-to-object\nBeEquivalentTo(b) op object of collectie" {style.fill: "#bbdefb"}
+s2: "ShouldBeEquivalentTo(b); collectie van leaves: ShouldBe(b, ignoreOrder: true)" {style.fill: "#c8e6c9"}
+f2 -> s2

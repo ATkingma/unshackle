@@ -12,7 +12,7 @@ Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/PipelineBehaviorPattern.cs
 | Element                         | Rol                                                                                             |
 | ------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `PipelineBehaviorPattern`       | Vindt het type met `Handle` van `MediatR.IPipelineBehavior<,>` en herschrijft het type          |
-| `MediatRSyntax`                 | Vinden (nu ook met het type zelf als root), `Task`→`ValueTask`, returns, `Task.X`→`ValueTask.X` |
+| `MediatRSyntax`                 | Vinden (nu ook met het type zelf als root), `Task`→`ValueTask`, returns, `Task.X`→`ValueTask.X`, `RejectExplicit`, `CommaList`, `WithConstraint` |
 | `Mediator.IPipelineBehavior<,>` | Zelfde naam (nu in `SwappedTypes`), andere `Handle` en `IMessage`-constraint                    |
 
 ## Figuur 2: sequence
@@ -27,7 +27,7 @@ Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/PipelineBehaviorPattern.cs
 | Vinden       | `MediatRSyntax.FindHandleMethods` (`IPipelineBehavior\`2`) | Het type (Parent van `Handle`), want de constraint staat op het type                 |
 | `next`       | `GetDeclaredSymbol` / `GetSymbolInfo`                      | Elk gebruik van de parameter moet een aanroep zijn                                   |
 | Herschrijven | `ReplaceNodes`, `CommaList`, `OnValueTask`                 | `next(request, token)`, `MessageHandlerDelegate<TReq, TRes>`, `ValueTask.FromResult` |
-| Constraint   | `WithMessageConstraint`, `AddClause`                       | `IMessage` op een typeparameter-request                                              |
+| Constraint   | `WithMessageConstraint` → `MediatRSyntax.WithConstraint`   | `IMessage` op een typeparameter-request, tenzij de constraint al een MediatR-bericht is (TAAK-081) |
 
 ## Figuur 3: beslisboom
 
@@ -42,7 +42,8 @@ Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/PipelineBehaviorPattern.cs
 | Manual "does not have the form"        | geen `Task<T>`, andere parameters       | geen proof                                                    |
 | Manual "next is used other than"       | `next` opgeslagen of doorgegeven        | `PipelineBehavior/next-stored`                                |
 | Manual "not next() or Task.FromResult" | niet-async, andere return               | `PipelineBehavior/next-passed`                                |
-| Fixed + `where T : IMessage`           | request is typeparameter                | `open-async`, `no-constraint`, `new-constraint`, `next-token` |
+| Fixed + `where T : IMessage`           | request is typeparameter                | `open-async`, `no-constraint`, `new-constraint`, `next-token`, `edge-notnull-constraint` |
+| Fixed zonder extra constraint          | constraint al `IRequest<T>`/`INotification` (of eigen interface daarop) | `PipelineBehavior/edge-request-constraint` |
 | Fixed zonder constraint                | gesloten request-type                   | `PipelineBehavior/closed`                                     |
 
 ## Zie ook

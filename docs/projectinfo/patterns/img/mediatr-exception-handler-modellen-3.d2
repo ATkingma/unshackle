@@ -1,0 +1,27 @@
+title: "[Beslisboom] ExceptionHandlerPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q1: "Abstract of Handle\nniet in deze klasse?" {shape: diamond}
+q2: "Expliciete interface-\nimplementatie?" {shape: diamond}
+q3: "async, geen blok-body\nof niet 4 parameters?" {shape: diamond}
+q4: "Elk gebruik van state is\nstate.SetHandled(x); return ...;?" {shape: diamond}
+q5: "Elke return is\nTask.CompletedTask?" {shape: diamond}
+q6: "Al een basisklasse?" {shape: diamond}
+m1: "Manual: abstract / Handle elders\n(geen proof)"
+m2: "Manual: explicit interface\n(geen proof)"
+m3: "Manual: async of geen statement body\n(geen proof)"
+m4: "Manual: state is used other than\n(state-passed)"
+m5: "Manual: not Task.CompletedTask\n(geen proof)"
+m6: "Manual: already has a base class\n(geen proof)"
+f: "MessageExceptionHandler + new(Handled(x)) / new(NotHandled)\n(set-handled)"
+q1 -> m1: ja
+q1 -> q2: nee
+q2 -> m2: ja
+q2 -> q3: nee
+q3 -> m3: ja
+q3 -> q4: nee
+q4 -> m4: nee
+q4 -> q5: ja
+q5 -> m5: nee
+q5 -> q6: ja
+q6 -> m6: ja
+q6 -> f: nee

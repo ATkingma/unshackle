@@ -21,12 +21,19 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowAsyncPattern.cs` 
 | REQ-5  | Gehaald | `message-starts.*.cs`, `message-ends.*.cs` |
 | REQ-6  | Gehaald | `message-exact.*.cs` |
 | REQ-7  | Gehaald | `message-because.*.cs`, `message-exact-because.*.cs` |
-| REQ-8  | Gehaald | `throw-exactly.*` |
-| REQ-9  | Gehaald | `because-args.*`, `message-because-args.*` |
+| REQ-8  | Vervangen | door Uitbreiding ThrowExactly (`fa.throw-exactly`) |
+| REQ-9  | Vervangen | door Uitbreiding TAAK-097 |
 | REQ-10 | Gehaald | `message-wildcard.*`, `message-variable.*` |
 | REQ-11 | Gehaald | `no-await.*`, `where.*` |
 | REQ-12 | Gehaald | `value-used.*` |
-| REQ-13 | Gehaald | `awaiting.*`, `value-func.*` |
+| REQ-13 | Gehaald (Awaiting-deel vervangen) | `value-func.*` |
+| ThrowExactly | Gehaald | `ThrowExactly/async.*`, `ThrowExactly/async-message.*` |
+| TAAK-097 | Gehaald | `because-args.after.cs`, `message-because-args.after.cs` |
+| Awaiting | Gehaald | `Invoking/awaiting.*`, `Invoking/awaiting-exactly.*` |
+| ConfigureAwait | Gehaald | `edge-configure-await.*` |
+| AggregateException | Gehaald | `aggregate-result` (Manual), `aggregate-awaited` (Fixed) |
+| Regeleinden | Gehaald | `message-line-break` (Fixed), `message-contains-line-break` (Manual) |
+| TAAK-100 | Gehaald | `IsInsideAssertionScope` als eerste controle; geen eigen proof |
 
 ## Deviations
 

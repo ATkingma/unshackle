@@ -1,27 +1,31 @@
 title: "[Beslisboom] OnlyContainPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
+q0: "In een AssertionScope?" {shape: diamond}
 q1: "x.Should().OnlyContain(...)?" {shape: diamond}
 q2: "Resultaat gebruikt?" {shape: diamond}
-q3: "becauseArgs of named args?" {shape: diamond}
+q3: "named args, of becauseArgs\nbij niet-constante because?" {shape: diamond}
 q4: "Generieke IEnumerable<T>?" {shape: diamond}
 q5: "Statement direct in blok?" {shape: diamond}
-q6: "Eenvoudig subject?" {shape: diamond}
+q6: "Subject veilig twee keer te evalueren?" {shape: diamond}
+q0 -> q1: nee
 q1 -> q2: ja
 q2 -> q3: nee
 q3 -> q4: nee
 q4 -> q5: ja
 q5 -> q6: ja
+m0: "Manual: Inside an AssertionScope"
 m1: "Manual: is not in the form"
 m2: "Manual: is used"
-m3: "Manual: becauseArgs"
+m3: "Manual: named arguments or becauseArgs"
 m4: "Manual: not a generic IEnumerable<T>"
 m5: "Manual: cannot hold two statements"
-m6: "Manual: evaluate the subject twice"
-f: "Fixed:\nx.ShouldNotBeEmpty([because]);\nx.ShouldAllBe(pred[, because]);"
+h: "Fixed met hoisting:\nvar subject = x;\nsubject.ShouldNotBeEmpty([because]);\nsubject.ShouldAllBe(pred[, because]);"
+f: "Fixed:\nx.ShouldNotBeEmpty([because]);\nx.ShouldAllBe(pred[, because]);\n(because met becauseArgs: string.Format(...))"
 q1 -> m1: nee
 q2 -> m2: ja
 q3 -> m3: ja
 q4 -> m4: nee
 q5 -> m5: nee
-q6 -> m6: nee
+q0 -> m0: ja
+q6 -> h: nee
 q6 -> f: ja

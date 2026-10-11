@@ -1,0 +1,20 @@
+title: "[Overzicht] Structuur: scopes, ketens, eigen extensies" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+vars: {
+  d2-legend: {
+    f: FluentAssertions {style.fill: "#bbdefb"}
+    s: Shouldly {style.fill: "#c8e6c9"}
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: Wordt
+  }
+}
+f0: "fa.assertion-scope\nusing (new AssertionScope()) { a; b; }" {style.fill: "#bbdefb"}
+s0: "x.ShouldSatisfyAllConditions(() => { a; }, () => { b; })" {style.fill: "#c8e6c9"}
+f0 -> s0
+f1: "fa.and-chain\nx.Should().A().And.B()" {style.fill: "#bbdefb"}
+s1: "x.ShouldA(); x.ShouldB(); (subject met bijwerkingen: var subject = x;)" {style.fill: "#c8e6c9"}
+f1 -> s1
+f2: "fa.custom-assertion\nx.Should().MijnEigenAssertion()" {style.fill: "#bbdefb"}
+s2: "altijd Manual, gegroepeerd per extensie" {style.fill: "#c8e6c9"}
+f2 -> s2

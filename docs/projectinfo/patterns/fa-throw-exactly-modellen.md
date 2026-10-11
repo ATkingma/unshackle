@@ -1,6 +1,6 @@
 # Modellen: fa.throw-exactly
 
-`act.Should().ThrowExactly<T>()` wordt `Should.Throw<T>(act).ShouldBeOfType<T>()`; `await act.Should().ThrowExactlyAsync<T>()` wordt `(await Should.ThrowAsync<T>(act)).ShouldBeOfType<T>()`; `.WithMessage` zoals `fa.throw`. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowExactlyPattern.cs`, `InvokingPattern.cs`, `ThrowPattern.cs`, `ThrowAsyncPattern.cs`, `NotThrowPattern.cs` en `ThrowMessage.cs`.
+`act.Should().ThrowExactly<T>()` wordt `Should.Throw<T>(act).ShouldBeOfType<T>()`; `await act.Should().ThrowExactlyAsync<T>()` wordt `(await Should.ThrowAsync<T>(act)).ShouldBeOfType<T>()`; `.WithMessage` zoals `fa.throw`. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowExactlyPattern.cs`, `ThrowSyntax.cs`, `ThrowPattern.cs`, `ThrowAsyncPattern.cs`, `NotThrowPattern.cs` en `ThrowMessage.cs`.
 
 **Figure 1.** Klassen rond `ThrowExactlyPattern`. Weggelaten: `Fixer`, `IFix` en de usings (zie [../modellen/klassen.md](../modellen/klassen.md)).
 
@@ -10,7 +10,7 @@
 | Element | Pad | Rol |
 | --- | --- | --- |
 | `ThrowExactlyPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowExactlyPattern.cs` | Dit patroon, Id `fa.throw-exactly`: claimt de nodes |
-| `InvokingPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` | `RewriteAssertion` kiest het herschrijvende patroon; `TryGetAction` maakt `() => ...` |
+| `ThrowSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowSyntax.cs` | `FindThrow`/`FindThrowAsync` met `IsExactly`; `Rewrite` kiest het herschrijvende patroon op de naam; `TryGetAction` maakt `() => ...` (voor `InvokingPattern`) |
 | `ThrowPattern`, `ThrowAsyncPattern`, `NotThrowPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/` | Herschrijven (ook ThrowExactly en Invoking) |
 | `ThrowMessage` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowMessage.cs` | `OfType`, message-check, AggregateException-heuristiek |
 
@@ -21,8 +21,8 @@
 
 | Stap | Plek | Wat gebeurt er |
 | --- | --- | --- |
-| Find | `ThrowExactlyPattern.Find` | `Find(root, model, owns)` van de Throw-patterns met het eigen filter |
-| Rewrite | `InvokingPattern.RewriteAssertion` | Kiest Throw/ThrowAsync/NotThrow op de naam van de assertion |
+| Find | `ThrowExactlyPattern.Find` | `ThrowSyntax.FindThrow` + `FindThrowAsync` met filter `IsExactly && !IsInvoking` (Invoking-subjects horen bij `InvokingPattern`) |
+| Rewrite | `ThrowSyntax.Rewrite` | Kiest `ThrowPattern`/`ThrowAsyncPattern` op de naam van de assertion |
 | Uitkomst | `PatternResult.Fixed` / `Manual` | Shouldly-aanroep of reden |
 
 **Figure 3.** Beslisboom; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/ThrowExactly/`.
@@ -34,9 +34,9 @@
 | --- | --- | --- |
 | Buiten een AssertionScope? | Inside an AssertionScope | `assertion-scope` |
 | Vorm act.Should().ThrowExactly<T>()? | is not in the form | `geen proof` |
-| Resultaat weggegooid? | is used | `value-used` |
+| Node is `.Which`, of resultaat weggegooid? | is used | geen eigen proof (`.Which` is Fixed: `value-used`) |
 | Delegate die Should.Throw(Async) accepteert? | The subject is not | `geen proof (fa.throw: value-func)` |
-| Geen becauseArgs? | becauseArgs | `because-args` |
+| Geen named args; becauseArgs alleen bij constante `because`? | named arguments or becauseArgs | geen proof (`because-args` is Fixed met `string.Format`) |
 
 ## Zie ook
 

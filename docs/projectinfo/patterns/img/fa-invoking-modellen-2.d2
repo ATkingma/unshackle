@@ -2,15 +2,15 @@ title: "[Sequence] InvokingPattern - Find en Rewrite" {shape: text; near: top-ce
 shape: sequence_diagram
 fixer: Fixer
 pattern: InvokingPattern
-inv: InvokingPattern
+inv: ThrowSyntax
 throw: "ThrowPattern / ThrowAsyncPattern / NotThrowPattern"
 msg: ThrowMessage
 fixer -> pattern: "Find(root, model)"
-pattern -> throw: "Find(root, model, owns)"
+pattern -> inv: "FindThrow / FindThrowAsync / FindNotThrow(root, model, IsInvoking)"
 pattern -> fixer: "nodes" {style.stroke-dash: 3}
 each: "loop [elke node]" {
   fixer -> pattern: "Rewrite(node, model)"
-  pattern -> inv: "RewriteAssertion(node, model)"
+  pattern -> inv: "ThrowSyntax.Rewrite(node, model)"
   inv -> throw: "Rewrite(node, model)"
   throw -> inv: "IsInvoking / TryGetAction"
   throw -> msg: "MayThrowAggregate / OfType / Check"

@@ -2,16 +2,16 @@ title: "[Sequence] ThrowExactlyPattern - Find en Rewrite" {shape: text; near: to
 shape: sequence_diagram
 fixer: Fixer
 pattern: ThrowExactlyPattern
-inv: InvokingPattern
+inv: ThrowSyntax
 throw: "ThrowPattern / ThrowAsyncPattern / NotThrowPattern"
 msg: ThrowMessage
 fixer -> pattern: "Find(root, model)"
-pattern -> throw: "Find(root, model, owns)"
+pattern -> inv: "FindThrow + FindThrowAsync(root, model, IsExactly && !IsInvoking)"
 pattern -> fixer: "nodes" {style.stroke-dash: 3}
 each: "loop [elke node]" {
   fixer -> pattern: "Rewrite(node, model)"
-  pattern -> inv: "RewriteAssertion(node, model)"
-  inv -> throw: "Rewrite(node, model)"
+  pattern -> inv: "Rewrite(node, model)"
+  inv -> throw: "Rewrite(node, model): ThrowPattern of ThrowAsyncPattern op de naam"
   throw -> inv: "IsInvoking / TryGetAction"
   throw -> msg: "MayThrowAggregate / OfType / Check"
   throw -> fixer: "Fixed(..) of Manual(reden)" {style.stroke-dash: 3}

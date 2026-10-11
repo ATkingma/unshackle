@@ -1,22 +1,24 @@
 title: "[Sequence] BeGreaterLessPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 shape: sequence_diagram
 fixer: Fixer
+base: FluentAssertionPattern
 pattern: BeGreaterLessPattern
 syntax: FluentAssertionsSyntax
 model: SemanticModel
 fixer -> pattern: "Find(root, model)"
-pattern -> syntax: "FindInvocations(root, model, namen)"
-syntax -> pattern: "comparison-aanroepen" {style.stroke-dash: 3}
-pattern -> fixer: "bovenste aanroep of ExpressionStatement per keten" {style.stroke-dash: 3}
-loop: "loop [elke node]" {
-  fixer -> pattern: "Rewrite(node, model)"
-  pattern -> syntax: "GetSubject(link) per schakel"
-  pattern -> syntax: "IsResultDiscarded(top, model)"
-  pattern -> model: "GetTypeInfo(subject)"
-  pattern -> syntax: "TryGetArguments(link, model)"
-  syntax -> pattern: "waarden + because" {style.stroke-dash: 3}
+pattern -> syntax: "FindInvocations(root, model, s_methods.Keys)"
+syntax -> pattern: "vergelijkingsaanroepen" {style.stroke-dash: 3}
+pattern -> fixer: "aanroepen" {style.stroke-dash: 3}
+loop: "loop [elke aanroep]" {
+  fixer -> base: "Rewrite(node, model)"
+  base -> syntax: "IsInsideAssertionScope, GetSubject, IsResultDiscarded"
+  base -> syntax: "TryGetArguments(assertion, model)"
+  syntax -> base: "waarden + because (becauseArgs → string.Format)" {style.stroke-dash: 3}
+  base -> pattern: "RewriteAssertion(context)"
+  pattern -> model: "GetTypeInfo(subject): non-nullable IComparable<T>"
+  pattern -> syntax: "ConvertExpected(waarde, subjecttype)"
   alt: "alt" {
-    pattern -> fixer: "Fixed(invocation | statements)" {style.stroke-dash: 3}
+    pattern -> fixer: "Fixed(x.ShouldBe...(waarden[, because]))" {style.stroke-dash: 3}
   }
   alt2: "else" {
     pattern -> fixer: "Manual(reden)" {style.stroke-dash: 3}

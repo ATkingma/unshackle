@@ -10,12 +10,14 @@ syntax -> pattern: "aanroepen" {style.stroke-dash: 3}
 pattern -> fixer: "statements of aanroepen" {style.stroke-dash: 3}
 loop: "loop [elke node]" {
   fixer -> pattern: "Rewrite(node, model)"
-  pattern -> syntax: "GetSubject(assertion)"
+  pattern -> syntax: "FluentAssertionPattern.Rewrite: IsInsideAssertionScope, GetSubject"
   pattern -> syntax: "IsResultDiscarded(assertion, model)"
   pattern -> syntax: "TryGetArguments(assertion, model)"
-  pattern -> model: "GetTypeInfo(subject)"
+  pattern -> model: "RewriteAssertion: GetTypeInfo(subject)"
+  pattern -> syntax: "TryGetSplittableStatement(node)"
+  pattern -> syntax: "IsSafeToEvaluateTwice? anders Hoist(subject)"
   alt: "alt" {
-    pattern -> fixer: "Fixed(ShouldNotBeEmpty; ShouldAllBe)" {style.stroke-dash: 3}
+    pattern -> fixer: "Fixed([var subject = x;] ShouldNotBeEmpty; ShouldAllBe)" {style.stroke-dash: 3}
   }
   alt2: "else" {
     pattern -> fixer: "Manual(reden)" {style.stroke-dash: 3}

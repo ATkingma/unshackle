@@ -19,7 +19,8 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/StringStartEndPattern.
 | REQ-3 | Gehaald | `because` |
 | REQ-4 | Gehaald | `null-or` |
 | REQ-5 | Gehaald | `nullable`, `edge-member-subject` |
-| REQ-6 | Gehaald | `because-args`, `assertion-scope`, `and`, `collection` |
+| REQ-6 | Gehaald (becauseArgs-deel vervangen) | `assertion-scope`, `and`, `collection` |
+| TAAK-097 | Gehaald | `because-args.after.cs` (`string.Format`) |
 
 ## Deviations
 

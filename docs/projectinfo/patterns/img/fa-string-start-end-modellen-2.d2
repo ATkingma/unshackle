@@ -13,8 +13,9 @@ each: "loop [elke node]" {
   pattern -> syntax: "IsInsideAssertionScope(node, model)"
   pattern -> syntax: "GetSubject(assertion)"
   pattern -> syntax: "IsResultDiscarded(assertion, model)"
-  pattern -> model: "GetSymbolInfo(assertion): StringAssertions?"
+  pattern -> model: "RewriteBeforeArguments: GetSymbolInfo(assertion): StringAssertions?"
   pattern -> syntax: "TryGetArguments(assertion, model)"
+  pattern -> pattern: "RewriteAssertion: s_nullOr / s_affixes, Case-argument"
   pattern -> result: "Fixed(..) of Manual(reden)"
   pattern -> fixer: "PatternResult" {style.stroke-dash: 3}
 }

@@ -1,27 +1,32 @@
-title: "[Overzicht] Exceptions" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Overzicht] Collecties en dictionaries" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: right
 vars: {
   d2-legend: {
     f: FluentAssertions {style.fill: "#bbdefb"}
     s: Shouldly {style.fill: "#c8e6c9"}
-    m: Manual {style.fill: "#ffe0b2"}
     a: "" {style.opacity: 0}
     b: "" {style.opacity: 0}
     a -> b: Wordt
   }
 }
-thr: "act.Should().Throw<T>()\n(+ .WithMessage(p))" {style.fill: "#bbdefb"}
-thrs: "Should.Throw<T>(act)\n(+ .Message.ShouldBe / ShouldContain /\nShouldStartWith / ShouldEndWith)" {style.fill: "#c8e6c9"}
-thrm: "Manual: ThrowExactly, Invoking, chain/Which,\nwildcard in het midden of variabele, becauseArgs" {style.fill: "#ffe0b2"}
-tha: "await act.Should().ThrowAsync<T>()" {style.fill: "#bbdefb"}
-thas: "await Should.ThrowAsync<T>(act)" {style.fill: "#c8e6c9"}
-tham: "Manual: ThrowExactlyAsync, Awaiting,\nniet direct awaited, Func<Task<waardetype>>" {style.fill: "#ffe0b2"}
-nth: "act.Should().NotThrow()" {style.fill: "#bbdefb"}
-nths: "Should.NotThrow(act)" {style.fill: "#c8e6c9"}
-nthm: "Manual: NotThrow<T>, NotThrowAfter,\nresultaat gebruikt (Which), Invoking" {style.fill: "#ffe0b2"}
-thr -> thrs
-thr -> thrm
-tha -> thas
-tha -> tham
-nth -> nths
-nth -> nthm
+f0: "fa.contain\nContain(item of predicate), NotContain" {style.fill: "#bbdefb"}
+s0: "ShouldContain, ShouldNotContain (string: Case.Sensitive)" {style.fill: "#c8e6c9"}
+f0 -> s0
+f1: "fa.contain-key\nContainKey(k), NotContainKey(k)" {style.fill: "#bbdefb"}
+s1: "ShouldContainKey(k), ShouldNotContainKey(k)" {style.fill: "#c8e6c9"}
+f1 -> s1
+f2: "fa.contain-single-which\nContainSingle(), ContainSingle(p)[.Which]" {style.fill: "#bbdefb"}
+s2: "ShouldHaveSingleItem(), ShouldContain(p, 1), x.Where(p).ShouldHaveSingleItem()" {style.fill: "#c8e6c9"}
+f2 -> s2
+f3: "fa.only-contain\nOnlyContain(pred)" {style.fill: "#bbdefb"}
+s3: "ShouldNotBeEmpty(); ShouldAllBe(pred)" {style.fill: "#c8e6c9"}
+f3 -> s3
+f4: "fa.all-satisfy\nAllSatisfy(a => { ... })" {style.fill: "#bbdefb"}
+s4: "ShouldNotBeEmpty(); foreach (var a in x) { ... }" {style.fill: "#c8e6c9"}
+f4 -> s4
+f5: "fa.equal-sequence\nEqual(seq), Equal(1, 2), NotEqual" {style.fill: "#bbdefb"}
+s5: "ShouldBe(seq), ShouldBe(new[] { 1, 2 }) (volgorde telt)" {style.fill: "#c8e6c9"}
+f5 -> s5
+f6: "fa.direct-mapping\nBeOneOf, BeSubsetOf, OnlyHaveUniqueItems, HaveValue" {style.fill: "#bbdefb"}
+s6: "ShouldBeOneOf, ShouldBeSubsetOf, ShouldBeUnique, ShouldNotBeNull" {style.fill: "#c8e6c9"}
+f6 -> s6

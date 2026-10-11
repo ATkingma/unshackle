@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "fa-be-empty"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10]
 files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEmptyPattern.cs
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
@@ -27,7 +27,7 @@ fa.be-empty: x.Should().BeEmpty()/NotBeEmpty() wordt x.ShouldBeEmpty()/ShouldNot
 **In scope**
 
 - `x.Should().BeEmpty()` / `NotBeEmpty()` (met optionele `because` zonder `becauseArgs`) als losse assertion, op string, `IEnumerable<T>`, arrays, lijsten en dictionaries.
-- `Manual(reden)` voor `becauseArgs`, ketens (`.And`) en gebruikt resultaat.
+- `Manual(reden)` voor named arguments of `becauseArgs` met niet-constante `because` (sinds TAAK-097), ketens (`.And`) en gebruikt resultaat.
 
 **Out of scope**
 
@@ -43,9 +43,10 @@ fa.be-empty: x.Should().BeEmpty()/NotBeEmpty() wordt x.ShouldBeEmpty()/ShouldNot
 - **REQ-4**: WHEN het subject een dictionary is THE SYSTEM SHALL het herschrijven (proof `.../BeEmpty/dictionary.*.cs`); idem `IEnumerable<T>` en array (proof `.../BeEmpty/enumerable.*.cs`).
 - **REQ-5**: WHEN een `because` zonder `becauseArgs` staat THE SYSTEM SHALL die als `customMessage` overnemen (proof `.../BeEmpty/because.*.cs`).
 - **REQ-6**: WHEN de assertion de body van een void-lambda is THE SYSTEM SHALL het herschrijven (proof `.../BeEmpty/lambda.*.cs`).
-- **REQ-7**: IF `becauseArgs` gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `.../BeEmpty/because-args.*`).
+- **REQ-7** (vervangen door REQ-10): IF `becauseArgs` gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `.../BeEmpty/because-args.*`).
 - **REQ-8**: IF een vervolg op de assertion staat (`.And`) of het resultaat als waarde wordt gebruikt THEN THE SYSTEM SHALL Manual geven (proofs `.../BeEmpty/chain.*`, `value-used.*`).
-- **REQ-9**: IF de assertion zelf een vervolg op een andere assertion is (`x.Should().NotBeNull().And.NotBeEmpty()`) THEN THE SYSTEM SHALL Manual geven (proof `.../BeEmpty/and-chain.*`).
+- **REQ-9**: IF de assertion zelf een vervolg op een andere assertion is (`x.Should().NotBeNull().And.NotBeEmpty()`) THEN THE SYSTEM SHALL Manual geven (proof `.../BeEmpty/and-chain.*`; in de volledige Fix splitst `fa.and-chain` zo'n keten).
+- **REQ-10** (Uitbreiding TAAK-097): WHEN `becauseArgs` met een constante, formatteerbare `because` staat THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (proof `.../BeEmpty/because-args.*.cs`); named arguments of een niet-constante `because` blijven Manual.
 
 ## Assumptions
 

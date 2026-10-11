@@ -1,0 +1,13 @@
+title: "[Klassen] RequestProcessorPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+IPattern: {shape: class; "+Id"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
+RequestProcessorPattern: {shape: class; "+Id = mediatr.request-processor"; "+Find(root, model)"; "+Rewrite(node, model)"; "-ResponseOf(message, model, position)"; "-HasOtherUses(symbol, declaration, model)"; "-IsOpenRegistration(name)"}
+MediatRSyntax: {shape: class; "+DeclaredInterface(type, name)"; "+RejectExplicit(method, todo)"; "+WithCompletedValueTask(method, model)"; "+AsHandleOverride(method, returnType)"; "+WithBaseClass(...)"; "+CommaList(nodes)"; "+WithConstraint(type, messageType, constraint, isMessage)"; "+IsMediatR(type, names)"}
+PatternResult: {shape: class; "+Fixed(node, namespaces)"; "+Manual(reason)"}
+MediatR: "MediatR.Pipeline.IRequestPreProcessor<TRequest>\nMediatR.Pipeline.IRequestPostProcessor<TRequest, TResponse>\nTask Process(...)"
+Mediator: "Mediator.MessagePreProcessor<TMessage, TResponse>\nMediator.MessagePostProcessor<TMessage, TResponse>\nprotected override ValueTask Handle(...)"
+RequestProcessorPattern -> IPattern: implementeert {style.stroke-dash: 3}
+RequestProcessorPattern -> MediatRSyntax: gebruikt
+RequestProcessorPattern -> PatternResult: geeft
+RequestProcessorPattern -> MediatR: herkent
+RequestProcessorPattern -> Mediator: schrijft voor

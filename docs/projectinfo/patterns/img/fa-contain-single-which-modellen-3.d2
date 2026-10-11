@@ -1,4 +1,4 @@
-title: "[Activity] ContainSinglePattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] FluentAssertionPattern.Rewrite + ContainSinglePattern.RewriteAssertion - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
 q0: "Buiten een AssertionScope?" {shape: diamond}
@@ -9,12 +9,12 @@ q1: "Vorm x.Should().ContainSingle(..)?" {shape: diamond}
 m1: "Manual: is not in the form x.Should()\n(proof: geen proof; .And via fa.and-chain)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q0 -> q1: ja
 q1 -> m1: nee
-q2: "Resultaat weggegooid of var y = ….Which?" {shape: diamond}
-m2: "Manual: is used beyond var x = ….Which\n(proof: which-chain)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q2: "Resultaat weggegooid of via .Which/.Subject?" {shape: diamond}
+m2: "Manual: is used other than through .Which/.Subject\n(geen proof; .And: fa.and-chain)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q1 -> q2: ja
 q2 -> m2: nee
-q3: "Geen becauseArgs?" {shape: diamond}
-m3: "Manual: becauseArgs\n(proof: because-args)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q3: "Geen benoemde argumenten; becauseArgs alleen met constante because?" {shape: diamond}
+m3: "Manual: named arguments, or becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q2 -> q3: ja
 q3 -> m3: nee
 q4: "Subject is IEnumerable<T>?" {shape: diamond}
@@ -25,5 +25,5 @@ q5: "Geen predicate, geen .Which, of lambda-predicate?" {shape: diamond}
 m5: "Manual: Expression variable\n(proof: expression-variable)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q4 -> q5: ja
 q5 -> m5: nee
-f0: "Fixed: x.ShouldHaveSingleItem() / x.ShouldContain(pred, 1) / x.Where(pred).ShouldHaveSingleItem()\n(simple, predicate, enumerable, because, which, nullable)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+f0: "Fixed: x.ShouldHaveSingleItem() / x.ShouldContain(pred, 1) / x.Where(pred).ShouldHaveSingleItem()\n(simple, predicate, enumerable, because, because-args, which, which-chain, edge-subject, nullable)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
 q5 -> f0: ja

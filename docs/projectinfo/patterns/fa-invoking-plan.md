@@ -43,7 +43,8 @@ files_expected:
 - **REQ-4**: WHEN `NotThrow()` volgt THE SYSTEM SHALL `Should.NotThrow(() => x.M())` geven (proof `not-throw`).
 - **REQ-5**: WHEN `x.Awaiting(s => s.MAsync()).Should().ThrowAsync<T>()` staat THE SYSTEM SHALL `await Should.ThrowAsync<T>(() => x.MAsync())` geven (proof `awaiting`).
 - **REQ-6**: IF de receiver bijwerkingen kan hebben of een value type is, of het argument geen lambda is THEN THE SYSTEM SHALL Manual geven (proof `side-effect-receiver, value-type, method-group`).
-- **REQ-7**: IF becauseArgs, een AssertionScope of een blokkerende Wait in de lambda THEN THE SYSTEM SHALL Manual geven (proof `because-args, assertion-scope, aggregate`).
+- **REQ-7**: IF becauseArgs, een AssertionScope of een blokkerende Wait in de lambda THEN THE SYSTEM SHALL Manual geven (proof `because-args, assertion-scope, aggregate`). _Voor becauseArgs vervangen door Uitbreiding TAAK-097._
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (Fixed, proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. `InvokingPattern` zoekt nu via `ThrowSyntax.FindThrow`/`FindThrowAsync`/`FindNotThrow` en herschrijft via `ThrowSyntax.Rewrite`.
 
 ## Assumptions
 

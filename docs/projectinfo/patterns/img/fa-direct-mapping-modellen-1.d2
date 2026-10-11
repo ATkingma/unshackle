@@ -1,0 +1,78 @@
+title: "[Class] DirectMappingPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: "Realisatie (holle driehoek), overerving (holle driehoek), dependency (gestreept)"
+  }
+}
+ipattern: "«interface» IPattern" {
+  shape: class
+  "+Id": string
+  "+Description": string
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+base: "FluentAssertionPattern (abstract)" {
+  shape: class
+  "+Rewrite(node, model)": PatternResult
+  "#RewriteBeforeArguments(context)": "PatternResult?"
+  "#RewriteAssertion(context)": "PatternResult (abstract)"
+}
+pattern: DirectMappingPattern {
+  shape: class
+  "+Id": "fa.direct-mapping"
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "#RewriteBeforeArguments(context)": "PatternResult?"
+  "#RewriteAssertion(context)": "PatternResult"
+  "-s_methods": "Dictionary<string, string>"
+}
+syntax: FluentAssertionsSyntax {
+  shape: class
+  "+FindInvocations(root, model, names)": "IEnumerable<InvocationExpressionSyntax>"
+  "+IsInsideAssertionScope(node, model)": "bool"
+  "+GetSubject(assertion)": "ExpressionSyntax?"
+  "+IsResultDiscarded(assertion, model)": "bool"
+  "+TryGetArguments(assertion, model, values, because)": "bool"
+  "+NotNull(subject, model)": "ExpressionSyntax"
+  "+ConvertExpected(expected, subjectType, model, position)": "ExpressionSyntax?"
+  "+Invoke(receiver, name, arguments)": "ExpressionSyntax"
+}
+result: "PatternResult (abstract)" {
+  shape: class
+  "+Fixed(newNode, namespaces)": PatternResult
+  "+Manual(reason)": PatternResult
+}
+fixed: FixedResult {
+  shape: class
+  "+NewNodes": "IReadOnlyList<SyntaxNode>"
+  "+RequiredNamespaces": "IReadOnlyList<string>"
+}
+manual: ManualResult {
+  shape: class
+  "+Reason": string
+}
+fa: "«FluentAssertions» herkend" {
+  shape: class
+  "BeOneOf(params T[])": ""
+  "BeSubsetOf(y)": ""
+  "OnlyHaveUniqueItems()": ""
+  "HaveValue() / NotHaveValue() op Nullable<T>": ""
+  "ContainInOrder(...): Manual": ""
+}
+sh: "«Shouldly» aangemaakt" {
+  shape: class
+  "ShouldBeOneOf(a, b)": ""
+  "ShouldBeSubsetOf(y[, because])": ""
+  "ShouldBeUnique([because])": ""
+  "ShouldNotBeNull / ShouldBeNull([because])": ""
+}
+base -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+pattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+pattern -> syntax: gebruikt {style.stroke-dash: 3}
+pattern -> result: levert {style.stroke-dash: 3}
+fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+pattern -> fa: herkent {style.stroke-dash: 3}
+pattern -> sh: bouwt {style.stroke-dash: 3}

@@ -42,6 +42,7 @@ files_expected:
 - **REQ-4**: WHEN het subject een samengestelde expressie is THE SYSTEM SHALL het tussen haakjes zetten (proof `receiver-parens`).
 - **REQ-5**: IF een stream, becauseArgs, een AssertionScope of `.And` THEN THE SYSTEM SHALL Manual geven (proofs `stream`, `because-args`, `assertion-scope`).
 - **REQ-6**: WHEN `HaveLength` een schakel na `.And` is THE SYSTEM SHALL via `fa.and-chain` een los statement geven (proof `AndChain/equal-length-approximately`).
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (Fixed, proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. REQ-5 geldt daarmee niet meer voor becauseArgs.
 
 ## Assumptions
 

@@ -18,8 +18,9 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EqualSequencePattern.c
 | REQ-2 | Gehaald | `params` |
 | REQ-3 | Gehaald | `because` |
 | REQ-4 | Gehaald | `nullable` |
-| REQ-5 | Gehaald | `not-equal`, `dictionary`, `predicate`, `because-args`, `assertion-scope`, `and` |
+| REQ-5 | Gehaald (becauseArgs vervangen) | `not-equal`, `dictionary`, `predicate`, `assertion-scope`, `and` |
 | REQ-6 | Gehaald | `AndChain/equal-length-approximately` |
+| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` |
 
 ## Deviations
 

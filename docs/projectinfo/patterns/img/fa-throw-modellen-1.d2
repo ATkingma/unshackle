@@ -20,9 +20,17 @@ ThrowPattern: ThrowPattern {
   "+Find(root, model)": "IEnumerable<SyntaxNode>"
   "+Rewrite(node, model)": PatternResult
 }
+throwsyntax: "«internal static» ThrowSyntax" {
+  shape: class
+  "+FindThrow(root, model, owns)": "IEnumerable<SyntaxNode>"
+  "+IsExactly(assertion)": bool
+  "+IsInvoking(assertion, model)": bool
+  "+TryGetAction(subject, model, ...)": bool
+}
 syntax: FluentAssertionsSyntax {
   shape: class
   "+FindInvocations(root, model, names)": "IEnumerable<InvocationExpressionSyntax>"
+  "+IsInsideAssertionScope(node, model)": bool
   "+GetSubject(assertion)": "ExpressionSyntax?"
   "+IsResultDiscarded(assertion, model)": bool
   "+IsFluentAssertions(symbol)": bool
@@ -47,22 +55,26 @@ fa: "«FluentAssertions» herkend" {
   "Throw<T>()": ""
   "ThrowExactly<T>()": ""
   "WithMessage(pattern)": ""
+  ".Which": ""
 }
 sh: "«Shouldly» aangemaakt" {
   shape: class
   "Should.Throw<T>(act[, because])": ""
+  "thrown.ShouldBeOfType<T>() (ThrowExactly)": ""
   "thrown.Message.ShouldContain / ShouldStartWith / ShouldEndWith / ShouldBe": ""
 }
 rec: "Herkende typen" {
   shape: class
   "Action": ""
   "Func<T> met referentietype": ""
-  "Invoking(...) (Manual)": ""
+  "Invoking(...) (via InvokingPattern)": ""
 }
 msg: "«internal static» ThrowMessage" {
   shape: class
-  "+Check(thrown, pattern, because)": "ExpressionSyntax?"
+  "+Check(thrown, pattern, because)": PatternResult
   "+Arguments(first, because)": ArgumentListSyntax
+  "+MayThrowAggregate(action, exceptionType, model)": bool
+  "+OfType(thrown, throwName)": ExpressionSyntax
 }
 ThrowPattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
 ThrowPattern -> syntax: gebruikt {style.stroke-dash: 3}
@@ -73,3 +85,4 @@ ThrowPattern -> fa: herkent {style.stroke-dash: 3}
 ThrowPattern -> sh: bouwt {style.stroke-dash: 3}
 ThrowPattern -> rec: onderscheidt {style.stroke-dash: 3}
 ThrowPattern -> msg: gebruikt {style.stroke-dash: 3}
+ThrowPattern -> throwsyntax: gebruikt {style.stroke-dash: 3}

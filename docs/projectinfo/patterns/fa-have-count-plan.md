@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "fa-have-count"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16]
 files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveCountPattern.cs
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
@@ -53,13 +53,14 @@ fa.have-count: x.Should().HaveCount(n) wordt type-afhankelijk x.Count.ShouldBe(n
 - **REQ-8**: WHEN het subject een expressie met lagere precedence is (bijv. `a ?? b`) THE SYSTEM SHALL haakjes om de ontvanger zetten (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/receiver-parens.*.cs`).
 - **REQ-9**: IF het subject een dictionary is (`IDictionary<,>`, `IReadOnlyDictionary<,>` of een implementatie) THEN THE SYSTEM SHALL Manual geven omdat Count of Keys bedoeld kan zijn (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/dictionary.*`).
 - **REQ-10**: IF `HaveCount` een predicate krijgt (`c => c > 1`) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/predicate.*`).
-- **REQ-11**: IF `HaveCount` `becauseArgs` of benoemde argumenten heeft THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/because-args.*`).
+- **REQ-11**: IF `HaveCount` `becauseArgs` of benoemde argumenten heeft THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/because-args.*`). _Voor becauseArgs vervangen door Uitbreiding TAAK-097._
 - **REQ-12**: IF het resultaat van `HaveCount` wordt gebruikt (`.And`, `.Which`, waarde) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/chain.*`).
 - **REQ-13**: IF het subject een non-generic `IEnumerable` is THEN THE SYSTEM SHALL Manual geven met het advies `Cast<T>().Count()`. _Geen proof: FA 7.2.2 heeft geen `HaveCount` op non-generic `IEnumerable`, dus before compileert niet._
 - **REQ-14**: IF het subject een conditional access is (`a?.b`) THEN THE SYSTEM SHALL Manual geven. _Geen proof: alleen via code bewaakt._
 - **REQ-15**: IF het type van het subject onbekend is (error type) THEN THE SYSTEM SHALL Manual geven. _Geen proof: alleen via code bewaakt._
 - **REQ-16**: IF het subject in een nullable-enabled context mogelijk null is (flow state MaybeNull) THEN THE SYSTEM SHALL `x.ShouldNotBeNull().Count.ShouldBe(n)` schrijven (TAAK-021: FluentAssertions accepteert een nullable subject, Shouldly's receiver niet; zonder dit CS8602/CS8604 in projecten met warnings-as-errors. `ShouldNotBeNull()` behoudt FA's falen op null) (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/nullable.*`).
 - **Uitbreiding TAAK-095**: WHEN `HaveCountGreaterThan`/`…OrEqualTo`/`HaveCountLessThan`/`…OrEqualTo` (ook de `…GreaterOrEqualTo`/`…LessOrEqualTo`-aliassen) staat THE SYSTEM SHALL dezelfde count-receiver met `ShouldBeGreaterThan`/`…OrEqualTo`/`ShouldBeLessThan`/`…OrEqualTo` geven (proofs `count-comparisons`, `count-comparison-because-args`). Probe: grens n-1, n, n+1 gelijk.
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (Fixed, proofs `because-args`, `count-comparison-because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. De gedeelde controles (AssertionScope, vorm, resultaat, becauseArgs) zitten sinds de Template Method in `FluentAssertionPattern.Rewrite`; `HaveCountPattern` implementeert `RewriteAssertion` en gebruikt `FluentAssertionsSyntax.NotNullReceiver` (haakjes en `ShouldNotBeNull()`) in plaats van een eigen `IsSafeReceiver`.
 
 ## Assumptions
 

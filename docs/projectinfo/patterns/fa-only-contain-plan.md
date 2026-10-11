@@ -45,6 +45,9 @@ fa.only-contain: `x.Should().OnlyContain(pred)` wordt twee statements, `x.Should
 - **REQ-7**: IF de assertion na `.And` staat THEN THE SYSTEM SHALL Manual geven (proof `and-chain.*`).
 - **REQ-8**: IF het subject een aanroep is THEN THE SYSTEM SHALL Manual geven, omdat splitsen het subject twee keer evalueert (proof `subject-call.*`).
 - **REQ-9**: IF de assertion geen statement direct in een blok is (lambda-body, `if` zonder accolades) THEN THE SYSTEM SHALL Manual geven, omdat er geen twee statements kunnen staan (proofs `lambda.*`, `no-block.*`).
+- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als `customMessage` op beide statements zetten (proof `because-args.*`, nu `.after.cs`); named arguments of een niet-constante `because` blijven Manual. Vervangt REQ-5.
+- **Uitbreiding TAAK-098**: WHEN het subject niet veilig twee keer te evalueren is (bv. een aanroep) THE SYSTEM SHALL het hoisten naar `var subject = x;` en daarna `subject.ShouldNotBeEmpty(); subject.ShouldAllBe(pred);` geven (proof `subject-call.*`, nu `.after.cs`). Vervangt REQ-8.
+- **Uitbreiding TAAK-100**: IF de assertie in een `AssertionScope` staat die niet wordt omgezet THEN THE SYSTEM SHALL Manual "Inside an AssertionScope" geven (gedeelde controle in `FluentAssertionPattern.Rewrite`).
 
 ## Assumptions
 

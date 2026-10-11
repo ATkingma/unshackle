@@ -17,8 +17,9 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeSameAsPattern.cs`; r
 | REQ-1 | Gehaald | `simple, nullable` |
 | REQ-2 | Gehaald | `not` |
 | REQ-3 | Gehaald | `because` |
-| REQ-4 | Gehaald | `because-args, result-used, assertion-scope` |
+| REQ-4 | Deels vervangen | `result-used, assertion-scope` (Manual); `because-args` is nu Fixed (TAAK-097) |
 | REQ-5 | Gehaald | `AndChain/be-same-as` |
+| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` |
 
 ## Deviations
 

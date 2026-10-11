@@ -18,10 +18,9 @@ public class FluentAssertionsFix : IFix
     public PackageMigration Package { get; } =
         new() { RemovedPackage = "FluentAssertions", AddedPackages = [new() { Name = "Shouldly", Version = ShouldlyVersion }] };
 
-    public IReadOnlyList<IPattern> Patterns { get; } =
+    // The assertion patterns, also the links AndChainPattern rewrites after splitting a chain.
+    private static readonly IPattern[] s_assertions =
     [
-        // First: its loop body keeps the FluentAssertions assertions, which the patterns below then rewrite as statements.
-        new AllSatisfyPattern(),
         new ShouldBePattern(),
         new NotBePattern(),
         new HaveCountPattern(),
@@ -37,6 +36,16 @@ public class FluentAssertionsFix : IFix
         new ContainKeyPattern(),
         new BeEquivalentToObjectPattern(),
         new OnlyContainPattern(),
+        new BeOfTypePattern(),
+    ];
+
+    public IReadOnlyList<IPattern> Patterns { get; } =
+    [
+        // First: its loop body keeps the FluentAssertions assertions, which the patterns below then rewrite as statements.
+        new AllSatisfyPattern(),
+        // Before the assertion patterns, which report a link after .And as Manual.
+        new AndChainPattern(s_assertions),
+        .. s_assertions,
         new AssertionScopePattern(),
     ];
 }

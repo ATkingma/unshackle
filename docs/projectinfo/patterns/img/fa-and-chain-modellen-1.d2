@@ -1,0 +1,67 @@
+title: "[Class] AndChainPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: "Realisatie (holle driehoek), overerving (holle driehoek), dependency (gestreept)"
+  }
+}
+result: "PatternResult (abstract)" {
+  shape: class
+  "+Fixed(newNodes, namespaces)": PatternResult
+  "+Manual(reason)": PatternResult
+}
+fixed: FixedResult {
+  shape: class
+  "+NewNodes": "IReadOnlyList<SyntaxNode>"
+  "+RequiredNamespaces": "IReadOnlyList<string>"
+}
+manual: ManualResult {
+  shape: class
+  "+Reason": string
+}
+ipattern: "«interface» IPattern" {
+  shape: class
+  "+Id": string
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+AndChainPattern: AndChainPattern {
+  shape: class
+  "-_links": "IReadOnlyList<IPattern>"
+  "+AndChainPattern(links)": ""
+  "+Id": "fa.and-chain"
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+  "-RewriteLink(statement, root, model)": "PatternResult?"
+  "-GetPrevious(link)": "InvocationExpressionSyntax?"
+  "-IsFreeOfSideEffects(expression, model)": bool
+}
+syntax: FluentAssertionsSyntax {
+  shape: class
+  "+IsFluentAssertions(symbol)": bool
+  "+IsInsideAssertionScope(node, model)": bool
+  "+GetSubject(assertion)": "ExpressionSyntax?"
+}
+fix: FluentAssertionsFix {
+  shape: class
+  "-s_assertions": "IPattern[]"
+  "+Patterns": "IReadOnlyList<IPattern>"
+}
+fa: "«FluentAssertions» herkend" {
+  shape: class
+  "x.Should().A(..).And.B(..)[.And.C(..)];": ""
+}
+sh: "«Shouldly» aangemaakt" {
+  shape: class
+  "één statement per schakel, door het schakel-patroon": ""
+}
+AndChainPattern -> ipattern: "realiseert; houdt _links vast (Composite)" {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+fix -> AndChainPattern: "new AndChainPattern(s_assertions)" {style.stroke-dash: 3}
+AndChainPattern -> syntax: gebruikt {style.stroke-dash: 3}
+AndChainPattern -> result: levert {style.stroke-dash: 3}
+AndChainPattern -> fa: herkent {style.stroke-dash: 3}
+AndChainPattern -> sh: bouwt {style.stroke-dash: 3}

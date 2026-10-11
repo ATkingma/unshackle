@@ -1,0 +1,26 @@
+title: "[Sequence] AndChainPattern - Find en Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: AndChainPattern
+syntax: FluentAssertionsSyntax
+model: SemanticModel
+split: "SemanticModel (gesplitste boom)"
+schakel: "IPattern (schakel)"
+fixer -> pattern: "Find(root, model)"
+pattern -> model: "GetSymbolInfo(invocation): IsFluentAssertions"
+pattern -> fixer: "statement met .And-keten" {style.stroke-dash: 3}
+each: "loop [elke node]" {
+  fixer -> pattern: "Rewrite(node, model)"
+  pattern -> syntax: "IsInsideAssertionScope(node, model)"
+  pattern -> syntax: "GetSubject(links[0])"
+  pattern -> model: "GetTypeInfo(.And-ontvanger) == GetTypeInfo(x.Should())"
+  pattern -> pattern: "IsFreeOfSideEffects(subject, model)"
+  pattern -> model: "Compilation.ReplaceSyntaxTree(tree, splitTree)"
+  model -> split: "GetSemanticModel(splitTree)" {style.stroke-dash: 3}
+  links: "loop [elke schakel]" {
+    pattern -> pattern: "RewriteLink(statement, splitRoot, splitModel)"
+    pattern -> schakel: "Find(splitRoot, splitModel) / Rewrite(found, splitModel)"
+    schakel -> pattern: "FixedResult of ManualResult" {style.stroke-dash: 3}
+  }
+  pattern -> fixer: "Fixed(statements, namespaces) of Manual(reden)" {style.stroke-dash: 3}
+}

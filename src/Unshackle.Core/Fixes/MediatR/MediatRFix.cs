@@ -1,4 +1,5 @@
 using Unshackle.Core.Abstractions;
+using Unshackle.Core.Fixes.MediatR.Patterns;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.MediatR;
@@ -44,5 +45,5 @@ public class MediatRFix : IFix
         ],
     };
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new RequestHandlerPattern()];
 }

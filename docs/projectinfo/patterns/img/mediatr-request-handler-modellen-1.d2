@@ -1,0 +1,13 @@
+title: "[Klassen] RequestHandlerPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+IPattern: {shape: class; "+Id: string"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
+RequestHandlerPattern: {shape: class; "+Id = mediatr.request-handler"; "+Find(root, model)"; "+Rewrite(node, model)"; "-IsRequestHandler(type): bool"; "-ToValueTask(type): TypeSyntax?"; "-ReturnedExpressions(method)"; "-IsTaskFromResult(expr, model): bool"}
+MediatRFix: {shape: class; "+Patterns"; "+SwappedTypes"}
+PatternResult: {shape: class; "+Fixed(node, namespaces)"; "+Manual(reason)"}
+Old: "MediatR.IRequestHandler<TReq,TRes>\nTask<TRes> Handle(...)" {shape: class}
+New: "Mediator.IRequestHandler<TReq,TRes>\nValueTask<TRes> Handle(...)" {shape: class}
+RequestHandlerPattern -> IPattern: implementeert
+MediatRFix -> RequestHandlerPattern: Patterns
+RequestHandlerPattern -> Old: herkent
+RequestHandlerPattern -> New: schrijft Handle voor
+MediatRFix -> New: "SwappedTypes: using MediatR -> Mediator"
+RequestHandlerPattern -> PatternResult: Fixed / Manual

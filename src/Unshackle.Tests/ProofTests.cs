@@ -60,6 +60,8 @@ public class ProofTests
         fix.Patterns.Returns([pattern]);
         fix.RemovedNamespaces.Returns(proofFix.Fix.RemovedNamespaces);
         fix.AddedNamespaces.Returns(proofFix.Fix.AddedNamespaces);
+        // A manual proof checks that the pattern leaves the code alone; the using swap of swapped types would still run.
+        fix.SwappedTypes.Returns(File.Exists(basePath + ".manual.txt") ? [] : proofFix.Fix.SwappedTypes);
         var fixer = new Fixer([fix]);
         Solution solution = TestSolution.Create(before, proofFix.Before);
 

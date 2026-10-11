@@ -34,7 +34,11 @@ internal static class ProjectPackages
             });
         }
 
-        return migrations;
+        // A multi-target project is loaded once per target framework; it keeps the package when any of them needs it.
+        return
+        [
+            .. migrations.GroupBy(m => m.ProjectPath, StringComparer.Ordinal).Select(g => g.FirstOrDefault(m => m.KeepRemovedPackage) ?? g.First()),
+        ];
     }
 
     // True when any document binds a name to a type or member of the assembly. Using directives do not count:

@@ -106,6 +106,55 @@ public class SampleShopTests
         await DotnetAsync(cancellationToken, "test", "--solution", solution);
     }
 
+    // MSBuild loads a multi-target project once per target framework; every finding and file still counts once.
+    [Fact]
+    public async Task ScanFix_MultiTargetProject_ReportsAndWritesEachFileOnce()
+    {
+        // Arrange
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using var directory = new TempDirectory();
+        string project = Path.Combine(directory.Path, "Multi.csproj");
+        string code = Path.Combine(directory.Path, "Tests.cs");
+        string report = Path.Combine(directory.Path, "r.csv");
+        await File.WriteAllTextAsync(project, """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+                <NoWarn>$(NoWarn);NU1903</NoWarn>
+              </PropertyGroup>
+              <ItemGroup>
+                <PackageReference Include="FluentAssertions" Version="7.2.2" />
+              </ItemGroup>
+            </Project>
+            """, cancellationToken);
+        await File.WriteAllTextAsync(code, """
+            using FluentAssertions;
+
+            public class Tests
+            {
+                public void M()
+                {
+                    1.Should().Be(1);
+                }
+            }
+            """, cancellationToken);
+        await DotnetAsync(cancellationToken, "restore", project);
+
+        // Act
+        int scanExit = await Cli.RunAsync(["scan", project, "--fix", "fluentassertions", "--report", report], cancellationToken);
+        string[] rows = await File.ReadAllLinesAsync(report, cancellationToken);
+        int fixExit = await Cli.RunAsync(["fix", project, "--fix", "fluentassertions", "--force"], cancellationToken);
+
+        // Assert
+        scanExit.ShouldBe(ExitCodes.Ok);
+        rows.Count(r => r.StartsWith("Tests.cs,", StringComparison.Ordinal)).ShouldBe(1);
+        fixExit.ShouldBe(ExitCodes.Ok);
+        string fixedCode = await File.ReadAllTextAsync(code, cancellationToken);
+        fixedCode.ShouldContain("1.ShouldBe(1);");
+        fixedCode.Split("using Shouldly;").Length.ShouldBe(2);
+        (await File.ReadAllTextAsync(project, cancellationToken)).Split("Include=\"Shouldly\"").Length.ShouldBe(2);
+    }
+
     // bin/ and obj/ hold absolute paths of the original location; restore creates them again.
     private static void CopyWithoutBuildOutput(string source, string target)
     {

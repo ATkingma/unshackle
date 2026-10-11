@@ -42,7 +42,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/`         | Actieve taken: `TAAK-NNN-<slug>.md` |
 | `claude/tasks/TAAK-019-lancering.md` | Volgende stap: lancering (echte casus, NuGet, publiek, README-GIF) |
 | `claude/tasks/TAAK-021-fa-nullable-subject.md` | Bug: nullable subject breekt build na fa.have-count / fa.contain (string) |
-| `claude/tasks/TAAK-022-scan-telt-per-target-framework.md` | Bug: scan/fix telt bevindingen per TFM (3x) |
+| `claude/tasks/archief/TAAK-022-scan-telt-per-target-framework.md` | Bug: scan/fix telt bevindingen per TFM (3x) |
 | `claude/tasks/patroon-queue.md` | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status |
 | `claude/tasks/mediatr-queue.md` | Wachtrij MediatR → Mediator-patronen; infrastructuur in TAAK-020 |
 | `claude/tasks/archief/` | Voltooide taken                     |

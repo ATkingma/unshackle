@@ -51,6 +51,7 @@ fa.be-greater-less: vergelijkingen (`BeGreaterThan`, `BeLessThan`, `...OrEqualTo
 - **REQ-12**: IF een `.And`-keten een andere assertion bevat THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-other.*`).
 - **REQ-13**: IF het subject van een keten een aanroep of ander expressie met mogelijke bijwerkingen is THEN THE SYSTEM SHALL Manual geven, omdat splitsen het twee keer evalueert (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-subject-call.*`).
 - **REQ-14**: IF een gesplitste keten niet direct in een blok staat (bijv. `if` zonder accolades) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-no-block.*`).
+- **Uitbreiding TAAK-095**: WHEN `BeAfter`/`BeOnOrAfter`/`BeBefore`/`BeOnOrBefore` staat THE SYSTEM SHALL `ShouldBeGreaterThan`/`…OrEqualTo`/`ShouldBeLessThan`/`…OrEqualTo` geven (proofs `dates`, `dates-nullable`, `AndChain/dates`). Probe: gelijk, ±1 tick, andere Kind, zelfde instant met andere offset, DateOnly: gelijk oordeel.
 
 ## Assumptions
 

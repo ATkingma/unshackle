@@ -20,6 +20,11 @@ public class BeGreaterLessPattern : FluentAssertionPattern
         ["NotBeInRange"] = ("ShouldNotBeInRange", 2),
         ["BePositive"] = ("ShouldBePositive", 0),
         ["BeNegative"] = ("ShouldBeNegative", 0),
+        // Date and time comparisons: FluentAssertions uses CompareTo, as Shouldly does (probed: equal, ±1 tick, Kind, offset).
+        ["BeAfter"] = ("ShouldBeGreaterThan", 1),
+        ["BeOnOrAfter"] = ("ShouldBeGreaterThanOrEqualTo", 1),
+        ["BeBefore"] = ("ShouldBeLessThan", 1),
+        ["BeOnOrBefore"] = ("ShouldBeLessThanOrEqualTo", 1),
     };
 
     // The numeric types Shouldly has ShouldBePositive/ShouldBeNegative for.
@@ -28,7 +33,7 @@ public class BeGreaterLessPattern : FluentAssertionPattern
 
     public override string Id => "fa.be-greater-less";
 
-    public override string Description => "x.Should().BeGreaterThan(n) → x.ShouldBeGreaterThan(n), BeInRange(a, b) → ShouldBeInRange(a, b)";
+    public override string Description => "x.Should().BeGreaterThan(n) → x.ShouldBeGreaterThan(n), BeInRange(a, b) → ShouldBeInRange(a, b), BeAfter(d) → ShouldBeGreaterThan(d)";
 
     public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         FluentAssertionsSyntax.FindInvocations(root, model, [.. s_methods.Keys]);

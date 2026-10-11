@@ -1,0 +1,47 @@
+title: "[Class] NotThrowAsyncPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+result: "PatternResult (abstract)" {
+  shape: class
+  "+Fixed(newNode, namespaces)": PatternResult
+  "+Manual(reason)": PatternResult
+}
+fixed: FixedResult {
+  shape: class
+  "+NewNodes": "IReadOnlyList<SyntaxNode>"
+}
+manual: ManualResult {
+  shape: class
+  "+Reason": string
+}
+fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+base: "IPattern" {
+  shape: class
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+pattern: NotThrowAsyncPattern {
+  shape: class
+  "+Id": "fa.not-throw-async"
+}
+syntax: FluentAssertionsSyntax {
+  shape: class
+  "+FindInvocations(root, model, names)": "IEnumerable<InvocationExpressionSyntax>"
+  "+GetSubject(assertion)": "ExpressionSyntax?"
+  "+TryGetArguments(assertion, model, values, because)": bool
+}
+fa: "«FluentAssertions» herkend" {
+  shape: class
+  "NotThrowAsync()": ""
+  "NotThrowAsync<T>()": ""
+  "NotThrowAfterAsync(..)": ""
+}
+sh: "«Shouldly» aangemaakt" {
+  shape: class
+  "Should.NotThrowAsync(act[, because])": ""
+}
+pattern -> base: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+pattern -> syntax: gebruikt {style.stroke-dash: 3}
+pattern -> result: levert {style.stroke-dash: 3}
+pattern -> fa: herkent {style.stroke-dash: 3}
+pattern -> sh: bouwt {style.stroke-dash: 3}

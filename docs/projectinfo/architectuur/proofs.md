@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 426 proofs (zonder `_Pending`).
+Totaal: 457 proofs (zonder `_Pending`).
 
 ## FluentAssertions
 
@@ -30,15 +30,18 @@ Totaal: 426 proofs (zonder `_Pending`).
 | `typed-parameter` | Fixed | `x.Should().AllSatisfy((int i) => Check(i));` → `x.ShouldNotBeEmpty(); foreach (int i in x)` |
 | `used` | Manual | `x.Should().AllSatisfy(i => Check(i)).And.NotBeEmpty();` — reden: is used |
 
-### AndChain (18)
+### AndChain (21)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `assertion-scope` | Manual | `items.Should().NotBeEmpty().And.HaveCount(2);` — reden: AssertionScope |
 | `be-of-type` | Fixed | `obj.Should().NotBeNull().And.BeOfType<string>();` → `obj.ShouldNotBeNull(); obj.ShouldBeOfType<string>();` |
+| `be-same-as` | Fixed | `a.Should().NotBeNull().And.BeSameAs(b);` → `a.ShouldNotBeNull(); a.ShouldBeSameAs(b);` |
 | `because` | Fixed | `items.Should().NotBeEmpty("needed").And.Contain(3, "three");` → `items.ShouldNotBeEmpty("needed"); items.ShouldContain(3, "three");` |
+| `dates` | Fixed | `a.Should().BeAfter(b).And.BeBefore(c);` → `a.ShouldBeGreaterThan(b); a.ShouldBeLessThan(c);` |
 | `edge-multiline` | Fixed | `items.Should() .NotBeEmpty()` → `items.ShouldNotBeEmpty(); items.Count.ShouldBe(2);` |
 | `equal-length-approximately` | Fixed | `x.Should().NotBeEmpty().And.Equal(1, 2); s.Should().NotBeNull().And.HaveLength(3);` → `x.ShouldNotBeEmpty(); x.ShouldBe(new int[] { 1, 2 });` |
+| `equivalent-collection` | Fixed | `a.Should().NotBeEmpty().And.BeEquivalentTo(b);` → `a.ShouldNotBeEmpty(); a.ShouldBe(b, ignoreOrder: true);` |
 | `greater-less` | Fixed | `order.Total.Should().BeGreaterThan(20m).And.BeLessThan(30m); order.Total.Should().BeGreaterThan(1m, "above").A…` → `order.Total.ShouldBeGreaterThan(20m); order.Total.ShouldBeLessThan(30m);` |
 | `lambda` | Manual | `Action a = () => x.Should().BeGreaterThan(1).And.BeLessThan(5);` — reden: is used |
 | `link-manual` | Manual | `items.Should().NotBeEmpty().And.HaveCount(2, "of {0}", 2);` — reden: Link HaveCount |
@@ -95,7 +98,7 @@ Totaal: 426 proofs (zonder `_Pending`).
 | `string` | Fixed | `text.Should().BeEmpty(); text.Should().NotBeEmpty();` → `text.ShouldBeEmpty(); text.ShouldNotBeEmpty();` |
 | `value-used` | Manual | `var result = text.Should().BeEmpty();` — reden: is used |
 
-### BeEquivalentToObject (26)
+### BeEquivalentToObject (31)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -106,10 +109,15 @@ Totaal: 426 proofs (zonder `_Pending`).
 | `because-args` | Manual | `a.Should().BeEquivalentTo(b, "reason {0}", 1);` — reden: becauseArgs |
 | `both-new` | Fixed | `new Dto { Id = 1 }.Should().BeEquivalentTo(new Dto { Id = 1 });` → `new Dto { Id = 1 }.ShouldBeEquivalentTo(new Dto { Id = 1 });` |
 | `collection` | Manual | `a.Should().BeEquivalentTo(b);` — reden: is a collection |
+| `collection-because-args` | Manual | `a.Should().BeEquivalentTo(b, "id {0}", 1);` — reden: becauseArgs |
+| `collection-element-types` | Manual | `a.Should().BeEquivalentTo(b);` — reden: Different |
+| `collection-ints` | Fixed | `a.Should().BeEquivalentTo(b);` → `a.ShouldBe(b, ignoreOrder: true);` |
 | `collection-member` | Manual | `a.Should().BeEquivalentTo(b);` — reden: is a collection |
+| `collection-nullable-enum` | Fixed | `a.Should().BeEquivalentTo(b);` → `a.ShouldBe(b, ignoreOrder: true);` |
+| `collection-strings-because` | Fixed | `a.Should().BeEquivalentTo(b, "any order");` → `a.ShouldBe(b, ignoreOrder: true, "any order");` |
 | `cyclic` | Manual | `a.Should().BeEquivalentTo(b);` — reden: cyclic object graph |
 | `different-types` | Manual | `a.Should().BeEquivalentTo(b);` — reden: Different compile-time types |
-| `edge-array-literal` | Manual | `result.Should().BeEquivalentTo(new[] { 1, 2 });` — reden: collection |
+| `edge-array-literal` | Fixed | `result.Should().BeEquivalentTo(new[] { 1, 2 });` → `result.ShouldBe(new[] { 1, 2 }, ignoreOrder: true);` |
 | `edge-collection-params` | Manual | `numbers.Select(n => n.ToString()).Should().BeEquivalentTo("1", "2");` — reden: is a collection |
 | `equals-member` | Manual | `a.Should().BeEquivalentTo(b);` — reden: overrides Equals |
 | `equals-override` | Manual | `a.Should().BeEquivalentTo(b);` — reden: overrides Equals |
@@ -140,7 +148,7 @@ Totaal: 426 proofs (zonder `_Pending`).
 | `simple` | Fixed | `s.Should().BeEquivalentTo("ab");` → `s.ShouldBe("ab", StringCompareShould.IgnoreCase);` |
 | `value-used` | Manual | `var c = s.Should().BeEquivalentTo("ab");` — reden: is used |
 
-### BeGreaterLess (13)
+### BeGreaterLess (15)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -148,6 +156,8 @@ Totaal: 426 proofs (zonder `_Pending`).
 | `because-args` | Manual | `x.Should().BeGreaterThan(1, "it is {0}", 1);` — reden: becauseArgs |
 | `byte-short` | Fixed | `b.Should().BeGreaterThan(1); s.Should().BeLessOrEqualTo(10, "small");` → `b.ShouldBeGreaterThan((byte)1); s.ShouldBeLessThanOrEqualTo((short)10, "small");` |
 | `comparable` | Fixed | `t.Should().BeGreaterThan(TimeSpan.Zero); v.Should().BeLessThan(new Version(2, 0));` → `t.ShouldBeGreaterThan(TimeSpan.Zero); v.ShouldBeLessThan(new Version(2, 0));` |
+| `dates` | Fixed | `a.Should().BeAfter(b); a.Should().BeOnOrAfter(b);` → `a.ShouldBeGreaterThan(b); a.ShouldBeGreaterThanOrEqualTo(b);` |
+| `dates-nullable` | Manual | `a.Should().BeAfter(b);` — reden: nullable |
 | `edge-double` | Fixed | `ratio.Should().BeGreaterThan(0.5);` → `ratio.ShouldBeGreaterThan(0.5);` |
 | `edge-interpolated-because` | Fixed | `age.Should().BeLessThan(150, $"{name} is human");` → `age.ShouldBeLessThan(150, $"{name} is human");` |
 | `in-range` | Fixed | `x.Should().BeInRange(1, 5); x.Should().NotBeInRange(6, 9);` → `x.ShouldBeInRange(1, 5); x.ShouldNotBeInRange(6, 9);` |
@@ -192,6 +202,18 @@ Totaal: 426 proofs (zonder `_Pending`).
 | `which` | Fixed | `var dto = obj.Should().BeOfType<Dto>().Which; var asObject = obj.Should().BeAssignableTo<object>("any").Subjec…` → `var dto = obj.ShouldBeOfType<Dto>(); var asObject = obj.ShouldBeAssignableTo<object>("any");` |
 | `which-chain` | Manual | `obj.Should().BeOfType<Dto>().Which.Name.Should().Be("a");` — reden: is used |
 | `which-multiple` | Manual | `Dto a = obj.Should().BeOfType<Dto>().Which, b = new Dto();` — reden: is used |
+
+### BeSameAs (7)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `assertion-scope` | Manual | `a.Should().BeSameAs(b);` — reden: AssertionScope |
+| `because` | Fixed | `a.Should().BeSameAs(b, "cached");` → `a.ShouldBeSameAs(b, "cached");` |
+| `because-args` | Manual | `a.Should().BeSameAs(b, "id {0}", 1);` — reden: becauseArgs |
+| `not` | Fixed | `a.Should().NotBeSameAs(b);` → `a.ShouldNotBeSameAs(b);` |
+| `nullable` | Fixed | `a.Should().BeSameAs(b);` → `a.ShouldBeSameAs(b);` |
+| `result-used` | Manual | `var c = a.Should().BeSameAs(b).And;` — reden: is used |
+| `simple` | Fixed | `a.Should().BeSameAs(b);` → `a.ShouldBeSameAs(b);` |
 
 ### BeTrueFalse (11)
 
@@ -285,7 +307,7 @@ Totaal: 426 proofs (zonder `_Pending`).
 | `predicate` | Manual | `x.Should().Equal(y, (a, b) => a.ToString() == b);` — reden: predicate |
 | `simple` | Fixed | `x.Should().Equal(y);` → `x.ShouldBe(y);` |
 
-### HaveCount (16)
+### HaveCount (18)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -293,6 +315,8 @@ Totaal: 426 proofs (zonder `_Pending`).
 | `because-args` | Manual | `x.Should().HaveCount(2, "x {0}", y);` — reden: becauseArgs |
 | `chain` | Manual | `x.Should().HaveCount(2).And.Contain(1);` — reden: is used |
 | `collection-interfaces` | Fixed | `a.Should().HaveCount(1); b.Should().HaveCount(2);` → `a.Count.ShouldBe(1); b.Count.ShouldBe(2);` |
+| `count-comparison-because-args` | Manual | `a.Should().HaveCountGreaterThan(1, "id {0}", 1);` — reden: becauseArgs |
+| `count-comparisons` | Fixed | `a.Should().HaveCountGreaterThan(1); b.Should().HaveCountGreaterThanOrEqualTo(2, "at least two");` → `a.Count.ShouldBeGreaterThan(1); b.Length.ShouldBeGreaterThanOrEqualTo(2, "at least two");` |
 | `dictionary` | Manual | `x.Should().HaveCount(2);` — reden: Dictionary: |
 | `edge-generic-element` | Fixed | `items.Should().HaveCount(1);` → `items.Count.ShouldBe(1);` |
 | `edge-linq-subject` | Fixed | `items.Where(x => x > 0).Should().HaveCount(2);` → `items.Where(x => x > 0).Count().ShouldBe(2);` |
@@ -364,6 +388,23 @@ Totaal: 426 proofs (zonder `_Pending`).
 | `simple` | Fixed | `act.Should().NotThrow();` → `Should.NotThrow(act);` |
 | `value-func` | Fixed | `func.Should().NotThrow();` → `Should.NotThrow(func);` |
 | `value-used` | Manual | `var value = func.Should().NotThrow().Which;` — reden: is used |
+
+### NotThrowAsync (12)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `assertion-scope` | Manual | `await act.Should().NotThrowAsync();` — reden: AssertionScope |
+| `awaiting` | Manual | `await FluentActions.Awaiting(act).Should().NotThrowAsync();` — reden: built with FluentAssertions |
+| `because` | Fixed | `await act.Should().NotThrowAsync("must work");` → `await Should.NotThrowAsync(act, "must work");` |
+| `because-args` | Manual | `await act.Should().NotThrowAsync("id {0}", 1);` — reden: becauseArgs |
+| `configure-await` | Fixed | `await act.Should().NotThrowAsync().ConfigureAwait(false);` → `await Should.NotThrowAsync(act).ConfigureAwait(false);` |
+| `generic` | Manual | `await act.Should().NotThrowAsync<InvalidOperationException>();` — reden: type T |
+| `lambda` | Fixed | `await wrapped.Should().NotThrowAsync();` → `await Should.NotThrowAsync(wrapped);` |
+| `not-awaited` | Manual | `Task t = act.Should().NotThrowAsync();` — reden: not awaited as a statement |
+| `reference-result` | Fixed | `await act.Should().NotThrowAsync();` → `await Should.NotThrowAsync(act);` |
+| `result-used` | Manual | `var r = await act.Should().NotThrowAsync();` — reden: not awaited as a statement |
+| `simple` | Fixed | `await act.Should().NotThrowAsync();` → `await Should.NotThrowAsync(act);` |
+| `value-result` | Manual | `await act.Should().NotThrowAsync();` — reden: Func<Task> |
 
 ### OnlyContain (15)
 

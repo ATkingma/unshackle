@@ -71,6 +71,10 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-049-fa-equivalent-runtime-type.md` | ✅ `BeEquivalentTo` object: waarschuwing bij niet-sealed types (runtime-type) |
 | `claude/tasks/archief/TAAK-080-mediatr-marker-interface-handler.md` | ✅ Bug: handler via eigen marker-interface (`ICommandHandler<T> : IRequestHandler<T>`) niet gevonden |
 | `claude/tasks/archief/TAAK-081-mediatr-behavior-request-constraint.md` | ✅ Bug: behavior met `IRequest<TResponse>`-constraint krijgt overbodig `IMessage` |
+| `claude/tasks/archief/TAAK-092-fa-be-equivalent-to-collection.md` | ✅ `BeEquivalentTo` op een collectie zonder options → `ShouldBe(expected, ignoreOrder: true)` |
+| `claude/tasks/archief/TAAK-093-fa-be-same-as.md` | ✅ `BeSameAs`/`NotBeSameAs` → `ShouldBeSameAs`/`ShouldNotBeSameAs` |
+| `claude/tasks/archief/TAAK-094-fa-not-throw-async.md` | ✅ `await act.Should().NotThrowAsync()` → `await Should.NotThrowAsync(act)` |
+| `claude/tasks/archief/TAAK-095-fa-date-count-comparisons.md` | ✅ `BeAfter`/`BeOnOrAfter`/`BeBefore`/`BeOnOrBefore` en `HaveCountGreaterThan…`/`HaveCountLessThan…` |
 | `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` | Frequentietabel MediatR/AutoMapper-API's uit 9 open-source projecten, dekking door patronen |
 | `claude/tasks/patroon-queue.md` | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status (ronde 2: rijen 15-34) |
 | `claude/tasks/mediatr-queue.md` | Wachtrij MediatR → Mediator-patronen; infrastructuur in TAAK-020 |

@@ -14,7 +14,7 @@ public class BeEquivalentToObjectPattern : FluentAssertionPattern
 {
     public override string Id => "fa.be-equivalent-to-object";
 
-    public override string Description => "obj.Should().BeEquivalentTo(other) → obj.ShouldBeEquivalentTo(other) for the same plain type, otherwise Manual";
+    public override string Description => "obj.Should().BeEquivalentTo(other) → obj.ShouldBeEquivalentTo(other) for the same plain type; a collection of primitives → ShouldBe(other, ignoreOrder: true); otherwise Manual";
 
     public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         FluentAssertionsSyntax.FindInvocations(root, model, "BeEquivalentTo", "NotBeEquivalentTo")
@@ -45,6 +45,15 @@ public class BeEquivalentToObjectPattern : FluentAssertionPattern
         if (subjectType is null or IErrorTypeSymbol || expectedType is null or IErrorTypeSymbol)
         {
             return PatternResult.Manual("The type of the subject or the expectation is unknown (null literal or unresolved).");
+        }
+
+        // A collection of value-compared leaves: FA matches each item once in any order, like ShouldBe(ignoreOrder: true)
+        // (probed: duplicates, null items, empty, different lengths, null subject or expectation). TAAK-092.
+        if (ElementType(subjectType) is { } element && IsLeaf(element is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } n ? n.TypeArguments[0] : element)
+            && SymbolEqualityComparer.Default.Equals(element, ElementType(expectedType)))
+        {
+            ArgumentSyntax ignoreOrder = SyntaxFactory.Argument(SyntaxFactory.NameColon("ignoreOrder").WithTrailingTrivia(SyntaxFactory.Space), default, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
+            return PatternResult.Fixed(FluentAssertionsSyntax.Invoke(subject.WithoutTrailingTrivia(), "ShouldBe", values[0], ignoreOrder, because));
         }
 
         if (!SymbolEqualityComparer.Default.Equals(subjectType, expectedType))
@@ -134,6 +143,14 @@ public class BeEquivalentToObjectPattern : FluentAssertionPattern
         path.Remove(named);
         return null;
     }
+
+    // T of the one IEnumerable<T> the type is or implements, else null.
+    private static ITypeSymbol? ElementType(ITypeSymbol type) =>
+        type.AllInterfaces.Prepend(type).OfType<INamedTypeSymbol>()
+            .Where(i => i.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T)
+            .Select(i => i.TypeArguments[0])
+            .Distinct(SymbolEqualityComparer.Default)
+            .ToList() is [ITypeSymbol single] ? single : null;
 
     private static string DerivableWarning(IEnumerable<string> types) =>
         $"ShouldBeEquivalentTo fails when the runtime type differs; FluentAssertions accepted derived types (not sealed: {string.Join(", ", types.Distinct())}).";

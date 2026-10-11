@@ -30,7 +30,7 @@ internal static class ThrowSyntax
             .Select(i => i.Parent is AwaitExpressionSyntax await ? (SyntaxNode)await : i);
 
     // `call.method(...)` when that directly follows call, else call.
-    private static InvocationExpressionSyntax Follow(InvocationExpressionSyntax call, string method) =>
+    public static InvocationExpressionSyntax Follow(InvocationExpressionSyntax call, string method) =>
         call.Parent is MemberAccessExpressionSyntax access
         && access.Name.Identifier.ValueText == method
         && access.Parent is InvocationExpressionSyntax next

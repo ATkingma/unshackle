@@ -150,6 +150,20 @@ Winst = calls die van Manual of niet-herkend naar Fixed gaan (B = 5 projecten, A
 
 Acties 1–4 halen samen ~3 procentpunt van de ~5 haalbare, voor weinig werk.
 
+## Na acties 1–4 (TAAK-092 t/m 095)
+
+Gebouwd: `BeEquivalentTo` op collecties van leaves → `ShouldBe(…, ignoreOrder: true)` (uitbreiding `fa.be-equivalent-to-object`),
+`fa.be-same-as`, `fa.not-throw-async`, en datum-/count-vergelijkingen in `fa.be-greater-less` en `fa.have-count`.
+Scan (`unshackle scan --fix fluentassertions`) met main bcf1156 (vóór) en deze wijziging (na):
+
+| Project | Fixed vóór | Manual vóór | Fixed na | Manual na | Verschil |
+| --- | --: | --: | --: | --: | --- |
+| SampleShop | 62 | 24 | 62 | 24 | geen: gebruikt geen van deze API's |
+| PowerApps-Tooling (casus, na restore) | 29 | 109 | 33 | 109 | +4 `fa.be-same-as` (waren niet herkend) |
+
+Manual telt hier inclusief `project-file`-findings (SampleShop 2, PowerApps 3). De corpus-winst (A) zit vooral in projecten
+die hier niet laden (actie 0).
+
 ## Zie ook
 
 - `docs/projectinfo/architectuur/corpus.md` — bron A; het percentage daar (90,5%) is verouderd

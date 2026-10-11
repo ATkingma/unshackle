@@ -96,7 +96,7 @@ Wachtrij en status: `claude/tasks/patroon-queue.md`.
 | Patroon-ID | Plan | Modellen | Verificatie | Taak |
 | --- | --- | --- | --- | --- |
 | `fa.should-be` | [plan](patterns/fa-should-be-plan.md) | [modellen](patterns/fa-should-be-modellen.md) | [verify](patterns/fa-should-be-verify.md) | TAAK-001 |
-| `fa.have-count` | [plan](patterns/fa-have-count-plan.md) | [modellen](patterns/fa-have-count-modellen.md) | [verify](patterns/fa-have-count-verify.md) | TAAK-002 |
+| `fa.have-count` | [plan](patterns/fa-have-count-plan.md) | [modellen](patterns/fa-have-count-modellen.md) | [verify](patterns/fa-have-count-verify.md) | TAAK-095, TAAK-002 |
 | `fa.be-true-false` | [plan](patterns/fa-be-true-false-plan.md) | [modellen](patterns/fa-be-true-false-modellen.md) | [verify](patterns/fa-be-true-false-verify.md) | TAAK-003 |
 | `fa.be-null` | [plan](patterns/fa-be-null-plan.md) | [modellen](patterns/fa-be-null-modellen.md) | [verify](patterns/fa-be-null-verify.md) | TAAK-004 |
 | `fa.be-empty` | [plan](patterns/fa-be-empty-plan.md) | [modellen](patterns/fa-be-empty-modellen.md) | [verify](patterns/fa-be-empty-verify.md) | TAAK-006 |
@@ -106,8 +106,8 @@ Wachtrij en status: `claude/tasks/patroon-queue.md`.
 | `fa.throw-async` | [plan](patterns/fa-throw-async-plan.md) | [modellen](patterns/fa-throw-async-modellen.md) | [verify](patterns/fa-throw-async-verify.md) | TAAK-012 |
 | `fa.not-throw` | [plan](patterns/fa-not-throw-plan.md) | [modellen](patterns/fa-not-throw-modellen.md) | [verify](patterns/fa-not-throw-verify.md) | TAAK-011 |
 | `fa.be-equivalent-to-string` | [plan](patterns/fa-be-equivalent-to-string-plan.md) | [modellen](patterns/fa-be-equivalent-to-string-modellen.md) | [verify](patterns/fa-be-equivalent-to-string-verify.md) | TAAK-009 |
-| `fa.be-equivalent-to-object` | [plan](patterns/fa-be-equivalent-to-object-plan.md) | [modellen](patterns/fa-be-equivalent-to-object-modellen.md) | [verify](patterns/fa-be-equivalent-to-object-verify.md) | TAAK-016 |
-| `fa.be-greater-less` | [plan](patterns/fa-be-greater-less-plan.md) | [modellen](patterns/fa-be-greater-less-modellen.md) | [verify](patterns/fa-be-greater-less-verify.md) | TAAK-010 |
+| `fa.be-equivalent-to-object` | [plan](patterns/fa-be-equivalent-to-object-plan.md) | [modellen](patterns/fa-be-equivalent-to-object-modellen.md) | [verify](patterns/fa-be-equivalent-to-object-verify.md) | TAAK-092, TAAK-016 |
+| `fa.be-greater-less` | [plan](patterns/fa-be-greater-less-plan.md) | [modellen](patterns/fa-be-greater-less-modellen.md) | [verify](patterns/fa-be-greater-less-verify.md) | TAAK-095, TAAK-010 |
 | `fa.only-contain` | [plan](patterns/fa-only-contain-plan.md) | [modellen](patterns/fa-only-contain-modellen.md) | [verify](patterns/fa-only-contain-verify.md) | TAAK-015 |
 | `fa.all-satisfy` | [plan](patterns/fa-all-satisfy-plan.md) | [modellen](patterns/fa-all-satisfy-modellen.md) | [verify](patterns/fa-all-satisfy-verify.md) | TAAK-014 |
 | `fa.assertion-scope` | [plan](patterns/fa-assertion-scope-plan.md) | [modellen](patterns/fa-assertion-scope-modellen.md) | [verify](patterns/fa-assertion-scope-verify.md) | TAAK-031 |
@@ -121,6 +121,8 @@ Wachtrij en status: `claude/tasks/patroon-queue.md`.
 | `fa.be-approximately` | [plan](patterns/fa-be-approximately-plan.md) | [modellen](patterns/fa-be-approximately-modellen.md) | [verify](patterns/fa-be-approximately-verify.md) | TAAK-050 |
 | `fa.throw-exactly` | [plan](patterns/fa-throw-exactly-plan.md) | [modellen](patterns/fa-throw-exactly-modellen.md) | [verify](patterns/fa-throw-exactly-verify.md) | TAAK-051 |
 | `fa.invoking` | [plan](patterns/fa-invoking-plan.md) | [modellen](patterns/fa-invoking-modellen.md) | [verify](patterns/fa-invoking-verify.md) | TAAK-052 |
+| `fa.be-same-as` | [plan](patterns/fa-be-same-as-plan.md) | [modellen](patterns/fa-be-same-as-modellen.md) | [verify](patterns/fa-be-same-as-verify.md) | TAAK-093 |
+| `fa.not-throw-async` | [plan](patterns/fa-not-throw-async-plan.md) | [modellen](patterns/fa-not-throw-async-modellen.md) | [verify](patterns/fa-not-throw-async-verify.md) | TAAK-094 |
 | `mediatr.request-handler` | [plan](patterns/mediatr-request-handler-plan.md) | [modellen](patterns/mediatr-request-handler-modellen.md) | [verify](patterns/mediatr-request-handler-verify.md) | TAAK-023 |
 | `mediatr.void-request-handler` | [plan](patterns/mediatr-void-request-handler-plan.md) | [modellen](patterns/mediatr-void-request-handler-modellen.md) | [verify](patterns/mediatr-void-request-handler-verify.md) | TAAK-025 |
 | `mediatr.notification-handler` | [plan](patterns/mediatr-notification-handler-plan.md) | [modellen](patterns/mediatr-notification-handler-modellen.md) | [verify](patterns/mediatr-notification-handler-verify.md) | TAAK-026 |

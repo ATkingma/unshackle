@@ -50,6 +50,17 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
 - `ISourceControl`: `HasUncommittedChangesAsync(directory, ct)`; `fix` weigert op een vuile werkmap tenzij `--force`.
 - De Fixer zelf is niet veranderd: Interface laadt, roept `FixAsync` aan en laat DataAccess schrijven.
 
+## Projectbestanden (TAAK-017)
+
+- `IFix.Package` (default `null`): `PackageMigration` (oud pakket = assembly-naam, nieuw pakket + versie). FA → Shouldly 4.3.0.
+- `Fixer` maakt per project dat de oude assembly refereert een `ProjectMigration`; `KeepRemovedPackage` als een `.cs`-bestand
+  het pakket na de fix nog semantisch gebruikt (`ProjectPackages`). Alle projecten gaan in één `IProjectFileStore.EditAsync`,
+  want `Directory.*.props` is gedeeld.
+- Rapport: Fixed per gewijzigd projectbestand, Manual per project dat het pakket houdt of bij een lees-/XML-fout (Line 0,
+  pattern `project-file`). `FixReport.ProjectFileChanges` bevat de nieuwe tekst; `FixCommand` toont de diff of roept `SaveAsync` aan.
+- Implementatie: `XmlProjectFileStore` (DataAccess, `XDocument` + `IFileSystem`), behoudt witruimte, CRLF en BOM en weigert te
+  schrijven als het bestand intussen veranderd is. Zie `docs/projectinfo/features/projectbestanden-migreren-plan.md`.
+
 ## SOLID in het kort
 
 | Principe | Hoe |

@@ -20,7 +20,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `docs/projectinfo/modellen/patronen.md` | Overzicht alle patterns: FA-vorm, Shouldly-vorm, Manual |
 | `docs/projectinfo/patterns/fa-be-greater-less-modellen.md` | Klassen-, sequence- en beslismodel van `fa.be-greater-less` |
 | `docs/projectinfo/patterns/` | KingmaDoc plan + verify per patroon (`<id>-plan.md`, `<id>-verify.md`) |
-| `docs/projectinfo/features/` | KingmaDoc plan + verify per feature (geen patroon), bv. `end-to-end-keten-plan.md`; config: `output_dir` op deze map zetten (`kingmadoc check -c <kopie van .featuredoc.yml>`) |
+| `docs/projectinfo/features/` | KingmaDoc plan + verify per feature (geen patroon), bv. `end-to-end-keten-plan.md`, `projectbestanden-migreren-plan.md`/`-verify.md`; config: `output_dir` op deze map zetten (`kingmadoc check -c <kopie van .featuredoc.yml>`) |
 | `docs/issues.md` | Publieke uitleg: issues aanmaken (missend patroon, nieuwe library, foute rewrite) |
 | `.github/ISSUE_TEMPLATE/` | Issue-formulieren: missing-pattern, new-library, wrong-rewrite |
 | `README.md`       | Publieke korte uitleg + projecttabel                                                             |
@@ -29,6 +29,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 
 | Document                         | Inhoud                                                          |
 | -------------------------------- | --------------------------------------------------------------- |
+| `claude/docs/overdracht.md` | Stand bij accountwissel: lopend werk, openstaande opdracht, afspraken |
 | `claude/docs/agent-werkwijze.md` | Taakbeheer, cross-referenties, documentsplitsing, gedragsregels |
 | `claude/docs/code-standaarden.md` | Codestijl (16 keuzes)                                           |
 | `claude/docs/patroon-loop.md`     | Loop die elke 15 min een agent per patroon start (tick + agent-brief) |
@@ -39,6 +40,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | Locatie                 | Inhoud                              |
 | ----------------------- | ----------------------------------- |
 | `claude/tasks/`         | Actieve taken: `TAAK-NNN-<slug>.md` |
+| `claude/tasks/TAAK-019-lancering.md` | Volgende stap: lancering (echte casus, NuGet, publiek, README-GIF) |
 | `claude/tasks/patroon-queue.md` | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status |
 | `claude/tasks/archief/` | Voltooide taken                     |
 

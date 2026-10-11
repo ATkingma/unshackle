@@ -46,3 +46,27 @@ writers -> iwriter: realiseert {target-arrowhead: {shape: triangle; style.filled
 git -> isc: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
 istore -> loadex: gooit {style.stroke-dash: 3}
 writers -> row: gebruikt {style.stroke-dash: 3}
+ipfs: "«interface» IProjectFileStore" {
+  shape: class
+  "+EditAsync(migrations, ct)": "Task<IReadOnlyList<ProjectFileChange>>"
+  "+SaveAsync(changes, ct)": Task
+}
+xpfs: XmlProjectFileStore {
+  shape: class
+  "-_fileSystem": IFileSystem
+}
+pmig: ProjectMigration {
+  shape: class
+  "+ProjectPath": string
+  "+Package": PackageMigration
+  "+KeepRemovedPackage": bool
+}
+pfc: ProjectFileChange {
+  shape: class
+  "+FilePath": string
+  "+OldText": string
+  "+NewText": string
+}
+xpfs -> ipfs: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+ipfs -> pmig: leest {style.stroke-dash: 3}
+ipfs -> pfc: levert {style.stroke-dash: 3}

@@ -28,6 +28,8 @@
 | `SolutionLoadException` | `Abstractions/SolutionLoadException.cs` | MSBuild meldde laadfouten (`Errors`); de CLI maakt er exitcode 1 van |
 | `IReportWriter` / `Csv`-, `Json`-, `MarkdownReportWriter` | `Abstractions/IReportWriter.cs`, `DataAccess/Reports/` | Eén rapportformaat per extensie (Strategy) |
 | `ReportRow` | `DataAccess/Reports/ReportRow.cs` | `Finding` → kolommen `File,Line,Fix,Pattern,Status,Reason` |
+| `IProjectFileStore` / `XmlProjectFileStore` | `Abstractions/IProjectFileStore.cs`, `DataAccess/Projects/` | Projectbestanden aanpassen (`EditAsync` → `ProjectFileChange`, zonder schrijven) en wegschrijven (`SaveAsync`) |
+| `ProjectMigration` / `PackageMigration` / `ProjectFileChange` | `Models/` | Per project: welk pakket weg/erbij, houdt het project het oude pakket; resultaat: oude en nieuwe tekst per bestand |
 | `ISourceControl` / `GitSourceControl` | `Abstractions/ISourceControl.cs`, `DataAccess/SourceControl/` | Heeft de werkmap niet-gecommitte wijzigingen? (`fix` weigert dan zonder `--force`) |
 
 ## Zie ook

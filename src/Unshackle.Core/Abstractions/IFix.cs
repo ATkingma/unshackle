@@ -1,3 +1,5 @@
+using Unshackle.Core.Models;
+
 namespace Unshackle.Core.Abstractions;
 
 /// <summary>A migration for one library (Strategy), for example FluentAssertions to Shouldly.</summary>
@@ -17,4 +19,10 @@ public interface IFix
 
     /// <summary>Namespaces that every changed document gets a top-level <c>using</c> directive for.</summary>
     IReadOnlyList<string> AddedNamespaces { get; }
+
+    /// <summary>
+    /// The package swap in the project files, or <see langword="null"/> (the default) when the fix leaves project files alone.
+    /// <c>&lt;Using Include&gt;</c> items follow <see cref="RemovedNamespaces"/> and <see cref="AddedNamespaces"/>.
+    /// </summary>
+    PackageMigration? Package => null;
 }

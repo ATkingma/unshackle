@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Weet je niet waar iets staat?** → zie `claude/docs/INDEX.md`
 
+**Sessie overgenomen?** → lees eerst `claude/docs/overdracht.md` (lopend werk, openstaande opdrachten, werkafspraken).
+
 ## Documentatie-architectuur
 
 | Locatie                          | Inhoud                                                                              |

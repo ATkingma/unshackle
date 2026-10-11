@@ -4,6 +4,7 @@ using Spectre.Console;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.FluentAssertions;
+using Unshackle.DataAccess.Projects;
 using Unshackle.DataAccess.Reports;
 using Unshackle.DataAccess.Solutions;
 using Unshackle.DataAccess.SourceControl;
@@ -31,8 +32,9 @@ public static class Cli
         error.Profile.Width = Console.IsErrorRedirected ? RedirectedWidth : error.Profile.Width;
         var view = new SpectreConsoleView(output, error);
         using var store = new MsBuildSolutionStore();
-        var scan = new ScanCommand(new Fixer(fixes), store, reportWriters, view);
-        var fix = new FixCommand(scan, store, new GitSourceControl(), view);
+        var projectFiles = new XmlProjectFileStore(fileSystem);
+        var scan = new ScanCommand(new Fixer(fixes, projectFiles), store, reportWriters, view);
+        var fix = new FixCommand(scan, store, projectFiles, new GitSourceControl(), view);
         var list = new ListCommand(fixes, view);
 
         RootCommand root = CreateRootCommand(fixes, reportWriters, scan, fix, list);

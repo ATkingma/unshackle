@@ -1,0 +1,303 @@
+using System.IO.Abstractions.TestingHelpers;
+using System.Text;
+using Shouldly;
+using Unshackle.Core.Models;
+using Unshackle.DataAccess.Projects;
+using Xunit;
+
+namespace Unshackle.Tests.DataAccess.Projects;
+
+public class XmlProjectFileStoreTests
+{
+    private const string Project = "/repo/src/Tests/Tests.csproj";
+    private const string OtherProject = "/repo/src/Other/Other.csproj";
+    private const string BuildProps = "/repo/Directory.Build.props";
+    private const string PackagesProps = "/repo/Directory.Packages.props";
+
+    private const string CentralProject = """
+        <Project Sdk="Microsoft.NET.Sdk">
+          <ItemGroup>
+            <!-- assertions -->
+            <PackageReference Include="FluentAssertions" />
+            <PackageReference Include="xunit.v3" />
+          </ItemGroup>
+          <ItemGroup>
+            <Using Include="FluentAssertions" />
+          </ItemGroup>
+        </Project>
+
+        """;
+
+    private const string CentralVersions = """
+        <!-- versions -->
+        <Project>
+          <ItemGroup Label="Test">
+            <PackageVersion Include="FluentAssertions" Version="7.2.2" />
+            <PackageVersion Include="xunit.v3" Version="4.0.2" />
+          </ItemGroup>
+        </Project>
+
+        """;
+
+    private readonly MockFileSystem _fileSystem = new();
+
+    [Fact]
+    public async Task EditAsync_CentralPackageManagement_SwapsReferenceUsingAndVersionInPlace()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(CentralProject));
+        _fileSystem.AddFile(PackagesProps, new MockFileData(CentralVersions));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        changes.Count.ShouldBe(2);
+        Text(changes, Project).ShouldBe(CentralProject
+            .Replace("<PackageReference Include=\"FluentAssertions\" />", "<PackageReference Include=\"Shouldly\" />", StringComparison.Ordinal)
+            .Replace("<Using Include=\"FluentAssertions\" />", "<Using Include=\"Shouldly\" />", StringComparison.Ordinal));
+        Text(changes, PackagesProps).ShouldBe(CentralVersions.Replace(
+            "Include=\"FluentAssertions\" Version=\"7.2.2\"", "Include=\"Shouldly\" Version=\"4.3.0\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task EditAsync_VersionOnReference_SwapsVersionAndLeavesOtherFilesAlone()
+    {
+        // Arrange
+        const string project = """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <ItemGroup>
+                <PackageReference Include="FluentAssertions" Version="7.2.2" />
+              </ItemGroup>
+            </Project>
+            """;
+        _fileSystem.AddFile(Project, new MockFileData(project));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        changes.ShouldHaveSingleItem().NewText.ShouldBe(project.Replace(
+            "Include=\"FluentAssertions\" Version=\"7.2.2\"", "Include=\"Shouldly\" Version=\"4.3.0\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task EditAsync_VersionAsChildElement_SwapsIt()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(
+            "<Project><ItemGroup><PackageReference Include=\"FluentAssertions\"><Version>7.2.2</Version></PackageReference></ItemGroup></Project>"));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        changes.ShouldHaveSingleItem().NewText.ShouldBe(
+            "<Project><ItemGroup><PackageReference Include=\"Shouldly\"><Version>4.3.0</Version></PackageReference></ItemGroup></Project>");
+    }
+
+    [Fact]
+    public async Task EditAsync_CodeStillUsesPackage_KeepsItAndAddsTheNewOneNextToIt()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(CentralProject));
+        _fileSystem.AddFile(PackagesProps, new MockFileData(CentralVersions));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: true));
+
+        // Assert
+        Text(changes, Project).ShouldBe(CentralProject.Replace(
+            "    <PackageReference Include=\"FluentAssertions\" />\n",
+            "    <PackageReference Include=\"FluentAssertions\" />\n    <PackageReference Include=\"Shouldly\" />\n",
+            StringComparison.Ordinal));
+        Text(changes, PackagesProps).ShouldBe(CentralVersions.Replace(
+            "    <PackageVersion Include=\"FluentAssertions\" Version=\"7.2.2\" />\n",
+            "    <PackageVersion Include=\"FluentAssertions\" Version=\"7.2.2\" />\n    <PackageVersion Include=\"Shouldly\" Version=\"4.3.0\" />\n",
+            StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task EditAsync_AddedPackageAlreadyThere_RemovesOldLinesAndEmptyGroup()
+    {
+        // Arrange
+        const string project = """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <ItemGroup>
+                <PackageReference Include="FluentAssertions" />
+                <PackageReference Include="Shouldly" />
+              </ItemGroup>
+              <ItemGroup>
+                <Using Include="fluentassertions" />
+              </ItemGroup>
+              <ItemGroup>
+                <Using Include="FluentAssertions" />
+                <Using Include="Shouldly" />
+              </ItemGroup>
+            </Project>
+            """;
+        _fileSystem.AddFile(Project, new MockFileData(project));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert: namespaces are case-sensitive, package ids are not
+        changes.ShouldHaveSingleItem().NewText.ShouldBe("""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <ItemGroup>
+                <PackageReference Include="Shouldly" />
+              </ItemGroup>
+              <ItemGroup>
+                <Using Include="fluentassertions" />
+              </ItemGroup>
+              <ItemGroup>
+                <Using Include="Shouldly" />
+              </ItemGroup>
+            </Project>
+            """);
+    }
+
+    [Fact]
+    public async Task EditAsync_ReferenceAndUsingInDirectoryBuildProps_EditsThePropsOnly()
+    {
+        // Arrange
+        const string props = """
+            <Project>
+              <ItemGroup>
+                <PackageReference Include="FluentAssertions" Version="7.2.2" />
+                <Using Include="FluentAssertions" />
+              </ItemGroup>
+            </Project>
+            """;
+        _fileSystem.AddFile(Project, new MockFileData("<Project Sdk=\"Microsoft.NET.Sdk\" />"));
+        _fileSystem.AddFile(BuildProps, new MockFileData(props));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        ProjectFileChange change = changes.ShouldHaveSingleItem();
+        change.FilePath.ShouldBe(BuildProps);
+        change.NewText.ShouldBe(props
+            .Replace("\"FluentAssertions\" Version=\"7.2.2\"", "\"Shouldly\" Version=\"4.3.0\"", StringComparison.Ordinal)
+            .Replace("<Using Include=\"FluentAssertions\" />", "<Using Include=\"Shouldly\" />", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task EditAsync_SharedPropsAndOneProjectKeepsPackage_KeepsItInThePropsAndSwapsTheOtherProject()
+    {
+        // Arrange
+        const string props = """
+            <Project>
+              <ItemGroup>
+                <Using Include="FluentAssertions" />
+              </ItemGroup>
+            </Project>
+            """;
+        _fileSystem.AddFile(Project, new MockFileData(CentralProject));
+        _fileSystem.AddFile(OtherProject, new MockFileData(CentralProject));
+        _fileSystem.AddFile(BuildProps, new MockFileData(props));
+        _fileSystem.AddFile(PackagesProps, new MockFileData(CentralVersions));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false), Migration(OtherProject, keep: true));
+
+        // Assert
+        changes.ShouldNotContain(c => c.FilePath == BuildProps);
+        Text(changes, Project).ShouldContain("<PackageReference Include=\"Shouldly\" />");
+        Text(changes, Project).ShouldNotContain("FluentAssertions");
+        Text(changes, OtherProject).ShouldContain("<PackageReference Include=\"FluentAssertions\" />");
+        Text(changes, PackagesProps).ShouldContain("<PackageVersion Include=\"FluentAssertions\" Version=\"7.2.2\" />");
+        Text(changes, PackagesProps).ShouldContain("<PackageVersion Include=\"Shouldly\" Version=\"4.3.0\" />");
+    }
+
+    [Fact]
+    public async Task EditAsync_PackageOnlyTransitive_AddsNewItemGroupToProject()
+    {
+        // Arrange
+        const string project = "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <A>1</A>\n  </PropertyGroup>\n</Project>\n";
+        _fileSystem.AddFile(Project, new MockFileData(project));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        changes.ShouldHaveSingleItem().NewText.ShouldBe(
+            "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <A>1</A>\n  </PropertyGroup>\n" +
+            "  <ItemGroup>\n    <PackageReference Include=\"Shouldly\" Version=\"4.3.0\" />\n  </ItemGroup>\n</Project>\n");
+    }
+
+    [Fact]
+    public async Task EditAsync_CrlfAndDeclaration_KeepsThem()
+    {
+        // Arrange
+        string project = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<Project>\r\n  <ItemGroup>\r\n" +
+            "    <PackageReference Include=\"FluentAssertions\" Version=\"7.2.2\" />\r\n  </ItemGroup>\r\n</Project>\r\n";
+        _fileSystem.AddFile(Project, new MockFileData(project));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        changes.ShouldHaveSingleItem().NewText.ShouldBe(project.Replace(
+            "\"FluentAssertions\" Version=\"7.2.2\"", "\"Shouldly\" Version=\"4.3.0\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task EditAsync_InvalidXml_Throws()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData("<Project>"));
+
+        // Act
+        Func<Task> edit = () => EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        await edit.ShouldThrowAsync<System.Xml.XmlException>();
+    }
+
+    [Fact]
+    public async Task SaveAsync_FileWithBom_WritesNewTextWithBom()
+    {
+        // Arrange
+        byte[] bom = Encoding.UTF8.GetPreamble();
+        _fileSystem.AddFile(Project, new MockFileData([.. bom, .. Encoding.UTF8.GetBytes("old")]));
+        var store = new XmlProjectFileStore(_fileSystem);
+
+        // Act
+        await store.SaveAsync([new ProjectFileChange { FilePath = Project, OldText = "old", NewText = "new" }], TestContext.Current.CancellationToken);
+
+        // Assert
+        _fileSystem.File.ReadAllBytes(Project).ShouldBe([.. bom, .. Encoding.UTF8.GetBytes("new")]);
+    }
+
+    [Fact]
+    public async Task SaveAsync_FileChangedSinceEdit_ThrowsAndKeepsFile()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData("changed"));
+        var store = new XmlProjectFileStore(_fileSystem);
+
+        // Act
+        Func<Task> save = () => store.SaveAsync(
+            [new ProjectFileChange { FilePath = Project, OldText = "old", NewText = "new" }], TestContext.Current.CancellationToken);
+
+        // Assert
+        await save.ShouldThrowAsync<InvalidOperationException>();
+        _fileSystem.File.ReadAllText(Project).ShouldBe("changed");
+    }
+
+    private static ProjectMigration Migration(string projectPath, bool keep) => new()
+    {
+        ProjectPath = projectPath,
+        Package = new PackageMigration { RemovedPackage = "FluentAssertions", AddedPackage = "Shouldly", AddedVersion = "4.3.0" },
+        KeepRemovedPackage = keep,
+        RemovedNamespaces = ["FluentAssertions"],
+        AddedNamespaces = ["Shouldly"],
+    };
+
+    private static string Text(IReadOnlyList<ProjectFileChange> changes, string path) => changes.Single(c => c.FilePath == path).NewText;
+
+    private Task<IReadOnlyList<ProjectFileChange>> EditAsync(params ProjectMigration[] migrations) =>
+        new XmlProjectFileStore(_fileSystem).EditAsync(migrations, TestContext.Current.CancellationToken);
+}

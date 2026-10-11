@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Unshackle.Tests.Integration;
 
-// The real CLI on a restored copy of samples/ in a temp directory whose path has spaces. Slow: restore + MSBuild.
+// The real CLI on a restored copy of samples/ in a temp directory whose path has spaces. Slow: restore + MSBuild (+ build and test).
 [Trait("Category", "Integration")]
 public class SampleShopTests
 {
@@ -26,7 +26,7 @@ public class SampleShopTests
         string orderTests = Path.Combine(samples, "SampleShop", "SampleShop.Tests", "OrderTests.cs");
         string report = Path.Combine(directory.Path, "report out", "r.csv");
         Directory.CreateDirectory(Path.GetDirectoryName(report)!);
-        await RestoreAsync(solution, cancellationToken);
+        await DotnetAsync(cancellationToken, "restore", solution);
         string original = await File.ReadAllTextAsync(orderTests, cancellationToken);
 
         // Act
@@ -56,6 +56,56 @@ public class SampleShopTests
         afterFix.ShouldContain("using Shouldly;");
     }
 
+    // fix keeps FluentAssertions while the one manual finding uses it; after that is fixed by hand, a second fix removes it.
+    [Fact]
+    public async Task FixTwice_SampleShopCopy_MigratesProjectFilesAndBuildsAndTests()
+    {
+        // Arrange
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using var directory = new TempDirectory();
+        string samples = Path.Combine(directory.Path, "my samples");
+        CopyWithoutBuildOutput(Path.Combine(RepositoryRoot.Path, "samples"), samples);
+        // The SDK and test runner settings of the repository, as for the samples in CI.
+        File.Copy(Path.Combine(RepositoryRoot.Path, "global.json"), Path.Combine(directory.Path, "global.json"));
+        string solution = Path.Combine(samples, "SampleShop", "SampleShop.slnx");
+        string testProject = Path.Combine(samples, "SampleShop", "SampleShop.Tests", "SampleShop.Tests.csproj");
+        string repositoryTests = Path.Combine(samples, "SampleShop", "SampleShop.Tests", "RepositoryTests.cs");
+        string report = Path.Combine(directory.Path, "r.csv");
+        await DotnetAsync(cancellationToken, "restore", solution);
+
+        // Act
+        int firstExit = await Cli.RunAsync(["fix", solution, "--fix", "fluentassertions", "--report", report], cancellationToken);
+        string[] firstRows = await File.ReadAllLinesAsync(report, cancellationToken);
+        string afterFirst = await File.ReadAllTextAsync(testProject, cancellationToken);
+        await DotnetAsync(cancellationToken, "build", solution);
+        string code = await File.ReadAllTextAsync(repositoryTests, cancellationToken);
+        await File.WriteAllTextAsync(
+            repositoryTests,
+            code.Replace("repository.All.Should().HaveCount(1);", "repository.All.Count.ShouldBe(1);", StringComparison.Ordinal),
+            cancellationToken);
+        int secondExit = await Cli.RunAsync(["fix", solution, "--fix", "fluentassertions"], cancellationToken);
+
+        // Assert
+        firstExit.ShouldBe(ExitCodes.Ok);
+        firstRows.ShouldContain(r => r.StartsWith("SampleShop.Tests/SampleShop.Tests.csproj,0,fluentassertions,project-file,Manual,", StringComparison.Ordinal));
+        firstRows.ShouldContain("SampleShop.Tests/SampleShop.Tests.csproj,0,fluentassertions,project-file,Fixed,");
+        firstRows.ShouldContain("../Directory.Packages.props,0,fluentassertions,project-file,Fixed,");
+        afterFirst.ShouldContain("<PackageReference Include=\"FluentAssertions\" />");
+        afterFirst.ShouldContain("<PackageReference Include=\"Shouldly\" />");
+
+        secondExit.ShouldBe(ExitCodes.Ok);
+        foreach (string file in Directory.EnumerateFiles(samples, "*.*proj*", SearchOption.AllDirectories)
+            .Concat(Directory.EnumerateFiles(samples, "*.props", SearchOption.AllDirectories))
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)))
+        {
+            (await File.ReadAllTextAsync(file, cancellationToken)).ShouldNotContain("FluentAssertions", customMessage: file);
+        }
+
+        (await File.ReadAllTextAsync(testProject, cancellationToken)).ShouldContain("<Using Include=\"Shouldly\" />");
+        await DotnetAsync(cancellationToken, "build", solution);
+        await DotnetAsync(cancellationToken, "test", "--solution", solution);
+    }
+
     // bin/ and obj/ hold absolute paths of the original location; restore creates them again.
     private static void CopyWithoutBuildOutput(string source, string target)
     {
@@ -75,10 +125,10 @@ public class SampleShopTests
         }
     }
 
-    private static async Task RestoreAsync(string solution, CancellationToken cancellationToken)
+    private static async Task DotnetAsync(CancellationToken cancellationToken, params string[] arguments)
     {
         var startInfo = new ProcessStartInfo("dotnet") { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
-        foreach (string argument in new[] { "restore", solution })
+        foreach (string argument in arguments)
         {
             startInfo.ArgumentList.Add(argument);
         }

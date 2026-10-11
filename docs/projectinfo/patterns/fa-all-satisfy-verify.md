@@ -25,16 +25,17 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AllSatisfyPattern.cs`;
 | REQ-9  | Gehaald | `subject-call.*` |
 | REQ-10 | Gehaald | `used.*`, `and-chain.*` |
 | REQ-11 | Gehaald | `not-in-block.*` |
-| REQ-12 | Deels   | Handmatig: `unshackle fix` op een kopie van `samples/` gaf `ShouldNotBeEmpty(); foreach (var o in orders) { o.Total.ShouldBe(20m); }`. Geen geautomatiseerde test (proofs draaien één pattern en de after moet tegen Shouldly compileren) |
+| REQ-12 | Gehaald | `CombinedProofTests` met `_Combined/all-satisfy-be.*` (het sample-geval: `ShouldNotBeEmpty(); foreach (var o in orders) { o.Total.ShouldBe(20m); }`) en `all-satisfy-other.*`; de volgorde (AllSatisfy eerst) wordt vastgelegd door `CombinedProofTests.AllSatisfyPattern_IsFirstInFix`. Eerder alleen handmatig bewezen |
 
 ## Deviations
 
 | # | Area | Plan says | Code does | Impact |
 | - | ---- | --------- | --------- | ------ |
 | 1 | Behaviour | Foutmelding gelijk aan FA | Loop stopt bij het eerste mislukte element; FA toont alle indexen | Low |
-| 2 | Verification | REQ-12 als test | Alleen handmatig bewezen | Low |
 
 ## Validation results
+
+REQ-12 is sinds TAAK-018 geautomatiseerd; afwijking 2 (alleen handmatig bewezen) is daarmee vervallen.
 
 | Check | Command        | Result |
 | ----- | -------------- | ------ |

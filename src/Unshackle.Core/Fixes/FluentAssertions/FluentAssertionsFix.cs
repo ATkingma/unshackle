@@ -1,15 +1,22 @@
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.FluentAssertions.Patterns;
+using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.FluentAssertions;
 
 public class FluentAssertionsFix : IFix
 {
+    // The version our proofs compile every rewrite against (Directory.Packages.props): latest stable, MIT, no license check.
+    public const string ShouldlyVersion = "4.3.0";
+
     public string Id => "fluentassertions";
 
     public IReadOnlyList<string> RemovedNamespaces { get; } = ["FluentAssertions"];
 
     public IReadOnlyList<string> AddedNamespaces { get; } = ["Shouldly"];
+
+    public PackageMigration Package { get; } =
+        new() { RemovedPackage = "FluentAssertions", AddedPackage = "Shouldly", AddedVersion = ShouldlyVersion };
 
     public IReadOnlyList<IPattern> Patterns { get; } =
     [

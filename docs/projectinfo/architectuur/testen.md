@@ -14,6 +14,17 @@ meegecompileerd: het is testdata.
 bibliotheek, en die van `after` met de nieuwe. Zo vang je een vergeten referentie af (anders
 geeft het `SemanticModel` stilletjes error types terug) en een rewrite die niet compileert.
 
+## Combined proofs: patronen samen
+```
+src/Unshackle.Tests/Proofs/FluentAssertions/_Combined/<case>.before.cs + <case>.after.cs
+```
+`ProofTests` draait één pattern per proof; dat laat samenwerking onbewezen (bv. `fa.all-satisfy` kopieert zijn
+lambda-body in een `foreach` en de latere patterns herschrijven die body; `.And`-splitsing naast andere patterns;
+usings). `CombinedProofTests` draait de **echte** `FluentAssertionsFix` (alle patterns, echte volgorde) en vergelijkt
+de eindtekst exact met `.after.cs`. Zelfde compileercheck: before tegen FluentAssertions, after tegen Shouldly (bevat
+de after nog `using FluentAssertions;` door een Manual-restant, dan Shouldly + FluentAssertions). `ProofTests` slaat
+de map `_Combined` over. Een aparte test legt vast dat `AllSatisfyPattern` eerst staat. Nieuw geval = twee bestanden.
+
 ## Types zonder te builden
 Unittests gebruiken een `Solution` in het geheugen (`AdhocWorkspace`). De types komen uit:
 1. **Echte assemblies** (standaard). Het testproject verwijst naar de laatste vrije versies
@@ -44,3 +55,4 @@ Moq gebruiken we bewust niet (SponsorLink-ophef in 2023, en het is zelf een migr
 
 - `docs/projectinfo/README.md` — overzicht en C4-diagrammen
 - `src/Unshackle.Tests/ProofTests.cs` — proof-runner
+- `src/Unshackle.Tests/CombinedProofTests.cs` — runner voor samenwerking van patterns

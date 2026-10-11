@@ -28,6 +28,7 @@ public class ProofTests
 
     public static TheoryData<string> Proofs() =>
         [.. Directory.EnumerateFiles(s_proofsDirectory, "*.before.cs", SearchOption.AllDirectories)
+            .Where(p => !p.Contains(CombinedProofTests.FolderName, StringComparison.Ordinal))
             .Select(p => Path.GetRelativePath(s_proofsDirectory, p)[..^".before.cs".Length].Replace('\\', '/'))
             .Order(StringComparer.Ordinal)];
 

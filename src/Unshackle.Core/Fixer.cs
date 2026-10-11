@@ -8,12 +8,24 @@ namespace Unshackle.Core;
 
 public class Fixer : IFixer
 {
-    private readonly IReadOnlyList<IFix> _fixes;
+    // Rows for project files have no pattern; this id groups them in the summary and the report.
+    public const string ProjectFilePatternId = "project-file";
 
+    private readonly IReadOnlyList<IFix> _fixes;
+    private readonly IProjectFileStore? _projectFiles;
+
+    // Code only: project files are left alone.
     public Fixer(IEnumerable<IFix> fixes)
     {
         ArgumentNullException.ThrowIfNull(fixes);
         _fixes = [.. fixes];
+    }
+
+    public Fixer(IEnumerable<IFix> fixes, IProjectFileStore projectFiles)
+        : this(fixes)
+    {
+        ArgumentNullException.ThrowIfNull(projectFiles);
+        _projectFiles = projectFiles;
     }
 
     public async Task<FixReport> FixAsync(Solution solution, FixRequest request, CancellationToken cancellationToken)
@@ -54,8 +66,49 @@ public class Fixer : IFixer
             }
         }
 
-        return new FixReport { Solution = solution, Findings = findings };
+        IReadOnlyList<ProjectFileChange> projectFileChanges = _projectFiles is not null && fix.Package is PackageMigration package
+            ? await MigrateProjectFilesAsync(_projectFiles, solution, fix, package, findings, cancellationToken)
+            : [];
+        return new FixReport { Solution = solution, Findings = findings, ProjectFileChanges = projectFileChanges };
     }
+
+    // Runs on the fixed solution: only code that is still there can keep the removed package.
+    private static async Task<IReadOnlyList<ProjectFileChange>> MigrateProjectFilesAsync(
+        IProjectFileStore projectFiles,
+        Solution solution,
+        IFix fix,
+        PackageMigration package,
+        List<Finding> findings,
+        CancellationToken cancellationToken)
+    {
+        IReadOnlyList<ProjectMigration> migrations = await ProjectPackages.PlanAsync(solution, fix, package, cancellationToken);
+        if (migrations.Count == 0)
+        {
+            return [];
+        }
+
+        IReadOnlyList<ProjectFileChange> changes;
+        try
+        {
+            changes = await projectFiles.EditAsync(migrations, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Like a pattern: a broken project file is manual work, not a lost run.
+            findings.AddRange(migrations.Select(m => CreateProjectFinding(m.ProjectPath, fix,
+                PatternResult.Manual($"Could not edit the project files: {ex.Message}"))));
+            return [];
+        }
+
+        findings.AddRange(migrations.Where(m => m.KeepRemovedPackage).Select(m => CreateProjectFinding(m.ProjectPath, fix,
+            PatternResult.Manual($"{package.RemovedPackage} is still used in this project, so its package and global usings stay. " +
+                "Fix the manual findings and run the fix again."))));
+        findings.AddRange(changes.Select(c => CreateProjectFinding(c.FilePath, fix, PatternResult.Fixed(Array.Empty<SyntaxNode>()))));
+        return changes;
+    }
+
+    private static Finding CreateProjectFinding(string filePath, IFix fix, PatternResult result) =>
+        new() { FilePath = filePath, Line = 0, FixId = fix.Id, PatternId = ProjectFilePatternId, Result = result };
 
     // Returns the same root instance when nothing was rewritten.
     private static SyntaxNode ApplyPattern(

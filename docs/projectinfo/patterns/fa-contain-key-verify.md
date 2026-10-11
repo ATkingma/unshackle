@@ -23,6 +23,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainKeyPattern.cs`;
 | REQ-7 | Gehaald | `chain.*`, `which.*`, `and-chain.*` |
 | REQ-8 | Gehaald | `keys.*`, `not-contain-keys.*` |
 | REQ-9 | Gehaald | `contain-value.*`, `contain-values.*`, `not-contain-value.*` |
+| REQ-10 | Gehaald | `nullable.*` |
 
 ## Deviations
 

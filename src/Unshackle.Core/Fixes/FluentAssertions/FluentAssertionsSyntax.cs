@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -31,6 +32,14 @@ public static class FluentAssertionsSyntax
         }
             ? should.Expression
             : null;
+
+    // `x.ShouldNotBeNull()` when x may be null in a nullable-enabled context, else x. FluentAssertions accepts a nullable
+    // subject and fails on null; Shouldly's non-nullable receivers would add CS8602/CS8604. ShouldNotBeNull keeps the failure.
+    public static ExpressionSyntax NotNull(ExpressionSyntax subject, SemanticModel model) =>
+        model.GetTypeInfo(subject).Nullability.FlowState == NullableFlowState.MaybeNull
+            ? SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression, subject.WithoutTrailingTrivia(), SyntaxFactory.IdentifierName("ShouldNotBeNull")))
+            : subject;
 
     // True when nothing uses the AndConstraint the assertion returns: a statement, or the body of a void lambda.
     public static bool IsResultDiscarded(InvocationExpressionSyntax assertion, SemanticModel model) => assertion.Parent switch

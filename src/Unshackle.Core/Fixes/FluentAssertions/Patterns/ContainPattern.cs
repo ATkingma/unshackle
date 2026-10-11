@@ -74,7 +74,7 @@ public class ContainPattern : IPattern
         return PatternResult.Fixed(SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
-                subject.WithoutTrailingTrivia(),
+                FluentAssertionsSyntax.NotNull(subject, model).WithoutTrailingTrivia(),
                 SyntaxFactory.IdentifierName(shouldName)),
             arguments));
     }

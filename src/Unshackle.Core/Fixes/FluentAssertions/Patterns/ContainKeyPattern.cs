@@ -54,7 +54,7 @@ public class ContainKeyPattern : IPattern
         return PatternResult.Fixed(SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
-                subject.WithoutTrailingTrivia(),
+                FluentAssertionsSyntax.NotNull(subject, model).WithoutTrailingTrivia(),
                 SyntaxFactory.IdentifierName("Should" + name)),
             assertion.ArgumentList));
     }

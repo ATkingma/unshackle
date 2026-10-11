@@ -17,6 +17,19 @@
 | `FixedResult` | `Models/FixedResult.cs` | Vervangende nodes en benodigde namespaces |
 | `ManualResult` | `Models/ManualResult.cs` | Reden waarom handwerk nodig is |
 
+**Figure 2.** Contracten die Core vastlegt voor I/O (`Abstractions/`) en hun implementaties in `Unshackle.DataAccess`.
+
+<!-- kingmadoc:diagram img/klassen-2.d2 -->
+![Klassen: contracten en modellen van Unshackle.Core](img/klassen-2.png)
+
+| Element | Pad | Rol |
+| ------- | --- | --- |
+| `ISolutionStore` / `MsBuildSolutionStore` | `Abstractions/ISolutionStore.cs`, `DataAccess/Solutions/` | Solution laden en wijzigingen wegschrijven via één `MSBuildWorkspace` |
+| `SolutionLoadException` | `Abstractions/SolutionLoadException.cs` | MSBuild meldde laadfouten (`Errors`); de CLI maakt er exitcode 1 van |
+| `IReportWriter` / `Csv`-, `Json`-, `MarkdownReportWriter` | `Abstractions/IReportWriter.cs`, `DataAccess/Reports/` | Eén rapportformaat per extensie (Strategy) |
+| `ReportRow` | `DataAccess/Reports/ReportRow.cs` | `Finding` → kolommen `File,Line,Fix,Pattern,Status,Reason` |
+| `ISourceControl` / `GitSourceControl` | `Abstractions/ISourceControl.cs`, `DataAccess/SourceControl/` | Heeft de werkmap niet-gecommitte wijzigingen? (`fix` weigert dan zonder `--force`) |
+
 ## Zie ook
 
 - [fix-flow.md](fix-flow.md) — hoe `FixAsync` deze klassen gebruikt

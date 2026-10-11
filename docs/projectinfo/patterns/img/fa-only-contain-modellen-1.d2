@@ -1,0 +1,37 @@
+title: "[Class] OnlyContainPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+ipattern: "«interface» IPattern" {
+  shape: class
+  "+Id": string
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+pattern: OnlyContainPattern {
+  shape: class
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+  "-IsSimple(e)": bool
+}
+syntax: FluentAssertionsSyntax {
+  shape: class
+  "+FindInvocations(root, model, names)": ""
+  "+GetSubject(assertion)": ExpressionSyntax
+  "+IsResultDiscarded(assertion, model)": bool
+  "+TryGetArguments(...)": bool
+}
+result: PatternResult {
+  shape: class
+  "+Fixed(nodes, namespaces)": ""
+  "+Manual(reason)": ""
+}
+fixed: FixedResult {shape: class; "+NewNodes": ""}
+manual: ManualResult {shape: class; "+Reason": string}
+fa: "FluentAssertions\nOnlyContain(predicate)\n(faalt op lege collectie)"
+sh: "Shouldly\nShouldNotBeEmpty\nShouldAllBe(predicate)"
+pattern -> ipattern: {style.stroke-dash: 0; target-arrowhead.shape: triangle}
+pattern -> syntax: gebruikt {style.stroke-dash: 3}
+pattern -> result: maakt {style.stroke-dash: 3}
+fixed -> result: {target-arrowhead.shape: triangle}
+manual -> result: {target-arrowhead.shape: triangle}
+fa -> pattern: herkend door Find {style.stroke-dash: 3}
+pattern -> sh: bouwt twee statements {style.stroke-dash: 3}

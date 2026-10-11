@@ -1,0 +1,38 @@
+title: "[Class] BeGreaterLessPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+ipattern: "«interface» IPattern" {
+  shape: class
+  "+Id": string
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+pattern: BeGreaterLessPattern {
+  shape: class
+  "-s_methods": "Dictionary<string, (Should, Values)>"
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+  "-IsSimple(e)": bool
+}
+syntax: FluentAssertionsSyntax {
+  shape: class
+  "+FindInvocations(root, model, names)": ""
+  "+GetSubject(assertion)": ExpressionSyntax
+  "+IsResultDiscarded(assertion, model)": bool
+  "+TryGetArguments(...)": bool
+}
+result: PatternResult {
+  shape: class
+  "+Fixed(node | nodes, namespaces)": ""
+  "+Manual(reason)": ""
+}
+fixed: FixedResult {shape: class; "+NewNodes": ""}
+manual: ManualResult {shape: class; "+Reason": string}
+fa: "FluentAssertions\nBeGreaterThan, BeGreaterThanOrEqualTo, BeGreaterOrEqualTo,\nBeLessThan, BeLessThanOrEqualTo, BeLessOrEqualTo,\nBeInRange, NotBeInRange, BePositive, BeNegative"
+sh: "Shouldly\nShouldBeGreaterThan, ShouldBeGreaterThanOrEqualTo, ShouldBeLessThan,\nShouldBeLessThanOrEqualTo, ShouldBeInRange, ShouldNotBeInRange,\nShouldBePositive, ShouldBeNegative"
+pattern -> ipattern: {style.stroke-dash: 0; target-arrowhead.shape: triangle}
+pattern -> syntax: gebruikt {style.stroke-dash: 3}
+pattern -> result: maakt {style.stroke-dash: 3}
+fixed -> result: {target-arrowhead.shape: triangle}
+manual -> result: {target-arrowhead.shape: triangle}
+fa -> pattern: herkend door Find {style.stroke-dash: 3}
+pattern -> sh: bouwt {style.stroke-dash: 3}

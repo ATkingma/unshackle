@@ -1,0 +1,98 @@
+using System.IO.Abstractions.TestingHelpers;
+using System.Text.Json;
+using Microsoft.CodeAnalysis.CSharp;
+using Shouldly;
+using Unshackle.Core.Models;
+using Unshackle.DataAccess.Reports;
+using Xunit;
+
+namespace Unshackle.Tests.DataAccess.Reports;
+
+public class ReportWriterTests
+{
+    private const string ReportPath = "/out/report";
+
+    private static readonly Finding[] s_findings =
+    [
+        new()
+        {
+            FilePath = "tests/UserTests.cs",
+            Line = 14,
+            FixId = "fluentassertions",
+            PatternId = "fa.should-be",
+            Result = PatternResult.Fixed(SyntaxFactory.ParseExpression("x")),
+        },
+        new()
+        {
+            FilePath = "tests/OrderTests.cs",
+            Line = 8,
+            FixId = "fluentassertions",
+            PatternId = "fa.have-count",
+            Result = PatternResult.Manual("Dictionary, | or \"Keys\""),
+        },
+    ];
+
+    [Fact]
+    public async Task CsvWriteAsync_Findings_WritesHeaderAndRows()
+    {
+        // Arrange
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddDirectory("/out");
+        var writer = new CsvReportWriter(fileSystem);
+
+        // Act
+        await writer.WriteAsync(ReportPath, s_findings, TestContext.Current.CancellationToken);
+
+        // Assert
+        string[] lines = fileSystem.File.ReadAllLines(ReportPath);
+        lines.ShouldBe(
+        [
+            "File,Line,Fix,Pattern,Status,Reason",
+            "tests/UserTests.cs,14,fluentassertions,fa.should-be,Fixed,",
+            "tests/OrderTests.cs,8,fluentassertions,fa.have-count,Manual,\"Dictionary, | or \"\"Keys\"\"\"",
+        ]);
+    }
+
+    [Fact]
+    public async Task JsonWriteAsync_Findings_WritesArrayOfRows()
+    {
+        // Arrange
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddDirectory("/out");
+        var writer = new JsonReportWriter(fileSystem);
+
+        // Act
+        await writer.WriteAsync(ReportPath, s_findings, TestContext.Current.CancellationToken);
+
+        // Assert
+        using var json = JsonDocument.Parse(fileSystem.File.ReadAllText(ReportPath));
+        json.RootElement.GetArrayLength().ShouldBe(2);
+        JsonElement manual = json.RootElement[1];
+        manual.GetProperty("File").GetString().ShouldBe("tests/OrderTests.cs");
+        manual.GetProperty("Line").GetInt32().ShouldBe(8);
+        manual.GetProperty("Status").GetString().ShouldBe("Manual");
+        manual.GetProperty("Reason").GetString().ShouldBe("Dictionary, | or \"Keys\"");
+    }
+
+    [Fact]
+    public async Task MarkdownWriteAsync_Findings_WritesTableWithEscapedPipes()
+    {
+        // Arrange
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddDirectory("/out");
+        var writer = new MarkdownReportWriter(fileSystem);
+
+        // Act
+        await writer.WriteAsync(ReportPath, s_findings, TestContext.Current.CancellationToken);
+
+        // Assert
+        string[] lines = fileSystem.File.ReadAllLines(ReportPath);
+        lines.ShouldBe(
+        [
+            "| File | Line | Fix | Pattern | Status | Reason |",
+            "| --- | --- | --- | --- | --- | --- |",
+            "| tests/UserTests.cs | 14 | fluentassertions | fa.should-be | Fixed |  |",
+            "| tests/OrderTests.cs | 8 | fluentassertions | fa.have-count | Manual | Dictionary, \\| or \"Keys\" |",
+        ]);
+    }
+}

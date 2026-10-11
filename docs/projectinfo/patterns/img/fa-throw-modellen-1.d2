@@ -1,0 +1,75 @@
+title: "[Class] ThrowPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: "Realisatie (holle driehoek), overerving (holle driehoek), dependency (gestreept)"
+  }
+}
+ipattern: "«interface» IPattern" {
+  shape: class
+  "+Id": string
+  "+Description": string
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+ThrowPattern: ThrowPattern {
+  shape: class
+  "+Id": "fa.throw"
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+syntax: FluentAssertionsSyntax {
+  shape: class
+  "+FindInvocations(root, model, names)": "IEnumerable<InvocationExpressionSyntax>"
+  "+GetSubject(assertion)": "ExpressionSyntax?"
+  "+IsResultDiscarded(assertion, model)": bool
+  "+IsFluentAssertions(symbol)": bool
+  "+TryGetArguments(assertion, model, values, because)": bool
+}
+result: "PatternResult (abstract)" {
+  shape: class
+  "+Fixed(newNode, namespaces)": PatternResult
+  "+Manual(reason)": PatternResult
+}
+fixed: FixedResult {
+  shape: class
+  "+NewNodes": "IReadOnlyList<SyntaxNode>"
+  "+RequiredNamespaces": "IReadOnlyList<string>"
+}
+manual: ManualResult {
+  shape: class
+  "+Reason": string
+}
+fa: "«FluentAssertions» herkend" {
+  shape: class
+  "Throw<T>()": ""
+  "ThrowExactly<T>()": ""
+  "WithMessage(pattern)": ""
+}
+sh: "«Shouldly» aangemaakt" {
+  shape: class
+  "Should.Throw<T>(act[, because])": ""
+  "thrown.Message.ShouldContain / ShouldStartWith / ShouldEndWith / ShouldBe": ""
+}
+rec: "Herkende typen" {
+  shape: class
+  "Action": ""
+  "Func<T> met referentietype": ""
+  "Invoking(...) (Manual)": ""
+}
+msg: "«internal static» ThrowMessage" {
+  shape: class
+  "+Check(thrown, pattern, because)": "ExpressionSyntax?"
+  "+Arguments(first, because)": ArgumentListSyntax
+}
+ThrowPattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+ThrowPattern -> syntax: gebruikt {style.stroke-dash: 3}
+ThrowPattern -> result: levert {style.stroke-dash: 3}
+fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+ThrowPattern -> fa: herkent {style.stroke-dash: 3}
+ThrowPattern -> sh: bouwt {style.stroke-dash: 3}
+ThrowPattern -> rec: onderscheidt {style.stroke-dash: 3}
+ThrowPattern -> msg: gebruikt {style.stroke-dash: 3}

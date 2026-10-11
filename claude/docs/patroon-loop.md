@@ -41,7 +41,7 @@ Niet committen of pushen (zie `claude/docs/agent-werkwijze.md` §6: main blijft 
    Vul daarna scope, requirements (EARS, één per proof-geval of groep), aannames, risico's en open vragen in vanuit
    je taak; geen `_TODO_` laten staan als de taak het antwoord heeft. `files_expected` = je pattern-bestand,
    `FluentAssertionsFix.cs` en de proof-map. Zet in de frontmatter `feature: "<slug>"` (de CLI maakt anders een lange slug uit de omschrijving). Dan `kingmadoc check <slug>` en `kingmadoc approve <slug>` (de loop is
-   door de gebruiker goedgekeurd). Voeg een rij toe aan de patroontabel in `docs/projectinfo/README.md`.
+   door de gebruiker goedgekeurd). Het plan krijgt **geen C4** (staat uit in `.featuredoc.yml`; staat er toch een C4-sectie, vervang die door een link naar `<slug>-modellen.md`). Voeg een rij toe aan de patroontabel in `docs/projectinfo/README.md` (kolommen Plan, Modellen, Verificatie, Taak).
 4. **Blokkade**: is rij 0 (fundament) nog niet `klaar`? Zet de realisatiestap op `[!]`, de rij op
    `geblokkeerd (TAAK-NNN, wacht op fundament)` en stop.
 5. **Realiseer** (alleen je eigen bestanden):
@@ -52,6 +52,8 @@ Niet committen of pushen (zie `claude/docs/agent-werkwijze.md` §6: main blijft 
       Contracten in `Abstractions/`, `Models/` of de `Fixer` wijzigen mag **niet**; nodig? → stap `[!]` met reden, rij `mislukt`.
 6. **Verifieer**: `dotnet build` en `dotnet test` groen. Faalt het door een file-lock of een half-af bestand van een
    andere agent? Wacht 30 s en probeer opnieuw (max 5×) voordat je het als eigen fout ziet.
+6b. **Patroon-modellen**: schrijf `docs/projectinfo/patterns/<slug>-modellen.md` volgens de **Patroon-modellen-brief**
+   hieronder en link het vanuit het plan (sectie "Modellen") en de README-rij.
 7. **KingmaDoc-verify**: schrijf `docs/projectinfo/patterns/<slug>-verify.md` volgens de KingmaDoc-skill (verify-modus,
    `~/.claude/skills/kingmadoc/SKILL.md`). `kingmadoc verify` mag als start, maar beoordeel alleen jouw eigen bestanden
    (andere agents wijzigen tegelijk). Elke REQ: gehaald (noem proof) / deels / niet. Vul de echte build/test-uitkomst in.
@@ -59,6 +61,22 @@ Niet committen of pushen (zie `claude/docs/agent-werkwijze.md` §6: main blijft 
    context in de taak, rij `mislukt (TAAK-NNN, poging N)`. De SubagentStop-hook blokkeert je stop zolang plan, verify
    of de README-rij van jouw patroon ontbreekt.
 9. **Verslag** (max 8 regels): patroon, gewijzigde bestanden, kernkeuzes, proofs, testresultaat.
+
+### Patroon-modellen-brief (per patroon)
+
+`docs/projectinfo/patterns/<slug>-modellen.md`, Nederlands, volgens de explaining-code-skill
+(`~/.claude-timme/skills/explaining-code/SKILL.md` + alleen de secties van `reference/models.md` die je tekent).
+Feiten uit de code van **dit** pattern; niets verzinnen. Drie genummerde figuren in D2, elk met een tabel:
+
+1. **Klassendiagram**: de pattern-klasse, `IPattern`, de helpers die hij gebruikt (bv. `FluentAssertionsSyntax`),
+   `PatternResult`/`FixedResult`/`ManualResult`, en de FA- en Shouldly-types die hij herkent of aanmaakt.
+2. **Sequencediagram**: `Fixer` → `<Naam>Pattern.Find` → `Rewrite` → helpers/`SemanticModel` → `Fixed`/`Manual`,
+   met de echte methodenamen uit de code.
+3. **Beslisboom** (UML-activity of flowchart): elke vraag die `Rewrite` stelt (type, overload, because-args, keten,
+   gebruikt resultaat…) met als bladeren de exacte Shouldly-vorm of de Manual-reden. Elk blad noemt de proof die het bewijst.
+
+Render met `kingmadoc render docs/projectinfo/patterns/<slug>-modellen.md` (afbeeldingen in `docs/projectinfo/patterns/img/`).
+`## Zie ook` onderaan (plan, verify, pattern-bestand, proof-map).
 
 ### Modellen-brief (na elk afgerond patroon)
 

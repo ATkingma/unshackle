@@ -1,0 +1,27 @@
+title: "[Activity] BeNullPattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
+q1: "Vorm x.Should().BeNull()?" {shape: diamond}
+m1: "Manual: BeNull()/NotBeNull() is not in the form x.Should()...\n(proof: and-chain)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q2: "Resultaat weggegooid?" {shape: diamond}
+m2: "Manual: The result of BeNull()/NotBeNull() is used\n(proof: chain, value-used)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q3: "Geen becauseArgs of benoemde argumenten?" {shape: diamond}
+m3: "Manual: becauseArgs of benoemde argumenten\n(proof: because-args)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+s: "Welke methode?" {shape: diamond}
+f1: "Fixed: x.ShouldBeNull([because])\n(proof: be-null, lambda, collection, nullable-value, because)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+f2: "Fixed: x.ShouldNotBeNull([because])\n(proof: not-be-null)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+start -> q1
+q1 -> m1: nee
+q1 -> q2: ja
+q2 -> m2: nee
+q2 -> q3: ja
+q3 -> m3: nee
+q3 -> s: ja
+s -> f1: "BeNull"
+s -> f2: "NotBeNull"

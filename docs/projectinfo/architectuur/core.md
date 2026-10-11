@@ -42,6 +42,14 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
   (buitenste eerst, overlap → Manual), daarna usings via `UsingDirectives`. Exceptions per pattern → Manual.
 - Details en redenen: `claude/tasks/archief/TAAK-001-fundament.md`.
 
+## Contracten naar buiten (TAAK-005)
+
+- `ISolutionStore`: `LoadAsync(path, ct)` → `Solution` (gooit `FileNotFoundException` of `SolutionLoadException` met
+  de MSBuild-fouten), `SaveAsync(solution, ct)` schrijft de gewijzigde documenten. Implementatie: `MsBuildSolutionStore`.
+- `IReportWriter`: `Extension` + `WriteAsync(path, findings, ct)`. Zie `rapportage.md`.
+- `ISourceControl`: `HasUncommittedChangesAsync(directory, ct)`; `fix` weigert op een vuile werkmap tenzij `--force`.
+- De Fixer zelf is niet veranderd: Interface laadt, roept `FixAsync` aan en laat DataAccess schrijven.
+
 ## SOLID in het kort
 
 | Principe | Hoe |

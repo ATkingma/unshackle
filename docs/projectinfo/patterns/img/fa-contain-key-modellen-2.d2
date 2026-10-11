@@ -1,0 +1,22 @@
+title: "[Sequence] ContainKeyPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: ContainKeyPattern
+syntax: FluentAssertionsSyntax
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "FindInvocations(root, model, namen)"
+syntax -> pattern: "aanroepen" {style.stroke-dash: 3}
+pattern -> fixer: "nodes" {style.stroke-dash: 3}
+loop: "loop [elke node]" {
+  fixer -> pattern: "Rewrite(node, model)"
+  pattern -> syntax: "GetSubject(assertion)"
+  pattern -> syntax: "IsResultDiscarded(assertion, model)"
+  pattern -> syntax: "TryGetArguments(assertion, model)"
+  syntax -> pattern: "waarden + because" {style.stroke-dash: 3}
+  alt: "alt" {
+    pattern -> fixer: "Fixed(ShouldContainKey(...))" {style.stroke-dash: 3}
+  }
+  alt2: "else" {
+    pattern -> fixer: "Manual(reden)" {style.stroke-dash: 3}
+  }
+}

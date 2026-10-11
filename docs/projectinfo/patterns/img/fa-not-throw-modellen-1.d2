@@ -1,0 +1,68 @@
+title: "[Class] NotThrowPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: "Realisatie (holle driehoek), overerving (holle driehoek), dependency (gestreept)"
+  }
+}
+ipattern: "«interface» IPattern" {
+  shape: class
+  "+Id": string
+  "+Description": string
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+NotThrowPattern: NotThrowPattern {
+  shape: class
+  "+Id": "fa.not-throw"
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+syntax: FluentAssertionsSyntax {
+  shape: class
+  "+FindInvocations(root, model, names)": "IEnumerable<InvocationExpressionSyntax>"
+  "+GetSubject(assertion)": "ExpressionSyntax?"
+  "+IsResultDiscarded(assertion, model)": bool
+  "+IsFluentAssertions(symbol)": bool
+  "+TryGetArguments(assertion, model, values, because)": bool
+}
+result: "PatternResult (abstract)" {
+  shape: class
+  "+Fixed(newNode, namespaces)": PatternResult
+  "+Manual(reason)": PatternResult
+}
+fixed: FixedResult {
+  shape: class
+  "+NewNodes": "IReadOnlyList<SyntaxNode>"
+  "+RequiredNamespaces": "IReadOnlyList<string>"
+}
+manual: ManualResult {
+  shape: class
+  "+Reason": string
+}
+fa: "«FluentAssertions» herkend" {
+  shape: class
+  "NotThrow([because])": ""
+  "NotThrow<T>()": ""
+  "NotThrowAfter(...)": ""
+}
+sh: "«Shouldly» aangemaakt" {
+  shape: class
+  "Should.NotThrow(act[, because])": ""
+}
+rec: "Herkende typen" {
+  shape: class
+  "Action": ""
+  "Func<T>": ""
+  "Invoking(...) (Manual)": ""
+}
+NotThrowPattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+NotThrowPattern -> syntax: gebruikt {style.stroke-dash: 3}
+NotThrowPattern -> result: levert {style.stroke-dash: 3}
+fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+NotThrowPattern -> fa: herkent {style.stroke-dash: 3}
+NotThrowPattern -> sh: bouwt {style.stroke-dash: 3}
+NotThrowPattern -> rec: onderscheidt {style.stroke-dash: 3}

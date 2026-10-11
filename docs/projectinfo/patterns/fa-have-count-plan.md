@@ -73,41 +73,9 @@ fa.have-count: x.Should().HaveCount(n) wordt type-afhankelijk x.Count.ShouldBe(n
 - Foutmelding wordt korter (Shouldly toont "x.Count should be 2 but was 3" in plaats van de hele collectie): gedocumenteerd verschil, geen Manual.
 - Dictionary-intentie (aantal keys of entries) is niet af te leiden: bewust Manual.
 - Multidimensionale arrays vallen onder `IArrayTypeSymbol` en krijgen `Length` (totaal aantal elementen), net als FA telt. Geen proof.
-## C4 Context (Mermaid)
+## Modellen
 
-Wie het patroon gebruikt en waarvan het afhangt.
-
-```mermaid
-C4Context
-    title System Context: Unshackle
-
-    Person(dev, "Developer", "Migreert een .NET-solution weg van FluentAssertions")
-    System(unshackle, "Unshackle", "dotnet tool dat FluentAssertions-code herschrijft naar Shouldly")
-    System_Ext(solution, "Solution van de gebruiker", "C#-testcode met FluentAssertions-asserties")
-    System_Ext(roslyn, "Roslyn", "Levert syntaxbomen en het SemanticModel")
-
-    Rel(dev, unshackle, "Draait")
-    Rel(unshackle, solution, "Leest en herschrijft")
-    Rel(unshackle, roslyn, "Analyseert code via")
-```
-
-## C4 Container (Mermaid)
-
-De betrokken projecten _(inferred)_; de CLI is nog niet aangesloten.
-
-```mermaid
-C4Container
-    title Containers: Unshackle
-
-    Person(dev, "Developer")
-    System_Boundary(unshackle_boundary, "Unshackle") {
-        Container(core, "Unshackle.Core", "C# / Roslyn", "Fixer, FluentAssertionsFix en de patterns")
-        Container(tests, "Unshackle.Tests", "C# / xUnit", "ProofTests draaien de proofs van dit patroon")
-    }
-
-    Rel(dev, core, "Uses")
-    Rel(tests, core, "Test")
-```
+Klassendiagram, sequencediagram en beslisboom: [fa-have-count-modellen.md](fa-have-count-modellen.md).
 
 ## Open questions
 

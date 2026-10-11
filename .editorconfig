@@ -84,3 +84,7 @@ dotnet_diagnostic.CS1591.severity = warning
 # 15: testnamen Method_State_Expected (voorlopig, zie TAAK-001) gebruiken underscores
 [src/Unshackle.Tests/**.cs]
 dotnet_diagnostic.CA1707.severity = none
+
+[src/{Unshackle.Interface/**,Unshackle.Tests/Interface/**}.cs]
+# The project name is fixed by the architecture; "Interface" is only a keyword in VB, and nobody references this exe.
+dotnet_diagnostic.CA1716.severity = none

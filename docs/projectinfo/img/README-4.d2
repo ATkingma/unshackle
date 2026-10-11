@@ -1,0 +1,97 @@
+classes: {
+  person: {shape: c4-person; style: {fill: "#08427b"; stroke: "#073b6f"; font-color: "#ffffff"}}
+  system: {shape: rectangle; style: {fill: "#1168bd"; stroke: "#0b4884"; font-color: "#ffffff"}}
+  external: {shape: rectangle; style: {fill: "#999999"; stroke: "#6b6b6b"; font-color: "#ffffff"}}
+  container: {shape: rectangle; style: {fill: "#438dd5"; stroke: "#3c7fc0"; font-color: "#ffffff"}}
+  component: {shape: rectangle; style: {fill: "#85bbf0"; stroke: "#5d82a8"; font-color: "#000000"}}
+  boundary: {label.near: top-left; style: {fill: transparent; stroke: "#888888"; stroke-dash: 4; font-size: 15}}
+}
+title: "[Component] Unshackle.Interface en Unshackle.DataAccess" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    c: Container {class: container}
+    k: Component {class: component}
+    x: External software system {class: external}
+    bd: Container boundary {class: boundary}
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: Relationship
+  }
+}
+cli: "Unshackle.Interface [Container: C# console]" {
+  class: boundary
+  root: |md
+    **Cli**\
+    [Component: static class]
+
+    Composition root en System.CommandLine-boom; parsefout geeft exitcode 2.
+  | {class: component}
+  scan: |md
+    **ScanCommand**\
+    [Component: class]
+
+    Laden, fix draaien, samenvatting, rapport. Schrijft geen code.
+  | {class: component}
+  fix: |md
+    **FixCommand**\
+    [Component: class]
+
+    Werkmap-check, ScanCommand, dan diff (--dry-run) of opslaan.
+  | {class: component}
+  list: |md
+    **ListCommand**\
+    [Component: class]
+
+    Toont fixes en patterns.
+  | {class: component}
+  view: |md
+    **SpectreConsoleView + LineDiff**\
+    [Component: IConsoleView]
+
+    Tabellen, regel-diff; fouten naar stderr.
+  | {class: component}
+}
+core: |md
+  **Unshackle.Core**\
+  [Container: C# / Roslyn]
+
+  IFixer, ISolutionStore, IReportWriter, ISourceControl.
+| {class: container}
+data: "Unshackle.DataAccess [Container: C# class library]" {
+  class: boundary
+  store: |md
+    **MsBuildSolutionStore**\
+    [Component: ISolutionStore]
+
+    Eén MSBuildWorkspace: laden (laadfouten → exception), TryApplyChanges.
+  | {class: component}
+  reports: |md
+    **Csv-, Json-, MarkdownReportWriter**\
+    [Component: IReportWriter]
+
+    Kolommen File, Line, Fix, Pattern, Status, Reason via IFileSystem.
+  | {class: component}
+  git: |md
+    **GitSourceControl**\
+    [Component: ISourceControl]
+
+    git status --porcelain in de map van de solution.
+  | {class: component}
+}
+solution: |md
+  **Solution van de gebruiker**\
+  [Software System]
+| {class: external}
+cli.root -> cli.scan: "Maakt aan, roept aan"
+cli.root -> cli.fix: "Maakt aan, roept aan"
+cli.root -> cli.list: "Maakt aan, roept aan"
+cli.fix -> cli.scan: "RunAsync"
+cli.scan -> core: "IFixer.FixAsync"
+cli.scan -> cli.view: "Toont"
+cli.fix -> cli.view: "Toont diff"
+cli.scan -> data.store: "LoadAsync\n[ISolutionStore]"
+cli.fix -> data.store: "SaveAsync\n[ISolutionStore]"
+cli.scan -> data.reports: "WriteAsync\n[IReportWriter]"
+cli.fix -> data.git: "HasUncommittedChangesAsync\n[ISourceControl]"
+data.store -> solution: "Leest en schrijft"

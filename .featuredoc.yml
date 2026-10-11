@@ -40,9 +40,8 @@ analyzer:
     - "*.egg-info"
 
 # Diagrams included in the plan doc.
-diagrams:
-  - c4_context
-  - c4_container
+# Patterns get their own models (<slug>-modellen.md); system C4 lives in docs/projectinfo/README.md.
+diagrams: []
 
 # Diagram language: mermaid, plantuml (C4-PlantUML) or d2.
 diagram_format: mermaid

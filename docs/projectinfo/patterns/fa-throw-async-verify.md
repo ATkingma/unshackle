@@ -1,0 +1,49 @@
+# Verification: fa-throw-async
+
+|               |                                                                  |
+| ------------- | ---------------------------------------------------------------- |
+| **Plan**      | [`docs/projectinfo/patterns/fa-throw-async-plan.md`](fa-throw-async-plan.md) |
+| **Status**    | Verified                                                         |
+| **Generated** | 2026-10-11 by KingmaDoc skill 1.1.0                              |
+
+> Verified by an AI agent against the code at uncommitted changes (basis 41ff4a3).
+
+## Requirements
+
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowAsyncPattern.cs` (+ gedeeld `ThrowMessage.cs`); registratie in `FluentAssertionsFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/ThrowAsync/`, gedraaid door `ProofTests`.
+
+| REQ    | Oordeel | Bewijs |
+| ------ | ------- | ------ |
+| REQ-1  | Gehaald | `simple.*.cs` |
+| REQ-2  | Gehaald | `func-task-reference.*.cs` |
+| REQ-3  | Gehaald | `because.*.cs` |
+| REQ-4  | Gehaald | `message-contains.*.cs` |
+| REQ-5  | Gehaald | `message-starts.*.cs`, `message-ends.*.cs` |
+| REQ-6  | Gehaald | `message-exact.*.cs` |
+| REQ-7  | Gehaald | `message-because.*.cs`, `message-exact-because.*.cs` |
+| REQ-8  | Gehaald | `throw-exactly.*` |
+| REQ-9  | Gehaald | `because-args.*`, `message-because-args.*` |
+| REQ-10 | Gehaald | `message-wildcard.*`, `message-variable.*` |
+| REQ-11 | Gehaald | `no-await.*`, `where.*` |
+| REQ-12 | Gehaald | `value-used.*` |
+| REQ-13 | Gehaald | `awaiting.*`, `value-func.*` |
+
+## Deviations
+
+| # | Area | Plan says | Code does | Impact |
+| - | ---- | --------- | --------- | ------ |
+| 1 | Shared code | Eigen patroonbestand | Wildcard-vertaling verhuisd naar `ThrowMessage` (gedeeld met `ThrowPattern`, gedrag ongewijzigd; Throw-proofs groen); `FluentAssertionsSyntax.TryGetArguments` slaat de receiver van extensiemethoden over | Low |
+| 2 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because` | Low |
+| 3 | Scope | `.Where`/`.WithInnerException` | Manual met reden "not directly awaited" | Low |
+
+## Validation results
+
+| Check | Command        | Result |
+| ----- | -------------- | ------ |
+| Build | `dotnet build` | passed |
+| Test  | `dotnet test`  | passed (180 tests, incl. 18 ThrowAsync-proofs) |
+
+## Zie ook
+
+- `claude/docs/patroon-loop.md`
+- [fa-throw-async-modellen.md](fa-throw-async-modellen.md)

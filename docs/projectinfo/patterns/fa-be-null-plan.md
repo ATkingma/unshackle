@@ -57,38 +57,9 @@ fa.be-null: x.Should().BeNull()/NotBeNull() wordt x.ShouldBeNull()/ShouldNotBeNu
 - Foutmelding krijgt "Additional Info:" in plaats van FA's "because"-voorvoegsel: gedocumenteerd verschil.
 - Na `x.Should().NotBeNull(); x!.Y` blijft de `!` staan: onschadelijk, Shouldly's `[NotNull]` maakt hem alleen overbodig.
 
-## C4 Context (Mermaid)
+## Modellen
 
-Who uses the system and which external systems it depends on.
-
-```mermaid
-C4Context
-    title System Context: Unshackle
-
-    Person(user, "User", "Person who uses the feature")
-    System(unshackle, "Unshackle", "Roslyn-based dotnet tool that migrates .NET code away from libraries that went commercial (FluentAssertions, MediatR, AutoMapper).")
-
-    Rel(user, unshackle, "Uses")
-```
-
-## C4 Container (Mermaid)
-
-The runnable units inside the system _(inferred from source directories)_.
-
-```mermaid
-C4Container
-    title Containers: Unshackle
-
-    Person(user, "User", "Person who uses the feature")
-    System_Boundary(unshackle_boundary, "Unshackle") {
-        Container(samples, "samples", "C#", "Source module samples/")
-        Container(unshackle_core, "Unshackle.Core", "C#", "Source module src/Unshackle.Core/")
-        Container(unshackle_interface, "Unshackle.Interface", "C#", "Source module src/Unshackle.Interface/")
-        Container(unshackle_tests, "Unshackle.Tests", "C#", "Source module src/Unshackle.Tests/")
-    }
-
-    Rel(user, samples, "Uses")
-```
+Klassendiagram, sequencediagram en beslisboom: [fa-be-null-modellen.md](fa-be-null-modellen.md).
 
 ## Open questions
 

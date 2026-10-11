@@ -1,2 +1,3 @@
-// Composition root: wiring follows once the code structure is agreed.
-return 0;
+using Unshackle.Interface;
+
+return await Cli.RunAsync(args, CancellationToken.None);

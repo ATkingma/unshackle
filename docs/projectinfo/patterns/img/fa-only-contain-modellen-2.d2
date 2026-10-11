@@ -1,0 +1,23 @@
+title: "[Sequence] OnlyContainPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: OnlyContainPattern
+syntax: FluentAssertionsSyntax
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "FindInvocations(root, model, \"OnlyContain\")"
+syntax -> pattern: "aanroepen" {style.stroke-dash: 3}
+pattern -> fixer: "statements of aanroepen" {style.stroke-dash: 3}
+loop: "loop [elke node]" {
+  fixer -> pattern: "Rewrite(node, model)"
+  pattern -> syntax: "GetSubject(assertion)"
+  pattern -> syntax: "IsResultDiscarded(assertion, model)"
+  pattern -> syntax: "TryGetArguments(assertion, model)"
+  pattern -> model: "GetTypeInfo(subject)"
+  alt: "alt" {
+    pattern -> fixer: "Fixed(ShouldNotBeEmpty; ShouldAllBe)" {style.stroke-dash: 3}
+  }
+  alt2: "else" {
+    pattern -> fixer: "Manual(reden)" {style.stroke-dash: 3}
+  }
+}

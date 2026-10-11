@@ -11,7 +11,7 @@ if [ "$mode" = "post-edit" ]; then
     case "$file" in
         */src/Unshackle.Core/Fixes/*/Patterns/*Pattern.cs)
             jq -n '{hookSpecificOutput: {hookEventName: "PostToolUse", additionalContext:
-                "Pattern-klasse gewijzigd. Documenteer met KingmaDoc (zie claude/docs/patroon-loop.md): docs/projectinfo/patterns/<id>-plan.md vóór de bouw, <id>-verify.md erna, en een rij in de patroontabel van docs/projectinfo/README.md (<id> = Pattern.Id met . vervangen door -)."}}'
+                "Pattern-klasse gewijzigd. Documenteer met KingmaDoc (zie claude/docs/patroon-loop.md): docs/projectinfo/patterns/<id>-plan.md vóór de bouw, <id>-modellen.md (klasse, sequence, beslisboom) en <id>-verify.md erna, en een rij in de patroontabel van docs/projectinfo/README.md (<id> = Pattern.Id met . vervangen door -)."}}'
             ;;
     esac
     exit 0
@@ -27,6 +27,7 @@ for f in "$root"/src/Unshackle.Core/Fixes/*/Patterns/*Pattern.cs; do
     [ -n "$id" ] || continue
     slug="${id//./-}"
     [ -f "$root/docs/projectinfo/patterns/$slug-plan.md" ] || missing+=("$id: plan ontbreekt (docs/projectinfo/patterns/$slug-plan.md)")
+    [ -f "$root/docs/projectinfo/patterns/$slug-modellen.md" ] || missing+=("$id: modellen ontbreken (docs/projectinfo/patterns/$slug-modellen.md)")
     [ -f "$root/docs/projectinfo/patterns/$slug-verify.md" ] || missing+=("$id: verify ontbreekt (docs/projectinfo/patterns/$slug-verify.md)")
     grep -q "patterns/$slug-plan.md" "$root/docs/projectinfo/README.md" 2>/dev/null || missing+=("$id: geen rij in docs/projectinfo/README.md")
 done

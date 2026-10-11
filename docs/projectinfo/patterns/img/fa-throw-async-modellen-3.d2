@@ -1,0 +1,27 @@
+title: "[Beslisboom] ThrowAsyncPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q1: "ThrowExactlyAsync?" {shape: diamond}
+q3: "Direct geawaite statement?" {shape: diamond}
+q4: "Subject Func<Task> of\nFunc<Task<ref type>>?" {shape: diamond}
+q5: "becauseArgs?" {shape: diamond}
+q6: "WithMessage?" {shape: diamond}
+q7: "Constante, alleen\nvoor-/achter-*?" {shape: diamond}
+q1 -> q3: nee
+q3 -> q4: ja
+q4 -> q5: ja
+q5 -> q6: nee
+q6 -> q7: ja
+m1: "Manual: requires the exact exception type\n(throw-exactly)"
+m3: "Manual: not directly awaited / is used\n(no-await, where, value-used)"
+m4: "Manual: Invoking / reference type\n(awaiting, value-func)"
+m5: "Manual: becauseArgs\n(because-args, message-because-args)"
+m7: "Manual: not a string constant / wildcards other than\n(message-variable, message-wildcard)"
+f1: "Fixed: await Should.ThrowAsync<T>(act[, because])\n(simple, func-task-reference, because)"
+f2: "Fixed: (await Should.ThrowAsync<T>(act)).Message.ShouldX(...)\n(message-contains, -starts, -ends, -exact, -because)"
+q1 -> m1: ja
+q3 -> m3: nee
+q4 -> m4: nee
+q5 -> m5: ja
+q6 -> f1: nee
+q7 -> m7: nee
+q7 -> f2: ja

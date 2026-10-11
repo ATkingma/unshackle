@@ -1,0 +1,27 @@
+title: "[Beslisboom] OnlyContainPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q1: "x.Should().OnlyContain(...)?" {shape: diamond}
+q2: "Resultaat gebruikt?" {shape: diamond}
+q3: "becauseArgs of named args?" {shape: diamond}
+q4: "Generieke IEnumerable<T>?" {shape: diamond}
+q5: "Statement direct in blok?" {shape: diamond}
+q6: "Eenvoudig subject?" {shape: diamond}
+q1 -> q2: ja
+q2 -> q3: nee
+q3 -> q4: nee
+q4 -> q5: ja
+q5 -> q6: ja
+m1: "Manual: is not in the form"
+m2: "Manual: is used"
+m3: "Manual: becauseArgs"
+m4: "Manual: not a generic IEnumerable<T>"
+m5: "Manual: cannot hold two statements"
+m6: "Manual: evaluate the subject twice"
+f: "Fixed:\nx.ShouldNotBeEmpty([because]);\nx.ShouldAllBe(pred[, because]);"
+q1 -> m1: nee
+q2 -> m2: ja
+q3 -> m3: ja
+q4 -> m4: nee
+q5 -> m5: nee
+q6 -> m6: nee
+q6 -> f: ja

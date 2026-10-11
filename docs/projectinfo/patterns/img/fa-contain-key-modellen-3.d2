@@ -1,0 +1,23 @@
+title: "[Beslisboom] ContainKeyPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q1: "x.Should().Methode(...)?" {shape: diamond}
+q2: "Meervoud (…Keys)?" {shape: diamond}
+q3: "…Value / …Values?" {shape: diamond}
+q4: "Resultaat gebruikt?" {shape: diamond}
+q5: "becauseArgs of named args?" {shape: diamond}
+q1 -> q2: ja
+q2 -> q3: nee
+q3 -> q4: nee
+q4 -> q5: nee
+m1: "Manual: is not in the form"
+m2: "Manual: several keys"
+m3: "Manual: has no Shouldly equivalent"
+m4: "Manual: is used"
+m5: "Manual: becauseArgs"
+f: "Fixed: x.ShouldContainKey(k[, because])\nx.ShouldNotContainKey(k[, because])"
+q1 -> m1: nee
+q2 -> m2: ja
+q3 -> m3: ja
+q4 -> m4: ja
+q5 -> m5: ja
+q5 -> f: nee

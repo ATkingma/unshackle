@@ -1,0 +1,28 @@
+title: "[Sequence] BeNullPattern - Find en Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: BeNullPattern
+syntax: FluentAssertionsSyntax
+model: SemanticModel
+result: PatternResult
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "FindInvocations(root, model, \"BeNull\", \"NotBeNull\")"
+syntax -> model: "GetSymbolInfo(invocation): IsFluentAssertions"
+syntax -> pattern: "InvocationExpressionSyntax-nodes" {style.stroke-dash: 3}
+pattern -> fixer: "nodes" {style.stroke-dash: 3}
+each: "loop [elke node]" {
+  fixer -> pattern: "Rewrite(node, model)"
+  checks: "opt [controles]" {
+    pattern -> syntax: "GetSubject(assertion)"
+    pattern -> syntax: "IsResultDiscarded(assertion, model)"
+    pattern -> syntax: "TryGetArguments(assertion, model)"
+  }
+  manual: "alt [een controle faalt]" {
+    pattern -> result: "Manual(reden)"
+    pattern -> fixer: "ManualResult" {style.stroke-dash: 3}
+  }
+  fixed: "alt [alle controles slagen]" {
+    pattern -> result: "Fixed(nieuwe node)"
+    pattern -> fixer: "FixedResult" {style.stroke-dash: 3}
+  }
+}

@@ -5,6 +5,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>unshackle</ToolCommandName>
     <PackageId>Unshackle</PackageId>
+    <Version>0.1.0-preview</Version>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Unshackle.Core\Unshackle.Core.csproj" />

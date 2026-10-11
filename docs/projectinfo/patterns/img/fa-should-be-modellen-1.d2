@@ -1,0 +1,61 @@
+title: "[Class] ShouldBePattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: "Realisatie (holle driehoek), overerving (holle driehoek), dependency (gestreept)"
+  }
+}
+ipattern: "«interface» IPattern" {
+  shape: class
+  "+Id": string
+  "+Description": string
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+}
+ShouldBePattern: ShouldBePattern {
+  shape: class
+  "+Id": "fa.should-be"
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+Rewrite(node, model)": PatternResult
+  "-ConvertExpected(expected, subjectType, model, position)": ""
+}
+syntax: FluentAssertionsSyntax {
+  shape: class
+  "+FindInvocations(root, model, names)": "IEnumerable<InvocationExpressionSyntax>"
+  "+GetSubject(assertion)": "ExpressionSyntax?"
+  "+IsResultDiscarded(assertion, model)": bool
+  "+TryGetArguments(assertion, model, values, because)": bool
+}
+result: "PatternResult (abstract)" {
+  shape: class
+  "+Fixed(newNode, namespaces)": PatternResult
+  "+Manual(reason)": PatternResult
+}
+fixed: FixedResult {
+  shape: class
+  "+NewNodes": "IReadOnlyList<SyntaxNode>"
+  "+RequiredNamespaces": "IReadOnlyList<string>"
+}
+manual: ManualResult {
+  shape: class
+  "+Reason": string
+}
+fa: "«FluentAssertions» herkend" {
+  shape: class
+  "Be(expected[, because])": ""
+  "Be uit FluentAssertions.Xml / .Types": ""
+}
+sh: "«Shouldly» aangemaakt" {
+  shape: class
+  "ShouldBe(expected[, because])": ""
+  "cast naar het subjecttype": ""
+}
+ShouldBePattern -> ipattern: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+ShouldBePattern -> syntax: gebruikt {style.stroke-dash: 3}
+ShouldBePattern -> result: levert {style.stroke-dash: 3}
+fixed -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+manual -> result: erft {target-arrowhead: {shape: triangle; style.filled: false}}
+ShouldBePattern -> fa: herkent {style.stroke-dash: 3}
+ShouldBePattern -> sh: bouwt {style.stroke-dash: 3}

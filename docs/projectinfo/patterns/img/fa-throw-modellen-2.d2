@@ -1,0 +1,35 @@
+title: "[Sequence] ThrowPattern - Find en Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: ThrowPattern
+syntax: FluentAssertionsSyntax
+model: SemanticModel
+result: PatternResult
+msg: ThrowMessage
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "FindInvocations(root, model, \"Throw\", \"ThrowExactly\")"
+syntax -> model: "GetSymbolInfo(invocation): IsFluentAssertions"
+syntax -> pattern: "InvocationExpressionSyntax-nodes" {style.stroke-dash: 3}
+pattern -> pattern: "node = WithMessage-aanroep als die direct volgt"
+pattern -> fixer: "nodes" {style.stroke-dash: 3}
+each: "loop [elke node]" {
+  fixer -> pattern: "Rewrite(node, model)"
+  checks: "opt [controles]" {
+    pattern -> syntax: "GetSubject(throwCall)"
+    pattern -> syntax: "IsResultDiscarded(outer, model)"
+    pattern -> syntax: "IsFluentAssertions(GetSymbolInfo(subject))"
+    pattern -> model: "GetTypeInfo(subject): Action of Func?"
+    pattern -> syntax: "TryGetArguments(throwCall, model)"
+    pattern -> msg: "Arguments([subject], because)"
+    pattern -> model: "GetConstantValue(pattern)"
+    pattern -> msg: "Check(result, pattern, because)"
+  }
+  manual: "alt [een controle faalt]" {
+    pattern -> result: "Manual(reden)"
+    pattern -> fixer: "ManualResult" {style.stroke-dash: 3}
+  }
+  fixed: "alt [alle controles slagen]" {
+    pattern -> result: "Fixed(nieuwe node)"
+    pattern -> fixer: "FixedResult" {style.stroke-dash: 3}
+  }
+}

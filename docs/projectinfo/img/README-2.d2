@@ -23,7 +23,7 @@ dev: |md
   **Developer**\
   [Person]
 
-  Draait de tool.
+  Draait de tool vanuit PowerShell of bash.
 | {class: person}
 unshackle: "Unshackle [Software System]" {
   class: boundary
@@ -31,7 +31,7 @@ unshackle: "Unshackle [Software System]" {
     **Unshackle.Interface**\
     [Container: C# console (System.CommandLine)]
 
-    CLI en composition root. Nu leeg: Program.cs geeft alleen 0 terug.
+    dotnet tool unshackle: scan, fix, list. Composition root in Cli.cs.
   | {class: container}
   core: |md
     **Unshackle.Core**\
@@ -43,7 +43,7 @@ unshackle: "Unshackle [Software System]" {
     **Unshackle.DataAccess**\
     [Container: C# class library (MSBuildWorkspace)]
 
-    Solution laden en opslaan, rapporten schrijven. Nu leeg.
+    Solution laden en opslaan (MSBuild), rapporten (CSV/JSON/Markdown), git-status.
   | {class: container}
 }
 solution: |md
@@ -52,8 +52,15 @@ solution: |md
 
   .sln/.slnx met C#-projecten op schijf.
 | {class: external}
+git: |md
+  **git**\
+  [Software System]
+
+  Werkmap schoon? (`fix` zonder `--force`)
+| {class: external}
 dev -> unshackle.cli: "Draait\n[CLI]"
 unshackle.cli -> unshackle.core: "Roept IFixer aan\n[in-process]"
 unshackle.cli -> unshackle.data: "Gebruikt\n[in-process]"
 unshackle.data -> unshackle.core: "Verwijst naar\n[projectreferentie]"
 unshackle.data -> solution: "Leest en schrijft\n[bestanden]"
+unshackle.data -> git: "git status --porcelain\n[proces]"

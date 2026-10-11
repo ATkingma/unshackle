@@ -1,0 +1,31 @@
+title: "[Activity] BeTrueFalsePattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
+q1: "Vorm x.Should().BeTrue()?" {shape: diamond}
+m1: "Manual: BeTrue()/BeFalse() is not in the form x.Should()...\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q2: "Resultaat weggegooid?" {shape: diamond}
+m2: "Manual: The result of BeTrue()/BeFalse() is used\n(proof: chain, value-used)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q3: "Geen becauseArgs of benoemde argumenten?" {shape: diamond}
+m3: "Manual: becauseArgs of benoemde argumenten\n(proof: because-args)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q4: "Subject is bool of bool??" {shape: diamond}
+m4: "Manual: The type of the subject is unknown or not bool/bool?\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+s: "Welk type heeft het subject?" {shape: diamond}
+f1: "Fixed: x.ShouldBeTrue([because]) / x.ShouldBeFalse([because])\n(proof: be-true, be-false, because)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+f2: "Fixed: x.ShouldBe(true|false[, because])\n(proof: nullable)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+start -> q1
+q1 -> m1: nee
+q1 -> q2: ja
+q2 -> m2: nee
+q2 -> q3: ja
+q3 -> m3: nee
+q3 -> q4: ja
+q4 -> m4: nee
+q4 -> s: ja
+s -> f1: "bool"
+s -> f2: "bool?"

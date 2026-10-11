@@ -1,0 +1,31 @@
+title: "[Sequence] NotThrowPattern - Find en Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: NotThrowPattern
+syntax: FluentAssertionsSyntax
+model: SemanticModel
+result: PatternResult
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "FindInvocations(root, model, \"NotThrow\", \"NotThrowAfter\")"
+syntax -> model: "GetSymbolInfo(invocation): IsFluentAssertions"
+syntax -> pattern: "InvocationExpressionSyntax-nodes" {style.stroke-dash: 3}
+pattern -> fixer: "nodes" {style.stroke-dash: 3}
+each: "loop [elke node]" {
+  fixer -> pattern: "Rewrite(node, model)"
+  checks: "opt [controles]" {
+    pattern -> pattern: "naam: NotThrowAfter? generiek?"
+    pattern -> syntax: "GetSubject(call)"
+    pattern -> syntax: "IsResultDiscarded(call, model)"
+    pattern -> syntax: "IsFluentAssertions(GetSymbolInfo(subject))"
+    pattern -> model: "GetTypeInfo(subject): parameterloze delegate?"
+    pattern -> syntax: "TryGetArguments(call, model)"
+  }
+  manual: "alt [een controle faalt]" {
+    pattern -> result: "Manual(reden)"
+    pattern -> fixer: "ManualResult" {style.stroke-dash: 3}
+  }
+  fixed: "alt [alle controles slagen]" {
+    pattern -> result: "Fixed(nieuwe node)"
+    pattern -> fixer: "FixedResult" {style.stroke-dash: 3}
+  }
+}

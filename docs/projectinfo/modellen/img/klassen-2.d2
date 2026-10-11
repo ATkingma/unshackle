@@ -1,0 +1,48 @@
+title: "[Class] Contracten naar buiten en hun implementaties" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    a: "" {style.opacity: 0}
+    b: "" {style.opacity: 0}
+    a -> b: "Realisatie (gestreept, holle driehoek), dependency (gestreept)"
+  }
+}
+istore: "«interface» ISolutionStore" {
+  shape: class
+  "+LoadAsync(path, ct)": "Task<Solution>"
+  "+SaveAsync(solution, ct)": Task
+}
+iwriter: "«interface» IReportWriter" {
+  shape: class
+  "+Extension": string
+  "+WriteAsync(path, findings, ct)": Task
+}
+isc: "«interface» ISourceControl" {
+  shape: class
+  "+HasUncommittedChangesAsync(directory, ct)": "Task<bool>"
+}
+loadex: SolutionLoadException {
+  shape: class
+  "+Errors": "IReadOnlyList<string>"
+}
+store: MsBuildSolutionStore {
+  shape: class
+  "-_workspace": "MSBuildWorkspace?"
+}
+writers: "CsvReportWriter / JsonReportWriter / MarkdownReportWriter" {
+  shape: class
+  "-_fileSystem": IFileSystem
+}
+row: ReportRow {
+  shape: class
+  "+File, Line, Fix, Pattern, Status, Reason": ""
+  "+From(finding)": ReportRow
+}
+git: GitSourceControl {
+  shape: class
+}
+store -> istore: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+writers -> iwriter: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+git -> isc: realiseert {target-arrowhead: {shape: triangle; style.filled: false}; style.stroke-dash: 3}
+istore -> loadex: gooit {style.stroke-dash: 3}
+writers -> row: gebruikt {style.stroke-dash: 3}

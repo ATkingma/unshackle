@@ -18,7 +18,9 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `docs/projectinfo/modellen/fix-flow.md` | UML-sequence van `Fixer.FixAsync` |
 | `docs/projectinfo/modellen/pattern-beslissing.md` | UML-activity: Fixed of Manual |
 | `docs/projectinfo/modellen/patronen.md` | Overzicht alle patterns: FA-vorm, Shouldly-vorm, Manual |
+| `docs/projectinfo/patterns/fa-be-greater-less-modellen.md` | Klassen-, sequence- en beslismodel van `fa.be-greater-less` |
 | `docs/projectinfo/patterns/` | KingmaDoc plan + verify per patroon (`<id>-plan.md`, `<id>-verify.md`) |
+| `docs/projectinfo/features/` | KingmaDoc plan + verify per feature (geen patroon), bv. `end-to-end-keten-plan.md`; config: `output_dir` op deze map zetten (`kingmadoc check -c <kopie van .featuredoc.yml>`) |
 | `docs/issues.md` | Publieke uitleg: issues aanmaken (missend patroon, nieuwe library, foute rewrite) |
 | `.github/ISSUE_TEMPLATE/` | Issue-formulieren: missing-pattern, new-library, wrong-rewrite |
 | `README.md`       | Publieke korte uitleg + projecttabel                                                             |
@@ -62,9 +64,10 @@ Config: `.claude/settings.json`; KingmaDoc-config: `.featuredoc.yml` (output `do
 
 | Onderwerp                | Pad                                                       |
 | ------------------------ | --------------------------------------------------------- |
-| CLI, composition root    | `src/Unshackle.Interface/Program.cs`                      |
+| CLI, composition root    | `src/Unshackle.Interface/Cli.cs` (`Program.cs` roept alleen `Cli.RunAsync` aan) |
+| Commands, console, diff  | `src/Unshackle.Interface/Commands/`, `Output/`            |
 | Fixer, fixes, patterns   | `src/Unshackle.Core/`                                     |
-| Solutions laden, rapport | `src/Unshackle.DataAccess/`                               |
+| Solutions laden, rapport, git-status | `src/Unshackle.DataAccess/{Solutions,Reports,SourceControl}/` |
 | Proofs per patroon       | `src/Unshackle.Tests/Proofs/<Fix>/<Pattern>/`             |
 | Integratietests          | `src/Unshackle.Tests/Integration/` (draait op `samples/`) |
 | Sample-codebase (doelcode) | `samples/SampleShop/` (FA + MediatR + AutoMapper, los van onze build) |

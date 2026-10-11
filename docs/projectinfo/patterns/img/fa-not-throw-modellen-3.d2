@@ -1,0 +1,43 @@
+title: "[Activity] NotThrowPattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
+q1: "Niet NotThrowAfter?" {shape: diamond}
+m1: "Manual: NotThrowAfter waits and polls\n(proof: after)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q2: "Niet generiek NotThrow<T>()?" {shape: diamond}
+m2: "Manual: NotThrow<T>() only forbids exception type T\n(proof: generic)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q3: "Vorm x.Should().NotThrow()?" {shape: diamond}
+m3: "Manual: NotThrow() is not in the form x.Should().NotThrow()\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q4: "Resultaat weggegooid?" {shape: diamond}
+m4: "Manual: The result of NotThrow() is used\n(proof: result-used, value-used)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5: "Subject niet gebouwd met Invoking(...)?" {shape: diamond}
+m5: "Manual: The subject is built with Invoking(...)\n(proof: invoking)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q6: "Subject is een parameterloze Action of Func?" {shape: diamond}
+m6: "Manual: The subject is not a parameterless Action or Func\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q7: "Geen becauseArgs, geen waarde-argumenten?" {shape: diamond}
+m7: "Manual: becauseArgs of benoemde argumenten\n(proof: because-args)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+s: "Is er een because?" {shape: diamond}
+f1: "Fixed: Should.NotThrow(act)\n(proof: simple, func, value-func)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+f2: "Fixed: Should.NotThrow(act, because)\n(proof: because)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+start -> q1
+q1 -> m1: nee
+q1 -> q2: ja
+q2 -> m2: nee
+q2 -> q3: ja
+q3 -> m3: nee
+q3 -> q4: ja
+q4 -> m4: nee
+q4 -> q5: ja
+q5 -> m5: nee
+q5 -> q6: ja
+q6 -> m6: nee
+q6 -> q7: ja
+q7 -> m7: nee
+q7 -> s: ja
+s -> f1: "nee"
+s -> f2: "ja"

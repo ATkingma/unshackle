@@ -68,6 +68,8 @@ public static class FluentAssertionsSyntax
                     break;
                 case (ArgumentKind.ParamArray, _) or (_, "becauseArgs"):
                     return false;
+                case (_, _) when argument.Syntax is not ArgumentSyntax: // the receiver of an extension method call
+                    break;
                 case (_, "because"):
                     because = (ArgumentSyntax)argument.Syntax;
                     break;

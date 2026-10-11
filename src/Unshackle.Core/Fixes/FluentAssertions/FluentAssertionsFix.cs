@@ -21,5 +21,10 @@ public class FluentAssertionsFix : IFix
         new ContainPattern(),
         new BeEquivalentToStringPattern(),
         new ThrowPattern(),
+        new ThrowAsyncPattern(),
+        new BeGreaterLessPattern(),
+        new NotThrowPattern(),
+        new ContainKeyPattern(),
+        new OnlyContainPattern(),
     ];
 }

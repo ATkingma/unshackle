@@ -1,6 +1,6 @@
 # TAAK-021 — Nullable subject breekt build na fa.have-count en fa.contain (string)
 
-**Status**: open
+**Status**: ✅ voltooid
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: TAAK-019 stap 1, casus microsoft/PowerApps-Tooling @ 630e6973
 
@@ -22,10 +22,17 @@ Gebruik het semantische model: is het subject nullable-annotated (`NullableAnnot
 
 ## Stappen
 
-- [ ] Proofs (before/after) met nullable subject voor beide patronen
-- [ ] Fix in `HaveCountPattern.cs` en `ContainPattern.cs` (`src/Unshackle.Core/.../Patterns/`)
-- [ ] Controle op andere patronen die het subject als niet-nullable argument doorgeven (be-empty, all-satisfy, contain-key, only-contain)
-- [ ] Casus PowerApps-Tooling opnieuw: Persistence.Tests bouwt
+- [x] Proofs (before/after) met nullable subject voor beide patronen
+- [x] Fix in `HaveCountPattern.cs` en `ContainPattern.cs` (`src/Unshackle.Core/.../Patterns/`)
+- [x] Controle op andere patronen die het subject als niet-nullable argument doorgeven (be-empty, all-satisfy, contain-key, only-contain)
+- [ ] Casus PowerApps-Tooling opnieuw: Persistence.Tests bouwt (niet gedaan in deze sessie: hoort bij TAAK-019)
+
+## Keuzes
+
+- **ShouldNotBeNull-keten, geen Manual.** `FluentAssertionsSyntax.NotNull(subject, model)` zet `.ShouldNotBeNull()` voor de receiver als `GetTypeInfo(subject).Nullability.FlowState == MaybeNull`. Reden: het blijft automatisch, het gedrag blijft gelijk (FA faalt ook op null) en Shouldly's `ShouldNotBeNull` heeft `[NotNull]`/geeft `T` terug. Flow state i.p.v. annotatie: na een null-check of in een nullable-disabled project is de flow state niet MaybeNull, dus geen ruis.
+- **Toegepast in** have-count, contain en contain-key. Be-empty, only-contain en all-satisfy hebben een nullable proof zonder wijziging: Shouldly's `ShouldBeEmpty`/`ShouldNotBeEmpty` accepteren `IEnumerable<T>?` en markeren het subject daarna als niet-null, dus ook de `foreach`/`ShouldAllBe` erna waarschuwt niet.
+- **Bewaking**: `TestSolution.CompileErrors` telt nu ook CS8602/CS8604 mee, zodat elke after-proof met `#nullable enable` faalt op deze waarschuwingen (unittest `FluentAssertionsSyntaxTests`).
+- Niet gedaan: de have-count-tak met een niet-veilige receiver (haakjes) krijgt geen `ShouldNotBeNull`; zo'n expressie is zelden MaybeNull.
 
 ## Zie ook
 

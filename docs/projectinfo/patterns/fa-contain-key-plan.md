@@ -45,6 +45,7 @@ fa.contain-key: `ContainKey`/`NotContainKey` met één sleutel wordt `ShouldCont
 - **REQ-7**: IF het resultaat wordt gebruikt (`.And`, `.WhoseValue`) of de assertion een vervolg op een andere is THEN THE SYSTEM SHALL Manual geven (proofs `chain.*`, `which.*`, `and-chain.*`).
 - **REQ-8**: IF `ContainKeys`/`NotContainKeys` wordt gebruikt THEN THE SYSTEM SHALL Manual geven (proofs `keys.*`, `not-contain-keys.*`).
 - **REQ-9**: IF `ContainValue(s)`/`NotContainValue` wordt gebruikt THEN THE SYSTEM SHALL Manual geven, omdat Shouldly geen losse waarde-assertie kent (proofs `contain-value.*`, `contain-values.*`, `not-contain-value.*`).
+- **REQ-10**: IF het subject in een nullable-enabled context mogelijk null is THEN THE SYSTEM SHALL `x.ShouldNotBeNull().ShouldContainKey(k)` schrijven (TAAK-021: FluentAssertions accepteert een nullable subject, Shouldly's receiver niet; zonder dit CS8602/CS8604 in projecten met warnings-as-errors. `ShouldNotBeNull()` behoudt FA's falen op null) (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ContainKey/nullable.*`).
 
 ## Assumptions
 

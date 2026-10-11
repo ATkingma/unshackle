@@ -47,6 +47,7 @@ fa.contain: `Contain`/`NotContain` met één item, predicate of substring wordt 
 - **REQ-9**: IF de assertion zelf een vervolg op een andere assertion is THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/and-chain.*`).
 - **REQ-10**: IF het subject een dictionary is THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/dictionary.*`).
 - **REQ-11**: IF `Contain(IEnumerable)` (alle items) of een occurrence-constraint wordt gebruikt THEN THE SYSTEM SHALL Manual geven (proofs `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/items.*`, `occurrence.*`).
+- **REQ-12**: IF het subject in een nullable-enabled context mogelijk null is THEN THE SYSTEM SHALL `x.ShouldNotBeNull().ShouldContain(...)` schrijven (TAAK-021: FluentAssertions accepteert een nullable subject, Shouldly's receiver niet; zonder dit CS8602/CS8604 in projecten met warnings-as-errors. `ShouldNotBeNull()` behoudt FA's falen op null) (proof `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/nullable-string.*`).
 
 ## Assumptions
 

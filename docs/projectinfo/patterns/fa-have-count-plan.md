@@ -58,6 +58,7 @@ fa.have-count: x.Should().HaveCount(n) wordt type-afhankelijk x.Count.ShouldBe(n
 - **REQ-13**: IF het subject een non-generic `IEnumerable` is THEN THE SYSTEM SHALL Manual geven met het advies `Cast<T>().Count()`. _Geen proof: FA 7.2.2 heeft geen `HaveCount` op non-generic `IEnumerable`, dus before compileert niet._
 - **REQ-14**: IF het subject een conditional access is (`a?.b`) THEN THE SYSTEM SHALL Manual geven. _Geen proof: alleen via code bewaakt._
 - **REQ-15**: IF het type van het subject onbekend is (error type) THEN THE SYSTEM SHALL Manual geven. _Geen proof: alleen via code bewaakt._
+- **REQ-16**: IF het subject in een nullable-enabled context mogelijk null is (flow state MaybeNull) THEN THE SYSTEM SHALL `x.ShouldNotBeNull().Count.ShouldBe(n)` schrijven (TAAK-021: FluentAssertions accepteert een nullable subject, Shouldly's receiver niet; zonder dit CS8602/CS8604 in projecten met warnings-as-errors. `ShouldNotBeNull()` behoudt FA's falen op null) (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/nullable.*`).
 
 ## Assumptions
 

@@ -50,7 +50,7 @@ public class HaveCountPattern : IPattern
             return PatternResult.Manual("The type of the subject is unknown.");
         }
 
-        ExpressionSyntax receiver = IsSafeReceiver(subject) ? subject.WithoutTrailingTrivia() : SyntaxFactory.ParenthesizedExpression(subject.WithoutTrivia());
+        ExpressionSyntax receiver = IsSafeReceiver(subject) ? FluentAssertionsSyntax.NotNull(subject, model).WithoutTrailingTrivia() : SyntaxFactory.ParenthesizedExpression(subject.WithoutTrivia());
         string[] namespaces = [];
         ExpressionSyntax count;
         if (Implements(type, "IDictionary", "IReadOnlyDictionary"))

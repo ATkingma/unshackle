@@ -25,6 +25,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainPattern.cs`; re
 | REQ-9  | Gehaald | `and-chain.*` |
 | REQ-10 | Gehaald | `dictionary.*` |
 | REQ-11 | Gehaald | `items.*`, `occurrence.*` |
+| REQ-12 | Gehaald | `nullable-string.*` |
 
 ## Deviations
 

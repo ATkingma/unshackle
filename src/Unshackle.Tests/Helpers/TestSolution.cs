@@ -26,6 +26,7 @@ public static class TestSolution
         return (await document.GetTextAsync(cancellationToken)).ToString();
     }
 
+    // Errors, plus the nullable warnings a rewrite must not add: projects with warnings-as-errors would not build.
     public static IReadOnlyList<Diagnostic> CompileErrors(string code, IEnumerable<MetadataReference> references) =>
         [.. CSharpCompilation.Create(
                 "Check",
@@ -33,5 +34,5 @@ public static class TestSolution
                 references,
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
             .GetDiagnostics()
-            .Where(d => d.Severity == DiagnosticSeverity.Error)];
+            .Where(d => d.Severity == DiagnosticSeverity.Error || d.Id is "CS8602" or "CS8604")];
 }

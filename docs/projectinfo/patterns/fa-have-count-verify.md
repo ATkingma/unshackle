@@ -30,6 +30,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveCountPattern.cs`; 
 | REQ-13 | Gehaald in code, geen proof | Laatste `else` in `Rewrite` (geen generieke `IEnumerable`); FA 7.2.2 laat een before-proof niet compileren |
 | REQ-14 | Gehaald in code, geen proof | `subject is ConditionalAccessExpressionSyntax` geeft Manual |
 | REQ-15 | Gehaald in code, geen proof | `type is null or IErrorTypeSymbol` geeft Manual |
+| REQ-16 | Gehaald | `nullable.*` (after-compileercheck faalt op CS8602/CS8604) |
 
 ## Deviations
 

@@ -95,6 +95,11 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-134-projectbestand-roundtrip.md` | ✅ TAAK-134 — Projectbestanden: "cannot be edited without changing unrelated text" bij gewone opmaak |
 | `claude/tasks/TAAK-135-loader-razor-en-vreemde-projecten.md` | TAAK-135 — Laden: Razor-componenten, `.dcproj` en niet-ladende bijprojecten blokkeren de hele solution |
 | `claude/tasks/archief/TAAK-136-mediatr-msg0005-zonder-handler.md` | ✅ TAAK-136 — MediatR: Mediator-generator MSG0005 breekt build met TreatWarningsAsErrors |
+| `claude/tasks/archief/TAAK-131-mediatr-namespace-schaduw.md` | ✅ TAAK-131 — MediatR: `using Mediator;` binnen een namespace wordt overschaduwd door eigen `*.Mediator`-namespace |
+| `claude/tasks/TAAK-132-mediatr-abstracte-generieke-basis.md` | TAAK-132 — MediatR: abstracte generieke basisklasse onterecht Manual ("generic messages") |
+| `claude/tasks/TAAK-133-mediatr-extern-pakket-op-mediatr.md` | TAAK-133 — MediatR: pakketten die zelf op MediatR bouwen (Ardalis.SharedKernel) worden niet gezien |
+| `claude/tasks/archief/TAAK-135-loader-razor-en-vreemde-projecten.md` | ✅ TAAK-135 — Laden: Razor-componenten, `.dcproj` en niet-ladende bijprojecten blokkeren de hele solution |
+| `claude/tasks/TAAK-136-mediatr-msg0005-zonder-handler.md` | TAAK-136 — MediatR: Mediator-generator MSG0005 breekt build met TreatWarningsAsErrors |
 | `claude/tasks/CORPUSRUN-fa.md` | Corpus-run FA: 2/9 bouwen na fix; blokkades TAAK-110..113 |
 | `claude/tasks/CORPUSRUN-mediatr.md` | Corpus-run MediatR: 0/9 volledig gemigreerd, blokkades en top-10 acties |
 | `claude/tasks/patroon-queue.md` | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status (ronde 2: rijen 15-34) |

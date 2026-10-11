@@ -45,7 +45,8 @@ internal static class UsingDirectives
         for (int i = 0; i < swapCount; i++)
         {
             UsingDirectiveSyntax current = updated.GetCurrentNode(unused[i])!;
-            updated = updated.ReplaceNode(current, current.WithName(SyntaxFactory.ParseName(missing[i]).WithTriviaFrom(current.Name!)));
+            string name = IsShadowed(unused[i], missing[i], model) ? "global::" + missing[i] : missing[i];
+            updated = updated.ReplaceNode(current, current.WithName(SyntaxFactory.ParseName(name).WithTriviaFrom(current.Name!)));
         }
 
         missing.RemoveRange(0, swapCount);
@@ -182,6 +183,23 @@ internal static class UsingDirectives
     {
         INamedTypeSymbol? type = (symbol as INamedTypeSymbol ?? symbol.ContainingType)?.OriginalDefinition;
         return type is not null && swappedTypes.Contains($"{type.ContainingNamespace.ToDisplayString()}.{type.MetadataName}");
+    }
+
+    // A using inside `namespace A.B` resolves `Mediator` against A.B and A first: an own A.Mediator would win (CS0246).
+    private static bool IsShadowed(UsingDirectiveSyntax directive, string ns, SemanticModel model)
+    {
+        string first = ns.Split('.')[0];
+        for (INamespaceSymbol? scope = directive.Parent is BaseNamespaceDeclarationSyntax declaration ? model.GetDeclaredSymbol(declaration) as INamespaceSymbol : null;
+            scope is { IsGlobalNamespace: false };
+            scope = scope.ContainingNamespace)
+        {
+            if (scope.GetMembers(first).Any())
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // The file's usings and those of its namespace declarations (block or file-scoped).

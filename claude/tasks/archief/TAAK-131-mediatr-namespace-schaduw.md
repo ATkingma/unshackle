@@ -1,6 +1,6 @@
 # TAAK-131 — MediatR: `using Mediator;` binnen een namespace wordt overschaduwd door eigen `*.Mediator`-namespace
 
-**Status**: open
+**Status**: klaar (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: `claude/tasks/CORPUSRUN-mediatr.md` (evolutionary-architecture hfst. 2)
 
@@ -20,9 +20,20 @@ Een projectnaam of map "Mediator" is in MediatR-projecten gewoon (`MediatorModul
 
 ## Stappen
 
-- [ ] Detectie + `global::`
-- [ ] Proof uit `_Pending` terugzetten (proof-runner moet een map voor de usings-swap accepteren), groen
-- [ ] `dotnet build` + `dotnet test` groen
+- [x] Detectie + `global::`
+- [x] Proof uit `_Pending` terugzetten (proof-runner moet een map voor de usings-swap accepteren), groen
+- [x] `dotnet build` + `dotnet test` groen
+
+## Resultaat
+
+- `UsingDirectives.IsShadowed`: bij de swap in place (`using MediatR;` → `Mediator`) binnen een namespace-declaratie wordt
+  gekeken of een omvattende namespace (niet de globale) een lid met de eerste naamdeel heeft (`A.Infrastructure.Mediator`).
+  Dan wordt het `using global::Mediator;`. Nieuwe usings (geen swap) vallen onder TAAK-115 (dan bovenaan het bestand).
+- Proof verplaatst van `_Pending/MediatR/Usings/` naar `Proofs/MediatR/NotificationHandler/edge-namespace-shadow.*`
+  (een handler erbij, zodat het patroon een bevinding geeft; een aparte Usings-map kent de proof-runner niet).
+- Corpus: verse kopie evo2 (`scratchpad/v131/evo2`): 25 Fixed / 0 Manual, de CS0246's zijn weg. Build faalt nog op één
+  IDE0060 (`MediatorModule.AddMediator(…, Assembly assembly)`: de parameter is na de AddMediatR-rewrite ongebruikt) — apart.
+
 
 ## Zie ook
 

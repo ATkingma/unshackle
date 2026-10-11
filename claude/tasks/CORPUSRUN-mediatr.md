@@ -78,7 +78,7 @@ Omgevingsfouten (geen Unshackle): NU1902, NETSDK1226, NSwag, CA1873 (nadirbad), 
 - TAAK-132 abstracte generieke basis onterecht Manual — proof `Proofs/MediatR/RequestHandler/edge-abstract-generic-base.*` (klaar) (gedrag van Mediator 3.0.2 gecontroleerd met een probe-project)
 - TAAK-133 extern pakket op MediatR niet gedetecteerd — unittest met tweede assembly
 - TAAK-134 projectbestand-roundtrip te streng + onnodig laden `Directory.Build.props` — DataAccess-tests
-- TAAK-135 loader: Razor, `.dcproj`, niet-ladende bijprojecten — DataAccess-tests
+- TAAK-135 loader: Razor, `.dcproj`, niet-ladende bijprojecten — klaar: eShopOnWeb bouwt na de fix, eShop/kgrzybek laden
 - TAAK-136 MSG0005 met TreatWarningsAsErrors
 
 ## 5. Top-10 acties (winst per inspanning)

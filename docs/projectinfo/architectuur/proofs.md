@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 502 proofs (zonder `_Pending`).
+Totaal: 503 proofs (zonder `_Pending`).
 
 ## FluentAssertions
 
@@ -632,7 +632,7 @@ Totaal: 502 proofs (zonder `_Pending`).
 | `set-handled` | Fixed | `public class FallbackHandler : IRequestExceptionHandler<Query, int, KeyNotFoundException> public Task Handle(Q…` → `public class FallbackHandler : MessageExceptionHandler<Query, int, KeyNotFoundException> protected override Va…` |
 | `state-passed` | Manual | `public Task Handle(Query request, InvalidOperationException exception, RequestExceptionHandlerState<int> state…` — reden: state is used other than as state.SetHandled(x) |
 
-### NotificationHandler (7)
+### NotificationHandler (8)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -640,6 +640,7 @@ Totaal: 502 proofs (zonder `_Pending`).
 | `completed-task` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) return Task.CompletedTask;` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) return ValueTask.CompletedTa…` |
 | `completed-task-expression` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) => Task.CompletedTask;` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) => ValueTask.CompletedTask;` |
 | `edge-marker-interface` | Fixed | `public async Task Handle(OrderPlaced notification, CancellationToken cancellationToken)` → `public async ValueTask Handle(OrderPlaced notification, CancellationToken cancellationToken)` |
+| `edge-namespace-shadow` | Fixed | `public Task Handle(OrderPlaced notification, CancellationToken cancellationToken) => Task.CompletedTask;` → `public ValueTask Handle(OrderPlaced notification, CancellationToken cancellationToken) => ValueTask.CompletedT…` |
 | `explicit` | Manual | `Task INotificationHandler<Placed>.Handle(Placed notification, CancellationToken cancellationToken) => Task.Com…` — reden: explicit interface |
 | `other-return` | Manual | `public Task Handle(Placed notification, CancellationToken cancellationToken) =>` — reden: not Task.CompletedTask |
 | `two-handlers` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) => Task.CompletedTask; public asy…` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) => ValueTask.CompletedTask; …` |
@@ -733,14 +734,6 @@ Totaal: 502 proofs (zonder `_Pending`).
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `edge-assertion-in-throw-lambda` | Manual | `Action act = () => total.Should().Be(3);` — reden: exception type |
-
-### _Pending / MediatR
-
-#### Usings (1)
-
-| Proof | Uitkomst | Wat het bewijst |
-| --- | --- | --- |
-| `edge-namespace-shadow` | Fixed | alleen usings |
 
 ## Zie ook
 

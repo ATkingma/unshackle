@@ -309,6 +309,59 @@ public class FixerTests
         fixer.FixAsync(TestSolution.Create(code, TestReferences.Net), new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
 
     // A pattern that finds every invocation and rewrites it with the given function.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task FixAsync_MarkerInterfaceInOtherFile_FindsHandlerWhateverTheFileOrder(bool markerFirst)
+    {
+        // Arrange
+        const string marker = """
+            using MediatR;
+
+            public interface IAppEvent : INotification;
+
+            public interface IAppEventHandler<in TEvent> : INotificationHandler<TEvent>
+                where TEvent : IAppEvent;
+
+            """;
+        const string handler = """
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            public record OrderPlaced(int Id) : IAppEvent;
+
+            public class OrderPlacedHandler : IAppEventHandler<OrderPlaced>
+            {
+                public async Task Handle(OrderPlaced notification, CancellationToken cancellationToken)
+                {
+                    await Task.Delay(notification.Id, cancellationToken);
+                }
+            }
+
+            """;
+        var projectId = ProjectId.CreateNewId();
+        Solution solution = new AdhocWorkspace().CurrentSolution
+            .AddProject(projectId, "App", "App", LanguageNames.CSharp)
+            .WithProjectCompilationOptions(projectId, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+            .AddMetadataReferences(projectId, TestReferences.MediatR);
+        // The Fixer walks the documents in solution order (alphabetical in a real project): the marker file first or last.
+        (string Name, string Code)[] files = markerFirst ? [("A.cs", marker), ("M.cs", handler)] : [("M.cs", handler), ("Z.cs", marker)];
+        foreach ((string name, string code) in files)
+        {
+            solution = solution.AddDocument(DocumentId.CreateNewId(projectId), name, code, filePath: name);
+        }
+
+        var fixer = new Fixer([new Unshackle.Core.Fixes.MediatR.MediatRFix()]);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "mediatr" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.ShouldContain(f => f.FilePath == "M.cs" && f.Result is FixedResult);
+        Document fixedHandler = report.Solution.Projects.Single().Documents.Single(d => d.FilePath == "M.cs");
+        (await fixedHandler.GetTextAsync(TestContext.Current.CancellationToken)).ToString().ShouldContain("ValueTask Handle");
+    }
+
     private static IPattern CreatePattern(Func<SyntaxNode, PatternResult> rewrite)
     {
         IPattern pattern = Substitute.For<IPattern>();

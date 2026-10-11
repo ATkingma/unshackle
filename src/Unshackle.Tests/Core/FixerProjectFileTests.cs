@@ -115,6 +115,32 @@ public class FixerProjectFileTests
         manual.Reason.ShouldContain("bad xml");
     }
 
+    [Fact]
+    public async Task FixAsync_EditThrows_LeavesTheCodeOfThatProjectUnchanged()
+    {
+        // Arrange
+        _projectFiles.EditAsync(Arg.Any<IEnumerable<ProjectMigration>>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidDataException("bad formatting"));
+        IFix fix = CreateFix(s_package);
+        IPattern pattern = Substitute.For<IPattern>();
+        pattern.Id.Returns("test.pattern");
+        pattern.Find(Arg.Any<SyntaxNode>(), Arg.Any<SemanticModel>())
+            .Returns(call => call.Arg<SyntaxNode>().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.InvocationExpressionSyntax>());
+        pattern.Rewrite(Arg.Any<SyntaxNode>(), Arg.Any<SemanticModel>()).Returns(PatternResult.Fixed(SyntaxFactory.ParseExpression("System.Console.WriteLine()")));
+        fix.Patterns.Returns([pattern]);
+        var fixer = new Fixer([fix], _projectFiles);
+
+        // Act
+        FixReport report = await FixAsync(fixer, StillUsesFluentAssertions, TestReferences.FluentAssertions);
+
+        // Assert
+        string text = (await report.Solution.Projects.Single().Documents.Single().GetTextAsync(TestContext.Current.CancellationToken)).ToString();
+        text.ShouldBe(StillUsesFluentAssertions);
+        report.Findings.ShouldNotBeEmpty();
+        report.Findings.ShouldAllBe(f => f.Result is ManualResult);
+        ((ManualResult)report.Findings.Single(f => f.PatternId == "test.pattern").Result).Reason.ShouldContain("bad formatting");
+    }
+
     private static IFix CreateFix(PackageMigration? package)
     {
         IFix fix = Substitute.For<IFix>();

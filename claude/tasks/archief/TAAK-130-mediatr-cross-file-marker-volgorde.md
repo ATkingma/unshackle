@@ -1,6 +1,6 @@
 # TAAK-130 — MediatR: handler via marker-interface in ander bestand wordt gemist (bestandsvolgorde)
 
-**Status**: open
+**Status**: klaar
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: `claude/tasks/CORPUSRUN-mediatr.md` (evolutionary-architecture hfst. 1 en 2)
 
@@ -29,6 +29,16 @@ De bestaande proof `MediatR/NotificationHandler/edge-marker-interface` staat in 
 - [ ] Rode test: twee documenten, handler-bestand na marker-bestand
 - [ ] Fixer op originele semantiek
 - [ ] `dotnet build` + `dotnet test` groen
+
+## Uitkomst (2026-10-11)
+
+**Status**: klaar. `Fixer` fixt elk bestand in een werkkopie van de **originele** solution (alleen dat bestand verandert)
+en zet de eindtekst daarna in de verzamelde solution. Test `FixerTests.FixAsync_MarkerInterfaceInOtherFile_FindsHandlerWhateverTheFileOrder`
+(marker voor/na het handler-bestand, echte `MediatRFix`); was rood bij marker-eerst. Proof-runner hoefde niet aangepast.
+
+Bewijs: evo1 CS0738 weg (build nog rood op MSG0005 = TAAK-136 en IDE0005/IDE0065/IDE0060 door usings-plaatsing in
+`InMemoryEventBusModule.cs`, `PassExpiredEventHandler.cs`, `RegisterEndpoint.cs` - nieuw, nog geen taak). evo2: 25 Fixed (sim: 22,
+de gemiste handlers worden nu gevonden); build alleen nog rood op TAAK-131 (CS0246/CS1961 door `*.Mediator`-schaduw).
 
 ## Zie ook
 

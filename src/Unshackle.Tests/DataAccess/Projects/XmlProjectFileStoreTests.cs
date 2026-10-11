@@ -400,17 +400,81 @@ public class XmlProjectFileStoreTests
     }
 
     [Fact]
-    public async Task EditAsync_ClosingTagInTrailingComment_ThrowsInsteadOfCorrupting()
+    public async Task EditAsync_ClosingTagInTrailingComment_KeepsTheComment()
     {
         // Arrange
-        _fileSystem.AddFile(Project, new MockFileData(
-            "<Project>\n  <ItemGroup><PackageReference Include=\"FluentAssertions\" /></ItemGroup>\n</Project>\n<!-- </Project> -->\n"));
+        const string project = "<Project>\n  <ItemGroup><PackageReference Include=\"FluentAssertions\" /></ItemGroup>\n</Project>\n<!-- </Project> -->\n";
+        _fileSystem.AddFile(Project, new MockFileData(project));
 
         // Act
-        Func<Task> edit = () => EditAsync(Migration(Project, keep: false));
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
 
         // Assert
-        await edit.ShouldThrowAsync<InvalidDataException>();
+        Text(changes, Project).ShouldBe(project.Replace("FluentAssertions", "Shouldly", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("<Project>\n  <ItemGroup>\n    <PackageReference Include=\"FluentAssertions\"/>\n    <Using Include=\"FluentAssertions\"/>\n  </ItemGroup>\n</Project>\n")]
+    [InlineData("<Project>\n  <ItemGroup>\n    <PackageReference Include=\"FluentAssertions\" >\n      <PrivateAssets>all</PrivateAssets>\n    </PackageReference>\n  </ItemGroup>\n</Project>\n")]
+    [InlineData("<Project>\n  <ItemGroup>\n    <None Include=\"@(DistFiles->'%(FullPath)')\" />\n    <PackageReference Include=\"FluentAssertions\" />\n  </ItemGroup>\n</Project>\n")]
+    [InlineData("<Project>\n  <ItemGroup>\n    <PackageReference\n      Include=\"FluentAssertions\"\n      Version=\"7.2.2\" />\n  </ItemGroup>\n</Project>\n")]
+    [InlineData("<Project>\r\n  <ItemGroup>\n    <PackageReference Include=\"FluentAssertions\" Version=\"7.2.2\" />\r\n  </ItemGroup>\n</Project>\r\n")]
+    [InlineData("<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<!-- a -> b -->\r\n<Project>\r\n  <ItemGroup>\r\n    <PackageReference Include='FluentAssertions' Version='7.2.2'/> <!-- x -->\r\n  </ItemGroup>\r\n</Project>")]
+    public async Task EditAsync_UnusualFormattingWithBom_ChangesOnlyTheValues(string project)
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData([.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(project)]));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        Text(changes, Project).ShouldBe(project
+            .Replace("FluentAssertions", "Shouldly", StringComparison.Ordinal)
+            .Replace("7.2.2", "4.3.0", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task EditAsync_MixedLineEndings_RemovesOnlyTheReferenceLine()
+    {
+        // Arrange
+        const string project = "<Project>\r\n  <ItemGroup>\n    <PackageReference Include=\"Shouldly\"/>\r\n    <PackageReference Include=\"FluentAssertions\"/>\n  </ItemGroup>\r\n</Project>\r\n";
+        _fileSystem.AddFile(Project, new MockFileData(project));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        Text(changes, Project).ShouldBe(project.Replace("\r\n    <PackageReference Include=\"FluentAssertions\"/>", "", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task EditAsync_AddsReferenceNextToNeighbour_KeepsItsLineEnding()
+    {
+        // Arrange
+        const string project = "<Project>\r\n  <ItemGroup>\r\n    <PackageReference Include=\"xunit\"/>\r\n  </ItemGroup>\r\n</Project>\r\n";
+        _fileSystem.AddFile(Project, new MockFileData(project));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        Text(changes, Project).ShouldBe(project.Replace(
+            "<PackageReference Include=\"xunit\"/>", "<PackageReference Include=\"xunit\"/>\r\n    <PackageReference Include=\"Shouldly\" Version=\"4.3.0\" />", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task EditAsync_UnchangedBuildPropsWithUnusualFormatting_IsLeftAlone()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData("<Project>\n  <ItemGroup>\n    <PackageReference Include=\"FluentAssertions\" />\n  </ItemGroup>\n</Project>\n"));
+        _fileSystem.AddFile(BuildProps, new MockFileData("<Project>\r\n  <PropertyGroup >\n    <Nullable>enable</Nullable><X\n  A=\"1\"/>\r\n  </PropertyGroup>\n</Project>"));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        changes.Select(c => c.FilePath).ShouldBe([Project]);
     }
 
     [Theory]

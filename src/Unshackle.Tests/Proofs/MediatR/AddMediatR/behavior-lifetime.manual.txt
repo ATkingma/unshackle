@@ -1,0 +1,1 @@
+cfg.AddOpenBehavior(...) has no direct Mediator equivalent

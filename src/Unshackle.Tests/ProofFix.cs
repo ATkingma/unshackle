@@ -11,4 +11,7 @@ public class ProofFix
     public required IReadOnlyList<MetadataReference> Before { get; init; }
 
     public required IReadOnlyList<MetadataReference> After { get; init; }
+
+    // Source generators of the new library that "after" needs to compile (Mediator writes AddMediator).
+    public IReadOnlyList<ISourceGenerator> AfterGenerators { get; init; } = [];
 }

@@ -27,12 +27,16 @@ public static class TestSolution
     }
 
     // Errors, plus the nullable warnings a rewrite must not add: projects with warnings-as-errors would not build.
-    public static IReadOnlyList<Diagnostic> CompileErrors(string code, IEnumerable<MetadataReference> references) =>
-        [.. CSharpCompilation.Create(
-                "Check",
-                [CSharpSyntaxTree.ParseText(code)],
-                references,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .GetDiagnostics()
-            .Where(d => d.Severity == DiagnosticSeverity.Error || d.Id is "CS8602" or "CS8604")];
+    // Source generators run first, like in a real build.
+    public static IReadOnlyList<Diagnostic> CompileErrors(
+        string code, IEnumerable<MetadataReference> references, IEnumerable<ISourceGenerator>? generators = null)
+    {
+        Compilation compilation = CSharpCompilation.Create(
+            "Check",
+            [CSharpSyntaxTree.ParseText(code)],
+            references,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        CSharpGeneratorDriver.Create([.. generators ?? []]).RunGeneratorsAndUpdateCompilation(compilation, out compilation, out _);
+        return [.. compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error || d.Id is "CS8602" or "CS8604")];
+    }
 }

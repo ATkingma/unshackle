@@ -1,0 +1,1 @@
+'cfg.NotificationPublisher = new TaskWhenAllPublisher()' has no direct Mediator equivalent

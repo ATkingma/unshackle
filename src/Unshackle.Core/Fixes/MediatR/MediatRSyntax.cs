@@ -10,7 +10,7 @@ public static class MediatRSyntax
     /// <summary>The Handle methods in <paramref name="root"/> that implement the MediatR interface with this metadata name (e.g. <c>IRequestHandler`2</c>).</summary>
     public static IEnumerable<MethodDeclarationSyntax> FindHandleMethods(SyntaxNode root, SemanticModel model, string interfaceMetadataName)
     {
-        foreach (TypeDeclarationSyntax type in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
+        foreach (TypeDeclarationSyntax type in root.DescendantNodesAndSelf().OfType<TypeDeclarationSyntax>())
         {
             if (model.GetDeclaredSymbol(type) is not INamedTypeSymbol symbol)
             {

@@ -1,6 +1,6 @@
 # TAAK-080 — mediatr: handler via eigen marker-interface wordt niet gevonden
 
-**Status**: open
+**Status**: klaar (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: corpus-onderzoek (`docs/projectinfo/architectuur/corpus-mediatr-automapper.md`)
 
@@ -19,9 +19,9 @@ Handlers implementeren alleen die eigen interface. `mediatr.request-handler` en 
 
 ## Stappen
 
-- [ ] Proofs uit `src/Unshackle.Tests/Proofs/_Pending/MediatR/{RequestHandler,NotificationHandler}/edge-marker-interface.*` groen maken en terugzetten
-- [ ] Void-variant proof
-- [ ] `dotnet build` + `dotnet test` groen
+- [x] Proofs uit `src/Unshackle.Tests/Proofs/_Pending/MediatR/{RequestHandler,NotificationHandler}/edge-marker-interface.*` groen maken en terugzetten
+- [x] Void-variant proof
+- [x] `dotnet build` + `dotnet test` groen
 
 ## Zie ook
 

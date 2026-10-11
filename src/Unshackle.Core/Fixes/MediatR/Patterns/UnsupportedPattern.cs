@@ -44,7 +44,8 @@ public class UnsupportedPattern : IPattern
 
     private static string? Advice(TypeDeclarationSyntax type, SemanticModel model)
     {
-        if (model.GetDeclaredSymbol(type) is not INamedTypeSymbol symbol)
+        // A user's own marker interface (IAppQueryHandler<TQuery, TResult> : IRequestHandler<...>) is fine; the generator only reads classes.
+        if (model.GetDeclaredSymbol(type) is not INamedTypeSymbol { TypeKind: not TypeKind.Interface } symbol)
         {
             return null;
         }

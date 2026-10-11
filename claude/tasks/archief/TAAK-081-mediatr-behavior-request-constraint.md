@@ -1,6 +1,6 @@
 # TAAK-081 — mediatr.pipeline-behavior: overbodige `IMessage` naast `IRequest<TResponse>`
 
-**Status**: open
+**Status**: klaar (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Gevonden in**: corpus-onderzoek (`docs/projectinfo/architectuur/corpus-mediatr-automapper.md`)
 
@@ -17,8 +17,8 @@ Compileert, maar is ruis: Mediator's `IRequest<T>` erft al van `IMessage`.
 
 ## Stappen
 
-- [ ] `src/Unshackle.Tests/Proofs/_Pending/MediatR/PipelineBehavior/edge-request-constraint.*` groen maken en terugzetten
-- [ ] `dotnet build` + `dotnet test` groen
+- [x] `src/Unshackle.Tests/Proofs/_Pending/MediatR/PipelineBehavior/edge-request-constraint.*` groen maken en terugzetten
+- [x] `dotnet build` + `dotnet test` groen
 
 ## Zie ook
 

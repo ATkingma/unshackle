@@ -67,8 +67,8 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-047-fa-withmessage-line-endings.md` | ✅ `WithMessage` met regeleinde: `IgnoreLineEndings` of Manual |
 | `claude/tasks/archief/TAAK-048-fa-throw-aggregate-exception.md` | ✅ `Throw`/`ThrowAsync`: actie met `Wait`/`.Result`/`Parallel.*` → Manual (AggregateException) |
 | `claude/tasks/archief/TAAK-049-fa-equivalent-runtime-type.md` | ✅ `BeEquivalentTo` object: waarschuwing bij niet-sealed types (runtime-type) |
-| `claude/tasks/TAAK-080-mediatr-marker-interface-handler.md` | Bug: handler via eigen marker-interface (`ICommandHandler<T> : IRequestHandler<T>`) niet gevonden |
-| `claude/tasks/TAAK-081-mediatr-behavior-request-constraint.md` | Bug: behavior met `IRequest<TResponse>`-constraint krijgt overbodig `IMessage` |
+| `claude/tasks/archief/TAAK-080-mediatr-marker-interface-handler.md` | ✅ Bug: handler via eigen marker-interface (`ICommandHandler<T> : IRequestHandler<T>`) niet gevonden |
+| `claude/tasks/archief/TAAK-081-mediatr-behavior-request-constraint.md` | ✅ Bug: behavior met `IRequest<TResponse>`-constraint krijgt overbodig `IMessage` |
 | `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` | Frequentietabel MediatR/AutoMapper-API's uit 9 open-source projecten, dekking door patronen |
 | `claude/tasks/patroon-queue.md` | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status (ronde 2: rijen 15-34) |
 | `claude/tasks/mediatr-queue.md` | Wachtrij MediatR → Mediator-patronen; infrastructuur in TAAK-020 |
@@ -76,10 +76,10 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/` | Voltooide taken |
 | `claude/tasks/archief/TAAK-029-mediatr-send-as-task.md` | ✅ niet-ge-awaite `Send`/`Publish` → `.AsTask()`; patroon `mediatr.send-as-task` |
 | `claude/tasks/archief/TAAK-037-mediatr-unsupported.md` | ✅ pre/post/exception/publisher/stream-behavior/generieke berichten → Manual met advies; stream-request-swap; `RegisterGenericHandlers` valt weg; end-to-end SampleShop |
-| `claude/tasks/TAAK-060-mediatr-notification-publisher-config.md` | `NotificationPublisher = new TaskWhenAllPublisher()` → `NotificationPublisherType`; CS0104 na swap |
+| `claude/tasks/archief/TAAK-060-mediatr-notification-publisher-config.md` | ✅ `NotificationPublisher = new TaskWhenAllPublisher()` → `NotificationPublisherType`; CS0104 na swap |
 | `claude/tasks/TAAK-061-mediatr-processors-exception-handlers.md` | Pre/post-processors en exception-handlers herschrijven i.p.v. Manual |
 | `claude/tasks/TAAK-062-mediatr-stream-pipeline-behavior.md` | `IStreamPipelineBehavior` herschrijven, `AddOpenStreamBehavior` → `StreamPipelineBehaviors` |
-| `claude/tasks/TAAK-063-mediatr-source-generator-alleen-host.md` | Source generator alleen in host-project (CS0436 in testprojecten) |
+| `claude/tasks/archief/TAAK-063-mediatr-source-generator-alleen-host.md` | ✅ Source generator alleen in host-project (CS0436 in testprojecten) |
 | `claude/tasks/TAAK-040-fa-expression-bodied-void.md` | Bug: `void M() => x.Should()...` wordt Manual |
 | `claude/tasks/TAAK-041-fa-null-conditional-subject.md` | Bug: `a?.B.Should()...` wordt Manual "result is used" |
 | `claude/tasks/TAAK-042-fa-throwasync-configure-await.md` | Bug: `ThrowAsync<T>().ConfigureAwait(false)` wordt Manual |

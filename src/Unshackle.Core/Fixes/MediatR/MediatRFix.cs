@@ -11,7 +11,8 @@ public class MediatRFix : IFix
 
     public string Id => "mediatr";
 
-    public IReadOnlyList<string> RemovedNamespaces { get; } = ["MediatR"];
+    // MediatR.NotificationPublishers: left behind next to using Mediator, TaskWhenAllPublisher is ambiguous (CS0104).
+    public IReadOnlyList<string> RemovedNamespaces { get; } = ["MediatR", "MediatR.NotificationPublishers"];
 
     public IReadOnlyList<string> AddedNamespaces { get; } = ["Mediator"];
 
@@ -45,7 +46,9 @@ public class MediatRFix : IFix
         AddedPackages =
         [
             new() { Name = "Mediator.Abstractions", Version = MediatorVersion },
-            new() { Name = "Mediator.SourceGenerator", Version = MediatorVersion },
+            // In every project it generates its own Mediator class: a project referencing the host's would get CS0436 (TAAK-063).
+            // So only the host (AddMediatR: its registration may still be Manual), and PrivateAssets keeps it from flowing on.
+            new() { Name = "Mediator.SourceGenerator", Version = MediatorVersion, OnlyWithCallTo = ["AddMediator", "AddMediatR"], PrivateAssets = "all" },
         ],
     };
 

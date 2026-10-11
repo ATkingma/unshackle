@@ -1,6 +1,6 @@
 # TAAK-060 — mediatr: NotificationPublisher-instelling en dubbelzinnige using
 
-**Status**: open
+**Status**: klaar (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Doel**: `cfg.NotificationPublisher = new TaskWhenAllPublisher()` / `new ForeachAwaitPublisher()` in `AddMediatR` → `cfg.NotificationPublisherType = typeof(...)` in `AddMediator`, en geen CS0104 meer na de fix.
 
@@ -12,9 +12,9 @@
 
 ## Stappen
 
-- [ ] 1. `AddMediatRPattern`: de twee ingebouwde publishers mappen; `using MediatR.NotificationPublishers` laten weghalen (bv. `RemovedNamespaces` uitbreiden). Eigen publisher-klasse → blijft Manual (`mediatr.unsupported`).
-- [ ] 2. Swap/using-logica in `Fixer`/`UsingDirectives`: geen CS0104 als er een `MediatR.*`-using achterblijft.
-- [ ] 3. Proofs + end-to-end op een kopie van SampleShop.
+- [x] 1. `AddMediatRPattern`: de twee ingebouwde publishers mappen; `using MediatR.NotificationPublishers` laten weghalen (bv. `RemovedNamespaces` uitbreiden). Eigen publisher-klasse → blijft Manual (`mediatr.unsupported`).
+- [x] 2. Swap/using-logica in `Fixer`/`UsingDirectives`: geen CS0104 als er een `MediatR.*`-using achterblijft.
+- [x] 3. Proofs + end-to-end op een kopie van SampleShop.
 
 ## Zie ook
 

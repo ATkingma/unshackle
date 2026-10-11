@@ -38,6 +38,12 @@ Scan op SampleShop (na `dotnet restore`): `mediatr.void-request-handler` 1 Fixed
 | Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 groen |
 | Lint    | _geen_                                                      | _not run_: geen lint-commando ingesteld |
 
+## Vervolg (2026-10-11)
+
+TAAK-080: `IAppCommandHandler<T> : IRequestHandler<T>` wordt gevonden (`AllInterfaces`). Proof `edge-marker-interface`.
+
+End-to-end (`fix --fix mediatr` op een kopie van SampleShop, na restore): 20 Fixed, 8 Manual; build zonder CS0436 (alleen MSG0003/MSG0005 van de generieke `CountQuery`). Manual: pre/post-processor, exception-handler, stream-behavior (TAAK-061/062), generieke `CountQuery`, en daardoor `AddMediatR` (`AddOpenStreamBehavior`). Omdat de registratie MediatR blijft, falen 28/38 sample-tests bij het opstarten (`LoggingBehavior`2 must implement MediatR.IPipelineBehavior`2`); dat lost zich op met TAAK-061/062.
+
 ## Zie ook
 
 - [mediatr-void-request-handler-plan.md](mediatr-void-request-handler-plan.md)

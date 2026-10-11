@@ -100,6 +100,12 @@ public class PipelineBehaviorPattern : IPattern
             return type;
         }
 
+        // IRequest<T>, INotification and marker interfaces on them already are an IMessage after the swap.
+        if (parameter.ConstraintTypes.OfType<INamedTypeSymbol>().SelectMany(t => t.AllInterfaces.Prepend(t)).Any(IsMediatRMessage))
+        {
+            return type;
+        }
+
         TypeConstraintSyntax message = SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName("IMessage"));
         TypeParameterConstraintClauseSyntax? clause = type.ConstraintClauses.FirstOrDefault(c => c.Name.Identifier.ValueText == parameter.Name);
         if (clause is null)
@@ -121,6 +127,9 @@ public class PipelineBehaviorPattern : IPattern
         constraints[^1] = constraints[^1].WithTrailingTrivia(clause.Constraints.Last().GetTrailingTrivia());
         return type.ReplaceNode(clause, clause.WithConstraints(CommaList(constraints)));
     }
+
+    private static bool IsMediatRMessage(INamedTypeSymbol type) =>
+        type.Name is "IBaseRequest" or "INotification" && type.ContainingNamespace.ToDisplayString() == "MediatR";
 
     // where TRequest : IMessage on its own line, one level deeper than the type declaration.
     private static TypeDeclarationSyntax AddClause(TypeDeclarationSyntax type, TypeParameterConstraintClauseSyntax clause)

@@ -1,6 +1,6 @@
 # TAAK-063 — mediatr: source generator alleen in het project dat AddMediator aanroept
 
-**Status**: open
+**Status**: klaar (2026-10-11)
 **Aangemaakt**: 2026-10-11
 **Doel**: geen CS0436-warnings (dubbele `Mediator`, `MediatorOptions`, `AssemblyReference`) in testprojecten na de fix.
 
@@ -11,8 +11,8 @@
 
 ## Stappen
 
-- [ ] 1. Generator alleen toevoegen aan projecten die `AddMediatR` aanroepen (of geen project-reference naar zo'n project hebben); andere projecten alleen `Mediator.Abstractions`.
-- [ ] 2. Unittest in `ProjectPackages`/project-file-tests; end-to-end op SampleShop zonder CS0436.
+- [x] 1. Generator alleen toevoegen aan projecten die `AddMediatR` aanroepen (of geen project-reference naar zo'n project hebben); andere projecten alleen `Mediator.Abstractions`.
+- [x] 2. Unittest in `ProjectPackages`/project-file-tests; end-to-end op SampleShop zonder CS0436.
 
 ## Zie ook
 

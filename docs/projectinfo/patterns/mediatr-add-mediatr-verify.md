@@ -40,6 +40,14 @@ Geen.
 | Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 groen                             |
 | Lint    | _geen_                                                      | _not run_: geen lint-commando ingesteld |
 
+## Vervolg (2026-10-11)
+
+TAAK-060: `cfg.NotificationPublisher = new TaskWhenAllPublisher()` / `new ForeachAwaitPublisher()` (ook MediatR-gekwalificeerd) → `cfg.NotificationPublisherType = typeof(global::Mediator.X)` (Mediator 3.0.2: `Mediator.TaskWhenAllPublisher`, `Mediator.ForeachAwaitPublisher`, `MediatorOptions.NotificationPublisherType`). `global::` bindt tijdens de fix niet aan MediatR, dus `using MediatR.NotificationPublishers;` (nu in `RemovedNamespaces`) verdwijnt. Blijft één removed using staan (bv. AddMediatR Manual), dan blijven ze allemaal (`UsingDirectives.UsedRemovedNamespaces`): geen CS0104/CS0029. Proofs `publisher` (was manual) en `edge-publisher-qualified`. Eigen publisher blijft Manual (`mediatr.unsupported`).
+
+TAAK-063: `Mediator.SourceGenerator` alleen in projecten die `AddMediator`/`AddMediatR` aanroepen (`AddedPackage.OnlyWithCallTo`, syntactisch in `ProjectPackages`), met `PrivateAssets="all"` zodat hij niet transitief naar testprojecten stroomt (dat gaf de CS0436).
+
+End-to-end (`fix --fix mediatr` op een kopie van SampleShop, na restore): 20 Fixed, 8 Manual; build zonder CS0436 (alleen MSG0003/MSG0005 van de generieke `CountQuery`). Manual: pre/post-processor, exception-handler, stream-behavior (TAAK-061/062), generieke `CountQuery`, en daardoor `AddMediatR` (`AddOpenStreamBehavior`). Omdat de registratie MediatR blijft, falen 28/38 sample-tests bij het opstarten (`LoggingBehavior`2 must implement MediatR.IPipelineBehavior`2`); dat lost zich op met TAAK-061/062.
+
 ## Zie ook
 
 - [mediatr-add-mediatr-plan.md](mediatr-add-mediatr-plan.md)

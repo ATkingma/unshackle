@@ -17,7 +17,8 @@ public static class MediatRSyntax
                 continue;
             }
 
-            foreach (INamedTypeSymbol handler in symbol.Interfaces.Where(i => IsMediatRType(i, interfaceMetadataName)))
+            // AllInterfaces: a handler may implement MediatR only through its own marker interface (ICommandHandler<T> : IRequestHandler<T>).
+            foreach (INamedTypeSymbol handler in symbol.AllInterfaces.Where(i => IsMediatRType(i, interfaceMetadataName)))
             {
                 ISymbol? handle = handler.GetMembers("Handle").FirstOrDefault();
                 ISymbol? implementation = handle is null ? null : symbol.FindImplementationForInterfaceMember(handle);

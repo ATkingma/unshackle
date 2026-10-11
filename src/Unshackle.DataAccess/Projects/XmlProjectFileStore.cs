@@ -148,6 +148,11 @@ public class XmlProjectFileStore : IProjectFileStore
                 added.Add(new XAttribute("Version", package.Version));
             }
 
+            if (package.PrivateAssets is not null && kind == PackageReference)
+            {
+                added.Add(new XAttribute("PrivateAssets", package.PrivateAssets));
+            }
+
             AddNextTo(file, removed ?? file.Document.Descendants(file.Namespace + kind).LastOrDefault(), added);
         }
     }

@@ -50,7 +50,9 @@ public class FixCommand
             ScanResult result = await _scan.RunAsync(solutionPath, fixId, reportPath, cancellationToken);
             List<DocumentId> changed =
             [
-                .. result.Report.Solution.GetChanges(result.Original).GetProjectChanges().SelectMany(p => p.GetChangedDocuments()),
+                .. result.Report.Solution.GetChanges(result.Original).GetProjectChanges().SelectMany(p => p.GetChangedDocuments())
+                    // A multi-target project has one document per target framework for the same file.
+                    .DistinctBy(id => result.Report.Solution.GetDocument(id)!.FilePath ?? id.Id.ToString()),
             ];
             IReadOnlyList<ProjectFileChange> projectFileChanges = result.Report.ProjectFileChanges;
             int fileCount = changed.Count + projectFileChanges.Count;

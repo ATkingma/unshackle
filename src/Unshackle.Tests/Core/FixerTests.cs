@@ -172,6 +172,30 @@ public class FixerTests
         await Should.ThrowAsync<ArgumentException>(act);
     }
 
+    [Fact]
+    public async Task FixAsync_SameFileInTwoTargetFrameworks_ReportsOnceAndFixesBothCopies()
+    {
+        // Arrange: a multi-target project is loaded as one project per target framework.
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        var fixer = new Fixer([CreateFix(pattern)]);
+        Solution solution = TestSolution.Create(Code, TestReferences.Net);
+        var secondId = ProjectId.CreateNewId();
+        solution = solution
+            .AddProject(secondId, "Test(net8.0)", "Test", LanguageNames.CSharp)
+            .AddMetadataReferences(secondId, TestReferences.Net)
+            .AddDocument(DocumentId.CreateNewId(secondId), TestSolution.FileName, Code, filePath: TestSolution.FileName);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.ShouldHaveSingleItem().Result.ShouldBeOfType<FixedResult>();
+        foreach (Document document in report.Solution.Projects.SelectMany(p => p.Documents))
+        {
+            (await document.GetTextAsync(TestContext.Current.CancellationToken)).ToString().ShouldContain("Bar();");
+        }
+    }
+
     private static Task<FixReport> FixAsync(Fixer fixer, string code) =>
         fixer.FixAsync(TestSolution.Create(code, TestReferences.Net), new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
 

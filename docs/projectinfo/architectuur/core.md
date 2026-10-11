@@ -40,6 +40,9 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
 - `IFix`: `Id`, `Patterns`, `RemovedNamespaces`, `AddedNamespaces`.
 - `Fixer`: per document de patterns na elkaar (vers `SemanticModel`), vervangen met `TrackNodes`/`ReplaceNode`
   (buitenste eerst, overlap → Manual), daarna usings via `UsingDirectives`. Exceptions per pattern → Manual.
+  Per bestandspad één keer: een multi-target project (één Roslyn-project per TFM) wordt in de eerste TFM gefixt
+  en gerapporteerd; de kopieën in de andere TFM's krijgen dezelfde tekst. Projectmigraties tellen ook per
+  projectbestand (package blijft als één TFM het nog nodig heeft); `fix` telt geschreven bestanden uniek (TAAK-022).
 - Details en redenen: `claude/tasks/archief/TAAK-001-fundament.md`.
 
 ## Contracten naar buiten (TAAK-005)

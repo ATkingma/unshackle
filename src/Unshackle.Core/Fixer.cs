@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
@@ -36,10 +37,17 @@ public class Fixer : IFixer
             ?? throw new ArgumentException($"Unknown fix '{request.FixId}'.", nameof(request));
 
         var findings = new List<Finding>();
-        List<DocumentId> documentIds =
-            [.. solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.DocumentIds)];
-        foreach (DocumentId documentId in documentIds)
+        // A multi-target project is loaded once per target framework: the same file is fixed and reported once,
+        // and its copies in the other projects get the fixed text.
+        List<IGrouping<string, DocumentId>> files =
+        [
+            .. solution.Projects.Where(p => p.Language == LanguageNames.CSharp)
+                .SelectMany(p => p.Documents)
+                .GroupBy(d => d.FilePath ?? d.Id.Id.ToString(), d => d.Id, StringComparer.Ordinal),
+        ];
+        foreach (IGrouping<string, DocumentId> file in files)
         {
+            DocumentId documentId = file.First();
             var requiredNamespaces = new HashSet<string>(StringComparer.Ordinal);
             bool changed = false;
             // Patterns run one after another, each on a fresh semantic model of the previous result.
@@ -63,6 +71,11 @@ public class Fixer : IFixer
                 requiredNamespaces.UnionWith(fix.AddedNamespaces);
                 Document document = solution.GetDocument(documentId)!;
                 solution = await UsingDirectives.UpdateAsync(document, requiredNamespaces, fix.RemovedNamespaces, cancellationToken);
+                SourceText text = await solution.GetDocument(documentId)!.GetTextAsync(cancellationToken);
+                foreach (DocumentId copy in file.Skip(1))
+                {
+                    solution = solution.WithDocumentText(copy, text);
+                }
             }
         }
 

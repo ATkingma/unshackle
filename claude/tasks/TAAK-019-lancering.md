@@ -81,8 +81,8 @@ _(wordt aangevuld tijdens uitvoering)_
 
 ## Zie ook
 
-- `claude/tasks/TAAK-021-fa-nullable-subject.md` — patroonfout uit de casus
-- `claude/tasks/TAAK-022-scan-telt-per-target-framework.md` — telling per TFM
+- `claude/tasks/archief/TAAK-021-fa-nullable-subject.md` — patroonfout uit de casus
+- `claude/tasks/archief/TAAK-022-scan-telt-per-target-framework.md` — telling per TFM
 
 - `claude/docs/INDEX.md`
 - `docs/projectinfo/README.md`

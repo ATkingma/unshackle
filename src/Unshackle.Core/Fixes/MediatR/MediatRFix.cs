@@ -45,5 +45,5 @@ public class MediatRFix : IFix
         ],
     };
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new RequestHandlerPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern()];
 }

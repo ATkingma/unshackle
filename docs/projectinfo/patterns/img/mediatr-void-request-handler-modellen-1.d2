@@ -1,0 +1,13 @@
+title: "[Klassen] VoidRequestHandlerPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+IPattern: {shape: class; "+Id"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
+VoidRequestHandlerPattern: {shape: class; "+Id = mediatr.void-request-handler"; "+Find(root, model)"; "+Rewrite(node, model)"; "-RewriteAsync(body, model, method)"; "-RewriteSync(method, model, returnType)"; "-WithUnit(valueTask)"; "-ReturnUnit()"}
+MediatRSyntax: {shape: class; "+FindHandleMethods(root, model, name)"; "+ToValueTask(type): TypeSyntax?"; "+ReturnedExpressions(method)"; "+IsTaskMember(expr, model, name): bool"; "+OnValueTask(member)"}
+PatternResult: {shape: class; "+Fixed(node, namespaces)"; "+Manual(reason)"}
+MediatR: "MediatR.IRequestHandler<TReq>\nTask Handle(...)"
+Mediator: "Mediator.IRequestHandler<TReq>\n= IRequestHandler<TReq, Unit>\nValueTask<Unit> Handle(...)"
+VoidRequestHandlerPattern -> IPattern: implementeert {style.stroke-dash: 3}
+VoidRequestHandlerPattern -> MediatRSyntax: gebruikt
+VoidRequestHandlerPattern -> PatternResult: geeft
+VoidRequestHandlerPattern -> MediatR: herkent
+VoidRequestHandlerPattern -> Mediator: schrijft voor

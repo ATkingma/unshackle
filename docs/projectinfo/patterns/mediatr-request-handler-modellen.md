@@ -26,9 +26,9 @@ Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerPattern.cs` 
 
 | Stap       | Methode in de code                                                                       | Wat gebeurt er                                                                                  |
 | ---------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Vinden     | `Find` → `GetDeclaredSymbol`, `IsRequestHandler`, `FindImplementationForInterfaceMember` | Semantisch: de `Handle`-methode die het interface-lid implementeert, in dezelfde klasse         |
-| Returntype | `ToValueTask`                                                                            | `Task<T>` of `System.Threading.Tasks.Task<T>` → `ValueTask<T>`                                  |
-| Returns    | `ReturnedExpressions`, `IsTaskFromResult`                                                | Expression body of elke `return` (niet in lambda's/lokale functies) moet `Task.FromResult` zijn |
+| Vinden     | `MediatRSyntax.FindHandleMethods` (`IRequestHandler<,>`) | Semantisch: de `Handle`-methode die het interface-lid implementeert, in dezelfde klasse         |
+| Returntype | `MediatRSyntax.ToValueTask`                                                                          | `Task<T>` of `System.Threading.Tasks.Task<T>` → `ValueTask<T>`                                  |
+| Returns    | `MediatRSyntax.ReturnedExpressions`, `IsTaskMember(..., "FromResult")`                                                | Expression body of elke `return` (niet in lambda's/lokale functies) moet `Task.FromResult` zijn |
 | Usings     | `UsingDirectives.UpdateAsync` in `Fixer`                                                 | `using MediatR` → `using Mediator` dankzij `SwappedTypes`                                       |
 
 ## Figuur 3: beslisboom

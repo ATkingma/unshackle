@@ -8,8 +8,8 @@ pattern -> model: "GetDeclaredSymbol(type)"
 pattern -> model: "FindImplementationForInterfaceMember(Handle)"
 pattern -> fixer: "MethodDeclarationSyntax Handle" {style.stroke-dash: 3}
 fixer -> pattern: "Rewrite(node, model)"
-pattern -> pattern: "ToValueTask(ReturnType)"
-pattern -> pattern: "ReturnedExpressions(method)"
-pattern -> model: "GetSymbolInfo (IsTaskFromResult)"
+pattern -> pattern: "MediatRSyntax.ToValueTask(ReturnType)"
+pattern -> pattern: "MediatRSyntax.ReturnedExpressions(method)"
+pattern -> model: "GetSymbolInfo (MediatRSyntax.IsTaskMember)"
 pattern -> fixer: "Fixed(method, System.Threading.Tasks) of Manual(reden)" {style.stroke-dash: 3}
 fixer -> fixer: "UsingDirectives.UpdateAsync (SwappedTypes)"

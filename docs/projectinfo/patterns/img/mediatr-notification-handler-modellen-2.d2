@@ -1,0 +1,16 @@
+title: "[Sequence] NotificationHandlerPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: NotificationHandlerPattern
+syntax: MediatRSyntax
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> syntax: "FindHandleMethods(root, model, INotificationHandler`1)"
+syntax -> model: "GetDeclaredSymbol / FindImplementationForInterfaceMember"
+pattern -> fixer: "MethodDeclarationSyntax Handle" {style.stroke-dash: 3}
+fixer -> pattern: "Rewrite(node, model)"
+pattern -> syntax: "ToValueTask(ReturnType)"
+pattern -> syntax: "ReturnedExpressions / IsTaskMember CompletedTask (niet-async)"
+pattern -> syntax: "OnValueTask(Task.CompletedTask)"
+pattern -> fixer: "Fixed(method, System.Threading.Tasks) of Manual(reden)" {style.stroke-dash: 3}
+fixer -> fixer: "UsingDirectives.UpdateAsync (SwappedTypes)"

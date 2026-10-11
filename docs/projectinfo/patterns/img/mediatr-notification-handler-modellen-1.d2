@@ -1,0 +1,13 @@
+title: "[Klassen] NotificationHandlerPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+IPattern: {shape: class; "+Id"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
+NotificationHandlerPattern: {shape: class; "+Id = mediatr.notification-handler"; "+Find(root, model)"; "+Rewrite(node, model)"}
+MediatRSyntax: {shape: class; "+FindHandleMethods(root, model, name)"; "+ToValueTask(type): TypeSyntax?"; "+ReturnedExpressions(method)"; "+IsTaskMember(expr, model, name): bool"; "+OnValueTask(member)"}
+PatternResult: {shape: class; "+Fixed(node, namespaces)"; "+Manual(reason)"}
+MediatR: "MediatR.INotificationHandler<T>\nTask Handle(...)"
+Mediator: "Mediator.INotificationHandler<T>\nValueTask Handle(...)"
+NotificationHandlerPattern -> IPattern: implementeert {style.stroke-dash: 3}
+NotificationHandlerPattern -> MediatRSyntax: gebruikt
+NotificationHandlerPattern -> PatternResult: geeft
+NotificationHandlerPattern -> MediatR: herkent
+NotificationHandlerPattern -> Mediator: schrijft voor

@@ -40,3 +40,13 @@ empty -> sempty
 empty -> m5
 contain -> scontain
 contain -> m6
+beq: "s.Should().BeEquivalentTo(y) / NotBeEquivalentTo(y)" {style.fill: "#bbdefb"}
+sbeq: "s.ShouldBe(y, StringCompareShould.IgnoreCase)" {style.fill: "#c8e6c9"}
+m7: "Manual: NotBeEquivalentTo, resultaat gebruikt,\nbecauseArgs" {style.fill: "#ffe0b2"}
+thr: "act.Should().Throw<T>()\n(+ .WithMessage(p))" {style.fill: "#bbdefb"}
+sthr: "Should.Throw<T>(act)\n(+ .Message.ShouldBe / ShouldContain /\nShouldStartWith / ShouldEndWith)" {style.fill: "#c8e6c9"}
+m8: "Manual: ThrowExactly, Invoking, chain/Which,\nwildcard of variabele in WithMessage, becauseArgs" {style.fill: "#ffe0b2"}
+beq -> sbeq
+beq -> m7
+thr -> sthr
+thr -> m8

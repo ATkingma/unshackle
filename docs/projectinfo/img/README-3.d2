@@ -80,6 +80,18 @@ core: "Unshackle.Core [Container: C# / Roslyn]" {
 
     fa.contain
   | {class: component}
+  p7: |md
+    **BeEquivalentToStringPattern**\
+    [Component: IPattern]
+
+    fa.be-equivalent-to-string
+  | {class: component}
+  p8: |md
+    **ThrowPattern**\
+    [Component: IPattern]
+
+    fa.throw
+  | {class: component}
 }
 cli: |md
   **Unshackle.Interface**\
@@ -95,3 +107,5 @@ core.p3 -> core.syntax: "Gebruikt"
 core.p4 -> core.syntax: "Gebruikt"
 core.p5 -> core.syntax: "Gebruikt"
 core.p6 -> core.syntax: "Gebruikt"
+core.p7 -> core.syntax: "Gebruikt"
+core.p8 -> core.syntax: "Gebruikt"

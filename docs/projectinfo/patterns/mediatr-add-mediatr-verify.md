@@ -23,7 +23,7 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`, registra
 | Uitbreiding TAAK-060 | Gehaald | `publisher`, `edge-publisher-qualified` |
 | Uitbreiding TAAK-061/062 | Gehaald | `processors`, `empty` |
 
-TAAK-117: een parameter die alleen naar een weggevallen `RegisterServicesFrom...` ging (IDE0060) blijft staan; `Fixed` met een waarschuwing in het rapport (`AddMediatRPatternTests`, proof `edge-assemblies` laat zien dat de code compileert).
+TAAK-117: een parameter die alleen naar een weggevallen `RegisterServicesFrom...` ging (IDE0060) blijft staan. TAAK-141: is de aanroep een los statement, dan komt er `_ = parameter;` vóór (geen IDE0060, signatuur en aanroepers ongewijzigd; proof `edge-assemblies`, evo1 bouwt weer). Anders `Fixed` met een waarschuwing in het rapport (`AddMediatRPatternTests`).
 
 Regressie-edges bij REQ-1/REQ-2: `edge-assemblies` (`RegisterServicesFromAssemblies`), `edge-service-type-behavior` (`AddBehavior(typeof(IPipelineBehavior<,>), typeof(X<,>))`).
 

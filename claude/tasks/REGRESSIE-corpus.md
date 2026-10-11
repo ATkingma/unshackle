@@ -34,7 +34,7 @@ Harnas: `claude/tools/corpus-regression.sh` (+ `.py`). Per solution: verse kopie
 
 | Solution | Reden | Soort |
 | --- | --- | --- |
-| evo1, evo2 | Build na fix faalt (IDE0060: ongebruikte `assembly`-parameter na `AddMediator`; TAAK-117 geeft alleen waarschuwing) | product: TAAK-117-vervolg |
+| evo1, evo2 | Build na fix faalt (IDE0060: ongebruikte `assembly`-parameter na `AddMediator`; TAAK-117 gaf alleen waarschuwing) | **opgelost** in TAAK-141 (`_ = assembly;`); evo2 heeft daarna nog CS0104/CS0122/CS0436/CS0535 (los probleem) |
 | Akka.NET, Steeltoe | Unshackle laadt de solution niet: AOT-/benchmark-/sample-projecten waarvan types niet resolven (302 resp. 502 fouten) | product: loader (TAAK-112/135 dekken dit nog niet) |
 | LiteDB | Baseline-build faalt al (`LiteDB.Fuzz`) | omgeving/project |
 | PowerApps-Tooling | 0 tests: project gebruikt Microsoft.Testing.Platform; het harnas dwingt VSTest af | harnas |

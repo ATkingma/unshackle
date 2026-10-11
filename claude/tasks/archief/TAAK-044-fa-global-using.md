@@ -1,6 +1,6 @@
 # TAAK-044 — `global using FluentAssertions;` wordt niet vervangen
 
-**Status**: stap 1/3 — nog te starten
+**Status**: ✅ voltooid 2026-10-11
 **Aangemaakt**: 2026-10-11
 **Doel**: de pending proof(s) hieronder slagen en staan weer in `Proofs/FluentAssertions/`.
 
@@ -37,9 +37,9 @@ Projectbrede stap na alle documenten (Fixer), niet per document: alleen vervange
 
 ## Stappen
 
-- [ ] 1. Proof(s) uit `_Pending/` terugzetten naar `Proofs/FluentAssertions/<Patroon>/`, zien falen.
-- [ ] 2. Fix in de genoemde code; alle proofs (`--filter-class "*ProofTests"`) en `dotnet test` groen.
-- [ ] 3. Verify-doc van het geraakte patroon bijwerken; taak archiveren.
+- [x] 1. Proof(s) uit `_Pending/` terugzetten naar `Proofs/FluentAssertions/<Patroon>/`, zien falen.
+- [x] 2. Fix in de genoemde code; alle proofs (`--filter-class "*ProofTests"`) en `dotnet test` groen.
+- [x] 3. Verify-doc van het geraakte patroon bijwerken; taak archiveren.
 
 ## Risico's & randgevallen
 
@@ -49,7 +49,7 @@ Projectbrede stap na alle documenten (Fixer), niet per document: alleen vervange
 
 ## Gewijzigde bestanden
 
-_(wordt aangevuld tijdens uitvoering)_
+`src/Unshackle.Core/Fixer.cs`, `UsingDirectives.cs`, `ProjectPackages.cs`, `src/Unshackle.Tests/ProofTests.cs` (after compileert tegen oud+nieuw bij Manual), `Core/FixerTests.cs`, proofs `ShouldBe/edge-ifdef` + `edge-global-using`, `docs/projectinfo/architectuur/core.md`. Keuze en motivatie: core.md §Inactieve `#if`-code en global usings.
 
 ## Zie ook
 

@@ -30,7 +30,7 @@ internal static class ProjectPackages
             {
                 ProjectPath = project.FilePath!,
                 Package = package,
-                KeepRemovedPackage = await UsesAssemblyAsync(project, removed, swappedTypes, cancellationToken),
+                KeepRemovedPackage = await UsesAssemblyAsync(project, removed, fix.RemovedNamespaces, swappedTypes, cancellationToken),
                 RemovedNamespaces = fix.RemovedNamespaces,
                 AddedNamespaces = fix.AddedNamespaces,
             });
@@ -44,9 +44,11 @@ internal static class ProjectPackages
     }
 
     // True when any document binds a name to a type or member of the assemblies, swapped types aside. Using directives do not count:
-    // the global usings MSBuild generates from <Using Include> would otherwise always keep the package.
+    // the global usings MSBuild generates from <Using Include> would otherwise always keep the package. Except a using that
+    // inactive #if code may need, or a global using the fixer kept: that code would break without the package.
     private static async Task<bool> UsesAssemblyAsync(
-        Project project, HashSet<string> assemblyNames, IReadOnlyCollection<string> swappedTypes, CancellationToken cancellationToken)
+        Project project, HashSet<string> assemblyNames, IReadOnlyList<string> removedNamespaces, IReadOnlyCollection<string> swappedTypes,
+        CancellationToken cancellationToken)
     {
         foreach (Document document in project.Documents)
         {
@@ -62,7 +64,8 @@ internal static class ProjectPackages
                 .Select(n => model.GetSymbolInfo(n, cancellationToken).Symbol)
                 .Any(s => s is not null and not INamespaceSymbol && s.ContainingAssembly?.Name is string name && assemblyNames.Contains(name)
                     && !UsingDirectives.IsSwapped(s, swappedTypes));
-            if (uses)
+            if (uses || UsingDirectives.KeepsRemovedUsing(root, removedNamespaces)
+                || UsingDirectives.RemovedGlobalUsings(root, document.FilePath, removedNamespaces).Any())
             {
                 return true;
             }

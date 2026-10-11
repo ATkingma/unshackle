@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
@@ -11,6 +12,9 @@ public class Fixer : IFixer
 {
     // Rows for project files have no pattern; this id groups them in the summary and the report.
     public const string ProjectFilePatternId = "project-file";
+
+    // Rows for usings the fix could not swap safely: a global using, or a using that inactive #if code may need.
+    public const string UsingsPatternId = "usings";
 
     private readonly IReadOnlyList<IFix> _fixes;
     private readonly IProjectFileStore? _projectFiles;
@@ -46,6 +50,16 @@ public class Fixer : IFixer
                 .SelectMany(p => p.Documents)
                 .GroupBy(d => d.FilePath ?? d.Id.Id.ToString(), d => d.Id, StringComparer.Ordinal),
         ];
+        HashSet<ProjectId> globalProjects = [];
+        foreach (Document document in solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents))
+        {
+            SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken))!;
+            if (UsingDirectives.RemovedGlobalUsings(root, document.FilePath, fix.RemovedNamespaces).Any())
+            {
+                globalProjects.Add(document.Project.Id);
+            }
+        }
+
         foreach (IGrouping<string, DocumentId> file in files)
         {
             DocumentId documentId = file.First();
@@ -72,9 +86,26 @@ public class Fixer : IFixer
                 && await UsingDirectives.HasUnusedRemovedUsingAsync(solution.GetDocument(documentId)!, fix.RemovedNamespaces, swappedTypes, cancellationToken)))
             {
                 requiredNamespaces.UnionWith(fix.AddedNamespaces);
+                if (globalProjects.Contains(documentId.ProjectId))
+                {
+                    // The project's global using brings the added namespaces (see SwapGlobalUsingsAsync).
+                    requiredNamespaces.ExceptWith(fix.AddedNamespaces);
+                }
+
                 Document document = solution.GetDocument(documentId)!;
                 solution = await UsingDirectives.UpdateAsync(document, requiredNamespaces, fix.RemovedNamespaces, swappedTypes, cancellationToken);
-                SourceText text = await solution.GetDocument(documentId)!.GetTextAsync(cancellationToken);
+                Document updated = solution.GetDocument(documentId)!;
+                SyntaxNode updatedRoot = (await updated.GetSyntaxRootAsync(cancellationToken))!;
+                if (UsingDirectives.KeepsRemovedUsing(updatedRoot, fix.RemovedNamespaces))
+                {
+                    // Line in the file as the patterns saw it, like their findings.
+                    int line = (await document.GetSyntaxRootAsync(cancellationToken))!.DescendantTrivia().First(t => t.IsKind(SyntaxKind.DisabledTextTrivia))
+                        .GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+                    findings.Add(CreateUsingsFinding(updated.FilePath ?? updated.Name, line, fix, PatternResult.Manual(
+                        "Code in an inactive #if branch is not migrated, so the old using stays. Migrate that branch by hand.")));
+                }
+
+                SourceText text = await updated.GetTextAsync(cancellationToken);
                 foreach (DocumentId copy in file.Skip(1))
                 {
                     solution = solution.WithDocumentText(copy, text);
@@ -82,6 +113,7 @@ public class Fixer : IFixer
             }
         }
 
+        solution = await SwapGlobalUsingsAsync(solution, fix, globalProjects, swappedTypes, findings, cancellationToken);
         IReadOnlyList<ProjectFileChange> projectFileChanges = _projectFiles is not null && fix.Package is PackageMigration package
             ? await MigrateProjectFilesAsync(_projectFiles, solution, fix, package, swappedTypes, findings, cancellationToken)
             : [];
@@ -123,6 +155,51 @@ public class Fixer : IFixer
         findings.AddRange(changes.Select(c => CreateProjectFinding(c.FilePath, fix, PatternResult.Fixed(Array.Empty<SyntaxNode>()))));
         return changes;
     }
+
+    // A global using applies to the whole project (every target): it is swapped only when no file still needs it.
+    // Otherwise the added namespaces are imported next to it, so the migrated files still compile.
+    private static async Task<Solution> SwapGlobalUsingsAsync(
+        Solution solution,
+        IFix fix,
+        HashSet<ProjectId> globalProjects,
+        HashSet<string> swappedTypes,
+        List<Finding> findings,
+        CancellationToken cancellationToken)
+    {
+        foreach (IGrouping<string, ProjectId> project in globalProjects.GroupBy(id => solution.GetProject(id)!.FilePath ?? id.Id.ToString(), StringComparer.Ordinal))
+        {
+            bool keep = false;
+            foreach (Document document in project.SelectMany(id => solution.GetProject(id)!.Documents))
+            {
+                keep = keep || await UsingDirectives.MayUseRemovedNamespaceAsync(document, fix.RemovedNamespaces, swappedTypes, cancellationToken);
+            }
+
+            HashSet<string> reported = new(StringComparer.Ordinal);
+            foreach (Document document in project.SelectMany(id => solution.GetProject(id)!.Documents))
+            {
+                SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken))!;
+                List<UsingDirectiveSyntax> globals = [.. UsingDirectives.RemovedGlobalUsings(root, document.FilePath, fix.RemovedNamespaces)];
+                if (globals.Count == 0)
+                {
+                    continue;
+                }
+
+                solution = solution.WithDocumentSyntaxRoot(document.Id, UsingDirectives.SwapGlobalUsings((CompilationUnitSyntax)root, globals, fix.AddedNamespaces, keep));
+                string filePath = document.FilePath ?? document.Name;
+                if (keep && reported.Add(filePath))
+                {
+                    findings.AddRange(globals.Select(g => CreateUsingsFinding(filePath, g.GetLocation().GetLineSpan().StartLinePosition.Line + 1, fix,
+                        PatternResult.Manual($"The project still uses {g.Name} (or has inactive #if code), so its global using stays next to the new one. " +
+                            "Fix the manual findings and run the fix again."))));
+                }
+            }
+        }
+
+        return solution;
+    }
+
+    private static Finding CreateUsingsFinding(string filePath, int line, IFix fix, PatternResult result) =>
+        new() { FilePath = filePath, Line = line, FixId = fix.Id, PatternId = UsingsPatternId, Result = result };
 
     private static Finding CreateProjectFinding(string filePath, IFix fix, PatternResult result) =>
         new() { FilePath = filePath, Line = 0, FixId = fix.Id, PatternId = ProjectFilePatternId, Result = result };

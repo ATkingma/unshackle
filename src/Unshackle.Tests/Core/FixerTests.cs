@@ -159,6 +159,59 @@ public class FixerTests
     }
 
     [Fact]
+    public async Task FixAsync_GlobalUsingNoLongerUsed_SwapsItWithoutFileUsing()
+    {
+        // Arrange
+        string code = "global " + Code;
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        var fixer = new Fixer([CreateFix(pattern, removed: ["System.Text"], added: ["System.IO"])]);
+
+        // Act
+        FixReport report = await FixAsync(fixer, code);
+
+        // Assert
+        string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        text.ShouldStartWith("global using System.IO;\n\npublic class C");
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult);
+    }
+
+    [Fact]
+    public async Task FixAsync_GlobalUsingStillUsed_KeepsItNextToNewOneAndReportsManual()
+    {
+        // Arrange
+        string code = "global " + Code.Replace("Foo();", "Foo(); _ = new StringBuilder();", StringComparison.Ordinal);
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        var fixer = new Fixer([CreateFix(pattern, removed: ["System.Text"], added: ["System.IO"])]);
+
+        // Act
+        FixReport report = await FixAsync(fixer, code);
+
+        // Assert
+        string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        text.ShouldStartWith("global using System.Text;\nglobal using System.IO;\n\npublic class C");
+        report.Findings.ShouldContain(f => f.PatternId == Fixer.UsingsPatternId && f.Result is ManualResult);
+    }
+
+    [Fact]
+    public async Task FixAsync_InactiveIfBranch_KeepsRemovedUsingAndReportsManual()
+    {
+        // Arrange
+        string code = Code.Replace("Foo();", "Foo();\n#if NEVER\n        _ = new StringBuilder();\n#endif", StringComparison.Ordinal);
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        var fixer = new Fixer([CreateFix(pattern, removed: ["System.Text"], added: ["System.IO"])]);
+
+        // Act
+        FixReport report = await FixAsync(fixer, code);
+
+        // Assert
+        string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        text.ShouldStartWith("using System.Text;\nusing System.IO;\n\npublic class C");
+        Finding manual = report.Findings.Where(f => f.PatternId == Fixer.UsingsPatternId).ShouldHaveSingleItem();
+        manual.Result.ShouldBeOfType<ManualResult>();
+        manual.Line.ShouldBe(9);
+    }
+
+    [Fact]
     public async Task FixAsync_UnknownFixId_ThrowsArgumentException()
     {
         // Arrange

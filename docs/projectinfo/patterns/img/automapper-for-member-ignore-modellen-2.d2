@@ -1,0 +1,16 @@
+title: "[Sequence] ForMemberIgnorePattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: ForMemberIgnorePattern
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> model: "GetDeclaredSymbol(class): IsProfileWithMaps?"
+pattern -> pattern: "UsesForMemberIgnore(profile): IgnoredMember(ForMember)"
+pattern -> fixer: "ClassDeclarationSyntax" {style.stroke-dash: 3}
+fixer -> pattern: "Rewrite(node, model)"
+pattern -> pattern: "TryParseMap(statement): CreateMap + ignored"
+pattern -> model: "GetSymbolInfo(ForMember / CreateMap<A, B>())"
+pattern -> pattern: "Problem(A, B, ignored, out members)"
+pattern -> pattern: "Extensions(profile, className, access, maps)"
+pattern -> fixer: "Fixed([leeg profile, <Profile>Extensions]) of Manual(reden)" {style.stroke-dash: 3}
+fixer -> fixer: "AllOrNothing: Manual ergens? dan origineel"

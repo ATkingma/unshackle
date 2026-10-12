@@ -1,0 +1,16 @@
+title: "[Klassen] ForMemberIgnorePattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+IPattern: {shape: class; "+Id"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
+CreateMapPattern: {shape: class; "+Id = automapper.create-map"; "+Find(root, model)"; "+Rewrite(node, model)"; "-TryParseMap(statement, model, out createMap, out ignored)"; "-IgnoredMember(forMember): string?"; "-Problem(source, destination, ignored, out members)"}
+ForMemberIgnorePattern: {shape: class; "+Id = automapper.for-member-ignore"; "+Find(root, model)"}
+AutoMapperFix: {shape: class; "+Patterns = [CreateMapPattern, ForMemberIgnorePattern]"; "+AllOrNothing = true"}
+PatternResult: {shape: class; "+Fixed(nodes)"; "+Manual(reason)"}
+AutoMapper: "AutoMapper 14.0.0:\nCreateMap<A, B>().ForMember(d => d.X, o => o.Ignore())"
+Output: "<Profile>Extensions:\nstatic B ToB(this A source) zonder X"
+CreateMapPattern -> IPattern: implementeert {style.stroke-dash: 3}
+ForMemberIgnorePattern -> CreateMapPattern: erft
+AutoMapperFix -> CreateMapPattern: Patterns
+AutoMapperFix -> ForMemberIgnorePattern: Patterns
+CreateMapPattern -> PatternResult: geeft
+ForMemberIgnorePattern -> AutoMapper: herkent
+CreateMapPattern -> Output: schrijft

@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 533 proofs (zonder `_Pending`).
+Totaal: 545 proofs (zonder `_Pending`).
 
 ## AutoMapper
 
@@ -23,7 +23,34 @@ Totaal: 533 proofs (zonder `_Pending`).
 | `options` | Manual | `CreateMap<Order, OrderDto>().ReverseMap();` — reden: is not a CreateMap<A, B>() without options |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>(); CreateMap<Tag, TagDto>();` → `public static class ProductProfileExtensions {` |
 
+### ForMemberIgnore (6)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `map-from` | Manual | `CreateMap<Order, OrderDto>()` — reden: is not a CreateMap<A, B>() without options |
+| `mixed` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Line, LineDto>().ForMember(d => d.Total, o => o.Ignore());` → `public static class OrderProfileExtensions {` |
+| `reverse-map` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore()).ForMember(d => d.Rank, o => o.Ignore()).R…` — reden: is not a CreateMap<A, B>() without options |
+| `simple` | Fixed | `CreateMap<Product, ProductDto>() .ForMember(d => d.Secret, o => o.Ignore())` → `public static class ProductProfileExtensions {` |
+| `string-name` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Rank, o => o.Ignore()).ForMember("Note", o => o.Ignore());` — reden: is not a CreateMap<A, B>() without options |
+| `unmatched` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore());` — reden: OrderDto.Rank has no member with the same name in Order |
+
 ## FluentAssertions
+
+### _Combined (11)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `all-satisfy-be` | Fixed | `orders.Should().AllSatisfy(o => o.Total.Should().Be(20m));` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
+| `all-satisfy-other` | Fixed | `orders.Should().AllSatisfy(o => o.Note.Should().NotBeNull();` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
+| `lambda-overload-one-run` | Fixed | `ctx.Should().Be(context); maybe2.HasValue.Should().BeTrue();` → `ctx.ShouldBe(context); maybe2.HasValue.ShouldBeTrue();` |
+| `manual-and-fixed` | Fixed | `y.Should().Be(1); y.Should().Be(2);` → `y.ShouldBe(1); y.ShouldBe(2);` |
+| `mixed` | Fixed | `order.Id.Should().Be(1); order.Total.Should().BeGreaterThan(10m).And.BeLessThan(30m);` → `order.Id.ShouldBe(1); order.Total.ShouldBeGreaterThan(10m);` |
+| `scope-using-block` | Fixed | `{ x.Should().Be(1);` → `x.ShouldSatisfyAllConditions( () => { x.ShouldBe(1); },` |
+| `scope-using-var` | Fixed | `y.Should().Be(2); name.Should().StartWith("a");` → `y.ShouldSatisfyAllConditions( () => { y.ShouldBe(2); },` |
+| `usings` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
+| `usings-existing` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
+| `usings-sorted` | Fixed | `Calc.Sum(values).Should().Be(3);` → `Calc.Sum(values).ShouldBe(3);` |
+| `usings-unsorted` | Fixed | `Calc.Sum(values).Should().Be(3);` → `Calc.Sum(values).ShouldBe(3);` |
 
 ### AllSatisfy (15)
 
@@ -347,7 +374,7 @@ Totaal: 533 proofs (zonder `_Pending`).
 | `unique` | Fixed | `x.Should().OnlyHaveUniqueItems();` → `x.ShouldBeUnique();` |
 | `unique-key` | Manual | `x.Should().OnlyHaveUniqueItems(s => s.Length);` — reden: key selector |
 
-### EqualSequence (13)
+### EqualSequence (14)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -358,6 +385,7 @@ Totaal: 533 proofs (zonder `_Pending`).
 | `collection-expression` | Fixed | `s.Should().Equal(["a", "b"]); x.Should().Equal([1]);` → `s.ShouldBe(new string[] { "a", "b" }); x.ShouldBe(new int[] { 1 });` |
 | `collection-expression-spread` | Manual | `s.Should().Equal([.. t, "b"]);` — reden: spread |
 | `dictionary` | Manual | `x.Should().Equal(y);` — reden: dictionary |
+| `multi-line` | Fixed | `lines.Should().Equal( "last");` → `lines.ShouldBe(new string[] {` |
 | `not-equal` | Manual | `x.Should().NotEqual(y);` — reden: NotEqual |
 | `nullable` | Fixed | `x.Should().Equal(y);` → `x.ShouldBe(y);` |
 | `params` | Fixed | `x.Should().Equal(1, 2, 3); s.Should().Equal("a", "b");` → `x.ShouldBe(new long[] { 1, 2, 3 }); s.ShouldBe(new string[] { "a", "b" });` |
@@ -628,20 +656,6 @@ Totaal: 533 proofs (zonder `_Pending`).
 | `simple` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>();` |
 | `value-used` | Fixed | `string message = act.Should().ThrowExactly<InvalidOperationException>().Which.Message;` → `string message = Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>().Mess…` |
 
-### _Combined (9)
-
-| Proof | Uitkomst | Wat het bewijst |
-| --- | --- | --- |
-| `all-satisfy-be` | Fixed | `orders.Should().AllSatisfy(o => o.Total.Should().Be(20m));` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
-| `all-satisfy-other` | Fixed | `orders.Should().AllSatisfy(o => o.Note.Should().NotBeNull();` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
-| `lambda-overload-one-run` | Fixed | `ctx.Should().Be(context); maybe2.HasValue.Should().BeTrue();` → `ctx.ShouldBe(context); maybe2.HasValue.ShouldBeTrue();` |
-| `manual-and-fixed` | Fixed | `y.Should().Be(1); y.Should().Be(2);` → `y.ShouldBe(1); y.ShouldBe(2);` |
-| `mixed` | Fixed | `order.Id.Should().Be(1); order.Total.Should().BeGreaterThan(10m).And.BeLessThan(30m);` → `order.Id.ShouldBe(1); order.Total.ShouldBeGreaterThan(10m);` |
-| `scope-using-block` | Fixed | `{ x.Should().Be(1);` → `x.ShouldSatisfyAllConditions( () => { x.ShouldBe(1); },` |
-| `scope-using-var` | Fixed | `y.Should().Be(2); name.Should().StartWith("a");` → `y.ShouldSatisfyAllConditions( () => { y.ShouldBe(2); },` |
-| `usings` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
-| `usings-existing` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
-
 ## MediatR
 
 ### AddMediatR (14)
@@ -677,7 +691,7 @@ Totaal: 533 proofs (zonder `_Pending`).
 | `set-handled` | Fixed | `public class FallbackHandler : IRequestExceptionHandler<Query, int, KeyNotFoundException> public Task Handle(Q…` → `public class FallbackHandler : MessageExceptionHandler<Query, int, KeyNotFoundException> protected override Va…` |
 | `state-passed` | Manual | `public Task Handle(Query request, InvalidOperationException exception, RequestExceptionHandlerState<int> state…` — reden: state is used other than as state.SetHandled(x) |
 
-### NotificationHandler (8)
+### NotificationHandler (10)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -687,7 +701,9 @@ Totaal: 533 proofs (zonder `_Pending`).
 | `edge-marker-interface` | Fixed | `public async Task Handle(OrderPlaced notification, CancellationToken cancellationToken)` → `public async ValueTask Handle(OrderPlaced notification, CancellationToken cancellationToken)` |
 | `edge-namespace-shadow` | Fixed | `public Task Handle(OrderPlaced notification, CancellationToken cancellationToken) => Task.CompletedTask;` → `public ValueTask Handle(OrderPlaced notification, CancellationToken cancellationToken) => ValueTask.CompletedT…` |
 | `explicit` | Manual | `Task INotificationHandler<Placed>.Handle(Placed notification, CancellationToken cancellationToken) => Task.Com…` — reden: explicit interface |
-| `other-return` | Manual | `public Task Handle(Placed notification, CancellationToken cancellationToken) =>` — reden: not Task.CompletedTask |
+| `null-return` | Manual | `public Task Handle(Placed notification, CancellationToken cancellationToken) => null!;` — reden: not a Task |
+| `other-task` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) => Task.Delay(notification.Id, ca…` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) => new ValueTask(Task.Delay(…` |
+| `other-task-block` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) return Task.CompletedTask;` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) return ValueTask.CompletedTa…` |
 | `two-handlers` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) => Task.CompletedTask; public asy…` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) => ValueTask.CompletedTask; …` |
 
 ### PipelineBehavior (10)
@@ -705,7 +721,7 @@ Totaal: 533 proofs (zonder `_Pending`).
 | `no-constraint` | Fixed | `public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken canc…` → `where TRequest : IMessage public ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest…` |
 | `open-async` | Fixed | `where TRequest : notnull public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRespons…` → `where TRequest : notnull, IMessage public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDe…` |
 
-### RequestHandler (13)
+### RequestHandler (14)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -720,7 +736,8 @@ Totaal: 533 proofs (zonder `_Pending`).
 | `from-result-block` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) return Task.FromResult(0);` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) return ValueTask.FromResult(0…` |
 | `from-result-expression` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => Task.FromResult(request.Id);` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) => ValueTask.FromResult(reque…` |
 | `generic` | Fixed | `public Task<T> Handle(Wrapped<T> request, CancellationToken ct) => Task.FromResult(request.Value);` → `public ValueTask<T> Handle(Wrapped<T> request, CancellationToken ct) => ValueTask.FromResult(request.Value);` |
-| `other-return` | Manual | `public Task<int> Handle(Query request, CancellationToken cancellationToken) =>` — reden: not Task.FromResult |
+| `null-return` | Manual | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => null!;` — reden: not a Task<T> |
+| `other-task` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => Task.Run(() => request.Id, canc…` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) => new ValueTask<int>(Task.Ru…` |
 | `token-name` | Fixed | `public async Task<int> Handle(Query query, CancellationToken token)` → `public async ValueTask<int> Handle(Query query, CancellationToken token)` |
 
 ### RequestProcessor (5)

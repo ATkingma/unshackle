@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -10,30 +11,30 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// <summary>
 /// A Profile whose constructor only holds CreateMap&lt;A, B&gt;() calls without options → a static class next to it with
 /// one B ToB(this A source) per map, copying the members with the same name and type. Anything AutoMapper would do
-/// beyond that (conversion, flattening, collections, constructors) is Manual.
+/// beyond that (conversion, flattening, collections, constructors) is Manual. The rewrite also understands
+/// ForMember(d => d.X, o => o.Ignore()) (see <see cref="ForMemberIgnorePattern"/>, which claims the profiles that use it).
 /// </summary>
 public class CreateMapPattern : IPattern
 {
     private const string AutoMapperAssembly = "AutoMapper";
 
-    public string Id => "automapper.create-map";
+    public virtual string Id => "automapper.create-map";
 
-    public string Description =>
+    public virtual string Description =>
         "Profile with CreateMap<A, B>() without options → static B ToB(this A source) => new() { X = source.X, ... } for the members with the same name and type; mapper.Map is Manual until automapper.map-call";
 
     // Map and ProjectTo calls are found too: while they run, a removed CreateMap fails at run time, so they make the fix all-or-nothing.
-    public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
+    public virtual IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().Where(n => n switch
         {
-            ClassDeclarationSyntax c => model.GetDeclaredSymbol(c) is INamedTypeSymbol type && IsProfile(type)
-                && c.Members.OfType<ConstructorDeclarationSyntax>().Any(ctor => ctor.Body is { Statements.Count: > 0 } || ctor.ExpressionBody is not null),
+            ClassDeclarationSyntax c => IsProfileWithMaps(c, model) && !UsesForMemberIgnore(c),
             InvocationExpressionSyntax i => model.GetSymbolInfo(i) is var info
                 && (info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is IMethodSymbol { Name: "Map" or "ProjectTo" } method
                 && method.ContainingAssembly?.Name == AutoMapperAssembly,
             _ => false,
         });
 
-    public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
+    public virtual PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
         if (node is InvocationExpressionSyntax)
         {
@@ -53,7 +54,7 @@ public class CreateMapPattern : IPattern
         bool isInternal = false;
         foreach (StatementSyntax statement in body.Statements)
         {
-            if (statement is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax { ArgumentList.Arguments.Count: 0 } invocation }
+            if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out HashSet<string>? ignored)
                 || invocation.Expression is not GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                 || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly } method)
             {
@@ -62,7 +63,7 @@ public class CreateMapPattern : IPattern
 
             ITypeSymbol sourceType = method.TypeArguments[0];
             ITypeSymbol destinationType = method.TypeArguments[1];
-            if (Problem(sourceType, destinationType, out List<string> members) is string problem)
+            if (Problem(sourceType, destinationType, ignored, out List<string> members) is string problem)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {problem}; write the mapping method by hand.");
             }
@@ -90,7 +91,7 @@ public class CreateMapPattern : IPattern
 
     // Why the map cannot be written as plain assignments, or null with the destination members AutoMapper writes,
     // each having a source member of the same name and type.
-    private static string? Problem(ITypeSymbol source, ITypeSymbol destination, out List<string> members)
+    private static string? Problem(ITypeSymbol source, ITypeSymbol destination, HashSet<string> ignored, out List<string> members)
     {
         members = [];
         if (destination is not INamedTypeSymbol { IsAbstract: false } named || destination.TypeKind is not (TypeKind.Class or TypeKind.Struct)
@@ -105,8 +106,24 @@ public class CreateMapPattern : IPattern
             IFieldSymbol => true,
             _ => false,
         })];
-        foreach (ISymbol target in AllMembers(destination).Where(m => m is IPropertySymbol { IsIndexer: false } or IFieldSymbol { IsReadOnly: false, IsConst: false }))
+        List<ISymbol> destinationMembers = [.. AllMembers(destination).Where(m => m is IPropertySymbol { IsIndexer: false } or IFieldSymbol { IsConst: false })];
+        foreach (string name in ignored)
         {
+            if (!destinationMembers.Any(m => m.Name == name))
+            {
+                // AutoMapper rejects an unknown member in the configuration; there is nothing sound to leave out.
+                return $"ForMember ignores {name}, which {destination.Name} does not have as a public property or field";
+            }
+        }
+
+        foreach (ISymbol target in destinationMembers.Where(m => m is IPropertySymbol or IFieldSymbol { IsReadOnly: false }))
+        {
+            // Ignore(): AutoMapper leaves the member alone, so the new object does too (also when the source has a member of that name).
+            if (ignored.Contains(target.Name))
+            {
+                continue;
+            }
+
             bool writable = target is IFieldSymbol || ((IPropertySymbol)target).SetMethod?.DeclaredAccessibility == Accessibility.Public;
             List<ISymbol> matches = [.. readable.Where(m => string.Equals(m.Name, target.Name, StringComparison.OrdinalIgnoreCase))];
             if (!writable)
@@ -159,6 +176,52 @@ public class CreateMapPattern : IPattern
             }
         }
     }
+
+    protected static bool IsProfileWithMaps(ClassDeclarationSyntax c, SemanticModel model) =>
+        model.GetDeclaredSymbol(c) is INamedTypeSymbol type && IsProfile(type)
+        && c.Members.OfType<ConstructorDeclarationSyntax>().Any(ctor => ctor.Body is { Statements.Count: > 0 } || ctor.ExpressionBody is not null);
+
+    // Syntactic: whether a ForMember(..., o => o.Ignore()) sits in the profile, so exactly one of the two patterns claims it.
+    protected static bool UsesForMemberIgnore(ClassDeclarationSyntax profile) =>
+        profile.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(i =>
+            i.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ForMember" } && IgnoredMember(i) is not null);
+
+    // `CreateMap<A, B>()` or `CreateMap<A, B>().ForMember(d => d.X, o => o.Ignore())...`; anything else in the chain is no match.
+    private static bool TryParseMap(StatementSyntax statement, SemanticModel model, [NotNullWhen(true)] out InvocationExpressionSyntax? createMap,
+        [NotNullWhen(true)] out HashSet<string>? ignored)
+    {
+        createMap = null;
+        ignored = [];
+        if (statement is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax expression })
+        {
+            return false;
+        }
+
+        while (expression is { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ForMember" } access } forMember)
+        {
+            if (IgnoredMember(forMember) is not string member
+                || model.GetSymbolInfo(forMember).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly }
+                || access.Expression is not InvocationExpressionSyntax inner)
+            {
+                return false;
+            }
+
+            ignored.Add(member);
+            expression = inner;
+        }
+
+        createMap = expression;
+        return expression.ArgumentList.Arguments.Count == 0;
+    }
+
+    // The X of `.ForMember(d => d.X, o => o.Ignore())`, or null for any other form (string member name, MapFrom, nested member, block lambda).
+    private static string? IgnoredMember(InvocationExpressionSyntax forMember) =>
+        forMember.ArgumentList.Arguments is [
+            { Expression: SimpleLambdaExpressionSyntax { Parameter.Identifier.ValueText: { } d, Body: MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax target, Name: { } name } } },
+            { Expression: SimpleLambdaExpressionSyntax { Parameter.Identifier.ValueText: { } o, Body: InvocationExpressionSyntax { ArgumentList.Arguments.Count: 0, Expression: MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax options, Name.Identifier.ValueText: "Ignore" } } } }]
+        && target.Identifier.ValueText == d && options.Identifier.ValueText == o
+            ? name.Identifier.ValueText
+            : null;
 
     private static bool IsProfile(INamedTypeSymbol type)
     {

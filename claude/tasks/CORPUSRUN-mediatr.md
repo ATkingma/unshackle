@@ -106,6 +106,58 @@ Verwachting na acties 1–8: evo1, evo2 en vermoedelijk amantin migreren volledi
 eerlijke Manual. nadirbad en kgrzybek blijven terecht Manual (generieke messages/decorators). jason, eShopOnWeb en
 eShop hangen af van acties 9–10. Dat moet een nieuwe corpus-run bevestigen, met build **en** tests.
 
+## Run 2026-10-12 (main 2800f23)
+
+Herhaalde run na de MediatR-wachtrij (TAAK-130..136 klaar). Werkmap `D:\playground\corpus-mediatr` (Windows, SDK 10.0.400),
+harnas `claude/tools/corpus-regression.sh` (kopie met `py -3`; restore → build → test ×2 → `fix --fix mediatr --force` →
+bin/obj weg → restore → build → test → per-test-vergelijking). Elke kloon kreeg een `nuget.config` met alleen nuget.org;
+flags zoals eerder (global.json → 10.0.100/latestFeature, `NuGetAudit=false`, `AllowMissingPrunePackageData`, `SkipNSwag`).
+Logs, rapporten en vergelijkingen in `D:\playground\corpus-mediatr\_results\<naam>\`.
+
+Commits (MediatR ≤ 12): jason tag v8.0.0 `f2f0445` (12.1.1; HEAD heeft 14.2), ardalis tag v9.1.0 `ccb82ba` (12.2.0; HEAD
+gebruikt al Mediator 3), amantin `5822811` (12.2.0), nadirbad `feb3a15` (12.4.1), evolutionary `441a7cd` (12.5.0),
+kgrzybek `91c8ef2` (12.2.0), eShopOnWeb `4da8212` (12.0.1), dotnet/eShop `59f1a6c` (2025-03-10, 12.4.1; HEAD heeft 13.1).
+Omgevingsingrepen: nadirbad `.editorconfig` + `CA1873 = none` (SDK 10-analyzer, TWAE); kgrzybek `_build` + `Database/*`
+uit de solution (sqlproj op SDK 10); eShop `ClientApp`, `HybridApp`, `ClientApp.UnitTests` uit de solution (MAUI).
+
+| Project        | Restore | Build vóór | Test vóór          | Fix   | Fixed | Manual (root)                          | Gemigreerd | Build na   | Test na  | Regressies |
+| -------------- | ------- | ---------- | ------------------ | ----- | ----: | -------------------------------------- | ---------- | ---------- | -------- | ---------- |
+| jason          | ok      | ok         | 39/41 (2 rood)     | ok    |     0 | 29 (usings `#if` + project-file)       | nee        | ok (ongew.) | 39/41   | 0          |
+| ardalis        | ok      | ok         | 9/9                | ok    |     0 | 28 (10× SharedKernel, 1× add-mediatr)  | nee (terecht) | ok (ongew.) | 9/9  | 0          |
+| amantin        | ok      | ok         | 85/85              | ok    |     0 | 28 (1× "still used", testproject)      | nee        | ok (ongew.) | 85/85   | 0          |
+| nadirbad       | ok      | ok¹        | 30/30              | ok    |     0 | 18 (request-processor, generic notif.) | nee        | ok (ongew.) | 30/30   | 0          |
+| evo hfst. 1    | ok      | ok         | 45/45              | ok    |     0 | 9 (1× add-mediatr testproject)         | nee        | ok (ongew.) | 45/45²  | 0          |
+| evo hfst. 2    | ok      | ok         | 26/52 (26 DB)      | ok    |     0 | 27 (2× add-mediatr)                    | nee        | ok (ongew.) | 26/52   | 0          |
+| kgrzybek       | ok³     | ok³        | 246/287 (40 DB)    | ok    |     0 | 242 (project-file + 32 generic)        | nee        | ok (ongew.) | 246/287 | 0          |
+| **eShopOnWeb** | ok      | ok         | 74/74              | ok    | **9** | 0                                      | **ja**     | **ok**     | **74/74** | **0**    |
+| dotnet/eShop   | ok³     | **faalt** (LIB002 libman/unpkg) | – | dry-run | 0 | 34 (1× generic `IdentifiedCommand<T,R>`) | nee (terecht) | – | – | – |
+
+¹ na CA1873-onderdrukking. ² 7 data-gedreven testnamen met random waarden wisselen per run (niet echt verdwenen).
+³ na trim. "ongew." = alles-of-niets liet de solution ongemoeid; de build/test na fix is dus de baseline-code.
+Alles-of-niets hield in alle 8 andere projecten stand: geen enkele half gemigreerde solution, 0 regressies.
+
+### Root-Manuals gegroepeerd
+
+| Oorzaak                                                                       | Projecten          | Oordeel        | Taak     |
+| ----------------------------------------------------------------------------- | ------------------ | -------------- | -------- |
+| testcode gebruikt `RequestHandlerDelegate` (mock), geen finding, alleen "still used" op csproj | amantin | gat (stil) | TAAK-180 |
+| zelfsluitend `<Project Sdk="..." />` → "cannot be edited without changing unrelated text" | kgrzybek | bug | TAAK-181 |
+| inactieve `#if`-code (zonder MediatR) houdt `global using MediatR`            | jason              | gat            | TAAK-182 |
+| `AddMediatR` over projectgrenzen (internal handler, assembly-param, testproject) | ardalis, evo1, evo2 | onderzoeken | TAAK-183 |
+| request-processor `return Task.Run(...)`                                       | nadirbad           | gat            | TAAK-184 |
+| pakket op MediatR (Ardalis.SharedKernel)                                      | ardalis            | terecht Manual | –        |
+| generieke messages/decorators (`DomainEventNotification<T>`, `*CommandHandlerDecorator<T>`, `IdentifiedCommand<T,R>`) | nadirbad, kgrzybek, eShop | terecht Manual | – |
+
+Build-fouten na fix: geen (eShopOnWeb, het enige herschreven project, bouwt). TAAK-134/135 werken: de vorige
+blokkades (projectbestand-opmaak in 6 projecten, laden van eShopOnWeb/eShop/kgrzybek) zijn weg.
+
+### Conclusie
+
+**1 van 9 volledig gemigreerd en groen** (eShopOnWeb: 9 Fixed, 0 Manual, MediatR weg, 74/74). Vorige run: 0 van 9.
+Vier projecten houden (ook) terechte Manuals (ardalis, nadirbad, kgrzybek, eShop). Na TAAK-180 en TAAK-182
+zijn amantin en jason naar verwachting volledig; na TAAK-183 mogelijk evo1/evo2. "100% MediatR" is daarmee nog niet
+bewezen: hooguit 5 van 9 is haalbaar, de rest gebruikt constructies die Mediator niet ondersteunt.
+
 ## Zie ook
 
 - `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` — frequenties uit dit corpus

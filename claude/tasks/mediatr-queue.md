@@ -40,6 +40,16 @@ TAAK-132 (abstracte generieke basis geen Manual), TAAK-133 (pakket dat op Mediat
 
 Alles-of-niets (2026-10-11): `MediatRFix.AllOrNothing`; één Manual-bevinding laat de hele solution ongemoeid (half gemigreerd bouwde wel maar faalde runtime).
 
+### Corpus 2026-10-12 (`claude/tasks/CORPUSRUN-mediatr.md`)
+
+| #   | Taak     | Wat                                                                                         | Project        | Status |
+| --- | -------- | ------------------------------------------------------------------------------------------- | -------------- | ------ |
+| 14  | TAAK-180 | `RequestHandlerDelegate` in testcode (mock + `Handle(cmd, next, ct)`); stil "still used"    | amantin        | open   |
+| 15  | TAAK-181 | zelfsluitend `<Project Sdk="..." />` blokkeert projectbestand-stap op alle projecten        | kgrzybek       | open   |
+| 16  | TAAK-182 | inactieve `#if`-code zonder MediatR houdt `global using MediatR` vast                        | jason          | open   |
+| 17  | TAAK-183 | `AddMediatR` over projectgrenzen (internal handlers, assembly-parameter, testproject)       | ardalis, evo1/2 | open  |
+| 18  | TAAK-184 | request-processor `return Task.Run(...)` → `new ValueTask(...)`                             | nadirbad       | open   |
+
 ## Zie ook
 
 - `claude/tasks/archief/TAAK-020-mediatr-fix-infrastructuur.md`

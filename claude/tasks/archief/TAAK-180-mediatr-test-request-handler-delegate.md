@@ -22,7 +22,7 @@ Mediator: `MessageHandlerDelegate<TMessage,TResponse>(TMessage message, Cancella
 1. [x] Vangnet in `ProjectPackages`/`MediatRFix`: elke resterende MediatR-symboolreferentie zonder finding wordt een Manual op die regel (niet alleen "still used" op het csproj).
 2. [x] Proof `Proofs/MediatR/RequestHandlerDelegate/` (NSubstitute-mock + `Invoke().Returns`).
 3. [x] Patroon `mediatr.request-handler-delegate` + KingmaDoc-docs.
-4. [x] Bewijs: nagebootst met `_Combined`-proof; harnas op amantin zelf niet gedraaid (corpusproject niet aanwezig).
+4. [x] Bewijs: nagebootst met `_Combined`-proof. Corpusrun 2026-10-12 op 5f9b366 (`CORPUSRUN-mediatr.md`, sectie Herhaling na TAAK-180..184): `ValidationBehaviorTests` gedekt, maar `AuthorizationBehaviorTests` deelt één `_mockNextBehavior`-veld over drie requesttypen → nu een Manual mét locatie (vangnet werkt), amantin nog niet gemigreerd (0 Fixed, 85/85, 0 regressies). Vervolg: TAAK-191.
 
 ## Gewijzigde bestanden
 

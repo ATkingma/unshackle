@@ -22,7 +22,7 @@ Inactieve takken bestaan alleen als `DisabledTextTrivia`. Tokeniseer die tekst (
 
 1. [x] Unittest: `#if X` met en zonder `ISender` in de inactieve tak (`FixerTests`: met `StringBuilder` bestaand, zonder nieuw) + proof `MediatR/RequestHandler/edge-inactive-if`.
 2. [x] Implementatie in `UsingDirectives.cs`: `InactiveCodeMayUse` vervangt `HasInactiveCode`; tokeniseert `DisabledTextTrivia` en zoekt namen van publieke typen, extension methods en de eerste namespace-segmenten van de verwijderde namespaces (uit de compilation, dus generiek voor alle fixes). `KeepsRemovedUsing` kreeg een `Compilation`-parameter.
-3. [!] Bewijs: harnas op jason (Fixed, build groen, 39/41) nog te draaien bij de volgende corpusrun; hier alleen unittest en proof.
+3. [x] Bewijs: Corpusrun 2026-10-12 op 5f9b366 (`CORPUSRUN-mediatr.md`, sectie Herhaling na TAAK-180..184): jason 27 Fixed, 0 Manual, MediatR weg — maar build na fix faalt (CS0305 in `RequestLoggerTests`: test construeert `LoggingBehaviour<TRequest>` die nu twee typeparameters heeft). Vervolg: TAAK-190.
 
 ## Zie ook
 

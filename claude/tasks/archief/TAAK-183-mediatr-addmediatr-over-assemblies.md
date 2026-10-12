@@ -43,7 +43,7 @@ Geen proof: een proof is één bestand en kan geen tweede assembly met Internals
 1. [x] Probe: Mediator 3.0.2 `Assemblies` met public en internal handlers, en met InternalsVisibleTo.
 2. [x] Beslissing per variant in `docs/projectinfo/patterns/` (add-mediatr).
 3. [x] Proofs + implementatie voor de varianten die kunnen.
-4. [-] Bewijs: harnas op evo1/evo2. Niet gedraaid: de klonen staan niet meer in `D:\playground\corpus-mediatr` (alleen `_results`). De varianten blijven Manual, dus geen verandering verwacht.
+4. [x] Bewijs: Corpusrun 2026-10-12 op 5f9b366 (`CORPUSRUN-mediatr.md`, sectie Herhaling na TAAK-180..184): ardalis (1 add-mediatr + 11 SharedKernel), evo1 (1) en evo2 (2) houden precies de hierboven besloten Manuals; tests gelijk (9/9, 45/45, 26/52), 0 regressies.
 
 ## Zie ook
 

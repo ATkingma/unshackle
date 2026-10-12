@@ -13,7 +13,7 @@
 
 1. [x] Proof `Proofs/MediatR/RequestProcessor/` met `return Task.Run(...)` en expression body.
 2. [x] Rewrite in `RequestProcessorPattern.cs` naar `new ValueTask(Expr)`.
-3. [x] (niet met het corpusproject zelf gedraaid; bewezen via proofs `other-return` en `task-run`) Bewijs: harnas op nadir → enige root-Manual is `mediatr.unsupported` (generieke notification).
+3. [x] (Corpusrun 2026-10-12 op 5f9b366 (`CORPUSRUN-mediatr.md`, sectie Herhaling na TAAK-180..184): bevestigd, enige root-Manual op nadir is de generieke notification; 30/30, 0 regressies) Bewijs: harnas op nadir → enige root-Manual is `mediatr.unsupported` (generieke notification).
 
 ## Resultaat
 

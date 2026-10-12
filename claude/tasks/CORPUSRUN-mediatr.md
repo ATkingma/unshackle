@@ -158,9 +158,59 @@ Vier projecten houden (ook) terechte Manuals (ardalis, nadirbad, kgrzybek, eShop
 zijn amantin en jason naar verwachting volledig; na TAAK-183 mogelijk evo1/evo2. "100% MediatR" is daarmee nog niet
 bewezen: hooguit 5 van 9 is haalbaar, de rest gebruikt constructies die Mediator niet ondersteunt.
 
+## Herhaling na TAAK-180..184 (2026-10-12, 5f9b366)
+
+Zelfde commits, flags, trims (nadirbad `CA1873 = none`; kgrzybek `_build` + `Database/*` uit de solution) en harnas
+(`py -3`, nuget.config alleen nuget.org) als de run hierboven; dotnet/eShop niet herhaald (baseline faalt op libman).
+Resultaten in `D:\playground\corpus-mediatr\_results\r2\<naam>\` (klonen verwijderd).
+
+| Project        | Test vóór        | Fixed | Manual | Root-Manual na deze taken                                     | Gemigreerd | Build na | Test na  | Regressies |
+| -------------- | ---------------- | ----: | -----: | ------------------------------------------------------------- | ---------- | -------- | -------- | ---------- |
+| jason          | 39/41 (2 rood)   | **27** | 0     | geen                                                          | ja, maar   | **faalt** (4× CS0305) | – | n.v.t. |
+| ardalis        | 9/9              | 0     | 28     | 11× Ardalis.SharedKernel, 1× add-mediatr (internal handler)   | nee (terecht) | ok (ongew.) | 9/9 | 0 |
+| amantin        | 85/85            | 0     | 30     | 1× request-handler-delegate (gedeeld mock-veld)               | nee        | ok (ongew.) | 85/85 | 0 |
+| nadirbad       | 30/30            | 0     | 17     | 1× generieke notification                                     | nee (terecht) | ok (ongew.) | 30/30 | 0 |
+| evo hfst. 1    | 45/45            | 0     | 9      | 1× add-mediatr (internal methode, testproject roept aan)       | nee (terecht) | ok (ongew.) | 45/45¹ | 0 |
+| evo hfst. 2    | 26/52 (26 DB)    | 0     | 27     | 2× add-mediatr (assembly-param, internal handler)             | nee (terecht) | ok (ongew.) | 26/52¹ | 0 |
+| kgrzybek       | 246/287 (40 DB)  | 0     | 278    | 32× generic decorator/notification, 30× unmatched-use (Autofac-`MediatorModule`) | nee (terecht) | ok (ongew.) | 246/287 | 0 |
+| **eShopOnWeb** | 74/74            | **9** | 0      | geen                                                          | **ja**     | **ok**   | **74/74** | **0**     |
+
+¹ 7 data-gedreven testnamen met random waarden wisselen per run (missing/new 7), niet echt verdwenen.
+
+Per taak:
+
+- TAAK-180 (amantin): `ValidationBehaviorTests` gedekt; het vangnet geeft nu een Manual mét locatie. Resterend gat: één
+  mock-veld voor drie requesttypen in `AuthorizationBehaviorTests` → **TAAK-191**.
+- TAAK-181 (kgrzybek): geen "cannot be edited"-Manual meer. Het vangnet uit TAAK-180 toont nu 30 `unmatched-use` in de vijf
+  Autofac-`MediatorModule`s (`MediatR.Pipeline`-typen, `RequestPre/PostProcessorBehavior`).
+- TAAK-182 (jason): de `#if`-blokkade is weg, alles Fixed en MediatR weg, maar de build breekt: `RequestLoggerTests` construeert
+  `LoggingBehaviour<CreateTodoItemCommand>` en roept `Process` aan, terwijl de processor nu `<TRequest, TResponse>` is → **TAAK-190**.
+  Dit is een stille buildbreuk ondanks 0 Manual.
+- TAAK-183 (ardalis, evo1, evo2): precies de bewust behouden add-mediatr-Manuals; geen verandering, zoals verwacht.
+- TAAK-184 (nadirbad): request-processor-Manual weg; enige root is de generieke `DomainEventNotification<T>`.
+
+### Terechte Manuals (Mediator ondersteunt het niet)
+
+| Project   | Manual                                                       | Reden                                                                                  |
+| --------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| ardalis   | Ardalis.SharedKernel (11×)                                   | extern pakket bouwt op MediatR-typen; Unshackle kan het pakket niet herschrijven        |
+| ardalis   | add-mediatr, `ContributorDeletedHandler` internal             | Mediator-generator in Web kan internal handler zonder InternalsVisibleTo niet aanroepen (CS0122, TAAK-183) |
+| nadirbad  | generieke `DomainEventNotification<T>`                        | Mediator's source generator ondersteunt geen generieke messages/handlers               |
+| evo1      | add-mediatr in internal methode die het testproject aanroept  | handlers in twee assemblies; één `AddMediator` per host (TAAK-148)                     |
+| evo2      | add-mediatr met `Assembly`-parameter; internal handlers in Contracts | handlers bij de aanroeper / internal zonder friend (TAAK-144, TAAK-183)          |
+| kgrzybek  | 32 generieke decorators en `DomainNotificationBase<T>`        | generieke handlers/decorators niet ondersteund door de generator                        |
+| kgrzybek  | 30 unmatched-use in Autofac-`MediatorModule`                  | handmatige Autofac-registratie van MediatR-interne typen; Mediator registreert via eigen DI, moet herontworpen worden |
+
+### Conclusie
+
+**1 van 9 volledig gemigreerd en groen** (eShopOnWeb, ongewijzigd). jason is volledig herschreven maar bouwt niet (TAAK-190);
+amantin hangt aan één gedeeld mock-veld (TAAK-191). Na die twee taken verwacht: 3 van 9. De overige zes zijn terecht Manual
+(dotnet/eShop ook, plus libman-baseline). Alles-of-niets hield stand: 0 regressies in de 7 projecten die liepen.
+
 ## Zie ook
 
 - `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` — frequenties uit dit corpus
 - `claude/tasks/mediatr-queue.md` — patroon-wachtrij
 - `docs/projectinfo/architectuur/core.md` — alles-of-niets
 - TAAK-130 t/m TAAK-136 in `claude/tasks/`
+- TAAK-180 t/m TAAK-184 (archief), TAAK-190, TAAK-191

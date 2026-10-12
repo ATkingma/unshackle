@@ -144,6 +144,8 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-165-custom-assertions-should-extensie.md` | ✅ queue #34: al gedekt door `fa.custom-assertion`; extra proof voor eigen `Should()` + `ObjectAssertions`-subklasse |
 | `claude/tasks/archief/TAAK-091-custom-assertions-gegroepeerd.md` | ✅ `fa.custom-assertion`: eigen FA-extensies Manual, gegroepeerd per extensie in rapport en console |
 | `claude/tasks/archief/TAAK-180-mediatr-test-request-handler-delegate.md` | ✅ `mediatr.request-handler-delegate` (gemockte `next` in testcode) + vangnet `unmatched-use` voor MediatR-gebruik zonder finding |
+| `claude/tasks/TAAK-190-mediatr-request-processor-aanroepers.md` | MediatR: testcode die een herschreven request-processor construeert/aanroept breekt de build stil (jason) |
+| `claude/tasks/TAAK-191-mediatr-request-handler-delegate-gedeeld-veld.md` | MediatR: één `RequestHandlerDelegate`-mock gedeeld door meerdere requesttypen (amantin) |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: ongebruikte assembly-parameter na AddMediator (IDE0060) → waarschuwing in rapport |
 | `claude/tasks/archief/TAAK-070-fa-assertion-in-throw-lambda.md` | ✅ Assertion in lambda met `Throw<XunitException>` erop → assertion en Throw Manual |
 

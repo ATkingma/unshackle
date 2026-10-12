@@ -49,6 +49,8 @@ Alles-of-niets (2026-10-11): `MediatRFix.AllOrNothing`; één Manual-bevinding l
 | 16  | TAAK-182 | inactieve `#if`-code zonder MediatR houdt `global using MediatR` vast                        | jason          | klaar  |
 | 17  | TAAK-183 | `AddMediatR` over projectgrenzen (internal handlers, assembly-parameter, testproject)       | ardalis, evo1/2 | klaar (TAAK-183) |
 | 18  | TAAK-184 | request-processor `return Task.Run(...)` → `new ValueTask(...)`                             | nadirbad       | klaar  |
+| 19  | TAAK-190 | aanroepers van herschreven request-processor (`new P<Cmd>()`, `.Process(...)`) breken build stil | jason | open |
+| 20  | TAAK-191 | één `RequestHandlerDelegate`-mock gedeeld door meerdere requesttypen                         | amantin        | open   |
 
 ## Zie ook
 

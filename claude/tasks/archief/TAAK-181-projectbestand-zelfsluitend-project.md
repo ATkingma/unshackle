@@ -15,13 +15,14 @@
 - Oorzaak: het bestand zelf is niet het probleem (roundtrip is gelijk). De fout komt als een migratie een verwijzing aan zo'n leeg root-element toevoegt (de "transitief binnengekomen"-tak van `EditReferences`, bv. MediatR -> Mediator.Abstractions in een Domain-project): `RenderElement` gooide bij een zelfsluitend element met nieuwe kinderen.
 - Fix: `ProjectFile.RenderElement` maakt van `<Project Sdk="..." />` + kinderen `<Project Sdk="...">...</Project>`; nieuwe regels in een leeg root volgen het regeleinde van het bestand (`ProjectFile.NewLine`, gebruikt in `AddNextTo`), dus CRLF blijft CRLF.
 - Tests: `XmlProjectFileStoreTests` (`EditAsync_ProjectWithoutContent_...` met 4 vormen incl. CRLF, `EditAsync_SelfClosingProjectOfThisSolution_...`). Stap 3 (harnas op kgr) niet gedraaid: corpusproject niet beschikbaar in deze run; de unittests bootsen het geval na.
-- Let op: `XmlProjectFileStoreTests` heeft op Windows al falende tests door `/repo`-paden tegenover `C:epo` in de `Text`-helper; mijn tests gebruiken daarom `FullPathText`.
+- Let op: `XmlProjectFileStoreTests` heeft op Windows al falende tests door `/repo`-paden tegenover `C:
+epo` in de `Text`-helper; mijn tests gebruiken daarom `FullPathText`.
 
 ## Stappen
 
 1. [x] DataAccess-test: roundtrip van `<Project Sdk="Microsoft.NET.Sdk" />` (CRLF, zonder slotnewline) laat de tekst gelijk.
 2. [x] Fix in `ProjectFile.cs`: ongewijzigde bestanden niet controleren/schrijven; zelfsluitend root-element splicen.
-3. [x] Bewijs: harnas op kgr (getrimde solution) → geen project-file-Manual; resterend alleen de 32 generieke decorators/`DomainNotificationBase<T>` (terecht Manual).
+3. [x] Bewijs: Corpusrun 2026-10-12 op 5f9b366 (`CORPUSRUN-mediatr.md`, sectie Herhaling na TAAK-180..184): kgr geen "cannot be edited"-Manual meer; resterend 32 generieke decorators/`DomainNotificationBase<T>` + 30 `unmatched-use` (Autofac-`MediatorModule` met `MediatR.Pipeline`-typen), terecht Manual. 246/287, 0 regressies.
 
 ## Gewijzigde bestanden
 

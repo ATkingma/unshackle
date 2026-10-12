@@ -57,7 +57,7 @@ automapper.map-call: `mapper.Map<B>(a)` en `mapper.Map<A, B>(a)` worden `a.ToB()
 - **REQ-5**: IF er geen herschreven `CreateMap<A, B>` en geen `ToB` is THEN THE SYSTEM SHALL Manual melden (proofs `unknown-map`, `manual-profile`).
 - **REQ-6**: IF de bron volgens de nullable-flow null kan zijn THEN THE SYSTEM SHALL Manual melden (proof `maybe-null`).
 - **REQ-7**: IF de bron `object` of `dynamic` is, of de ontvanger bijwerkingen kan hebben THEN THE SYSTEM SHALL Manual melden (proofs `object-source`, `receiver-call`).
-- **REQ-8**: WHEN `Map(src, dest)`, `Map` met opties of `ProjectTo` voorkomt THE SYSTEM SHALL dat in `CreateMapPattern` Manual laten (proof `CreateMap/map-into`).
+- **REQ-8**: WHEN `Map` met opties of `ProjectTo` voorkomt THE SYSTEM SHALL dat in `CreateMapPattern` Manual laten (geen eigen proof meer: `CreateMap/map-into` is verwijderd sinds `Map(src, dest)` naar `automapper.map-into` ging, zie [automapper-map-into-plan.md](automapper-map-into-plan.md); bijgewerkt in TAAK-159).
 
 ## Assumptions
 

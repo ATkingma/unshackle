@@ -1,0 +1,1 @@
+Excluding(x => x.Id): ShouldBeEquivalentTo compares every member and cannot skip any

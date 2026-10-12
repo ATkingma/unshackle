@@ -1,0 +1,1 @@
+WithStrictOrdering() on a collection of Dto: FluentAssertions compares the items by their members, Shouldly's ShouldBe by Equals

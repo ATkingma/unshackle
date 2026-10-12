@@ -18,7 +18,12 @@ public class BeEquivalentToObjectPattern : FluentAssertionPattern
 
     public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         FluentAssertionsSyntax.FindInvocations(root, model, "BeEquivalentTo", "NotBeEquivalentTo")
-            .Where(i => model.GetSymbolInfo(i).Symbol is IMethodSymbol { ContainingType.Name: not "StringAssertions" });
+            .Where(i => model.GetSymbolInfo(i).Symbol is IMethodSymbol { ContainingType.Name: not "StringAssertions" } method
+                && !(i.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "BeEquivalentTo" } && HasOptions(method)));
+
+    // BeEquivalentTo(expected, options => ...): the overloads with a Func<EquivalencyAssertionOptions<T>, ...>; EquivalentOptionsPattern owns those.
+    protected static bool HasOptions(IMethodSymbol method) =>
+        method.Parameters.Any(p => p.Type is INamedTypeSymbol { DelegateInvokeMethod.ReturnType.Name: "EquivalencyAssertionOptions" });
 
     // Before the argument split: BeEquivalentTo(params TExpectation[]) on a collection takes expected items, not becauseArgs.
     protected override PatternResult? RewriteBeforeArguments(AssertionContext context) =>
@@ -145,7 +150,7 @@ public class BeEquivalentToObjectPattern : FluentAssertionPattern
     }
 
     // T of the one IEnumerable<T> the type is or implements, else null.
-    private static ITypeSymbol? ElementType(ITypeSymbol type) =>
+    protected static ITypeSymbol? ElementType(ITypeSymbol type) =>
         type.AllInterfaces.Prepend(type).OfType<INamedTypeSymbol>()
             .Where(i => i.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T)
             .Select(i => i.TypeArguments[0])
@@ -156,7 +161,7 @@ public class BeEquivalentToObjectPattern : FluentAssertionPattern
         $"ShouldBeEquivalentTo fails when the runtime type differs; FluentAssertions accepted derived types (not sealed: {string.Join(", ", types.Distinct())}).";
 
     // Compared by value in the same way by both libraries (probed): primitives, string, decimal, enums and a few BCL structs.
-    private static bool IsLeaf(ITypeSymbol t) =>
+    protected static bool IsLeaf(ITypeSymbol t) =>
         t.TypeKind == TypeKind.Enum
         || t.SpecialType is SpecialType.System_Boolean or SpecialType.System_Char or SpecialType.System_SByte or SpecialType.System_Byte
             or SpecialType.System_Int16 or SpecialType.System_UInt16 or SpecialType.System_Int32 or SpecialType.System_UInt32

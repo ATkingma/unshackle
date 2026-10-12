@@ -1,0 +1,1 @@
+WithStrictOrdering() on a collection of Item

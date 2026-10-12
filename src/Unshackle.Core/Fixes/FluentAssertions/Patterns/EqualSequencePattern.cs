@@ -12,7 +12,7 @@ public class EqualSequencePattern : FluentAssertionPattern
     public override string Description => "x.Should().Equal(seq) / Equal(1, 2) → x.ShouldBe(seq) / x.ShouldBe(new[] { 1, 2 }) (order-sensitive)";
 
     public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        FluentAssertionsSyntax.FindInvocations(root, model, "Equal", "NotEqual");
+        FluentAssertionsSyntax.FindInvocations(root, model, "Equal");
 
     // Before the argument split: Equal(params T[] elements) would be reported as becauseArgs.
     protected override PatternResult? RewriteBeforeArguments(AssertionContext context)
@@ -21,12 +21,7 @@ public class EqualSequencePattern : FluentAssertionPattern
         InvocationExpressionSyntax assertion = context.Assertion;
         if (model.GetSymbolInfo(assertion).Symbol is not IMethodSymbol { ContainingType.Name: "GenericCollectionAssertions" or "StringCollectionAssertions" } method)
         {
-            return PatternResult.Manual($"{context.Name}(...) on a dictionary compares without order; check ShouldBe or ShouldBeEquivalentTo by hand.");
-        }
-
-        if (context.Name == "NotEqual")
-        {
-            return PatternResult.Manual("NotEqual(...): Shouldly has no ShouldNotBe for sequences; e.g. x.SequenceEqual(y).ShouldBeFalse().");
+            return PatternResult.Manual("Equal(...) on a dictionary compares without order; check ShouldBe or ShouldBeEquivalentTo by hand.");
         }
 
         // Equal(params T[] elements): build the array FluentAssertions builds, typed so ShouldBe infers the element type.

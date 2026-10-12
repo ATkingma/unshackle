@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 567 proofs (zonder `_Pending`).
+Totaal: 650 proofs (zonder `_Pending`).
 
 ## AutoMapper
 
@@ -17,6 +17,15 @@ Totaal: 567 proofs (zonder `_Pending`).
 | `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
 | `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
 | `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
+
+### AddAutoMapper (4)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `mapper-injected` | Manual |  — reden: IMapper is still used |
+| `parameter` | Fixed | `services.AddAutoMapper(profiles);` → `_ = profiles;` |
+| `result-used` | Manual |  — reden: The result of AddAutoMapper is used |
+| `simple` | Fixed | `services.AddAutoMapper(typeof(OrderProfile).Assembly);` →  |
 
 ### CreateMap (7)
 
@@ -186,7 +195,7 @@ Totaal: 567 proofs (zonder `_Pending`).
 | `string` | Fixed | `text.Should().BeEmpty(); text.Should().NotBeEmpty();` → `text.ShouldBeEmpty(); text.ShouldNotBeEmpty();` |
 | `value-used` | Manual | `var result = text.Should().BeEmpty();` — reden: is used |
 
-### BeEquivalentToObject (31)
+### BeEquivalentToObject (30)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -216,7 +225,6 @@ Totaal: 567 proofs (zonder `_Pending`).
 | `not-equivalent` | Manual | `a.Should().NotBeEquivalentTo(b);` — reden: no Shouldly equivalent |
 | `object-member` | Manual | `a.Should().BeEquivalentTo(b);` — reden: not a plain class or struct |
 | `object-subject` | Manual | `a.Should().BeEquivalentTo(b);` — reden: not a plain class or struct |
-| `options` | Manual | `a.Should().BeEquivalentTo(b, options => options.Excluding(x => x.Id));` — reden: options => ... |
 | `record` | Fixed | `a.Should().BeEquivalentTo(b);` → `a.ShouldBeEquivalentTo(b);` |
 | `sealed` | Fixed | `a.Should().BeEquivalentTo(b);` → `a.ShouldBeEquivalentTo(b);` |
 | `simple` | Fixed | `a.Should().BeEquivalentTo(b);` → `a.ShouldBeEquivalentTo(b);` |
@@ -416,7 +424,7 @@ Totaal: 567 proofs (zonder `_Pending`).
 | `unique` | Fixed | `x.Should().OnlyHaveUniqueItems();` → `x.ShouldBeUnique();` |
 | `unique-key` | Manual | `x.Should().OnlyHaveUniqueItems(s => s.Length);` — reden: key selector |
 
-### EqualSequence (14)
+### EqualSequence (13)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -428,12 +436,49 @@ Totaal: 567 proofs (zonder `_Pending`).
 | `collection-expression-spread` | Manual | `s.Should().Equal([.. t, "b"]);` — reden: spread |
 | `dictionary` | Manual | `x.Should().Equal(y);` — reden: dictionary |
 | `multi-line` | Fixed | `lines.Should().Equal( "last");` → `lines.ShouldBe(new string[] {` |
-| `not-equal` | Manual | `x.Should().NotEqual(y);` — reden: NotEqual |
 | `nullable` | Fixed | `x.Should().Equal(y);` → `x.ShouldBe(y);` |
 | `params` | Fixed | `x.Should().Equal(1, 2, 3); s.Should().Equal("a", "b");` → `x.ShouldBe(new long[] { 1, 2, 3 }); s.ShouldBe(new string[] { "a", "b" });` |
 | `params-array` | Fixed | `x.Should().Equal(y); x.Should().Equal(new[] { 1 });` → `x.ShouldBe(y); x.ShouldBe(new[] { 1 });` |
 | `predicate` | Manual | `x.Should().Equal(y, (a, b) => a.ToString() == b);` — reden: predicate |
 | `simple` | Fixed | `x.Should().Equal(y);` → `x.ShouldBe(y);` |
+
+### EquivalentOptions (33)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `block-body` | Manual | `a.Should().BeEquivalentTo(b, o => { return o.Excluding(x => x.Id); });` — reden: The options are no inline lambda |
+| `collection-excluding` | Manual | `a.Should().BeEquivalentTo(b, o => o.Excluding(x => x.Id));` — reden: Excluding(x => x.Id): ShouldBeEquivalentTo compares every member |
+| `comparing-by-value` | Manual | `a.Should().BeEquivalentTo(b, o => o.ComparingByValue<Dto>());` — reden: ComparingByValue(): it changes how values are compared |
+| `excluding` | Manual | `a.Should().BeEquivalentTo(b, options => options.Excluding(x => x.Id));` — reden: Excluding(x => x.Id): ShouldBeEquivalentTo compares every member and cannot skip any |
+| `excluding-missing-members` | Fixed | `a.Should().BeEquivalentTo(b, o => o.ExcludingMissingMembers());` → `a.ShouldBeEquivalentTo(b);` |
+| `excluding-missing-members-other-type` | Manual | `a.Should().BeEquivalentTo(b, o => o.ExcludingMissingMembers());` — reden: ExcludingMissingMembers() on different compile-time types |
+| `excluding-two` | Manual | `a.Should().BeEquivalentTo(b, o => o.Excluding(x => x.Id).Excluding(x => x.Name));` — reden: Excluding(x => x.Name): ShouldBeEquivalentTo compares every member |
+| `excluding-with-strict` | Manual | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering().Excluding(x => x.Name));` — reden: Excluding(x => x.Name): ShouldBeEquivalentTo compares every member |
+| `including` | Manual | `a.Should().BeEquivalentTo(b, o => o.Including(x => x.Id));` — reden: Including(x => x.Id): it changes which members are compared |
+| `lenient-collection-ints` | Fixed | `a.Should().BeEquivalentTo(b, o => o.ExcludingMissingMembers());` → `a.ShouldBe(b, ignoreOrder: true);` |
+| `options-variable` | Manual | `a.Should().BeEquivalentTo(b, configure);` — reden: The options are no inline lambda |
+| `respecting-runtime-types` | Manual | `a.Should().BeEquivalentTo(b, o => o.RespectingRuntimeTypes());` — reden: it picks declared or runtime types |
+| `strict-ordering` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering());` → `a.ShouldBe(b);` |
+| `strict-ordering-because` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering(), "order matters");` → `a.ShouldBe(b, ignoreOrder: false, "order matters");` |
+| `strict-ordering-because-args` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering(), "order {0}", 1);` → `a.ShouldBe(b, ignoreOrder: false, string.Format(System.Globalization.CultureInfo.InvariantCulture, "order {0}"…` |
+| `strict-ordering-class` | Manual | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering());` — reden: WithStrictOrdering() on a collection of Dto: FluentAssertions compares the items by their members, Shouldly's ShouldBe by Equals |
+| `strict-ordering-item-types` | Manual | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering());` — reden: WithStrictOrdering() on collections with different item types |
+| `strict-ordering-lambda-parenthesized` | Fixed | `a.Should().BeEquivalentTo(b, (options) => options.WithStrictOrdering());` → `a.ShouldBe(b);` |
+| `strict-ordering-object` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering());` → `a.ShouldBeEquivalentTo(b);` |
+| `strict-ordering-record` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering());` → `a.ShouldBe(b);` |
+| `strict-ordering-record-computed` | Manual | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering());` — reden: WithStrictOrdering() on a collection of Item |
+| `strict-ordering-record-list-member` | Manual | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering());` — reden: WithStrictOrdering() on a collection of Item |
+| `strict-ordering-record-struct` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering());` → `a.ShouldBe(b);` |
+| `strict-ordering-record-unsealed` | Manual | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering());` — reden: WithStrictOrdering() on a collection of Item |
+| `strict-ordering-strings` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering());` → `a.ShouldBe(b);` |
+| `strict-ordering-struct` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering());` → `a.ShouldBe(b);` |
+| `strict-ordering-with-missing-members` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering().ExcludingMissingMembers());` → `a.ShouldBe(b);` |
+| `strict-then-without` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithStrictOrdering().WithoutStrictOrdering());` → `a.ShouldBe(b, ignoreOrder: true);` |
+| `throwing-on-missing-members` | Fixed | `a.Should().BeEquivalentTo(b, o => o.ThrowingOnMissingMembers());` → `a.ShouldBeEquivalentTo(b);` |
+| `using-comparer` | Manual | `a.Should().BeEquivalentTo(b, o => o.Using<decimal>(c => c.Subject.Should().BeApproximately(c.Expectation, 0.01…` — reden: it changes how values are compared |
+| `with-tracing` | Manual | `a.Should().BeEquivalentTo(b, o => o.WithTracing());` — reden: it only adds a trace to the failure message |
+| `without-strict-ordering` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithoutStrictOrdering());` → `a.ShouldBe(b, ignoreOrder: true);` |
+| `without-then-strict` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithoutStrictOrdering().WithStrictOrdering());` → `a.ShouldBe(b);` |
 
 ### HaveCount (18)
 
@@ -517,6 +562,49 @@ Totaal: 567 proofs (zonder `_Pending`).
 | `record` | Fixed | `price.Should().NotBe(new Money(0m, "EUR"));` → `price.ShouldNotBe(new Money(0m, "EUR"));` |
 | `simple` | Fixed | `result.Should().NotBe(41); name.Should().NotBe("timme");` → `result.ShouldNotBe(41); name.ShouldNotBe("timme");` |
 
+### NotContainNulls (21)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `all-be-assertion-scope` | Manual | `x.Should().AllBe("EUR");` — reden: AssertionScope |
+| `all-be-because` | Fixed | `x.Should().AllBe("EUR", "uniform");` → `x.ShouldAllBe(i => i == "EUR", "uniform");` |
+| `all-be-because-args` | Fixed | `x.Should().AllBe("EUR", "of {0}", 2);` → `x.ShouldAllBe(i => i == "EUR", string.Format(System.Globalization.CultureInfo.InvariantCulture, "of {0}", 2));` |
+| `all-be-computed` | Manual | `x.Should().AllBe(x[0] + "!");` — reden: computed |
+| `all-be-constant-expression` | Fixed | `x.Should().AllBe("E" + "UR");` → `x.ShouldAllBe(i => i == ("E" + "UR"));` |
+| `all-be-member-expected` | Fixed | `x.Should().AllBe(currency);` → `x.ShouldAllBe(i => i == currency);` |
+| `all-be-name-conflict` | Fixed | `x.Should().AllBe(i);` → `x.ShouldAllBe(item => item == i);` |
+| `all-be-nullable-string` | Fixed | `x.Should().AllBe("EUR");` → `x.ShouldNotBeNull().ShouldAllBe(i => i == "EUR");` |
+| `all-be-result-used` | Manual | `var c = x.Should().AllBe("EUR").And;` — reden: is used |
+| `all-be-string` | Fixed | `x.Should().AllBe("EUR");` → `x.ShouldAllBe(i => i == "EUR");` |
+| `array` | Fixed | `x.Should().NotContainNulls();` → `x.ShouldNotContain(i => i == null);` |
+| `assertion-scope` | Manual | `x.Should().NotContainNulls();` — reden: AssertionScope |
+| `because` | Fixed | `x.Should().NotContainNulls("no gaps");` → `x.ShouldNotContain(i => i == null, "no gaps");` |
+| `because-args` | Fixed | `x.Should().NotContainNulls("of {0}", 2);` → `x.ShouldNotContain(i => i == null, string.Format(System.Globalization.CultureInfo.InvariantCulture, "of {0}", …` |
+| `name-conflict` | Fixed | `x.Should().NotContainNulls();` → `x.ShouldNotContain(item => item == null);` |
+| `nullable` | Fixed | `x.Should().NotContainNulls();` → `x.ShouldNotBeNull().ShouldNotContain(i => i == null);` |
+| `nullable-int` | Fixed | `x.Should().NotContainNulls();` → `x.ShouldNotContain(i => i == null);` |
+| `result-used` | Manual | `var c = x.Should().NotContainNulls().And;` — reden: is used |
+| `selector` | Manual | `x.Should().NotContainNulls(i => i.Name);` — reden: checks a property |
+| `simple` | Fixed | `x.Should().NotContainNulls();` → `x.ShouldNotContain(i => i == null);` |
+| `value-type` | Manual | `x.Should().NotContainNulls();` — reden: non-nullable value type |
+
+### NotEqual (12)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `array-literal` | Fixed | `x.Should().NotEqual(new[] { 1, 2 });` → `x.ShouldNotBeNull().ShouldNotBe<System.Collections.Generic.IEnumerable<int>>(new[] { 1, 2 });` |
+| `assertion-scope` | Manual | `x.Should().NotEqual(y);` — reden: AssertionScope |
+| `because` | Fixed | `x.Should().NotEqual(y, "order matters");` → `x.ShouldNotBeNull().ShouldNotBe(y, "order matters");` |
+| `because-args` | Fixed | `x.Should().NotEqual(y, "of {0}", 2);` → `x.ShouldNotBeNull().ShouldNotBe(y, string.Format(System.Globalization.CultureInfo.InvariantCulture, "of {0}", …` |
+| `dictionary` | Manual | `x.Should().NotEqual(y);` — reden: dictionary |
+| `different-type` | Fixed | `x.Should().NotEqual(y);` → `x.ShouldNotBeNull().ShouldNotBe<System.Collections.Generic.IEnumerable<int>>(y);` |
+| `interface-type` | Fixed | `x.Should().NotEqual(y);` → `x.ShouldNotBeNull().ShouldNotBe<System.Collections.Generic.IEnumerable<string>>(y);` |
+| `non-null` | Fixed | `x.Should().NotEqual(y);` → `x.ShouldNotBe(y);` |
+| `nullable` | Fixed | `x.Should().NotEqual(y);` → `x.ShouldNotBeNull().ShouldNotBe(y);` |
+| `result-used` | Manual | `var c = x.Should().NotEqual(y).And;` — reden: is used |
+| `same-type` | Fixed | `x.Should().NotEqual(y);` → `x.ShouldNotBeNull().ShouldNotBe(y);` |
+| `string-collection` | Fixed | `x.Should().NotEqual(y);` → `x.ShouldNotBeNull().ShouldNotBe(y);` |
+
 ### NotThrow (11)
 
 | Proof | Uitkomst | Wat het bewijst |
@@ -569,6 +657,26 @@ Totaal: 567 proofs (zonder `_Pending`).
 | `simple` | Fixed | `x.Should().OnlyContain(i => i > 0);` → `x.ShouldNotBeEmpty(); x.ShouldAllBe(i => i > 0);` |
 | `subject-call` | Fixed | `Load().Should().OnlyContain(i => i > y);` → `var subject = Load(); subject.ShouldNotBeEmpty();` |
 | `used` | Manual | `var r = x.Should().OnlyContain(i => i > 0);` — reden: is used |
+
+### Order (15)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `assertion-scope` | Manual | `x.Should().BeInAscendingOrder();` — reden: AssertionScope |
+| `because` | Fixed | `x.Should().BeInAscendingOrder(p => p.Qty, "sorted by quantity");` → `x.Select(p => p.Qty).ShouldBeInOrder(SortDirection.Ascending, null, "sorted by quantity");` |
+| `because-args` | Fixed | `x.Should().BeInAscendingOrder(p => p.Qty, "sorted by {0}", "quantity");` → `x.Select(p => p.Qty).ShouldBeInOrder(SortDirection.Ascending, null, string.Format(System.Globalization.Culture…` |
+| `comparer` | Manual | `x.Should().BeInAscendingOrder(Comparer<int>.Default);` — reden: comparer or comparison |
+| `comparison` | Manual | `x.Should().BeInAscendingOrder((a, b) => a.CompareTo(b));` — reden: comparer or comparison |
+| `expression-variable` | Manual | `x.Should().BeInAscendingOrder(key);` — reden: Expression variable |
+| `no-selector` | Fixed | `x.Should().BeInAscendingOrder(); x.Should().BeInDescendingOrder();` → `x.ShouldBeInOrder(SortDirection.Ascending); x.ShouldBeInOrder(SortDirection.Descending);` |
+| `nullable` | Fixed | `x.Should().BeInAscendingOrder(p => p.Qty);` → `x.ShouldNotBeNull().Select(p => p.Qty).ShouldBeInOrder(SortDirection.Ascending);` |
+| `result-used` | Manual | `var c = x.Should().BeInAscendingOrder().And;` — reden: is used |
+| `selector-ascending` | Fixed | `x.Should().BeInAscendingOrder(p => p.Qty);` → `x.Select(p => p.Qty).ShouldBeInOrder(SortDirection.Ascending);` |
+| `selector-comparer` | Manual | `x.Should().BeInAscendingOrder(p => p.Sku, StringComparer.OrdinalIgnoreCase);` — reden: comparer or comparison |
+| `selector-descending` | Fixed | `x.Should().BeInDescendingOrder(p => p.Qty);` → `x.Select(p => p.Qty).ShouldBeInOrder(SortDirection.Descending);` |
+| `string-because` | Fixed | `x.Should().BeInAscendingOrder("names");` → `x.ShouldBeInOrder(SortDirection.Ascending, System.StringComparer.Ordinal, "names");` |
+| `string-elements` | Fixed | `x.Should().BeInDescendingOrder();` → `x.ShouldBeInOrder(SortDirection.Descending, System.StringComparer.Ordinal);` |
+| `string-key` | Fixed | `x.Should().BeInAscendingOrder(p => p.Sku);` → `x.Select(p => p.Sku).ShouldBeInOrder(SortDirection.Ascending, System.StringComparer.Ordinal);` |
 
 ### ShouldBe (31)
 

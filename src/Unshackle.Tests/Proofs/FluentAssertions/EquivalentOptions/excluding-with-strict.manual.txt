@@ -1,0 +1,1 @@
+Excluding(x => x.Name): ShouldBeEquivalentTo compares every member

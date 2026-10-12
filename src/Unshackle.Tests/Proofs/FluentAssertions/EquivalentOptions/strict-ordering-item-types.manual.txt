@@ -1,0 +1,1 @@
+WithStrictOrdering() on collections with different item types

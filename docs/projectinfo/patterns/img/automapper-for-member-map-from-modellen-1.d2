@@ -1,0 +1,17 @@
+title: "[Klassen] ForMemberMapFromPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+IPattern: {shape: class; "+Id"; "+Find(root, model)"; "+Rewrite(node, model): PatternResult"}
+CreateMapPattern: {shape: class; "+Id = automapper.create-map"; "+Find(root, model)"; "+Rewrite(node, model)"; "-TryParseMap(statement, model, out createMap, out options)"; "-ForMemberOption(forMember)"; "-Problem(source, destination, options, model, profileType, out members)"; "-MapFromProblem(member, lambda, model, profileType, targetType, out value)"}
+ForMemberIgnorePattern: {shape: class; "+Id = automapper.for-member-ignore"; "+Find(root, model)"}
+ForMemberMapFromPattern: {shape: class; "+Id = automapper.for-member-map-from"; "+Find(root, model)"}
+AutoMapperFix: {shape: class; "+Patterns = [CreateMapPattern, ForMemberIgnorePattern, ForMemberMapFromPattern]"; "+AllOrNothing = true"}
+PatternResult: {shape: class; "+Fixed(nodes)"; "+Manual(reason)"}
+AutoMapper: "AutoMapper 14.0.0:\nCreateMap<A, B>().ForMember(d => d.X, o => o.MapFrom(s => expr))"
+Output: "<Profile>Extensions:\nstatic B ToB(this A source) met X = expr"
+CreateMapPattern -> IPattern: implementeert {style.stroke-dash: 3}
+ForMemberIgnorePattern -> CreateMapPattern: erft
+ForMemberMapFromPattern -> CreateMapPattern: erft
+AutoMapperFix -> ForMemberMapFromPattern: Patterns
+CreateMapPattern -> PatternResult: geeft
+ForMemberMapFromPattern -> AutoMapper: herkent
+CreateMapPattern -> Output: schrijft

@@ -14,21 +14,24 @@ public class ForMemberIgnorePatternTests
 
     // Exactly one of the two patterns claims a profile, otherwise the Fixer would rewrite it twice.
     [Theory]
-    [InlineData("CreateMap<A, B>().ForMember(d => d.Rank, o => o.Ignore());", true)]
-    [InlineData("CreateMap<A, B>().ForMember(d => d.Rank, o => o.MapFrom(s => s.Id));", false)]
-    [InlineData("CreateMap<A, B>();", false)]
-    public void Find_ProfileWithOrWithoutIgnore_IsClaimedByOneOfThePatterns(string statement, bool claimedByIgnore)
+    [InlineData("CreateMap<A, B>().ForMember(d => d.Rank, o => o.Ignore());", 1, 0, 0)]
+    [InlineData("CreateMap<A, B>().ForMember(d => d.Rank, o => o.MapFrom(s => s.Id));", 0, 1, 0)]
+    [InlineData("CreateMap<A, B>().ForMember(d => d.Rank, o => o.MapFrom(s => s.Id)).ForMember(d => d.Id, o => o.Ignore());", 0, 1, 0)]
+    [InlineData("CreateMap<A, B>();", 0, 0, 1)]
+    public void Find_ProfileWithOrWithoutOptions_IsClaimedByOneOfThePatterns(string statement, int byIgnoreCount, int byMapFromCount, int byCreateMapCount)
     {
         // Arrange
         (SyntaxNode root, SemanticModel model) = Compile(Types + "public class P : AutoMapper.Profile { public P() { " + statement + " } }");
 
         // Act
         int byIgnore = new ForMemberIgnorePattern().Find(root, model).Count();
+        int byMapFrom = new ForMemberMapFromPattern().Find(root, model).Count();
         int byCreateMap = new CreateMapPattern().Find(root, model).Count();
 
         // Assert
-        byIgnore.ShouldBe(claimedByIgnore ? 1 : 0);
-        byCreateMap.ShouldBe(claimedByIgnore ? 0 : 1);
+        byIgnore.ShouldBe(byIgnoreCount);
+        byMapFrom.ShouldBe(byMapFromCount);
+        byCreateMap.ShouldBe(byCreateMapCount);
     }
 
     [Fact]

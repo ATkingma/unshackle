@@ -1,0 +1,17 @@
+title: "[Sequence] ForMemberMapFromPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: ForMemberMapFromPattern
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> model: "GetDeclaredSymbol(class): IsProfileWithMaps?"
+pattern -> pattern: "UsesForMember(profile, ignore: false): IsMapFromCall(ForMember)"
+pattern -> fixer: "ClassDeclarationSyntax" {style.stroke-dash: 3}
+fixer -> pattern: "Rewrite(node, model)"
+pattern -> pattern: "TryParseMap(statement): CreateMap + options (Ignore: null, MapFrom: lambda)"
+pattern -> model: "GetSymbolInfo(ForMember / MapFrom / CreateMap<A, B>())"
+pattern -> pattern: "Problem(A, B, options, model, profileType, out members)"
+pattern -> model: "MapFromProblem: GetSymbolInfo, GetTypeInfo, ClassifyConversion"
+pattern -> pattern: "Extensions(profile, className, access, maps)"
+pattern -> fixer: "Fixed([leeg profile, <Profile>Extensions]) of Manual(reden)" {style.stroke-dash: 3}
+fixer -> fixer: "AllOrNothing: Manual ergens? dan origineel"

@@ -34,7 +34,7 @@ automapper.for-member-ignore: een `CreateMap<A, B>().ForMember(d => d.X, o => o.
 
 **Out of scope**
 
-- `MapFrom` en andere `ForMember`-opties (rij 3, `automapper.for-member-map-from`; rij 7): Manual.
+- `MapFrom` (sinds TAAK-156 `automapper.for-member-map-from`) en andere `ForMember`-opties (rij 7): Manual of eigen patroon.
 - `ForMember("X", ...)` met stringnaam, geneste leden (`d => d.A.B`), blok-lambda's, `ReverseMap`: Manual.
 - Een genegeerd lid dat B niet publiek heeft: Manual.
 
@@ -47,7 +47,7 @@ automapper.for-member-ignore: een `CreateMap<A, B>().ForMember(d => d.X, o => o.
 - **REQ-1**: WHEN een `CreateMap<A, B>()` een of meer `ForMember(d => d.X, o => o.Ignore())` heeft THE SYSTEM SHALL de ToB-methode zonder X schrijven, ook als A een lid X heeft (proofs `simple`, `mixed`, unittest `Rewrite_IgnoredMemberHasSourceMember_LeavesItOut`).
 - **REQ-2**: WHEN een genegeerd lid geen bronlid heeft THE SYSTEM SHALL dat niet als ontbrekend lid melden (proofs `simple`, `mixed`).
 - **REQ-3**: IF een lid niet genegeerd is en geen gelijknamig bronlid van hetzelfde type heeft THEN THE SYSTEM SHALL Manual melden, zoals bij `create-map` (proof `unmatched`).
-- **REQ-4**: IF een `ForMember` een andere optie heeft dan `Ignore()` (bijv. `MapFrom`), een stringnaam gebruikt of niet direct op `CreateMap` staat (bijv. na `ReverseMap`) THEN THE SYSTEM SHALL Manual melden voor het hele profile (proofs `map-from`, `string-name`, `reverse-map`).
+- **REQ-4**: IF een `ForMember` een andere optie heeft dan `Ignore()` (bijv. `MapFrom`), een stringnaam gebruikt of niet direct op `CreateMap` staat (bijv. na `ReverseMap`) THEN THE SYSTEM SHALL Manual melden voor het hele profile (proofs `string-name`, `reverse-map`; MapFrom is sinds TAAK-156 een eigen patroon).
 - **REQ-5**: IF het genegeerde lid niet als publiek lid van B bestaat THEN THE SYSTEM SHALL Manual melden (unittest `Rewrite_IgnoredMemberNotPublic_ReportsManual`).
 - **REQ-6**: WHEN een profile voorkomt THE SYSTEM SHALL het door precies één van `CreateMapPattern` en `ForMemberIgnorePattern` laten vinden (unittest `Find_ProfileWithOrWithoutIgnore_IsClaimedByOneOfThePatterns`).
 

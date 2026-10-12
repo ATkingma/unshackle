@@ -42,7 +42,7 @@ Feiten uit `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberIgnorePattern.
 
 | Blad                                        | Voorwaarde                                                  | Bewijs                                   |
 | ------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------- |
-| Manual "not a CreateMap without options"    | `MapFrom`, stringnaam, geneste lid of `ReverseMap` in keten | `map-from`, `string-name`, `reverse-map` |
+| Manual "not a CreateMap without options"    | `MapFrom`, stringnaam, geneste lid of `ReverseMap` in keten | `string-name`, `reverse-map` |
 | Manual "does not have as a public property" | genegeerd lid bestaat niet publiek op B                     | unittest                                 |
 | Manual "no member with the same name"       | niet-genegeerd lid zonder bronlid                           | `unmatched`                              |
 | Fixed (lid weggelaten)                      | genegeerd lid, met of zonder bronlid                        | `simple`, `mixed`, unittest              |

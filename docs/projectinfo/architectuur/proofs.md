@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 545 proofs (zonder `_Pending`).
+Totaal: 551 proofs (zonder `_Pending`).
 
 ## AutoMapper
 
@@ -23,16 +23,27 @@ Totaal: 545 proofs (zonder `_Pending`).
 | `options` | Manual | `CreateMap<Order, OrderDto>().ReverseMap();` — reden: is not a CreateMap<A, B>() without options |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>(); CreateMap<Tag, TagDto>();` → `public static class ProductProfileExtensions {` |
 
-### ForMemberIgnore (6)
+### ForMemberIgnore (5)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
-| `map-from` | Manual | `CreateMap<Order, OrderDto>()` — reden: is not a CreateMap<A, B>() without options |
 | `mixed` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Line, LineDto>().ForMember(d => d.Total, o => o.Ignore());` → `public static class OrderProfileExtensions {` |
 | `reverse-map` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore()).ForMember(d => d.Rank, o => o.Ignore()).R…` — reden: is not a CreateMap<A, B>() without options |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>() .ForMember(d => d.Secret, o => o.Ignore())` → `public static class ProductProfileExtensions {` |
 | `string-name` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Rank, o => o.Ignore()).ForMember("Note", o => o.Ignore());` — reden: is not a CreateMap<A, B>() without options |
 | `unmatched` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore());` — reden: OrderDto.Rank has no member with the same name in Order |
+
+### ForMemberMapFrom (7)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `collection` | Manual | `CreateMap<Order, OrderDto>()` — reden: is a collection |
+| `conversion` | Manual | `CreateMap<Order, OrderDto>()` — reden: (AutoMapper converts) |
+| `ignore-and-nullable` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `public static class OrderProfileExtensions {` |
+| `null-deref` | Manual | `CreateMap<Order, OrderDto>()` — reden: which may be null |
+| `outside-profile` | Manual | `CreateMap<Order, OrderDto>()` — reden: is not available outside the profile |
+| `resolver-form` | Manual | `CreateMap<Order, OrderDto>()` — reden: is not a CreateMap<A, B>() without options |
+| `simple` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Total, o => o.MapFrom(s => s.Price * s.Quantity))` → `public static class OrderProfileExtensions {` |
 
 ## FluentAssertions
 

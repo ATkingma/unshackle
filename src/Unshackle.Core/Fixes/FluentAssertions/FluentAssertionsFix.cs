@@ -56,6 +56,7 @@ public class FluentAssertionsFix : IFix
         new ContainKeyPattern(),
         new BeEquivalentToObjectPattern(),
         new EquivalentOptionsPattern(),
+        new ContainEquivalentOfPattern(),
         new OnlyContainPattern(),
         new BeOfTypePattern(),
         new StringStartEndPattern(),

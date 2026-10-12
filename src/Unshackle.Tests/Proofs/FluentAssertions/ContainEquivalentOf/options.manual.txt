@@ -1,0 +1,1 @@
+equivalency options have no Shouldly equivalent

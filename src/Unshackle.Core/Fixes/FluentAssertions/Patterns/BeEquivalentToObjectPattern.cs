@@ -169,6 +169,36 @@ public class BeEquivalentToObjectPattern : FluentAssertionPattern
             or SpecialType.System_Double or SpecialType.System_String or SpecialType.System_DateTime
         || t.ToDisplayString() is "System.DateTimeOffset" or "System.Guid" or "System.TimeSpan" or "System.DateOnly" or "System.TimeOnly";
 
+    // Items for which Equals equals FluentAssertions' member comparison: a leaf, or a record (class: sealed) or struct with only
+    // leaf fields, each public or behind a public auto property, no computed public property and no hand-written Equals.
+    protected static bool IsValueLike(ITypeSymbol type)
+    {
+        ITypeSymbol item = type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable ? nullable.TypeArguments[0] : type;
+        if (IsLeaf(item))
+        {
+            return true;
+        }
+
+        if (item is not INamedTypeSymbol { IsAbstract: false, IsRefLikeType: false, IsAnonymousType: false, SpecialType: SpecialType.None } named
+            || named.ContainingNamespace.ToDisplayString().StartsWith("System", StringComparison.Ordinal)
+            || !(named.TypeKind == TypeKind.Struct || named is { TypeKind: TypeKind.Class, IsRecord: true, IsSealed: true, BaseType.SpecialType: SpecialType.System_Object }))
+        {
+            return false;
+        }
+
+        System.Collections.Immutable.ImmutableArray<ISymbol> members = named.GetMembers();
+        var fields = members.OfType<IFieldSymbol>().Where(f => f is { IsStatic: false, IsConst: false }).ToList();
+        return fields.Count > 0
+            && !members.Any(m => m.Name == "Equals" && !m.IsImplicitlyDeclared)
+            && fields.All(f => IsLeafOrNullable(f.Type) && (f.DeclaredAccessibility == Accessibility.Public || f.AssociatedSymbol is IPropertySymbol { DeclaredAccessibility: Accessibility.Public }))
+            && members.OfType<IPropertySymbol>()
+                .Where(p => p is { IsStatic: false, IsIndexer: false, IsImplicitlyDeclared: false, DeclaredAccessibility: Accessibility.Public, GetMethod: not null })
+                .All(p => fields.Any(f => SymbolEqualityComparer.Default.Equals(f.AssociatedSymbol, p)));
+    }
+
+    protected static bool IsLeafOrNullable(ITypeSymbol type) =>
+        IsLeaf(type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable ? nullable.TypeArguments[0] : type);
+
     // A user-written Equals(object); the one a record synthesizes is implicit and FluentAssertions compares records by members.
     private static bool HasEqualsOverride(INamedTypeSymbol type)
     {

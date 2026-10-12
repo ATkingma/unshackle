@@ -47,7 +47,7 @@ Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeGreaterLessPatt
 | Manual "nullable or has an unknown type" | `int?`, `DateTime?` | `nullable`, `dates-nullable` |
 | Manual "named arguments, or becauseArgs" | named args of niet-constante `because` | `named-because`, `because-variable` (`because-args` is sinds TAAK-097 Fixed) |
 | Manual "only exists for" | `BePositive` op `byte` | `sign-byte` |
-| Manual "NaN" | `BeNegative` op double/float | `negative-double` |
+| Fixed `(x < 0).ShouldBeTrue()` | `BeNegative` op double/float (NaN: FA faalt, `ShouldBeNegative` slaagt; `x < 0` is onwaar) | `negative-double`, `negative-float` |
 | Manual "Value type ... differs" | waarde niet naar het subjecttype te converteren | `value-type-differs` |
 
 ## Zie ook

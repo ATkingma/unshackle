@@ -43,14 +43,14 @@ Alle Shouldly-doelen gecontroleerd in `Shouldly.dll` 4.3.0. Prio: H = in bijna e
 | 24 | `fa.be-approximately` | `d.Should().BeApproximately(25m, 0.01m)` | `d.ShouldBe(25m, 0.01m)` (double/float/decimal-overload met tolerance) | M | klaar (TAAK-050) |
 | 25 | `fa.be-close-to` | `dt.Should().BeCloseTo(other, TimeSpan.FromSeconds(2))` | `dt.ShouldBe(other, TimeSpan.FromSeconds(2))` (DateTime/DateTimeOffset/TimeSpan) | M | klaar (TAAK-050) |
 | 26 | `fa.have-length` | `s.Should().HaveLength(5)` | `s.Length.ShouldBe(5)` (null-subject: `ShouldNotBeNull()` ervoor, zoals TAAK-021) | M | klaar (TAAK-039) |
-| 27 | `fa.numeric-sign` | `x.Should().BeNegative()` (`BePositive` al gedekt door `fa.be-greater-less`) | `x.ShouldBeNegative()`; ook `BeInRange(a,b)` → `ShouldBeInRange(a,b)` | M | bezig (TAAK-166) |
+| 27 | `fa.numeric-sign` | `x.Should().BeNegative()` (`BePositive` al gedekt door `fa.be-greater-less`) | `x.ShouldBeNegative()`; ook `BeInRange(a,b)` → `ShouldBeInRange(a,b)` | M | klaar (TAAK-166) |
 | 28 | `fa.invoking` | `order.Invoking(o => o.Cancel()).Should().Throw<T>()` | `Should.Throw<T>(() => order.Cancel())`; daarna `fa.throw`-regels (ketens Manual) | M | klaar (TAAK-052) |
 | 29 | `fa.not-contain-nulls` | `x.Should().NotContainNulls()` / `AllBe("EUR")` | `x.ShouldNotContain(i => i == null)` / `x.ShouldAllBe(i => i == "EUR")` | L | klaar (TAAK-161) |
 | 30 | `fa.order` | `x.Should().BeInAscendingOrder(p => p.Sku)` / `BeInDescendingOrder` | `x.Select(p => p.Sku).ShouldBeInOrder(SortDirection.Ascending)`; met comparer → Manual | L | klaar (TAAK-162) |
 | 31 | `fa.match` | `s.Should().MatchRegex("^SO-[0-9]+$")` / `Match("SO-*")` | `s.ShouldMatch("^SO-[0-9]+$")`; wildcard `Match` → regex (`^` + `Regex.Escape` met `*`→`.*`, `?`→`.` + `$`) of Manual | L | klaar (TAAK-099) |
 | 32 | `fa.equivalent-options` | `BeEquivalentTo(x, o => o.Excluding(d => d.Id))` / `WithStrictOrdering` / `ExcludingMissingMembers` | Manual (Shouldly `ShouldBeEquivalentTo` heeft geen options); alleen betere Manual-reden per optie | L | klaar (TAAK-163) |
-| 33 | `fa.contain-equivalent-of` | `x.Should().ContainEquivalentOf(item)` | Manual (geen Shouldly-equivalent; records → `ShouldContain(item)` kan, maar alleen bij value-equality) | L | bezig (TAAK-164) |
-| 34 | `fa.custom-assertions` | `order.Should().BeCancelled(..)` op eigen `ReferenceTypeAssertions`-subklasse | Manual met reden "custom FA-assertion: herschrijf de extensie naar Shouldly"; niet stil overslaan | L | bezig (TAAK-165) |
+| 33 | `fa.contain-equivalent-of` | `x.Should().ContainEquivalentOf(item)` | Manual (geen Shouldly-equivalent; records → `ShouldContain(item)` kan, maar alleen bij value-equality) | L | klaar (TAAK-164) |
+| 34 | `fa.custom-assertions` | `order.Should().BeCancelled(..)` op eigen `ReferenceTypeAssertions`-subklasse | Manual met reden "custom FA-assertion: herschrijf de extensie naar Shouldly"; niet stil overslaan | L | klaar (TAAK-165)   |
 | — | `fa.be-same-as` | `x.Should().BeSameAs(y)` / `NotBeSameAs(y)` (482 + 54×, 9 projecten) | `x.ShouldBeSameAs(y)` / `x.ShouldNotBeSameAs(y)` | H | klaar (TAAK-093) |
 | — | `fa.not-throw-async` | `await act.Should().NotThrowAsync()` (150×, 4 projecten) | `await Should.NotThrowAsync(act)`; gebruikt resultaat/`.Which` → Manual | M | klaar (TAAK-094) |
 | — | `fa.contain-in-order` | `x.Should().ContainInOrder(a, b)` (67×, 4 projecten) | geen Shouldly-equivalent: Manual met reden, of subreeks-check met `ShouldBe` als `x` precies `a, b` is | M | klaar (TAAK-101: Manual met code) |

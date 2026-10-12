@@ -53,7 +53,7 @@ fa.be-greater-less: vergelijkingen (`BeGreaterThan`, `BeLessThan`, `...OrEqualTo
 - **REQ-14**: IF een gesplitste keten niet direct in een blok staat (bijv. `if` zonder accolades) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-no-block.*`).
 - **Uitbreiding TAAK-095**: WHEN `BeAfter`/`BeOnOrAfter`/`BeBefore`/`BeOnOrBefore` staat THE SYSTEM SHALL `ShouldBeGreaterThan`/`…OrEqualTo`/`ShouldBeLessThan`/`…OrEqualTo` geven (proofs `dates`, `dates-nullable`, `AndChain/dates`). Probe: gelijk, ±1 tick, andere Kind, zelfde instant met andere offset, DateOnly: gelijk oordeel.
 - **REQ-15** (Uitbreiding REVIEW-A): WHEN de waarde een ander type heeft dan het subject (`byte`/`short`) THE SYSTEM SHALL de waarde naar het subjecttype casten (`ConvertExpected`), anders Manual (proof `byte-short`).
-- **REQ-16**: IF `BeNegative()` op double/float staat THEN THE SYSTEM SHALL Manual geven, omdat FA faalt op NaN en `ShouldBeNegative` slaagt (proof `negative-double`).
+- **REQ-16**: IF `BeNegative()` op double/float staat THEN THE SYSTEM SHALL `(x < 0).ShouldBeTrue([because])` geven (subject tussen haakjes als het geen eenvoudige expressie is), omdat FA faalt op NaN en `ShouldBeNegative`/`ShouldBeLessThan(0)` slagen (CompareTo ordent NaN onder alles); `x < 0` is onwaar voor NaN en -0.0, net als FA (proofs `negative-double`, `negative-float`). `BePositive` is in beide bibliotheken gelijk en blijft `ShouldBePositive()`. Zie TAAK-166.
 - **REQ-17** (Uitbreiding TAAK-097): WHEN `becauseArgs` met een constante, formatteerbare `because` staat THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (proof `because-args`); named arguments of een niet-constante `because` blijven Manual.
 
 ## Assumptions
@@ -66,7 +66,7 @@ fa.be-greater-less: vergelijkingen (`BeGreaterThan`, `BeLessThan`, `...OrEqualTo
 
 - Een property met bijwerkingen als subject van een keten wordt twee keer gelezen; beperkt door alleen namen en member-accesses toe te staan.
 - Foutmeldingen verschillen van FluentAssertions (Shouldly zet "Additional Info:" voor de `because`).
-- `double.NaN` en afrondingsgedrag zijn niet apart onderzocht; de vergelijking is `CompareTo` bij beide bibliotheken.
+- Geprobed (TAAK-166, FA 7.2.2 vs Shouldly 4.3.0, double en float): NaN, -0.0, 0.0, ±Epsilon, ±Infinity, ±1 geven bij `BePositive` identiek resultaat; bij `BeNegative` verschilt alleen NaN. int/long/short/decimal zijn gelijk. De foutmelding van `ShouldBeTrue` is minder informatief (geen waarde).
 
 ## Modellen
 

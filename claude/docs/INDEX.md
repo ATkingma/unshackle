@@ -56,6 +56,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-038-fa-equal-sequence.md` | ✅ `Equal(seq)`/`Equal(params)` → `ShouldBe(seq)` (volgorde-gevoelig), `NotEqual` sinds TAAK-160 eigen patroon; patroon `fa.equal-sequence` |
 | `claude/tasks/archief/TAAK-159-automapper-add-automapper.md` | ✅ `AddAutoMapper(...)` → patroon `automapper.add-automapper` |
 | `claude/tasks/archief/TAAK-160-fa-not-equal.md` | ✅ `NotEqual(seq)` → `ShouldNotBe(seq)` (met `ShouldNotBeNull()`-guard); patroon `fa.not-equal` |
+| `claude/tasks/archief/TAAK-164-fa-contain-equivalent-of.md` | ✅ `ContainEquivalentOf`/`NotContainEquivalentOf` → `ShouldContain`/`ShouldNotContain` voor waarde-items (leaf, sealed record, struct); class/ander type/options Manual; patroon `fa.contain-equivalent-of` |
 | `claude/tasks/archief/TAAK-162-fa-order.md` | ✅ `BeInAscendingOrder`/`BeInDescendingOrder` → `Select(..).ShouldBeInOrder(dir)` (string-sleutel met Ordinal-comparer); patroon `fa.order` |
 | `claude/tasks/archief/TAAK-039-fa-have-length.md` | ✅ string `HaveLength(n)` → `Length.ShouldBe(n)`; patroon `fa.have-length` |
 | `claude/tasks/archief/TAAK-050-fa-be-approximately.md` | ✅ `(Not)BeApproximately`/`(Not)BeCloseTo` → `ShouldBe(x, tol)`/`ShouldNotBe`/`Math.Abs(..).ShouldBeGreaterThan`; patroon `fa.be-approximately` |
@@ -84,6 +85,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-099-fa-match.md` | ✅ `fa.match`: MatchRegex/NotMatchRegex en wildcard-Match |
 | `claude/tasks/archief/TAAK-100-fa-assertion-scope-satisfy.md` | ✅ AssertionScope → `ShouldSatisfyAllConditions` |
 | `claude/tasks/archief/TAAK-101-fa-direct-mappings.md` | ✅ Kleine mappings |
+| `claude/tasks/archief/TAAK-166-fa-numeric-sign.md` | ✅ `BeNegative` op double/float: exacte vertaling `(x < 0).ShouldBeTrue()`, probe NaN/-0.0/±∞ |
 | `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` | Frequentietabel MediatR/AutoMapper-API's uit 9 open-source projecten, dekking door patronen |
 | `claude/tasks/archief/TAAK-110-unrecognized-should-keeps-using.md` | ✅ Bug (corpus): niet-herkende `.Should()` → using toch weg (CSFE, CS1061) |
 | `claude/tasks/archief/TAAK-116-one-run-lambda-overload.md` | ✅ Eén fix-run volstaat: Shouldly als referentie in het model (CSFE 21 `usings`-Manuals → 0) |
@@ -139,6 +141,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/TAAK-061-mediatr-processors-exception-handlers.md` | Pre/post-processors en exception-handlers herschrijven i.p.v. Manual |
 | `claude/tasks/TAAK-062-mediatr-stream-pipeline-behavior.md` | `IStreamPipelineBehavior` herschrijven, `AddOpenStreamBehavior` → `StreamPipelineBehaviors` |
 | `claude/tasks/archief/TAAK-090-loader-nuget-warnings.md` | ✅ Loader: NuGet-audit/NU1701 en ontbrekend projectbestand zijn waarschuwingen, geen laadfout |
+| `claude/tasks/archief/TAAK-165-custom-assertions-should-extensie.md` | ✅ queue #34: al gedekt door `fa.custom-assertion`; extra proof voor eigen `Should()` + `ObjectAssertions`-subklasse |
 | `claude/tasks/archief/TAAK-091-custom-assertions-gegroepeerd.md` | ✅ `fa.custom-assertion`: eigen FA-extensies Manual, gegroepeerd per extensie in rapport en console |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: ongebruikte assembly-parameter na AddMediator (IDE0060) → waarschuwing in rapport |
 | `claude/tasks/archief/TAAK-070-fa-assertion-in-throw-lambda.md` | ✅ Assertion in lambda met `Throw<XunitException>` erop → assertion en Throw Manual |

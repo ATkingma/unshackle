@@ -29,7 +29,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeGreaterLessPattern.c
 | REQ-13 | Vervangen | Via `fa.and-chain` sinds TAAK-098 Fixed met hoist: `AndChain/subject-call.*` |
 | REQ-14 | Gehaald | Via `fa.and-chain`: `AndChain/no-block.*` |
 | REQ-15 | Gehaald (REVIEW-A H1) | `byte-short.*.cs`: waarden worden naar het subjecttype gecast (`(byte)1`), anders leidt Shouldly `T = int` af en compileert het niet |
-| REQ-16 | Gehaald | `negative-double.*` (Manual "NaN") |
+| REQ-16 | Gehaald | `negative-double.*`, `negative-float.*` (Fixed `(x < 0).ShouldBeTrue()`) |
 | REQ-17 | Gehaald | `because-args.*.cs` (`string.Format`) |
 | TAAK-095 | Gehaald | `dates.*.cs`, `dates-nullable.*` (Manual), `AndChain/dates.*.cs` |
 

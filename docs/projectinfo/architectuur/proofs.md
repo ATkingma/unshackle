@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 650 proofs (zonder `_Pending`).
+Totaal: 667 proofs (zonder `_Pending`).
 
 ## AutoMapper
 
@@ -244,7 +244,7 @@ Totaal: 650 proofs (zonder `_Pending`).
 | `simple` | Fixed | `s.Should().BeEquivalentTo("ab");` → `s.ShouldBe("ab", StringCompareShould.IgnoreCase);` |
 | `value-used` | Manual | `var c = s.Should().BeEquivalentTo("ab");` — reden: is used |
 
-### BeGreaterLess (19)
+### BeGreaterLess (20)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -260,7 +260,8 @@ Totaal: 650 proofs (zonder `_Pending`).
 | `in-range` | Fixed | `x.Should().BeInRange(1, 5); x.Should().NotBeInRange(6, 9);` → `x.ShouldBeInRange(1, 5); x.ShouldNotBeInRange(6, 9);` |
 | `lambda` | Fixed | `Action a = () => x.Should().BeGreaterThan(1);` → `Action a = () => x.ShouldBeGreaterThan(1);` |
 | `named-because` | Manual | `x.Should().BeGreaterThan(1, because: "it is positive");` — reden: named arguments |
-| `negative-double` | Manual | `d.Should().BeNegative();` — reden: NaN |
+| `negative-double` | Fixed | `d.Should().BeNegative();` → `(d < 0).ShouldBeTrue();` |
+| `negative-float` | Fixed | `f.Should().BeNegative("it dropped"); (a - b).Should().BeNegative();` → `(f < 0).ShouldBeTrue("it dropped"); ((a - b) < 0).ShouldBeTrue();` |
 | `nullable` | Manual | `x.Should().BeGreaterThan(1);` — reden: nullable or has an unknown type |
 | `sign` | Fixed | `x.Should().BePositive(); d.Should().BePositive("it dropped");` → `x.ShouldBePositive(); d.ShouldBePositive("it dropped");` |
 | `sign-byte` | Manual | `b.Should().BePositive();` — reden: only exists for |
@@ -364,6 +365,26 @@ Totaal: 650 proofs (zonder `_Pending`).
 | `string` | Fixed | `text.Should().Contain("ab");` → `text.ShouldContain("ab", Shouldly.Case.Sensitive);` |
 | `value-used` | Manual | `var result = x.Should().Contain(2);` — reden: is used |
 
+### ContainEquivalentOf (15)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `assertion-scope` | Manual | `x.Should().ContainEquivalentOf("a");` — reden: AssertionScope |
+| `because` | Fixed | `x.Should().ContainEquivalentOf(2, "it was added"); x.Should().NotContainEquivalentOf(5, "it was {0}", "removed…` → `x.ShouldContain(2, "it was added"); x.ShouldNotContain(5, string.Format(System.Globalization.CultureInfo.Invar…` |
+| `class` | Manual | `x.Should().ContainEquivalentOf(new Dto { Id = 1 });` — reden: is no leaf, record or struct of leaf members |
+| `dictionary` | Manual | `x.Should().ContainEquivalentOf(new KeyValuePair<string, int>("a", 1));` — reden: is no leaf, record or struct of leaf members |
+| `different-type` | Manual | `x.Should().ContainEquivalentOf(2L);` — reden: the elements are Int32 |
+| `nullable-subject` | Fixed | `x.Should().ContainEquivalentOf("a"); x.Should().NotContainEquivalentOf("b");` → `x.ShouldNotBeNull().ShouldContain("a"); x.ShouldNotContain("b");` |
+| `nullable-value` | Fixed | `x.Should().ContainEquivalentOf(at); y.Should().ContainEquivalentOf((int?)null);` → `x.ShouldContain(at); y.ShouldContain((int?)null);` |
+| `options` | Manual | `x.Should().ContainEquivalentOf("a", o => o.Excluding(s => s.Length));` — reden: equivalency options have no Shouldly equivalent |
+| `record-list-member` | Manual | `x.Should().ContainEquivalentOf(item);` — reden: is no leaf, record or struct of leaf members |
+| `record-struct` | Fixed | `x.Should().ContainEquivalentOf(new Point(1, 2));` → `x.ShouldContain(new Point(1, 2));` |
+| `record-unsealed` | Manual | `x.Should().NotContainEquivalentOf(item);` — reden: is no leaf, record or struct of leaf members |
+| `sealed-record` | Fixed | `x.Should().ContainEquivalentOf(item); x.Should().NotContainEquivalentOf(new Item(1, "a", DateTime.MinValue));` → `x.ShouldContain(item); x.ShouldNotContain(new Item(1, "a", DateTime.MinValue));` |
+| `simple` | Fixed | `x.Should().ContainEquivalentOf(2); x.Should().NotContainEquivalentOf(5);` → `x.ShouldContain(2); x.ShouldNotContain(5);` |
+| `strings` | Fixed | `x.Should().ContainEquivalentOf("abc");` → `x.ShouldContain("abc");` |
+| `which` | Manual | `var found = x.Should().ContainEquivalentOf("a").Which;` — reden: is used |
+
 ### ContainKey (17)
 
 | Proof | Uitkomst | Wat het bewijst |
@@ -402,12 +423,13 @@ Totaal: 650 proofs (zonder `_Pending`).
 | `which` | Fixed | `var only = x.Should().ContainSingle().Which; var big = x.Should().ContainSingle(d => d.Price > 5m, "big").Whic…` → `var only = x.ShouldHaveSingleItem(); var big = x.Where(d => d.Price > 5m).ShouldHaveSingleItem("big");` |
 | `which-chain` | Fixed | `decimal price = x.Should().ContainSingle().Which.Price;` → `decimal price = x.ShouldHaveSingleItem().Price;` |
 
-### CustomAssertion (3)
+### CustomAssertion (4)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `extension` | Manual | `result.Should().BeFailure();` — reden: Custom assertion `ResultAssertions.BeFailure` |
 | `in-assertion-scope` | Manual | `result.Should().BeFailure();` — reden: Custom assertion `ScopedResultAssertions.BeFailure` |
+| `should-extension` | Manual | `order.Should().BeCancelled("it was refused");` — reden: Custom assertion `CancelOrderAssertions.BeCancelled` |
 | `subclass` | Manual |  — reden: Custom assertion `OrderAssertions.BeShipped` |
 
 ### DirectMapping (9)

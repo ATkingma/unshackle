@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Unshackle.Core.Models;
 
@@ -65,10 +66,23 @@ public class BeGreaterLessPattern : FluentAssertionPattern
             return PatternResult.Manual($"{shouldName} only exists for int, long, short, decimal, double and float.");
         }
 
-        // Probed: FluentAssertions fails BeNegative on NaN, ShouldBeNegative passes it.
+        // Probed (FA 7.2.2, Shouldly 4.3.0): double/float NaN fails FluentAssertions' BeNegative but passes ShouldBeNegative and
+        // ShouldBeLessThan(0) (CompareTo orders NaN below everything). `x < 0` is false for NaN and for -0.0, like FluentAssertions.
+        // BePositive is identical in both libraries (NaN, -0.0, infinities probed), so only BeNegative needs this.
         if (context.Name == "BeNegative" && type.SpecialType is SpecialType.System_Double or SpecialType.System_Single)
         {
-            return PatternResult.Manual("BeNegative() on double/float: FluentAssertions fails on NaN, ShouldBeNegative passes; use (x < 0).ShouldBeTrue() by hand.");
+            // Plain `0`: it converts implicitly to double and float, so the comparison stays in the subject's type.
+            ExpressionSyntax zero = SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(0));
+            ExpressionSyntax left = context.Subject.WithoutTrivia() is IdentifierNameSyntax or MemberAccessExpressionSyntax or InvocationExpressionSyntax or ElementAccessExpressionSyntax or ParenthesizedExpressionSyntax
+                ? context.Subject.WithoutTrivia()
+                : SyntaxFactory.ParenthesizedExpression(context.Subject.WithoutTrivia());
+            ExpressionSyntax comparison = SyntaxFactory.ParenthesizedExpression(
+                SyntaxFactory.BinaryExpression(
+                    SyntaxKind.LessThanExpression,
+                    left,
+                    SyntaxFactory.Token(SyntaxKind.LessThanToken).WithLeadingTrivia(SyntaxFactory.Space).WithTrailingTrivia(SyntaxFactory.Space),
+                    zero));
+            return PatternResult.Fixed(FluentAssertionsSyntax.Invoke(comparison, "ShouldBeTrue", context.Because));
         }
 
         // ShouldBeGreaterThan<T>(this T, T) infers T from both sides: `b.ShouldBeGreaterThan(1)` on a byte binds T = int and fails.

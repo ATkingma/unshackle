@@ -1,0 +1,15 @@
+shape: sequence_diagram
+Fixer
+MapCallPattern
+SemanticModel
+Solution
+CreateMapPattern
+Fixer -> MapCallPattern: "Find(root, model)"
+MapCallPattern -> SemanticModel: "IsMapCall: GetSymbolInfo"
+Fixer -> MapCallPattern: "RewriteAsync(node, model, solution, ct)"
+MapCallPattern -> SemanticModel: "Check: GetTypeInfo, Nullability"
+MapCallPattern -> SemanticModel: "Existing: LookupSymbols, GetSymbolsWithName"
+MapCallPattern -> Solution: "GeneratedAsync: projecten, documenten met CreateMap"
+MapCallPattern -> CreateMapPattern: "Rewrite(profile, profileModel)"
+CreateMapPattern -> MapCallPattern: "FixedResult [profile, Extensions]"
+MapCallPattern -> Fixer: "Fixed(a.ToB(), namespace) of Manual(reden)"

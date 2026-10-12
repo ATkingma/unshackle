@@ -1,0 +1,35 @@
+direction: down
+start: "Map<B>(a) / Map<A, B>(a)"
+recv: "ontvanger naam of keten?" {shape: diamond}
+obj: "bron object/dynamic?" {shape: diamond}
+coll: "collectie?" {shape: diamond}
+nul: "bron MaybeNull?" {shape: diamond}
+ex: "ToB bestaat (scope of bron)?" {shape: diamond}
+gen: "herschreven CreateMap<A, B>?" {shape: diamond}
+one: "precies één?" {shape: diamond}
+int: "internal in ander project?" {shape: diamond}
+m1: "Manual: not called as mapper.Map\n(receiver-call)"
+m2: "Manual: no type of its own\n(object-source)"
+m3: "Manual: maps a collection\n(collection)"
+m4: "Manual: may be null\n(maybe-null)"
+m5: "Manual: No CreateMap\n(unknown-map, manual-profile)"
+m6: "Manual: Several profiles"
+m7: "Manual: becomes internal\n(unittest)"
+f1: "Fixed: a.ToB()\n(existing-method, map-call-*)"
+start -> recv
+recv -> m1: nee
+recv -> obj: ja
+obj -> m2: ja
+obj -> coll: nee
+coll -> m3: ja
+coll -> nul: nee
+nul -> m4: ja
+nul -> ex: nee
+ex -> f1: ja
+ex -> gen: nee
+gen -> m5: nee
+gen -> one: ja
+one -> m6: nee
+one -> int: ja
+int -> m7: ja
+int -> f1: nee

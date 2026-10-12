@@ -44,7 +44,7 @@ automapper.create-map: een `Profile` waarvan de constructor alleen `CreateMap<A,
 - **REQ-4**: IF een bestemmingslid geen bronlid met exact dezelfde naam heeft (flattening, `GetX()`, andere hoofdletters) THEN THE SYSTEM SHALL Manual melden (proof `flattening`, unittest hoofdletters).
 - **REQ-5**: IF de typen verschillen of het lid een collectie is THEN THE SYSTEM SHALL Manual melden (proofs `conversion`, `collection`).
 - **REQ-6**: IF B geen publieke parameterloze constructor heeft of abstract is THEN THE SYSTEM SHALL Manual melden (proof `constructor`).
-- **REQ-7**: WHEN AutoMapper's `Map`/`ProjectTo` aangeroepen wordt THE SYSTEM SHALL Manual melden, zodat de fix niets wijzigt (proof `map-call`).
+- **REQ-7**: WHEN AutoMapper's `Map`/`ProjectTo` aangeroepen wordt THE SYSTEM SHALL Manual melden, zodat de fix niets wijzigt (proof `map-call`; sinds TAAK-157 alleen `ProjectTo`, `Map(src, dest)` en `Map` met opties, proof `map-into`).
 
 ## Assumptions
 

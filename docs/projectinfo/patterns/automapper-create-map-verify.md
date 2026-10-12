@@ -20,7 +20,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `AutoM
 | REQ-4 | Gehaald | `flattening`, unittest hoofdletters                                           |
 | REQ-5 | Gehaald | `conversion`, `collection`, unittest `int[]`                                  |
 | REQ-6 | Gehaald | `constructor`, unittest abstract                                              |
-| REQ-7 | Gehaald | `map-call`                                                                    |
+| REQ-7 | Gehaald | `map-into`                                                                    |
 
 Doortest SampleShop (kopie in `/mnt/dikkeschijf/unshackle-corpus/t146/`): 0 Fixed, 10 Manual (8× `Map`, 2 profiles met opties), 0 bestanden gewijzigd (AllOrNothing); de kopie bouwt en 38/38 tests zijn groen.
 

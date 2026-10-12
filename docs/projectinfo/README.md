@@ -141,6 +141,7 @@ Wachtrij en status: `claude/tasks/patroon-queue.md`.
 | `automapper.create-map`            | [plan](patterns/automapper-create-map-plan.md)            | [modellen](patterns/automapper-create-map-modellen.md)            | [verify](patterns/automapper-create-map-verify.md)            | TAAK-146 |
 | `automapper.for-member-ignore`      | [plan](patterns/automapper-for-member-ignore-plan.md)     | [modellen](patterns/automapper-for-member-ignore-modellen.md)     | [verify](patterns/automapper-for-member-ignore-verify.md)     | TAAK-155 |
 | `automapper.for-member-map-from`    | [plan](patterns/automapper-for-member-map-from-plan.md)   | [modellen](patterns/automapper-for-member-map-from-modellen.md)   | [verify](patterns/automapper-for-member-map-from-verify.md)   | TAAK-156 |
+| `automapper.map-call`               | [plan](patterns/automapper-map-call-plan.md)              | [modellen](patterns/automapper-map-call-modellen.md)              | [verify](patterns/automapper-map-call-verify.md)              | TAAK-157 |
 
 ## Zie ook
 

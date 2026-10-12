@@ -1,0 +1,43 @@
+direction: right
+IPattern: {
+  shape: class
+  Find(root, model)
+  Rewrite(node, model)
+}
+ISolutionPattern: {
+  shape: class
+  RewriteAsync(node, model, solution, ct)
+}
+MapCallPattern: {
+  shape: class
+  "-_profiles": CreateMapPattern
+  "+IsMapCall(invocation, model)": bool
+  "-Check(...)": string?
+  "-Existing(...)": PatternResult?
+  "-GeneratedAsync(...)": List
+  "-Fixed(...)": PatternResult
+}
+CreateMapPattern: {
+  shape: class
+  "+IsProfileWithMaps(c, model)": bool
+  "+Rewrite(node, model)": PatternResult
+}
+PatternResult: {shape: class}
+FixedResult: {
+  shape: class
+  NewNodes
+  RequiredNamespaces
+}
+ManualResult: {
+  shape: class
+  Reason
+}
+IMapper: "AutoMapper.IMapper\nMap<B>(object)\nMap<A, B>(A)"
+ISolutionPattern -> IPattern: extends
+MapCallPattern -> ISolutionPattern: implements
+MapCallPattern -> CreateMapPattern: Rewrite van profiles
+CreateMapPattern -> MapCallPattern: Find sluit IsMapCall uit {style.stroke-dash: 3}
+FixedResult -> PatternResult
+ManualResult -> PatternResult
+MapCallPattern -> IMapper: herkent
+MapCallPattern -> PatternResult: levert

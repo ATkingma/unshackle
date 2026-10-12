@@ -18,5 +18,5 @@ public class AutoMapperFix : IFix
 
     // No Package yet: every migrated Profile stays (empty) and keeps AutoMapper referenced; the package goes once the
     // Profile, Map and AddAutoMapper rows of claude/tasks/automapper-queue.md can remove all of it.
-    public IReadOnlyList<IPattern> Patterns { get; } = [new CreateMapPattern(), new ForMemberIgnorePattern(), new ForMemberMapFromPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new CreateMapPattern(), new ForMemberIgnorePattern(), new ForMemberMapFromPattern(), new MapCallPattern()];
 }

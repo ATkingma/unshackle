@@ -1,0 +1,1 @@
+not called as mapper.Map on a plain field

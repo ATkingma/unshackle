@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Shouldly;
 using Unshackle.Core;
+using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.FluentAssertions;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
@@ -11,11 +12,14 @@ namespace Unshackle.Tests;
 // Runs Proofs/FluentAssertions/_Combined/<case>.before.cs through the real FluentAssertionsFix (all patterns, real order).
 // Expected: <case>.after.cs (exact text). Left-over FluentAssertions code (Manual findings) must still compile, so then
 // "after" is compiled against Shouldly and FluentAssertions.
+// Proofs/AutoMapper/_Combined runs the real AutoMapperFix: a Map call only becomes a.ToB() next to the profile rewrite that writes ToB.
 public class CombinedProofTests
 {
     public const string FolderName = "_Combined";
 
     private static readonly string s_directory = Path.Combine(AppContext.BaseDirectory, "Proofs", "FluentAssertions", FolderName);
+
+    private static readonly string s_autoMapperDirectory = Path.Combine(AppContext.BaseDirectory, "Proofs", "AutoMapper", FolderName);
 
     public static TheoryData<string> Cases() =>
         [.. Directory.EnumerateFiles(s_directory, "*.before.cs")
@@ -44,6 +48,33 @@ public class CombinedProofTests
         string actual = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
         actual.ShouldBe(expected);
         TestSolution.CompileErrors(actual, afterReferences).ShouldBeEmpty("after must compile");
+    }
+
+    public static TheoryData<string> AutoMapperCases() =>
+        [.. Directory.EnumerateFiles(s_autoMapperDirectory, "*.before.cs")
+            .Select(p => Path.GetFileName(p)[..^".before.cs".Length])
+            .Order(StringComparer.Ordinal)];
+
+    [Theory]
+    [MemberData(nameof(AutoMapperCases))]
+    public async Task CombinedAutoMapper_Before_BecomesAfter(string name)
+    {
+        // Arrange
+        string basePath = Path.Combine(s_autoMapperDirectory, name);
+        string before = Normalize(await File.ReadAllTextAsync(basePath + ".before.cs", TestContext.Current.CancellationToken));
+        string expected = Normalize(await File.ReadAllTextAsync(basePath + ".after.cs", TestContext.Current.CancellationToken));
+        TestSolution.CompileErrors(before, TestReferences.AutoMapper).ShouldBeEmpty("before must compile against AutoMapper");
+        var fixer = new Fixer([new AutoMapperFix()]);
+        Solution solution = TestSolution.Create(before, TestReferences.AutoMapper);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        string actual = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult, string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
+        actual.ShouldBe(expected);
+        TestSolution.CompileErrors(actual, TestReferences.AutoMapper).ShouldBeEmpty("after must compile");
     }
 
     [Fact]

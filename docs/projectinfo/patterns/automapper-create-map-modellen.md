@@ -40,7 +40,7 @@ Feiten uit `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` en
 
 | Blad                                             | Voorwaarde                                 | Bewijs                     |
 | ------------------------------------------------ | ------------------------------------------ | -------------------------- |
-| Manual "not migrated yet"                        | `Map`/`ProjectTo` van AutoMapper           | `map-call`                 |
+| Manual "not migrated yet"                        | `ProjectTo`, `Map(src, dest)` van AutoMapper | `map-into`                 |
 | Manual "nested, generic, partial…"               | profile geen eenvoudige top-level klasse   | n.v.t. (zeldzaam)          |
 | Manual "not a CreateMap without options"         | `ReverseMap`, `ForMember`, ander statement | `options`                  |
 | Manual "no public parameterless constructor"     | positioneel record, abstract               | `constructor`, unittest    |

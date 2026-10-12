@@ -6,9 +6,16 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 551 proofs (zonder `_Pending`).
+Totaal: 560 proofs (zonder `_Pending`).
 
 ## AutoMapper
+
+### _Combined (2)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
+| `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
 
 ### CreateMap (8)
 
@@ -19,7 +26,7 @@ Totaal: 551 proofs (zonder `_Pending`).
 | `conversion` | Manual | `CreateMap<Order, OrderDto>();` — reden: (AutoMapper converts) |
 | `flattening` | Manual | `CreateMap<Order, OrderDto>();` — reden: has no member with the same name |
 | `internal-types` | Fixed | `CreateMap<Order, OrderDto>();` → `internal static class OrderProfileExtensions {` |
-| `map-call` | Manual |  — reden: is not migrated yet (automapper.map-call) |
+| `map-into` | Manual |  — reden: Map(source, destination) and Map with options are not migrated yet |
 | `options` | Manual | `CreateMap<Order, OrderDto>().ReverseMap();` — reden: is not a CreateMap<A, B>() without options |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>(); CreateMap<Tag, TagDto>();` → `public static class ProductProfileExtensions {` |
 
@@ -44,6 +51,18 @@ Totaal: 551 proofs (zonder `_Pending`).
 | `outside-profile` | Manual | `CreateMap<Order, OrderDto>()` — reden: is not available outside the profile |
 | `resolver-form` | Manual | `CreateMap<Order, OrderDto>()` — reden: is not a CreateMap<A, B>() without options |
 | `simple` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Total, o => o.MapFrom(s => s.Price * s.Quantity))` → `public static class OrderProfileExtensions {` |
+
+### MapCall (7)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `collection` | Manual | `CreateMap<Order, OrderDto>();` — reden: maps a collection |
+| `existing-method` | Fixed | `public OrderDto Get(Order order) => _mapper.Map<OrderDto>(order); public OrderDto First(Order[] orders) => thi…` → `public OrderDto Get(Order order) => order.ToOrderDto(); public OrderDto First(Order[] orders) => orders[0].ToO…` |
+| `manual-profile` | Manual | `CreateMap<Order, OrderDto>().ReverseMap();` — reden: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
+| `maybe-null` | Manual |  — reden: may be null |
+| `object-source` | Manual |  — reden: no type of its own |
+| `receiver-call` | Manual |  — reden: not called as mapper.Map on a plain field |
+| `unknown-map` | Manual |  — reden: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
 
 ## FluentAssertions
 

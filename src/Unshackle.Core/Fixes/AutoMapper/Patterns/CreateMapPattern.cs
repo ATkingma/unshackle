@@ -22,16 +22,18 @@ public class CreateMapPattern : IPattern
     public virtual string Id => "automapper.create-map";
 
     public virtual string Description =>
-        "Profile with CreateMap<A, B>() without options → static B ToB(this A source) => new() { X = source.X, ... } for the members with the same name and type; mapper.Map is Manual until automapper.map-call";
+        "Profile with CreateMap<A, B>() without options → static B ToB(this A source) => new() { X = source.X, ... } for the members with the same name and type; Map(source, destination), Map with options and ProjectTo are Manual";
 
-    // Map and ProjectTo calls are found too: while they run, a removed CreateMap fails at run time, so they make the fix all-or-nothing.
+    // Map and ProjectTo calls that MapCallPattern does not rewrite are found too: while they run, a removed CreateMap fails at run time,
+    // so they make the fix all-or-nothing.
     public virtual IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().Where(n => n switch
         {
             ClassDeclarationSyntax c => IsProfileWithMaps(c, model) && !UsesForMember(c, ignore: true) && !UsesForMember(c, ignore: false),
             InvocationExpressionSyntax i => model.GetSymbolInfo(i) is var info
                 && (info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is IMethodSymbol { Name: "Map" or "ProjectTo" } method
-                && method.ContainingAssembly?.Name == AutoMapperAssembly,
+                && method.ContainingAssembly?.Name == AutoMapperAssembly
+                && !MapCallPattern.IsMapCall(i, model),
             _ => false,
         });
 
@@ -40,7 +42,7 @@ public class CreateMapPattern : IPattern
         if (node is InvocationExpressionSyntax)
         {
             return PatternResult.Manual(
-                "AutoMapper's Map/ProjectTo is not migrated yet (automapper.map-call); while it runs, the CreateMap rewrites of this fix stay undone.");
+                "AutoMapper's ProjectTo, Map(source, destination) and Map with options are not migrated yet (automapper.map-into, automapper.unsupported); while they run, the CreateMap rewrites of this fix stay undone.");
         }
 
         var profile = (ClassDeclarationSyntax)node;
@@ -310,7 +312,7 @@ public class CreateMapPattern : IPattern
         }
     }
 
-    protected static bool IsProfileWithMaps(ClassDeclarationSyntax c, SemanticModel model) =>
+    protected internal static bool IsProfileWithMaps(ClassDeclarationSyntax c, SemanticModel model) =>
         model.GetDeclaredSymbol(c) is INamedTypeSymbol type && IsProfile(type)
         && c.Members.OfType<ConstructorDeclarationSyntax>().Any(ctor => ctor.Body is { Statements.Count: > 0 } || ctor.ExpressionBody is not null);
 

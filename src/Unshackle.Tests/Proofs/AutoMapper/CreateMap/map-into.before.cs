@@ -21,5 +21,5 @@ public class OrderService
         _mapper = mapper;
     }
 
-    public OrderDto Get(Order order) => _mapper.Map<OrderDto>(order);
+    public OrderDto Update(Order order, OrderDto dto) => _mapper.Map(order, dto);
 }

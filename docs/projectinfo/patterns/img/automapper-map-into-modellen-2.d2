@@ -1,0 +1,16 @@
+shape: sequence_diagram
+Fixer
+CreateMapPattern
+MapIntoPattern
+MapCallPattern
+Fixer -> CreateMapPattern: "RewriteAsync(profile)"
+CreateMapPattern -> MapIntoPattern: "TargetsAsync(solution)"
+MapIntoPattern -> CreateMapPattern: "paren A|B"
+CreateMapPattern -> Fixer: "Fixed: profile + Extensions (ToB, MapInto)"
+Fixer -> MapIntoPattern: "Find, IsMapIntoCall"
+Fixer -> MapIntoPattern: "RewriteAsync(call)"
+MapIntoPattern -> MapIntoPattern: "Check"
+MapIntoPattern -> MapIntoPattern: "Existing (LookupSymbols, GetSymbolsWithName)"
+MapIntoPattern -> MapCallPattern: "GeneratedAsync"
+MapCallPattern -> MapIntoPattern: "namespace, internal, project"
+MapIntoPattern -> Fixer: "Fixed a.MapInto(b) of Manual(reden)"

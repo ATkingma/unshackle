@@ -155,7 +155,7 @@ public class MapCallPattern : ISolutionPattern
 
     // Every CreateMap<A, B> in a profile the profile patterns rewrite, in the calling project or one it depends on: the generated method,
     // the namespace of its class (null: global) and whether it becomes internal.
-    private async Task<List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)>> GeneratedAsync(Solution solution, SemanticModel model,
+    internal async Task<List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)>> GeneratedAsync(Solution solution, SemanticModel model,
         ITypeSymbol sourceType, ITypeSymbol destination, CancellationToken cancellationToken)
     {
         string sourceName = sourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
@@ -218,7 +218,7 @@ public class MapCallPattern : ISolutionPattern
         $"No CreateMap<{source.Name}, {destination.Name}> in a profile this fix rewrites, and no {source.Name}.To{destination.Name}() exists; migrate the call by hand.";
 
     // The receiver is dropped: only a name, this.name or a chain of names may go.
-    private static bool HasNoSideEffects(ExpressionSyntax receiver) => receiver switch
+    internal static bool HasNoSideEffects(ExpressionSyntax receiver) => receiver switch
     {
         IdentifierNameSyntax or ThisExpressionSyntax or BaseExpressionSyntax or PredefinedTypeSyntax => true,
         MemberAccessExpressionSyntax { Expression: var inner } => HasNoSideEffects(inner),
@@ -226,10 +226,10 @@ public class MapCallPattern : ISolutionPattern
         _ => false,
     };
 
-    private static bool NeedsParentheses(ExpressionSyntax expression) => expression is not (IdentifierNameSyntax or MemberAccessExpressionSyntax or InvocationExpressionSyntax
+    internal static bool NeedsParentheses(ExpressionSyntax expression) => expression is not (IdentifierNameSyntax or MemberAccessExpressionSyntax or InvocationExpressionSyntax
         or ElementAccessExpressionSyntax or ParenthesizedExpressionSyntax or ThisExpressionSyntax or LiteralExpressionSyntax or ObjectCreationExpressionSyntax
         or GenericNameSyntax or PostfixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.SuppressNullableWarningExpression });
 
-    private static bool IsCollection(ITypeSymbol type) =>
+    internal static bool IsCollection(ITypeSymbol type) =>
         type.SpecialType != SpecialType.System_String && (type is IArrayTypeSymbol || type.AllInterfaces.Any(i => i.SpecialType == SpecialType.System_Collections_IEnumerable));
 }

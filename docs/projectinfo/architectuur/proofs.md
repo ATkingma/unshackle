@@ -6,18 +6,19 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 560 proofs (zonder `_Pending`).
+Totaal: 567 proofs (zonder `_Pending`).
 
 ## AutoMapper
 
-### _Combined (2)
+### _Combined (3)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
 | `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
+| `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
 
-### CreateMap (8)
+### CreateMap (7)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -26,7 +27,6 @@ Totaal: 560 proofs (zonder `_Pending`).
 | `conversion` | Manual | `CreateMap<Order, OrderDto>();` — reden: (AutoMapper converts) |
 | `flattening` | Manual | `CreateMap<Order, OrderDto>();` — reden: has no member with the same name |
 | `internal-types` | Fixed | `CreateMap<Order, OrderDto>();` → `internal static class OrderProfileExtensions {` |
-| `map-into` | Manual |  — reden: Map(source, destination) and Map with options are not migrated yet |
 | `options` | Manual | `CreateMap<Order, OrderDto>().ReverseMap();` — reden: is not a CreateMap<A, B>() without options |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>(); CreateMap<Tag, TagDto>();` → `public static class ProductProfileExtensions {` |
 
@@ -63,6 +63,18 @@ Totaal: 560 proofs (zonder `_Pending`).
 | `object-source` | Manual |  — reden: no type of its own |
 | `receiver-call` | Manual |  — reden: not called as mapper.Map on a plain field |
 | `unknown-map` | Manual |  — reden: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
+
+### MapInto (7)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `collection` | Manual |  — reden: maps a collection |
+| `existing-method` | Fixed | `public OrderDto Update(Order order, OrderDto dto) => _mapper.Map(order, dto); public void Fill(Order[] orders,…` → `public OrderDto Update(Order order, OrderDto dto) => order.MapInto(dto); public void Fill(Order[] orders, Orde…` |
+| `maybe-null-destination` | Manual |  — reden: destination of Map may be null |
+| `maybe-null-source` | Manual |  — reden: source of Map may be null |
+| `object-source` | Manual |  — reden: no type of its own |
+| `receiver-call` | Manual |  — reden: plain field, property or variable |
+| `unknown-map` | Manual |  — reden: No CreateMap<Order, OrderDto> |
 
 ## FluentAssertions
 

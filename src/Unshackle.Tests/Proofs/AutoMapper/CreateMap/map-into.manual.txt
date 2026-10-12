@@ -1,1 +1,0 @@
-Map(source, destination) and Map with options are not migrated yet

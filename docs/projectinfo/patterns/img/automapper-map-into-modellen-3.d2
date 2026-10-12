@@ -1,0 +1,41 @@
+direction: down
+start: "Map(a, b) / Map<A, B>(a, b)"
+recv: "ontvanger naam of keten?" {shape: diamond}
+obj: "bron/doel object of dynamic?" {shape: diamond}
+coll: "collectie?" {shape: diamond}
+nuls: "bron MaybeNull?" {shape: diamond}
+nuld: "doel MaybeNull?" {shape: diamond}
+ex: "MapInto bestaat?" {shape: diamond}
+gen: "herschreven CreateMap<A, B>?" {shape: diamond}
+one: "precies een?" {shape: diamond}
+int: "internal in ander project?" {shape: diamond}
+mem: "A heeft member MapInto?" {shape: diamond}
+m1: "Manual: not called as mapper.Map\n(receiver-call)"
+m2: "Manual: no type of its own\n(object-source)"
+m3: "Manual: maps a collection\n(collection)"
+m4: "Manual: source may be null\n(maybe-null-source)"
+m5: "Manual: destination may be null\n(maybe-null-destination)"
+m6: "Manual: No CreateMap\n(unknown-map)"
+m7: "Manual: Several profiles / becomes internal / already has a member"
+f1: "Fixed: a.MapInto(b)\n(existing-method, map-into-profile, unittest)"
+start -> recv
+recv -> m1: nee
+recv -> obj: ja
+obj -> m2: ja
+obj -> coll: nee
+coll -> m3: ja
+coll -> nuls: nee
+nuls -> m4: ja
+nuls -> nuld: nee
+nuld -> m5: ja
+nuld -> ex: nee
+ex -> f1: ja
+ex -> gen: nee
+gen -> m6: nee
+gen -> one: ja
+one -> m7: nee
+one -> int: ja
+int -> m7: ja
+int -> mem: nee
+mem -> m7: ja
+mem -> f1: nee

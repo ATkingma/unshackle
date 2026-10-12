@@ -13,16 +13,17 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// one B ToB(this A source) per map, copying the members with the same name and type. Anything AutoMapper would do
 /// beyond that (conversion, flattening, collections, constructors) is Manual. The rewrite also understands
 /// ForMember(d => d.X, o => o.Ignore()) (see <see cref="ForMemberIgnorePattern"/>) and ForMember(d => d.X, o => o.MapFrom(s => expr))
-/// (see <see cref="ForMemberMapFromPattern"/>); those two claim the profiles that use them.
+/// (see <see cref="ForMemberMapFromPattern"/>); those two claim the profiles that use them. With the solution, a map that a
+/// mapper.Map(source, destination) call uses also gets B MapInto(this A source, B destination) (see <see cref="MapIntoPattern"/>).
 /// </summary>
-public class CreateMapPattern : IPattern
+public class CreateMapPattern : ISolutionPattern
 {
     private const string AutoMapperAssembly = "AutoMapper";
 
     public virtual string Id => "automapper.create-map";
 
     public virtual string Description =>
-        "Profile with CreateMap<A, B>() without options → static B ToB(this A source) => new() { X = source.X, ... } for the members with the same name and type; Map(source, destination), Map with options and ProjectTo are Manual";
+        "Profile with CreateMap<A, B>() without options → static B ToB(this A source) => new() { X = source.X, ... } for the members with the same name and type; MapInto(this A source, B destination) when the solution calls Map(source, destination); Map with options and ProjectTo are Manual";
 
     // Map and ProjectTo calls that MapCallPattern does not rewrite are found too: while they run, a removed CreateMap fails at run time,
     // so they make the fix all-or-nothing.
@@ -33,16 +34,31 @@ public class CreateMapPattern : IPattern
             InvocationExpressionSyntax i => model.GetSymbolInfo(i) is var info
                 && (info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is IMethodSymbol { Name: "Map" or "ProjectTo" } method
                 && method.ContainingAssembly?.Name == AutoMapperAssembly
-                && !MapCallPattern.IsMapCall(i, model),
+                && !MapCallPattern.IsMapCall(i, model)
+                && !MapIntoPattern.IsMapIntoCall(i, model),
             _ => false,
         });
 
-    public virtual PatternResult Rewrite(SyntaxNode node, SemanticModel model)
+    // Without the solution no MapInto is written: nothing says a Map(source, destination) call needs it.
+    public virtual PatternResult Rewrite(SyntaxNode node, SemanticModel model) => Rewrite(node, model, new HashSet<string>());
+
+    public virtual async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(solution);
+        return node is ClassDeclarationSyntax
+            ? Rewrite(node, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken))
+            : Rewrite(node, model, new HashSet<string>());
+    }
+
+    // mapInto: the maps (MapIntoPattern.Key) that get a MapInto next to ToB.
+    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, IReadOnlySet<string> mapInto)
     {
         if (node is InvocationExpressionSyntax)
         {
             return PatternResult.Manual(
-                "AutoMapper's ProjectTo, Map(source, destination) and Map with options are not migrated yet (automapper.map-into, automapper.unsupported); while they run, the CreateMap rewrites of this fix stay undone.");
+                "AutoMapper's ProjectTo and Map with options are not migrated yet (automapper.unsupported); while they run, the CreateMap rewrites of this fix stay undone.");
         }
 
         var profile = (ClassDeclarationSyntax)node;
@@ -54,7 +70,7 @@ public class CreateMapPattern : IPattern
             return PatternResult.Manual($"Profile {profile.Identifier} is nested, generic, partial or has several constructors; write its mapping methods by hand.");
         }
 
-        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members)> maps = [];
+        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto)> maps = [];
         bool isInternal = false;
         foreach (StatementSyntax statement in body.Statements)
         {
@@ -79,7 +95,7 @@ public class CreateMapPattern : IPattern
             }
 
             isInternal |= access == Accessibility.Internal;
-            maps.Add((source, destination, members));
+            maps.Add((source, destination, members, mapInto.Contains(MapIntoPattern.Key(sourceType, destinationType))));
         }
 
         string className = profile.Identifier.ValueText + "Extensions";
@@ -409,7 +425,7 @@ public class CreateMapPattern : IPattern
 
     // The static class goes right after the profile, with its indentation and line endings.
     private static MemberDeclarationSyntax Extensions(ClassDeclarationSyntax profile, string className, string access,
-        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members)> maps)
+        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto)> maps)
     {
         string indent = profile.GetLeadingTrivia().LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToString();
         string eol = profile.SyntaxTree.GetRoot().DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia)).ToString() is { Length: > 0 } found
@@ -417,7 +433,7 @@ public class CreateMapPattern : IPattern
             : "\n";
         var text = new StringBuilder();
         text.Append(access).Append(" static class ").Append(className).Append(eol).Append(indent).Append('{').Append(eol);
-        foreach ((TypeSyntax source, TypeSyntax destination, List<(string Name, string Value)> members) in maps)
+        foreach ((TypeSyntax source, TypeSyntax destination, List<(string Name, string Value)> members, _) in maps)
         {
             if (text[^(eol.Length + 1)] != '{')
             {
@@ -440,6 +456,20 @@ public class CreateMapPattern : IPattern
             }
 
             text.Append(indent).Append("    };").Append(eol);
+        }
+
+        // After all ToB methods: MapCallPattern pairs the i-th method with the i-th CreateMap.
+        foreach ((TypeSyntax source, TypeSyntax destination, List<(string Name, string Value)> members, _) in maps.Where(m => m.MapInto))
+        {
+            text.Append(eol).Append(indent).Append("    ").Append(access).Append(" static ").Append(destination)
+                .Append(" MapInto(this ").Append(source).Append(" source, ").Append(destination).Append(" destination)").Append(eol)
+                .Append(indent).Append("    {").Append(eol);
+            foreach ((string member, string value) in members)
+            {
+                text.Append(indent).Append("        destination.").Append(member).Append(" = ").Append(value).Append(';').Append(eol);
+            }
+
+            text.Append(indent).Append("        return destination;").Append(eol).Append(indent).Append("    }").Append(eol);
         }
 
         text.Append(indent).Append('}').Append(eol);

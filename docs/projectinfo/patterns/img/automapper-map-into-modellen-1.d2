@@ -1,0 +1,29 @@
+direction: right
+ISolutionPattern: {shape: class; "+RewriteAsync(node, model, solution, ct)": "Task<PatternResult>"}
+MapIntoPattern: {
+  shape: class
+  "+Id": "automapper.map-into"
+  "+Find(root, model)": "IEnumerable<SyntaxNode>"
+  "+RewriteAsync(...)": "Task<PatternResult>"
+  "~IsMapIntoCall(i, model)": bool
+  "~TargetsAsync(solution, ct)": "IReadOnlySet<string>"
+  "-Check, Existing, Fixed": ""
+}
+CreateMapPattern: {
+  shape: class
+  "+RewriteAsync(...)": "Task<PatternResult>"
+  "-Rewrite(node, model, mapInto)": PatternResult
+}
+MapCallPattern: {shape: class; "~GeneratedAsync(...)": "List<(Method, Namespace, IsInternal, Project)>"}
+PatternResult: {shape: class}
+FixedResult: {shape: class}
+ManualResult: {shape: class}
+IMapper: "AutoMapper.IMapper\nMap<A, B>(A, B)"
+MapIntoPattern -> ISolutionPattern: implements
+CreateMapPattern -> ISolutionPattern: implements
+MapIntoPattern -> MapCallPattern: GeneratedAsync
+CreateMapPattern -> MapIntoPattern: "TargetsAsync, Key"
+MapIntoPattern -> IMapper: herkent
+FixedResult -> PatternResult: is
+ManualResult -> PatternResult: is
+MapIntoPattern -> PatternResult: geeft

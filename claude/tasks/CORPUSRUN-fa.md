@@ -44,7 +44,65 @@ Verse kopieën in `scratchpad/v110/work/<naam>` (bron `corpus/src`), alleen rest
 
 evo1 (MediatR, TAAK-115): geen IDE0005/IDE0065 meer; build nog rood op IDE0060 en MSG0005 (TAAK-136).
 
+## Ronde 3: volledig corpus (2026-10-12, main 2800f23)
+
+Shallow clones (`git clone --depth 1`) in `D:\playground\corpus-fa`, elk met een `nuget.config` met alleen nuget.org. Harnas: kopie van `claude/tools/corpus-regression.sh` (SDK 10, `NuGetAudit=false`, `AllowMissingPrunePackageData=true`, 3 jobs; test 2× vóór de fix, daarna `fix --force`, bin/obj weg, build, test, en vergelijking per test via TRX). De tool is gepubliceerd uit 2800f23. Alle HEADs gebruiken nog FA ≤ 7, dus er was geen oudere commit nodig; Polly, Mapperly en EventFlow staan op dezelfde tag als in ronde 1. Commits staan in `_results/commits.txt`. De kloons zijn verwijderd; rapporten en gefilterde logs staan in `D:\playground\corpus-fa\_results\<naam>\` (9 MB).
+
+| Project | Commit | restore | build vóór | tests vóór (pass/fail) | fix | Fixed | Manual | build na | tests na | regressies |
+| --- | --- | --- | --- | --- | --- | ---: | ---: | --- | --- | ---: |
+| SmartEnum | 9bc3f7a | 0 | 0 | 1293 (1293/0) | 0 | 379 | 62 | 0 | 1293 (1293/0) | 0 |
+| FluentResults | 36284d3 | 0 | 0 | 864 (864/0) | 0 | 564 | 76 | 0 | 864 (864/0) | 0 |
+| Ardalis.Result | 14cf45a | 0 | 0 | 1068 (1068/0) | 0 | 292 | 49 | 0 | 1068 (1068/0) | 0 |
+| CSharpFunctionalExtensions | e0fc908 | 0 | 0 | 4228 (4226/0) | 0 | 4502 | 49 | 0 | 4228 (4226/0) | 0 |
+| Facility | 6e147bf | 0 | 0 | 1552 (1552/0) | 0 | 513 | 2 | 0 | 1552 (1552/0) | 0 |
+| Ardalis.Specification¹ | d2fcf35 | 0 | 0 | 829 (823/0) | 0 | 828 | 45 | 0 | 829 (823/0) | 0 |
+| Bogus | 6ece18c | 0 | 0 | 3155 (3149/0) | 0 | 844 | 115 | 0 | 3155 (3149/0) | 0 |
+| NUKE | 27e8077 | 0 | 0 | 398 (391/0) | 0 | 339 | 34 | 0 | 398 (391/0) | 0 |
+| Mapperly (v3.6.0) | 51aa1da | 0 | 0 | 1094 (1094/0) | 0 | 114 | 6 | 0 | 1094 (1094/0) | 0 |
+| PowerApps-Tooling | 630e697 | 0 | 0 | 1767 (1767/0) | 0 | 293 | 103 | 0 | 1767 (1767/0) | 0 |
+| Polly (7.2.4) | b1a5a17 | 0 | 0 | 5685 (5685/0) | 0 | 4449 | 964 | 0 | 5685 (5685/0) | 0 |
+| EventFlow (v0.83.4713)² | e544b76 | 0 | 0 | 970 (642/326) | **1** → 0 | 483 | 59 | 0 | 970 (642/326) | 0 |
+| modular-monolith³ | 91c8ef2 | 0 | 0 | 287 (246/40) | 0 | **0** | 82 | 0 | 287 (246/40) | 0 |
+| LiteDB⁴ | 7b71bc4 | 0 | 0 | 4928×2 TFM groen | 0 | 6874 | 357 | **1** | – | – |
+| Steeltoe | f13e514 | 0 | 0 | 7 assemblies rood (baseline) | 0 | 5071 | 529 | **1** | – | – |
+| Akka.NET | 23a8566 | 0 | 0 | 2–3 assemblies rood (baseline) | 0 | 8488 | 1868 | **1** | – | – |
+
+Fixed/Manual zonder `project-file`- en `usings`-findings. Testtellingen zijn over alle TFM's opgeteld; "fail" telt alleen echte falers (overgeslagen tests niet).
+
+¹ `.sln` faalt als de map niet `Specification` heet (`ProjectReference ..\..\..\Specification\…`); opnieuw gedraaid met die mapnaam.
+² De fix crashte op een Latin-1-bestand (TAAK-167). Na handmatige conversie naar UTF-8: groen. De 326 falers zijn integratietests zonder database/EventStore (hangende testhosts na 4 min gestopt).
+³ Het sqlproj-project uit de solution gehaald (MSBuild.Sdk.SqlProj ondersteunt SDK 10 niet). Alle 82 findings Manual omdat het zelfsluitende `<Project Sdk=".." />` niet bewerkt kan worden (bestaande TAAK-181). Groen, maar er is niets gemigreerd.
+⁴ Eerste poging faalde in de baseline door een file-lock (CS2012, LiteDB.Fuzz parallel gebouwd); opnieuw met `-m:1`.
+
+Bouwfouten na de fix:
+
+| Project | Fout | Oorzaak | Taak |
+| --- | --- | --- | --- |
+| Akka.NET | 4 984× CS0121 (+ enkele CS8130/CS0119/CS1061/CS0452) | `Akka.TestKit` heeft een eigen `ShouldBe`/`ShouldBeTrue`; met `using Shouldly;` erbij is die dubbelzinnig | TAAK-174 |
+| LiteDB | 80× CS1929, 8× CS0411 (11 regels) | `BsonValue.ShouldBe(int/string)`: een eigen impliciete conversie, dus geen typeinferentie | TAAK-169 |
+| Steeltoe | 58× CS0411 (11 regels) | `ShouldContainKey` op `IReadOnlyDictionary`/headers | TAAK-168 |
+| EventFlow | fix exit 1 | niet-UTF-8-bestand → unhandled exception | TAAK-167 |
+
+Grootste Manual-groepen (alle projecten samen):
+
+| Reden | Aantal | Waar vooral | Taak |
+| --- | ---: | --- | --- |
+| Resultaat van `Throw<T>()` gebruikt (`.And/.Which/.Where/.WithInnerException`) | 499 | Polly 428 | TAAK-170 |
+| `ContainKey(..)` met resultaat gebruikt (`WhoseValue`), `ContainKeys`/`ContainValues` | 377 | Steeltoe 249, Polly 120 | TAAK-171 |
+| `BeEquivalentTo` op een collectie: volgorde | 207 | 13 projecten | TAAK-172 |
+| `AssertionScope` (blokken met helpers/deconstructie) | 190 | LiteDB 140 | – (bewust Manual) |
+| Subject gebouwd met `Awaiting`/`FluentActions` voor `NotThrowAsync` | 131 | Polly | TAAK-173 |
+| Projectbestand niet bewerkbaar (zelfsluitend) | 61 (+21 cascade) | modular-monolith | TAAK-181 |
+
+## Conclusie ronde 3
+
+- **Fixed: 88,9%** van alle FA-findings (33 900 Fixed / 4 249 Manual, 16 solutions; zonder Akka, Steeltoe en LiteDB 92,5%). Calls die niet herkend werden zitten niet in deze noemer (zie `ANALYSE-fa-100.md`).
+- **Volledig groen na de fix (bouwt, 0 testregressies, iets gemigreerd): 12 van 16**: SmartEnum, FluentResults, Ardalis.Result, CSFE, Facility, Specification, Bogus, NUKE, Mapperly, PowerApps-Tooling en Polly zonder ingreep, EventFlow na UTF-8-conversie. modular-monolith bouwt en heeft 0 regressies, maar er is niets omgezet.
+- **0 testregressies** in alle 13 projecten waar vóór en na vergeleken kon worden (samen ruim 24 000 testuitvoeringen). In ronde 1 waren dat er 26 (Polly) en 4 (FluentResults).
+- Rood: Akka.NET, LiteDB en Steeltoe bouwen niet na de fix (TAAK-174/169/168), en EventFlow crasht op encoding (TAAK-167). Daarmee is "100% FA" nog niet bewezen. Na TAAK-167..174 de run herhalen: met TAAK-170..173 komt Fixed op ongeveer 92%.
+
 ## Zie ook
 
 - `claude/tasks/CORPUSRUN-mediatr.md`
 - `claude/tasks/ANALYSE-fa-100.md`
+- `claude/tasks/TAAK-167-niet-utf8-bestand-breekt-fix.md` t/m `claude/tasks/TAAK-174-shouldly-dubbelzinnig-met-eigen-shouldbe.md`

@@ -76,3 +76,19 @@ Alle Shouldly-doelen gecontroleerd in `Shouldly.dll` 4.3.0. Prio: H = in bijna e
 | TAAK-113 | `Equal([..])` collection expression | PowerApps-Tooling | klaar (proof; corpus niet herbewezen) |
 | TAAK-114 | `Guid` `NotBeEmpty()` → `ShouldNotBeEmpty()` (CS1061) | Polly | klaar (Polly bouwt) |
 | TAAK-115 | Toegevoegde usings buiten namespace / overbodig (IDE0065/IDE0005) | evo1 (MediatR) | klaar |
+
+## Ronde 3 — corpus 2026-10-12
+
+Uit `claude/tasks/CORPUSRUN-fa.md` (ronde 3). Bouwfouten eerst.
+
+| Taak | Bug / patroon | Gevonden in | Aantal | Status |
+| --- | --- | --- | ---: | --- |
+| TAAK-174 | `using Shouldly;` botst met eigen `ShouldBe`-extensies (CS0121) | Akka.NET | 4 984 fouten | open |
+| TAAK-169 | `Be(x)` met eigen impliciete conversie (CS1929/CS0411) | LiteDB | 11 regels | open |
+| TAAK-168 | `ShouldContainKey` op `IReadOnlyDictionary`/headers (CS0411) | Steeltoe | 11 regels | open |
+| TAAK-167 | Niet-UTF-8-bestand laat de fix crashen | EventFlow | 1 bestand | open |
+| TAAK-181 | Zelfsluitend `<Project Sdk=".." />` (bestaand, nu ook bij FA) | modular-monolith | 82 Manual | open |
+| TAAK-170 | `Throw<T>()`-resultaat gebruikt → teruggegeven exception | Polly e.a. | 499 Manual | open |
+| TAAK-171 | `ContainKey(..).WhoseValue`, `ContainKeys`/`ContainValues` | Steeltoe, Polly | 377 Manual | open |
+| TAAK-172 | `BeEquivalentTo` collectie met waarde-items → `ignoreOrder: true` | 13 projecten | 207 Manual | open |
+| TAAK-173 | `Awaiting(..).Should().NotThrowAsync()` | Polly | 131 Manual | open |

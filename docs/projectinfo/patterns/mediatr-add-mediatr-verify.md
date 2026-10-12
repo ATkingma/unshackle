@@ -23,12 +23,15 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`, registra
 | Uitbreiding TAAK-060 | Gehaald | `publisher`, `edge-publisher-qualified` |
 | Uitbreiding TAAK-061/062 | Gehaald | `processors`, `empty` |
 | Uitbreiding TAAK-144 | Gehaald | `edge-assemblies-public`, `AddMediatRPatternTests` |
+| Uitbreiding TAAK-183 | Gehaald | `AddMediatRPatternTests.Rewrite_ScannedAssemblyOfOtherProject_ManualWhenHandlerNotPublicAndNoFriend` |
 | Uitbreiding TAAK-147 | Gehaald | `edge-assemblies-friend`, `AddMediatRPatternTests`, `SwappedTypesTests` |
 | Uitbreiding TAAK-148 | Gehaald | `edge-assemblies-friend` (nu Fixed), `AddMediatRPatternTests.RewriteAsync_InternalMethodWithFriend_ManualOnlyWhenOtherProjectCallsIt` |
 
 TAAK-117: een parameter die alleen naar een weggevallen `RegisterServicesFrom...` ging (IDE0060) blijft staan. TAAK-141: is de aanroep een los statement, dan komt er `_ = parameter;` vóór (geen IDE0060, signatuur en aanroepers ongewijzigd; proof `edge-assemblies`, evo1 bouwt weer). Anders `Fixed` met een waarschuwing in het rapport (`AddMediatRPatternTests`).
 
 TAAK-144: is die methode publiek (evo2's gedeelde `MediatorModule.AddMediator(services, assembly)`), of scant de aanroep een ander project met een internal handler, dan Manual; proof `edge-assemblies` is daarom nu `internal`. Daarnaast krijgt een eigen type dat zo heet als een Mediator-type (`ICommand`) de volledige naam waar `using Mediator;` binnenkomt (`IFix.AddedTypes`, proof `RequestHandler/edge-own-command-name`). Harnas: evo2 `ok` (Manual, ongewijzigd, 39/39), evo1 `ok` (45/45).
+
+TAAK-183: probe met Mediator 3.0.2 (host + library met public en internal handler): zonder `InternalsVisibleTo` CS0122 in `Mediator.g.cs`, met of zonder `o.Assemblies = [typeof(Marker)]`; met `InternalsVisibleTo("Host")` bouwt en draait het (beide handlers). Een internal handler in een assembly die dit project als friend heeft, is dus geen Manual meer. ardalis (geen friend, plus Ardalis.SharedKernel), evo1 (testproject als aanroeper) en evo2 (publieke methode met `Assembly`-parameter, internal handlers zonder friend) blijven terecht Manual.
 
 TAAK-147: een `internal` methode in een assembly met `InternalsVisibleTo` (behalve `DynamicProxyGenAssembly2`) telt ook als aanroepbaar van buiten → Manual. Sinds TAAK-148 alleen als een ander project de methode echt aanroept (melding noemt project en bestand:regel); anders Fixed (proof `edge-assemblies-friend`). `Mediator.SourceGenerator` komt alleen in projecten waarvan de originele code de echte MediatR-`AddMediatR` aanroept (semantisch, niet meer op naam; een eigen `AddMediator` telt niet). Een geswapte `global using Mediator;` kwalificeert eigen typen met een Mediator-naam in elk bestand van het project (proof `RequestHandler/edge-own-command-name-global`).
 

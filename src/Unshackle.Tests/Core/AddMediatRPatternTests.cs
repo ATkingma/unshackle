@@ -97,14 +97,18 @@ public class AddMediatRPatternTests
     }
 
     [Theory]
-    [InlineData("internal", typeof(ManualResult))]
-    [InlineData("public", typeof(FixedResult))]
-    public void Rewrite_ScannedAssemblyOfOtherProject_ManualWhenHandlerNotPublic(string accessibility, Type expected)
+    [InlineData("internal", "", typeof(ManualResult))]
+    [InlineData("public", "", typeof(FixedResult))]
+    [InlineData("internal", "Other", typeof(ManualResult))]
+    [InlineData("internal", "Host", typeof(FixedResult))]
+    public void Rewrite_ScannedAssemblyOfOtherProject_ManualWhenHandlerNotPublicAndNoFriend(string accessibility, string friend, Type expected)
     {
         // Arrange
         CancellationToken token = TestContext.Current.CancellationToken;
         SyntaxTree handlers = CSharpSyntaxTree.ParseText(
-            "using System.Threading; using System.Threading.Tasks; using MediatR;\npublic class Marker { }\npublic class Ping : IRequest { }\n"
+            "using System.Threading; using System.Threading.Tasks; using MediatR;\n"
+            + (friend.Length > 0 ? $"[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(\"{friend}\")]\n" : "")
+            + "public class Marker { }\npublic class Ping : IRequest { }\n"
             + accessibility + " class PingHandler : IRequestHandler<Ping> { public Task Handle(Ping request, CancellationToken cancellationToken) => Task.CompletedTask; }",
             cancellationToken: token);
         MetadataReference library = CSharpCompilation.Create("Handlers", [handlers], TestReferences.MediatR,

@@ -50,6 +50,9 @@ internal partial class ProjectFile
 
     public XDocument Document { get; }
 
+    // The line ending the file mostly uses; new lines in a file without any follow the file.
+    public string NewLine => _text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+
     public XNamespace Namespace => Document.Root!.Name.Namespace;
 
     public ProjectFileChange ToChange() =>
@@ -101,20 +104,20 @@ internal partial class ProjectFile
             });
         }
 
-        if (span.TagEnd == span.End)
+        bool selfClosing = span.TagEnd == span.End;
+        if (selfClosing && !element.Nodes().Any())
         {
-            return element.Nodes().Any()
-                ? throw new InvalidDataException($"{Path} cannot be edited without changing unrelated text; migrate it by hand.")
-                : startTag;
+            return startTag;
         }
 
-        var builder = new StringBuilder(startTag);
+        // A self-closing element that gained children (<Project Sdk="..." /> that gets a reference) becomes <Project Sdk="...">...</Project>.
+        var builder = new StringBuilder(selfClosing ? startTag[..^2].TrimEnd() + ">" : startTag);
         foreach (XNode child in element.Nodes())
         {
             builder.Append(Render(child));
         }
 
-        return builder.Append(_text[span.ContentEnd..span.End]).ToString();
+        return builder.Append(selfClosing ? $"</{element.Name.LocalName}>" : _text[span.ContentEnd..span.End]).ToString();
     }
 
     // shortcut: a new element is written on one line with ' />'; enough for the references and usings this store adds.

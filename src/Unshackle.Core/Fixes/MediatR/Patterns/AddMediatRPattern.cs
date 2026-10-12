@@ -151,7 +151,7 @@ public class AddMediatRPattern : ISolutionPattern
         {
             return PatternResult.Manual(
                 $"AddMediatR scans {hidden.ContainingAssembly.Name}, whose handler {hidden.Name} is not public: the code Mediator generates in this project cannot reach it (CS0122). "
-                + "Make the handlers public, or call AddMediator in the project that declares them.");
+                + "Make the handlers public, grant this project InternalsVisibleTo, or call AddMediator in the project that declares them.");
         }
 
         // MediatR's assembly scan registers closed exception handlers and processors itself; Mediator only runs what is listed.
@@ -244,6 +244,7 @@ public class AddMediatRPattern : ISolutionPattern
             .FirstOrDefault(n => !string.IsNullOrEmpty(n) && n != "DynamicProxyGenAssembly2");
 
     // A non-public handler in another assembly that a dropped scan names by typeof(T) or <T>, directly or through a local.
+    // An assembly that grants this project InternalsVisibleTo is fine: Mediator 3.0.2's generated code then reaches its internal handlers (TAAK-183).
     private static INamedTypeSymbol? HiddenHandler(List<InvocationExpressionSyntax> dropped, SemanticModel model)
     {
         List<SyntaxNode> sources = [.. dropped];
@@ -261,7 +262,7 @@ public class AddMediatRPattern : ISolutionPattern
                 .Concat(s.DescendantNodesAndSelf().OfType<GenericNameSyntax>().SelectMany(g => g.TypeArgumentList.Arguments)))
             .Select(t => model.GetTypeInfo(t).Type?.ContainingAssembly)
             .OfType<IAssemblySymbol>()
-            .Where(a => !SymbolEqualityComparer.Default.Equals(a, model.Compilation.Assembly))
+            .Where(a => !SymbolEqualityComparer.Default.Equals(a, model.Compilation.Assembly) && !a.GivesAccessTo(model.Compilation.Assembly))
             .Distinct(SymbolEqualityComparer.Default)
             .Cast<IAssemblySymbol>()
             .SelectMany(a => Types(a.GlobalNamespace))

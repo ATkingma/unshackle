@@ -3,6 +3,7 @@ using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.FluentAssertions;
+using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
 using Xunit;
@@ -75,6 +76,36 @@ public class CombinedProofTests
         report.Findings.ShouldAllBe(f => f.Result is FixedResult, string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
         actual.ShouldBe(expected);
         TestSolution.CompileErrors(actual, TestReferences.AutoMapper).ShouldBeEmpty("after must compile");
+    }
+
+    private static readonly string s_mediatRDirectory = Path.Combine(AppContext.BaseDirectory, "Proofs", "MediatR", FolderName);
+
+    public static TheoryData<string> MediatRCases() =>
+        [.. Directory.EnumerateFiles(s_mediatRDirectory, "*.before.cs")
+            .Select(p => Path.GetFileName(p)[..^".before.cs".Length])
+            .Order(StringComparer.Ordinal)];
+
+    // A behavior and the test that mocks its next: the test only compiles after both are rewritten.
+    [Theory]
+    [MemberData(nameof(MediatRCases))]
+    public async Task CombinedMediatR_Before_BecomesAfter(string name)
+    {
+        // Arrange
+        string basePath = Path.Combine(s_mediatRDirectory, name);
+        string before = Normalize(await File.ReadAllTextAsync(basePath + ".before.cs", TestContext.Current.CancellationToken));
+        string expected = Normalize(await File.ReadAllTextAsync(basePath + ".after.cs", TestContext.Current.CancellationToken));
+        TestSolution.CompileErrors(before, TestReferences.MediatR).ShouldBeEmpty("before must compile against MediatR");
+        var fixer = new Fixer([new MediatRFix()]);
+        Solution solution = TestSolution.Create(before, TestReferences.MediatR);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "mediatr" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        string actual = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult, string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
+        actual.ShouldBe(expected);
+        TestSolution.CompileErrors(actual, TestReferences.Mediator, TestReferences.MediatorGenerators).ShouldBeEmpty("after must compile against Mediator");
     }
 
     [Fact]

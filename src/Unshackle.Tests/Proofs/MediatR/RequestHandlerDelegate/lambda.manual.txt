@@ -1,0 +1,1 @@
+is initialized with a real delegate, not a Substitute.For mock

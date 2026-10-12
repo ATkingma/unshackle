@@ -63,10 +63,40 @@ public class FixerProjectFileTests
         await _projectFiles.Received(1).EditAsync(
             Arg.Is<IEnumerable<ProjectMigration>>(m => m.Single().KeepRemovedPackage),
             Arg.Any<CancellationToken>());
-        Finding manual = report.Findings.Single(f => f.Result is ManualResult);
+        Finding manual = report.Findings.Single(f => f.Result is ManualResult && f.PatternId == Fixer.ProjectFilePatternId);
         manual.FilePath.ShouldBe(ProjectPath);
         manual.Line.ShouldBe(0);
         ((ManualResult)manual.Result).Reason.ShouldContain("FluentAssertions is still used");
+    }
+
+    [Fact]
+    public async Task FixAsync_CodeStillUsesPackageWithoutFinding_ReportsManualOnThatLine()
+    {
+        // Arrange
+        var fixer = new Fixer([CreateFix(s_package)], _projectFiles);
+        string code = "using FluentAssertions;\nclass C\n{\n    void M() => 1.Should();\n}";
+
+        // Act
+        FixReport report = await FixAsync(fixer, code, TestReferences.FluentAssertions);
+
+        // Assert
+        Finding unmatched = report.Findings.Single(f => f.PatternId == Fixer.UnmatchedPatternId);
+        unmatched.FilePath.ShouldBe("/repo/Tests/C.cs");
+        unmatched.Line.ShouldBe(4);
+        ((ManualResult)unmatched.Result).Reason.ShouldContain("is still used here and no pattern migrates it");
+    }
+
+    [Fact]
+    public async Task FixAsync_CodeNoLongerUsesPackage_ReportsNoUnmatchedUse()
+    {
+        // Arrange
+        var fixer = new Fixer([CreateFix(s_package)], _projectFiles);
+
+        // Act
+        FixReport report = await FixAsync(fixer, NoFluentAssertions, TestReferences.FluentAssertions);
+
+        // Assert
+        report.Findings.ShouldNotContain(f => f.PatternId == Fixer.UnmatchedPatternId);
     }
 
     [Fact]

@@ -1,6 +1,6 @@
 # TAAK-184 — MediatR: request-processor die een andere Task teruggeeft (`return Task.Run(...)`)
 
-**Status**: stap 1/3 — nog te starten
+**Status**: ✅ voltooid — 2026-10-12
 **Aangemaakt**: 2026-10-12 (`claude/tasks/CORPUSRUN-mediatr.md`; actie 7 uit de run van 2026-10-11)
 **Doel**: nadirbad VerticalSlice komt voorbij deze Manual (daarna blijft hij terecht Manual op de generieke `DomainEventNotification<T>`).
 
@@ -11,9 +11,14 @@
 
 ## Stappen
 
-1. [ ] Proof `Proofs/MediatR/RequestProcessor/` met `return Task.Run(...)` en expression body.
-2. [ ] Rewrite in `RequestProcessorPattern.cs` naar `new ValueTask(Expr)`.
-3. [ ] Bewijs: harnas op nadir → enige root-Manual is `mediatr.unsupported` (generieke notification).
+1. [x] Proof `Proofs/MediatR/RequestProcessor/` met `return Task.Run(...)` en expression body.
+2. [x] Rewrite in `RequestProcessorPattern.cs` naar `new ValueTask(Expr)`.
+3. [x] (niet met het corpusproject zelf gedraaid; bewezen via proofs `other-return` en `task-run`) Bewijs: harnas op nadir → enige root-Manual is `mediatr.unsupported` (generieke notification).
+
+## Resultaat
+
+- `MediatRSyntax.WithCompletedValueTask`: elke andere teruggegeven `Task` wordt `new ValueTask(expr)` (alleen gebruikt door `RequestProcessorPattern`); Manual blijft voor niet-`Task`-types (ook `Task<T>`).
+- Proofs: `RequestProcessor/other-return` (nu Fixed, was Manual), `RequestProcessor/task-run`. Patroon-docs (plan REQ-4, verify, modellen) en `proofs.md` bijgewerkt.
 
 ## Zie ook
 

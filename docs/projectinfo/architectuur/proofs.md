@@ -916,7 +916,8 @@ Totaal: 667 proofs (zonder `_Pending`).
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
-| `other-return` | Manual |  — reden: not async |
+| `other-return` | Fixed | `public Task Process(TRequest request, CancellationToken cancellationToken) => Task.Delay(1, cancellationToken);` → `protected override ValueTask Handle(TRequest request, CancellationToken cancellationToken) => new ValueTask(Task.Delay(1, cancellationToken));` |
+| `task-run` | Fixed | `public Task Process(...) { return Task.Run(...); }` → `protected override ValueTask Handle(...) { return new ValueTask(Task.Run(...)); }` |
 | `post-open-async` | Fixed | `public class AuditPostProcessor<TRequest, TResponse> : IRequestPostProcessor<TRequest, TResponse> where TReque…` → `public class AuditPostProcessor<TRequest, TResponse> : MessagePostProcessor<TRequest, TResponse> where TReques…` |
 | `pre-closed` | Fixed | `public class QueryPreProcessor : IRequestPreProcessor<Query> public Task Process(Query request, CancellationTo…` → `public class QueryPreProcessor : MessagePreProcessor<Query, int> protected override ValueTask Handle(Query req…` |
 | `pre-open` | Fixed | `public class AuditPreProcessor<TRequest> : IRequestPreProcessor<TRequest> where TRequest : notnull public Task…` → `public class AuditPreProcessor<TRequest, TResponse> : MessagePreProcessor<TRequest, TResponse> where TRequest …` |

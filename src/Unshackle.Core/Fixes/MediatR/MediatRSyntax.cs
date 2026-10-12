@@ -68,8 +68,9 @@ public static class MediatRSyntax
             taskMember.Name).WithTriviaFrom(taskMember);
 
     /// <summary>
-    /// Async: unchanged. Otherwise every <c>return Task.CompletedTask</c> → <c>ValueTask.CompletedTask</c>; null when another Task is returned.
-    /// The return type is left to the caller.
+    /// Async: unchanged. Otherwise every <c>return Task.CompletedTask</c> → <c>ValueTask.CompletedTask</c> and every other returned Task
+    /// (<c>Task.Run(...)</c>, <c>Task.Delay(...)</c>) → <c>new ValueTask(expr)</c> (no state machine, a synchronous throw stays synchronous, TAAK-154);
+    /// null when something that is not a Task is returned. The return type is left to the caller.
     /// </summary>
     public static MethodDeclarationSyntax? WithCompletedValueTask(MethodDeclarationSyntax method, SemanticModel model)
     {
@@ -79,10 +80,23 @@ public static class MediatRSyntax
         }
 
         List<ExpressionSyntax?> returned = ReturnedExpressions(method);
-        return returned.Any(e => e is not MemberAccessExpressionSyntax || !IsTaskMember(e, model, "CompletedTask"))
-            ? null
-            : method.ReplaceNodes(returned.OfType<MemberAccessExpressionSyntax>(), (original, _) => OnValueTask(original));
+        if (returned.Any(e => e is null || !IsCompletedTask(e, model) && model.GetTypeInfo(e).Type?.ToDisplayString() != "System.Threading.Tasks.Task"))
+        {
+            return null;
+        }
+
+        return method.ReplaceNodes(
+            returned.OfType<ExpressionSyntax>(),
+            (original, _) => IsCompletedTask(original, model)
+                ? OnValueTask((MemberAccessExpressionSyntax)original)
+                : SyntaxFactory.ObjectCreationExpression(
+                    SyntaxFactory.IdentifierName("ValueTask").WithLeadingTrivia(SyntaxFactory.Space),
+                    SyntaxFactory.ArgumentList([SyntaxFactory.Argument(original.WithoutTrivia())]),
+                    null).WithTriviaFrom(original));
     }
+
+    private static bool IsCompletedTask(ExpressionSyntax expression, SemanticModel model) =>
+        expression is MemberAccessExpressionSyntax && IsTaskMember(expression, model, "CompletedTask");
 
     /// <summary>The MediatR interface with this metadata name that <paramref name="type"/> declares itself (not through a base class or interface).</summary>
     public static INamedTypeSymbol? DeclaredInterface(INamedTypeSymbol type, string metadataName) =>

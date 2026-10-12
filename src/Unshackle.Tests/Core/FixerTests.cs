@@ -357,6 +357,24 @@ public class FixerTests
     }
 
     [Fact]
+    public async Task FixAsync_InactiveIfBranchWithoutRemovedNames_RemovesUsingAndReportsNoManual()
+    {
+        // Arrange: like jason's `#if (UseApiOnly)` blocks: inactive code that names nothing of the removed namespace.
+        string code = Code.Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace("Foo();", "Foo();\n#if NEVER\n        var sb = new Other();\n#endif", StringComparison.Ordinal);
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        var fixer = new Fixer([CreateFix(pattern, removed: ["System.Text"], added: ["System.IO"])]);
+
+        // Act
+        FixReport report = await FixAsync(fixer, code);
+
+        // Assert
+        string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        text.ShouldNotContain("using");
+        report.Findings.ShouldNotContain(f => f.PatternId == Fixer.UsingsPatternId && f.Result is ManualResult);
+    }
+
+    [Fact]
     public async Task FixAsync_UnknownFixId_ThrowsArgumentException()
     {
         // Arrange

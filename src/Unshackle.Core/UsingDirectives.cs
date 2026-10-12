@@ -34,7 +34,7 @@ internal static class UsingDirectives
             used.UnionWith(removedNamespaces);
         }
 
-        List<UsingDirectiveSyntax> unused = HasInactiveCode(root)
+        List<UsingDirectiveSyntax> unused = InactiveCodeMayUse(root, model.Compilation, removedNamespaces)
             ? []
             : [.. AllUsings(root).Where(d => IsPlainUsing(d) && d.GlobalKeyword.IsKind(SyntaxKind.None)
                 && removedNamespaces.Contains(d.Name!.ToString()) && !used.Contains(d.Name!.ToString()))];
@@ -235,15 +235,46 @@ internal static class UsingDirectives
     public static async Task<bool> NamesRemovedNamespaceAsync(Document document, IEnumerable<string> removedNamespaces, CancellationToken cancellationToken) =>
         await document.GetSyntaxRootAsync(cancellationToken) is CompilationUnitSyntax root
         && await document.GetSemanticModelAsync(cancellationToken) is SemanticModel model
-        && (HasInactiveCode(root) || UsedNamespaces(root, model, [], cancellationToken).Overlaps(removedNamespaces));
+        && (InactiveCodeMayUse(root, model.Compilation, removedNamespaces) || UsedNamespaces(root, model, [], cancellationToken).Overlaps(removedNamespaces));
 
-    // Code in an inactive #if branch is only trivia: nothing binds there, so a removed using may still be needed by it.
-    public static bool HasInactiveCode(SyntaxNode root) =>
-        root.DescendantTrivia().Any(t => t.IsKind(SyntaxKind.DisabledTextTrivia));
+    // Code in an inactive #if branch is only trivia: nothing binds there, so we tokenise it and look for a name of the removed
+    // namespaces (their types, their extension methods, the namespace itself). Inactive code without one needs no using (TAAK-182).
+    public static bool InactiveCodeMayUse(SyntaxNode root, Compilation compilation, IEnumerable<string> removedNamespaces)
+    {
+        List<SyntaxTrivia> inactive = [.. root.DescendantTrivia().Where(t => t.IsKind(SyntaxKind.DisabledTextTrivia))];
+        if (inactive.Count == 0)
+        {
+            return false;
+        }
+
+        HashSet<string> names = RemovedNames(compilation, [.. removedNamespaces]);
+        return inactive.Any(t => SyntaxFactory.ParseTokens(t.ToString()).Any(token => token.IsKind(SyntaxKind.IdentifierToken) && names.Contains(token.ValueText)));
+    }
+
+    private static HashSet<string> RemovedNames(Compilation compilation, IReadOnlyCollection<string> removedNamespaces)
+    {
+        HashSet<string> names = [.. removedNamespaces.Select(ns => ns.Split('.')[0])];
+        foreach (string ns in removedNamespaces)
+        {
+            INamespaceSymbol? scope = compilation.GlobalNamespace;
+            foreach (string part in ns.Split('.'))
+            {
+                scope = scope?.GetNamespaceMembers().FirstOrDefault(m => m.Name == part);
+            }
+
+            foreach (INamedTypeSymbol type in scope?.GetTypeMembers().Where(t => t.DeclaredAccessibility == Accessibility.Public) ?? [])
+            {
+                names.Add(type.Name);
+                names.UnionWith(type.GetMembers().OfType<IMethodSymbol>().Where(m => m.IsExtensionMethod).Select(m => m.Name));
+            }
+        }
+
+        return names;
+    }
 
     // A top-level using of a removed namespace that stays because inactive code may still need it.
-    public static bool KeepsRemovedUsing(SyntaxNode root, IEnumerable<string> removedNamespaces) =>
-        root is CompilationUnitSyntax unit && HasInactiveCode(unit) && AllUsings(unit)
+    public static bool KeepsRemovedUsing(SyntaxNode root, Compilation compilation, IEnumerable<string> removedNamespaces) =>
+        root is CompilationUnitSyntax unit && InactiveCodeMayUse(unit, compilation, removedNamespaces) && AllUsings(unit)
             .Any(u => IsPlainUsing(u) && u.GlobalKeyword.IsKind(SyntaxKind.None) && removedNamespaces.Contains(u.Name!.ToString()));
 
     // Top-level `global using` directives of removed namespaces in the user's own files (not MSBuild's generated *.g.cs).
@@ -291,9 +322,9 @@ internal static class UsingDirectives
             return false;
         }
 
-        return HasInactiveCode(root)
-            || await document.GetSemanticModelAsync(cancellationToken) is SemanticModel model
-            && UsedNamespaces(root, model, swappedTypes, cancellationToken).Overlaps(removedNamespaces);
+        return await document.GetSemanticModelAsync(cancellationToken) is SemanticModel model
+            && (InactiveCodeMayUse(root, model.Compilation, removedNamespaces)
+                || UsedNamespaces(root, model, swappedTypes, cancellationToken).Overlaps(removedNamespaces));
     }
 
     // A swapped type, or a member of one: its twin in the added namespace takes over after the using swap.

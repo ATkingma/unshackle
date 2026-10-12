@@ -25,10 +25,11 @@ public static class TestReferences
         MetadataReference.CreateFromFile(typeof(global::MediatR.IMediator).Assembly.Location),
         MetadataReference.CreateFromFile(typeof(global::MediatR.INotification).Assembly.Location),
         DependencyInjection,
+        NSubstitute,
     ];
 
     public static IReadOnlyList<MetadataReference> Mediator { get; } =
-        [.. Net, MetadataReference.CreateFromFile(typeof(global::Mediator.IMediator).Assembly.Location), DependencyInjection];
+        [.. Net, MetadataReference.CreateFromFile(typeof(global::Mediator.IMediator).Assembly.Location), DependencyInjection, NSubstitute];
 
     // Mediator writes AddMediator and MediatorOptions at compile time, so an "after" using them only compiles with its generator.
     public static IReadOnlyList<ISourceGenerator> MediatorGenerators { get; } =
@@ -40,6 +41,10 @@ public static class TestReferences
     // AutoMapper 14.0.0: the last free version. "After" keeps it while a Profile stays (an emptied one too).
     public static IReadOnlyList<MetadataReference> AutoMapper { get; } =
         [.. Net, MetadataReference.CreateFromFile(typeof(global::AutoMapper.Profile).Assembly.Location), DependencyInjection];
+
+    // Test code that mocks a pipeline behavior's next (RequestHandlerDelegate).
+    private static MetadataReference NSubstitute =>
+        MetadataReference.CreateFromFile(typeof(global::NSubstitute.Substitute).Assembly.Location);
 
     // AddMediatR, AddMediator and the code Mediator's source generator writes need IServiceCollection.
     private static MetadataReference DependencyInjection =>

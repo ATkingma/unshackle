@@ -143,6 +143,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-090-loader-nuget-warnings.md` | ✅ Loader: NuGet-audit/NU1701 en ontbrekend projectbestand zijn waarschuwingen, geen laadfout |
 | `claude/tasks/archief/TAAK-165-custom-assertions-should-extensie.md` | ✅ queue #34: al gedekt door `fa.custom-assertion`; extra proof voor eigen `Should()` + `ObjectAssertions`-subklasse |
 | `claude/tasks/archief/TAAK-091-custom-assertions-gegroepeerd.md` | ✅ `fa.custom-assertion`: eigen FA-extensies Manual, gegroepeerd per extensie in rapport en console |
+| `claude/tasks/archief/TAAK-180-mediatr-test-request-handler-delegate.md` | ✅ `mediatr.request-handler-delegate` (gemockte `next` in testcode) + vangnet `unmatched-use` voor MediatR-gebruik zonder finding |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: ongebruikte assembly-parameter na AddMediator (IDE0060) → waarschuwing in rapport |
 | `claude/tasks/archief/TAAK-070-fa-assertion-in-throw-lambda.md` | ✅ Assertion in lambda met `Throw<XunitException>` erop → assertion en Throw Manual |
 

@@ -50,7 +50,7 @@ public class RequestProcessorPattern : IPattern
             : null;
         if (body is null)
         {
-            return PatternResult.Manual("Process does not return Task.CompletedTask or is not async; Mediator needs a ValueTask, convert it by hand.");
+            return PatternResult.Manual("Process returns something that is not a Task; Mediator needs a ValueTask, convert it by hand (e.g. make the method async).");
         }
 
         ITypeSymbol message = processor.TypeArguments[0];

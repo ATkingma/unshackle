@@ -16,6 +16,9 @@ public class Fixer : IFixer
     // Rows for usings the fix could not swap safely: a global using, or a using that inactive #if code may need.
     public const string UsingsPatternId = "usings";
 
+    // Rows for code that still names the removed package while no pattern found it: the place the user has to migrate by hand.
+    public const string UnmatchedPatternId = "unmatched-use";
+
     private readonly IReadOnlyList<IFix> _fixes;
     private readonly IProjectFileStore? _projectFiles;
 
@@ -115,7 +118,7 @@ public class Fixer : IFixer
                     .Select(n => CreateUsingsFinding(updated.FilePath ?? updated.Name, n.GetLocation().GetLineSpan().StartLinePosition.Line + 1, fix, PatternResult.Manual(
                         $"{n.Identifier.ValueText}() binds to nothing here (the type it is called on is unknown, e.g. after a rewrite in a lambda earlier on), " +
                         "so no pattern migrated it and the old using stays. Run the fix again once the project builds, or migrate it by hand."))));
-                if (UsingDirectives.KeepsRemovedUsing(updatedRoot, fix.RemovedNamespaces))
+                if (UsingDirectives.KeepsRemovedUsing(updatedRoot, model.Compilation, fix.RemovedNamespaces))
                 {
                     // Line in the file as the patterns saw it, like their findings; 0 (whole file) when only the updated root has it.
                     SyntaxTrivia disabled = (await document.GetSyntaxRootAsync(cancellationToken))!.DescendantTrivia()
@@ -241,6 +244,21 @@ public class Fixer : IFixer
         findings.AddRange(migrations.Where(m => m.KeepRemovedPackage).Select(m => CreateProjectFinding(m.ProjectPath, fix,
             PatternResult.Manual($"{package.RemovedPackage} is still used in this project, so its package and global usings stay. " +
                 "Fix the manual findings and run the fix again."))));
+        // The project-file row alone says that something is left, not where. A file with a Manual finding already has its explanation.
+        HashSet<string> removed = [package.RemovedPackage, .. package.AlsoRemovedPackages];
+        HashSet<string> explained = [.. findings.Where(f => f.Result is ManualResult).Select(f => f.FilePath)];
+        foreach (ProjectMigration kept in migrations.Where(m => m.KeepRemovedPackage))
+        {
+            foreach ((string filePath, int line, string symbol) in await ProjectPackages.RemainingUsesAsync(solution, kept.ProjectPath, removed, swappedTypes, cancellationToken))
+            {
+                if (!explained.Contains(filePath))
+                {
+                    findings.Add(CreateFinding(filePath, line, fix, UnmatchedPatternId, PatternResult.Manual(
+                        $"{symbol} is still used here and no pattern migrates it, so {package.RemovedPackage} stays in this project. Migrate it by hand.")));
+                }
+            }
+        }
+
         findings.AddRange(changes.Select(c => CreateProjectFinding(c.FilePath, fix, c.KeptRemovedPackageFor is string user
             ? PatternResult.Manual($"{user} is not migrated but still uses {package.RemovedPackage}, so this shared file keeps it next to the new package. " +
                 "Migrate that project and run the fix again.")
@@ -409,5 +427,8 @@ public class Fixer : IFixer
         PatternResult.Manual($"Internal error in {pattern.Id}: {ex.Message}");
 
     private static Finding CreateFinding(string filePath, int line, IFix fix, IPattern pattern, PatternResult result) =>
-        new() { FilePath = filePath, Line = line, FixId = fix.Id, PatternId = pattern.Id, Result = result };
+        CreateFinding(filePath, line, fix, pattern.Id, result);
+
+    private static Finding CreateFinding(string filePath, int line, IFix fix, string patternId, PatternResult result) =>
+        new() { FilePath = filePath, Line = line, FixId = fix.Id, PatternId = patternId, Result = result };
 }

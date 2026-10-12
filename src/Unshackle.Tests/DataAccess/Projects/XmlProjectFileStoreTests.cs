@@ -94,6 +94,41 @@ public class XmlProjectFileStoreTests
         Text(changes, Project).ShouldBe(expected);
     }
 
+    [Theory]
+    [InlineData("<Project Sdk=\"Microsoft.NET.Sdk\" />", "\n")]
+    [InlineData("<Project Sdk=\"Microsoft.NET.Sdk\"/>", "\n")]
+    [InlineData("<Project Sdk=\"Microsoft.NET.Sdk\"></Project>", "\n")]
+    [InlineData("<Project Sdk=\"Microsoft.NET.Sdk\" />\r\n", "\r\n")]
+    public async Task EditAsync_ProjectWithoutContent_GetsTheAddedPackageAndKeepsLineEndings(string project, string newLine)
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(project));
+        string trailing = project.EndsWith('\n') ? newLine : string.Empty;
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
+
+        // Assert
+        FullPathText(changes, Project).ShouldBe(
+            $"<Project Sdk=\"Microsoft.NET.Sdk\">{newLine}  <ItemGroup>{newLine}    <PackageReference Include=\"Shouldly\" Version=\"4.3.0\" />{newLine}  </ItemGroup>{newLine}</Project>{trailing}");
+    }
+
+    [Fact]
+    public async Task EditAsync_SelfClosingProjectOfThisSolution_GetsReferenceWithoutVersionNextToNormalProject()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(CentralProject));
+        _fileSystem.AddFile(PackagesProps, new MockFileData(CentralVersions));
+        _fileSystem.AddFile(OtherProject, new MockFileData("<Project Sdk=\"Microsoft.NET.Sdk\" />"));
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false), Migration(OtherProject, keep: false));
+
+        // Assert
+        changes.Count.ShouldBe(3);
+        FullPathText(changes, OtherProject).ShouldBe("<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <PackageReference Include=\"Shouldly\" />\n  </ItemGroup>\n</Project>");
+    }
+
     [Fact]
     public async Task EditAsync_TwoAddedPackagesCentral_SwapsFirstInPlaceAndAddsSecondWithPrivateAssetsAfterIt()
     {
@@ -630,6 +665,10 @@ public class XmlProjectFileStoreTests
         RemovedNamespaces = ["FluentAssertions"],
         AddedNamespaces = ["Shouldly"],
     };
+
+    // The store reports full paths of the file system it runs on ("C:\repo\..." on Windows).
+    private string FullPathText(IReadOnlyList<ProjectFileChange> changes, string path) =>
+        changes.Single(c => c.FilePath == _fileSystem.Path.GetFullPath(path)).NewText;
 
     private static string Text(IReadOnlyList<ProjectFileChange> changes, string path) => changes.Single(c => c.FilePath == path).NewText;
 

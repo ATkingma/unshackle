@@ -44,11 +44,11 @@ Alles-of-niets (2026-10-11): `MediatRFix.AllOrNothing`; één Manual-bevinding l
 
 | #   | Taak     | Wat                                                                                         | Project        | Status |
 | --- | -------- | ------------------------------------------------------------------------------------------- | -------------- | ------ |
-| 14  | TAAK-180 | `RequestHandlerDelegate` in testcode (mock + `Handle(cmd, next, ct)`); stil "still used"    | amantin        | open   |
-| 15  | TAAK-181 | zelfsluitend `<Project Sdk="..." />` blokkeert projectbestand-stap op alle projecten        | kgrzybek       | open   |
-| 16  | TAAK-182 | inactieve `#if`-code zonder MediatR houdt `global using MediatR` vast                        | jason          | open   |
-| 17  | TAAK-183 | `AddMediatR` over projectgrenzen (internal handlers, assembly-parameter, testproject)       | ardalis, evo1/2 | open  |
-| 18  | TAAK-184 | request-processor `return Task.Run(...)` → `new ValueTask(...)`                             | nadirbad       | open   |
+| 14  | TAAK-180 | `RequestHandlerDelegate` in testcode (mock + `Handle(cmd, next, ct)`); stil "still used"    | amantin        | klaar (TAAK-180) |
+| 15  | TAAK-181 | zelfsluitend `<Project Sdk="..." />` blokkeert projectbestand-stap op alle projecten        | kgrzybek       | klaar  |
+| 16  | TAAK-182 | inactieve `#if`-code zonder MediatR houdt `global using MediatR` vast                        | jason          | klaar  |
+| 17  | TAAK-183 | `AddMediatR` over projectgrenzen (internal handlers, assembly-parameter, testproject)       | ardalis, evo1/2 | klaar (TAAK-183) |
+| 18  | TAAK-184 | request-processor `return Task.Run(...)` → `new ValueTask(...)`                             | nadirbad       | klaar  |
 
 ## Zie ook
 

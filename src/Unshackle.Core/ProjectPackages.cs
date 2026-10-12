@@ -86,12 +86,8 @@ internal static class ProjectPackages
                 continue;
             }
 
-            bool uses = root.DescendantNodes(n => n is not UsingDirectiveSyntax)
-                .OfType<SimpleNameSyntax>()
-                .Select(n => model.GetSymbolInfo(n, cancellationToken).Symbol)
-                .Any(s => s is not null and not INamespaceSymbol && s.ContainingAssembly?.Name is string name && assemblyNames.Contains(name)
-                    && !UsingDirectives.IsSwapped(s, swappedTypes));
-            if (uses || UsingDirectives.KeepsRemovedUsing(root, fix.RemovedNamespaces)
+            bool uses = RemovedAssemblyUses(root, model, assemblyNames, swappedTypes, cancellationToken).Any();
+            if (uses || UsingDirectives.KeepsRemovedUsing(root, model.Compilation, fix.RemovedNamespaces)
                 || UsingDirectives.RemovedGlobalUsings(root, document.FilePath, fix.RemovedNamespaces).Any()
                 || UsingDirectives.UnboundCalls(root, model, fix.RemovedExtensionMethods, cancellationToken).Any())
             {
@@ -101,4 +97,39 @@ internal static class ProjectPackages
 
         return false;
     }
+
+    // Where the code of these projects still names a type or member of the removed package (swapped types aside): the places no pattern migrated.
+    public static async Task<IReadOnlyList<(string FilePath, int Line, string Symbol)>> RemainingUsesAsync(
+        Solution solution,
+        string projectPath,
+        IEnumerable<string> assemblyNames,
+        IReadOnlyCollection<string> swappedTypes,
+        CancellationToken cancellationToken)
+    {
+        HashSet<string> names = [.. assemblyNames];
+        var uses = new List<(string FilePath, int Line, string Symbol)>();
+        foreach (Document document in solution.Projects.Where(p => p.FilePath == projectPath).SelectMany(p => p.Documents))
+        {
+            SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken);
+            SemanticModel? model = await document.GetSemanticModelAsync(cancellationToken);
+            if (root is null || model is null)
+            {
+                continue;
+            }
+
+            uses.AddRange(RemovedAssemblyUses(root, model, names, swappedTypes, cancellationToken)
+                .Select(u => (document.FilePath ?? document.Name, u.Name.GetLocation().GetLineSpan().StartLinePosition.Line + 1, u.Symbol.ToDisplayString())));
+        }
+
+        return [.. uses.DistinctBy(u => (u.FilePath, u.Line))];
+    }
+
+    private static IEnumerable<(SimpleNameSyntax Name, ISymbol Symbol)> RemovedAssemblyUses(
+        SyntaxNode root, SemanticModel model, HashSet<string> assemblyNames, IReadOnlyCollection<string> swappedTypes, CancellationToken cancellationToken) =>
+        root.DescendantNodes(n => n is not UsingDirectiveSyntax)
+            .OfType<SimpleNameSyntax>()
+            .Select(n => (Name: n, Symbol: model.GetSymbolInfo(n, cancellationToken).Symbol))
+            .Where(u => u.Symbol is not null and not INamespaceSymbol && u.Symbol.ContainingAssembly?.Name is string name && assemblyNames.Contains(name)
+                && !UsingDirectives.IsSwapped(u.Symbol, swappedTypes))
+            .Select(u => (u.Name, u.Symbol!));
 }

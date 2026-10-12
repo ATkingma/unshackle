@@ -15,7 +15,7 @@
 | REQ-1 | Gehaald | `pre-open` |
 | REQ-2 | Gehaald | `post-open-async` |
 | REQ-3 | Gehaald | `pre-closed` |
-| REQ-4 | Gehaald | `other-return` |
+| REQ-4 | Gehaald | `other-return`, `task-run` |
 | REQ-5 | Gehaald | `used-elsewhere` |
 
 Proofs: `src/Unshackle.Tests/Proofs/MediatR/RequestProcessor/`; elke `after` compileert tegen Mediator 3.0.2 mét source generator.

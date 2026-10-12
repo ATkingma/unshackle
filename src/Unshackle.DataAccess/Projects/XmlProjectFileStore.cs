@@ -318,12 +318,12 @@ public class XmlProjectFileStore : IProjectFileStore
 
         XElement root = file.Document.Root!;
         XElement? last = root.Elements().LastOrDefault();
-        string outer = last is null ? "\n  " : Indentation(last);
+        string outer = last is null ? file.NewLine + "  " : Indentation(last);
         string inner = outer + outer.TrimStart('\r', '\n');
         var newGroup = new XElement(file.Namespace + group, new XText(inner), added, new XText(outer));
         if (last is null)
         {
-            root.Add(new XText(outer), newGroup, new XText("\n"));
+            root.Add(new XText(outer), newGroup, new XText(file.NewLine));
         }
         else
         {

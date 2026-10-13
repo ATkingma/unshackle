@@ -51,11 +51,55 @@ public class ShouldBePattern : FluentAssertionPattern
         }
 
         ArgumentListSyntax arguments = FluentAssertionsSyntax.Arguments(context.Values[0].WithExpression(newExpected), context.Because);
-        return PatternResult.Fixed(SyntaxFactory.InvocationExpression(
+        InvocationExpressionSyntax rewritten = SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
                 context.Subject.WithoutTrailingTrivia(),
                 SyntaxFactory.IdentifierName(ShouldName)),
-            arguments));
+            arguments);
+        return new FixedResult([rewritten], []) { Warning = EqualsOrderWarning(subjectType, model.GetTypeInfo(expected).Type) };
     }
+
+    // FluentAssertions calls actual.Equals(expected), Shouldly expected.Equals(actual): only an asymmetric Equals tells them apart
+    // (Akka's ORMultiValueDictionaryDelta, TAAK-200). Warned for an own Equals (a record's generated one is symmetric, so not), and for
+    // two sides whose runtime type is unknown (object, a type parameter, an interface).
+    private static string? EqualsOrderWarning(ITypeSymbol subjectType, ITypeSymbol? expectedType)
+    {
+        if (expectedType is null)
+        {
+            return null;
+        }
+
+        const string Order = "Shouldly compares expected.Equals(actual), FluentAssertions actual.Equals(expected)";
+        if ((OwnEquals(subjectType) ?? OwnEquals(expectedType)) is INamedTypeSymbol own)
+        {
+            return $"{Order}; check symmetry of {own.ToDisplayString()}.Equals.";
+        }
+
+        return IsOpen(subjectType) && IsOpen(expectedType)
+            ? $"{Order}; the runtime types are unknown here ({subjectType.ToDisplayString()}, {expectedType.ToDisplayString()}), check symmetry of their Equals."
+            : null;
+
+        static bool IsOpen(ITypeSymbol type) =>
+            type.SpecialType == SpecialType.System_Object || type.TypeKind is TypeKind.TypeParameter or TypeKind.Interface;
+    }
+
+    // The type, or a base type, outside the BCL that declares an Equals(x) of its own; null when there is none.
+    private static INamedTypeSymbol? OwnEquals(ITypeSymbol type)
+    {
+        for (var current = type as INamedTypeSymbol; current is not null && !IsBcl(current.ContainingAssembly); current = current.BaseType)
+        {
+            if (current.TypeKind is TypeKind.Class or TypeKind.Struct
+                && current.GetMembers("Equals").OfType<IMethodSymbol>().Any(m => !m.IsStatic && !m.IsImplicitlyDeclared && m.Parameters.Length == 1))
+            {
+                return current;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsBcl(IAssemblySymbol? assembly) =>
+        assembly?.Name is { } name
+        && (name is "mscorlib" or "netstandard" || name.StartsWith("System", StringComparison.Ordinal) || name.StartsWith("Microsoft", StringComparison.Ordinal));
 }

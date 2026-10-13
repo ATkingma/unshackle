@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,7 +7,6 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Mediator;
 using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
 
 namespace Proofs
 {

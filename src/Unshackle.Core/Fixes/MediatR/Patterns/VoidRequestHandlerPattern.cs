@@ -46,7 +46,8 @@ public class VoidRequestHandlerPattern : IPattern
             return PatternResult.Manual("Handle is async without a statement body; write it as a block that ends with return Unit.Value.");
         }
 
-        return PatternResult.Fixed(RewriteAsync(body, model, method).WithReturnType(returnType));
+        // Unit and IRequestHandler<T, Unit> come from Mediator also in a file that only saw MediatR through an own marker interface (TAAK-210).
+        return PatternResult.Fixed(RewriteAsync(body, model, method).WithReturnType(returnType), "Mediator", "System.Threading.Tasks");
     }
 
     // async: every bare "return;" and a reachable end of the body return Unit.Value.
@@ -61,9 +62,12 @@ public class VoidRequestHandlerPattern : IPattern
             (original, _) => ReturnUnit().WithTriviaFrom(original));
         if (endReachable)
         {
-            // Same indentation as the last statement.
+            // Same indentation as the last statement; after a closing brace (if, loop, try) a blank line, as StyleCop's SA1513 wants.
+            IEnumerable<SyntaxTrivia> blankLine = last.GetLastToken().IsKind(SyntaxKind.CloseBraceToken)
+                ? last.GetTrailingTrivia().Where(t => t.IsKind(SyntaxKind.EndOfLineTrivia)).TakeLast(1)
+                : [];
             rewritten = rewritten.AddStatements(ReturnUnit()
-                .WithLeadingTrivia(last.GetLeadingTrivia().Where(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).TakeLast(1))
+                .WithLeadingTrivia(blankLine.Concat(last.GetLeadingTrivia().Where(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).TakeLast(1)))
                 .WithTrailingTrivia(last.GetTrailingTrivia()));
         }
 
@@ -82,7 +86,7 @@ public class VoidRequestHandlerPattern : IPattern
         MethodDeclarationSyntax rewritten = method.ReplaceNodes(
             returned.OfType<MemberAccessExpressionSyntax>(),
             (original, _) => SyntaxFactory.ParseExpression("Unit.ValueTask").WithTriviaFrom(original));
-        return PatternResult.Fixed(rewritten.WithReturnType(returnType));
+        return PatternResult.Fixed(rewritten.WithReturnType(returnType), "Mediator", "System.Threading.Tasks");
     }
 
     private static GenericNameSyntax WithUnit(IdentifierNameSyntax valueTask) =>

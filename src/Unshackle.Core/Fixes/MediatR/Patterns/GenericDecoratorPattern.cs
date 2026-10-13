@@ -113,8 +113,7 @@ public class GenericDecoratorPattern : ISolutionPattern
                     && type.AllInterfaces.Contains(p, SymbolEqualityComparer.Default))
                 // Already rewritten in this file (an earlier pattern run sees MediatR's IRequestHandler<T, Unit>, which MediatR does not relate to IRequestHandler<T>).
                 ?? (kind == Kind.Void ? type.InstanceConstructors.SelectMany(c => c.Parameters).Select(p => p.Type).OfType<INamedTypeSymbol>()
-                    .FirstOrDefault(p => p.OriginalDefinition.MetadataName == "IRequestHandler`2" && MediatRSyntax.IsMediatR(p, "IRequestHandler")
-                        && SymbolEqualityComparer.Default.Equals(p.TypeArguments[0], parameter) && MediatRSyntax.IsMediatR((INamedTypeSymbol)p.TypeArguments[1], "Unit")) : null);
+                    .FirstOrDefault(p => IsRewrittenVoid(p, parameter)) : null);
             if (decorated is not null)
             {
                 return (kind.Value, decorated);
@@ -123,6 +122,15 @@ public class GenericDecoratorPattern : ISolutionPattern
 
         return null;
     }
+
+    // IRequestHandler<T, Unit> as RewriteVoid writes it. In a file without "using MediatR" (kgrzybek's module decorators only see their own
+    // ICommandHandler<T> marker) it does not bind until the fix adds "using Mediator", so it is an error type of that name (TAAK-210).
+    private static bool IsRewrittenVoid(INamedTypeSymbol type, ITypeParameterSymbol parameter) =>
+        type is { Name: "IRequestHandler", Arity: 2 }
+        && SymbolEqualityComparer.Default.Equals(type.TypeArguments[0], parameter)
+        && (type.TypeKind == TypeKind.Error
+            ? type.TypeArguments[1] is { Name: "Unit" }
+            : MediatRSyntax.IsMediatR(type.OriginalDefinition, "IRequestHandler") && type.TypeArguments[1] is INamedTypeSymbol unit && MediatRSyntax.IsMediatR(unit, "Unit"));
 
     // typeof(S<>) as the service of RegisterGenericDecorator(typeof(D<>), typeof(S<>)) with D a void decorator and S a handler interface of one type parameter.
     private static bool VoidService(TypeOfExpressionSyntax typeOf, SemanticModel model) =>

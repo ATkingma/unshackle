@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "mediatr-internal-handler-access"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6]
 files_expected:
     - src/Unshackle.Core/Fixes/MediatR/Patterns/InternalHandlerAccessPattern.cs
     - src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs
@@ -41,6 +41,7 @@ Scant `AddMediatR` in project A een ander project B van de solution met internal
 - **REQ-3**: WHEN twee projecten B scannen THE SYSTEM SHALL twee attributen in één bestand zetten, één bevinding (`InternalHandlerAccessPatternTests.FixAsync_TwoHostsScanInternalHandlers_OneAttributePerHostInOneFile`).
 - **REQ-4**: IF B de host al `InternalsVisibleTo` geeft, of niemand B scant THEN THE SYSTEM SHALL niets toevoegen (`..._LibraryAlreadyGrantsHost_AddsNoAttribute`, `..._NoOtherProjectScansLibrary_AddsNothing`).
 - **REQ-5**: Zonder het attribuut bouwt het resultaat niet (CS0122 in de gegenereerde code; `CompileErrors_GeneratedMediatorWithoutInternalsVisibleTo_IsCS0122`).
+- **REQ-6**: WHEN B alleen een niet-publiek, niet-generiek message (request of notification, bv. een domain event) heeft THE SYSTEM SHALL B de host ook `InternalsVisibleTo` geven: de generator noemt elk message dat hij ziet, ook zonder handler (CS0122 in kgrzybek; proof `_Combined/internal-message-access`, TAAK-212).
 
 ## Assumptions
 

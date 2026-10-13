@@ -46,8 +46,8 @@ using Autofac.Core.Activators.Reflection;
 using Autofac.Extensions.DependencyInjection;
 using Autofac.Features.Variance;
 using Mediator;
-using MyMeetings.Modules.Meetings.Application;
 using Microsoft.Extensions.DependencyInjection;
+using MyMeetings.Modules.Meetings.Application;
 
 namespace MyMeetings.Modules.Meetings.Infrastructure.Configuration.Mediation;
 

@@ -1,8 +1,8 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Shouldly;
 using System.Linq;
+using Shouldly;
 
 namespace Proofs;
 

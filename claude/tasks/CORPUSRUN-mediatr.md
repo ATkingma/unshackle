@@ -207,10 +207,82 @@ Per taak:
 amantin hangt aan één gedeeld mock-veld (TAAK-191). Na die twee taken verwacht: 3 van 9. De overige zes zijn terecht Manual
 (dotnet/eShop ook, plus libman-baseline). Alles-of-niets hield stand: 0 regressies in de 7 projecten die liepen.
 
+## Herhaling ronde 3 (2026-10-13)
+
+main `9189df4` (na TAAK-190..197). Zelfde commits, flags, trims en harnas als hierboven; resultaten in
+`<corpus>/corpus-mediatr/_results/r3/<naam>/` (klonen verwijderd). dotnet/eShop nu wél gedraaid: libman omzeild met
+`LibraryRestore=false` (omgevingsvariabele → MSBuild-property), MAUI-trim als eerder, `TEST_TIMEOUT=600` (functionele tests
+wachten op Docker/SQL en lopen anders een uur).
+
+| Project        | Test vóór        | Fixed | Manual | Root-Manual                                                     | Gemigreerd | Build na | Test na  | Regressies |
+| -------------- | ---------------- | ----: | -----: | --------------------------------------------------------------- | ---------- | -------- | -------- | ---------- |
+| **jason**      | 39/41 (2 rood)   | **33** | 0     | geen                                                            | **ja**     | **ok**   | **39/41** | **0**     |
+| **ardalis**    | 9/9              | **32** | 0     | geen                                                            | **ja**     | **ok**   | **9/9**  | **0**      |
+| **amantin**    | 85/85            | **29** | 0     | geen                                                            | **ja**     | **ok**   | **85/85** | **0**     |
+| **nadirbad**   | 30/30            | **18** | 0     | geen                                                            | **ja**     | **ok**   | **30/30** | **0**     |
+| evo hfst. 1    | 45/45            | 0     | 9      | 1× add-mediatr (internal methode, testproject roept aan)         | nee (terecht) | ok (ongew.) | 45/45¹ | 0 |
+| evo hfst. 2    | 26/52 (26 DB)    | 0     | 27     | 1× add-mediatr (`Assembly`-parameter, public methode)            | nee (terecht) | ok (ongew.) | 26/52¹ | 0 |
+| kgrzybek       | 246/287 (40 DB)  | 0     | 270    | 15× `mediatr.unsupported` op module-decorators zonder `using MediatR` | nee (**bug**) | ok (ongew.) | 246/287 | 0 |
+| **eShopOnWeb** | 74/74            | **9** | 0      | geen                                                            | **ja**     | **ok**   | **74/74** | **0**     |
+| dotnet/eShop   | 32 unit groen²   | 52    | 0      | geen                                                            | ja, maar   | **faalt** (12× NS1000) | – | n.v.t. |
+
+¹ 7 data-gedreven testnamen met random waarden wisselen per run. ² Basket 3/3, Ordering.UnitTests 29/29; functionele tests
+rood (geen Docker), testrun liep tegen de time-out.
+
+- jason (TAAK-190), amantin (TAAK-191), nadirbad (TAAK-192), ardalis (TAAK-194/195/197): nu volledig gemigreerd en groen;
+  MediatR komt in de solutions alleen nog voor in namen/commentaar van de vendored SharedKernel (ardalis; `sample/` is een aparte solution).
+- kgrzybek: TAAK-196 (Autofac) en TAAK-193 werken voor de BuildingBlocks-decorator, maar de 15 module-decorators
+  (`ICommandHandler<T>`-marker, bestand zonder `using MediatR`) vallen alsnog in `mediatr.unsupported` → **TAAK-210** (gereproduceerd in een
+  twee-projecten-repro: mét `using MediatR` alles Fixed, zonder Manual).
+- dotnet/eShop: `IdentifiedCommand<T,R>` migreert (TAAK-193), maar `mediatr.send-as-task` maakt van NSubstitute-setups
+  `mock.Send(...).AsTask().Returns(...)` → NS1000, stille buildbreuk → **TAAK-211**.
+- evo1/evo2: terecht (TAAK-195 gemeten: geen exacte vertaling).
+
+### Conclusie
+
+**5 van 9 volledig gemigreerd en groen** (jason, ardalis, amantin, nadirbad, eShopOnWeb; vorige ronde 1). Twee terecht Manual
+(evo1, evo2). Twee bugs: kgrzybek (TAAK-210) en dotnet/eShop (TAAK-211); na die taken verwacht: 7 van 9. 0 regressies.
+
+## Herhaling ronde 4 (2026-10-13, alleen kgrzybek en dotnet/eShop)
+
+Werkboom op `9189df4` + TAAK-210/211 (niet gecommit; bevat ook lopend FA-werk van een andere agent in `Fixer`/`UsingDirectives`).
+Zelfde commits, trims en harnas (`_results/r4/harness.sh`, kopie van r2 met pad naar `r3/corpus-regression.py`); eShop met
+`LibraryRestore=false`, `TEST_TIMEOUT=600`. Resultaten in `<corpus>/corpus-mediatr/_results/r4/<naam>/` (klonen in `corpus-mediatr/src/`).
+
+| Project      | Test vóór       | Fixed | Manual | Root-Manual | Gemigreerd | Build na | Test na | Regressies |
+| ------------ | --------------- | ----: | -----: | ----------- | ---------- | -------- | ------- | ---------- |
+| kgrzybek     | (DB-tests rood) | 217   | **0**  | geen        | ja, maar   | **faalt** (88× MSG0001, 26× SA1210, 6× CS1503, 4× CS0122) | – | n.v.t. |
+| dotnet/eShop | unit 32/32¹     | 52    | 0      | geen        | **ja**     | **ok**   | unit 32/32¹ | **0** |
+
+¹ Basket + Ordering.UnitTests; functionele tests (Docker) lopen tegen de time-out; na de fix 6 extra functionele tests rood die vóór de fix niet
+binnen de time-out liepen (harnas: "flaky/new", geen regressie).
+
+- TAAK-211: de 6 NSubstitute-setups in `Ordering.UnitTests` worden `.Returns(ValueTask.FromResult(true))`; geen NS1000 meer.
+- TAAK-210: 15 module-decorators nu `mediatr.generic-decorator` Fixed. Drie extra oorzaken onderweg gevonden en opgelost
+  (tussenruns `kgr-try1..3`): niet-CPM `Directory.Packages.props` → NU1015; `Unit` zonder `using Mediator` in void-handlers → CS0246/CS0738;
+  SA1513 na `return Unit.Value;`. Wat overblijft → **TAAK-212**.
+
+### Conclusie
+
+dotnet/eShop nu volledig gemigreerd en groen: **6 van 9** (ronde 3: 5). kgrzybek: 0 Manual, build nog rood (TAAK-212).
+
+## Herhaling ronde 5 (2026-10-13, alleen kgrzybek, TAAK-212)
+
+Werkboom na TAAK-212 (niet gecommit). Harnas `_results/r5/harness.sh` (kopie van r4); resultaten in `<corpus>/corpus-mediatr/_results/r5/kgr/`.
+
+| Project  | Fix | Build na | Fouten |
+| -------- | --- | -------- | ------ |
+| kgrzybek | 218 Fixed, 0 Manual | **faalt** | 0× MSG0001, 0× SA1210, 0× CS1503, 0× CS0122 (r4: 88/26/6/4); nu zichtbaar: 410× CS0436 + 2× CS0121, alleen in `Registrations.Infrastructure` |
+
+- Die nieuwe fouten zaten in r4 achter de MSG0001-breuk van `UserAccess.Infrastructure` (Registrations werd toen niet gecompileerd).
+  Oorzaak: een generator-host verwijst naar een andere host (gegenereerde Mediator-typen dubbel) → **TAAK-213**.
+
 ## Zie ook
 
+- `claude/tasks/archief/TAAK-210-mediatr-generieke-decorator-zonder-using.md`, `claude/tasks/archief/TAAK-211-mediatr-send-as-task-nsubstitute-setup.md`, `claude/tasks/archief/TAAK-212-mediatr-kgrzybek-build-na-fix.md`, `claude/tasks/TAAK-213-mediatr-host-verwijst-naar-host.md`
 - `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` — frequenties uit dit corpus
 - `claude/tasks/mediatr-queue.md` — patroon-wachtrij
 - `docs/projectinfo/architectuur/core.md` — alles-of-niets
 - TAAK-130 t/m TAAK-136 in `claude/tasks/`
 - TAAK-180 t/m TAAK-184 (archief), TAAK-190, TAAK-191
+- TAAK-210 (generieke decorator zonder `using MediatR`), TAAK-211 (send-as-task in NSubstitute-setup)

@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "mediatr-send-as-task"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6]
 files_expected:
     - src/Unshackle.Core/Fixes/MediatR/Patterns/SendAsTaskPattern.cs
     - src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs
@@ -42,6 +42,8 @@ mediatr.send-as-task: een `Send`/`Publish` van MediatR waarvan het resultaat nie
 - **REQ-3**: WHEN `Send(object)` als Task teruggegeven wordt THE SYSTEM SHALL `.AsTask()` toevoegen (proof `send-object`).
 - **REQ-4**: THE SYSTEM SHALL nooit Manual melden: `.AsTask()` behoudt elke Task-semantiek.
 - **Uitbreiding review B L4**: IF `Send`/`Publish` met `?.` aangeroepen wordt (`_sender?.Send(x)`) THEN THE SYSTEM SHALL Manual melden: de null-case moet met de hand (proof `null-conditional`). Dit is de enige uitzondering op REQ-4.
+- **REQ-5** (TAAK-211): WHEN `Send`/`Publish` de ontvanger is van NSubstitute `Returns`/`ReturnsForAnyArgs` THE SYSTEM SHALL geen `.AsTask()` toevoegen (dat configureert niets, NS1000) maar de waarden meeverhuizen: `Task.FromResult(x)` → `ValueTask.FromResult(x)` (ook met typeargument of gekwalificeerd), `Task.CompletedTask` → `ValueTask.CompletedTask` (alleen `Publish`/niet-generiek); elke andere waarde (lambda, variabele, `Task.CompletedTask` op een void-`Send`, dat in Mediator `ValueTask<Unit>` geeft) → Manual (proofs `nsubstitute-returns`, `nsubstitute-returns-lambda`). Tweede uitzondering op REQ-4.
+- **REQ-6** (TAAK-211): WHEN `Send`/`Publish` de ontvanger is van NSubstitute `Throws*`, of als losse statement achter `Received()`/`DidNotReceive()` staat THE SYSTEM SHALL hem ongemoeid laten (proof `nsubstitute-returns`, unittest `Find_NSubstituteThrowsSetupAndReceivedCheck_FindsNothing`). Moq-`Setup`-lambda's vallen buiten scope.
 
 ## Assumptions
 

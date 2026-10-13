@@ -105,8 +105,12 @@ Grootste Manual-groepen (alle projecten samen):
 
 Polly 7.2.4 (`b1a5a17`, 2026-10-13, harnas zonder kloon-wijzigingen): Fixed 4449 → 5255, Manual 964 → 171, build 0 fouten, tests 5685/5685 → 5685/5685, 0 regressies. Resterende top-Manuals: Invoking-receiver niet stabiel (42), `ContainInOrder` (34), verschillende compile-time typen bij `BeEquivalentTo` (20).
 
+## Herhaling Akka na TAAK-174 (2026-10-13)
+
+Akka.NET `23a8566` (verse kloon, zelfde build-flags als het harnas): Fixed 8 488 → **5 463**, Manual 1 868 → **5 126** (3 449 daarvan: bestand Manual door botsing met `Akka.TestKit.AkkaSpecExtensions`), build **0 fouten** (was 4 984× CS0121 + 28 gevolgfouten). Tests: 2 echte regressies (TAAK-199: eigen `ShouldBe` in omsluitende namespace verdringt Shouldly stil; TAAK-200: `object`-subject `ShouldBe` in DData), 2 flaky (poortconflict, MultiNode-timeout). Conflict-Manuals verkleinen: TAAK-198.
+
 ## Zie ook
 
 - `claude/tasks/CORPUSRUN-mediatr.md`
 - `claude/tasks/ANALYSE-fa-100.md`
-- `claude/tasks/archief/TAAK-167-niet-utf8-bestand-breekt-fix.md` t/m `claude/tasks/TAAK-174-shouldly-dubbelzinnig-met-eigen-shouldbe.md`
+- `claude/tasks/archief/TAAK-167-niet-utf8-bestand-breekt-fix.md` t/m `claude/tasks/archief/TAAK-174-shouldly-dubbelzinnig-met-eigen-shouldbe.md`

@@ -307,7 +307,7 @@ public class AddMediatRPattern : ISolutionPattern
     internal static IEnumerable<INamedTypeSymbol> Types(INamespaceOrTypeSymbol container) =>
         container.GetMembers().OfType<INamespaceOrTypeSymbol>().SelectMany(m => m is INamedTypeSymbol type ? [type, .. Types(type)] : Types(m));
 
-    private static bool IsVisibleOutside(ISymbol symbol)
+    internal static bool IsVisibleOutside(ISymbol symbol)
     {
         for (ISymbol? current = symbol; current is not null and not INamespaceSymbol; current = current.ContainingSymbol)
         {

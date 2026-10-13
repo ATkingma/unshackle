@@ -1,0 +1,1 @@
+binds to Proofs.TestKit.SpecExtensions.ShouldBe instead of Shouldly

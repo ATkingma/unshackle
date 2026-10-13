@@ -17,7 +17,9 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/SendAsTaskPattern.cs`, registra
 | REQ-1 | Gehaald | `task-uses`                                     |
 | REQ-2 | Gehaald | `task-uses` (await en `.ConfigureAwait(false)`) |
 | REQ-3 | Gehaald | `send-object`                                   |
-| REQ-4 | Gehaald | `Rewrite` geeft `Fixed`, behalve bij `?.` (uitbreiding) |
+| REQ-4 | Gehaald | `Rewrite` geeft `Fixed`, behalve bij `?.` (uitbreiding) en onbekende NSubstitute-setupwaarden (REQ-5) |
+| REQ-5 | Gehaald | `nsubstitute-returns` (after compileert tegen Mediator + NSubstitute), `nsubstitute-returns-lambda` (Manual), `SendAsTaskPatternTests`; corpus dotnet/eShop ronde 4 |
+| REQ-6 | Gehaald | `nsubstitute-returns` (`Throws`, `Received().Send`), `SendAsTaskPatternTests.Find_NSubstituteThrowsSetupAndReceivedCheck_FindsNothing` |
 | Uitbreiding review B L4 | Gehaald | `null-conditional` |
 
 Scan op SampleShop: 5 Fixed (`OrderFacade` 2×, `Func<Task> act = () => Sender.Send(...)` 3× in de testprojecten).
@@ -38,6 +40,10 @@ Geen.
 ## Bijgewerkt (review B L4, 2026-10-11)
 
 - `_sender?.Send(x)` (MemberBinding) → Manual (proof `null-conditional`).
+
+## Bijgewerkt (TAAK-211, 2026-10-13)
+
+- NSubstitute-setups: `Returns`-waarden naar `ValueTask`, `Throws*`/`Received()` ongemoeid, rest Manual.
 
 ## Zie ook
 

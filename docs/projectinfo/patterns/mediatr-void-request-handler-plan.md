@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "mediatr-void-request-handler"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7]
 files_expected:
     - src/Unshackle.Core/Fixes/MediatR/Patterns/VoidRequestHandlerPattern.cs
     - src/Unshackle.Core/Fixes/MediatR/MediatRSyntax.cs
@@ -44,6 +44,8 @@ mediatr.void-request-handler: in klassen die `MediatR.IRequestHandler<TReq>` imp
 - **REQ-3**: WHEN het einde van de body onbereikbaar is (bv. `throw`) THE SYSTEM SHALL geen return toevoegen (proof `throw-at-end`).
 - **REQ-4**: WHEN een niet-async `Handle` alleen `Task.CompletedTask` teruggeeft THE SYSTEM SHALL `ValueTask<Unit>` + `Unit.ValueTask` schrijven (proofs `completed-task`, `completed-task-expression`).
 - **REQ-5**: IF `Handle` een andere `Task` teruggeeft, async is met expression body, of expliciet geïmplementeerd is THEN THE SYSTEM SHALL Manual melden (proofs `other-return`, `async-expression`, `explicit`).
+- **REQ-6** (TAAK-210): THE SYSTEM SHALL `using Mediator;` (en `System.Threading.Tasks`) eisen voor de herschreven `Handle`, zodat `Unit` en `ValueTask<Unit>` ook binden in een bestand dat MediatR alleen via een eigen marker-interface zag (geen `using MediatR`) (proof `_Combined/generic-decorator-marker-without-using`, project `Handlers`).
+- **REQ-7** (TAAK-210): WHEN de toegevoegde `return Unit.Value;` volgt op een statement dat op `}` eindigt THE SYSTEM SHALL er een lege regel voor zetten (StyleCop SA1513, kgrzybek) (proof `block-end`).
 - **Uitbreiding TAAK-080**: WHEN de handler `IRequestHandler<T>` via een eigen marker-interface implementeert (`IAppCommandHandler<T> : IRequestHandler<T>`) THE SYSTEM SHALL hem hetzelfde herschrijven (proof `edge-marker-interface`).
 
 ## Assumptions

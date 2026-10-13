@@ -61,7 +61,16 @@ Alles-of-niets (2026-10-11): `MediatRFix.AllOrNothing`; één Manual-bevinding l
 | 24  | TAAK-194 | extern pakket op MediatR (Ardalis.SharedKernel): broncode lokaal vendoren, pakket vervangen | ardalis        | klaar (TAAK-194): vendored Ardalis.SharedKernel |
 | 25  | TAAK-195 | `AddMediatR` over projectgrenzen: internal handlers, `Assembly`-parameter, testproject      | ardalis, evo1/2 | mislukt (TAAK-195, poging 1): internal handlers klaar (`mediatr.internal-handler-access`, ardalis 0 Manual); evo1-testproject en evo2-`Assembly`-parameter geen exacte vertaling |
 | 26  | TAAK-196 | handmatige Autofac-registratie van MediatR (`MediatorModule`, 30× unmatched-use op `MediatR.Pipeline`) | kgrzybek | klaar (TAAK-196): `mediatr.autofac-mediator-module` |
-| 27  | TAAK-197 | eigen `IMediator`-implementatie in testcode (ardalis `NoOpMediator`, `Task`-signaturen) breekt de build | ardalis | open |
+| 27  | TAAK-197 | eigen `IMediator`-implementatie in testcode (ardalis `NoOpMediator`, `Task`-signaturen) breekt de build | ardalis | klaar (9189df4) |
+
+### Corpus ronde 3 (2026-10-13)
+
+| #   | Taak     | Wat                                                                                         | Project        | Status |
+| --- | -------- | ------------------------------------------------------------------------------------------- | -------------- | ------ |
+| 28  | TAAK-210 | generieke decorator via eigen marker, bestand zonder `using MediatR` → alsnog `mediatr.unsupported` | kgrzybek | klaar (TAAK-210): 0 Manual; ook niet-CPM `Directory.Packages.props`, `using Mediator` bij void-handlers, SA1513; build → #30 |
+| 29  | TAAK-211 | `mediatr.send-as-task` op NSubstitute-setup → `.AsTask().Returns(...)` (NS1000, stille buildbreuk) | dotnet/eShop | klaar (TAAK-211): eShop bouwt, unit 32/32 gelijk |
+| 30  | TAAK-212 | kgrzybek bouwt niet na de fix: MSG0001 (dubbele handlers), SA1210, CS1503, CS0122 | kgrzybek | klaar (TAAK-212): vier foutsoorten weg; volgende laag → #31 |
+| 31  | TAAK-213 | generator-host verwijst naar andere host: CS0436/CS0121 in Registrations.Infrastructure | kgrzybek | open |
 
 ## Zie ook
 

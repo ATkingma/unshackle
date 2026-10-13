@@ -746,6 +746,48 @@ public class XmlProjectFileStoreTests
     private const string SharedReference =
         "<Project>\n  <ItemGroup>\n    <PackageReference Include=\"FluentAssertions\" Version=\"7.2.2\" />\n  </ItemGroup>\n</Project>\n";
 
+    [Fact]
+    public async Task EditAsync_PackagesPropsWithoutCentralManagement_EditsItsConditionedReferenceAndVersionsTheProjectsExtra()
+    {
+        // Arrange: kgrzybek's Directory.Packages.props holds <PackageReference Version> per project condition, no <PackageVersion> (TAAK-210).
+        const string packages = """
+            <Project>
+              <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Domain'))">
+                <PackageReference Include="MediatR" Version="12.2.0" />
+              </ItemGroup>
+            </Project>
+
+            """;
+        const string infra = "<Project Sdk=\"Microsoft.NET.Sdk\" />";
+        _fileSystem.AddFile(Project, new MockFileData(infra));
+        _fileSystem.AddFile(OtherProject, new MockFileData(infra));
+        _fileSystem.AddFile(PackagesProps, new MockFileData(packages));
+        ProjectMigration Mediator(string path, bool generator) => new()
+        {
+            ProjectPath = path,
+            Package = new PackageMigration
+            {
+                RemovedPackage = "MediatR",
+                AddedPackages = generator
+                    ? [new() { Name = "Mediator.Abstractions", Version = "3.0.2" }, new() { Name = "Mediator.SourceGenerator", Version = "3.0.2", PrivateAssets = "all" }]
+                    : [new() { Name = "Mediator.Abstractions", Version = "3.0.2" }],
+            },
+            KeepRemovedPackage = false,
+            RemovedNamespaces = ["MediatR"],
+            AddedNamespaces = ["Mediator"],
+        };
+
+        // Act: the project with the generator first, so its extra package would land next to the Domain-only reference.
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(Mediator(Project, generator: true), Mediator(OtherProject, generator: false));
+
+        // Assert
+        Text(changes, PackagesProps).ShouldBe(packages.Replace(
+            "Include=\"MediatR\" Version=\"12.2.0\"", "Include=\"Mediator.Abstractions\" Version=\"3.0.2\"", StringComparison.Ordinal));
+        Text(changes, Project).ShouldContain("<PackageReference Include=\"Mediator.SourceGenerator\" Version=\"3.0.2\" PrivateAssets=\"all\" />");
+        Text(changes, Project).ShouldNotContain("PackageVersion");
+        changes.ShouldNotContain(c => c.FilePath == OtherProject);
+    }
+
     private static ProjectMigration Migration(string projectPath, bool keep) => new()
     {
         ProjectPath = projectPath,

@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "mediatr-generic-decorator"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7]
 files_expected:
     - src/Unshackle.Core/Fixes/MediatR/Patterns/GenericDecoratorPattern.cs
     - src/Unshackle.Core/Fixes/MediatR/Patterns/UnsupportedPattern.cs
@@ -44,6 +44,7 @@ Een open generieke handler zónder gedecoreerde parameter blijft bij `mediatr.un
 - **REQ-4**: IF de decorator anders gebruikt wordt dan in `RegisterGenericDecorator` THEN Manual (proof `used-elsewhere`).
 - **REQ-5**: IF de eigen handler-interface members heeft, of de gedecoreerde handler anders gebruikt wordt dan `Handle` aanroepen THEN Manual (proofs `decorated-members`, `decorated-other-use`).
 - **REQ-6**: WHEN een notification-decorator gevonden wordt THE SYSTEM SHALL alleen Fixed geven als MediatR met de hand in Autofac geregistreerd is (`mediatr.autofac-mediator-module`), anders Manual (proof `notification-without-autofac`).
+- **REQ-7** (TAAK-210): WHEN de decorator alleen een eigen marker (`ICommandHandler<T> : IRequestHandler<T>`) implementeert en zijn bestand geen `using MediatR` heeft THE SYSTEM SHALL hem na de eigen herschrijving (`IRequestHandler<T, Unit>`, bindt pas na `using Mediator`) nog als decorator herkennen, zodat `mediatr.unsupported` hem niet als generieke handler meldt (proof `_Combined/generic-decorator-marker-without-using`, unittests `IsDecorator_RewrittenVoidDecoratorInFileWithoutUsingMediatR_True`, `IsDecorator_UnboundHandlerWithOtherResponse_False`).
 
 ## Assumptions
 

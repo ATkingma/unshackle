@@ -55,6 +55,19 @@ public class XmlProjectFileStore : IProjectFileStore
                 chain.Add(await LoadAsync(files, buildProps, cancellationToken));
             }
 
+            // A Directory.Packages.props without central package management (kgrzybek: conditioned <PackageReference Version>, TAAK-210)
+            // is just another imported props file: its references are edited like the project's, and nothing gets a <PackageVersion>.
+            bool central = false;
+            if (packagesProps is not null)
+            {
+                ProjectFile packages = await LoadAsync(files, packagesProps, cancellationToken);
+                central = IsCentral(packages, chain);
+                if (!central)
+                {
+                    chain.Add(packages);
+                }
+            }
+
             foreach (ProjectFile file in chain.Where(f => !Keeps(f.Path)))
             {
                 SwapUsings(file, migration);
@@ -65,7 +78,7 @@ public class XmlProjectFileStore : IProjectFileStore
             foreach ((AddedPackage added, bool first) in migration.Package.AddedPackages.Select((p, i) => (p, i == 0)).Reverse())
             {
                 Func<string, bool> keeps = first ? Keeps : _ => true;
-                if (EditReferences(chain, removed, added, keeps, packagesProps is not null))
+                if (EditReferences(chain, removed, added, keeps, central, first))
                 {
                     ProjectFile versions = await LoadAsync(files, packagesProps!, cancellationToken);
                     Migrate(versions, PackageVersion, Find(versions, PackageVersion, removed), keeps(versions.Path),
@@ -80,9 +93,9 @@ public class XmlProjectFileStore : IProjectFileStore
                     RemoveIfPresent(Find(file, PackageReference, also));
                 }
 
-                if (packagesProps is not null && !Keeps(packagesProps))
+                if (central && !Keeps(packagesProps!))
                 {
-                    RemoveIfPresent(Find(await LoadAsync(files, packagesProps, cancellationToken), PackageVersion, also));
+                    RemoveIfPresent(Find(await LoadAsync(files, packagesProps!, cancellationToken), PackageVersion, also));
                 }
             }
         }
@@ -246,12 +259,25 @@ public class XmlProjectFileStore : IProjectFileStore
         }
     }
 
+    // Central package management: a <PackageVersion> in Directory.Packages.props, or ManagePackageVersionsCentrally set to true.
+    private static bool IsCentral(ProjectFile packages, List<ProjectFile> chain) =>
+        packages.Document.Descendants().Any(e => e.Name.LocalName == PackageVersion)
+        || chain.Append(packages).SelectMany(f => f.Document.Descendants())
+            .Any(e => e.Name.LocalName == "ManagePackageVersionsCentrally" && e.Value.Trim().Equals("true", StringComparison.OrdinalIgnoreCase));
+
     // Returns true when this added package needs a <PackageVersion> (central package management).
     private static bool EditReferences(
-        List<ProjectFile> chain, string removedPackage, AddedPackage package, Func<string, bool> keeps, bool hasPackagesProps)
+        List<ProjectFile> chain, string removedPackage, AddedPackage package, Func<string, bool> keeps, bool hasPackagesProps, bool first)
     {
         bool hasAdded = chain.Any(f => Find(f, PackageReference, package.Name) is not null);
         ProjectFile? owner = chain.FirstOrDefault(f => Find(f, PackageReference, removedPackage) is not null);
+        // An extra package next to a reference in a conditioned group of a shared file would only reach the projects of that
+        // condition; the project itself gets it.
+        if (!first && owner is not null && owner != chain[0] && Find(owner, PackageReference, removedPackage)!.Parent?.Attribute("Condition") is not null)
+        {
+            owner = null;
+        }
+
         if (owner is null)
         {
             // The removed package came in transitively: the project itself gets the added one.

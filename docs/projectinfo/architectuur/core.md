@@ -130,6 +130,10 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
   oude pakket alleen als geen `.csproj` onder zijn map (met dit bestand als dichtstbijzijnde) het nog via `PackageReference`
   gebruikt, ook een project dat bij het laden is overgeslagen (TAAK-112/135). Anders blijft de regel, komt het nieuwe pakket
   ernaast en zet `XmlProjectFileStore` `ProjectFileChange.KeptRemovedPackageFor`; de Fixer meldt dat bestand Manual.
+- `Directory.Packages.props` zonder central package management (TAAK-210, kgrzybek: geen `<PackageVersion>`, geen
+  `ManagePackageVersionsCentrally`, wel `<PackageReference Version>` in ItemGroups met een `Condition`) is gewoon een geïmporteerd
+  props-bestand: het hoort bij de keten van het project (referenties worden daar in place gewisseld) en er komt geen `<PackageVersion>`.
+  Een extra pakket (bv. de source generator) komt dan niet naast een referentie in een geconditioneerde groep, maar in het project zelf.
 
 ## Gelijknamige typen (TAAK-024)
 
@@ -159,6 +163,10 @@ die typen en hun leden tellen niet als gebruik in`UsingDirectives.UsedNamespaces
   Het bestand houdt zo de oude library en het project het oude pakket (project-file-cascade). `UsingDirectives.AmbiguityWithAddedAsync`.
 - Volledig gekwalificeerde Shouldly-aanroepen zijn afgewezen (onleesbaar). Een global using die het conflict veroorzaakt
   (`SwapGlobalUsingsAsync`) wordt niet gecontroleerd.
+- Zonder dubbelzinnigheid kan een herschreven aanroep stil aan iets anders binden: een eigen extensie in de omsluitende
+  namespace gaat vóór `using Shouldly;` (bestand in `namespace Akka.TestKit`, TAAK-199). Bindt een aanroep met de naam van een
+  extensie uit een toegevoegde namespace ergens anders, en had het origineel er minder, dan volgt dezelfde terugval met reden
+  "binds to <type>.<methode> instead of Shouldly". `UsingDirectives.MisboundAddedCallAsync`.
 
 ## SOLID in het kort
 

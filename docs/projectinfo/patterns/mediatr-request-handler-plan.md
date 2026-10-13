@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "mediatr-request-handler"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7]
 files_expected:
     - src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerPattern.cs
     - src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs
@@ -43,6 +43,7 @@ mediatr.request-handler: in klassen die `MediatR.IRequestHandler<TReq,TRes>` imp
 - **REQ-4**: WHEN de handler generiek is THE SYSTEM SHALL hem hetzelfde herschrijven (proof `generic`).
 - **REQ-5**: WHEN de `CancellationToken`-parameter een andere naam heeft THE SYSTEM SHALL de parameters ongemoeid laten (proof `token-name`).
 - **REQ-6**: IF een niet-async `Handle` iets anders dan `Task.FromResult` teruggeeft, of `Handle` expliciet geïmplementeerd is THEN THE SYSTEM SHALL Manual melden (proofs `other-return`, `explicit`).
+- **REQ-7**: WHEN een niet-async `Handle` (bv. een decorator) `inner.Handle(...)` van een `IRequestHandler<,>` (of een eigen afgeleide interface) teruggeeft THE SYSTEM SHALL die return ongemoeid laten: na de wissel geeft de binnenste handler zelf een `ValueTask<T>` (proof `decorator-inner-handle`, TAAK-212; was CS1503 in kgrzybek).
 - **Uitbreiding TAAK-080**: WHEN de handler `IRequestHandler<,>` via een eigen marker-interface implementeert (`IAppQueryHandler<TQ, TR> : IRequestHandler<TQ, TR>`) THE SYSTEM SHALL hem hetzelfde herschrijven (`MediatRSyntax.FindHandleMethods` kijkt naar `AllInterfaces`; proof `edge-marker-interface`).
 
 ## Assumptions

@@ -20,6 +20,7 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerPattern.cs`, regi
 | REQ-4 | Gehaald | `generic`                                             |
 | REQ-5 | Gehaald | `token-name`                                          |
 | REQ-6 | Gehaald | `other-return`, `explicit`                            |
+| REQ-7 | Gehaald | `decorator-inner-handle` (TAAK-212)                   |
 | Uitbreiding TAAK-080 | Gehaald | `edge-marker-interface` |
 
 Regressie-edges: `edge-nested-generic` (geneste generieke response bij REQ-1), `edge-primary-ctor` (primary constructor bij REQ-2).
@@ -46,6 +47,10 @@ Scan op SampleShop (`scan samples/SampleShop/SampleShop.slnx --fix mediatr`, na 
 TAAK-080: handlers via een eigen marker-interface (`IAppQueryHandler<TQ, TR> : IRequestHandler<TQ, TR>`) worden gevonden: `MediatRSyntax.FindHandleMethods` kijkt naar `AllInterfaces`. Proof `edge-marker-interface`. `mediatr.unsupported` slaat interface-declaraties over (een generieke marker-interface is geen generieke handler).
 
 End-to-end (`fix --fix mediatr` op een kopie van SampleShop, na restore): 20 Fixed, 8 Manual; build zonder CS0436 (alleen MSG0003/MSG0005 van de generieke `CountQuery`). Manual: pre/post-processor, exception-handler, stream-behavior (TAAK-061/062), generieke `CountQuery`, en daardoor `AddMediatR` (`AddOpenStreamBehavior`). Omdat de registratie MediatR blijft, falen 28/38 sample-tests bij het opstarten (`LoggingBehavior`2 must implement MediatR.IPipelineBehavior`2`); dat lost zich op met TAAK-061/062.
+
+## Vervolg TAAK-212 (2026-10-13)
+
+REQ-7: `return _decorated.Handle(...)` blijft staan i.p.v. `new ValueTask<T>(...)` (CS1503 in kgrzybek). Build `dotnet build` ok; `dotnet test` 1062/1062 groen. Corpus kgrzybek: zie `claude/tasks/CORPUSRUN-mediatr.md` "Herhaling ronde 5".
 
 ## Zie ook
 

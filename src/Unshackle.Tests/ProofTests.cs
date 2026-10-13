@@ -25,7 +25,8 @@ public class ProofTests
     {
         ["FluentAssertions"] = new()
         {
-            Fix = new FluentAssertionsFix(),
+            // Like the real fix: Shouldly is in the model, so a rewritten call that binds elsewhere is seen (TAAK-199).
+            Fix = new FluentAssertionsFix(TestReferences.ShouldlyAssembly),
             Before = TestReferences.FluentAssertions,
             After = TestReferences.Shouldly,
         },

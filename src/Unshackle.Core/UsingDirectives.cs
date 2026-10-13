@@ -78,19 +78,20 @@ internal static class UsingDirectives
             IEnumerable<UsingDirectiveSyntax> added = missing.Select(ns => SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(ns).WithLeadingTrivia(SyntaxFactory.Space))
                 .WithLeadingTrivia(indentation)
                 .WithTrailingTrivia(endOfLine));
-            return document.WithSyntaxRoot(updated.ReplaceNode(target, target.WithUsings(target.Usings.AddRange(added)))).Project.Solution;
+            return document.WithSyntaxRoot(Resort(root, updated.ReplaceNode(target, target.WithUsings(target.Usings.AddRange(added))), originalMinimum: 2)).Project.Solution;
         }
 
-        // shortcut: new usings go after the existing ones (or on top of the file), not sorted. Fine for the CLI diff.
+        // New usings go after the existing ones (or on top of the file); a list that was sorted is sorted again (SA1210, TAAK-212).
         usings.AddRange(missing.Select(ns => SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(ns).WithLeadingTrivia(SyntaxFactory.Space))
             .WithTrailingTrivia(root.Usings.Count == 0 ? SyntaxFactory.TriviaList(endOfLine, endOfLine) : SyntaxFactory.TriviaList(endOfLine))));
 
-        return document.WithSyntaxRoot(updated.WithUsings([.. usings])).Project.Solution;
+        return document.WithSyntaxRoot(Resort(root, updated.WithUsings([.. usings]), originalMinimum: 2)).Project.Solution;
     }
 
     // A swapped name may land out of order (using Shouldly; before using NUnit.Framework;, SA1210): each using list that was sorted
-    // (System first or not) is sorted again; an unsorted one is left as the user had it (TAAK-152).
-    private static CompilationUnitSyntax Resort(CompilationUnitSyntax before, CompilationUnitSyntax after)
+    // (System first or not) is sorted again; an unsorted one is left as the user had it (TAAK-152). For added usings the list must have had
+    // at least originalMinimum usings: one using says nothing about the order the user keeps (TAAK-212).
+    private static CompilationUnitSyntax Resort(CompilationUnitSyntax before, CompilationUnitSyntax after, int originalMinimum = 0)
     {
         List<SyntaxNode> containers = [.. Containers(before)];
         List<SyntaxNode> targets = [.. Containers(after)];
@@ -101,7 +102,7 @@ internal static class UsingDirectives
             SyntaxList<UsingDirectiveSyntax> now = UsingsOf(original);
             List<int> plain = [.. Enumerable.Range(0, now.Count).Where(i => IsPlainUsing(now[i]) && now[i].GlobalKeyword.IsKind(SyntaxKind.None))];
             List<string> oldNames = [.. was.Where(u => IsPlainUsing(u) && u.GlobalKeyword.IsKind(SyntaxKind.None)).Select(u => u.Name!.ToString())];
-            if (plain.Count < 2)
+            if (plain.Count < 2 || oldNames.Count < originalMinimum)
             {
                 return rewritten;
             }
@@ -305,6 +306,82 @@ internal static class UsingDirectives
 
         static bool IsIn(IMethodSymbol method, IReadOnlyCollection<string> namespaces) =>
             namespaces.Contains(method.ContainingNamespace?.ToDisplayString() ?? string.Empty);
+    }
+
+    // The first call to a method named like one of the added namespaces (e.g. ShouldBe) that binds elsewhere, and that the original
+    // file did not already have: an extension in the enclosing namespace wins over an imported one without ambiguity, e.g.
+    // Akka.TestKit.AkkaSpecExtensions.ShouldBe in a file in namespace Akka.TestKit (TAAK-199); null when there is none.
+    public static async Task<(IMethodSymbol Bound, int Line)?> MisboundAddedCallAsync(
+        Document original, Document updated, IReadOnlyCollection<string> addedNamespaces, CancellationToken cancellationToken)
+    {
+        if (await updated.GetSyntaxRootAsync(cancellationToken) is not SyntaxNode root
+            || await updated.GetSemanticModelAsync(cancellationToken) is not SemanticModel model)
+        {
+            return null;
+        }
+
+        HashSet<string> names = AddedMethodNames(model.Compilation, addedNamespaces);
+        List<(IMethodSymbol Bound, InvocationExpressionSyntax Invocation)> misbound = Misbound(root, model, names, addedNamespaces, cancellationToken);
+        if (misbound.Count == 0)
+        {
+            return null;
+        }
+
+        Dictionary<string, int> before = [];
+        if (await original.GetSyntaxRootAsync(cancellationToken) is SyntaxNode originalRoot
+            && await original.GetSemanticModelAsync(cancellationToken) is SemanticModel originalModel)
+        {
+            foreach ((IMethodSymbol bound, _) in Misbound(originalRoot, originalModel, names, addedNamespaces, cancellationToken))
+            {
+                before[bound.Name] = before.GetValueOrDefault(bound.Name) + 1;
+            }
+        }
+
+        foreach (IGrouping<string, (IMethodSymbol Bound, InvocationExpressionSyntax Invocation)> group in misbound.GroupBy(m => m.Bound.Name))
+        {
+            if (group.Count() > before.GetValueOrDefault(group.Key))
+            {
+                (IMethodSymbol bound, InvocationExpressionSyntax invocation) = group.Last();
+                return (bound, invocation.GetLocation().GetLineSpan().StartLinePosition.Line + 1);
+            }
+        }
+
+        return null;
+
+        static List<(IMethodSymbol, InvocationExpressionSyntax)> Misbound(
+            SyntaxNode root, SemanticModel model, HashSet<string> names, IReadOnlyCollection<string> addedNamespaces, CancellationToken cancellationToken) =>
+            [.. root.DescendantNodes()
+                .OfType<InvocationExpressionSyntax>()
+                .Where(i => i.Expression switch
+                {
+                    MemberAccessExpressionSyntax member => names.Contains(member.Name.Identifier.ValueText),
+                    SimpleNameSyntax name => names.Contains(name.Identifier.ValueText),
+                    _ => false,
+                })
+                .Select(i => (Bound: model.GetSymbolInfo(i, cancellationToken).Symbol as IMethodSymbol, Invocation: i))
+                .Where(m => m.Bound is not null && !addedNamespaces.Contains(m.Bound.ContainingNamespace?.ToDisplayString() ?? string.Empty))
+                .Select(m => (m.Bound!, m.Invocation))];
+    }
+
+    // Names of the extension methods of the public static types in the added namespaces.
+    private static HashSet<string> AddedMethodNames(Compilation compilation, IEnumerable<string> addedNamespaces)
+    {
+        HashSet<string> names = [];
+        foreach (string ns in addedNamespaces)
+        {
+            INamespaceSymbol? scope = compilation.GlobalNamespace;
+            foreach (string part in ns.Split('.'))
+            {
+                scope = scope?.GetNamespaceMembers().FirstOrDefault(m => m.Name == part);
+            }
+
+            foreach (INamedTypeSymbol type in scope?.GetTypeMembers().Where(t => t.DeclaredAccessibility == Accessibility.Public && t.IsStatic) ?? [])
+            {
+                names.UnionWith(type.GetMembers().OfType<IMethodSymbol>().Where(m => m.IsExtensionMethod).Select(m => m.Name));
+            }
+        }
+
+        return names;
     }
 
     public static bool KeepsRemovedUsing(SyntaxNode root, Compilation compilation, IEnumerable<string> removedNamespaces) =>

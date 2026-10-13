@@ -75,10 +75,12 @@ public class MediatRFix : IFix
             // So only the host (AddMediatR: its registration may still be Manual), and PrivateAssets keeps it from flowing on.
             // MSG0005 (message without handler; MediatR allows it): an error under TreatWarningsAsErrors breaks a migration that behaves the same (TAAK-136).
             // MSG0003 (generic handler skipped): an open generic decorator stays a container decorator, Mediator resolves handlers through DI (TAAK-193).
+            // MSG0001 (multiple handlers): Mediator 3.0.2 reports it falsely for a void handler in a referenced assembly that implements
+            // IRequestHandler<T> through an own interface (ICommandHandler<T> : IRequestHandler<T>); it still registers the handler (TAAK-212).
             new()
             {
                 Name = "Mediator.SourceGenerator", Version = MediatorVersion, OnlyWithCallTo = ["AddMediatR", ProjectPackages.TypeofAssembly], PrivateAssets = "all",
-                WarningsNotAsErrors = ["MSG0003", "MSG0005"],
+                WarningsNotAsErrors = ["MSG0001", "MSG0003", "MSG0005"],
             },
         ],
     };

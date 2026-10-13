@@ -152,21 +152,36 @@ public class Fixer : IFixer
 
                 // An added namespace that makes a call ambiguous with an extension of the user's own (CS0121) would break the build:
                 // the file stays as it was, so it keeps the old library and its project the old package (TAAK-174).
+                (string Reason, int Line)? conflict = null;
                 if (requiredNamespaces.Count > 0
                     && await UsingDirectives.AmbiguityWithAddedAsync(updated, fix.AddedNamespaces, cancellationToken) is { } ambiguity)
                 {
-                    string reason = $"{ambiguity.Added.ContainingType.ToDisplayString()}.{ambiguity.Added.Name} is ambiguous with "
+                    conflict = ($"{ambiguity.Added.ContainingType.ToDisplayString()}.{ambiguity.Added.Name} is ambiguous with "
                         + $"{ambiguity.Existing.ContainingType.ToDisplayString()}.{ambiguity.Existing.Name} once {ambiguity.Added.ContainingNamespace.ToDisplayString()} is imported (CS0121), "
-                        + "so this file is not migrated and its project keeps the old package. Rename or remove the conflicting extension, or migrate the file by hand.";
+                        + "so this file is not migrated and its project keeps the old package. Rename or remove the conflicting extension, or migrate the file by hand.",
+                        ambiguity.Line);
+                }
+                else if (changed
+                    && await UsingDirectives.MisboundAddedCallAsync(baseline.GetDocument(documentId)!, updated, fix.AddedNamespaces, cancellationToken) is { } misbound)
+                {
+                    // An own extension in the enclosing namespace wins without ambiguity: the rewrite would silently change behaviour (TAAK-199).
+                    conflict = ($"a rewritten {misbound.Bound.Name}() binds to {misbound.Bound.ContainingType.ToDisplayString()}.{misbound.Bound.Name} instead of "
+                        + $"{string.Join(", ", fix.AddedNamespaces)} (an own method in the enclosing namespace or type wins over an imported extension), "
+                        + "so this file is not migrated and its project keeps the old package. Rename or remove the conflicting method, or migrate the file by hand.",
+                        misbound.Line);
+                }
+
+                if (conflict is { } c)
+                {
                     for (int i = firstFinding; i < findings.Count; i++)
                     {
                         if (findings[i].Result is FixedResult)
                         {
-                            findings[i] = CreateFinding(findings[i], PatternResult.Manual($"Not rewritten: {reason}"));
+                            findings[i] = CreateFinding(findings[i], PatternResult.Manual($"Not rewritten: {c.Reason}"));
                         }
                     }
 
-                    findings.Add(CreateUsingsFinding(updated.FilePath ?? updated.Name, ambiguity.Line, fix, PatternResult.Manual(reason)));
+                    findings.Add(CreateUsingsFinding(updated.FilePath ?? updated.Name, c.Line, fix, PatternResult.Manual(c.Reason)));
                     working = baseline;
                 }
             }

@@ -15,6 +15,7 @@
 | REQ-3 | Gehaald | `InternalHandlerAccessPatternTests.FixAsync_TwoHostsScanInternalHandlers_OneAttributePerHostInOneFile` |
 | REQ-4 | Gehaald | `..._LibraryAlreadyGrantsHost_AddsNoAttribute`, `..._NoOtherProjectScansLibrary_AddsNothing` |
 | REQ-5 | Gehaald | `CompileErrors_GeneratedMediatorWithoutInternalsVisibleTo_IsCS0122` |
+| REQ-6 | Gehaald | `_Combined/internal-message-access` (after compileert met generator; TAAK-212) |
 
 ## Validation results
 
@@ -25,6 +26,10 @@
 
 - Proofs onder `_Combined/` kunnen nu meerdere projecten bevatten; per-patroonproofs (`ProofTests`) blijven één bestand.
 - `HostsAsync` leest per gekozen bestand alle projecten (eerst een tekstfilter op `AddMediatR`); geen cache.
+
+## Vervolg TAAK-212 (2026-10-13)
+
+REQ-6: internal domain event zonder handler krijgt ook `InternalsVisibleTo` (CS0122 in kgrzybek). Build `dotnet build` ok; `dotnet test` 1062/1062 groen. Corpus kgrzybek: zie `claude/tasks/CORPUSRUN-mediatr.md` "Herhaling ronde 5".
 
 ## Zie ook
 

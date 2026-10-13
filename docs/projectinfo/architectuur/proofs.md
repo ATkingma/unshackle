@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 758 proofs (zonder `_Pending`).
+Totaal: 779 proofs (zonder `_Pending`).
 
 ## AutoMapper
 
@@ -300,7 +300,7 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `value-type-differs` | Manual | `score.Should<int>().BeGreaterThan(5);` — reden: differs from subject type |
 | `value-used` | Manual | `var c = x.Should().BeGreaterThan(1);` — reden: is used |
 
-### BeNull (14)
+### BeNull (15)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -317,9 +317,10 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `lambda` | Fixed | `Action act = () => text.Should().BeNull();` → `Action act = () => text.ShouldBeNull();` |
 | `not-be-null` | Fixed | `item.Should().NotBeNull();` → `item.ShouldNotBeNull();` |
 | `nullable-value` | Fixed | `number.Should().BeNull(); flag.Should().NotBeNull("why");` → `number.ShouldBeNull(); flag.ShouldNotBeNull("why");` |
+| `struct` | Fixed | `entry.Should().NotBeNull("the check should be registered");` → `((object)entry).ShouldNotBeNull("the check should be registered");` |
 | `value-used` | Manual | `var constraint = text.Should().NotBeNull();` — reden: is used |
 
-### BeOfType (11)
+### BeOfType (12)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -328,6 +329,7 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `because` | Fixed | `obj.Should().BeOfType<Dto>("mapped");` → `obj.ShouldBeOfType<Dto>("mapped");` |
 | `because-args` | Fixed | `obj.Should().BeOfType<Dto>("of {0}", 1);` → `obj.ShouldBeOfType<Dto>(string.Format(System.Globalization.CultureInfo.InvariantCulture, "of {0}", 1));` |
 | `nullable` | Fixed | `obj.Should().BeOfType<Dto>(); Dto dto = obj.Should().BeOfType<Dto>().Which;` → `obj.ShouldBeOfType<Dto>(); Dto dto = obj.ShouldBeOfType<Dto>();` |
+| `nullable-type` | Fixed | `value.Should().BeOfType(Type.GetType(name, throwOnError: true));` → `value.ShouldBeOfType(Type.GetType(name, throwOnError: true)!);` |
 | `simple` | Fixed | `obj.Should().BeOfType<Dto>(); obj.Should().BeAssignableTo<object>();` → `obj.ShouldBeOfType<Dto>(); obj.ShouldBeAssignableTo<object>();` |
 | `type-argument` | Fixed | `obj.Should().BeOfType(typeof(Dto)); obj.Should().NotBeAssignableTo(typeof(string), "no");` → `obj.ShouldBeOfType(typeof(Dto)); obj.ShouldNotBeAssignableTo(typeof(string), "no");` |
 | `type-subject` | Manual | `typeof(Dto).Should().BeAssignableTo<object>();` — reden: on a Type |
@@ -372,7 +374,7 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `retry-filter` | Fixed | `if (!(e is AssertionFailedException) \|\| i == attempts)` → `if (!(e is AssertionFailedException \|\| e is ShouldAssertException) \|\| i == attempts)` |
 | `when-filter` | Fixed | `catch (Exception e) when (e is AssertionFailedException)` → `catch (Exception e) when (e is AssertionFailedException \|\| e is ShouldAssertException)` |
 
-### Contain (19)
+### Contain (20)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -390,6 +392,7 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `list` | Fixed | `x.Should().Contain(2);` → `x.ShouldContain(2);` |
 | `named-because` | Manual | `x.Should().Contain(2, because: "it was added");` — reden: named arguments |
 | `not-contain` | Fixed | `x.Should().NotContain(2); text.Should().NotContain("bad");` → `x.ShouldNotContain(2); text.ShouldNotContain("bad", Shouldly.Case.Sensitive);` |
+| `nullable-expected` | Fixed | `ex.Message.Should().Contain(typeof(NullableExpectedCase).FullName);` → `ex.Message.ShouldContain(typeof(NullableExpectedCase).FullName!, Shouldly.Case.Sensitive);` |
 | `nullable-string` | Fixed | `text.Should().Contain("ab");` → `text.ShouldNotBeNull().ShouldContain("ab", Shouldly.Case.Sensitive);` |
 | `occurrence` | Manual | `text.Should().Contain("ab", Exactly.Twice());` — reden: occurrence constraint |
 | `predicate` | Fixed | `x.Should().Contain(e => e.StartsWith("a")); x.Should().NotContain(e => e.Length > 3);` → `x.ShouldContain(e => e.StartsWith("a")); x.ShouldNotContain(e => e.Length > 3);` |
@@ -536,7 +539,7 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `without-strict-ordering` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithoutStrictOrdering());` → `a.ShouldBe(b, ignoreOrder: true);` |
 | `without-then-strict` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithoutStrictOrdering().WithStrictOrdering());` → `a.ShouldBe(b);` |
 
-### HaveCount (18)
+### HaveCount (19)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -553,6 +556,7 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `enumerable` | Fixed | `x.Should().HaveCount(2); Numbers().Should().HaveCount(1);` → `x.Count().ShouldBe(2); Numbers().Count().ShouldBe(1);` |
 | `enumerable-because` | Fixed | `x.Should().HaveCount(2, "two items expected");` → `x.Count().ShouldBe(2, "two items expected");` |
 | `enumerable-existing-using` | Fixed | `x.Should().HaveCount(2);` → `x.Count().ShouldBe(2);` |
+| `explicit-count` | Fixed | `x.Should().HaveCount(1);` → `x.Count().ShouldBe(1);` |
 | `list` | Fixed | `x.Should().HaveCount(2);` → `x.Count.ShouldBe(2);` |
 | `list-because` | Fixed | `x.Should().HaveCount(2, "two items expected");` → `x.Count.ShouldBe(2, "two items expected");` |
 | `nullable` | Fixed | `x.Should().HaveCount(2);` → `x.ShouldNotBeNull().Count.ShouldBe(2);` |
@@ -571,7 +575,7 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `simple` | Fixed | `s.Should().HaveLength(5);` → `s.Length.ShouldBe(5);` |
 | `stream` | Manual | `s.Should().HaveLength(5);` — reden: stream |
 
-### Invoking (15)
+### Invoking (17)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -581,6 +585,7 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `awaiting-exactly` | Fixed | `await order.Awaiting(o => o.CancelAsync()).Should().ThrowExactlyAsync<InvalidOperationException>();` → `(await Should.ThrowAsync<InvalidOperationException>(() => order.CancelAsync())).ShouldBeOfType<InvalidOperatio…` |
 | `because-args` | Fixed | `order.Invoking(o => o.Cancel()).Should().Throw<InvalidOperationException>("a {0}", 1);` → `Should.Throw<InvalidOperationException>(() => order.Cancel(), string.Format(System.Globalization.CultureInfo.I…` |
 | `because-message` | Fixed | `order.Invoking(o => o.Cancel()).Should().Throw<InvalidOperationException>("it is shipped").WithMessage("*shipp…` → `Should.Throw<InvalidOperationException>(() => order.Cancel(), "it is shipped").Message.ShouldEndWith("shipped"…` |
+| `fluent-actions` | Fixed | `FluentActions.Invoking(() => order.Cancel()).Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(() => order.Cancel());` |
 | `func` | Fixed | `order.Invoking(o => o.Name()).Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(() => order.Name());` |
 | `method-group` | Fixed | `order.Invoking(Run).Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(() => Run(order));` |
 | `not-throw` | Fixed | `order.Invoking(o => o.Cancel()).Should().NotThrow();` → `Should.NotThrow(() => order.Cancel());` |
@@ -589,6 +594,7 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `side-effect-receiver` | Manual | `Create().Invoking(o => o.Cancel()).Should().Throw<InvalidOperationException>();` — reden: side effects |
 | `simple` | Fixed | `order.Invoking(o => o.Cancel()).Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(() => order.Cancel());` |
 | `throw-exactly` | Fixed | `order.Invoking(o => o.Cancel()).Should().ThrowExactly<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(() => order.Cancel()).ShouldBeOfType<InvalidOperationException>();` |
+| `value-result` | Fixed | `breaker.Invoking(b => b.Raise()).Should().Throw<InvalidOperationException>(); await breaker.Awaiting(b => b.Ra…` → `Should.Throw<InvalidOperationException>(() => breaker.Raise()); await Should.ThrowAsync<InvalidOperationExcept…` |
 | `value-type` | Manual | `date.Invoking(d => d.AddYears(100000)).Should().Throw<ArgumentOutOfRangeException>();` — reden: value type |
 
 ### Match (10)
@@ -679,15 +685,19 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `value-func` | Fixed | `func.Should().NotThrow();` → `Should.NotThrow(func);` |
 | `value-used` | Manual | `var value = func.Should().NotThrow().Which;` — reden: is used |
 
-### NotThrowAsync (12)
+### NotThrowAsync (16)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `assertion-scope` | Manual | `await act.Should().NotThrowAsync();` — reden: AssertionScope |
-| `awaiting` | Manual | `await FluentActions.Awaiting(act).Should().NotThrowAsync();` — reden: built with FluentAssertions |
+| `awaiting` | Fixed | `await FluentActions.Awaiting(act).Should().NotThrowAsync();` → `await Should.NotThrowAsync(act);` |
+| `awaiting-receiver` | Fixed | `await breaker.Awaiting(x => x.ExecuteAsync(() => Task.CompletedTask)).Should().NotThrowAsync();` → `await Should.NotThrowAsync(() => breaker.ExecuteAsync(() => Task.CompletedTask));` |
+| `awaiting-side-effect` | Manual | `await Create().Awaiting(x => x.ExecuteAsync(() => Task.CompletedTask)).Should().NotThrowAsync();` — reden: side effects |
+| `awaiting-value-result` | Fixed | `await counter.Awaiting(c => c.CountAsync()).Should().NotThrowAsync();` → `await Should.NotThrowAsync(() => counter.CountAsync());` |
 | `because` | Fixed | `await act.Should().NotThrowAsync("must work");` → `await Should.NotThrowAsync(act, "must work");` |
 | `because-args` | Fixed | `await act.Should().NotThrowAsync("id {0}", 1);` → `await Should.NotThrowAsync(act, string.Format(System.Globalization.CultureInfo.InvariantCulture, "id {0}", 1))…` |
 | `configure-await` | Fixed | `await act.Should().NotThrowAsync().ConfigureAwait(false);` → `await Should.NotThrowAsync(act).ConfigureAwait(false);` |
+| `fluent-actions-lambda` | Fixed | `await FluentActions.Awaiting(() => breaker.ExecuteAsync(() => Task.CompletedTask)).Should().NotThrowAsync("it …` → `await Should.NotThrowAsync(() => breaker.ExecuteAsync(() => Task.CompletedTask), "it is closed");` |
 | `generic` | Manual | `await act.Should().NotThrowAsync<InvalidOperationException>();` — reden: type T |
 | `lambda` | Fixed | `await wrapped.Should().NotThrowAsync();` → `await Should.NotThrowAsync(wrapped);` |
 | `not-awaited` | Manual | `Task t = act.Should().NotThrowAsync();` — reden: not awaited as a statement |
@@ -736,7 +746,7 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `string-elements` | Fixed | `x.Should().BeInDescendingOrder();` → `x.ShouldBeInOrder(SortDirection.Descending, System.StringComparer.Ordinal);` |
 | `string-key` | Fixed | `x.Should().BeInAscendingOrder(p => p.Sku);` → `x.Select(p => p.Sku).ShouldBeInOrder(SortDirection.Ascending, System.StringComparer.Ordinal);` |
 
-### ShouldBe (32)
+### ShouldBe (34)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -770,6 +780,8 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `implicit-conversion` | Fixed | `doc.Should().Be(42); doc.Should().Be("John", "name");` → `doc.ShouldBe((Doc)42); doc.ShouldBe((Doc)"John", "name");` |
 | `lambda` | Fixed | `Array.ForEach(totals, t => t.Should().Be(20m));` → `Array.ForEach(totals, t => t.ShouldBe(20m));` |
 | `nullable-expected` | Manual | `count.Should().Be(expected);` — reden: differs from subject type |
+| `own-equals` | Fixed | `actual.Should().Be(expected);` → `actual.ShouldBe(expected);` |
+| `own-shouldbe-in-namespace` | Manual | `total.Should().Be(25, "{0} items", items);` — reden: binds to Proofs.TestKit.SpecExtensions.ShouldBe instead of Shouldly |
 | `simple` | Fixed | `result.Should().Be(42); name.Should().Be("timme");` → `result.ShouldBe(42); name.ShouldBe("timme");` |
 | `xml` | Manual | `actual.Should().Be(expected);` — reden: different equality semantics |
 
@@ -887,15 +899,17 @@ Totaal: 758 proofs (zonder `_Pending`).
 
 ## MediatR
 
-### _Combined (8)
+### _Combined (10)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `add-mediatr-internal-handlers-other-project` | Fixed | `public Task Handle(ContributorDeletedEvent domainEvent, CancellationToken cancellationToken) => Task.Completed…` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Clean.Architecture.Web")] public ValueTask Hand…` |
 | `autofac-mediator-module` | Fixed | `where TCommand : ICommand public class AddMeetingCommentCommand : ICommand` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyMeetings.Modules.Meetings.Infrastructure")] w…` |
+| `generic-decorator-marker-without-using` | Fixed | `where TCommand : ICommand public class CreateMeetingCommand : ICommand` → `where TCommand : global::App.ICommand public class CreateMeetingCommand : global::App.ICommand` |
 | `generic-decorators-kgrzybek` | Fixed | `public class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : ICommand` → `public abstract class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : global::Proofs.…` |
 | `generic-notification-nadirbad` | Fixed | `public class DomainEventNotification<TDomainEvent> : INotification public Task Handle(DomainEventNotification<…` → `public abstract class DomainEventNotification<TDomainEvent> : INotification public class DomainEventNotificati…` |
 | `identified-command-eshop` | Fixed | `public class IdentifiedCommand<T, R> : IRequest<R> public async Task<R> Handle(IdentifiedCommand<T, R> message…` → `public abstract class IdentifiedCommand<T, R> : IRequest<R> }` |
+| `internal-message-access` | Fixed | `public Task Handle(CancelMeetingCommand request, CancellationToken cancellationToken) => Task.CompletedTask; b…` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyMeetings.Modules.Meetings.Infrastructure")] p…` |
 | `request-handler-delegate` | Fixed | `public async Task<int> Handle(Register command, RequestHandlerDelegate<int> next, CancellationToken token) ret…` → `public async ValueTask<int> Handle(Register command, MessageHandlerDelegate<Register, int> next, CancellationT…` |
 | `request-handler-delegate-shared-field` | Fixed | `public async Task<Response> Handle(TRequest request, RequestHandlerDelegate<Response> next, CancellationToken …` → `public async ValueTask<Response> Handle(TRequest request, MessageHandlerDelegate<TRequest, Response> next, Can…` |
 | `request-processor-callers` | Fixed | `public class LoggingBehaviour<TRequest> : IRequestPreProcessor<TRequest> where TRequest : notnull public Task …` → `public class LoggingBehaviour<TRequest, TResponse> : MessagePreProcessor<TRequest, TResponse> where TRequest :…` |
@@ -970,6 +984,14 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `open-creation` | Manual |  — reden: is created with open type arguments in generic code |
 | `unbound-typeof` | Manual |  — reden: Retried becomes abstract with one concrete subclass per closed type |
 
+### MediatorImplementation (3)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `no-op` | Fixed | `public Task Publish(object notification, CancellationToken cancellationToken = default) {` → `public ValueTask<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken =…` |
+| `publisher` | Fixed | `public Task Publish(object notification, CancellationToken cancellationToken = default) {` → `public ValueTask Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = defa…` |
+| `with-logic` | Manual |  — reden: does more than complete |
+
 ### NotificationHandler (10)
 
 | Proof | Uitkomst | Wat het bewijst |
@@ -1000,11 +1022,12 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `no-constraint` | Fixed | `public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken canc…` → `where TRequest : IMessage public ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest…` |
 | `open-async` | Fixed | `where TRequest : notnull public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRespons…` → `where TRequest : notnull, IMessage public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDe…` |
 
-### RequestHandler (15)
+### RequestHandler (16)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `async` | Fixed | `public async Task<int> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<int> Handle(Query request, CancellationToken cancellationToken)` |
+| `decorator-inner-handle` | Fixed | `public Task<TResult> Handle(TRequest request, CancellationToken cancellationToken)` → `public ValueTask<TResult> Handle(TRequest request, CancellationToken cancellationToken)` |
 | `edge-abstract-generic-base` | Fixed | `public Task<int> Handle(Ping request, CancellationToken cancellationToken) => Task.FromResult(42);` → `public ValueTask<int> Handle(Ping request, CancellationToken cancellationToken) => ValueTask.FromResult(42);` |
 | `edge-inactive-if` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) return Task.FromResult(request.Id)…` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) return ValueTask.FromResult(r…` |
 | `edge-marker-interface` | Fixed | `public async Task<int> Handle(Query request, CancellationToken cancellationToken)` → `public async ValueTask<int> Handle(Query request, CancellationToken cancellationToken)` |
@@ -1048,10 +1071,12 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `through-interface` | Manual |  — reden: is called through the MediatR interface |
 | `unknown-response` | Manual |  — reden: the response type of T is unknown |
 
-### SendAsTask (3)
+### SendAsTask (5)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
+| `nsubstitute-returns` | Fixed | `_mediator.Send(Arg.Any<IRequest<bool>>(), default).Returns(Task.FromResult(true)); _mediator.Send(Arg.Any<Quer…` → `_mediator.Send(Arg.Any<IRequest<bool>>(), default).Returns(ValueTask.FromResult(true)); _mediator.Send(Arg.Any…` |
+| `nsubstitute-returns-lambda` | Manual |  — reden: set up on an NSubstitute mock |
 | `null-conditional` | Manual |  — reden: called with ?. |
 | `send-object` | Fixed | `return _mediator.Send(message, cancellationToken);` → `return _mediator.Send(message, cancellationToken).AsTask();` |
 | `task-uses` | Fixed | `public Task<int> GetAsync(int id, CancellationToken cancellationToken) => _sender.Send(new Query(id), cancella…` → `public Task<int> GetAsync(int id, CancellationToken cancellationToken) => _sender.Send(new Query(id), cancella…` |
@@ -1072,12 +1097,13 @@ Totaal: 758 proofs (zonder `_Pending`).
 | `generic-handler` | Manual | `public Task<int> Handle(CountQuery<TEntity> request, CancellationToken cancellationToken) => Task.FromResult(0…` — reden: does not support generic messages or request handlers |
 | `notification-publisher` | Manual |  — reden: set NotificationPublisherType in AddMediator |
 
-### VoidRequestHandler (9)
+### VoidRequestHandler (10)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `async` | Fixed | `public async Task Handle(Command request, CancellationToken cancellationToken)` → `public async ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken) return Unit.Value;` |
 | `async-expression` | Manual | `public async Task Handle(Command request, CancellationToken cancellationToken) =>` — reden: without a statement body |
+| `block-end` | Fixed | `public async Task Handle(Command request, CancellationToken cancellationToken)` → `public async ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken) return Unit.Value;` |
 | `completed-task` | Fixed | `public Task Handle(Command request, CancellationToken cancellationToken) return Task.CompletedTask;` → `public ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken) return Unit.ValueTask;` |
 | `completed-task-expression` | Fixed | `public Task Handle(Command request, CancellationToken cancellationToken) => Task.CompletedTask;` → `public ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken) => Unit.ValueTask;` |
 | `early-return` | Fixed | `public async Task Handle(Command request, CancellationToken cancellationToken) return;` → `public async ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken) return Unit.Value;` |

@@ -8,7 +8,7 @@ namespace Unshackle.Core.Fixes.MediatR.Patterns;
 
 // MediatR scans another project's internal handlers by reflection; Mediator's source generator in the host writes code that names them,
 // which only compiles when that project grants the host InternalsVisibleTo (CS0122 otherwise, measured on 3.0.2 in TAAK-183/195).
-// The attribute goes into one file of the project with the handlers: the first one (by path) that declares an internal handler.
+// The attribute goes into one file of the project with the handlers: the first one (by path) that declares an internal handler or message.
 public class InternalHandlerAccessPattern : ISolutionPattern, ISolutionFinder
 {
     public string Id => "mediatr.internal-handler-access";
@@ -66,7 +66,7 @@ public class InternalHandlerAccessPattern : ISolutionPattern, ISolutionFinder
     private static bool IsChosenFile(SemanticModel model, CancellationToken cancellationToken)
     {
         SyntaxReference? first = AddMediatRPattern.Types(model.Compilation.Assembly.GlobalNamespace)
-            .Where(AddMediatRPattern.IsHiddenHandler)
+            .Where(t => AddMediatRPattern.IsHiddenHandler(t) || IsHiddenMessage(t))
             .SelectMany(t => t.DeclaringSyntaxReferences)
             .OrderBy(r => r.SyntaxTree.FilePath, StringComparer.Ordinal)
             .ThenBy(r => r.Span.Start)
@@ -74,6 +74,12 @@ public class InternalHandlerAccessPattern : ISolutionPattern, ISolutionFinder
         cancellationToken.ThrowIfCancellationRequested();
         return first is not null && first.SyntaxTree.FilePath == model.SyntaxTree.FilePath;
     }
+
+    // An internal, non-generic request or notification (a domain event, say): the host's generator names it even without a handler (CS0122, TAAK-212).
+    private static bool IsHiddenMessage(INamedTypeSymbol type) =>
+        !type.IsAbstract && type.TypeParameters.Length == 0 && !AddMediatRPattern.IsVisibleOutside(type)
+        && type.AllInterfaces.Any(i => i.MetadataName is "IRequest" or "IRequest`1" or "INotification" or "IStreamRequest`1"
+            && i.ContainingNamespace.ToDisplayString() is "MediatR" or "Mediator");
 
     // Assembly names of the other projects whose AddMediatR scans this assembly and that it does not grant InternalsVisibleTo yet, sorted.
     private static async Task<IReadOnlyList<string>> HostsAsync(SemanticModel model, Solution solution, CancellationToken cancellationToken)

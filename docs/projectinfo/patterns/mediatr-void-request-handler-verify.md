@@ -19,6 +19,8 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/VoidRequestHandlerPattern.cs`, 
 | REQ-3 | Gehaald | `throw-at-end`                                 |
 | REQ-4 | Gehaald | `completed-task`, `completed-task-expression`  |
 | REQ-5 | Gehaald | `other-return`, `async-expression`, `explicit` |
+| REQ-6 | Gehaald | `_Combined/generic-decorator-marker-without-using` (project `Handlers` krijgt `using Mediator;`) |
+| REQ-7 | Gehaald | `block-end` |
 | Uitbreiding TAAK-080 | Gehaald | `edge-marker-interface` |
 
 Mediator 3.0.2 bevat `IRequestHandler\`1`en`Unit.ValueTask`(assembly); de`after`-proofs compileren ertegen.

@@ -72,6 +72,7 @@ Alles-of-niets (2026-10-11): `MediatRFix.AllOrNothing`; één Manual-bevinding l
 | 30  | TAAK-212 | kgrzybek bouwt niet na de fix: MSG0001 (dubbele handlers), SA1210, CS1503, CS0122 | kgrzybek | klaar (TAAK-212): vier foutsoorten weg; volgende laag → #31 |
 | 31  | TAAK-213 | generator-host verwijst naar andere host: CS0436/CS0121 in Registrations.Infrastructure | kgrzybek | klaar (TAAK-213): build groen; archtests → #32 |
 | 32  | TAAK-214 | gegenereerde Mediator-typen breken archtests (module-afhankelijkheid), 4 regressies | kgrzybek | klaar (TAAK-214): legitiem verschil (gegenereerde dispatcher in archtest), gedocumenteerd |
+| 33  | TAAK-240 | rapportwaarschuwing bij NetArchTest/ArchUnitNET: namespace `Mediator` uitzonderen | kgrzybek | klaar (TAAK-240): warning op AddMediatR/Autofac-host |
 
 ## Zie ook
 

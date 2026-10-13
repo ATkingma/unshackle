@@ -206,7 +206,7 @@ public class BeEquivalentToObjectPattern : FluentAssertionPattern
 
     // Items for which Equals equals FluentAssertions' member comparison: a leaf, or a record (class: sealed) or struct with only
     // leaf fields, each public or behind a public auto property, no computed public property and no hand-written Equals.
-    protected static bool IsValueLike(ITypeSymbol type)
+    protected internal static bool IsValueLike(ITypeSymbol type)
     {
         ITypeSymbol item = type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable ? nullable.TypeArguments[0] : type;
         if (IsLeaf(item))

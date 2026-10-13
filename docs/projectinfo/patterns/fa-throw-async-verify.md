@@ -34,6 +34,8 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowAsyncPattern.cs` 
 | AggregateException | Gehaald | `aggregate-result` (Manual), `aggregate-awaited` (Fixed) |
 | Regeleinden | Gehaald | `message-line-break` (Fixed), `message-contains-line-break` (Manual) |
 | TAAK-100 | Gehaald | `IsInsideAssertionScope` als eerste controle; proof `ThrowAsync/assertion-scope` |
+| TAAK-221 | Gehaald | `cancelled-inner`, `ThrowExactly/async-cancelled` (Manual); `ThrowExactly/async-task-canceled`, `result-local-and` (Fixed) |
+| TAAK-220 (WaitAsync) | Gehaald | `Invoking/awaiting-wait-async` (Manual) |
 
 ## Deviations
 
@@ -52,6 +54,11 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowAsyncPattern.cs` 
 | ----- | -------------- | ------ |
 | Build | `dotnet build` | passed |
 | Test  | `dotnet test`  | passed (180 tests, incl. 18 ThrowAsync-proofs) |
+
+## TAAK-220..222 (2026-10-13)
+
+- `dotnet build` 0 warnings; `dotnet test` 1093/1093; sample 38/38.
+- Corpus ronde 5: Akka 1 regressie (bekend, TAAK-200), Steeltoe 0, LiteDB 0 (was 10/18/26).
 
 ## Zie ook
 

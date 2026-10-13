@@ -27,6 +27,7 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`, registra
 | Uitbreiding TAAK-183 | Gehaald | `AddMediatRPatternTests.Rewrite_ScannedAssemblyOfOtherProject_ManualWhenHandlerNotPublicAndNoFriend` |
 | Uitbreiding TAAK-147 | Gehaald | `edge-assemblies-friend`, `AddMediatRPatternTests`, `SwappedTypesTests` |
 | Uitbreiding TAAK-195 | Gehaald | `_Combined/add-mediatr-internal-handlers-other-project`, `InternalHandlerAccessPatternTests` |
+| Uitbreiding TAAK-240 | Gehaald | `AddMediatRPatternTests.RewriteAsync_SolutionWithArchitectureTests_WarnsAboutMediatorNamespace`; scan kgrzybek |
 | Uitbreiding TAAK-148 | Gehaald | `edge-assemblies-friend` (nu Fixed), `AddMediatRPatternTests.RewriteAsync_InternalMethodWithFriend_ManualOnlyWhenOtherProjectCallsIt` |
 
 TAAK-117: een parameter die alleen naar een weggevallen `RegisterServicesFrom...` ging (IDE0060) blijft staan. TAAK-141: is de aanroep een los statement, dan komt er `_ = parameter;` vóór (geen IDE0060, signatuur en aanroepers ongewijzigd; proof `edge-assemblies`, evo1 bouwt weer). Anders `Fixed` met een waarschuwing in het rapport (`AddMediatRPatternTests`).

@@ -45,8 +45,11 @@ nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, ander
   Elk bestand wordt gefixt op de **originele** solution (alleen dat bestand verandert in zijn werkkopie): de semantiek
   van andere bestanden hangt dus niet af van de volgorde (TAAK-130: marker-interface in een eerder bestand was al geswapt,
   waardoor een handler in een later bestand stil gemist werd). De eindtekst gaat daarna in de verzamelde solution.
-  Per bestandspad één keer: een multi-target project (één Roslyn-project per TFM) wordt in de eerste TFM gefixt
-  en gerapporteerd; de kopieën in de andere TFM's krijgen dezelfde tekst. Projectmigraties tellen ook per
+  Per bestandspad één keer: een multi-target project (één Roslyn-project per TFM) wordt eerst in de eerste TFM gefixt;
+  heeft het bestand `#if`-code die in een andere TFM actief is (`#if !NETFRAMEWORK`), dan volgt per afwijkende set
+  inactieve code één extra pass op de tekst tot dan toe, die alleen nodes fixt die in **alle** eerdere passes inactief
+  waren (`Fixer.NewCode`), zodat gedeelde code één keer gefixt en gerapporteerd wordt. De usings-rij "inactive #if
+  branch" van een eerdere pass vervalt als een latere pass de usings bijwerkt (TAAK-223). Alle kopieën krijgen de eindtekst. Projectmigraties tellen ook per
   projectbestand (package blijft als één TFM het nog nodig heeft); `fix` telt geschreven bestanden uniek (TAAK-022).
 - Details en redenen: `claude/tasks/archief/TAAK-001-fundament.md`.
 

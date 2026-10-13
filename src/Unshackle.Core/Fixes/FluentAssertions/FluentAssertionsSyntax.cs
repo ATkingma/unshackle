@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -315,13 +316,16 @@ public static class FluentAssertionsSyntax
 
     // True when node runs inside a lambda whose exception is expected (Throw<T>, ThrowExactly<T>, ThrowAsync<T>, Invoking,
     // Shouldly's Should.Throw<T>) with a T that a ShouldAssertException does not satisfy, e.g. XunitException.
+    // Also true inside a method of the solution that such an action calls when T is an assertion exception (TAAK-222):
+    // migrating the helper would change the exception the test expects, so helper and test both stay FluentAssertions.
     public static bool IsInsideExpectedFailure(SyntaxNode node, SemanticModel model) =>
         node.Ancestors().OfType<AnonymousFunctionExpressionSyntax>()
             .SelectMany(lambda => UsesOf(lambda, model))
-            .Any(use => ExpectedException(use, model) is { } type && !AcceptsShouldlyFailure(type));
+            .Any(use => ExpectedException(use, model) is { } type && !AcceptsShouldlyFailure(type))
+        || IsInsideExpectedFailureHelper(node, model);
 
     // True when the action of a Throw<T> with such a T contains a FluentAssertions assertion: the two belong together.
-    // shortcut: only assertions written in the lambda itself, not in a helper it calls; widen when real code needs it.
+    // With an assertion exception as T, the methods of the solution the action calls count too (two levels deep, TAAK-222).
     public static bool ExpectsAssertionFailure(ExpressionSyntax subject, ITypeSymbol? expected, SemanticModel model)
     {
         if (expected is null || AcceptsShouldlyFailure(expected))
@@ -329,15 +333,143 @@ public static class FluentAssertionsSyntax
             return false;
         }
 
+        if (ActionBody(subject, model) is not { } body)
+        {
+            return false;
+        }
+
+        if (ContainsAssertion(body, model))
+        {
+            return true;
+        }
+
+        return IsAssertionException(expected)
+            && CalledSourceMethods(body, model, HelperDepth).Any(m => ContainsAssertion(m.Body, m.Model));
+    }
+
+    private const int HelperDepth = 2;
+
+    private static readonly string[] s_assertionExceptionNames = ["XunitException", "AssertionFailedException", "AssertionException", "AssertFailedException"];
+
+    // Per syntax tree: the helpers (see HelperKey) its Throw<assertion exception> actions call. Keyed by the tree, which the
+    // Fixer keeps for every file it does not rewrite, so each test file is analysed once per run.
+    private static readonly ConditionalWeakTable<SyntaxTree, HashSet<string>> s_helpersPerTree = new();
+
+    // The lambda, the initialiser of a local delegate, or the method group the action of `subject.Should().Throw<T>()` runs.
+    private static SyntaxNode? ActionBody(ExpressionSyntax subject, SemanticModel model)
+    {
         ExpressionSyntax action = subject is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Invoking" or "Awaiting" } } invoking
             && invoking.ArgumentList.Arguments.Count > 0
             ? invoking.ArgumentList.Arguments[^1].Expression
             : subject;
-        SyntaxNode? body = model.GetSymbolInfo(action).Symbol is ILocalSymbol local
+        return model.GetSymbolInfo(action).Symbol is ILocalSymbol local
             ? local.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax()
             : action;
-        return body is not null && body.DescendantNodes().OfType<InvocationExpressionSyntax>()
+    }
+
+    private static bool ContainsAssertion(SyntaxNode body, SemanticModel model) =>
+        body.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>()
             .Any(i => i.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Should" } && IsFluentAssertions(model.GetSymbolInfo(i).Symbol));
+
+    // XunitException, FluentAssertions' AssertionFailedException, NUnit's AssertionException, MSTest's AssertFailedException
+    // or a type derived from one: what a failing FluentAssertions assertion throws, and not what Shouldly throws.
+    private static bool IsAssertionException(ITypeSymbol type)
+    {
+        for (ITypeSymbol? current = type; current is not null; current = current.BaseType)
+        {
+            if (s_assertionExceptionNames.Contains(current.Name))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // The methods and local functions with source in the compilation that body calls, and the ones those call, up to depth.
+    private static IEnumerable<(SyntaxNode Body, SemanticModel Model, IMethodSymbol Method)> CalledSourceMethods(SyntaxNode body, SemanticModel model, int depth)
+    {
+        var seen = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        var level = new List<(SyntaxNode Body, SemanticModel Model)> { (body, model) };
+        for (int d = 0; d < depth && level.Count > 0; d++)
+        {
+            var next = new List<(SyntaxNode Body, SemanticModel Model)>();
+            foreach ((SyntaxNode current, SemanticModel currentModel) in level)
+            {
+                foreach (SyntaxNode name in current.DescendantNodesAndSelf().Where(n => n is InvocationExpressionSyntax or IdentifierNameSyntax))
+                {
+                    ISymbol? symbol = name is InvocationExpressionSyntax invocation
+                        ? currentModel.GetSymbolInfo(invocation).Symbol
+                        : name.Parent is InvocationExpressionSyntax || name.Parent is MemberAccessExpressionSyntax { Parent: InvocationExpressionSyntax } ? null : currentModel.GetSymbolInfo(name).Symbol;
+                    if (symbol is not IMethodSymbol { MethodKind: MethodKind.Ordinary or MethodKind.LocalFunction or MethodKind.ReducedExtension } method)
+                    {
+                        continue;
+                    }
+
+                    method = method.ReducedFrom ?? method;
+                    if (!seen.Add(method.OriginalDefinition) || method.OriginalDefinition.DeclaringSyntaxReferences is not [var reference])
+                    {
+                        continue;
+                    }
+
+                    SyntaxNode declaration = reference.GetSyntax();
+                    if (declaration is not (BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax) || !model.Compilation.ContainsSyntaxTree(declaration.SyntaxTree))
+                    {
+                        continue;
+                    }
+
+                    SemanticModel declarationModel = declaration.SyntaxTree == currentModel.SyntaxTree ? currentModel : model.Compilation.GetSemanticModel(declaration.SyntaxTree);
+                    yield return (declaration, declarationModel, method.OriginalDefinition);
+                    next.Add((declaration, declarationModel));
+                }
+            }
+
+            level = next;
+        }
+    }
+
+    // True when node is in a method that a Throw<assertion exception> action somewhere in the compilation calls (TAAK-222).
+    private static bool IsInsideExpectedFailureHelper(SyntaxNode node, SemanticModel model)
+    {
+        if (node.FirstAncestorOrSelf<SyntaxNode>(a => a is BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax) is not { } member
+            || model.GetDeclaredSymbol(member) is not IMethodSymbol method)
+        {
+            return false;
+        }
+
+        string key = HelperKey(method);
+        return model.Compilation.SyntaxTrees.Any(tree => s_helpersPerTree.GetValue(tree, t => HelpersCalledFromExpectedFailures(t, model.Compilation)).Contains(key));
+    }
+
+    // Containing type, name and arity: stable across the compilations the Fixer makes while it rewrites other files.
+    private static string HelperKey(IMethodSymbol method) =>
+        $"{method.ContainingType?.ToDisplayString()}.{method.Name}/{method.Parameters.Length}";
+
+    private static HashSet<string> HelpersCalledFromExpectedFailures(SyntaxTree tree, Compilation compilation)
+    {
+        var helpers = new HashSet<string>(StringComparer.Ordinal);
+        string text = tree.GetText().ToString();
+        if (!s_assertionExceptionNames.Any(n => text.Contains(n, StringComparison.Ordinal)))
+        {
+            return helpers;
+        }
+
+        SemanticModel model = compilation.GetSemanticModel(tree);
+        foreach (InvocationExpressionSyntax check in FindInvocations(tree.GetRoot(), model, "Throw", "ThrowExactly", "ThrowAsync", "ThrowExactlyAsync"))
+        {
+            if (model.GetSymbolInfo(check).Symbol is IMethodSymbol { TypeArguments: [var expected] }
+                && IsAssertionException(expected)
+                && GetSubject(check) is { } subject
+                && ActionBody(subject, model) is { } body)
+            {
+                foreach ((_, _, IMethodSymbol helper) in CalledSourceMethods(body, model, HelperDepth))
+                {
+                    helpers.Add(HelperKey(helper));
+                }
+            }
+        }
+
+        return helpers;
     }
 
     // The lambda itself and, for `Action act = () => ...;`, every use of act.

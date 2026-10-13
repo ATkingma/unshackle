@@ -20,6 +20,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EqualSequencePattern.c
 | REQ-4 | Gehaald | `nullable` |
 | REQ-5 | Gehaald (becauseArgs vervangen) | `not-equal`, `dictionary`, `predicate`, `assertion-scope`, `and` |
 | REQ-6 | Gehaald | `AndChain/equal-length-approximately` |
+| Uitbreiding TAAK-225 | Gehaald | `dictionary`, `dictionary-because` (Fixed); `dictionary-class-values`, `dictionary-pair-list` (Manual); dotnet build + test groen (2026-10-13) |
 | Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` |
 
 ## Aanvulling TAAK-113

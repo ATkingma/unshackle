@@ -43,6 +43,7 @@ Bewijs: met `.And().DoNotResideInNamespace("Mediator")` in de 4 tests (kopie in 
 8/8; daarmee is kgrzybek 246/287, gelijk aan de basis.
 Advies voor gebruikers: archtests die alle typen van een assembly bekijken, moeten de namespace `Mediator` uitzonderen.
 Unshackle meldt dit niet automatisch: zo'n waarschuwing is niet betrouwbaar af te leiden (welke test wat bekijkt staat niet in de code van de host).
+Update: sinds TAAK-240 geeft de fix wel een algemene waarschuwing zodra de solution NetArchTest/ArchUnitNET refereert.
 
 ## Zie ook
 

@@ -52,14 +52,21 @@ internal static class ThrowMessage
 
     public const string AggregateReason = "The action blocks on a task or runs Parallel.* (Wait/Result/WaitAll/Parallel.For/ForEach/Invoke), which throws AggregateException: FluentAssertions unwraps AggregateException; Shouldly does not.";
 
-    // Heuristic: true when the action (a lambda, a local delegate initialised with one, or a method group) visibly calls
-    // a member that wraps exceptions in AggregateException, and exceptionType does not already accept AggregateException.
+    public const string AggregateUsedReason = "The action blocks on a task or runs Parallel.* (Wait/Result/WaitAll/Parallel.For/ForEach/Invoke), which throws AggregateException, and the exception is checked further (And/Which/WithMessage/...): FluentAssertions hands over the unwrapped inner exception, Shouldly the AggregateException.";
+
+    private const int MethodDepth = 2;
+
+    // Heuristic: true when the action (a lambda, a local delegate initialised with one, or a method group), or a method of
+    // the solution it calls (two levels deep), visibly calls a member that wraps exceptions in AggregateException, and
+    // FluentAssertions would unwrap it: exceptionType is no AggregateException, and when it is a base of AggregateException
+    // (Exception) only if the chain uses the exception (FluentAssertions returns the inner one, Shouldly the aggregate; probed).
     // An action that cannot be followed (e.g. a parameter) counts as false. GetAwaiter().GetResult() and WaitAny do not wrap.
-    public static bool MayThrowAggregate(ExpressionSyntax action, TypeSyntax exceptionType, SemanticModel model)
+    public static bool MayThrowAggregate(ExpressionSyntax action, TypeSyntax exceptionType, bool usesException, SemanticModel model)
     {
         if (model.GetTypeInfo(exceptionType).Type is not ITypeSymbol expected
             || model.Compilation.GetTypeByMetadataName("System.AggregateException") is not { } aggregate
-            || model.Compilation.ClassifyConversion(aggregate, expected).IsImplicit)
+            || model.Compilation.ClassifyConversion(expected, aggregate).IsImplicit
+            || model.Compilation.ClassifyConversion(aggregate, expected).IsImplicit && !usesException)
         {
             return false;
         }
@@ -74,7 +81,7 @@ internal static class ThrowMessage
             if (declaration is VariableDeclaratorSyntax { Initializer.Value: var value })
             {
                 // A local's initialiser can never refer back to itself, so this recursion ends.
-                return MayThrowAggregate(value, exceptionType, model);
+                return MayThrowAggregate(value, exceptionType, usesException, model);
             }
 
             body = declaration switch
@@ -84,13 +91,37 @@ internal static class ThrowMessage
             };
         }
 
-        if (body is null)
+        return body is not null && Blocks(body, model, MethodDepth, new HashSet<SyntaxNode>());
+    }
+
+    // True when body, or a method with source it calls (up to depth levels), calls a wrapping member (TAAK-220).
+    private static bool Blocks(SyntaxNode body, SemanticModel model, int depth, HashSet<SyntaxNode> seen)
+    {
+        if (!seen.Add(body) || !model.Compilation.ContainsSyntaxTree(body.SyntaxTree))
         {
             return false;
         }
 
         SemanticModel bodyModel = body.SyntaxTree == model.SyntaxTree ? model : model.Compilation.GetSemanticModel(body.SyntaxTree);
-        return body.DescendantNodes().OfType<SimpleNameSyntax>().Any(n => Wraps(bodyModel.GetSymbolInfo(n).Symbol));
+        var called = new List<SyntaxNode>();
+        foreach (SimpleNameSyntax name in body.DescendantNodes().OfType<SimpleNameSyntax>())
+        {
+            ISymbol? symbol = bodyModel.GetSymbolInfo(name).Symbol;
+            if (Wraps(symbol))
+            {
+                return true;
+            }
+
+            if (depth > 0
+                && symbol is IMethodSymbol { MethodKind: MethodKind.Ordinary or MethodKind.LocalFunction or MethodKind.ReducedExtension } method
+                && (method.ReducedFrom ?? method).OriginalDefinition.DeclaringSyntaxReferences is [var reference]
+                && reference.GetSyntax() is BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax)
+            {
+                called.Add(reference.GetSyntax());
+            }
+        }
+
+        return called.Any(c => Blocks(c, model, depth - 1, seen));
     }
 
     private static bool Wraps(ISymbol? symbol) =>

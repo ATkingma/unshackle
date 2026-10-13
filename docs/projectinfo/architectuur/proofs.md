@@ -6,7 +6,7 @@ Een proof is een `*.before.cs` (compileert tegen de oude bibliotheek) plus `*.af
 of `*.manual.txt` (verwachte Manual-reden). `ProofTests` en `CombinedProofTests` draaien ze; `_Pending/` bevat bekende fouten met een taak.
 Kolom *Wat het bewijst*: bij Fixed de eerste regel die verandert (voor → na), bij Manual de assertion en de reden.
 
-Totaal: 779 proofs (zonder `_Pending`).
+Totaal: 802 proofs (zonder `_Pending`).
 
 ## AutoMapper
 
@@ -349,10 +349,11 @@ Totaal: 779 proofs (zonder `_Pending`).
 | `result-used` | Manual | `var c = a.Should().BeSameAs(b).And;` — reden: is used |
 | `simple` | Fixed | `a.Should().BeSameAs(b);` → `a.ShouldBeSameAs(b);` |
 
-### BeTrueFalse (11)
+### BeTrueFalse (13)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
+| `assertion-helper` | Manual | `candidate.Should().Throw<AssertionFailedException>();` — reden: Throw<XunitException> |
 | `be-false` | Fixed | `(a == b).Should().BeFalse();` → `(a == b).ShouldBeFalse();` |
 | `be-true` | Fixed | `flag.Should().BeTrue();` → `flag.ShouldBeTrue();` |
 | `because` | Fixed | `flag.Should().BeTrue("must be paid");` → `flag.ShouldBeTrue("must be paid");` |
@@ -363,6 +364,7 @@ Totaal: 779 proofs (zonder `_Pending`).
 | `edge-linq-subject` | Fixed | `items.Any(x => x > 1).Should().BeFalse();` → `items.Any(x => x > 1).ShouldBeFalse();` |
 | `edge-pattern-subject` | Fixed | `(value is string { Length: > 0 }).Should().BeTrue();` → `(value is string { Length: > 0 }).ShouldBeTrue();` |
 | `nullable` | Fixed | `flag.Should().BeTrue(); flag.Should().BeFalse("why");` → `flag.ShouldBe(true); flag.ShouldBe(false, "why");` |
+| `own-shouldbe-in-scope` | Fixed | `done.Should().BeTrue();` → `done.ShouldBeTrue();` |
 | `value-used` | Manual | `var c = flag.Should().BeFalse();` — reden: is used |
 
 ### CatchAssertionException (4)
@@ -483,7 +485,7 @@ Totaal: 779 proofs (zonder `_Pending`).
 | `unique` | Fixed | `x.Should().OnlyHaveUniqueItems();` → `x.ShouldBeUnique();` |
 | `unique-key` | Manual | `x.Should().OnlyHaveUniqueItems(s => s.Length);` — reden: key selector |
 
-### EqualSequence (13)
+### EqualSequence (16)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -493,7 +495,10 @@ Totaal: 779 proofs (zonder `_Pending`).
 | `because-args` | Fixed | `x.Should().Equal(y, "of {0}", 2);` → `x.ShouldBe(y, ignoreOrder: false, string.Format(System.Globalization.CultureInfo.InvariantCulture, "of {0}", 2…` |
 | `collection-expression` | Fixed | `s.Should().Equal(["a", "b"]); x.Should().Equal([1]);` → `s.ShouldBe(new string[] { "a", "b" }); x.ShouldBe(new int[] { 1 });` |
 | `collection-expression-spread` | Manual | `s.Should().Equal([.. t, "b"]);` — reden: spread |
-| `dictionary` | Manual | `x.Should().Equal(y);` — reden: dictionary |
+| `dictionary` | Fixed | `x.Should().Equal(y);` → `x.ShouldBe(y, ignoreOrder: true);` |
+| `dictionary-because` | Fixed | `x.Should().Equal(y, "the {0} counts", "node");` → `x.ShouldBe(y, ignoreOrder: true, string.Format(System.Globalization.CultureInfo.InvariantCulture, "the {0} cou…` |
+| `dictionary-class-values` | Manual | `x.Should().Equal(y);` — reden: are no leaf, record or struct of leaves |
+| `dictionary-pair-list` | Manual | `x.Should().Equal(y);` — reden: The expectation is no dictionary |
 | `multi-line` | Fixed | `lines.Should().Equal( "last");` → `lines.ShouldBe(new string[] {` |
 | `nullable` | Fixed | `x.Should().Equal(y);` → `x.ShouldBe(y);` |
 | `params` | Fixed | `x.Should().Equal(1, 2, 3); s.Should().Equal("a", "b");` → `x.ShouldBe(new long[] { 1, 2, 3 }); s.ShouldBe(new string[] { "a", "b" });` |
@@ -575,14 +580,17 @@ Totaal: 779 proofs (zonder `_Pending`).
 | `simple` | Fixed | `s.Should().HaveLength(5);` → `s.Length.ShouldBe(5);` |
 | `stream` | Manual | `s.Should().HaveLength(5);` — reden: stream |
 
-### Invoking (17)
+### Invoking (20)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `aggregate` | Manual | `order.Invoking(o => o.CancelAsync().Wait()).Should().Throw<InvalidOperationException>();` — reden: AggregateException |
+| `aggregate-parameter-and` | Manual | `task.Invoking(_ => _.Wait(TimeSpan.FromSeconds(3))).Should().Throw<Exception>().And.Should().Be(expected);` — reden: the unwrapped inner exception |
+| `aggregate-parameter-message` | Manual | `future.Invoking(f => f.Wait()).Should().Throw<Exception>().WithMessage("Stream failed.");` — reden: the unwrapped inner exception |
 | `assertion-scope` | Manual | `order.Invoking(o => o.Cancel()).Should().Throw<InvalidOperationException>();` — reden: AssertionScope |
 | `awaiting` | Fixed | `await order.Awaiting(o => o.CancelAsync()).Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(() => order.CancelAsync());` |
 | `awaiting-exactly` | Fixed | `await order.Awaiting(o => o.CancelAsync()).Should().ThrowExactlyAsync<InvalidOperationException>();` → `(await Should.ThrowAsync<InvalidOperationException>(() => order.CancelAsync())).ShouldBeOfType<InvalidOperatio…` |
+| `awaiting-wait-async` | Manual | `await task.Awaiting(t => t.WaitAsync(TimeSpan.FromSeconds(3))).Should().ThrowAsync<InvalidOperationException>(…` — reden: waits on a task made elsewhere |
 | `because-args` | Fixed | `order.Invoking(o => o.Cancel()).Should().Throw<InvalidOperationException>("a {0}", 1);` → `Should.Throw<InvalidOperationException>(() => order.Cancel(), string.Format(System.Globalization.CultureInfo.I…` |
 | `because-message` | Fixed | `order.Invoking(o => o.Cancel()).Should().Throw<InvalidOperationException>("it is shipped").WithMessage("*shipp…` → `Should.Throw<InvalidOperationException>(() => order.Cancel(), "it is shipped").Message.ShouldEndWith("shipped"…` |
 | `fluent-actions` | Fixed | `FluentActions.Invoking(() => order.Cancel()).Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(() => order.Cancel());` |
@@ -800,14 +808,18 @@ Totaal: 779 proofs (zonder `_Pending`).
 | `nullable` | Fixed | `s.Should().StartWith("Ti"); s.Should().NotBeNullOrWhiteSpace();` → `s.ShouldStartWith("Ti", Shouldly.Case.Sensitive); s.ShouldNotBeNullOrWhiteSpace();` |
 | `simple` | Fixed | `s.Should().StartWith("Ti"); s.Should().EndWith("me");` → `s.ShouldStartWith("Ti", Shouldly.Case.Sensitive); s.ShouldEndWith("me", Shouldly.Case.Sensitive);` |
 
-### Throw (42)
+### Throw (46)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
+| `aggregate-exception-and` | Manual | `action.Should().Throw<Exception>().And.Should().BeSameAs(expected);` — reden: the unwrapped inner exception |
+| `aggregate-exception-plain` | Fixed | `action.Should().Throw<Exception>();` → `Should.Throw<Exception>(action);` |
 | `aggregate-expected` | Fixed | `act.Should().Throw<AggregateException>();` → `Should.Throw<AggregateException>(act);` |
 | `aggregate-get-result` | Fixed | `act.Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(act);` |
+| `aggregate-helper-method` | Manual | `fail.Should().Throw<InvalidOperationException>();` — reden: unwraps AggregateException |
 | `aggregate-method-group` | Manual | `act.Should().Throw<InvalidOperationException>();` — reden: unwraps AggregateException |
 | `aggregate-wait` | Manual | `act.Should().Throw<InvalidOperationException>();` — reden: unwraps AggregateException |
+| `assertion-helper` | Manual | `candidate.Should().Throw<AssertionFailedException>();` — reden: Throw<XunitException> |
 | `because` | Fixed | `act.Should().Throw<InvalidOperationException>("it is shipped");` → `Should.Throw<InvalidOperationException>(act, "it is shipped");` |
 | `because-args` | Fixed | `act.Should().Throw<InvalidOperationException>("because {0}", 1);` → `Should.Throw<InvalidOperationException>(act, string.Format(System.Globalization.CultureInfo.InvariantCulture, …` |
 | `chain` | Fixed | `act.Should().Throw<InvalidOperationException>().WithInnerException<ArgumentException>();` → `Should.Throw<InvalidOperationException>(act).InnerException.ShouldNotBeNull().ShouldBeAssignableTo<ArgumentExc…` |
@@ -847,7 +859,7 @@ Totaal: 779 proofs (zonder `_Pending`).
 | `value-func` | Manual | `func.Should().Throw<InvalidOperationException>();` — reden: reference type |
 | `value-used` | Fixed | `var exception = act.Should().Throw<InvalidOperationException>().Which;` → `var exception = Should.Throw<InvalidOperationException>(act);` |
 
-### ThrowAsync (30)
+### ThrowAsync (31)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -857,6 +869,7 @@ Totaal: 779 proofs (zonder `_Pending`).
 | `because` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>("a");` → `await Should.ThrowAsync<InvalidOperationException>(act, "a");` |
 | `because-args` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>("a {0}", 1);` → `await Should.ThrowAsync<InvalidOperationException>(act, string.Format(System.Globalization.CultureInfo.Invaria…` |
 | `because-variable` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>(why, 1);` — reden: becauseArgs whose because is no constant format string |
+| `cancelled-inner` | Manual | `(await action.Should().ThrowAsync<TaskCanceledException>()).WithInnerException<TimeoutException>();` — reden: returns a new TaskCanceledException |
 | `edge-configure-await` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>().ConfigureAwait(false);` → `await Should.ThrowAsync<InvalidOperationException>(act).ConfigureAwait(false);` |
 | `edge-local-async-lambda` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
 | `func-task-reference` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
@@ -882,14 +895,16 @@ Totaal: 779 proofs (zonder `_Pending`).
 | `value-used` | Fixed | `var thrown = await act.Should().ThrowAsync<InvalidOperationException>();` → `var thrown = await Should.ThrowAsync<InvalidOperationException>(act);` |
 | `where` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>().Where(e => e.Message.Length > 0);` → `var exception = await Should.ThrowAsync<InvalidOperationException>(act); (exception.Message.Length > 0).Should…` |
 
-### ThrowExactly (10)
+### ThrowExactly (12)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
 | `aggregate-wait` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>();` |
 | `assertion-scope` | Manual | `act.Should().ThrowExactly<InvalidOperationException>();` — reden: AssertionScope |
 | `async` | Fixed | `await act.Should().ThrowExactlyAsync<InvalidOperationException>();` → `(await Should.ThrowAsync<InvalidOperationException>(act)).ShouldBeOfType<InvalidOperationException>();` |
+| `async-cancelled` | Manual | `await action.Should().ThrowExactlyAsync<OperationCanceledException>();` — reden: returns a new TaskCanceledException |
 | `async-message` | Fixed | `await act.Should().ThrowExactlyAsync<InvalidOperationException>().WithMessage("Order shipped");` → `(await Should.ThrowAsync<InvalidOperationException>(act)).ShouldBeOfType<InvalidOperationException>().Message.…` |
+| `async-task-canceled` | Fixed | `await action.Should().ThrowExactlyAsync<TaskCanceledException>();` → `(await Should.ThrowAsync<TaskCanceledException>(action)).ShouldBeOfType<TaskCanceledException>();` |
 | `because` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>("it is shipped");` → `Should.Throw<InvalidOperationException>(act, "it is shipped").ShouldBeOfType<InvalidOperationException>();` |
 | `because-args` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>("a {0}", 1);` → `Should.Throw<InvalidOperationException>(act, string.Format(System.Globalization.CultureInfo.InvariantCulture, …` |
 | `message` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>().WithMessage("Order*");` → `Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>().Message.ShouldStartWi…` |
@@ -897,9 +912,21 @@ Totaal: 779 proofs (zonder `_Pending`).
 | `simple` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>();` |
 | `value-used` | Fixed | `string message = act.Should().ThrowExactly<InvalidOperationException>().Which.Message;` → `string message = Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>().Mess…` |
 
+### TimeSpanExtensions (7)
+
+| Proof | Uitkomst | Wat het bewijst |
+| --- | --- | --- |
+| `and` | Manual |  — reden: has no direct replacement |
+| `month` | Fixed | `public DateTime Test(int year) => 1.March(year);` → `public DateTime Test(int year) => new DateTime(year, 3, 1);` |
+| `month-computed` | Manual |  — reden: with a computed day and year |
+| `no-using-system` | Fixed | `public object Test() => 5.Seconds();` → `public object Test() => TimeSpan.FromSeconds(5);` |
+| `offset` | Manual |  — reden: has no direct replacement |
+| `simple` | Fixed | `Wait(3.Seconds()); Wait(200.Milliseconds());` → `Wait(TimeSpan.FromSeconds(3)); Wait(TimeSpan.FromMilliseconds(200));` |
+| `static-call` | Fixed | `public TimeSpan Test() => FluentTimeSpanExtensions.Seconds(5);` → `public TimeSpan Test() => TimeSpan.FromSeconds(5);` |
+
 ## MediatR
 
-### _Combined (10)
+### _Combined (11)
 
 | Proof | Uitkomst | Wat het bewijst |
 | --- | --- | --- |
@@ -908,6 +935,7 @@ Totaal: 779 proofs (zonder `_Pending`).
 | `generic-decorator-marker-without-using` | Fixed | `where TCommand : ICommand public class CreateMeetingCommand : ICommand` → `where TCommand : global::App.ICommand public class CreateMeetingCommand : global::App.ICommand` |
 | `generic-decorators-kgrzybek` | Fixed | `public class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : ICommand` → `public abstract class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : global::Proofs.…` |
 | `generic-notification-nadirbad` | Fixed | `public class DomainEventNotification<TDomainEvent> : INotification public Task Handle(DomainEventNotification<…` → `public abstract class DomainEventNotification<TDomainEvent> : INotification public class DomainEventNotificati…` |
+| `host-references-host` | Fixed | `public Task Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Task.CompletedTask; bu…` → `public ValueTask<Unit> Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Unit.ValueT…` |
 | `identified-command-eshop` | Fixed | `public class IdentifiedCommand<T, R> : IRequest<R> public async Task<R> Handle(IdentifiedCommand<T, R> message…` → `public abstract class IdentifiedCommand<T, R> : IRequest<R> }` |
 | `internal-message-access` | Fixed | `public Task Handle(CancelMeetingCommand request, CancellationToken cancellationToken) => Task.CompletedTask; b…` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyMeetings.Modules.Meetings.Infrastructure")] p…` |
 | `request-handler-delegate` | Fixed | `public async Task<int> Handle(Register command, RequestHandlerDelegate<int> next, CancellationToken token) ret…` → `public async ValueTask<int> Handle(Register command, MessageHandlerDelegate<Register, int> next, CancellationT…` |

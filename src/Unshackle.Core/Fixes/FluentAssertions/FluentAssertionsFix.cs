@@ -27,7 +27,7 @@ public class FluentAssertionsFix : IFix
 
     public IReadOnlyList<MetadataReference> AddedReferences { get; }
 
-    public IReadOnlyList<string> RemovedNamespaces { get; } = ["FluentAssertions", "FluentAssertions.Execution"];
+    public IReadOnlyList<string> RemovedNamespaces { get; } = ["FluentAssertions", "FluentAssertions.Execution", "FluentAssertions.Extensions"];
 
     public IReadOnlyList<string> AddedNamespaces { get; } = ["Shouldly"];
 
@@ -85,5 +85,7 @@ public class FluentAssertionsFix : IFix
         new CustomAssertionPattern(),
         // Catch sites of the assertion exception, e.g. a retry helper around assertions (TAAK-140).
         new CatchAssertionExceptionPattern(),
+        // No assertion: 5.Seconds() and 1.March(2020) from FluentAssertions.Extensions (TAAK-224).
+        new TimeSpanExtensionsPattern(),
     ];
 }

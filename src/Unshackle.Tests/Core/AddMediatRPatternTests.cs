@@ -170,6 +170,49 @@ public class AddMediatRPatternTests
         }
     }
 
+    [Theory]
+    [InlineData("NetArchTest.Rules.dll", true)]
+    [InlineData("ArchUnitNET.xUnit.dll", true)]
+    [InlineData("Other.dll", false)]
+    public async Task RewriteAsync_SolutionWithArchitectureTests_WarnsAboutMediatorNamespace(string library, bool warns)
+    {
+        // Arrange
+        CancellationToken token = TestContext.Current.CancellationToken;
+        var host = ProjectId.CreateNewId();
+        var tests = ProjectId.CreateNewId();
+        var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+        using var image = new MemoryStream();
+        CSharpCompilation.Create(Path.GetFileNameWithoutExtension(library), [], TestReferences.MediatR, options).Emit(image, cancellationToken: token);
+        var registration = DocumentId.CreateNewId(host);
+        Solution solution = new AdhocWorkspace().CurrentSolution
+            .AddProject(host, "Host", "Host", LanguageNames.CSharp).WithProjectCompilationOptions(host, options)
+            .AddMetadataReferences(host, TestReferences.MediatR)
+            .AddDocument(registration, "Registration.cs",
+                "using Microsoft.Extensions.DependencyInjection;\nclass Registration { void T(IServiceCollection services) { "
+                + "services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly)); } }")
+            .AddProject(tests, "ArchTests", "ArchTests", LanguageNames.CSharp)
+            .AddMetadataReference(tests, MetadataReference.CreateFromImage(image.ToArray(), filePath: Path.Combine("lib", library)));
+        Document document = solution.GetDocument(registration)!;
+        SemanticModel model = (await document.GetSemanticModelAsync(token))!;
+        var pattern = new AddMediatRPattern();
+        SyntaxNode node = pattern.Find((await document.GetSyntaxRootAsync(token))!, model).Single();
+
+        // Act
+        PatternResult result = await pattern.RewriteAsync(node, model, solution, token);
+
+        // Assert
+        FixedResult fixedResult = result.ShouldBeOfType<FixedResult>();
+        if (warns)
+        {
+            fixedResult.Warning.ShouldNotBeNull().ShouldContain("ArchTests uses an architecture-test library");
+            fixedResult.Warning.ShouldContain(".And().DoNotResideInNamespace(\"Mediator\")");
+        }
+        else
+        {
+            fixedResult.Warning.ShouldBeNull();
+        }
+    }
+
     private static (AddMediatRPattern Pattern, SyntaxNode Node, SemanticModel Model) Arrange(string body, string declaration = "class C {")
     {
         string code = "using System.Reflection;\nusing Microsoft.Extensions.DependencyInjection;\n"

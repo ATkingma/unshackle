@@ -462,9 +462,29 @@ internal static class ThrowChains
         }
 
         // ThrowExactly does not unwrap AggregateException, just like Shouldly.
-        if (!exactly && ThrowMessage.MayThrowAggregate(inspected, generic.TypeArgumentList.Arguments[0], model))
+        bool usesException = chain.Steps.Count > 0 || chain.Tail is not null || DeclaredLocal(chain) is not null;
+        if (!exactly && ThrowMessage.MayThrowAggregate(inspected, generic.TypeArgumentList.Arguments[0], usesException, model))
         {
-            reason = ThrowMessage.AggregateReason;
+            reason = usesException ? ThrowMessage.AggregateUsedReason : ThrowMessage.AggregateReason;
+            return false;
+        }
+
+        if (async && WaitsOnOtherTask(inspected, generic.TypeArgumentList.Arguments[0], model))
+        {
+            reason = WaitsOnOtherTaskReason;
+            return false;
+        }
+
+        // Shouldly's ThrowAsync replaces the exception of a cancelled task by a new TaskCanceledException (probed): its type,
+        // message and inner exception are not the ones FluentAssertions checks (TAAK-221).
+        // Members such as CancellationToken survive (the new exception takes the token of the task), so only steps count.
+        // ThrowExactlyAsync<TaskCanceledException>() alone still holds: that is the type Shouldly makes.
+        ITypeSymbol? thrownType = model.GetTypeInfo(generic.TypeArgumentList.Arguments[0]).Type;
+        if (async
+            && (chain.Steps.Count > 0 || exactly && thrownType?.ToDisplayString() != "System.Threading.Tasks.TaskCanceledException")
+            && IsCancellation(thrownType, model))
+        {
+            reason = CancellationReason;
             return false;
         }
 
@@ -497,6 +517,24 @@ internal static class ThrowChains
         start = exactly ? ThrowMessage.OfType(SyntaxFactory.ParenthesizedExpression(thrown), generic) : thrown;
         return true;
     }
+
+    private const string WaitsOnOtherTaskReason = "The action only waits on a task made elsewhere (WaitAsync): when that task faulted with an AggregateException (e.g. TaskCompletionSource.SetException(task.Exception)), FluentAssertions flattens it and finds the inner exception, Shouldly's ThrowAsync does not.";
+
+    private const string CancellationReason = "ThrowAsync on an OperationCanceledException with ThrowExactlyAsync or a step (WithMessage, WithInnerException, Where): when the task ends cancelled, Shouldly's ThrowAsync returns a new TaskCanceledException instead of the thrown exception.";
+
+    // `x => x.WaitAsync(..)` / `() => task.WaitAsync(..)`: the awaited task is made elsewhere (TAAK-220, Akka). Only when
+    // exceptionType is no AggregateException (which neither library unwraps).
+    private static bool WaitsOnOtherTask(ExpressionSyntax inspected, TypeSyntax exceptionType, SemanticModel model) =>
+        inspected is LambdaExpressionSyntax { ExpressionBody: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "WaitAsync" } } }
+        && model.GetTypeInfo(exceptionType).Type is { } expected
+        && model.Compilation.GetTypeByMetadataName("System.AggregateException") is { } aggregate
+        && !model.Compilation.ClassifyConversion(expected, aggregate).IsImplicit;
+
+    // OperationCanceledException or a type derived from it (TaskCanceledException).
+    private static bool IsCancellation(ITypeSymbol? type, SemanticModel model) =>
+        type is not null
+        && model.Compilation.GetTypeByMetadataName("System.OperationCanceledException") is { } cancelled
+        && model.Compilation.ClassifyConversion(type, cancelled).IsImplicit;
 
     // The Shouldly check for a step that does not change the exception.
     private static PatternResult Check(string name, InvocationExpressionSyntax step, ExpressionSyntax exception, IReadOnlyList<ArgumentSyntax> values, ArgumentSyntax? because, SemanticModel model)

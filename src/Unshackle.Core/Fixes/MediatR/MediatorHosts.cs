@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Unshackle.Core.Fixes.MediatR.Patterns;
+using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.MediatR;
 
@@ -182,4 +183,34 @@ public static class MediatorHosts
 
         return true;
     }
+
+    /// <summary>
+    /// Adds a report warning to a fixed host when a project of the solution references an architecture-test library (NetArchTest,
+    /// ArchUnitNET): the generated <c>Mediator.Mediator</c> and <c>Mediator.Internals.ContainerMetadata</c> name the messages of every
+    /// referenced module, so a test that forbids dependencies between modules fails on them (TAAK-214, TAAK-240).
+    /// </summary>
+    /// <param name="result">The result of the host's rewrite; only a <see cref="FixedResult"/> gets the warning.</param>
+    /// <param name="solution">The solution of the host.</param>
+    /// <returns>The result, with the warning appended to an existing one.</returns>
+    public static PatternResult WithArchitectureTestWarning(PatternResult result, Solution solution)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(solution);
+        if (result is not FixedResult fixedResult || ArchitectureTestProject(solution) is not Project project)
+        {
+            return result;
+        }
+
+        string warning =
+            $"{project.Name} uses an architecture-test library: Mediator generates Mediator.Mediator and Mediator.Internals.ContainerMetadata in this project, "
+            + "which name the messages of the modules it references. Tests that forbid dependencies between modules should exclude namespace Mediator, "
+            + "e.g. .And().DoNotResideInNamespace(\"Mediator\").";
+        return fixedResult with { Warning = fixedResult.Warning is string existing ? $"{existing} {warning}" : warning };
+    }
+
+    // NetArchTest.Rules and NetArchTest.eNhancedEdition ship NetArchTest.Rules.dll; TngTech.ArchUnitNET ships ArchUnitNET*.dll.
+    private static Project? ArchitectureTestProject(Solution solution) =>
+        solution.Projects.FirstOrDefault(p => p.MetadataReferences.OfType<PortableExecutableReference>().Any(r =>
+            Path.GetFileName(r.FilePath ?? r.Display) is string name
+            && (name.StartsWith("NetArchTest", StringComparison.OrdinalIgnoreCase) || name.StartsWith("ArchUnitNET", StringComparison.OrdinalIgnoreCase))));
 }

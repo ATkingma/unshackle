@@ -32,7 +32,7 @@ files_expected:
 **Out of scope**
 
 - `NotEqual` (sinds TAAK-160 eigen patroon `fa.not-equal`).
-- Dictionary-`Equal` (volgorde-ongevoelig, Manual).
+- Dictionary-`Equal` met sleutels/waarden die geen leaf, record of struct van leaves zijn, of met een verwachting die geen dictionary is (Manual).
 - `Equal(seq, predicate)` (Manual).
 
 ## Requirements
@@ -44,6 +44,7 @@ files_expected:
 - **REQ-5**: IF een dictionary, een predicate, becauseArgs, een AssertionScope of `.And` THEN THE SYSTEM SHALL Manual geven (proofs `dictionary`, `predicate`, `because-args`, `assertion-scope`, `and`).
 - **REQ-6**: WHEN `Equal` een schakel na `.And` is THE SYSTEM SHALL via `fa.and-chain` een los `ShouldBe`-statement geven (proof `AndChain/equal-length-approximately`).
 - **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `ShouldBe(y, ignoreOrder: false, string.Format(CultureInfo.InvariantCulture, because, args))` geven (Fixed, proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. REQ-5 geldt daarmee niet meer voor becauseArgs.
+- **Uitbreiding TAAK-225**: WHEN `Equal(y)` op een dictionary staat, y ook een dictionary is met hetzelfde `KeyValuePair<K, V>` en K en V waarde-items zijn (`IsValueLike`: leaf, of record/struct van leaves) THE SYSTEM SHALL `x.ShouldBe(y, ignoreOrder: true)` geven (met `because`: als derde argument) (proofs `dictionary`, `dictionary-because`); andere sleutel/waarde-typen of een lijst van paren blijven Manual (proofs `dictionary-class-values`, `dictionary-pair-list`). Gedrag gesondeerd met FA 7.2.2 en Shouldly 4.3.0: volgorde, ontbrekende/extra sleutel, andere waarde, `null`-waarden, leeg, immutable/read-only subject gelijk; alleen `null` als subject én verwachting verschilt (FA gooit, Shouldly slaagt). REQ-5 geldt daarmee niet meer voor deze dictionaries.
 
 ## Assumptions
 

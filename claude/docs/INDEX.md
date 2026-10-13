@@ -44,6 +44,12 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `claude/tasks/` | Actieve taken: `TAAK-NNN-<slug>.md` |
 | `claude/tasks/TAAK-019-lancering.md` | Volgende stap: lancering (echte casus, NuGet, publiek, README-GIF) |
+| `claude/tasks/archief/TAAK-220-throw-aggregateexception-uitpakken.md` | ✅ `Throw<T>()` op blokkerende delegate, FA pakt `AggregateException` uit (Akka.Streams, 9 regressies) |
+| `claude/tasks/archief/TAAK-221-throwasync-geannuleerde-task.md` | ✅ `ThrowAsync` op geannuleerde task verliest echte exception (Steeltoe, 18 regressies) |
+| `claude/tasks/archief/TAAK-222-meta-test-op-eigen-assertion-helper.md` | ✅ `Throw<XunitException>()` op gemigreerde eigen assertion-helper (LiteDB, 26 regressies) |
+| `claude/tasks/archief/TAAK-224-timespan-extensies-seconds-milliseconds.md` | ✅ Nieuw patroon `fa.timespan-extensions`: `5.Seconds()` → `TimeSpan.FromSeconds(5)`, `1.March(y)` → `new DateTime(..)` |
+| `claude/tasks/archief/TAAK-225-equal-op-dictionary.md` | ✅ `Equal` op dictionary met waarde-items → `ShouldBe(.., ignoreOrder: true)` |
+| `claude/tasks/archief/TAAK-223-multitarget-eerste-tfm-inactieve-code.md` | ✅ Multi-target: extra pass per TFM met andere actieve `#if`-code (LiteDB) |
 | `claude/tasks/archief/TAAK-031-fa-assertion-scope.md` | ✅ Assertions in `AssertionScope` → Manual; patroon `fa.assertion-scope` |
 | `claude/tasks/archief/TAAK-040-fa-expression-bodied-void.md` | ✅ `void M() => x.Should()...` wordt herschreven |
 | `claude/tasks/archief/TAAK-041-fa-null-conditional-subject.md` | ✅ `a?.B.Should()...` → `a?.B.ShouldX()` (zelfde semantiek) |
@@ -107,7 +113,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-135-loader-razor-en-vreemde-projecten.md` | ✅ TAAK-135 — Laden: Razor-componenten, `.dcproj` en niet-ladende bijprojecten blokkeren de hele solution |
 | `claude/tasks/TAAK-136-mediatr-msg0005-zonder-handler.md` | TAAK-136 — MediatR: Mediator-generator MSG0005 breekt build met TreatWarningsAsErrors |
 | `claude/tasks/archief/TAAK-118-gedeeld-pakketbestand-niet-geladen-projecten.md` | ✅ TAAK-118 — Gedeeld `Directory.*.props` houdt het oude pakket als een niet-gemigreerd project op schijf het nog gebruikt |
-| `claude/tasks/CORPUSRUN-fa.md` | Corpus-run FA: 2/9 bouwen na fix; blokkades TAAK-110..113 |
+| `claude/tasks/CORPUSRUN-fa.md` | Corpus-runs FA; ronde 4: 16/16 bouwen, 13/16 groen, regressies → TAAK-220..222; ronde 5: Akka/Steeltoe/LiteDB 0 nieuwe regressies |
 | `claude/tasks/CORPUSRUN-mediatr.md` | Corpus-run MediatR: 0/9 volledig gemigreerd, blokkades en top-10 acties |
 | `claude/tasks/REGRESSIE-corpus.md` | Regressie-run per test: 8/10 identiek; Polly → TAAK-140 |
 | `claude/tasks/REGRESSIE-corpus-2.md` | Regressie-run ronde 2 (Facility, MODiX): 0 regressies; foutklassen → TAAK-152..154 |
@@ -179,6 +185,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-212-mediatr-kgrzybek-build-na-fix.md` | ✅ TAAK-212 — kgrzybek: MSG0001, SA1210, CS1503, CS0122 na de fix opgelost |
 | `claude/tasks/archief/TAAK-213-mediatr-host-verwijst-naar-host.md` | ✅ TAAK-213 — host verwijst naar host: GenerateTypesAsInternal + Assemblies (kgrzybek bouwt) |
 | `claude/tasks/archief/TAAK-214-mediatr-archtests-gegenereerde-mediator.md` | ✅ TAAK-214 — kgrzybek-archtests: gegenereerde dispatcher, legitiem verschil |
+| `claude/tasks/archief/TAAK-240-mediatr-archtest-waarschuwing.md` | ✅ TAAK-240 — rapportwaarschuwing bij archtest-bibliotheek: namespace `Mediator` uitzonderen |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: ongebruikte assembly-parameter na AddMediator (IDE0060) → waarschuwing in rapport |
 | `claude/tasks/archief/TAAK-070-fa-assertion-in-throw-lambda.md` | ✅ Assertion in lambda met `Throw<XunitException>` erop → assertion en Throw Manual |
 

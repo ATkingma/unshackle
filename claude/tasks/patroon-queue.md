@@ -92,3 +92,16 @@ Uit `claude/tasks/CORPUSRUN-fa.md` (ronde 3). Bouwfouten eerst.
 | TAAK-171 | `ContainKey(..).WhoseValue`, `ContainKeys`/`ContainValues` | Steeltoe, Polly | 377 Manual | klaar (TAAK-171; corpus niet herdraaid) |
 | TAAK-172 | `BeEquivalentTo` collectie met waarde-items → `ignoreOrder: true` | 13 projecten | 207 Manual | klaar (TAAK-172) |
 | TAAK-173 | `Awaiting(..).Should().NotThrowAsync()` | Polly | 131 Manual | klaar (TAAK-173) |
+
+## Ronde 4 — corpus 2026-10-13
+
+Uit `claude/tasks/CORPUSRUN-fa.md` (ronde 4). Testregressies eerst.
+
+| Taak | Bug / patroon | Gevonden in | Aantal | Status |
+| --- | --- | --- | ---: | --- |
+| TAAK-220 | `Throw<T>()` op delegate met `Wait()`/`WaitAsync` → `AggregateException` niet uitgepakt | Akka.NET (Streams) | 9 regressies | ✅ klaar |
+| TAAK-221 | `ThrowAsync`/`ThrowExactlyAsync` op geannuleerde task → Shouldly maakt eigen `TaskCanceledException` | Steeltoe | 18 regressies | ✅ klaar |
+| TAAK-222 | `Throw<XunitException>()` op eigen assertion-helper in ander bestand | LiteDB | 26 regressies | ✅ klaar |
+| TAAK-223 | Multi-target: eerste TFM gemigreerd, `#if !NETFRAMEWORK`-code blijft | LiteDB | 709 Manual | ✅ klaar |
+| TAAK-224 | `5.Seconds()`/`Milliseconds()` → `TimeSpan.From*` | Akka, Steeltoe | 380 Manual | ✅ klaar |
+| TAAK-225 | `Equal(..)` op dictionary → `ShouldBe(.., ignoreOrder: true)` | Akka | 344 Manual | ✅ klaar |

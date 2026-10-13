@@ -16,7 +16,7 @@ Volgorde op frequentie in `docs/projectinfo/architectuur/corpus-mediatr-automapp
 | 6   | `automapper.add-automapper`      | `services.AddAutoMapper(...)`                                                                                                                                                         | regel weg                                                               | 4 / 3                         | klaar (TAAK-159) |
 | 7   | `automapper.unsupported`         | `ProjectTo<T>`, `MapperConfiguration`/`AssertConfigurationIsValid`, `ReverseMap`, resolvers, converters, `AfterMap`, `Include(Base)`, `ConstructUsing`, `Condition`, `NullSubstitute` | Manual met reden (rapport)                                              | 3+5 / 2; rest 0               | open   |
 
-Rij 7 splitsen zodra een groter corpus de geavanceerde API's wél laat zien.
+**Besluit (2026-10-13, gebruiker)**: eerst AutoMapper verder uitwerken (rij 7 splitsen in eigen patronen voor de veelgebruikte API's zoals `ReverseMap`, `ProjectTo`, nested/collectie-members, `ConstructUsing`, `Condition`, `NullSubstitute`; de rest Manual met reden), daarna een grote corpusrun (build + tests vóór/na) zoals bij FA en MediatR.
 
 ## Zie ook
 

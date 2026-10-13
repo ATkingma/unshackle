@@ -36,7 +36,7 @@ public class AutofacMediatorModulePattern : ISolutionPattern
         ArgumentNullException.ThrowIfNull(node);
         ArgumentNullException.ThrowIfNull(model);
         MediatorHostSettings host = await MediatorHosts.SettingsAsync(node, model, solution, cancellationToken);
-        return host.ManualReason is string reason ? PatternResult.Manual(reason) : Rewrite(node, model, host);
+        return host.ManualReason is string reason ? PatternResult.Manual(reason) : MediatorHosts.WithArchitectureTestWarning(Rewrite(node, model, host), solution);
     }
 
     private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, MediatorHostSettings host)

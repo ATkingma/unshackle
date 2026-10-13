@@ -84,6 +84,55 @@ public class FluentAssertionsSyntaxTests
         result.ShouldBe(expected);
     }
 
+    [Theory]
+    [InlineData("Action a = () => Helper.Check(true); a.Should().Throw<AssertionFailedException>();", true)]
+    [InlineData("Action a = () => Wrap(); a.Should().Throw<AssertionFailedException>();", true)]
+    [InlineData("Action a = () => Helper.Check(true); a.Should().Throw<InvalidOperationException>();", false)]
+    [InlineData("Action a = () => Helper.Check(true); a.Should().Throw<Exception>();", false)]
+    [InlineData("Helper.Check(true);", false)]
+    public void IsInsideExpectedFailure_HelperInOtherFile_DependsOnCallerInAnyFile(string body, bool expected)
+    {
+        // Arrange
+        const string helper = "using FluentAssertions;\nstatic class Helper { public static void Check(bool b) { b.Should().BeTrue(); } }";
+        string test = "using System; using FluentAssertions; using FluentAssertions.Execution;\n"
+            + "class T { static void Wrap() => Helper.Check(false); void Run() { " + body + " } }";
+        SyntaxTree helperTree = CSharpSyntaxTree.ParseText(helper, cancellationToken: TestContext.Current.CancellationToken);
+        SyntaxTree testTree = CSharpSyntaxTree.ParseText(test, cancellationToken: TestContext.Current.CancellationToken);
+        SemanticModel model = CSharpCompilation.Create("Check", [helperTree, testTree], TestReferences.FluentAssertions).GetSemanticModel(helperTree);
+        InvocationExpressionSyntax assertion = helperTree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes().OfType<InvocationExpressionSyntax>().First();
+
+        // Act
+        bool result = FluentAssertionsSyntax.IsInsideExpectedFailure(assertion, model);
+
+        // Assert
+        result.ShouldBe(expected);
+    }
+
+    [Theory]
+    [InlineData("AssertionFailedException", true)]
+    [InlineData("InvalidOperationException", false)]
+    public void ExpectsAssertionFailure_FollowsHelperInOtherFile(string thrown, bool expected)
+    {
+        // Arrange
+        const string helper = "using FluentAssertions;\nstatic class Helper { public static void Check(bool b) { b.Should().BeTrue(); } }";
+        string test = "using System; using FluentAssertions; using FluentAssertions.Execution;\n"
+            + "class T { void Run() { Action a = () => Helper.Check(false); a.Should().Throw<" + thrown + ">(); } }";
+        SyntaxTree helperTree = CSharpSyntaxTree.ParseText(helper, cancellationToken: TestContext.Current.CancellationToken);
+        SyntaxTree testTree = CSharpSyntaxTree.ParseText(test, cancellationToken: TestContext.Current.CancellationToken);
+        var compilation = CSharpCompilation.Create("Check", [helperTree, testTree], TestReferences.FluentAssertions);
+        SemanticModel model = compilation.GetSemanticModel(testTree);
+        InvocationExpressionSyntax throwCall = testTree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Single(i => i.Expression is MemberAccessExpressionSyntax { Name: GenericNameSyntax { Identifier.ValueText: "Throw" } });
+        ExpressionSyntax subject = FluentAssertionsSyntax.GetSubject(throwCall)!;
+        ITypeSymbol? type = model.GetTypeInfo(((GenericNameSyntax)((MemberAccessExpressionSyntax)throwCall.Expression).Name).TypeArgumentList.Arguments[0], TestContext.Current.CancellationToken).Type;
+
+        // Act
+        bool result = FluentAssertionsSyntax.ExpectsAssertionFailure(subject, type, model);
+
+        // Assert
+        result.ShouldBe(expected);
+    }
+
     [Fact]
     public void CompileErrors_ReportsNullableWarningOfRewrite()
     {

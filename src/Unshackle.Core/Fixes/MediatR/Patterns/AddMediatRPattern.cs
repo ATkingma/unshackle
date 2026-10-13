@@ -58,7 +58,7 @@ public class AddMediatRPattern : ISolutionPattern
 
         // A scanned project of this solution gets InternalsVisibleTo for this one from InternalHandlerAccessPattern (TAAK-195).
         IReadOnlySet<string> hosts = await MediatorHosts.AssemblyNamesAsync(solution, cancellationToken);
-        return Rewrite(node, model, caller, a => CanGrantAccess(a, solution), host, hosts);
+        return MediatorHosts.WithArchitectureTestWarning(Rewrite(node, model, caller, a => CanGrantAccess(a, solution), host, hosts), solution);
     }
 
     // A C# project of the solution without a strong name: InternalHandlerAccessPattern can add InternalsVisibleTo to it.

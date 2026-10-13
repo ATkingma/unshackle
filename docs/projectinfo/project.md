@@ -71,15 +71,15 @@ En `BeEquivalentTo` op strings negeert hoofdletters. Met tekstvervanging worden 
 `_mapper.Map<B>(a)` wordt `a.ToDto()`. `ProjectTo<>` komt in het rapport als handwerk.
 
 ## Roadmap
-Stand op 2026-10-11.
+Stand op 2026-10-13 (zie `claude/docs/overdracht.md` voor het lopende werk).
 
 | Stap | Doel | Stand |
 | --- | --- | --- |
 | 1 | Scan + rapport (CSV/JSON/Markdown), solution laden, aanroepen tellen | Klaar |
-| 2 | FluentAssertions → Shouldly: de 15 meest gebruikte assertions, `--dry-run` met diff | Ruim klaar: 31 patterns, 94,9% van de corpus-calls herkend, 92,5% Fixed op de scanbare projecten ([corpus.md](architectuur/corpus.md)). Open: TAAK-110, -112, -113 en een herhaalde corpus-run |
-| 3 | MediatR → Mediator: handlers, `ValueTask`, DI-registratie (behaviors → rapport) | Bijna: 10 patterns, alles-of-niets per solution. Open: TAAK-131, -132, -133, -135, -136 uit de corpus-run (0 van 9 projecten volledig gemigreerd) |
+| 2 | FluentAssertions → Shouldly: de 15 meest gebruikte assertions, `--dry-run` met diff | ~97%: corpusronde 4: 16/16 bouwt na de fix, 13/16 groen; regressies daarna opgelost (TAAK-220..223), alleen Akka DData blijft (bug in Akka, waarschuwing). Open: push + corpusronde 5 ([corpus.md](architectuur/corpus.md)) |
+| 3 | MediatR → Mediator: handlers, `ValueTask`, DI-registratie (behaviors → rapport) | 100%: 7 van 9 corpusprojecten volledig gemigreerd en groen; evo1/evo2 terecht Manual |
 | 4 | Lancering: README met GIF, NuGet, testen op een echt open-source project, post op r/dotnet | Inhoudelijk klaar (TAAK-019); wacht op de gebruiker (publiceren, post) |
-| 5 | AutoMapper: eerst eenvoudige profielen | Niet begonnen (alleen `claude/tasks/automapper-queue.md`) |
+| 5 | AutoMapper → handgeschreven mapping (`ToB()`-extensies) | ~40%: patronen create-map, ignore, map-from, map-call, map-into, add-automapper klaar (TAAK-146, -155..159). Eerst verder uitwerken (rij 7 + veelgebruikte geavanceerde API's), daarna een grote corpusrun zoals bij FA/MediatR |
 | 6 | Later: de motor los beschikbaar maken als algemeen zoek-en-vervang (werktitel SharpGrep) | Niet begonnen |
 
 ## Risico's

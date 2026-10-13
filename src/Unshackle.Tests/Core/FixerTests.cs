@@ -412,6 +412,103 @@ public class FixerTests
         }
     }
 
+    [Fact]
+    public async Task FixAsync_CodeOnlyActiveInLaterTargetFramework_IsFixedOnceInEveryBranch()
+    {
+        // Arrange: net462 defines NETFRAMEWORK, net8.0 does not; Foo() in the shared code and in both branches (TAAK-223).
+        const string code = """
+            public class C
+            {
+                public void M()
+                {
+                    Foo();
+            #if NETFRAMEWORK
+                    Foo();
+            #else
+                    Foo();
+                    Foo();
+            #endif
+                }
+
+                private static void Foo()
+                {
+                }
+
+                private static void Bar()
+                {
+                }
+            }
+
+            """;
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        pattern.Find(Arg.Any<SyntaxNode>(), Arg.Any<SemanticModel>())
+            .Returns(call => call.Arg<SyntaxNode>().DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => i.Expression.ToString() == "Foo"));
+        var fixer = new Fixer([CreateFix(pattern)]);
+        Solution solution = CreateMultiTargetSolution(code);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.Count.ShouldBe(4);
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult);
+        foreach (Document document in report.Solution.Projects.SelectMany(p => p.Documents))
+        {
+            string text = (await document.GetTextAsync(TestContext.Current.CancellationToken)).ToString();
+            text.ShouldNotContain("Foo();");
+            (await document.GetSemanticModelAsync(TestContext.Current.CancellationToken))!.GetDiagnostics(cancellationToken: TestContext.Current.CancellationToken).ShouldNotContain(d => d.Severity == DiagnosticSeverity.Error);
+        }
+    }
+
+    [Fact]
+    public async Task FixAsync_ManualInSharedCode_IsReportedOnceAcrossTargetFrameworks()
+    {
+        // Arrange
+        const string code = """
+            public class C
+            {
+                public void M()
+                {
+                    Foo();
+            #if !NETFRAMEWORK
+                    Foo();
+            #endif
+                }
+
+                private static void Foo()
+                {
+                }
+            }
+
+            """;
+        var fixer = new Fixer([CreateFix(CreatePattern(_ => PatternResult.Manual("by hand")))]);
+        Solution solution = CreateMultiTargetSolution(code);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.Select(f => f.Line).Order().ShouldBe([5, 7]);
+    }
+
+    // A multi-target project: the net462 copy (NETFRAMEWORK) first, like MSBuildWorkspace loads them.
+    private static Solution CreateMultiTargetSolution(string code)
+    {
+        Solution solution = new AdhocWorkspace().CurrentSolution;
+        foreach ((string name, string[] symbols) in new[] { ("Test(net462)", new[] { "NETFRAMEWORK" }), ("Test(net8.0)", Array.Empty<string>()) })
+        {
+            var projectId = ProjectId.CreateNewId();
+            solution = solution
+                .AddProject(projectId, name, "Test", LanguageNames.CSharp)
+                .WithProjectCompilationOptions(projectId, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+                .WithProjectParseOptions(projectId, new CSharpParseOptions(preprocessorSymbols: symbols))
+                .AddMetadataReferences(projectId, TestReferences.Net)
+                .AddDocument(DocumentId.CreateNewId(projectId), TestSolution.FileName, code, filePath: TestSolution.FileName);
+        }
+
+        return solution;
+    }
+
     private static Task<FixReport> FixAsync(Fixer fixer, string code) =>
         fixer.FixAsync(TestSolution.Create(code, TestReferences.Net), new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
 

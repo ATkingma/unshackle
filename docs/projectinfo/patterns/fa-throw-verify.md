@@ -35,6 +35,8 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowPattern.cs`; regi
 | Regeleinden | Gehaald | `message-line-break`, `edge-multiline-message` (Fixed); `message-contains-line-break` (Manual) |
 | TAAK-100 | Gehaald | `ThrowExactly/assertion-scope`, `Invoking/assertion-scope` |
 | TAAK-070 | Gehaald | `edge-assertion-in-throw-lambda` (`.manual.txt`): `Throw<T>`/`ThrowAsync<T>` met T ≠ `Exception`/`ShouldAssertException` op een actie met een FA-assertion → Manual (`ExpectsAssertionFailure`) |
+| TAAK-220 | Gehaald | `aggregate-helper-method`, `aggregate-exception-and` (Manual), `aggregate-exception-plain` (Fixed); `ThrowMessage.MayThrowAggregate` volgt nu eigen methoden (2 niveaus) en kijkt bij `T = Exception` of de keten de exception gebruikt |
+| TAAK-222 | Gehaald | `Throw/assertion-helper`, `BeTrueFalse/assertion-helper` (Manual); `FluentAssertionsSyntaxTests.IsInsideExpectedFailure_HelperInOtherFile_*`, `ExpectsAssertionFailure_FollowsHelperInOtherFile` |
 
 ## Deviations
 
@@ -56,6 +58,11 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowPattern.cs`; regi
 ## Corpus (TAAK-170, TAAK-173)
 
 - Polly 7.2.4 (`b1a5a17`, 2026-10-13, harnas zonder kloon-wijzigingen): Fixed 4449 → 5255, Manual 964 → 171, build 0 fouten, tests 5685/5685 → 5685/5685, 0 regressies.
+
+## TAAK-220..222 (2026-10-13)
+
+- `dotnet build` 0 warnings; `dotnet test` 1093/1093; sample 38/38.
+- Corpus ronde 5: Akka 1 regressie (bekend, TAAK-200), Steeltoe 0, LiteDB 0 (was 10/18/26).
 
 ## Zie ook
 

@@ -290,6 +290,7 @@ Werkboom na TAAK-213 (niet gecommit; bevat ook lopend FA-werk in `Fixer.cs`/`Usi
 - TAAK-214 (probe op de r6-werkboom): de dispatcher noemt de IntegrationEvents van Meetings/Registrations omdat Administration er handlers voor heeft.
   `Assemblies` beperken laat die events stil vallen (verworpen). **Legitiem verschil**: met `DoNotResideInNamespace("Mediator")` in de 4 archtests
   slagen ze (ArchTests 8/8) → effectief 246/287 = basis. Geen codewijziging, dus geen r7.
+- TAAK-240: de fix waarschuwt nu in het rapport (4× op de MediatorModules) dat archtests namespace `Mediator` moeten uitzonderen.
 
 ## Zie ook
 

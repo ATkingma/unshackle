@@ -50,6 +50,7 @@ Autofac's blijven; `MediatR.Pipeline`-typen verdwijnen uit de scanlijsten en de 
 - **REQ-6**: WHEN Autofac.Extensions.DependencyInjection of `ServiceCollection` ontbreekt THE SYSTEM SHALL Manual melden.
 - **REQ-7**: WHEN een host (project met Mediator-generator) verwijst naar een andere host THE SYSTEM SHALL de verwezen host `GenerateTypesAsInternal = true` geven en de verwijzende host `Assemblies = [typeof(eigen type), typeof(één type per verwezen assembly met messages/handlers, zonder hosts)]`, zodat beider gegenereerde typen niet botsen (CS0436/CS0121) en de verwijzende host de internal handlers van de andere niet noemt (CS0122) (`MediatorHosts`, proof `_Combined/host-references-host`, TAAK-213).
 - **REQ-8**: IF een host de andere host al `InternalsVisibleTo` geeft THEN THE SYSTEM SHALL Manual melden: geen Mediator-optie voorkomt dan de botsing (probe TAAK-213; `MediatorHostsTests.SettingsAsync_HostGrantsInternalsVisibleToOtherHost_IsManual`).
+- **REQ-9**: WHEN een project van de solution NetArchTest of ArchUnitNET refereert THE SYSTEM SHALL de Fixed-herschrijving een waarschuwing geven dat archtests namespace `Mediator` moeten uitzonderen (`MediatorHosts.WithArchitectureTestWarning`, TAAK-240).
 
 ## Assumptions
 

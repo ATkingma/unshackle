@@ -25,6 +25,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeTrueFalsePattern.cs`
 | REQ-8 | Gehaald in code, geen proof | Type-check (`bool`/`bool?`) in `RewriteAssertion`; een onbekend type laat `before` niet compileren |
 | Uitbreiding TAAK-097 | Gehaald | `because-args.before.cs` / `because-args.after.cs` (`string.Format(...)`) |
 | Uitbreiding TAAK-100 | Gehaald | Gedeelde check in `FluentAssertionPattern.Rewrite`; proofs in `AssertionScope/` |
+| Uitbreiding TAAK-198 | Gehaald | `own-shouldbe-in-scope.before.cs` / `.after.cs`: eigen `ShouldBe<T>` in scope, `BeTrue` → `ShouldBeTrue` met `using static Shouldly.ShouldBeBooleanExtensions;`, bestaande eigen `ShouldBe`-call blijft ongedubbelzinnig; unittests `AmbiguousAddedNamespaceTests` (gemengd bestand, namespace-variant, terugval bij botsende alias). |
 
 ## Deviations
 

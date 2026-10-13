@@ -85,7 +85,8 @@ public class InternalHandlerAccessPattern : ISolutionPattern, ISolutionFinder
     private static async Task<IReadOnlyList<string>> HostsAsync(SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
         IAssemblySymbol self = model.Compilation.Assembly;
-        if (self.Identity.IsStrongName)
+        // A host gets Mediator's generator itself; a host referencing it lists only the other assemblies (MediatorHosts, TAAK-213).
+        if (self.Identity.IsStrongName || (await MediatorHosts.AssemblyNamesAsync(solution, cancellationToken)).Contains(self.Name))
         {
             return [];
         }

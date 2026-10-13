@@ -167,6 +167,14 @@ die typen en hun leden tellen niet als gebruik in`UsingDirectives.UsedNamespaces
   namespace gaat vóór `using Shouldly;` (bestand in `namespace Akka.TestKit`, TAAK-199). Bindt een aanroep met de naam van een
   extensie uit een toegevoegde namespace ergens anders, en had het origineel er minder, dan volgt dezelfde terugval met reden
   "binds to <type>.<methode> instead of Shouldly". `UsingDirectives.MisboundAddedCallAsync`.
+- **Gerichte imports (TAAK-198)**: vóór die terugval probeert de Fixer de rest van het bestand toch te migreren
+  (`Fixer.FixWithTargetedImportsAsync`). Het bestand krijgt dan geen `using Shouldly;`, maar `using static` voor elke Shouldly-klasse
+  waarvan het extensies aanroept (`using static Shouldly.ShouldBeBooleanExtensions;`) en een alias voor elk genoemd type
+  (`using Should = Shouldly.Should;`). Een klasse die een aanroep dubbelzinnig maakt blijft weg; een herschrijving die een botsende
+  naam (of een naam uit een weggelaten klasse) zou aanroepen wordt per call Manual ("Not rewritten: … is ambiguous with … (CS0121) …")
+  en blijft FA. Elke ronde draait de patterns opnieuw met de geblokkeerde namen en controleert het resultaat zonder de globale
+  model-using (`ConflictsWithAddedAsync`, plus: niet meer compileerfouten dan het origineel). Groeit er niets meer of komt er een
+  andere fout bij (bijv. een eigen type `Should` dat met de alias botst), dan volgt de terugval per bestand hierboven.
 
 ## SOLID in het kort
 

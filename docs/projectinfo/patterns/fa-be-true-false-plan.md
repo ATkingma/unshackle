@@ -51,6 +51,7 @@ fa.be-true-false: x.Should().BeTrue()/BeFalse() wordt x.ShouldBeTrue()/ShouldBeF
 - **REQ-8**: IF het type van het subject onbekend is of niet `bool`/`bool?` THEN THE SYSTEM SHALL Manual geven. _Geen proof: before compileert dan niet; alleen via code bewaakt._
 - **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als `customMessage` geven (proof `.../BeTrueFalse/because-args.after.cs`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt REQ-5 voor dit geval.
 - **Uitbreiding TAAK-100**: IF de assertion in een `AssertionScope` staat die `fa.assertion-scope` niet omzet THEN THE SYSTEM SHALL Manual geven ("Inside an AssertionScope").
+- **Uitbreiding TAAK-198**: IF het bestand een eigen extensie met een Shouldly-naam in scope heeft (Akka.TestKit's `ShouldBe`/`ShouldBeTrue`) THEN THE SYSTEM SHALL in plaats van `using Shouldly;` alleen de niet-botsende Shouldly-klassen importeren (`using static Shouldly.ShouldBeBooleanExtensions;`, alias `using Should = Shouldly.Should;`) en alleen de calls die op een botsende naam uitkomen Manual laten (proof `.../BeTrueFalse/own-shouldbe-in-scope.*`; `Fixer.FixWithTargetedImportsAsync`). Geldt voor alle FA-patterns.
 
 ## Assumptions
 

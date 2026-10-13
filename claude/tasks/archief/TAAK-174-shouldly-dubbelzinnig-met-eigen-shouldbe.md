@@ -41,7 +41,7 @@ Akka.NET `23a8566`, verse kloon in `<probe-dir>`, `unshackle fix Akka.slnx --fix
 ## Zie ook
 
 - `claude/tasks/CORPUSRUN-fa.md`
-- `claude/tasks/TAAK-198-shouldly-conflict-manual-verkleinen.md`
+- `claude/tasks/archief/TAAK-198-shouldly-conflict-manual-verkleinen.md`
 - `claude/tasks/TAAK-199-eigen-shouldbe-in-omsluitende-namespace.md`
 - `claude/tasks/TAAK-200-shouldbe-object-gelijkheid-ddata.md`
 - `claude/tasks/archief/TAAK-165-custom-assertions-should-extensie.md`

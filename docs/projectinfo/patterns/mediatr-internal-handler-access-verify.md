@@ -16,6 +16,7 @@
 | REQ-4 | Gehaald | `..._LibraryAlreadyGrantsHost_AddsNoAttribute`, `..._NoOtherProjectScansLibrary_AddsNothing` |
 | REQ-5 | Gehaald | `CompileErrors_GeneratedMediatorWithoutInternalsVisibleTo_IsCS0122` |
 | REQ-6 | Gehaald | `_Combined/internal-message-access` (after compileert met generator; TAAK-212) |
+| REQ-7 | Gehaald | `_Combined/host-references-host`: UserAccess.Infrastructure (host) krijgt geen `InternalsVisibleTo`, Registrations.Application wel (TAAK-213) |
 
 ## Validation results
 

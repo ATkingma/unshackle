@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "mediatr-autofac-mediator-module"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
 files_expected:
     - src/Unshackle.Core/Fixes/MediatR/Patterns/AutofacMediatorModulePattern.cs
     - src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs
@@ -48,6 +48,8 @@ Autofac's blijven; `MediatR.Pipeline`-typen verdwijnen uit de scanlijsten en de 
 - **REQ-4**: WHEN de module in een ander project staat dan internal handlers THE SYSTEM SHALL (met `mediatr.internal-handler-access`) dat project `InternalsVisibleTo` het moduleproject laten geven (`_Combined/autofac-mediator-module`).
 - **REQ-5**: THE SYSTEM SHALL Mediator.SourceGenerator toevoegen aan het project met `typeof(T).Assembly` van MediatR (`ProjectPackages.TypeofAssembly`, unittest `FixAsync_AutofacScanOfMediatRAssembly_AddsSourceGenerator`).
 - **REQ-6**: WHEN Autofac.Extensions.DependencyInjection of `ServiceCollection` ontbreekt THE SYSTEM SHALL Manual melden.
+- **REQ-7**: WHEN een host (project met Mediator-generator) verwijst naar een andere host THE SYSTEM SHALL de verwezen host `GenerateTypesAsInternal = true` geven en de verwijzende host `Assemblies = [typeof(eigen type), typeof(één type per verwezen assembly met messages/handlers, zonder hosts)]`, zodat beider gegenereerde typen niet botsen (CS0436/CS0121) en de verwijzende host de internal handlers van de andere niet noemt (CS0122) (`MediatorHosts`, proof `_Combined/host-references-host`, TAAK-213).
+- **REQ-8**: IF een host de andere host al `InternalsVisibleTo` geeft THEN THE SYSTEM SHALL Manual melden: geen Mediator-optie voorkomt dan de botsing (probe TAAK-213; `MediatorHostsTests.SettingsAsync_HostGrantsInternalsVisibleToOtherHost_IsManual`).
 
 ## Assumptions
 

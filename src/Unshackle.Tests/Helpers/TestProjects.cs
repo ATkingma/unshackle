@@ -63,7 +63,7 @@ public static class TestProjects
                 CSharpGeneratorDriver.Create([.. generators]).RunGeneratorsAndUpdateCompilation(compilation, out compilation, out _);
             }
 
-            errors.AddRange(compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error || d.Id is "CS8602" or "CS8604"));
+            errors.AddRange(compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error || d.Id is "CS8602" or "CS8604" or "CS0436"));
             built[section.Name] = compilation.ToMetadataReference();
         }
 

@@ -16,6 +16,8 @@
 | REQ-4 | Gehaald | `_Combined/autofac-mediator-module` (Application + Infrastructure, `InternalsVisibleTo`) |
 | REQ-5 | Gehaald | `SwappedTypesTests.FixAsync_AutofacScanOfMediatRAssembly_AddsSourceGenerator` |
 | REQ-6 | Gehaald | Manual-tak in `AutofacMediatorModulePattern` |
+| REQ-7 | Gehaald | `_Combined/host-references-host` (after compileert per project met generator, ook zonder CS0436-waarschuwing); `MediatorHostsTests` (`ReferencedHost_GeneratesTypesAsInternal`, `ReferencingHost_ListsAssembliesWithoutOtherHost`); kgrzybek r6 bouwt (TAAK-213) |
+| REQ-8 | Gehaald | `MediatorHostsTests.SettingsAsync_HostGrantsInternalsVisibleToOtherHost_IsManual` |
 
 ## Deviations
 

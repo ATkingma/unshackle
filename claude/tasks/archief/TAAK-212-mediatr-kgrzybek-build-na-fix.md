@@ -34,7 +34,7 @@ Na TAAK-210 (`_results/r4/kgr`): 217 Fixed, 0 Manual, build faalt op 88× MSG000
 
 ## Zie ook
 
-- `claude/tasks/TAAK-213-mediatr-host-verwijst-naar-host.md`
+- `claude/tasks/archief/TAAK-213-mediatr-host-verwijst-naar-host.md`
 - `claude/tasks/archief/TAAK-210-mediatr-generieke-decorator-zonder-using.md`
 - `claude/tasks/CORPUSRUN-mediatr.md` — "Herhaling ronde 4" en "Herhaling ronde 5"
 - `claude/tasks/mediatr-queue.md`

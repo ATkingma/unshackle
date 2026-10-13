@@ -109,6 +109,10 @@ Polly 7.2.4 (`b1a5a17`, 2026-10-13, harnas zonder kloon-wijzigingen): Fixed 4449
 
 Akka.NET `23a8566` (verse kloon, zelfde build-flags als het harnas): Fixed 8 488 → **5 463**, Manual 1 868 → **5 126** (3 449 daarvan: bestand Manual door botsing met `Akka.TestKit.AkkaSpecExtensions`), build **0 fouten** (was 4 984× CS0121 + 28 gevolgfouten). Tests: 2 echte regressies (TAAK-199: eigen `ShouldBe` in omsluitende namespace verdringt Shouldly stil; TAAK-200: `object`-subject `ShouldBe` in DData), 2 flaky (poortconflict, MultiNode-timeout). Conflict-Manuals verkleinen: TAAK-198.
 
+## Herhaling Akka na TAAK-198..200 (2026-10-13)
+
+Schone checkout `23a8566` (`<probe-dir>/probe-174`): Fixed 5 463 → 6 016, Manual 5 518 → 4 649 (conflict-Manuals nu per call: 2 943). Build 0 fouten. Akka.Tests 1553/0, Akka.TestKit.Tests 337/0, DData 201/1 (`ReplicatorMessageSerializerSpec`: asymmetrische `Equals` in Akka zelf, nu als waarschuwing in het rapport, TAAK-200). 173 waarschuwingen voor de `Equals`-volgorde.
+
 ## Zie ook
 
 - `claude/tasks/CORPUSRUN-mediatr.md`

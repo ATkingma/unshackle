@@ -154,7 +154,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `docs/projectinfo/patterns/fa-be-equivalent-to-collection-verify.md` | Verificatie van `BeEquivalentTo` op een collectie |
 | `claude/tasks/archief/TAAK-173-awaiting-subject-not-throw-async.md` | ✅ `Awaiting(..).Should().NotThrowAsync()`, `FluentActions.Invoking/Awaiting`, waardetype-resultaten bij Invoking (Polly 964 → 171 Manual) |
 | `claude/tasks/archief/TAAK-174-shouldly-dubbelzinnig-met-eigen-shouldbe.md` | ✅ `using Shouldly` dat botst met eigen `ShouldBe` (CS0121) → bestand Manual; Akka bouwt groen na de fix |
-| `claude/tasks/TAAK-198-shouldly-conflict-manual-verkleinen.md` | open: conflict-Manual per bestand verkleinen (Akka 3 449 findings), bijv. gerichte `using static`-imports |
+| `claude/tasks/archief/TAAK-198-shouldly-conflict-manual-verkleinen.md` | ✅ conflict met eigen `Should*`: per call Manual, rest via gerichte `using static`-imports; Akka Fixed 5 463 → 6 016, build groen |
 | `claude/tasks/archief/TAAK-199-eigen-shouldbe-in-omsluitende-namespace.md` | ✅ herschreven call die niet aan Shouldly bindt (eigen `ShouldBe` in omsluitende namespace) → bestand Manual; Akka.Tests groen |
 | `claude/tasks/archief/TAAK-200-shouldbe-object-gelijkheid-ddata.md` | ✅ oorzaak: Shouldly doet `expected.Equals(actual)`, FA `actual.Equals(expected)`; asymmetrische `Equals` in Akka; nu Fixed met waarschuwing in het rapport |
 | `claude/tasks/archief/TAAK-180-mediatr-test-request-handler-delegate.md` | ✅ `mediatr.request-handler-delegate` (gemockte `next` in testcode) + vangnet `unmatched-use` voor MediatR-gebruik zonder finding |
@@ -177,7 +177,8 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-210-mediatr-generieke-decorator-zonder-using.md` | ✅ decorator via eigen marker zonder `using MediatR` niet meer `mediatr.unsupported`; niet-CPM `Directory.Packages.props`; kgrzybek 0 Manual |
 | `claude/tasks/archief/TAAK-211-mediatr-send-as-task-nsubstitute-setup.md` | ✅ NSubstitute-setup `Send(...).Returns(Task.FromResult(x))` → `ValueTask.FromResult(x)`; dotnet/eShop bouwt |
 | `claude/tasks/archief/TAAK-212-mediatr-kgrzybek-build-na-fix.md` | ✅ TAAK-212 — kgrzybek: MSG0001, SA1210, CS1503, CS0122 na de fix opgelost |
-| `claude/tasks/TAAK-213-mediatr-host-verwijst-naar-host.md` | open: generator-host verwijst naar andere host (kgrzybek CS0436/CS0121) |
+| `claude/tasks/archief/TAAK-213-mediatr-host-verwijst-naar-host.md` | ✅ TAAK-213 — host verwijst naar host: GenerateTypesAsInternal + Assemblies (kgrzybek bouwt) |
+| `claude/tasks/archief/TAAK-214-mediatr-archtests-gegenereerde-mediator.md` | ✅ TAAK-214 — kgrzybek-archtests: gegenereerde dispatcher, legitiem verschil |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: ongebruikte assembly-parameter na AddMediator (IDE0060) → waarschuwing in rapport |
 | `claude/tasks/archief/TAAK-070-fa-assertion-in-throw-lambda.md` | ✅ Assertion in lambda met `Throw<XunitException>` erop → assertion en Throw Manual |
 

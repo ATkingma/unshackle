@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "mediatr-internal-handler-access"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7]
 files_expected:
     - src/Unshackle.Core/Fixes/MediatR/Patterns/InternalHandlerAccessPattern.cs
     - src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs
@@ -42,6 +42,7 @@ Scant `AddMediatR` in project A een ander project B van de solution met internal
 - **REQ-4**: IF B de host al `InternalsVisibleTo` geeft, of niemand B scant THEN THE SYSTEM SHALL niets toevoegen (`..._LibraryAlreadyGrantsHost_AddsNoAttribute`, `..._NoOtherProjectScansLibrary_AddsNothing`).
 - **REQ-5**: Zonder het attribuut bouwt het resultaat niet (CS0122 in de gegenereerde code; `CompileErrors_GeneratedMediatorWithoutInternalsVisibleTo_IsCS0122`).
 - **REQ-6**: WHEN B alleen een niet-publiek, niet-generiek message (request of notification, bv. een domain event) heeft THE SYSTEM SHALL B de host ook `InternalsVisibleTo` geven: de generator noemt elk message dat hij ziet, ook zonder handler (CS0122 in kgrzybek; proof `_Combined/internal-message-access`, TAAK-212).
+- **REQ-7**: IF B zelf een host is (AddMediatR of Autofac-module) THEN THE SYSTEM SHALL niets toevoegen: `InternalsVisibleTo` tussen twee hosts laat hun gegenereerde typen botsen (CS0436/CS0121); de verwijzende host beperkt zijn `Assemblies` (proof `_Combined/host-references-host`, TAAK-213).
 
 ## Assumptions
 

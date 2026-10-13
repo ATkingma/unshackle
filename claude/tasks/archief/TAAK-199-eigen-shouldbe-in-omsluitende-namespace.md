@@ -30,5 +30,5 @@ Na de rewrite per herschreven invocation semantisch controleren dat het gebonden
 ## Zie ook
 
 - `claude/tasks/archief/TAAK-174-shouldly-dubbelzinnig-met-eigen-shouldbe.md`
-- `claude/tasks/TAAK-198-shouldly-conflict-manual-verkleinen.md`
+- `claude/tasks/archief/TAAK-198-shouldly-conflict-manual-verkleinen.md`
 - `claude/tasks/CORPUSRUN-fa.md`

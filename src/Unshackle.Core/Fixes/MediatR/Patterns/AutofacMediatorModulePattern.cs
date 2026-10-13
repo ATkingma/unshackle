@@ -11,7 +11,7 @@ namespace Unshackle.Core.Fixes.MediatR.Patterns;
 // registered as open generics. Mediator's dispatcher is generated code that only AddMediator registers, so the scan becomes
 // AddMediator on a ServiceCollection, populated into the builder without Mediator's handler registrations: the handlers stay
 // Autofac's (decorators, AllConstructorFinder, contravariance), exactly as they were for MediatR (measured on 3.0.2).
-public class AutofacMediatorModulePattern : IPattern
+public class AutofacMediatorModulePattern : ISolutionPattern
 {
     private const string PipelineNamespace = "MediatR.Pipeline";
 
@@ -28,7 +28,18 @@ public class AutofacMediatorModulePattern : IPattern
             .Select(s => s.Parent!)
             .Distinct();
 
-    public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
+    public PatternResult Rewrite(SyntaxNode node, SemanticModel model) => Rewrite(node, model, MediatorHostSettings.None);
+
+    // With the solution: a module next to another host's module gets GenerateTypesAsInternal and/or Assemblies (TAAK-213).
+    public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        ArgumentNullException.ThrowIfNull(model);
+        MediatorHostSettings host = await MediatorHosts.SettingsAsync(node, model, solution, cancellationToken);
+        return host.ManualReason is string reason ? PatternResult.Manual(reason) : Rewrite(node, model, host);
+    }
+
+    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, MediatorHostSettings host)
     {
         ArgumentNullException.ThrowIfNull(node);
         ArgumentNullException.ThrowIfNull(model);
@@ -106,6 +117,8 @@ public class AutofacMediatorModulePattern : IPattern
         {
             settings.Add($"{options}.NotificationPublisherType = typeof(global::Mediator.TaskWhenAllPublisher)");
         }
+
+        settings.AddRange(host.Assignments.Select(a => $"{options}.{a.Property} = {a.Value}"));
 
         string code =
             $"{indentation}// Mediator's dispatcher; the handlers stay registered by this module, as they were for MediatR.{newLine}"

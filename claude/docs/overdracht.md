@@ -5,7 +5,7 @@ Lees dit eerst als je deze sessie overneemt. Daarna `CLAUDE.md` en `claude/docs/
 ## Stand
 
 - FA → Shouldly en MediatR → Mediator: alle wachtrijtaken t/m TAAK-196 klaar en gepusht (zie `claude/tasks/patroon-queue.md`, `claude/tasks/mediatr-queue.md`).
-- Open taken: TAAK-174 (FA, Akka: stap 3, corpusbewijs), TAAK-019 (lancering), TAAK-046 (semantische audit). TAAK-170, -173 en -197 zijn klaar.
+- Open taken: TAAK-019 (lancering), TAAK-046 (semantische audit). FA: Akka bouwt en is groen op een bekende Akka-bug na (TAAK-174..200); volledige FA-corpusrun 4 staat open. MediatR: 7 van 9 gemigreerd (rest terecht Manual), TAAK-210..214 klaar. Daarna AutoMapper.
 - Corpus-herhaling na TAAK-193..196 (kgrzybek, eShop, ardalis) staat nog open.
 
 ## Lokale omgeving (Windows)

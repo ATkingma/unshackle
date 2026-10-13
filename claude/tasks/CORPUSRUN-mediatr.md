@@ -277,9 +277,23 @@ Werkboom na TAAK-212 (niet gecommit). Harnas `_results/r5/harness.sh` (kopie van
 - Die nieuwe fouten zaten in r4 achter de MSG0001-breuk van `UserAccess.Infrastructure` (Registrations werd toen niet gecompileerd).
   Oorzaak: een generator-host verwijst naar een andere host (gegenereerde Mediator-typen dubbel) → **TAAK-213**.
 
+## Herhaling ronde 6 (2026-10-13, alleen kgrzybek, TAAK-213)
+
+Werkboom na TAAK-213 (niet gecommit; bevat ook lopend FA-werk in `Fixer.cs`/`UsingDirectives.cs`). Harnas `_results/r6/harness.sh` (kopie van r5); resultaten in `<corpus>/corpus-mediatr/_results/r6/kgr/`.
+
+| Project  | Fix | Build na | Tests voor → na | Regressies |
+| -------- | --- | -------- | --------------- | ---------- |
+| kgrzybek | 0 Manual | **ok** (r5: 410× CS0436 + 2× CS0121) | 246/287 → 242/287 | 4, alle `ArchTests.ModuleTests.*Module_DoesNotHave_Dependency_On_Other_Modules` |
+
+- Registrations.Infrastructure kreeg `Assemblies = [...]`, UserAccess.Infrastructure `GenerateTypesAsInternal = true`; geen `InternalsVisibleTo` meer tussen de hosts.
+- Regressies: gegenereerde `Mediator.Mediator`/`Mediator.Internals.ContainerMetadata` hangen af van andere modules → **TAAK-214**.
+- TAAK-214 (probe op de r6-werkboom): de dispatcher noemt de IntegrationEvents van Meetings/Registrations omdat Administration er handlers voor heeft.
+  `Assemblies` beperken laat die events stil vallen (verworpen). **Legitiem verschil**: met `DoNotResideInNamespace("Mediator")` in de 4 archtests
+  slagen ze (ArchTests 8/8) → effectief 246/287 = basis. Geen codewijziging, dus geen r7.
+
 ## Zie ook
 
-- `claude/tasks/archief/TAAK-210-mediatr-generieke-decorator-zonder-using.md`, `claude/tasks/archief/TAAK-211-mediatr-send-as-task-nsubstitute-setup.md`, `claude/tasks/archief/TAAK-212-mediatr-kgrzybek-build-na-fix.md`, `claude/tasks/TAAK-213-mediatr-host-verwijst-naar-host.md`
+- `claude/tasks/archief/TAAK-210-mediatr-generieke-decorator-zonder-using.md`, `claude/tasks/archief/TAAK-211-mediatr-send-as-task-nsubstitute-setup.md`, `claude/tasks/archief/TAAK-212-mediatr-kgrzybek-build-na-fix.md`, `claude/tasks/archief/TAAK-213-mediatr-host-verwijst-naar-host.md`, `claude/tasks/archief/TAAK-214-mediatr-archtests-gegenereerde-mediator.md`
 - `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` — frequenties uit dit corpus
 - `claude/tasks/mediatr-queue.md` — patroon-wachtrij
 - `docs/projectinfo/architectuur/core.md` — alles-of-niets

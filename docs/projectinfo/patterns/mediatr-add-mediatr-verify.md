@@ -20,6 +20,7 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`, registra
 | REQ-4 | Gehaald | eigen publisher (geen proof; `publisher` is sinds TAAK-060 Fixed) |
 | REQ-5 | Gehaald | `no-lambda`                         |
 | REQ-6 | Gehaald | `generic-handlers` (TAAK-037)       |
+| REQ-7 | Gehaald | `MediatorHostsTests` (AddMediatR-host naast host; scan van andere host → Manual; TAAK-213) |
 | Uitbreiding TAAK-060 | Gehaald | `publisher`, `edge-publisher-qualified` |
 | Uitbreiding TAAK-061/062 | Gehaald | `processors`, `empty` |
 | Uitbreiding TAAK-144 | Gehaald | `edge-assemblies-public`, `AddMediatRPatternTests` |

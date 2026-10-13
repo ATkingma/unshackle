@@ -31,6 +31,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs`; r
 | TAAK-169 | Gehaald | `implicit-conversion.before.cs` / `implicit-conversion.after.cs`: `ShouldBe((Doc)42)` voor een eigen type met `implicit operator` (int en string); `ConvertExpected` herkent `Conversion.IsUserDefined`. Gedrag gemeten met een probe, FA en Shouldly gelijk. |
 | TAAK-199 | Gehaald | `own-shouldbe-in-namespace.before.cs` / `.manual.txt`: eigen `ShouldBe<T>` in de omsluitende namespace; unittests `AmbiguousAddedNamespaceTests.FixAsync_FileInNamespaceOfOwnShouldBe_*`. Akka: `MixedBindingPair.cs` (namespace `Akka.TestKit`) blijft FA + Manual. |
 | TAAK-200 | Gehaald (waarschuwing) | `EqualsOrderWarning` in `ShouldBePattern` (ook `NotBePattern`): Fixed met `Warning` bij eigen `Equals` of twee onbekende runtime-typen; unittests `ShouldBeEqualsOrderTests` (5 met, 5 zonder waarschuwing), proof `own-equals.*`. Probe Akka DData: `a.Equals(e)=True`, `e.Equals(a)=False`. |
+| TAAK-198 | Gehaald | Terugval per call: `own-shouldbe-in-namespace.manual.txt` blijft Manual (de enige call is `ShouldBe`); gemengde bestanden in `AmbiguousAddedNamespaceTests` (`ShouldBe` blijft FA, de rest via `using static`). |
 
 ## Deviations
 

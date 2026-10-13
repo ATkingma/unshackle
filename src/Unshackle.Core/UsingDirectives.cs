@@ -285,6 +285,17 @@ internal static class UsingDirectives
             return null;
         }
 
+        foreach ((IMethodSymbol added, IMethodSymbol existing, int line) in Ambiguities(root, model, addedNamespaces, cancellationToken))
+        {
+            return (added, existing, line);
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<(IMethodSymbol Added, IMethodSymbol Existing, int Line)> Ambiguities(
+        SyntaxNode root, SemanticModel model, IReadOnlyCollection<string> addedNamespaces, CancellationToken cancellationToken)
+    {
         foreach (Diagnostic diagnostic in model.GetDiagnostics(cancellationToken: cancellationToken).Where(d => d.Id == "CS0121"))
         {
             SyntaxNode node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
@@ -298,15 +309,13 @@ internal static class UsingDirectives
             IMethodSymbol? existing = candidates.FirstOrDefault(m => !IsIn(m, addedNamespaces));
             if (added is not null && existing is not null)
             {
-                return (added, existing, diagnostic.Location.GetLineSpan().StartLinePosition.Line + 1);
+                yield return (added, existing, diagnostic.Location.GetLineSpan().StartLinePosition.Line + 1);
             }
         }
-
-        return null;
-
-        static bool IsIn(IMethodSymbol method, IReadOnlyCollection<string> namespaces) =>
-            namespaces.Contains(method.ContainingNamespace?.ToDisplayString() ?? string.Empty);
     }
+
+    private static bool IsIn(ISymbol symbol, IReadOnlyCollection<string> namespaces) =>
+        namespaces.Contains(symbol.ContainingNamespace?.ToDisplayString() ?? string.Empty);
 
     // The first call to a method named like one of the added namespaces (e.g. ShouldBe) that binds elsewhere, and that the original
     // file did not already have: an extension in the enclosing namespace wins over an imported one without ambiguity, e.g.
@@ -320,11 +329,19 @@ internal static class UsingDirectives
             return null;
         }
 
+        List<(IMethodSymbol Bound, int Line)> misbound = await MisboundAsync(original, root, model, addedNamespaces, cancellationToken);
+        return misbound.Count == 0 ? null : misbound[0];
+    }
+
+    // Per method name, the last call that binds elsewhere when the updated file has more of them than the original.
+    private static async Task<List<(IMethodSymbol Bound, int Line)>> MisboundAsync(
+        Document original, SyntaxNode root, SemanticModel model, IReadOnlyCollection<string> addedNamespaces, CancellationToken cancellationToken)
+    {
         HashSet<string> names = AddedMethodNames(model.Compilation, addedNamespaces);
         List<(IMethodSymbol Bound, InvocationExpressionSyntax Invocation)> misbound = Misbound(root, model, names, addedNamespaces, cancellationToken);
         if (misbound.Count == 0)
         {
-            return null;
+            return [];
         }
 
         Dictionary<string, int> before = [];
@@ -337,16 +354,9 @@ internal static class UsingDirectives
             }
         }
 
-        foreach (IGrouping<string, (IMethodSymbol Bound, InvocationExpressionSyntax Invocation)> group in misbound.GroupBy(m => m.Bound.Name))
-        {
-            if (group.Count() > before.GetValueOrDefault(group.Key))
-            {
-                (IMethodSymbol bound, InvocationExpressionSyntax invocation) = group.Last();
-                return (bound, invocation.GetLocation().GetLineSpan().StartLinePosition.Line + 1);
-            }
-        }
-
-        return null;
+        return [.. misbound.GroupBy(m => m.Bound.Name)
+            .Where(group => group.Count() > before.GetValueOrDefault(group.Key))
+            .Select(group => (group.Last().Bound, group.Last().Invocation.GetLocation().GetLineSpan().StartLinePosition.Line + 1))];
 
         static List<(IMethodSymbol, InvocationExpressionSyntax)> Misbound(
             SyntaxNode root, SemanticModel model, HashSet<string> names, IReadOnlyCollection<string> addedNamespaces, CancellationToken cancellationToken) =>
@@ -362,6 +372,122 @@ internal static class UsingDirectives
                 .Where(m => m.Bound is not null && !addedNamespaces.Contains(m.Bound.ContainingNamespace?.ToDisplayString() ?? string.Empty))
                 .Select(m => (m.Bound!, m.Invocation))];
     }
+
+    // Every call in the candidate (a file with targeted imports, TAAK-198) that an added namespace breaks: ambiguous (CS0121)
+    // or a rewritten call that binds to an own method (TAAK-199). The reasons are per call: the rest of the file is migrated.
+    public static async Task<IReadOnlyList<AddedConflict>> ConflictsWithAddedAsync(
+        Document original, Document candidate, IReadOnlyCollection<string> addedNamespaces, CancellationToken cancellationToken)
+    {
+        if (await candidate.GetSyntaxRootAsync(cancellationToken) is not SyntaxNode root
+            || await candidate.GetSemanticModelAsync(cancellationToken) is not SemanticModel model)
+        {
+            return [];
+        }
+
+        List<AddedConflict> conflicts = [.. Ambiguities(root, model, addedNamespaces, cancellationToken).Select(a => new AddedConflict
+        {
+            Name = a.Added.Name,
+            AddedType = a.Added.ContainingType.OriginalDefinition.ToDisplayString(),
+            Reason = $"{a.Added.ContainingType.ToDisplayString()}.{a.Added.Name} is ambiguous with {a.Existing.ContainingType.ToDisplayString()}.{a.Existing.Name} "
+                + $"(CS0121), so {a.Added.ContainingType.ToDisplayString()} is not imported here and this call is not migrated. "
+                + "Rename or remove the conflicting extension, or migrate this call by hand.",
+            Line = a.Line,
+        })];
+        conflicts.AddRange((await MisboundAsync(original, root, model, addedNamespaces, cancellationToken)).Select(m => new AddedConflict
+        {
+            Name = m.Bound.Name,
+            AddedType = null,
+            Reason = $"a rewritten {m.Bound.Name}() binds to {m.Bound.ContainingType.ToDisplayString()}.{m.Bound.Name} instead of "
+                + $"{string.Join(", ", addedNamespaces)} (an own method in the enclosing namespace or type wins over an imported extension), "
+                + "so this call is not migrated. Rename or remove the conflicting method, or migrate this call by hand.",
+            Line = m.Line,
+        }));
+        return conflicts;
+    }
+
+    // The extension methods (with their static class) and the types of the added namespaces the rewritten file uses. The model
+    // imports the added namespaces globally (Fixer.AddReferences), so an ambiguous call counts with its added candidates.
+    // Null when a type cannot get an alias (generic) or the file already imports an added namespace itself.
+    public static async Task<AddedUsage?> AddedUsageAsync(Document document, IReadOnlyCollection<string> addedNamespaces, CancellationToken cancellationToken)
+    {
+        if (await document.GetSyntaxRootAsync(cancellationToken) is not CompilationUnitSyntax root
+            || await document.GetSemanticModelAsync(cancellationToken) is not SemanticModel model
+            || AllUsings(root).Any(u => u.Name is not null && addedNamespaces.Contains(u.Name.ToString())))
+        {
+            return null;
+        }
+
+        List<(string Name, string Type)> calls = [];
+        HashSet<string> types = new(StringComparer.Ordinal);
+        foreach (SimpleNameSyntax name in root.DescendantNodes(n => n is not UsingDirectiveSyntax).OfType<SimpleNameSyntax>())
+        {
+            SymbolInfo info = model.GetSymbolInfo(name, cancellationToken);
+            foreach (ISymbol symbol in info.Symbol is ISymbol bound ? [bound] : info.CandidateSymbols)
+            {
+                if (symbol is IMethodSymbol method && (method.ReducedFrom ?? method).IsExtensionMethod && IsIn(method, addedNamespaces))
+                {
+                    calls.Add((method.Name, method.ContainingType.OriginalDefinition.ToDisplayString()));
+                }
+                else if (symbol is INamedTypeSymbol type && type.ContainingType is null && IsIn(type, addedNamespaces) && !IsMemberName(name))
+                {
+                    if (type.IsGenericType)
+                    {
+                        return null;
+                    }
+
+                    types.Add(type.ToDisplayString());
+                }
+            }
+        }
+
+        return new AddedUsage { Calls = calls, Types = [.. types.Order(StringComparer.Ordinal)] };
+
+        static bool IsMemberName(SimpleNameSyntax name) => name.Parent switch
+        {
+            QualifiedNameSyntax q => q.Right == name,
+            MemberAccessExpressionSyntax m => m.Name == name,
+            AliasQualifiedNameSyntax a => a.Name == name,
+            _ => false,
+        };
+    }
+
+    // Instead of `using Shouldly;`: `using static` for each class whose extensions the file calls, and an alias for each type it
+    // names (using Should = Shouldly.Should;), after the existing usings, so a conflicting class stays out (TAAK-198).
+    public static CompilationUnitSyntax AddTargetedImports(CompilationUnitSyntax root, IEnumerable<string> staticClasses, IEnumerable<string> types)
+    {
+        List<string> lines =
+        [
+            .. staticClasses.Distinct().Order(StringComparer.Ordinal).Select(c => $"using static {c};"),
+            .. types.Distinct().Order(StringComparer.Ordinal).Select(t => $"using {t[(t.LastIndexOf('.') + 1)..]} = {t};"),
+        ];
+        if (lines.Count == 0)
+        {
+            return root;
+        }
+
+        SyntaxTrivia endOfLine = root.DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia));
+        if (endOfLine.IsKind(SyntaxKind.None))
+        {
+            endOfLine = SyntaxFactory.LineFeed;
+        }
+
+        if (root.Usings.Count == 0
+            && root.Members.OfType<BaseNamespaceDeclarationSyntax>().FirstOrDefault(n => n.Usings.Count > 0) is BaseNamespaceDeclarationSyntax target)
+        {
+            SyntaxTriviaList indentation = [.. target.Usings.Last().GetLeadingTrivia().Where(t => t.IsKind(SyntaxKind.WhitespaceTrivia))];
+            return root.ReplaceNode(target, target.WithUsings(target.Usings.AddRange(
+                lines.Select(l => SyntaxFactory.ParseCompilationUnit(l).Usings[0].WithLeadingTrivia(indentation).WithTrailingTrivia(endOfLine)))));
+        }
+
+        SyntaxTriviaList last = root.Usings.Count == 0 ? SyntaxFactory.TriviaList(endOfLine, endOfLine) : SyntaxFactory.TriviaList(endOfLine);
+        return root.WithUsings(root.Usings.AddRange(lines.Select((l, i) =>
+            SyntaxFactory.ParseCompilationUnit(l).Usings[0].WithTrailingTrivia(i == lines.Count - 1 ? last : SyntaxFactory.TriviaList(endOfLine)))));
+    }
+
+    public static async Task<int> ErrorCountAsync(Document document, CancellationToken cancellationToken) =>
+        await document.GetSemanticModelAsync(cancellationToken) is SemanticModel model
+            ? model.GetDiagnostics(cancellationToken: cancellationToken).Count(d => d.Severity == DiagnosticSeverity.Error)
+            : 0;
 
     // Names of the extension methods of the public static types in the added namespaces.
     private static HashSet<string> AddedMethodNames(Compilation compilation, IEnumerable<string> addedNamespaces)

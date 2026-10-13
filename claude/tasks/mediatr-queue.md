@@ -70,7 +70,8 @@ Alles-of-niets (2026-10-11): `MediatRFix.AllOrNothing`; één Manual-bevinding l
 | 28  | TAAK-210 | generieke decorator via eigen marker, bestand zonder `using MediatR` → alsnog `mediatr.unsupported` | kgrzybek | klaar (TAAK-210): 0 Manual; ook niet-CPM `Directory.Packages.props`, `using Mediator` bij void-handlers, SA1513; build → #30 |
 | 29  | TAAK-211 | `mediatr.send-as-task` op NSubstitute-setup → `.AsTask().Returns(...)` (NS1000, stille buildbreuk) | dotnet/eShop | klaar (TAAK-211): eShop bouwt, unit 32/32 gelijk |
 | 30  | TAAK-212 | kgrzybek bouwt niet na de fix: MSG0001 (dubbele handlers), SA1210, CS1503, CS0122 | kgrzybek | klaar (TAAK-212): vier foutsoorten weg; volgende laag → #31 |
-| 31  | TAAK-213 | generator-host verwijst naar andere host: CS0436/CS0121 in Registrations.Infrastructure | kgrzybek | open |
+| 31  | TAAK-213 | generator-host verwijst naar andere host: CS0436/CS0121 in Registrations.Infrastructure | kgrzybek | klaar (TAAK-213): build groen; archtests → #32 |
+| 32  | TAAK-214 | gegenereerde Mediator-typen breken archtests (module-afhankelijkheid), 4 regressies | kgrzybek | klaar (TAAK-214): legitiem verschil (gegenereerde dispatcher in archtest), gedocumenteerd |
 
 ## Zie ook
 

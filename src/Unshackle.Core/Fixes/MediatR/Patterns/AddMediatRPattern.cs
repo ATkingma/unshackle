@@ -29,7 +29,7 @@ public class AddMediatRPattern : ISolutionPattern
 
     // Without the solution every friend may call the internal method.
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
-        Rewrite(node, model, Friend(model) is string friend ? $"{friend} may call" : null, _ => false);
+        Rewrite(node, model, Friend(model) is string friend ? $"{friend} may call" : null, _ => false, MediatorHostSettings.None, new HashSet<string>());
 
     // With the solution only a real call from another project counts, and the report names it (TAAK-148).
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
@@ -49,8 +49,16 @@ public class AddMediatRPattern : ISolutionPattern
                 .FirstOrDefault();
         }
 
+        // A host next to another host gets GenerateTypesAsInternal and/or Assemblies (TAAK-213).
+        MediatorHostSettings host = await MediatorHosts.SettingsAsync(node, model, solution, cancellationToken);
+        if (host.ManualReason is string reason)
+        {
+            return PatternResult.Manual(reason);
+        }
+
         // A scanned project of this solution gets InternalsVisibleTo for this one from InternalHandlerAccessPattern (TAAK-195).
-        return Rewrite(node, model, caller, a => CanGrantAccess(a, solution));
+        IReadOnlySet<string> hosts = await MediatorHosts.AssemblyNamesAsync(solution, cancellationToken);
+        return Rewrite(node, model, caller, a => CanGrantAccess(a, solution), host, hosts);
     }
 
     // A C# project of the solution without a strong name: InternalHandlerAccessPattern can add InternalsVisibleTo to it.
@@ -60,7 +68,9 @@ public class AddMediatRPattern : ISolutionPattern
 
     // caller: who may call this method from another project ("X may call", "X calls (file:line)"), or null.
     // granted: a scanned assembly that will give this project InternalsVisibleTo, so its internal handlers are fine.
-    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, string? caller, Func<IAssemblySymbol, bool> granted)
+    // host: settings next to other hosts; hosts: assembly names of all hosts (a scan of another host cannot become Mediator's).
+    private static PatternResult Rewrite(
+        SyntaxNode node, SemanticModel model, string? caller, Func<IAssemblySymbol, bool> granted, MediatorHostSettings host, IReadOnlySet<string> hosts)
     {
         var statement = node as ExpressionStatementSyntax;
         var invocation = (InvocationExpressionSyntax)(statement?.Expression ?? node);
@@ -154,6 +164,13 @@ public class AddMediatRPattern : ISolutionPattern
                 + "Call AddMediator once in that project (with Mediator.SourceGenerator) instead.");
         }
 
+        if (ScannedAssemblies(dropped, model).FirstOrDefault(a => hosts.Contains(a.Name)) is IAssemblySymbol otherHost)
+        {
+            return PatternResult.Manual(
+                $"AddMediatR scans {otherHost.Name}, which registers MediatR itself: both get Mediator's source generator, and its handlers cannot be generated in both (CS0436, CS0121 on AddMediator). "
+                + "Call AddMediator in only one of the two projects.");
+        }
+
         if (HiddenHandler(dropped, model, granted) is INamedTypeSymbol hidden)
         {
             return PatternResult.Manual(
@@ -181,6 +198,8 @@ public class AddMediatRPattern : ISolutionPattern
         {
             assignments.Add(publisher);
         }
+
+        assignments.AddRange(host.Assignments.Select(a => $"{config}.{a.Property} = {a.Value}"));
 
         LambdaExpressionSyntax? rewritten = lambda.Block is { } body
             ? body.Statements.Count == 0 && assignments.Count == 1

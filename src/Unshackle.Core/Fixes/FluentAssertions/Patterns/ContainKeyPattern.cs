@@ -40,7 +40,9 @@ public class ContainKeyPattern : FluentAssertionPattern
         }
 
         ITypeSymbol? subjectType = context.Model.GetTypeInfo(context.Subject).Type;
-        if (subjectType is null or IErrorTypeSymbol || IsGenericDictionary(subjectType))
+        // Shouldly 4.3.0 has ShouldContainKey for IDictionary<,> and IReadOnlyDictionary<,>; a type with both (Dictionary<,>) only picks one
+        // with OverloadResolutionPriority, which C# 12 and older ignore: CS0121 (Akka.NET, LangVersion 12, TAAK-174). Then the lookup below.
+        if (subjectType is null or IErrorTypeSymbol || IsGenericDictionary(subjectType) && !IsAmbiguousBeforeCSharp13(subjectType, context.Subject.SyntaxTree))
         {
             return PatternResult.Fixed(SyntaxFactory.InvocationExpression(
                 SyntaxFactory.MemberAccessExpression(
@@ -64,6 +66,10 @@ public class ContainKeyPattern : FluentAssertionPattern
             FluentAssertionsSyntax.NotNullReceiver(context.Subject, context.Model), lookup, context.Values[0]);
         return PatternResult.Fixed(FluentAssertionsSyntax.Invoke(call, assertion, context.Because));
     }
+
+    private static bool IsAmbiguousBeforeCSharp13(ITypeSymbol type, SyntaxTree tree) =>
+        tree.Options is CSharpParseOptions { LanguageVersion: < LanguageVersion.CSharp13 }
+        && type.AllInterfaces.Prepend(type).Any(t => t.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.IReadOnlyDictionary<TKey, TValue>");
 
     private static bool IsGenericDictionary(ITypeSymbol type) =>
         type.AllInterfaces.Prepend(type).Any(t => t.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.IDictionary<TKey, TValue>");

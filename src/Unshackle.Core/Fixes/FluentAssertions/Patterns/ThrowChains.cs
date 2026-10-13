@@ -436,24 +436,29 @@ internal static class ThrowChains
             return false;
         }
 
-        if (model.GetTypeInfo(subject).Type is not INamedTypeSymbol { TypeKind: TypeKind.Delegate, DelegateInvokeMethod: { Parameters.Length: 0 } invoke })
+        // A lambda the fix wrote (Invoking/Awaiting) converts to Action, Func<object?> or Func<Task> whatever it returns;
+        // a delegate that is passed on must already be one Shouldly accepts.
+        if (action is not LambdaExpressionSyntax)
         {
-            reason = async
-                ? "The subject is not a Func<Task> or a Func<Task<T>> with T a reference type, the only delegates Should.ThrowAsync accepts."
-                : "The subject is not an Action or a Func returning a reference type, the only delegates Should.Throw accepts.";
-            return false;
-        }
+            if (model.GetTypeInfo(subject).Type is not INamedTypeSymbol { TypeKind: TypeKind.Delegate, DelegateInvokeMethod: { Parameters.Length: 0 } invoke })
+            {
+                reason = async
+                    ? "The subject is not a Func<Task> or a Func<Task<T>> with T a reference type, the only delegates Should.ThrowAsync accepts."
+                    : "The subject is not an Action or a Func returning a reference type, the only delegates Should.Throw accepts.";
+                return false;
+            }
 
-        // Should.ThrowAsync takes a Func<Task>; Func<Task<T>> converts to it only when T is a reference type.
-        bool accepted = async
-            ? invoke.ReturnType is INamedTypeSymbol { Name: "Task", ContainingNamespace.Name: "Tasks" } task && task.TypeArguments is not [{ IsReferenceType: false }]
-            : invoke.ReturnsVoid || invoke.ReturnType.IsReferenceType;
-        if (!accepted)
-        {
-            reason = async
-                ? "The subject is not a Func<Task> or a Func<Task<T>> with T a reference type, the only delegates Should.ThrowAsync accepts."
-                : "The subject is not an Action or a Func returning a reference type, the only delegates Should.Throw accepts.";
-            return false;
+            // Should.ThrowAsync takes a Func<Task>; Func<Task<T>> converts to it only when T is a reference type.
+            bool accepted = async
+                ? invoke.ReturnType is INamedTypeSymbol { Name: "Task", ContainingNamespace.Name: "Tasks" } task && task.TypeArguments is not [{ IsReferenceType: false }]
+                : invoke.ReturnsVoid || invoke.ReturnType.IsReferenceType;
+            if (!accepted)
+            {
+                reason = async
+                    ? "The subject is not a Func<Task> or a Func<Task<T>> with T a reference type, the only delegates Should.ThrowAsync accepts."
+                    : "The subject is not an Action or a Func returning a reference type, the only delegates Should.Throw accepts.";
+                return false;
+            }
         }
 
         // ThrowExactly does not unwrap AggregateException, just like Shouldly.

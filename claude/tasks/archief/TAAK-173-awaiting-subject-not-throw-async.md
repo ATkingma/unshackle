@@ -1,6 +1,6 @@
 # TAAK-173 — `x.Awaiting(..).Should().NotThrowAsync()` herschrijven
 
-**Status**: stap 1/3 — nog te starten
+**Status**: klaar
 **Aangemaakt**: 2026-10-12 (corpus-run, `claude/tasks/CORPUSRUN-fa.md`)
 **Doel**: 131 Manuals in Polly met de reden "The subject is built with FluentAssertions (e.g. FluentActions.Awaiting)" worden Fixed.
 
@@ -17,9 +17,14 @@
 
 ## Stappen
 
-- [ ] 1. Proofs: Awaiting op een lokale variabele, `FluentActions.Awaiting`, en een receiver met side effect (→ Manual).
-- [ ] 2. De lambda-opbouw uit `InvokingPattern` hergebruiken in `NotThrowAsyncPattern`.
-- [ ] 3. Bewijs: Polly-harnas.
+- [x] 1. Proofs: Awaiting op een lokale variabele, `FluentActions.Awaiting`, en een receiver met side effect (→ Manual).
+- [x] 2. De lambda-opbouw uit `InvokingPattern` hergebruiken in `NotThrowAsyncPattern`.
+- [x] 3. Bewijs: Polly-harnas.
+
+## Resultaat
+
+- Polly 7.2.4 (`b1a5a17`, 2026-10-13, harnas zonder kloon-wijzigingen): Fixed 4449 → 5255, Manual 964 → 171, build 0 fouten, tests 5685/5685 → 5685/5685, 0 regressies.
+- `NotThrowAsyncPattern` gebruikt `ThrowSyntax.TryGetAction`; `FluentActions.Invoking/Awaiting(d)` → `d`; een door de fix geschreven lambda slaat de delegate-typecheck over (waardetype-resultaten Fixed, ook voor Throw/ThrowAsync via Invoking). Proofs `NotThrowAsync/awaiting*`, `fluent-actions-lambda`, `Invoking/fluent-actions`, `value-result`.
 
 ## Zie ook
 

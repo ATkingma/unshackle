@@ -151,6 +151,15 @@ die typen en hun leden tellen niet als gebruik in`UsingDirectives.UsedNamespaces
   inactieve code, dan wordt hij in place `global using <nieuw>;`; anders blijft hij met de nieuwe ernaast + Manual `usings`.
   Een overgebleven global using houdt het pakket in `ProjectPackages`.
 
+## Dubbelzinnig door een nieuwe namespace (TAAK-174)
+
+- Na de using-stap bindt de Fixer het bijgewerkte bestand opnieuw. Geeft een aanroep CS0121 tussen een methode uit een
+  toegevoegde namespace en een bestaande (Akka.TestKit's eigen `ShouldBe` naast Shouldly's), dan blijft het bestand zoals het was:
+  de Fixed-findings van dat bestand worden Manual ("Not rewritten: …") plus één Manual `usings` met beide methoden.
+  Het bestand houdt zo de oude library en het project het oude pakket (project-file-cascade). `UsingDirectives.AmbiguityWithAddedAsync`.
+- Volledig gekwalificeerde Shouldly-aanroepen zijn afgewezen (onleesbaar). Een global using die het conflict veroorzaakt
+  (`SwapGlobalUsingsAsync`) wordt niet gecontroleerd.
+
 ## SOLID in het kort
 
 | Principe | Hoe                                                                                                                    |

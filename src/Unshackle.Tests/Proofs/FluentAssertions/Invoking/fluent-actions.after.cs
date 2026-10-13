@@ -1,0 +1,22 @@
+using System;
+using System.Threading.Tasks;
+using Shouldly;
+
+namespace Proofs;
+
+public class FluentActionsCase
+{
+    public void Test(Order order)
+    {
+        Should.Throw<InvalidOperationException>(() => order.Cancel());
+    }
+}
+
+public class Order
+{
+    public void Cancel() => throw new InvalidOperationException("Order shipped");
+
+    public string Name() => throw new InvalidOperationException();
+
+    public Task CancelAsync() => Task.FromException(new InvalidOperationException());
+}

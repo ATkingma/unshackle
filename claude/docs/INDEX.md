@@ -146,14 +146,14 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-167-niet-utf8-bestand-breekt-fix.md` | ✅ Niet-UTF-8-bestand: overgeslagen met Manual `encoding`, rest gemigreerd (EventFlow) (corpus 2026-10-12) |
 | `claude/tasks/archief/TAAK-168-should-contain-key-readonly-dictionary.md` | klaar: `ContainKey` op `IReadOnlyDictionary`/headers geeft `ContainsKey(..).ShouldBeTrue()`/`Contains(..)`, anders Manual (CS0411 Steeltoe) |
 | `claude/tasks/archief/TAAK-169-should-be-impliciete-conversie.md` | ✅ `Be`/`BeGreaterThan` met eigen impliciete conversie → cast naar subjecttype (LiteDB, corpus 2026-10-12) |
-| `claude/tasks/TAAK-170-throw-resultaat-gebruikt.md` | open: `Throw<T>()`-resultaat gebruikt → teruggegeven exception (corpus 2026-10-12) |
+| `claude/tasks/archief/TAAK-170-throw-resultaat-gebruikt.md` | ✅ `Throw<T>()`-keten (`.And/.Which/.Where/.WithInnerException`) via `ThrowChains` op de teruggegeven exception (Polly) |
 | `claude/tasks/archief/TAAK-171-contain-key-whose-value.md` | klaar: `ContainKey(..).WhoseValue`, `ContainKeys`/`ContainValues`/`ContainValue` worden via `fa.and-chain` losse Shouldly-statements (corpus 2026-10-12) |
 | `claude/tasks/archief/TAAK-172-be-equivalent-to-collectie-ignore-order.md` | ✅ `BeEquivalentTo` op collectie van waarde-items (sealed record, struct) en de params-vorm `BeEquivalentTo("a", "b")` → `ShouldBe(…, ignoreOrder: true)`; `ParamsArraySyntax` gedeeld met `fa.equal-sequence` |
 | `docs/projectinfo/patterns/fa-be-equivalent-to-collection-plan.md` | KingmaDoc-plan van `BeEquivalentTo` op een collectie (TAAK-172) |
 | `docs/projectinfo/patterns/fa-be-equivalent-to-collection-modellen.md` | Klassen-, sequence- en beslismodel van `BeEquivalentTo` op een collectie |
 | `docs/projectinfo/patterns/fa-be-equivalent-to-collection-verify.md` | Verificatie van `BeEquivalentTo` op een collectie |
-| `claude/tasks/TAAK-173-awaiting-subject-not-throw-async.md` | open: `Awaiting(..).Should().NotThrowAsync()` (corpus 2026-10-12) |
-| `claude/tasks/TAAK-174-shouldly-dubbelzinnig-met-eigen-shouldbe.md` | open: `using Shouldly` botst met eigen `ShouldBe` (Akka, CS0121) (corpus 2026-10-12) |
+| `claude/tasks/archief/TAAK-173-awaiting-subject-not-throw-async.md` | ✅ `Awaiting(..).Should().NotThrowAsync()`, `FluentActions.Invoking/Awaiting`, waardetype-resultaten bij Invoking (Polly 964 → 171 Manual) |
+| `claude/tasks/TAAK-174-shouldly-dubbelzinnig-met-eigen-shouldbe.md` | open (stap 3, Akka-bewijs): `using Shouldly` botst met eigen `ShouldBe` (Akka, CS0121) (corpus 2026-10-12) |
 | `claude/tasks/archief/TAAK-180-mediatr-test-request-handler-delegate.md` | ✅ `mediatr.request-handler-delegate` (gemockte `next` in testcode) + vangnet `unmatched-use` voor MediatR-gebruik zonder finding |
 | `claude/tasks/archief/TAAK-190-mediatr-request-processor-aanroepers.md` | ✅ `mediatr.request-processor-caller`: `new P<Cmd>()` en `await p.Process(...)` van een herschreven processor meeverhuisd, rest Manual |
 | `docs/projectinfo/patterns/mediatr-request-processor-caller-plan.md` | Plan (+ modellen, verify) van `mediatr.request-processor-caller` |
@@ -170,7 +170,7 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `docs/projectinfo/patterns/mediatr-vendored-package-plan.md` | Plan (+ modellen, verify) van het vendoren van een pakket op MediatR |
 | `claude/tasks/archief/TAAK-196-mediatr-autofac-mediator-module.md` | ✅ `mediatr.autofac-mediator-module`: MediatR met de hand in Autofac → `AddMediator` + `Populate` zonder handler-registraties (kgrzybek) |
 | `docs/projectinfo/patterns/mediatr-autofac-mediator-module-plan.md` | Plan (+ modellen, verify) van `mediatr.autofac-mediator-module` |
-| `claude/tasks/TAAK-197-mediatr-eigen-imediator-implementatie.md` | open: eigen `IMediator`-implementatie in testcode (ardalis `NoOpMediator`) breekt de build |
+| `claude/tasks/archief/TAAK-197-mediatr-eigen-imediator-implementatie.md` | voltooid: eigen no-op `IMediator` → Mediator-interface (`mediatr.mediator-implementation`) |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: ongebruikte assembly-parameter na AddMediator (IDE0060) → waarschuwing in rapport |
 | `claude/tasks/archief/TAAK-070-fa-assertion-in-throw-lambda.md` | ✅ Assertion in lambda met `Throw<XunitException>` erop → assertion en Throw Manual |
 

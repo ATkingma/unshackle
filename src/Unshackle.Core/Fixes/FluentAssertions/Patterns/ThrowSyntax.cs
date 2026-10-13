@@ -64,6 +64,22 @@ internal static class ThrowSyntax
         inspected = subject;
         reason = string.Empty;
         var call = (InvocationExpressionSyntax)subject;
+
+        // FluentActions.Invoking(d) / FluentActions.Awaiting(d) return d itself.
+        if (model.GetSymbolInfo(call).Symbol is IMethodSymbol { IsStatic: true, IsExtensionMethod: false, ContainingType.Name: "FluentActions" })
+        {
+            if (call.ArgumentList.Arguments is [{ NameColon: null, Expression: var given }]
+                && (given is ParenthesizedLambdaExpressionSyntax || IsStable(given, model) && IsActionOrAsyncAction(model.GetTypeInfo(given).Type)))
+            {
+                action = given.WithoutTrivia();
+                inspected = given;
+                return true;
+            }
+
+            reason = "FluentActions.Invoking/Awaiting with a delegate that is no lambda, or no Action or Func<Task> variable: pass the delegate by hand.";
+            return false;
+        }
+
         ExpressionSyntax receiver = ((MemberAccessExpressionSyntax)call.Expression).Expression;
         if (!IsStable(receiver, model))
         {
@@ -103,6 +119,10 @@ internal static class ThrowSyntax
         action = SyntaxFactory.ParseExpression(prefix + body.WithoutLeadingTrivia().ToFullString().TrimEnd());
         return true;
     }
+
+    private static bool IsActionOrAsyncAction(ITypeSymbol? type) =>
+        type is INamedTypeSymbol { TypeKind: TypeKind.Delegate, DelegateInvokeMethod: { Parameters.Length: 0 } invoke }
+        && (invoke.ReturnsVoid || invoke.ReturnType is INamedTypeSymbol { Name: "Task", Arity: 0, ContainingNamespace.Name: "Tasks" });
 
     // shortcut: properties and other members are refused, even side-effect-free ones; widen when real code needs it.
     private static bool IsStable(ExpressionSyntax receiver, SemanticModel model) => receiver switch

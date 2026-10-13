@@ -57,6 +57,7 @@ fa.throw-async: `await act.Should().ThrowAsync<T>()` wordt `await Should.ThrowAs
 - **Uitbreiding AggregateException**: IF de actie zichtbaar blokkeert (`.Result`, `Wait`, ...) en T geen `AggregateException` accepteert THEN THE SYSTEM SHALL Manual geven (proof `aggregate-result.*`); een geawaite taak blijft Fixed (proof `aggregate-awaited.*`). Niet bij ThrowExactlyAsync.
 - **Uitbreiding regeleinden**: WHEN het `WithMessage`-patroon zonder wildcards een regeleinde bevat THE SYSTEM SHALL `ShouldBe(lit, StringCompareShould.IgnoreCase | StringCompareShould.IgnoreLineEndings)` geven (proof `message-line-break.*`); met een `*` erbij Manual (proof `message-contains-line-break.*`).
 - **Uitbreiding TAAK-100**: IF de assertie in een niet omgezette `AssertionScope` staat THEN THE SYSTEM SHALL Manual "Inside an AssertionScope" geven (geen eigen proof; zie `ThrowExactly/assertion-scope`).
+- **Uitbreiding TAAK-170**: dezelfde ketenomzetting als `fa.throw` (`ThrowChains`) op `await Should.ThrowAsync<T>(…)`; proofs `ThrowAsync/result-*`, `where`, `value-used`.
 
 ## Assumptions
 

@@ -48,6 +48,13 @@ public static class FluentAssertionsSyntax
                 SyntaxKind.SimpleMemberAccessExpression, subject.WithoutTrailingTrivia(), SyntaxFactory.IdentifierName("ShouldNotBeNull")))
             : subject;
 
+    // `x!` for an argument that may be null where Shouldly's parameter is not nullable (CS8604 under warnings-as-errors, Akka.NET).
+    // Only the compiler's view changes: both libraries fail on a null expectation.
+    public static ArgumentSyntax NotNullArgument(ArgumentSyntax argument, SemanticModel model) =>
+        model.GetTypeInfo(argument.Expression).Nullability.FlowState == NullableFlowState.MaybeNull
+            ? argument.WithExpression(SyntaxFactory.PostfixUnaryExpression(SyntaxKind.SuppressNullableWarningExpression, argument.Expression.WithoutTrivia()).WithTriviaFrom(argument.Expression))
+            : argument;
+
     // `x.ShouldNotBeNull()` around a receiver for a member access (parenthesized when needed, see IsSafeReceiver):
     // one null rule for every Shouldly receiver that is read directly, like Count or Length.
     public static ExpressionSyntax NotNullReceiver(ExpressionSyntax subject, SemanticModel model)

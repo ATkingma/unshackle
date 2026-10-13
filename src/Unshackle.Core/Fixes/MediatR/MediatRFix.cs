@@ -83,5 +83,5 @@ public class MediatRFix : IFix
         ],
     };
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern(), new RequestHandlerDelegatePattern(), new PipelineBehaviorPattern(), new StreamPipelineBehaviorPattern(), new RequestProcessorCallerPattern(), new RequestProcessorPattern(), new ExceptionHandlerPattern(), new AddMediatRPattern(), new BehaviorDiRegistrationPattern(), new AutofacMediatorModulePattern(), new SendAsTaskPattern(), new GenericDecoratorPattern(), new GenericRequestPattern(), new GenericNotificationPattern(), new UnsupportedPattern(), new InternalHandlerAccessPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern(), new RequestHandlerDelegatePattern(), new PipelineBehaviorPattern(), new StreamPipelineBehaviorPattern(), new RequestProcessorCallerPattern(), new RequestProcessorPattern(), new ExceptionHandlerPattern(), new AddMediatRPattern(), new BehaviorDiRegistrationPattern(), new AutofacMediatorModulePattern(), new SendAsTaskPattern(), new GenericDecoratorPattern(), new GenericRequestPattern(), new GenericNotificationPattern(), new MediatorImplementationPattern(), new UnsupportedPattern(), new InternalHandlerAccessPattern()];
 }

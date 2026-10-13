@@ -40,6 +40,7 @@ files_expected:
 - **REQ-2**: WHEN `because` zonder becauseArgs staat THE SYSTEM SHALL die als customMessage meegeven (proof `because`).
 - **REQ-3**: WHEN `.ConfigureAwait(x)` volgt THE SYSTEM SHALL die op `Should.NotThrowAsync` houden (proof `configure-await`).
 - **REQ-4**: IF generiek, niet-awaited, resultaat gebruikt, waarde-Task, FA-subject of AssertionScope THEN THE SYSTEM SHALL Manual geven (proof `generic, not-awaited, result-used, value-result, awaiting, assertion-scope`).
+- **Uitbreiding TAAK-173**: WHEN het subject `x.Awaiting(s => …)` of `FluentActions.Awaiting(d)` is THE SYSTEM SHALL de actie bouwen zoals `fa.invoking` (`ThrowSyntax.TryGetAction`: stabiele receiver, lambda/method group/delegate-variabele) en `await Should.NotThrowAsync(() => …)` geven; een geschreven lambda mag een `Task<T>` met waardetype teruggeven (proofs `awaiting`, `awaiting-receiver`, `fluent-actions-lambda`, `awaiting-value-result`); een receiver met bijwerkingen blijft Manual (`awaiting-side-effect`). Vervangt het FA-subject-deel van REQ-4.
 - **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (Fixed, proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual.
 
 ## Assumptions

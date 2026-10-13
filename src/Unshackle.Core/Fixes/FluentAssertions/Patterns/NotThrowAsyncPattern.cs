@@ -11,7 +11,7 @@ public class NotThrowAsyncPattern : IPattern
 {
     public string Id => "fa.not-throw-async";
 
-    public string Description => "await act.Should().NotThrowAsync() → await Should.NotThrowAsync(act)";
+    public string Description => "await act.Should().NotThrowAsync() → await Should.NotThrowAsync(act); x.Awaiting(s => s.M()) → () => x.M()";
 
     // The node is the `await` around the call (a `.ConfigureAwait(...)` in between is kept); without an await the call itself.
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
@@ -60,15 +60,26 @@ public class NotThrowAsyncPattern : IPattern
             return PatternResult.Manual("NotThrowAsync() is not in the form act.Should().NotThrowAsync(), e.g. after .And.");
         }
 
+        ExpressionSyntax action = subject.WithoutTrivia();
         if (FluentAssertionsSyntax.IsFluentAssertions(model.GetSymbolInfo(subject).Symbol))
         {
-            return PatternResult.Manual("The subject is built with FluentAssertions (e.g. FluentActions.Awaiting): pass the delegate to Should.NotThrowAsync by hand.");
+            if (subject is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Awaiting" } })
+            {
+                return PatternResult.Manual("The subject is built with FluentAssertions other than x.Awaiting(...) or FluentActions.Awaiting(...): pass the delegate to Should.NotThrowAsync by hand.");
+            }
+
+            if (!ThrowSyntax.TryGetAction(subject, model, out action, out _, out string reason))
+            {
+                return PatternResult.Manual(reason);
+            }
         }
 
         // Should.NotThrowAsync takes a Func<Task>; Func<Task<T>> converts to it only when T is a reference type.
-        if (model.GetTypeInfo(subject).Type is not INamedTypeSymbol { TypeKind: TypeKind.Delegate, DelegateInvokeMethod: { Parameters.Length: 0 } invoke }
-            || invoke.ReturnType is not INamedTypeSymbol { Name: "Task", ContainingNamespace.Name: "Tasks" } task
-            || task.TypeArguments is [{ IsReferenceType: false }])
+        // A lambda the fix wrote (Awaiting) converts to Func<Task> whatever its task returns.
+        if (action is not LambdaExpressionSyntax
+            && (model.GetTypeInfo(subject).Type is not INamedTypeSymbol { TypeKind: TypeKind.Delegate, DelegateInvokeMethod: { Parameters.Length: 0 } invoke }
+                || invoke.ReturnType is not INamedTypeSymbol { Name: "Task", ContainingNamespace.Name: "Tasks" } task
+                || task.TypeArguments is [{ IsReferenceType: false }]))
         {
             return PatternResult.Manual("The subject is not a Func<Task> or a Func<Task<T>> with T a reference type, the only delegates Should.NotThrowAsync accepts.");
         }
@@ -84,7 +95,7 @@ public class NotThrowAsyncPattern : IPattern
                 SyntaxKind.SimpleMemberAccessExpression,
                 SyntaxFactory.IdentifierName("Should"),
                 SyntaxFactory.IdentifierName("NotThrowAsync")),
-            FluentAssertionsSyntax.Arguments(SyntaxFactory.Argument(subject.WithoutTrivia()), because));
+            FluentAssertionsSyntax.Arguments(SyntaxFactory.Argument(action), because));
         if (configureAwait is not null)
         {
             notThrow = configureAwait.WithExpression(((MemberAccessExpressionSyntax)configureAwait.Expression).WithExpression(notThrow));

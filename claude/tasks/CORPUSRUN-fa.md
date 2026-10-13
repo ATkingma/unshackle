@@ -101,6 +101,10 @@ Grootste Manual-groepen (alle projecten samen):
 - **0 testregressies** in alle 13 projecten waar vóór en na vergeleken kon worden (samen ruim 24 000 testuitvoeringen). In ronde 1 waren dat er 26 (Polly) en 4 (FluentResults).
 - Rood: Akka.NET, LiteDB en Steeltoe bouwen niet na de fix (TAAK-174/169/168), en EventFlow crasht op encoding (TAAK-167). Daarmee is "100% FA" nog niet bewezen. Na TAAK-167..174 de run herhalen: met TAAK-170..173 komt Fixed op ongeveer 92%.
 
+## Herhaling Polly na TAAK-170/173 (2026-10-13)
+
+Polly 7.2.4 (`b1a5a17`, 2026-10-13, harnas zonder kloon-wijzigingen): Fixed 4449 → 5255, Manual 964 → 171, build 0 fouten, tests 5685/5685 → 5685/5685, 0 regressies. Resterende top-Manuals: Invoking-receiver niet stabiel (42), `ContainInOrder` (34), verschillende compile-time typen bij `BeEquivalentTo` (20).
+
 ## Zie ook
 
 - `claude/tasks/CORPUSRUN-mediatr.md`

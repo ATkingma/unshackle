@@ -37,6 +37,10 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` (c
 | Test | `dotnet test` | passed (515 tests) |
 | Sample | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | passed (38 tests) |
 
+## Corpus (TAAK-170, TAAK-173)
+
+- Polly 7.2.4 (`b1a5a17`, 2026-10-13, harnas zonder kloon-wijzigingen): Fixed 4449 → 5255, Manual 964 → 171, build 0 fouten, tests 5685/5685 → 5685/5685, 0 regressies.
+
 ## Zie ook
 
 - [fa-invoking-modellen.md](fa-invoking-modellen.md)

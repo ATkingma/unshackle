@@ -52,7 +52,7 @@ public class ContainPattern : FluentAssertionPattern
         {
             // FluentAssertions compares substrings case-sensitively, Shouldly case-insensitively by default.
             ArgumentSyntax caseSensitive = SyntaxFactory.Argument(SyntaxFactory.ParseExpression("Shouldly.Case.Sensitive"));
-            arguments = FluentAssertionsSyntax.Arguments(values[0], caseSensitive, context.Because);
+            arguments = FluentAssertionsSyntax.Arguments(FluentAssertionsSyntax.NotNullArgument(values[0], model), caseSensitive, context.Because);
         }
 
         return PatternResult.Fixed(SyntaxFactory.InvocationExpression(

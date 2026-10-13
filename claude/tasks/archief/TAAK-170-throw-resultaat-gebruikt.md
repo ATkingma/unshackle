@@ -1,6 +1,6 @@
 # TAAK-170 — `Throw<T>().And/.Which/.Where` herschrijven via de teruggegeven exception
 
-**Status**: stap 1/4 — nog te starten
+**Status**: klaar
 **Aangemaakt**: 2026-10-12 (corpus-run, `claude/tasks/CORPUSRUN-fa.md`)
 **Doel**: de grootste Manual-groep van het corpus (499×, waarvan 428 in Polly) wordt Fixed.
 
@@ -23,10 +23,15 @@ Ongeveer 500 Manuals minder in het corpus, ongeveer 1,3 procentpunt meer Fixed.
 
 ## Stappen
 
-- [ ] 1. Proofs per vorm: And/Which-member, Where, WithInnerException, en combinatie met WithMessage.
-- [ ] 2. Gedeelde helper in `ThrowSyntax.cs` voor sync, async, exactly en invoking.
-- [ ] 3. Manual laten voor: resultaat als waarde doorgegeven, of `Where` met side effects.
-- [ ] 4. Bewijs: Polly-harnas, 0 regressies.
+- [x] 1. Proofs per vorm: And/Which-member, Where, WithInnerException, en combinatie met WithMessage.
+- [x] 2. Gedeelde helper in `ThrowSyntax.cs` voor sync, async, exactly en invoking.
+- [x] 3. Manual laten voor: resultaat als waarde doorgegeven, of `Where` met side effects.
+- [x] 4. Bewijs: Polly-harnas, 0 regressies.
+
+## Resultaat
+
+- Polly 7.2.4 (`b1a5a17`, 2026-10-13, harnas zonder kloon-wijzigingen): Fixed 4449 → 5255, Manual 964 → 171, build 0 fouten, tests 5685/5685 → 5685/5685, 0 regressies.
+- Code stond er al (`ThrowChains.cs`, `ThrowChain.cs`, proofs `Throw/result-*`, `ThrowAsync/result-*`, `where`); deze sessie alleen het corpusbewijs en de docs (`fa-throw-plan.md`, `fa-throw-async-plan.md`, Uitbreiding TAAK-170).
 
 ## Zie ook
 

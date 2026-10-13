@@ -48,6 +48,6 @@ public class BeOfTypePattern : FluentAssertionPattern
             : SyntaxFactory.IdentifierName(s_methods[name]);
         return PatternResult.Fixed(SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, context.Subject.WithoutTrailingTrivia(), shouldName.WithoutTrivia()),
-            FluentAssertionsSyntax.Arguments([.. context.Values, context.Because])));
+            FluentAssertionsSyntax.Arguments([.. context.Values.Select(v => FluentAssertionsSyntax.NotNullArgument(v, context.Model)), context.Because])));
     }
 }

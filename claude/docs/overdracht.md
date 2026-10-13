@@ -5,7 +5,7 @@ Lees dit eerst als je deze sessie overneemt. Daarna `CLAUDE.md` en `claude/docs/
 ## Stand
 
 - FA → Shouldly en MediatR → Mediator: alle wachtrijtaken t/m TAAK-196 klaar en gepusht (zie `claude/tasks/patroon-queue.md`, `claude/tasks/mediatr-queue.md`).
-- Open taken: TAAK-170, -173, -174 (FA, uit corpusrun 3), TAAK-197 (MediatR, eigen `IMediator` in testcode), TAAK-019 (lancering), TAAK-046 (semantische audit).
+- Open taken: TAAK-174 (FA, Akka: stap 3, corpusbewijs), TAAK-019 (lancering), TAAK-046 (semantische audit). TAAK-170, -173 en -197 zijn klaar.
 - Corpus-herhaling na TAAK-193..196 (kgrzybek, eShop, ardalis) staat nog open.
 
 ## Lokale omgeving (Windows)
@@ -16,7 +16,8 @@ Lees dit eerst als je deze sessie overneemt. Daarna `CLAUDE.md` en `claude/docs/
 
 ## Push-procedure
 
-Taken naar `archief/` → `git add -A` → commit → checks op de commit in een losse worktree (`dotnet build`, `dotnet test`,
+Taken naar `archief/` → `git add -A` → commit → checks op de commit in een losse worktree, uitgecheckt met LF zoals CI
+(`git -c core.autocrlf=false worktree add --detach <map buiten %TEMP%> HEAD`; met de globale `autocrlf=true` falen 15 tests op CRLF) (`dotnet build`, `dotnet test`,
 `dotnet test --solution samples/SampleShop/SampleShop.slnx`, docs-check) → alles groen → `git push origin main`. Iets rood → niet pushen, melden
 (`claude/docs/agent-werkwijze.md` §6). Vóór elke commit grep op lokale paden (playground-map, gebruikersmap, `AppData`); schrijf `<probe-dir>/…` of `<corpus>/…`.
 

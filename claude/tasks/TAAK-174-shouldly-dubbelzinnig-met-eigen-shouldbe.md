@@ -1,6 +1,6 @@
 # TAAK-174 — `using Shouldly;` maakt eigen `ShouldBe`-extensies dubbelzinnig (CS0121)
 
-**Status**: stap 1/3 — nog te starten
+**Status**: stap 3/3 — in uitvoering
 **Aangemaakt**: 2026-10-12 (corpus-run, `claude/tasks/CORPUSRUN-fa.md`)
 **Doel**: Akka.NET bouwt na de fix, of krijgt een duidelijke Manual in plaats van een kapotte build.
 
@@ -22,9 +22,9 @@ Vóór `using Shouldly;` wordt toegevoegd, controleert de Fixer semantisch of er
 
 ## Stappen
 
-- [ ] 1. Unittest met een eigen statische `ShouldBe<T>`-extensie in scope.
-- [ ] 2. Conflictdetectie in de using-stap (`UsingDirectives.cs`) of als pre-check in de Fixer.
-- [ ] 3. Bewijs: Akka-harnas bouwt; de overige foutcodes uitzoeken en zo nodig een vervolgtaak maken.
+- [x] 1. Unittest met een eigen statische `ShouldBe<T>`-extensie in scope.
+- [x] 2. Conflictdetectie in de using-stap (`UsingDirectives.cs`) of als pre-check in de Fixer.
+- [→] 3. Bewijs: Akka-harnas bouwt; de overige foutcodes uitzoeken en zo nodig een vervolgtaak maken.
 
 ## Zie ook
 

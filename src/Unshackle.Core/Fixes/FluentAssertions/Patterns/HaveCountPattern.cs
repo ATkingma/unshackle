@@ -86,7 +86,17 @@ public class HaveCountPattern : FluentAssertionPattern
             && t.OriginalDefinition.ContainingNamespace.ToDisplayString() is "System.Collections.Generic"
             && t.OriginalDefinition is INamedTypeSymbol { Arity: > 0 });
 
+    // On a class or struct only its own and inherited members count: an interface property it implements explicitly
+    // (IReadOnlyCollection<T>.Count) is not reachable as x.Count, which then binds to Enumerable.Count (CS0119, Akka.NET).
     private static bool HasIntProperty(ITypeSymbol type, string name) =>
-        type.AllInterfaces.Prepend(type).Any(t => t.GetMembers(name).OfType<IPropertySymbol>().Any(p =>
+        (type.TypeKind == TypeKind.Interface ? type.AllInterfaces.Prepend(type) : BaseTypesAndSelf(type)).Any(t => t.GetMembers(name).OfType<IPropertySymbol>().Any(p =>
             p.Type.SpecialType == SpecialType.System_Int32 && p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic));
+
+    private static IEnumerable<ITypeSymbol> BaseTypesAndSelf(ITypeSymbol type)
+    {
+        for (ITypeSymbol? current = type; current is not null; current = current.BaseType)
+        {
+            yield return current;
+        }
+    }
 }

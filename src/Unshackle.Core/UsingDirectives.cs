@@ -273,6 +273,40 @@ internal static class UsingDirectives
     }
 
     // A top-level using of a removed namespace that stays because inactive code may still need it.
+    // The first call that an added namespace made ambiguous (CS0121) with a method that is not from an added namespace,
+    // e.g. Shouldly's ShouldBe next to Akka.TestKit's own (TAAK-174); null when there is none.
+    public static async Task<(IMethodSymbol Added, IMethodSymbol Existing, int Line)?> AmbiguityWithAddedAsync(
+        Document document, IReadOnlyCollection<string> addedNamespaces, CancellationToken cancellationToken)
+    {
+        if (await document.GetSyntaxRootAsync(cancellationToken) is not SyntaxNode root
+            || await document.GetSemanticModelAsync(cancellationToken) is not SemanticModel model)
+        {
+            return null;
+        }
+
+        foreach (Diagnostic diagnostic in model.GetDiagnostics(cancellationToken: cancellationToken).Where(d => d.Id == "CS0121"))
+        {
+            SyntaxNode node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
+            if (node.FirstAncestorOrSelf<InvocationExpressionSyntax>() is not InvocationExpressionSyntax invocation)
+            {
+                continue;
+            }
+
+            IMethodSymbol[] candidates = [.. model.GetSymbolInfo(invocation, cancellationToken).CandidateSymbols.OfType<IMethodSymbol>()];
+            IMethodSymbol? added = candidates.FirstOrDefault(m => IsIn(m, addedNamespaces));
+            IMethodSymbol? existing = candidates.FirstOrDefault(m => !IsIn(m, addedNamespaces));
+            if (added is not null && existing is not null)
+            {
+                return (added, existing, diagnostic.Location.GetLineSpan().StartLinePosition.Line + 1);
+            }
+        }
+
+        return null;
+
+        static bool IsIn(IMethodSymbol method, IReadOnlyCollection<string> namespaces) =>
+            namespaces.Contains(method.ContainingNamespace?.ToDisplayString() ?? string.Empty);
+    }
+
     public static bool KeepsRemovedUsing(SyntaxNode root, Compilation compilation, IEnumerable<string> removedNamespaces) =>
         root is CompilationUnitSyntax unit && InactiveCodeMayUse(unit, compilation, removedNamespaces) && AllUsings(unit)
             .Any(u => IsPlainUsing(u) && u.GlobalKeyword.IsKind(SyntaxKind.None) && removedNamespaces.Contains(u.Name!.ToString()));

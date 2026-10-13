@@ -89,6 +89,7 @@ public class Fixer : IFixer
         foreach (IGrouping<string, DocumentId> file in files)
         {
             DocumentId documentId = file.First();
+            int firstFinding = findings.Count;
             // Every file is fixed against the original solution, so what a pattern finds never depends on which files
             // were fixed before (a marker interface in an earlier file would already be swapped, TAAK-130).
             Solution working = baseline;
@@ -147,6 +148,26 @@ public class Fixer : IFixer
                     int line = disabled.IsKind(SyntaxKind.DisabledTextTrivia) ? disabled.GetLocation().GetLineSpan().StartLinePosition.Line + 1 : 0;
                     findings.Add(CreateUsingsFinding(updated.FilePath ?? updated.Name, line, fix, PatternResult.Manual(
                         "Code in an inactive #if branch is not migrated, so the old using stays. Migrate that branch by hand.")));
+                }
+
+                // An added namespace that makes a call ambiguous with an extension of the user's own (CS0121) would break the build:
+                // the file stays as it was, so it keeps the old library and its project the old package (TAAK-174).
+                if (requiredNamespaces.Count > 0
+                    && await UsingDirectives.AmbiguityWithAddedAsync(updated, fix.AddedNamespaces, cancellationToken) is { } ambiguity)
+                {
+                    string reason = $"{ambiguity.Added.ContainingType.ToDisplayString()}.{ambiguity.Added.Name} is ambiguous with "
+                        + $"{ambiguity.Existing.ContainingType.ToDisplayString()}.{ambiguity.Existing.Name} once {ambiguity.Added.ContainingNamespace.ToDisplayString()} is imported (CS0121), "
+                        + "so this file is not migrated and its project keeps the old package. Rename or remove the conflicting extension, or migrate the file by hand.";
+                    for (int i = firstFinding; i < findings.Count; i++)
+                    {
+                        if (findings[i].Result is FixedResult)
+                        {
+                            findings[i] = CreateFinding(findings[i], PatternResult.Manual($"Not rewritten: {reason}"));
+                        }
+                    }
+
+                    findings.Add(CreateUsingsFinding(updated.FilePath ?? updated.Name, ambiguity.Line, fix, PatternResult.Manual(reason)));
+                    working = baseline;
                 }
             }
 

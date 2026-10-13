@@ -87,8 +87,8 @@ Uit `claude/tasks/CORPUSRUN-fa.md` (ronde 3). Bouwfouten eerst.
 | TAAK-169 | `Be(x)` met eigen impliciete conversie (CS1929/CS0411) | LiteDB | 11 regels | klaar (TAAK-169; corpus niet herdraaid) |
 | TAAK-168 | `ShouldContainKey` op `IReadOnlyDictionary`/headers (CS0411) | Steeltoe | 11 regels | klaar (TAAK-168) |
 | TAAK-167 | Niet-UTF-8-bestand laat de fix crashen | EventFlow | 1 bestand | klaar (TAAK-167) |
-| TAAK-181 | Zelfsluitend `<Project Sdk=".." />` (bestaand, nu ook bij FA) | modular-monolith | 82 Manual | open |
-| TAAK-170 | `Throw<T>()`-resultaat gebruikt → teruggegeven exception | Polly e.a. | 499 Manual | bezig (TAAK-170) |
+| TAAK-181 | Zelfsluitend `<Project Sdk=".." />` (bestaand, nu ook bij FA) | modular-monolith | 82 Manual | klaar (TAAK-181, MediatR-wachtrij) |
+| TAAK-170 | `Throw<T>()`-resultaat gebruikt → teruggegeven exception | Polly e.a. | 499 Manual | klaar (TAAK-170; Polly 964 → 171 Manual samen met TAAK-173) |
 | TAAK-171 | `ContainKey(..).WhoseValue`, `ContainKeys`/`ContainValues` | Steeltoe, Polly | 377 Manual | klaar (TAAK-171; corpus niet herdraaid) |
 | TAAK-172 | `BeEquivalentTo` collectie met waarde-items → `ignoreOrder: true` | 13 projecten | 207 Manual | klaar (TAAK-172) |
-| TAAK-173 | `Awaiting(..).Should().NotThrowAsync()` | Polly | 131 Manual | open |
+| TAAK-173 | `Awaiting(..).Should().NotThrowAsync()` | Polly | 131 Manual | klaar (TAAK-173) |

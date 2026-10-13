@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "mediatr-request-handler-delegate"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5]
 files_expected:
     - src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerDelegatePattern.cs
     - src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs
@@ -38,13 +38,16 @@ Testcode die `Substitute.For<RequestHandlerDelegate<TRes>>()` configureert en aa
 
 - **REQ-1**: WHEN een gemockt `RequestHandlerDelegate<TRes>` aan een behavior-`Handle` wordt gegeven THE SYSTEM SHALL het type `MessageHandlerDelegate<TReq, TRes>` maken (TReq uit de `Handle`-parameter), `Invoke()` van `Arg.Any` voorzien en `Task.FromResult(x)` in `Returns` naar `ValueTask.FromResult(x)` zetten (proof `_Combined/request-handler-delegate`).
 - **REQ-2**: IF het delegate een echt delegate is (lambda), een parameter, direct wordt aangeroepen, of `Returns` een Task/callback krijgt THEN THE SYSTEM SHALL Manual melden met de regel (proofs `lambda`, `parameter`, `invoke-call`, `callback-returns`).
-- **REQ-3**: IF het request-type niet uit precies één `Handle`-aanroep volgt THEN THE SYSTEM SHALL Manual melden (proof `no-handle-call`).
+- **REQ-3**: IF het delegate aan geen enkele behavior-`Handle` wordt gegeven THEN THE SYSTEM SHALL Manual melden, omdat het request-type dan niet af te leiden is (proof `no-handle-call`).
+- **REQ-5** (TAAK-191): WHEN één delegate-veld aan `Handle` van behaviors met verschillende request-types wordt gegeven THE SYSTEM SHALL het veld `MessageHandlerDelegate<IMessage, TRes>` typeren, `Arg.Any<IMessage>()` gebruiken en elk `next`-argument vervangen door een adapter-lambda `(message, cancellationToken) => veld(message, cancellationToken)` (proof `_Combined/request-handler-delegate-shared-field`).
 - **REQ-4**: WHEN na de patronen nog een MediatR-symbool zonder finding in een project staat dat het pakket houdt THE SYSTEM SHALL een Manual op die regel melden (unittest `FixerProjectFileTests`).
 
 ## Assumptions
 
 - Mediator 3.0.2: `delegate ValueTask<TResponse> MessageHandlerDelegate<TMessage, TResponse>(TMessage message, CancellationToken cancellationToken)`; NSubstitute 6 configureert `ValueTask<T>` met `Returns(T)`.
 - Het patroon staat vóór `mediatr.pipeline-behavior` in `MediatRFix.Patterns`: staan behavior en test in één bestand, dan bindt de `Handle`-aanroep nog aan de MediatR-versie.
+- `MessageHandlerDelegate<TMessage, TResponse>` is invariant in `TMessage` (gemeten met een probe-project: `MessageHandlerDelegate<IA<int>,int>` is niet toewijsbaar aan `<R1,int>`; een lambda wel). Daarom een adapter-lambda per `Handle`-aanroep; `IMessage` als gemeenschappelijk type is altijd geldig (elk request is een `IMessage`) en voorkomt toegankelijkheids- en constraintproblemen van een door de gebruiker gedefinieerde basis.
+- Lambda-parameternamen (`message`, `cancellationToken`) krijgen een `_`-suffix als de naam al in het type voorkomt.
 - Per bestand wordt tegen de originele solution gefixt; de behavior in een ander bestand is dus nog de MediatR-versie.
 
 ## Modellen

@@ -46,7 +46,7 @@ evo1 (MediatR, TAAK-115): geen IDE0005/IDE0065 meer; build nog rood op IDE0060 e
 
 ## Ronde 3: volledig corpus (2026-10-12, main 2800f23)
 
-Shallow clones (`git clone --depth 1`) in `D:\playground\corpus-fa`, elk met een `nuget.config` met alleen nuget.org. Harnas: kopie van `claude/tools/corpus-regression.sh` (SDK 10, `NuGetAudit=false`, `AllowMissingPrunePackageData=true`, 3 jobs; test 2× vóór de fix, daarna `fix --force`, bin/obj weg, build, test, en vergelijking per test via TRX). De tool is gepubliceerd uit 2800f23. Alle HEADs gebruiken nog FA ≤ 7, dus er was geen oudere commit nodig; Polly, Mapperly en EventFlow staan op dezelfde tag als in ronde 1. Commits staan in `_results/commits.txt`. De kloons zijn verwijderd; rapporten en gefilterde logs staan in `D:\playground\corpus-fa\_results\<naam>\` (9 MB).
+Shallow clones (`git clone --depth 1`) in `<corpus>/corpus-fa`, elk met een `nuget.config` met alleen nuget.org. Harnas: kopie van `claude/tools/corpus-regression.sh` (SDK 10, `NuGetAudit=false`, `AllowMissingPrunePackageData=true`, 3 jobs; test 2× vóór de fix, daarna `fix --force`, bin/obj weg, build, test, en vergelijking per test via TRX). De tool is gepubliceerd uit 2800f23. Alle HEADs gebruiken nog FA ≤ 7, dus er was geen oudere commit nodig; Polly, Mapperly en EventFlow staan op dezelfde tag als in ronde 1. Commits staan in `_results/commits.txt`. De kloons zijn verwijderd; rapporten en gefilterde logs staan in `<corpus>/corpus-fa/_results/<naam>/` (9 MB).
 
 | Project | Commit | restore | build vóór | tests vóór (pass/fail) | fix | Fixed | Manual | build na | tests na | regressies |
 | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | --- | ---: |
@@ -105,4 +105,4 @@ Grootste Manual-groepen (alle projecten samen):
 
 - `claude/tasks/CORPUSRUN-mediatr.md`
 - `claude/tasks/ANALYSE-fa-100.md`
-- `claude/tasks/TAAK-167-niet-utf8-bestand-breekt-fix.md` t/m `claude/tasks/TAAK-174-shouldly-dubbelzinnig-met-eigen-shouldbe.md`
+- `claude/tasks/archief/TAAK-167-niet-utf8-bestand-breekt-fix.md` t/m `claude/tasks/TAAK-174-shouldly-dubbelzinnig-met-eigen-shouldbe.md`

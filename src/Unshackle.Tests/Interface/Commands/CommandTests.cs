@@ -173,7 +173,7 @@ public class CommandTests
     public async Task FixExecuteAsync_DirtyTree_RefusesWithoutLoading()
     {
         // Arrange
-        _sourceControl.HasUncommittedChangesAsync("/repo/My App", Arg.Any<CancellationToken>()).Returns(true);
+        _sourceControl.HasUncommittedChangesAsync(Path.GetDirectoryName(Path.GetFullPath(SolutionPath))!, Arg.Any<CancellationToken>()).Returns(true);
         FixCommand command = CreateFix();
 
         // Act

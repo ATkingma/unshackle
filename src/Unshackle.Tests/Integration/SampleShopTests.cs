@@ -273,6 +273,48 @@ public class SampleShopTests
         store.Warnings.ShouldContain(w => w.Contains("Gone.csproj", StringComparison.Ordinal), string.Join(" | ", store.Warnings));
     }
 
+    // EventFlow (TAAK-167): one Latin-1 file must not stop the run. It stays byte for byte as it was, gets a Manual row, keeps
+    // the project on FluentAssertions, and the rest of the solution is migrated.
+    [Fact]
+    public async Task Fix_FileInLatin1_LeavesItAndMigratesTheRest()
+    {
+        // Arrange
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using var directory = new TempDirectory();
+        string project = Path.Combine(directory.Path, "Tests.csproj");
+        string report = Path.Combine(directory.Path, "r.csv");
+        await File.WriteAllTextAsync(project, """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net10.0</TargetFramework>
+                <NoWarn>$(NoWarn);NU1903</NoWarn>
+              </PropertyGroup>
+              <ItemGroup>
+                <PackageReference Include="FluentAssertions" Version="7.2.2" />
+              </ItemGroup>
+            </Project>
+            """, cancellationToken);
+        const string Code = "using FluentAssertions;\n\nclass {0}\n{{\n    // caf\u00e9\n    void M() => 1.Should().Be(1);\n}}\n";
+        byte[] latin1 = System.Text.Encoding.Latin1.GetBytes(string.Format(System.Globalization.CultureInfo.InvariantCulture, Code, "Old"));
+        await File.WriteAllBytesAsync(Path.Combine(directory.Path, "Old.cs"), latin1, cancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(directory.Path, "New.cs"), string.Format(System.Globalization.CultureInfo.InvariantCulture, Code, "New"), cancellationToken);
+        await DotnetAsync(cancellationToken, "restore", project);
+
+        // Act
+        int exit = await Cli.RunAsync(["fix", project, "--fix", "fluentassertions", "--force", "--report", report], cancellationToken);
+
+        // Assert
+        exit.ShouldBe(ExitCodes.Ok);
+        (await File.ReadAllBytesAsync(Path.Combine(directory.Path, "Old.cs"), cancellationToken)).ShouldBe(latin1);
+        string migrated = await File.ReadAllTextAsync(Path.Combine(directory.Path, "New.cs"), cancellationToken);
+        migrated.ShouldContain("1.ShouldBe(1)");
+        string[] rows = await File.ReadAllLinesAsync(report, cancellationToken);
+        rows.ShouldContain(r => r.StartsWith("Old.cs,0,fluentassertions,encoding,Manual,", StringComparison.Ordinal), string.Join(Environment.NewLine, rows));
+        string projectText = await File.ReadAllTextAsync(project, cancellationToken);
+        projectText.ShouldContain("Include=\"FluentAssertions\"");
+        projectText.ShouldContain("Include=\"Shouldly\"");
+    }
+
     // Bogus (TAAK-112): a build project the solution restore skips resolves not even System (simulated here without framework
     // references). With nothing depending on it, it is left out with a warning; the other projects still load.
     [Fact]

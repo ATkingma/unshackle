@@ -54,6 +54,27 @@ Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainKeyPattern
 | Manual "named arguments, or becauseArgs whose because is no constant format string" | benoemde argumenten of niet-constante `because` | geen proof |
 | Manual "Inside an AssertionScope" | scope die `fa.assertion-scope` niet omzet | `AssertionScope/` |
 
+## Figuur 4: uitbreiding TAAK-168 (type-afhankelijke vorm)
+
+**Figure 4.** `RewriteAssertion` kijkt sinds TAAK-168 naar het subjecttype: Shouldly's `ShouldContainKey` bestaat alleen voor `IDictionary<,>`.
+
+```mermaid
+flowchart TD
+    A["RewriteAssertion: subjecttype via GetTypeInfo"] --> B{"onbekend/fouttype of<br/>implementeert IDictionary&lt;,&gt;?"}
+    B -- ja --> C["Fixed: x.ShouldContainKey(k)<br/>proof: dictionary, idictionary, not-contain-key"]
+    B -- nee --> D{"FindLookup: publieke bool ContainsKey(key)<br/>op type, basis of interface?"}
+    D -- ja --> E["Fixed: x.ContainsKey(k).ShouldBeTrue()<br/>NotContainKey: ShouldBeFalse()<br/>proof: read-only, read-only-not-contain"]
+    D -- nee --> F{"publieke bool Contains(key)?"}
+    F -- ja --> G["Fixed: x.Contains(k).ShouldBeTrue()<br/>proof: headers"]
+    F -- nee --> H["Manual: has no ContainsKey/Contains(key) method<br/>proof: enumerable-pairs"]
+```
+
+| Element | Rol |
+| ------- | --- |
+| `IsGenericDictionary` | Zoekt `System.Collections.Generic.IDictionary<TKey, TValue>` in het type en zijn interfaces |
+| `FindLookup` | Zoekt `ContainsKey`, dan `Contains` (één parameter, bool, publiek, niet-generiek) waarvan de parameter de sleutel impliciet accepteert |
+| `NotNullReceiver` | Zet `ShouldNotNull()` om een mogelijk-null subject, net als bij de andere receivers |
+
 ## Zie ook
 
 - [fa-contain-key-plan.md](fa-contain-key-plan.md)

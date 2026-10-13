@@ -92,7 +92,7 @@ public class FixCommand
             {
                 await _projectFiles.SaveAsync([.. changes, .. projectFileChanges], cancellationToken);
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or InvalidDataException)
             {
                 throw new CommandException(ExitCodes.Failure, $"Nothing written: {ex.Message}");
             }

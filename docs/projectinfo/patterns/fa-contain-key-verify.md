@@ -15,7 +15,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainKeyPattern.cs`;
 | REQ   | Oordeel | Bewijs |
 | ----- | ------- | ------ |
 | REQ-1 | Gehaald | `dictionary.*.cs` |
-| REQ-2 | Gehaald | `read-only.*.cs`, `idictionary.*.cs` (after compileert tegen Shouldly) |
+| REQ-2 | Gehaald | `idictionary.*.cs` (after compileert tegen Shouldly) |
 | REQ-3 | Gehaald | `not-contain-key.*.cs` |
 | REQ-4 | Gehaald | `because.*.cs` |
 | REQ-5 | Gehaald | `lambda.*.cs` |
@@ -24,12 +24,16 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainKeyPattern.cs`;
 | REQ-8 | Gehaald | `keys.*`, `not-contain-keys.*` |
 | REQ-9 | Gehaald | `contain-value.*`, `contain-values.*`, `not-contain-value.*` |
 | REQ-10 | Gehaald | `nullable.*` |
+| REQ-11 | Gehaald | `read-only.*`, `read-only-not-contain.*` (after compileert; `ContainsKey(..).ShouldBeTrue/False`) |
+| REQ-12 | Gehaald | `headers.*` |
+| REQ-13 | Gehaald | `enumerable-pairs.manual.txt` |
 | Uitbreiding TAAK-097 | Gehaald | `because-args.before.cs` / `because-args.after.cs` |
 
 ## Deviations
 
 | # | Area | Plan says | Code does | Impact |
 | - | ---- | --------- | --------- | ------ |
+| 2 | Behaviour | Gelijk aan FA | `HttpHeaders.Contains` is hoofdletterongevoelig; FA vergelijkt exact | Low (positieve assertie iets soepeler, alleen bij headers) |
 | 1 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because`; gedocumenteerd verschil | Low |
 
 ## Validation results
@@ -37,7 +41,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainKeyPattern.cs`;
 | Check | Command        | Result |
 | ----- | -------------- | ------ |
 | Build | `dotnet build` | passed (0 warnings) |
-| Tests | `dotnet test`  | ProofTests voor `ContainKey/` alle groen; zie verslag voor het totaal |
+| Tests | `dotnet test`  | `ProofTests` 685/685 groen (TAAK-168); volledige run: alleen de bekende CRLF-falers |
 | Lint  | _geen_         | _not run_: geen lint-commando ingesteld |
 
 ## Zie ook

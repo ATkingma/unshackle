@@ -55,6 +55,12 @@ public interface IFix
     bool AllOrNothing => false;
 
     /// <summary>
+    /// Packages that build on the old library and have no version for the new one with the same API: the solution gets their
+    /// source, migrated, in the project all their users reference, and loses the package (TAAK-194). Empty (the default): none.
+    /// </summary>
+    IReadOnlyList<VendoredPackage> VendoredPackages => [];
+
+    /// <summary>
     /// Assemblies of the new library, added to each project's semantic model while fixing (not to the result). Without them a
     /// rewrite in a lambda binds to nothing, overload resolution of the call around it fails and patterns after it miss code
     /// that depends on that call (TAAK-116). Empty (the default): the patterns see only what the project references.

@@ -108,11 +108,11 @@ eShop hangen af van acties 9–10. Dat moet een nieuwe corpus-run bevestigen, me
 
 ## Run 2026-10-12 (main 2800f23)
 
-Herhaalde run na de MediatR-wachtrij (TAAK-130..136 klaar). Werkmap `D:\playground\corpus-mediatr` (Windows, SDK 10.0.400),
+Herhaalde run na de MediatR-wachtrij (TAAK-130..136 klaar). Werkmap `<corpus>/corpus-mediatr` (Windows, SDK 10.0.400),
 harnas `claude/tools/corpus-regression.sh` (kopie met `py -3`; restore → build → test ×2 → `fix --fix mediatr --force` →
 bin/obj weg → restore → build → test → per-test-vergelijking). Elke kloon kreeg een `nuget.config` met alleen nuget.org;
 flags zoals eerder (global.json → 10.0.100/latestFeature, `NuGetAudit=false`, `AllowMissingPrunePackageData`, `SkipNSwag`).
-Logs, rapporten en vergelijkingen in `D:\playground\corpus-mediatr\_results\<naam>\`.
+Logs, rapporten en vergelijkingen in `<corpus>/corpus-mediatr/_results/<naam>/`.
 
 Commits (MediatR ≤ 12): jason tag v8.0.0 `f2f0445` (12.1.1; HEAD heeft 14.2), ardalis tag v9.1.0 `ccb82ba` (12.2.0; HEAD
 gebruikt al Mediator 3), amantin `5822811` (12.2.0), nadirbad `feb3a15` (12.4.1), evolutionary `441a7cd` (12.5.0),
@@ -162,7 +162,7 @@ bewezen: hooguit 5 van 9 is haalbaar, de rest gebruikt constructies die Mediator
 
 Zelfde commits, flags, trims (nadirbad `CA1873 = none`; kgrzybek `_build` + `Database/*` uit de solution) en harnas
 (`py -3`, nuget.config alleen nuget.org) als de run hierboven; dotnet/eShop niet herhaald (baseline faalt op libman).
-Resultaten in `D:\playground\corpus-mediatr\_results\r2\<naam>\` (klonen verwijderd).
+Resultaten in `<corpus>/corpus-mediatr/_results/r2/<naam>/` (klonen verwijderd).
 
 | Project        | Test vóór        | Fixed | Manual | Root-Manual na deze taken                                     | Gemigreerd | Build na | Test na  | Regressies |
 | -------------- | ---------------- | ----: | -----: | ------------------------------------------------------------- | ---------- | -------- | -------- | ---------- |
@@ -195,7 +195,7 @@ Per taak:
 | --------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
 | ardalis   | Ardalis.SharedKernel (11×)                                   | extern pakket bouwt op MediatR-typen; Unshackle kan het pakket niet herschrijven        |
 | ardalis   | add-mediatr, `ContributorDeletedHandler` internal             | Mediator-generator in Web kan internal handler zonder InternalsVisibleTo niet aanroepen (CS0122, TAAK-183) |
-| nadirbad  | generieke `DomainEventNotification<T>`                        | Mediator's source generator ondersteunt geen generieke messages/handlers               |
+| nadirbad  | generieke `DomainEventNotification<T>`                        | **opgelost door TAAK-192** (`mediatr.generic-notification`): nadirbad 18 Fixed, 0 Manual, build ok, 30/30 |
 | evo1      | add-mediatr in internal methode die het testproject aanroept  | handlers in twee assemblies; één `AddMediator` per host (TAAK-148)                     |
 | evo2      | add-mediatr met `Assembly`-parameter; internal handlers in Contracts | handlers bij de aanroeper / internal zonder friend (TAAK-144, TAAK-183)          |
 | kgrzybek  | 32 generieke decorators en `DomainNotificationBase<T>`        | generieke handlers/decorators niet ondersteund door de generator                        |

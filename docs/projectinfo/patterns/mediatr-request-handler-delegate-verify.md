@@ -13,6 +13,7 @@
 | REQ-1 | Gehaald | `Proofs/MediatR/_Combined/request-handler-delegate` (`CombinedProofTests.CombinedMediatR_Before_BecomesAfter`; `after` compileert tegen Mediator 3.0.2 mét generator) |
 | REQ-2 | Gehaald | `RequestHandlerDelegate/lambda`, `parameter`, `invoke-call`, `callback-returns` |
 | REQ-3 | Gehaald | `RequestHandlerDelegate/no-handle-call` |
+| REQ-5 | Gehaald | `Proofs/MediatR/_Combined/request-handler-delegate-shared-field` (before compileert tegen MediatR 12.5, after tegen Mediator 3.0.2 met generator; nabootsing van amantin `AuthorizationBehaviorTests`) |
 | REQ-4 | Gehaald | `FixerProjectFileTests.FixAsync_CodeStillUsesPackageWithoutFinding_ReportsManualOnThatLine` en `..._ReportsNoUnmatchedUse` |
 
 ## Deviations

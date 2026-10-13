@@ -1,1 +1,1 @@
-is not handed to exactly one request type of a behavior's Handle
+is not handed to a behavior's Handle

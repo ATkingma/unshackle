@@ -30,7 +30,8 @@ Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerDelegatePatt
 | Manual "initialized with a real delegate" | `RequestHandlerDelegate<int> next = () => ...` | `lambda` |
 | Manual "used other than as a mock configuration" | `await next()` of `next.Invoke()` buiten `Returns` | `invoke-call` |
 | Manual "is a Task or a callback" | `Returns(_ => ...)` of een andere Task | `callback-returns` |
-| Manual "not handed to exactly one request type" | geen of verschillende `Handle`-aanroepen | `no-handle-call` |
+| Manual "not handed to a behavior's Handle" | geen `Handle`-aanroep waaraan het delegate als `next` wordt gegeven | `no-handle-call` |
+| Fixed (gedeeld veld) | zelfde veld aan `Handle` van meerdere request-types: type `MessageHandlerDelegate<IMessage, TRes>`, `Arg.Any<IMessage>()`, adapter-lambda per `next`-argument | `_Combined/request-handler-delegate-shared-field` |
 
 ## Zie ook
 

@@ -10,27 +10,13 @@ namespace Unshackle.Core.Fixes.FluentAssertions.Patterns;
 // passes which ones it owns), the ThrowExactly and Invoking checks, and the Invoking subject as a lambda.
 internal static class ThrowSyntax
 {
-    // The node is the Throw call, the whole `.WithMessage(...)` call when that directly follows it, or `.Which` after the call
-    // (not `.Subject`: that is all thrown exceptions, Should.Throw returns one).
+    // One node per Throw/ThrowExactly chain the pattern owns (see ThrowChains.Find).
     public static IEnumerable<SyntaxNode> FindThrow(SyntaxNode root, SemanticModel model, Func<InvocationExpressionSyntax, bool> owns) =>
-        FluentAssertionsSyntax.FindInvocations(root, model, "Throw", "ThrowExactly")
-            .Where(owns)
-            .Select<InvocationExpressionSyntax, SyntaxNode>(t => t.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "WithMessage" } access
-                && access.Parent is InvocationExpressionSyntax { } withMessage
-                && withMessage.Expression == access
-                    ? withMessage
-                    : t.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Which" } which && which.Expression == t
-                        ? which
-                        : t);
+        ThrowChains.Find(root, model, ThrowChains.SyncNames, owns);
 
-    // The node is the `await` around the ThrowAsync call (or around the `.WithMessage(...)` call that directly follows it);
-    // without an await it is the invocation itself. A `.ConfigureAwait(...)` between the call and the await is kept.
+    // One node per ThrowAsync/ThrowExactlyAsync chain the pattern owns (see ThrowChains.Find).
     public static IEnumerable<SyntaxNode> FindThrowAsync(SyntaxNode root, SemanticModel model, Func<InvocationExpressionSyntax, bool> owns) =>
-        FluentAssertionsSyntax.FindInvocations(root, model, "ThrowAsync", "ThrowExactlyAsync")
-            .Where(owns)
-            .Select(t => Follow(t, "WithMessage"))
-            .Select(i => Follow(i, "ConfigureAwait"))
-            .Select(i => i.Parent is AwaitExpressionSyntax await ? (SyntaxNode)await : i);
+        ThrowChains.Find(root, model, ThrowChains.AsyncNames, owns);
 
     // `call.method(...)` when that directly follows call, else call.
     public static InvocationExpressionSyntax Follow(InvocationExpressionSyntax call, string method) =>
@@ -47,21 +33,12 @@ internal static class ThrowSyntax
     public static bool IsExactly(InvocationExpressionSyntax assertion) =>
         ((MemberAccessExpressionSyntax)assertion.Expression).Name.Identifier.ValueText.StartsWith("ThrowExactly", StringComparison.Ordinal);
 
-    // Hands the node to the pattern of its assertion method; those patterns handle ThrowExactly and Invoking subjects too.
-    public static PatternResult Rewrite(SyntaxNode node, SemanticModel model)
-    {
-        string method = node.DescendantNodesAndSelf()
-            .OfType<InvocationExpressionSyntax>()
-            .Select(i => ((i.Expression as MemberAccessExpressionSyntax)?.Name.Identifier.ValueText) ?? string.Empty)
-            .First(n => n.StartsWith("Throw", StringComparison.Ordinal) || n.StartsWith("NotThrow", StringComparison.Ordinal));
-        IPattern pattern = method switch
-        {
-            _ when method.StartsWith("NotThrow", StringComparison.Ordinal) => new NotThrowPattern(),
-            _ when method.EndsWith("Async", StringComparison.Ordinal) => new ThrowAsyncPattern(),
-            _ => new ThrowPattern(),
-        };
-        return pattern.Rewrite(node, model);
-    }
+    // Hands the node to the NotThrow pattern (its nodes are the NotThrow calls) or to the Throw chain rewrite; those handle
+    // ThrowExactly and Invoking subjects too.
+    public static PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
+        node is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } && access.Name.Identifier.ValueText.StartsWith("NotThrow", StringComparison.Ordinal)
+            ? new NotThrowPattern().Rewrite(node, model)
+            : ThrowChains.Rewrite(node, model);
 
     // True when the subject of the assertion is a FluentAssertions Invoking(...) or Awaiting(...) call.
     public static bool IsInvoking(InvocationExpressionSyntax assertion, SemanticModel model) =>
@@ -71,18 +48,20 @@ internal static class ThrowSyntax
         } call
         && FluentAssertionsSyntax.IsFluentAssertions(model.GetSymbolInfo(call).Symbol);
 
-    // For `x.Invoking(s => body)`: action = `() => body[s := x]` and lambda = the original lambda (to inspect its body).
+    // For `x.Invoking(s => body)`: action = `() => body[s := x]` and inspected = the original lambda (to inspect its body).
+    // For `x.Invoking(d)` with d a method group or a local, parameter or field of a delegate type: action = `() => d(x)`
+    // and inspected = d; d is read when the action runs instead of before, which is the same for these stable references.
     // False with a reason when x may have side effects or is a value type (Invoking works on a copy), or the
-    // argument is not a one-parameter lambda.
+    // argument is neither of those.
     public static bool TryGetAction(
         ExpressionSyntax subject,
         SemanticModel model,
         out ExpressionSyntax action,
-        out AnonymousFunctionExpressionSyntax lambda,
+        out ExpressionSyntax inspected,
         out string reason)
     {
         action = subject;
-        lambda = null!;
+        inspected = subject;
         reason = string.Empty;
         var call = (InvocationExpressionSyntax)subject;
         ExpressionSyntax receiver = ((MemberAccessExpressionSyntax)call.Expression).Expression;
@@ -98,14 +77,24 @@ internal static class ThrowSyntax
             return false;
         }
 
+        if (call.ArgumentList.Arguments is [{ NameColon: null, Expression: var delegateExpression }]
+            && delegateExpression is not AnonymousFunctionExpressionSyntax
+            && (model.GetSymbolInfo(delegateExpression).Symbol is IMethodSymbol { MethodKind: MethodKind.Ordinary or MethodKind.LocalFunction, Parameters.Length: 1 }
+                || IsStable(delegateExpression, model) && model.GetTypeInfo(delegateExpression).Type is { TypeKind: TypeKind.Delegate }))
+        {
+            inspected = delegateExpression;
+            action = SyntaxFactory.ParseExpression($"() => {delegateExpression.WithoutTrivia()}({receiver.WithoutTrivia()})");
+            return true;
+        }
+
         if (call.ArgumentList.Arguments is not [{ NameColon: null, Expression: AnonymousFunctionExpressionSyntax function }]
             || model.GetSymbolInfo(function).Symbol is not IMethodSymbol { Parameters: [var parameter] })
         {
-            reason = "Invoking/Awaiting without a one-parameter lambda (e.g. a method group): pass the delegate by hand.";
+            reason = "Invoking/Awaiting without a one-parameter lambda, method group or delegate variable: pass the delegate by hand.";
             return false;
         }
 
-        lambda = function;
+        inspected = function;
         SyntaxNode body = function.Body.ReplaceNodes(
             function.Body.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()
                 .Where(i => SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(i).Symbol, parameter)),

@@ -1,0 +1,1 @@
+ICommandHandler declares members of its own

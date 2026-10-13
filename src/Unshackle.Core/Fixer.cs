@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -18,6 +19,9 @@ public class Fixer : IFixer
 
     // Rows for code that still names the removed package while no pattern found it: the place the user has to migrate by hand.
     public const string UnmatchedPatternId = "unmatched-use";
+
+    // Rows for a source file that is not UTF-8: writing it back as UTF-8 would corrupt its characters, so it is left alone.
+    public const string EncodingPatternId = "encoding";
 
     private readonly IReadOnlyList<IFix> _fixes;
     private readonly IProjectFileStore? _projectFiles;
@@ -47,16 +51,33 @@ public class Fixer : IFixer
         Solution original = solution;
         Solution baseline = AddReferences(original, fix.AddedReferences, fix.AddedNamespaces);
         HashSet<string> swappedTypes = [.. fix.SwappedTypes];
+        // A file that is not UTF-8 stays as it is, with one Manual row (TAAK-167). It still names the old library, so its
+        // project keeps the package (the project-file cascade below) and the rest of the solution is migrated.
+        HashSet<string> notUtf8 = await NotUtf8FilesAsync(solution, cancellationToken);
+        // Only a file that names the old library needs the row; another one is left alone without noise.
+        foreach (string path in notUtf8.Order(StringComparer.Ordinal))
+        {
+            Document document = solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents).First(d => d.FilePath == path);
+            if (await UsingDirectives.NamesRemovedNamespaceAsync(document, fix.RemovedNamespaces, cancellationToken))
+            {
+                findings.Add(CreateFinding(path, 0, fix, EncodingPatternId, PatternResult.Manual(
+                    "The file is not UTF-8 (it would be corrupted when written back), so it is not migrated and its project keeps the old package. " +
+                    "Convert it to UTF-8 and run the fix again, or migrate it by hand.")));
+            }
+        }
+
         // A multi-target project is loaded once per target framework: the same file is fixed and reported once,
         // and its copies in the other projects get the fixed text.
         List<IGrouping<string, DocumentId>> files =
         [
             .. solution.Projects.Where(p => p.Language == LanguageNames.CSharp)
                 .SelectMany(p => p.Documents)
+                .Where(d => !notUtf8.Contains(d.FilePath ?? d.Id.Id.ToString()))
                 .GroupBy(d => d.FilePath ?? d.Id.Id.ToString(), d => d.Id, StringComparer.Ordinal),
         ];
         HashSet<ProjectId> globalProjects = [];
-        foreach (Document document in solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents))
+        foreach (Document document in solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents)
+            .Where(d => !notUtf8.Contains(d.FilePath ?? d.Id.Id.ToString())))
         {
             SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken))!;
             if (UsingDirectives.RemovedGlobalUsings(root, document.FilePath, fix.RemovedNamespaces).Any())
@@ -139,12 +160,19 @@ public class Fixer : IFixer
             }
         }
 
-        solution = await SwapGlobalUsingsAsync(solution, fix, globalProjects, swappedTypes, findings, cancellationToken);
+        solution = await SwapGlobalUsingsAsync(solution, fix, globalProjects, swappedTypes, notUtf8, findings, cancellationToken);
+        // A package that builds on the old library: its source goes in, the package goes out with the others (TAAK-194).
+        VendoredPlan vendored = await VendoredPackages.PlanAsync(original, fix, cancellationToken);
+        findings.AddRange(vendored.Findings);
+        solution = vendored.AddTo(solution);
         IReadOnlyList<ProjectFileChange> projectFileChanges = [];
         if (_projectFiles is not null && fix.Package is PackageMigration package)
         {
-            (solution, projectFileChanges) = await MigrateProjectFilesAsync(_projectFiles, original, solution, fix, package, swappedTypes, findings, cancellationToken);
+            (solution, projectFileChanges) = await MigrateProjectFilesAsync(
+                _projectFiles, original, solution, fix, package, swappedTypes, vendored.Migrations, findings, cancellationToken);
         }
+
+        projectFileChanges = [.. vendored.Files, .. projectFileChanges];
 
         if (fix.AllOrNothing && findings.Any(f => f.Result is ManualResult))
         {
@@ -203,10 +231,13 @@ public class Fixer : IFixer
         IFix fix,
         PackageMigration package,
         HashSet<string> swappedTypes,
+        IReadOnlyList<ProjectMigration> vendoredMigrations,
         List<Finding> findings,
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<ProjectMigration> migrations = await ProjectPackages.PlanAsync(original, solution, fix, package, swappedTypes, cancellationToken);
+        // One edit for both: the store reads each file once, so the second swap does not overwrite the first.
+        IReadOnlyList<ProjectMigration> migrations =
+            [.. await ProjectPackages.PlanAsync(original, solution, fix, package, swappedTypes, cancellationToken), .. vendoredMigrations];
         if (migrations.Count == 0)
         {
             return (solution, []);
@@ -273,6 +304,7 @@ public class Fixer : IFixer
         IFix fix,
         HashSet<ProjectId> globalProjects,
         HashSet<string> swappedTypes,
+        HashSet<string> notUtf8,
         List<Finding> findings,
         CancellationToken cancellationToken)
     {
@@ -286,12 +318,17 @@ public class Fixer : IFixer
 
             foreach (DocumentId documentId in project.SelectMany(id => solution.GetProject(id)!.DocumentIds).ToList())
             {
+                if (notUtf8.Contains(solution.GetDocument(documentId)!.FilePath ?? documentId.Id.ToString()))
+                {
+                    continue;
+                }
+
                 solution = await UsingDirectives.QualifyClashingAsync(
                     solution.GetDocument(documentId)!, fix.AddedNamespaces, fix.RemovedNamespaces, fix.AddedTypes, cancellationToken);
             }
 
             HashSet<string> reported = new(StringComparer.Ordinal);
-            foreach (Document document in project.SelectMany(id => solution.GetProject(id)!.Documents))
+            foreach (Document document in project.SelectMany(id => solution.GetProject(id)!.Documents).Where(d => !notUtf8.Contains(d.FilePath ?? d.Id.Id.ToString())))
             {
                 SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken))!;
                 List<UsingDirectiveSyntax> globals = [.. UsingDirectives.RemovedGlobalUsings(root, document.FilePath, fix.RemovedNamespaces)];
@@ -312,6 +349,22 @@ public class Fixer : IFixer
         }
 
         return solution;
+    }
+
+    // Roslyn reads a file with a BOM or valid UTF-8 as UTF-8, and anything else (Latin-1, UTF-16) with that other encoding.
+    // Text without an encoding (made in memory) is written as UTF-8.
+    private static async Task<HashSet<string>> NotUtf8FilesAsync(Solution solution, CancellationToken cancellationToken)
+    {
+        HashSet<string> paths = new(StringComparer.Ordinal);
+        foreach (Document document in solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents))
+        {
+            if (document.FilePath is not null && (await document.GetTextAsync(cancellationToken)).Encoding is { } encoding and not UTF8Encoding)
+            {
+                paths.Add(document.FilePath);
+            }
+        }
+
+        return paths;
     }
 
     private static Finding CreateUsingsFinding(string filePath, int line, IFix fix, PatternResult result) =>
@@ -336,7 +389,10 @@ public class Fixer : IFixer
         try
         {
             // Outer nodes first: a nested finding inside an already replaced node is reported, not lost.
-            nodes = [.. pattern.Find(root, model).OrderBy(n => n.SpanStart).ThenByDescending(n => n.Span.Length)];
+            IEnumerable<SyntaxNode> found = pattern is ISolutionFinder finder
+                ? await finder.FindAsync(root, model, solution, cancellationToken)
+                : pattern.Find(root, model);
+            nodes = [.. found.OrderBy(n => n.SpanStart).ThenByDescending(n => n.Span.Length)];
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

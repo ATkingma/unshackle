@@ -1,0 +1,1 @@
+Retried becomes abstract with one concrete subclass per closed type

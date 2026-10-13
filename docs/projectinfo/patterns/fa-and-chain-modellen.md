@@ -44,6 +44,35 @@
 | Schakel gevonden? | which no pattern rewrites | `unsupported-link` |
 | Schakel Fixed? | Link X of the .And chain: reden | `manual-link` |
 
+## Uitbreiding TAAK-171: dictionary-assertions die meerdere statements worden
+
+**Figure 4.** Welke vormen de splitsing erbij kreeg. `Find` neemt ook een statement dat zelf geen `.And` heeft maar via `IsExpandable` meerdere statements wordt; `Rewrite` bouwt de lijst `entries` (een FA-statement per uitkomst) en geeft die aan dezelfde `RewriteLink`-lus.
+
+```mermaid
+flowchart TD
+    A["Statement met x.Should()...."] --> B{"Eerste schakel heeft subject<br/>Y.WhoseValue, Y = x.Should().ContainKey(k)?"}
+    B -- ja --> C{"x heeft indexer op k-type<br/>en k is constante of veilig?"}
+    C -- nee --> M1["Manual: no indexer / key evaluated twice<br/>whose-value-no-indexer, whose-value-computed-key"]
+    C -- ja --> D["entries: x.Should().ContainKey(k..)<br/>daarna schakels op x[k].Should()<br/>whose-value*"]
+    B -- nee --> E{"Schakel heet ContainKeys, NotContainKeys,<br/>ContainValue(s) of NotContainValue(s)?"}
+    E -- nee --> F["entries: een statement per schakel (zoals voorheen)"]
+    E -- ja --> G{"Params-vorm met losse argumenten<br/>(IsExpandedParams)?"}
+    G -- nee --> M2["Manual: collection argument<br/>contain-keys-collection, contain-values-collection"]
+    G -- ja --> H{"Values-eigenschap nodig en aanwezig?"}
+    H -- nee --> M3["Manual: no Values property"]
+    H -- ja --> I["entries: per argument ContainKey / x.Values.Should().Contain<br/>contain-keys*, contain-value*"]
+    D --> J["RewriteLink per entry op het gesplitste model"]
+    F --> J
+    I --> J
+```
+
+| Vraag | Bij nee: uitkomst | Proof |
+| --- | --- | --- |
+| Subject is `ContainKey(k).WhoseValue`? | gewone splitsing | `whose-value*` voor ja |
+| Indexer en veilige key? | Manual | `whose-value-no-indexer`, `whose-value-computed-key` |
+| Params-vorm? | Manual | `contain-keys-collection`, `contain-values-collection` |
+| Subject veilig twee keer te evalueren? | hoist (`subject`, `subject2`; x telt als subject, `Y.WhoseValue` ook) | `contain-keys-subject-call`, `whose-value-subject-call` |
+
 ## Zie ook
 
 - [fa-and-chain-plan.md](fa-and-chain-plan.md) - plan

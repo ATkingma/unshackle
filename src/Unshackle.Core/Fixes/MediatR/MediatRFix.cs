@@ -18,6 +18,9 @@ public class MediatRFix : IFix
     // Half a migration builds but fails at run time (behaviors rewritten while AddMediatR stays): any Manual finding leaves the solution as it is.
     public bool AllOrNothing => true;
 
+    // Ardalis.SharedKernel builds on MediatR and has no Mediator version with the same API: its source goes in instead (TAAK-194).
+    public IReadOnlyList<VendoredPackage> VendoredPackages { get; } = [ArdalisSharedKernel.Package];
+
     public IReadOnlyList<string> AddedNamespaces { get; } = ["Mediator"];
 
     // Same name and arity in Mediator 3.0.2 (checked in the real assemblies by MediatRFixTests).
@@ -71,13 +74,14 @@ public class MediatRFix : IFix
             // In every project it generates its own Mediator class: a project referencing the host's would get CS0436 (TAAK-063).
             // So only the host (AddMediatR: its registration may still be Manual), and PrivateAssets keeps it from flowing on.
             // MSG0005 (message without handler; MediatR allows it): an error under TreatWarningsAsErrors breaks a migration that behaves the same (TAAK-136).
+            // MSG0003 (generic handler skipped): an open generic decorator stays a container decorator, Mediator resolves handlers through DI (TAAK-193).
             new()
             {
-                Name = "Mediator.SourceGenerator", Version = MediatorVersion, OnlyWithCallTo = ["AddMediatR"], PrivateAssets = "all",
-                WarningsNotAsErrors = ["MSG0005"],
+                Name = "Mediator.SourceGenerator", Version = MediatorVersion, OnlyWithCallTo = ["AddMediatR", ProjectPackages.TypeofAssembly], PrivateAssets = "all",
+                WarningsNotAsErrors = ["MSG0003", "MSG0005"],
             },
         ],
     };
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern(), new RequestHandlerDelegatePattern(), new PipelineBehaviorPattern(), new StreamPipelineBehaviorPattern(), new RequestProcessorPattern(), new ExceptionHandlerPattern(), new AddMediatRPattern(), new BehaviorDiRegistrationPattern(), new SendAsTaskPattern(), new UnsupportedPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern(), new RequestHandlerDelegatePattern(), new PipelineBehaviorPattern(), new StreamPipelineBehaviorPattern(), new RequestProcessorCallerPattern(), new RequestProcessorPattern(), new ExceptionHandlerPattern(), new AddMediatRPattern(), new BehaviorDiRegistrationPattern(), new AutofacMediatorModulePattern(), new SendAsTaskPattern(), new GenericDecoratorPattern(), new GenericRequestPattern(), new GenericNotificationPattern(), new UnsupportedPattern(), new InternalHandlerAccessPattern()];
 }

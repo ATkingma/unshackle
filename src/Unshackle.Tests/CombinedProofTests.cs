@@ -94,18 +94,25 @@ public class CombinedProofTests
         string basePath = Path.Combine(s_mediatRDirectory, name);
         string before = Normalize(await File.ReadAllTextAsync(basePath + ".before.cs", TestContext.Current.CancellationToken));
         string expected = Normalize(await File.ReadAllTextAsync(basePath + ".after.cs", TestContext.Current.CancellationToken));
-        TestSolution.CompileErrors(before, TestReferences.MediatR).ShouldBeEmpty("before must compile against MediatR");
+        // "// @project Name -> References" sections: several projects, the generator only where AddMediator is called (TAAK-195).
+        bool projects = TestProjects.IsMultiProject(before);
+        (projects ? TestProjects.CompileErrors(before, TestReferences.MediatR) : TestSolution.CompileErrors(before, TestReferences.MediatR))
+            .ShouldBeEmpty("before must compile against MediatR");
         var fixer = new Fixer([new MediatRFix()]);
-        Solution solution = TestSolution.Create(before, TestReferences.MediatR);
+        Solution solution = projects ? TestProjects.Create(before, TestReferences.MediatR) : TestSolution.Create(before, TestReferences.MediatR);
 
         // Act
         FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "mediatr" }, TestContext.Current.CancellationToken);
 
         // Assert
-        string actual = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        string actual = projects
+            ? await TestProjects.GetTextAsync(report.Solution, before, TestContext.Current.CancellationToken)
+            : await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
         report.Findings.ShouldAllBe(f => f.Result is FixedResult, string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
         actual.ShouldBe(expected);
-        TestSolution.CompileErrors(actual, TestReferences.Mediator, TestReferences.MediatorGenerators).ShouldBeEmpty("after must compile against Mediator");
+        (projects
+            ? TestProjects.CompileErrors(actual, TestReferences.Mediator, TestReferences.MediatorGenerators)
+            : TestSolution.CompileErrors(actual, TestReferences.Mediator, TestReferences.MediatorGenerators)).ShouldBeEmpty("after must compile against Mediator");
     }
 
     [Fact]

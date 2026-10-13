@@ -63,16 +63,16 @@ public class RequestProcessorPattern : IPattern
         else if (message is ITypeParameterSymbol)
         {
             // Mediator's pre-processor knows the response type: the class gets a second type parameter (<> → <,> in typeof).
-            if (symbol.TypeParameters.Any(p => p.Name == "TResponse") || HasOtherUses(symbol, type, model))
+            if (symbol.TypeParameters.Any(p => p.Name == "TResponse"))
             {
-                return PatternResult.Manual("The pre-processor gets a second type parameter TResponse, but that name is taken or the class is used outside AddMediatR; rewrite it by hand.");
+                return PatternResult.Manual("The pre-processor gets a second type parameter TResponse, but that name is taken; rewrite it by hand.");
             }
 
             response = SyntaxFactory.IdentifierName("TResponse");
             result = result.WithTypeParameterList(result.TypeParameterList!.AddParameters(SyntaxFactory.TypeParameter("TResponse")));
             result = result.WithTypeParameterList(result.TypeParameterList!.WithParameters(MediatRSyntax.CommaList([.. result.TypeParameterList.Parameters.Select(p => p.WithoutTrivia())])));
         }
-        else if (ResponseOf(message, model, type.SpanStart) is string closed)
+        else if (MediatRSyntax.ResponseOf(message, model, type.SpanStart) is string closed)
         {
             response = SyntaxFactory.ParseTypeName(closed);
         }
@@ -94,27 +94,4 @@ public class RequestProcessorPattern : IPattern
             MediatRSyntax.WithConstraint(withBase, message, "IMessage", t => MediatRSyntax.IsMediatR(t, "IBaseRequest", "INotification")),
             "System.Threading.Tasks");
     }
-
-    // IRequest<T> → T, IRequest → Unit (Mediator's IRequest is IRequest<Unit>).
-    private static string? ResponseOf(ITypeSymbol message, SemanticModel model, int position)
-    {
-        INamedTypeSymbol? request = message.AllInterfaces.Prepend(message as INamedTypeSymbol)
-            .FirstOrDefault(i => i is not null && MediatRSyntax.IsMediatR(i, "IRequest"));
-        return request switch
-        {
-            { TypeArguments: [{ } result] } => result.ToMinimalDisplayString(model, position),
-            { TypeArguments: [] } => "Unit",
-            _ => null,
-        };
-    }
-
-    // shortcut: only this project is searched, other projects referencing the generic class are not; add a solution-wide check when that shows up.
-    private static bool HasOtherUses(INamedTypeSymbol symbol, ClassDeclarationSyntax declaration, SemanticModel model) =>
-        model.Compilation.SyntaxTrees
-            .SelectMany(t => t.GetRoot().DescendantNodes().OfType<GenericNameSyntax>())
-            .Where(n => n.Identifier.ValueText == symbol.Name && n.Arity == symbol.Arity)
-            .Any(n => !(n.SyntaxTree == declaration.SyntaxTree && declaration.Span.Contains(n.Span)) && !IsOpenRegistration(n));
-
-    private static bool IsOpenRegistration(GenericNameSyntax name) =>
-        name.Parent is TypeOfExpressionSyntax { Parent: ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "AddOpenRequestPreProcessor" } } } } };
 }

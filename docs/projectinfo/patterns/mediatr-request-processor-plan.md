@@ -34,7 +34,7 @@ Een klasse die zelf `IRequestPreProcessor<TReq>` of `IRequestPostProcessor<TReq,
 - **REQ-2**: WHEN een post-processor `async` is THE SYSTEM SHALL alleen basisklasse, modifiers, naam en returntype aanpassen (proof `post-open-async`).
 - **REQ-3**: WHEN een gesloten pre-processor een request met `IRequest<T>` of `IRequest` heeft THE SYSTEM SHALL `T` resp. `Unit` als response gebruiken (proof `pre-closed`).
 - **REQ-4**: WHEN `Process` zonder async een andere `Task` teruggeeft (`Task.Delay(...)`, `Task.Run(...)`, expression body of blok) THE SYSTEM SHALL `return new ValueTask(expr)` schrijven; synchrone exception-timing blijft gelijk (proofs `other-return`, `task-run`; TAAK-184). IF iets teruggegeven wordt dat geen `Task` is THEN Manual.
-- **REQ-5**: IF een open pre-processor buiten `AddOpenRequestPreProcessor` gebruikt wordt (arity verandert) THEN THE SYSTEM SHALL Manual melden (proof `used-elsewhere`).
+- **REQ-5**: IF een open pre-processor al een typeparameter `TResponse` heeft THEN THE SYSTEM SHALL Manual melden. Gebruik van de klasse elders (`new P<Cmd>()`, `Process`-aanroepen) volgt `mediatr.request-processor-caller` (TAAK-190); de oude vangnetproof `used-elsewhere` is daarmee vervallen.
 
 ## Assumptions
 

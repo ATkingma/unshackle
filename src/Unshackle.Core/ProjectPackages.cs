@@ -8,6 +8,10 @@ namespace Unshackle.Core;
 // Which projects follow the package migration, and whether their code still needs the removed package.
 internal static class ProjectPackages
 {
+    // AddedPackage.OnlyWithCallTo entry for typeof(T).Assembly with T of the removed package: an Autofac scan that registers
+    // MediatR's own classes is the hand-written AddMediatR (TAAK-196).
+    public const string TypeofAssembly = "typeof().Assembly";
+
     public static async Task<IReadOnlyList<ProjectMigration>> PlanAsync(
         Solution original,
         Solution solution,
@@ -62,6 +66,11 @@ internal static class ProjectPackages
                 .Select(i => model.GetSymbolInfo(i, cancellationToken).Symbol)
                 .Where(s => s?.ContainingAssembly?.Name is string name && removed.Contains(name))
                 .Select(s => s!.Name));
+            if (root.DescendantNodes().OfType<TypeOfExpressionSyntax>().Any(t => IsAssemblyOf(t)
+                && model.GetTypeInfo(t.Type, cancellationToken).Type?.ContainingAssembly?.Name is string name && removed.Contains(name)))
+            {
+                called.Add(TypeofAssembly);
+            }
         }
 
         List<AddedPackage> added = [.. package.AddedPackages.Where(p => p.OnlyWithCallTo.Count == 0 || p.OnlyWithCallTo.Any(called.Contains))];
@@ -69,6 +78,14 @@ internal static class ProjectPackages
             ? package
             : new PackageMigration { RemovedPackage = package.RemovedPackage, AlsoRemovedPackages = package.AlsoRemovedPackages, AddedPackages = added };
     }
+
+    // typeof(T).Assembly or typeof(T).GetTypeInfo().Assembly.
+    private static bool IsAssemblyOf(TypeOfExpressionSyntax typeOf) => typeOf.Parent switch
+    {
+        MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Assembly" } => true,
+        MemberAccessExpressionSyntax { Name.Identifier.ValueText: "GetTypeInfo", Parent: InvocationExpressionSyntax { Parent: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Assembly" } } } => true,
+        _ => false,
+    };
 
     // True when any document binds a name to a type or member of the assemblies, swapped types aside. Using directives do not count:
     // the global usings MSBuild generates from <Using Include> would otherwise always keep the package. Except a using that

@@ -38,6 +38,15 @@ Gebouwd in TAAK-005 (`src/Unshackle.DataAccess/Reports/`):
   in de `.cs`-bestanden van die projecten Manual met "Not rewritten: Could not edit the project files: …". Die bestanden
   blijven ongewijzigd.
 
+## Bronbestand niet UTF-8 (TAAK-167)
+
+- Een `.cs`-bestand dat Roslyn niet als UTF-8 las (Latin-1, UTF-16: `SourceText.Encoding` is geen `UTF8Encoding`) wordt door de
+  `Fixer` niet aangeraakt: terugschrijven als UTF-8 zou tekens beschadigen. Het blijft byte voor byte gelijk.
+- Noemt dat bestand de oude bibliotheek, dan staat er een Manual met patroon-id `encoding` (regel 0, "The file is not UTF-8 ...").
+  Het bestand telt daardoor als restgebruik: het project houdt het oude pakket (project-file-cascade) en de rest van de
+  solution wordt wel gemigreerd. Een niet-UTF-8-bestand zonder de oude bibliotheek krijgt geen rij.
+- Bewijs: `FixerProjectFileTests.FixAsync_FileNotUtf8_*` en `SampleShopTests.Fix_FileInLatin1_LeavesItAndMigratesTheRest`.
+
 ## Zie ook
 
 - `docs/projectinfo/README.md` — overzicht en C4-diagrammen

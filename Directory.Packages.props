@@ -26,5 +26,10 @@
     <PackageVersion Include="AutoMapper" Version="14.0.0" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />
+    <!-- A package that builds on MediatR (TAAK-194): the version of the ardalis corpus case, only as types for proofs -->
+    <PackageVersion Include="Ardalis.SharedKernel" Version="1.4.0" />
+    <!-- MediatR registered by hand in an Autofac module (TAAK-196): the versions of the corpus case -->
+    <PackageVersion Include="Autofac" Version="7.1.0" />
+    <PackageVersion Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
   </ItemGroup>
 </Project>

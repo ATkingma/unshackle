@@ -109,7 +109,7 @@ public class XmlProjectFileStoreTests
         IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
 
         // Assert
-        FullPathText(changes, Project).ShouldBe(
+        Text(changes, Project).ShouldBe(
             $"<Project Sdk=\"Microsoft.NET.Sdk\">{newLine}  <ItemGroup>{newLine}    <PackageReference Include=\"Shouldly\" Version=\"4.3.0\" />{newLine}  </ItemGroup>{newLine}</Project>{trailing}");
     }
 
@@ -126,7 +126,7 @@ public class XmlProjectFileStoreTests
 
         // Assert
         changes.Count.ShouldBe(3);
-        FullPathText(changes, OtherProject).ShouldBe("<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <PackageReference Include=\"Shouldly\" />\n  </ItemGroup>\n</Project>");
+        Text(changes, OtherProject).ShouldBe("<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <PackageReference Include=\"Shouldly\" />\n  </ItemGroup>\n</Project>");
     }
 
     [Fact]
@@ -307,7 +307,7 @@ public class XmlProjectFileStoreTests
 
         // Assert
         ProjectFileChange change = changes.ShouldHaveSingleItem();
-        change.FilePath.ShouldBe(BuildProps);
+        change.FilePath.ShouldBe(FullPath(BuildProps));
         change.NewText.ShouldBe(props
             .Replace("\"FluentAssertions\" Version=\"7.2.2\"", "\"Shouldly\" Version=\"4.3.0\"", StringComparison.Ordinal)
             .Replace("<Using Include=\"FluentAssertions\" />", "<Using Include=\"Shouldly\" />", StringComparison.Ordinal));
@@ -333,7 +333,7 @@ public class XmlProjectFileStoreTests
         IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false), Migration(OtherProject, keep: true));
 
         // Assert
-        changes.ShouldNotContain(c => c.FilePath == BuildProps);
+        changes.ShouldNotContain(c => c.FilePath == FullPath(BuildProps));
         Text(changes, Project).ShouldContain("<PackageReference Include=\"Shouldly\" />");
         Text(changes, Project).ShouldNotContain("FluentAssertions");
         Text(changes, OtherProject).ShouldContain("<PackageReference Include=\"FluentAssertions\" />");
@@ -384,6 +384,95 @@ public class XmlProjectFileStoreTests
 
         // Assert
         await edit.ShouldThrowAsync<System.Xml.XmlException>();
+    }
+
+    [Fact]
+    public async Task SaveAsync_NewFile_CreatesFolderAndFile()
+    {
+        // Arrange
+        const string source = "/repo/src/Core/Ardalis.SharedKernel/EntityBase.cs";
+        _fileSystem.AddFile(Project, new MockFileData("old"));
+        var store = new XmlProjectFileStore(_fileSystem);
+
+        // Act
+        await store.SaveAsync(
+            [new ProjectFileChange { FilePath = source, OldText = string.Empty, NewText = "class EntityBase;", Creates = true }],
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        _fileSystem.File.ReadAllText(source).ShouldBe("class EntityBase;");
+    }
+
+    [Fact]
+    public async Task SaveAsync_NewFileAlreadyThere_ThrowsAndWritesNothing()
+    {
+        // Arrange
+        const string source = "/repo/src/Core/Ardalis.SharedKernel/EntityBase.cs";
+        _fileSystem.AddFile(Project, new MockFileData("old"));
+        _fileSystem.AddFile(source, new MockFileData("mine"));
+        var store = new XmlProjectFileStore(_fileSystem);
+
+        // Act
+        Func<Task> save = () => store.SaveAsync(
+            [
+                new ProjectFileChange { FilePath = Project, OldText = "old", NewText = "new" },
+                new ProjectFileChange { FilePath = source, OldText = string.Empty, NewText = "class EntityBase;", Creates = true },
+            ],
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        (await save.ShouldThrowAsync<InvalidOperationException>()).Message.ShouldContain("already exists");
+        _fileSystem.File.ReadAllText(Project).ShouldBe("old");
+        _fileSystem.File.ReadAllText(source).ShouldBe("mine");
+    }
+
+    [Fact]
+    public async Task EditAsync_VendoredPackage_RootSwapsItForItsDependenciesAndOtherProjectLosesIt()
+    {
+        // Arrange
+        const string root =
+            "<Project Sdk=\"Microsoft.NET.Sdk\">\n" +
+            "  <ItemGroup>\n" +
+            "    <PackageReference Include=\"Ardalis.GuardClauses\" />\n" +
+            "    <PackageReference Include=\"Ardalis.SharedKernel\" />\n" +
+            "  </ItemGroup>\n" +
+            "</Project>\n";
+        const string other =
+            "<Project Sdk=\"Microsoft.NET.Sdk\">\n" +
+            "  <ItemGroup>\n" +
+            "    <PackageReference Include=\"Ardalis.SharedKernel\" />\n" +
+            "    <PackageReference Include=\"MailKit\" />\n" +
+            "  </ItemGroup>\n" +
+            "</Project>\n";
+        const string versions =
+            "<Project>\n" +
+            "  <ItemGroup>\n" +
+            "    <PackageVersion Include=\"Ardalis.GuardClauses\" Version=\"4.5.0\" />\n" +
+            "    <PackageVersion Include=\"Ardalis.SharedKernel\" Version=\"1.4.0\" />\n" +
+            "    <PackageVersion Include=\"MailKit\" Version=\"4.0.0\" />\n" +
+            "  </ItemGroup>\n" +
+            "</Project>\n";
+        _fileSystem.AddFile(Project, new MockFileData(root));
+        _fileSystem.AddFile(OtherProject, new MockFileData(other));
+        _fileSystem.AddFile(PackagesProps, new MockFileData(versions));
+        ProjectMigration Vendored(string path, PackageMigration package) =>
+            new() { ProjectPath = path, Package = package, KeepRemovedPackage = false, RemovedNamespaces = [], AddedNamespaces = [] };
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(
+            Vendored(Project, new PackageMigration
+            {
+                RemovedPackage = "Ardalis.SharedKernel",
+                AddedPackages = [new() { Name = "Ardalis.GuardClauses", Version = "4.1.1" }, new() { Name = "Ardalis.Specification", Version = "7.0.0" }],
+            }),
+            Vendored(OtherProject, new PackageMigration { RemovedPackage = "Ardalis.SharedKernel", AlsoRemovedPackages = ["Ardalis.SharedKernel"], AddedPackages = [] }));
+
+        // Assert: an existing PackageVersion keeps its version
+        Text(changes, Project).ShouldBe(root.Replace(
+            "    <PackageReference Include=\"Ardalis.SharedKernel\" />", "    <PackageReference Include=\"Ardalis.Specification\" />", StringComparison.Ordinal));
+        Text(changes, OtherProject).ShouldBe(other.Replace("    <PackageReference Include=\"Ardalis.SharedKernel\" />\n", string.Empty, StringComparison.Ordinal));
+        Text(changes, PackagesProps).ShouldBe(versions.Replace(
+            "<PackageVersion Include=\"Ardalis.SharedKernel\" Version=\"1.4.0\" />", "<PackageVersion Include=\"Ardalis.Specification\" Version=\"7.0.0\" />", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -541,7 +630,7 @@ public class XmlProjectFileStoreTests
         IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
 
         // Assert
-        changes.Select(c => c.FilePath).ShouldBe([Project]);
+        changes.Select(c => c.FilePath).ShouldBe([FullPath(Project)]);
     }
 
     [Theory]
@@ -590,12 +679,12 @@ public class XmlProjectFileStoreTests
 
         // Assert
         Text(changes, Project).ShouldContain("<PackageReference Include=\"Shouldly\" />");
-        ProjectFileChange versions = changes.Single(c => c.FilePath == PackagesProps);
+        ProjectFileChange versions = changes.Single(c => c.FilePath == FullPath(PackagesProps));
         versions.NewText.ShouldBe(CentralVersions.Replace(
             "<PackageVersion Include=\"FluentAssertions\" Version=\"7.2.2\" />",
             "<PackageVersion Include=\"FluentAssertions\" Version=\"7.2.2\" />\n    <PackageVersion Include=\"Shouldly\" Version=\"4.3.0\" />", StringComparison.Ordinal));
-        versions.KeptRemovedPackageFor.ShouldBe(OtherProject);
-        changes.ShouldNotContain(c => c.FilePath == OtherProject);
+        versions.KeptRemovedPackageFor.ShouldBe(FullPath(OtherProject));
+        changes.ShouldNotContain(c => c.FilePath == FullPath(OtherProject));
     }
 
     [Theory]
@@ -612,7 +701,7 @@ public class XmlProjectFileStoreTests
         IReadOnlyList<ProjectFileChange> changes = await EditAsync(Migration(Project, keep: false));
 
         // Assert
-        ProjectFileChange versions = changes.Single(c => c.FilePath == PackagesProps);
+        ProjectFileChange versions = changes.Single(c => c.FilePath == FullPath(PackagesProps));
         versions.NewText.ShouldNotContain("FluentAssertions");
         versions.KeptRemovedPackageFor.ShouldBeNull();
     }
@@ -630,10 +719,10 @@ public class XmlProjectFileStoreTests
 
         // Assert
         ProjectFileChange change = changes.ShouldHaveSingleItem();
-        change.FilePath.ShouldBe(BuildProps);
+        change.FilePath.ShouldBe(FullPath(BuildProps));
         change.NewText.ShouldContain("Include=\"FluentAssertions\"");
         change.NewText.ShouldContain("Include=\"Shouldly\" Version=\"4.3.0\"");
-        change.KeptRemovedPackageFor.ShouldBe(OtherProject);
+        change.KeptRemovedPackageFor.ShouldBe(FullPath(OtherProject));
     }
 
     [Fact]
@@ -667,10 +756,9 @@ public class XmlProjectFileStoreTests
     };
 
     // The store reports full paths of the file system it runs on ("C:\repo\..." on Windows).
-    private string FullPathText(IReadOnlyList<ProjectFileChange> changes, string path) =>
-        changes.Single(c => c.FilePath == _fileSystem.Path.GetFullPath(path)).NewText;
+    private string FullPath(string path) => _fileSystem.Path.GetFullPath(path);
 
-    private static string Text(IReadOnlyList<ProjectFileChange> changes, string path) => changes.Single(c => c.FilePath == path).NewText;
+    private string Text(IReadOnlyList<ProjectFileChange> changes, string path) => changes.Single(c => c.FilePath == FullPath(path)).NewText;
 
     private Task<IReadOnlyList<ProjectFileChange>> EditAsync(params ProjectMigration[] migrations) =>
         new XmlProjectFileStore(_fileSystem).EditAsync(migrations, TestContext.Current.CancellationToken);

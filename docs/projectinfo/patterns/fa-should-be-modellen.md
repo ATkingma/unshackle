@@ -49,6 +49,7 @@ x.Should().Be(y) naar x.ShouldBe(y). Feiten uit `src/Unshackle.Core/Fixes/Fluent
 | --- | --- | --- |
 | nee | `x.ShouldBe(y[, because])`; `becauseArgs` worden `string.Format(CultureInfo.InvariantCulture, because, args)` | `simple`, `because`, `lambda`, `because-args` |
 | ja (constante alleen impliciet naar subjecttype) | `x.ShouldBe((byte)1)` | `constant-cast` |
+| ja (alleen via een eigen impliciete conversie, `Conversion.IsUserDefined`) | `x.ShouldBe((Doc)42)` | `implicit-conversion` |
 
 ## Zie ook
 

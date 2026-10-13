@@ -28,6 +28,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs`; r
 | TAAK-097 | Gehaald | `because-args.after.cs` (`string.Format`); Manual: `edge-named-because`, `because-args-variable`, `because-args-bad-format` |
 | TAAK-100 | Gehaald | `assertion-scope-nested`, `assertion-scope-using-block`, `assertion-scope-using-var` (`.manual.txt`) |
 | TAAK-070 | Gehaald | `edge-assertion-in-throw-lambda` (`.manual.txt`): assertion in een lambda waarvan `Throw<T>` met T ≠ `Exception`/`ShouldAssertException` gecontroleerd wordt; gedeelde check `IsInsideExpectedFailure` in alle FA-patterns, unittest `IsInsideExpectedFailure_DependsOnExpectedExceptionType` |
+| TAAK-169 | Gehaald | `implicit-conversion.before.cs` / `implicit-conversion.after.cs`: `ShouldBe((Doc)42)` voor een eigen type met `implicit operator` (int en string); `ConvertExpected` herkent `Conversion.IsUserDefined`. Gedrag gemeten met een probe, FA en Shouldly gelijk. |
 
 ## Deviations
 

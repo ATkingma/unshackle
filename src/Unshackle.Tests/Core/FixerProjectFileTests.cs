@@ -1,5 +1,7 @@
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Shouldly;
@@ -187,6 +189,99 @@ public class FixerProjectFileTests
         report.Findings.ShouldNotBeEmpty();
         report.Findings.ShouldAllBe(f => f.Result is ManualResult);
         ((ManualResult)report.Findings.Single(f => f.PatternId == "test.pattern").Result).Reason.ShouldContain("bad formatting");
+    }
+
+    [Fact]
+    public async Task FixAsync_FileNotUtf8_LeavesItAloneAndMigratesTheRest()
+    {
+        // Arrange
+        IFix fix = CreateFix(s_package);
+        IPattern rewriting = CreateRewritingPattern();
+        fix.Patterns.Returns([rewriting]);
+        var fixer = new Fixer([fix], _projectFiles);
+        string latin1Code = StillUsesFluentAssertions + " // café";
+
+
+        // Act
+        FixReport report = await FixAsync(fixer, TestReferences.FluentAssertions, ("A.cs", StillUsesFluentAssertions, Encoding.UTF8), ("L.cs", latin1Code, Encoding.Latin1));
+
+        // Assert
+        Dictionary<string, string> texts = await TextsAsync(report);
+        texts["L.cs"].ShouldBe(latin1Code);
+        texts["A.cs"].ShouldContain("System.Console.WriteLine()");
+        Finding encoding = report.Findings.Single(f => f.PatternId == Fixer.EncodingPatternId);
+        encoding.FilePath.ShouldBe("/repo/Tests/L.cs");
+        encoding.Line.ShouldBe(0);
+        ((ManualResult)encoding.Result).Reason.ShouldContain("not UTF-8");
+        report.Findings.ShouldNotContain(f => f.PatternId == "test.pattern" && f.FilePath.EndsWith("L.cs", StringComparison.Ordinal));
+        // The file still uses the old library, so the project keeps the package.
+        await _projectFiles.Received(1).EditAsync(Arg.Is<IEnumerable<ProjectMigration>>(m => m.Single().KeepRemovedPackage), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task FixAsync_FileNotUtf8WithoutOldLibrary_ReportsNothingForIt()
+    {
+        // Arrange
+        var fixer = new Fixer([CreateFix(s_package)], _projectFiles);
+
+        // Act
+        FixReport report = await FixAsync(fixer, TestReferences.FluentAssertions, ("L.cs", "class L { } // café", Encoding.Latin1));
+
+        // Assert
+        report.Findings.ShouldNotContain(f => f.PatternId == Fixer.EncodingPatternId);
+    }
+
+    [Fact]
+    public async Task FixAsync_FileUtf16_IsNotUtf8EitherAndLeftAlone()
+    {
+        // Arrange
+        IFix fix = CreateFix(s_package);
+        IPattern rewriting = CreateRewritingPattern();
+        fix.Patterns.Returns([rewriting]);
+        var fixer = new Fixer([fix], _projectFiles);
+
+        // Act
+        FixReport report = await FixAsync(fixer, TestReferences.FluentAssertions, ("W.cs", StillUsesFluentAssertions, Encoding.Unicode));
+
+        // Assert
+        (await TextsAsync(report))["W.cs"].ShouldBe(StillUsesFluentAssertions);
+        report.Findings.ShouldContain(f => f.PatternId == Fixer.EncodingPatternId);
+    }
+
+    private static IPattern CreateRewritingPattern()
+    {
+        IPattern pattern = Substitute.For<IPattern>();
+        pattern.Id.Returns("test.pattern");
+        pattern.Find(Arg.Any<SyntaxNode>(), Arg.Any<SemanticModel>())
+            .Returns(call => call.Arg<SyntaxNode>().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.InvocationExpressionSyntax>());
+        pattern.Rewrite(Arg.Any<SyntaxNode>(), Arg.Any<SemanticModel>()).Returns(PatternResult.Fixed(SyntaxFactory.ParseExpression("System.Console.WriteLine()")));
+        return pattern;
+    }
+
+    private static async Task<Dictionary<string, string>> TextsAsync(FixReport report)
+    {
+        var texts = new Dictionary<string, string>();
+        foreach (Document document in report.Solution.Projects.Single().Documents)
+        {
+            texts[document.Name] = (await document.GetTextAsync(TestContext.Current.CancellationToken)).ToString();
+        }
+
+        return texts;
+    }
+
+    private static Task<FixReport> FixAsync(Fixer fixer, IEnumerable<MetadataReference> references, params (string Name, string Code, Encoding Encoding)[] files)
+    {
+        var projectId = ProjectId.CreateNewId();
+        Solution solution = new AdhocWorkspace().CurrentSolution
+            .AddProject(ProjectInfo.Create(projectId, VersionStamp.Default, "Tests", "Tests", LanguageNames.CSharp, filePath: ProjectPath)
+                .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+                .WithMetadataReferences(references));
+        foreach ((string name, string code, Encoding encoding) in files)
+        {
+            solution = solution.AddDocument(DocumentId.CreateNewId(projectId), name, SourceText.From(code, encoding), filePath: "/repo/Tests/" + name);
+        }
+
+        return fixer.FixAsync(solution, new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
     }
 
     private static IFix CreateFix(PackageMigration? package)

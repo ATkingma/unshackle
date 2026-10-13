@@ -1,1 +1,1 @@
-is a collection
+no leaf, record or struct

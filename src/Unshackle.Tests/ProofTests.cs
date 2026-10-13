@@ -75,6 +75,10 @@ public class ProofTests
         // A manual proof checks that the pattern leaves the code alone; the using swap of swapped types would still run.
         fix.SwappedTypes.Returns(File.Exists(basePath + ".manual.txt") ? [] : proofFix.Fix.SwappedTypes);
         fix.AddedTypes.Returns(proofFix.Fix.AddedTypes);
+        // Like the real fix: a rewrite that leaves the old library's calls on its result (`Should.Throw<T>(act).P.Should()`)
+        // only binds with the new library in the model, and keeps the old using.
+        fix.AddedReferences.Returns(proofFix.Fix.AddedReferences);
+        fix.RemovedExtensionMethods.Returns(proofFix.Fix.RemovedExtensionMethods);
         var fixer = new Fixer([fix]);
         Solution solution = TestSolution.Create(before, proofFix.Before);
 

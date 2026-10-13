@@ -144,9 +144,21 @@ public class XmlProjectFileStore : IProjectFileStore
     {
         ArgumentNullException.ThrowIfNull(changes);
         // Check every file before the first write, so a stale file never leaves a half-migrated tree.
-        var checkedFiles = new List<(ProjectFileChange Change, byte[] Original, bool Bom)>();
+        var checkedFiles = new List<(ProjectFileChange Change, byte[]? Original, bool Bom)>();
         foreach (ProjectFileChange change in changes)
         {
+            // A new file (vendored source, TAAK-194) must not be there yet: it would be overwritten.
+            if (change.Creates)
+            {
+                if (_fileSystem.File.Exists(change.FilePath))
+                {
+                    throw new InvalidOperationException($"{change.FilePath} already exists; move it and run the fix again.");
+                }
+
+                checkedFiles.Add((change, null, false));
+                continue;
+            }
+
             byte[] original = await _fileSystem.File.ReadAllBytesAsync(change.FilePath, cancellationToken);
             (string text, bool bom) = Decode(change.FilePath, original);
             if (text != change.OldText)
@@ -157,11 +169,19 @@ public class XmlProjectFileStore : IProjectFileStore
             checkedFiles.Add((change, original, bom));
         }
 
-        var written = new List<(string Path, byte[] Original)>();
+        var written = new List<(string Path, byte[]? Original)>();
+        var createdDirectories = new List<string>();
         try
         {
-            foreach ((ProjectFileChange change, byte[] original, bool bom) in checkedFiles)
+            foreach ((ProjectFileChange change, byte[]? original, bool bom) in checkedFiles)
             {
+                string? directory = _fileSystem.Path.GetDirectoryName(change.FilePath);
+                if (change.Creates && !string.IsNullOrEmpty(directory) && !_fileSystem.Directory.Exists(directory))
+                {
+                    _fileSystem.Directory.CreateDirectory(directory);
+                    createdDirectories.Add(directory);
+                }
+
                 byte[] bytes = Encoding.UTF8.GetBytes(change.NewText);
                 await ReplaceAsync(change.FilePath, bom ? [.. s_bom, .. bytes] : bytes, CancellationToken.None);
                 written.Add((change.FilePath, original));
@@ -170,15 +190,34 @@ public class XmlProjectFileStore : IProjectFileStore
         catch
         {
             // Put back what was already written; the caller reports the original error.
-            foreach ((string path, byte[] original) in written)
+            foreach ((string path, byte[]? original) in written)
             {
                 try
                 {
-                    await ReplaceAsync(path, original, CancellationToken.None);
+                    if (original is null)
+                    {
+                        _fileSystem.File.Delete(path);
+                    }
+                    else
+                    {
+                        await ReplaceAsync(path, original, CancellationToken.None);
+                    }
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
                     // Keep restoring the others; the original error is the one to report.
+                }
+            }
+
+            foreach (string directory in Enumerable.Reverse(createdDirectories))
+            {
+                try
+                {
+                    _fileSystem.Directory.Delete(directory);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    // Not empty or locked: left behind, the original error is the one to report.
                 }
             }
 

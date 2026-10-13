@@ -54,17 +54,25 @@ public class UnsupportedPattern : IPattern
         // A package that builds on MediatR (Ardalis.SharedKernel: DomainEventBase : INotification) keeps MediatR's types after the swap (TAAK-133).
         // Metadata only: a project in the solution is a source reference and gets migrated itself.
         INamedTypeSymbol? package = symbol.Interfaces.Append(symbol.BaseType).OfType<INamedTypeSymbol>().FirstOrDefault(t =>
-            t.Locations.Any(l => l.IsInMetadata) && t.ContainingAssembly.Name is not ("MediatR" or "MediatR.Contracts") && t.AllInterfaces.Any(IsMediatR));
+            t.Locations.Any(l => l.IsInMetadata) && t.ContainingAssembly.Name is not ("MediatR" or "MediatR.Contracts") && t.AllInterfaces.Any(IsMediatR)
+            && !IsVendored(t.ContainingAssembly.Identity));
         if (package is not null)
         {
             return $"{package.ContainingAssembly.Name} builds on MediatR ({package.ToDisplayString()}); Mediator cannot swap its types. Replace the package or migrate it to Mediator first.";
         }
 
         // The generator only registers concrete types: an abstract generic base (CommandBase<TResult> : IRequest<TResult>) is fine (TAAK-132).
-        return symbol.IsGenericType && !symbol.IsAbstract && symbol.AllInterfaces.Any(i => IsMediatR(i) && s_noGeneric.Contains(i.OriginalDefinition.MetadataName))
+        // Generic decorators and generic requests have their own pattern (TAAK-193).
+        return symbol.IsGenericType && !symbol.IsAbstract && !GenericDecoratorPattern.IsDecorator(symbol) && !GenericRequestPattern.IsCandidate(symbol)
+            && symbol.AllInterfaces.Any(i => IsMediatR(i) && s_noGeneric.Contains(i.OriginalDefinition.MetadataName))
             ? GenericMessageAdvice
             : null;
     }
+
+    // A version of a package whose source the fix puts in its place (Ardalis.SharedKernel, TAAK-194): its types become Mediator's.
+    private static bool IsVendored(AssemblyIdentity assembly) =>
+        assembly.Name == ArdalisSharedKernel.Name
+        && ArdalisSharedKernel.Package.Versions.Any(v => v.Version == $"{assembly.Version.Major}.{assembly.Version.Minor}.{assembly.Version.Build}");
 
     private static bool IsMediatR(INamedTypeSymbol type) => type.ContainingNamespace.ToDisplayString().StartsWith("MediatR", StringComparison.Ordinal);
 }

@@ -16,7 +16,7 @@
 | REQ-2 | Gehaald | `post-open-async` |
 | REQ-3 | Gehaald | `pre-closed` |
 | REQ-4 | Gehaald | `other-return`, `task-run` |
-| REQ-5 | Gehaald | `used-elsewhere` |
+| REQ-5 | Deels | `HasOtherUses` is vervangen door `mediatr.request-processor-caller` (zie [verify](mediatr-request-processor-caller-verify.md)); de `TResponse`-naambotsing heeft geen eigen proof |
 
 Proofs: `src/Unshackle.Tests/Proofs/MediatR/RequestProcessor/`; elke `after` compileert tegen Mediator 3.0.2 mét source generator.
 End-to-end: `SampleShopTests.FixMediatRTwice_SampleShopCopy_FirstChangesNothingThenMigratesAndBuildsAndTests` (build + 38 tests groen na de migratie).

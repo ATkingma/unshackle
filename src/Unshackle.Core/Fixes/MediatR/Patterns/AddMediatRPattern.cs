@@ -29,7 +29,7 @@ public class AddMediatRPattern : ISolutionPattern
 
     // Without the solution every friend may call the internal method.
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
-        Rewrite(node, model, Friend(model) is string friend ? $"{friend} may call" : null);
+        Rewrite(node, model, Friend(model) is string friend ? $"{friend} may call" : null, _ => false);
 
     // With the solution only a real call from another project counts, and the report names it (TAAK-148).
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
@@ -49,11 +49,18 @@ public class AddMediatRPattern : ISolutionPattern
                 .FirstOrDefault();
         }
 
-        return Rewrite(node, model, caller);
+        // A scanned project of this solution gets InternalsVisibleTo for this one from InternalHandlerAccessPattern (TAAK-195).
+        return Rewrite(node, model, caller, a => CanGrantAccess(a, solution));
     }
 
+    // A C# project of the solution without a strong name: InternalHandlerAccessPattern can add InternalsVisibleTo to it.
+    internal static bool CanGrantAccess(IAssemblySymbol assembly, Solution solution) =>
+        !assembly.Identity.IsStrongName
+        && solution.Projects.Any(p => p.Language == LanguageNames.CSharp && p.AssemblyName == assembly.Name);
+
     // caller: who may call this method from another project ("X may call", "X calls (file:line)"), or null.
-    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, string? caller)
+    // granted: a scanned assembly that will give this project InternalsVisibleTo, so its internal handlers are fine.
+    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, string? caller, Func<IAssemblySymbol, bool> granted)
     {
         var statement = node as ExpressionStatementSyntax;
         var invocation = (InvocationExpressionSyntax)(statement?.Expression ?? node);
@@ -147,7 +154,7 @@ public class AddMediatRPattern : ISolutionPattern
                 + "Call AddMediator once in that project (with Mediator.SourceGenerator) instead.");
         }
 
-        if (HiddenHandler(dropped, model) is INamedTypeSymbol hidden)
+        if (HiddenHandler(dropped, model, granted) is INamedTypeSymbol hidden)
         {
             return PatternResult.Manual(
                 $"AddMediatR scans {hidden.ContainingAssembly.Name}, whose handler {hidden.Name} is not public: the code Mediator generates in this project cannot reach it (CS0122). "
@@ -245,7 +252,31 @@ public class AddMediatRPattern : ISolutionPattern
 
     // A non-public handler in another assembly that a dropped scan names by typeof(T) or <T>, directly or through a local.
     // An assembly that grants this project InternalsVisibleTo is fine: Mediator 3.0.2's generated code then reaches its internal handlers (TAAK-183).
-    private static INamedTypeSymbol? HiddenHandler(List<InvocationExpressionSyntax> dropped, SemanticModel model)
+    private static INamedTypeSymbol? HiddenHandler(List<InvocationExpressionSyntax> dropped, SemanticModel model, Func<IAssemblySymbol, bool> granted) =>
+        ScannedAssemblies(dropped, model)
+            .Where(a => !a.GivesAccessTo(model.Compilation.Assembly) && !granted(a))
+            .SelectMany(a => Types(a.GlobalNamespace))
+            .FirstOrDefault(IsHiddenHandler);
+
+    // The other assemblies the AddMediatR call found by Find scans, for InternalHandlerAccessPattern; none when it is not services.AddMediatR(cfg => ...).
+    internal static IReadOnlyList<IAssemblySymbol> ScannedAssemblies(SyntaxNode found, SemanticModel model)
+    {
+        var invocation = (InvocationExpressionSyntax)((found as ExpressionStatementSyntax)?.Expression ?? found);
+        if (invocation.ArgumentList.Arguments is not [{ Expression: LambdaExpressionSyntax lambda }] || ParameterName(lambda) is not string config)
+        {
+            return [];
+        }
+
+        IEnumerable<ExpressionSyntax> settings = lambda.Block?.Statements.OfType<ExpressionStatementSyntax>().Select(s => s.Expression)
+            ?? (lambda.ExpressionBody is { } body ? [body] : []);
+        List<InvocationExpressionSyntax> dropped = [.. settings.OfType<InvocationExpressionSyntax>().Where(i =>
+            i.Expression is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax target } call
+            && target.Identifier.ValueText == config && s_dropped.Contains(call.Name.Identifier.ValueText))];
+        return ScannedAssemblies(dropped, model);
+    }
+
+    // Assemblies other than this one that the dropped scans name by typeof(T) or <T>, directly or through a local of this file.
+    private static IReadOnlyList<IAssemblySymbol> ScannedAssemblies(List<InvocationExpressionSyntax> dropped, SemanticModel model)
     {
         List<SyntaxNode> sources = [.. dropped];
         sources.AddRange(dropped.SelectMany(d => d.ArgumentList.DescendantNodes().OfType<IdentifierNameSyntax>())
@@ -257,21 +288,23 @@ public class AddMediatRPattern : ISolutionPattern
             .Where(v => v.SyntaxTree == model.SyntaxTree)
             .Select(v => (SyntaxNode?)v.Initializer)
             .OfType<SyntaxNode>());
-        return sources
+        return [.. sources
             .SelectMany(s => s.DescendantNodesAndSelf().OfType<TypeOfExpressionSyntax>().Select(t => t.Type)
                 .Concat(s.DescendantNodesAndSelf().OfType<GenericNameSyntax>().SelectMany(g => g.TypeArgumentList.Arguments)))
             .Select(t => model.GetTypeInfo(t).Type?.ContainingAssembly)
             .OfType<IAssemblySymbol>()
-            .Where(a => !SymbolEqualityComparer.Default.Equals(a, model.Compilation.Assembly) && !a.GivesAccessTo(model.Compilation.Assembly))
+            .Where(a => !SymbolEqualityComparer.Default.Equals(a, model.Compilation.Assembly))
             .Distinct(SymbolEqualityComparer.Default)
-            .Cast<IAssemblySymbol>()
-            .SelectMany(a => Types(a.GlobalNamespace))
-            .FirstOrDefault(t => !t.IsAbstract && !IsVisibleOutside(t) && t.AllInterfaces.Any(i =>
-                i.MetadataName is "IRequestHandler`1" or "IRequestHandler`2" or "INotificationHandler`1" or "IStreamRequestHandler`2"
-                && i.ContainingNamespace.ToDisplayString() is "MediatR" or "Mediator"));
+            .Cast<IAssemblySymbol>()];
     }
 
-    private static IEnumerable<INamedTypeSymbol> Types(INamespaceOrTypeSymbol container) =>
+    // A concrete MediatR (or already swapped Mediator) handler that code outside its assembly cannot name.
+    internal static bool IsHiddenHandler(INamedTypeSymbol type) =>
+        !type.IsAbstract && !IsVisibleOutside(type) && type.AllInterfaces.Any(i =>
+            i.MetadataName is "IRequestHandler`1" or "IRequestHandler`2" or "INotificationHandler`1" or "IStreamRequestHandler`2"
+            && i.ContainingNamespace.ToDisplayString() is "MediatR" or "Mediator");
+
+    internal static IEnumerable<INamedTypeSymbol> Types(INamespaceOrTypeSymbol container) =>
         container.GetMembers().OfType<INamespaceOrTypeSymbol>().SelectMany(m => m is INamedTypeSymbol type ? [type, .. Types(type)] : Types(m));
 
     private static bool IsVisibleOutside(ISymbol symbol)

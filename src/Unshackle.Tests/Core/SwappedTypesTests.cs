@@ -173,6 +173,33 @@ public class SwappedTypesTests
     }
 
     [Fact]
+    public async Task FixAsync_AutofacScanOfMediatRAssembly_AddsSourceGenerator()
+    {
+        // Arrange
+        const string code = """
+            using Autofac;
+            using MediatR;
+
+            public class MediatorModule : Module
+            {
+                protected override void Load(ContainerBuilder builder) =>
+                    builder.RegisterAssemblyTypes(typeof(IMediator).Assembly).AsImplementedInterfaces();
+            }
+
+            """;
+        var fixer = new Fixer([new MediatRFix()], _projectFiles);
+        (Solution solution, _) = CreateSolution(code);
+
+        // Act
+        await fixer.FixAsync(solution, new FixRequest { FixId = "mediatr" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        await _projectFiles.Received(1).EditAsync(
+            Arg.Is<IEnumerable<ProjectMigration>>(m => m.Single().Package.AddedPackages.Any(p => p.Name == "Mediator.SourceGenerator")),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task FixAsync_ProjectCallingOwnAddMediator_AddsNoSourceGenerator()
     {
         // Arrange

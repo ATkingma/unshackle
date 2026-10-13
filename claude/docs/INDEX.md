@@ -143,9 +143,34 @@ Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
 | `claude/tasks/archief/TAAK-090-loader-nuget-warnings.md` | ✅ Loader: NuGet-audit/NU1701 en ontbrekend projectbestand zijn waarschuwingen, geen laadfout |
 | `claude/tasks/archief/TAAK-165-custom-assertions-should-extensie.md` | ✅ queue #34: al gedekt door `fa.custom-assertion`; extra proof voor eigen `Should()` + `ObjectAssertions`-subklasse |
 | `claude/tasks/archief/TAAK-091-custom-assertions-gegroepeerd.md` | ✅ `fa.custom-assertion`: eigen FA-extensies Manual, gegroepeerd per extensie in rapport en console |
+| `claude/tasks/archief/TAAK-167-niet-utf8-bestand-breekt-fix.md` | ✅ Niet-UTF-8-bestand: overgeslagen met Manual `encoding`, rest gemigreerd (EventFlow) (corpus 2026-10-12) |
+| `claude/tasks/archief/TAAK-168-should-contain-key-readonly-dictionary.md` | klaar: `ContainKey` op `IReadOnlyDictionary`/headers geeft `ContainsKey(..).ShouldBeTrue()`/`Contains(..)`, anders Manual (CS0411 Steeltoe) |
+| `claude/tasks/archief/TAAK-169-should-be-impliciete-conversie.md` | ✅ `Be`/`BeGreaterThan` met eigen impliciete conversie → cast naar subjecttype (LiteDB, corpus 2026-10-12) |
+| `claude/tasks/TAAK-170-throw-resultaat-gebruikt.md` | open: `Throw<T>()`-resultaat gebruikt → teruggegeven exception (corpus 2026-10-12) |
+| `claude/tasks/archief/TAAK-171-contain-key-whose-value.md` | klaar: `ContainKey(..).WhoseValue`, `ContainKeys`/`ContainValues`/`ContainValue` worden via `fa.and-chain` losse Shouldly-statements (corpus 2026-10-12) |
+| `claude/tasks/archief/TAAK-172-be-equivalent-to-collectie-ignore-order.md` | ✅ `BeEquivalentTo` op collectie van waarde-items (sealed record, struct) en de params-vorm `BeEquivalentTo("a", "b")` → `ShouldBe(…, ignoreOrder: true)`; `ParamsArraySyntax` gedeeld met `fa.equal-sequence` |
+| `docs/projectinfo/patterns/fa-be-equivalent-to-collection-plan.md` | KingmaDoc-plan van `BeEquivalentTo` op een collectie (TAAK-172) |
+| `docs/projectinfo/patterns/fa-be-equivalent-to-collection-modellen.md` | Klassen-, sequence- en beslismodel van `BeEquivalentTo` op een collectie |
+| `docs/projectinfo/patterns/fa-be-equivalent-to-collection-verify.md` | Verificatie van `BeEquivalentTo` op een collectie |
+| `claude/tasks/TAAK-173-awaiting-subject-not-throw-async.md` | open: `Awaiting(..).Should().NotThrowAsync()` (corpus 2026-10-12) |
+| `claude/tasks/TAAK-174-shouldly-dubbelzinnig-met-eigen-shouldbe.md` | open: `using Shouldly` botst met eigen `ShouldBe` (Akka, CS0121) (corpus 2026-10-12) |
 | `claude/tasks/archief/TAAK-180-mediatr-test-request-handler-delegate.md` | ✅ `mediatr.request-handler-delegate` (gemockte `next` in testcode) + vangnet `unmatched-use` voor MediatR-gebruik zonder finding |
-| `claude/tasks/TAAK-190-mediatr-request-processor-aanroepers.md` | MediatR: testcode die een herschreven request-processor construeert/aanroept breekt de build stil (jason) |
-| `claude/tasks/TAAK-191-mediatr-request-handler-delegate-gedeeld-veld.md` | MediatR: één `RequestHandlerDelegate`-mock gedeeld door meerdere requesttypen (amantin) |
+| `claude/tasks/archief/TAAK-190-mediatr-request-processor-aanroepers.md` | ✅ `mediatr.request-processor-caller`: `new P<Cmd>()` en `await p.Process(...)` van een herschreven processor meeverhuisd, rest Manual |
+| `docs/projectinfo/patterns/mediatr-request-processor-caller-plan.md` | Plan (+ modellen, verify) van `mediatr.request-processor-caller` |
+| `claude/tasks/archief/TAAK-191-mediatr-request-handler-delegate-gedeeld-veld.md` | ✅ één `RequestHandlerDelegate`-mock gedeeld door meerdere requesttypen → `MessageHandlerDelegate<IMessage, TRes>` + adapter-lambda (amantin) |
+| `claude/tasks/archief/TAAK-195-mediatr-addmediatr-projectgrenzen.md` | ◐ `AddMediatR` over projectgrenzen: internal handlers → `InternalsVisibleTo` (`mediatr.internal-handler-access`, ardalis); evo1-testproject en evo2-`Assembly`-parameter gemeten onvertaalbaar |
+| `docs/projectinfo/patterns/mediatr-internal-handler-access-plan.md` | Plan (+ modellen, verify) van `mediatr.internal-handler-access` |
+| `src/Unshackle.Tests/Helpers/TestProjects.cs` | Meerprojectproofs in `_Combined/` (`// @project Naam -> Referenties`) |
+| `claude/tasks/archief/TAAK-192-mediatr-generieke-notification.md` | ✅ `mediatr.generic-notification`: `G<T> : INotification` → abstract + `GOfX : G<X>` per gesloten type, `MakeGenericType` → `GTypes.Close` (nadirbad) |
+| `docs/projectinfo/patterns/mediatr-generic-notification-plan.md` | Plan (+ modellen, verify) van `mediatr.generic-notification` |
+| `claude/tasks/archief/TAAK-193-mediatr-generieke-decorators-messages.md` | ✅ `mediatr.generic-decorator` (open generieke Autofac-decorators blijven, void → `IRequestHandler<T, Unit>`) en `mediatr.generic-request` (`G<T, R>` → abstract + `GOfXAndY` per gesloten type) (kgrzybek, eShop) |
+| `docs/projectinfo/patterns/mediatr-generic-decorator-plan.md` | Plan (+ modellen, verify) van `mediatr.generic-decorator` |
+| `docs/projectinfo/patterns/mediatr-generic-request-plan.md` | Plan (+ modellen, verify) van `mediatr.generic-request` |
+| `claude/tasks/archief/TAAK-194-mediatr-vendored-shared-kernel.md` | ✅ Ardalis.SharedKernel 1.4.0–3.0.1 vendored met Mediator i.p.v. MediatR; pakket vervangen door zijn afhankelijkheden |
+| `docs/projectinfo/patterns/mediatr-vendored-package-plan.md` | Plan (+ modellen, verify) van het vendoren van een pakket op MediatR |
+| `claude/tasks/archief/TAAK-196-mediatr-autofac-mediator-module.md` | ✅ `mediatr.autofac-mediator-module`: MediatR met de hand in Autofac → `AddMediator` + `Populate` zonder handler-registraties (kgrzybek) |
+| `docs/projectinfo/patterns/mediatr-autofac-mediator-module-plan.md` | Plan (+ modellen, verify) van `mediatr.autofac-mediator-module` |
+| `claude/tasks/TAAK-197-mediatr-eigen-imediator-implementatie.md` | open: eigen `IMediator`-implementatie in testcode (ardalis `NoOpMediator`) breekt de build |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: ongebruikte assembly-parameter na AddMediator (IDE0060) → waarschuwing in rapport |
 | `claude/tasks/archief/TAAK-070-fa-assertion-in-throw-lambda.md` | ✅ Assertion in lambda met `Throw<XunitException>` erop → assertion en Throw Manual |
 

@@ -1,29 +1,24 @@
-# Overdracht (accountwissel 2026-10-11)
+# Overdracht (bijgewerkt 2026-10-13)
 
 Lees dit eerst als je deze sessie overneemt. Daarna `CLAUDE.md` en `claude/docs/INDEX.md`.
 
 ## Stand
 
-- `main` = commit `f9b1a27` (alles gepusht, CI groen tot en met `d5b8778`). Tool werkt: `unshackle list|scan|fix`.
-- Patroon-wachtrij (`claude/tasks/patroon-queue.md`): alle 15 FA → Shouldly-patronen **klaar**. De patroon-loop (cron) is gestopt.
-- Roadmap: stap 1 klaar, stap 2 ~90%, stap 3 (MediatR) / 5 (AutoMapper) / 6 nog niet begonnen. Besluit: **eerst lanceren** (TAAK-019), dan MediatR.
+- FA → Shouldly en MediatR → Mediator: alle wachtrijtaken t/m TAAK-196 klaar en gepusht (zie `claude/tasks/patroon-queue.md`, `claude/tasks/mediatr-queue.md`).
+- Open taken: TAAK-170, -173, -174 (FA, uit corpusrun 3), TAAK-197 (MediatR, eigen `IMediator` in testcode), TAAK-019 (lancering), TAAK-046 (semantische audit).
+- Corpus-herhaling na TAAK-193..196 (kgrzybek, eShop, ardalis) staat nog open.
 
-## Lopend werk (achtergrond-agents, niet gecommit)
+## Lokale omgeving (Windows)
 
-| Taak     | Wat                                                                                                                                                              | Als de agent niet meer draait                                                                                                                                                    |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TAAK-017 | `fix` past ook projectbestanden aan (FA-pakket/`<Using>` weg, Shouldly 4.3.0 erbij, CPM), met unittests + integratietest die de gefixte SampleShop bouwt en test | `/taak-oppakken TAAK-017`; staat de taak nog niet in `claude/tasks/`, opnieuw starten met dezelfde opdracht (zie verslag van de vorige sessie of maak hem met `/taak-specifiek`) |
-| TAAK-018 | ✅ Klaar (in `archief/`): `CombinedProofTests` + `Proofs/FluentAssertions/_Combined/` (6 cases), 245 tests groen. Nog niet gepusht. | — |
+- Deze machine blokkeert het starten van `.exe` uit `%TEMP%` ("Access is denied"). De twee `SampleShopTests`-integratietests die een gefixte kopie bouwen en testen falen daardoor lokaal.
+  Draai ze met `TEMP`/`TMP` op een map buiten `%TEMP%` (bijv. `TEMP=<map op D:> TMP=<map op D:> dotnet test`); in CI (Linux) speelt dit niet.
+- `jq` ontbreekt in Git Bash: `.claude/hooks/check-pattern-docs.sh` faalt; doe de check met de hand (zie het script).
 
-## Openstaande opdracht van de gebruiker
+## Push-procedure
 
-> "Als je deze 2 dingen gefixt hebt, push alles wat we tot nu toe hebben."
-
-Dus: zodra TAAK-017 en TAAK-018 klaar zijn → taken naar `archief/` → `git add -A` → commit → **checks op de commit in een
-losse worktree** (`git worktree add --detach <scratchpad>/verify HEAD`; `dotnet build`, `dotnet test`,
-`dotnet test --solution samples/SampleShop/SampleShop.slnx`, `echo '{}' | bash .claude/hooks/check-pattern-docs.sh subagent-stop`)
-→ alles groen → `git push origin main`. Iets rood → niet pushen, melden (`claude/docs/agent-werkwijze.md` §6).
-Daarna: TAAK-019 (lancering) voorstellen.
+Taken naar `archief/` → `git add -A` → commit → checks op de commit in een losse worktree (`dotnet build`, `dotnet test`,
+`dotnet test --solution samples/SampleShop/SampleShop.slnx`, docs-check) → alles groen → `git push origin main`. Iets rood → niet pushen, melden
+(`claude/docs/agent-werkwijze.md` §6). Vóór elke commit grep op lokale paden (playground-map, gebruikersmap, `AppData`); schrijf `<probe-dir>/…` of `<corpus>/…`.
 
 ## Werkafspraken met de gebruiker (niet vergeten)
 

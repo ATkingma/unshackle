@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.FluentAssertions.Patterns;
@@ -25,13 +26,40 @@ public class BeEquivalentToObjectPattern : FluentAssertionPattern
     protected static bool HasOptions(IMethodSymbol method) =>
         method.Parameters.Any(p => p.Type is INamedTypeSymbol { DelegateInvokeMethod.ReturnType.Name: "EquivalencyAssertionOptions" });
 
-    // Before the argument split: BeEquivalentTo(params TExpectation[]) on a collection takes expected items, not becauseArgs.
-    protected override PatternResult? RewriteBeforeArguments(AssertionContext context) =>
-        context.Name == "NotBeEquivalentTo"
-            ? PatternResult.Manual("NotBeEquivalentTo(...) has no Shouldly equivalent: there is no ShouldNotBeEquivalentTo.")
-            : context.Model.GetSymbolInfo(context.Assertion).Symbol is IMethodSymbol { Parameters: [{ IsParams: true }, ..] }
-                ? PatternResult.Manual($"{context.Name}(params items) is a collection assertion: FluentAssertions ignores the item order by default, Shouldly does not.")
-                : null;
+    // Before the argument split: BeEquivalentTo(params string[]) on a collection takes expected items, not becauseArgs.
+    protected override PatternResult? RewriteBeforeArguments(AssertionContext context)
+    {
+        if (context.Name == "NotBeEquivalentTo")
+        {
+            return PatternResult.Manual("NotBeEquivalentTo(...) has no Shouldly equivalent: there is no ShouldNotBeEquivalentTo.");
+        }
+
+        // An array passed as the argument is an ordinary expectation (RewriteAssertion); only the expanded form BeEquivalentTo("a", "b") is handled here.
+        if (context.Model.GetOperation(context.Assertion) is not IInvocationOperation { Arguments: [{ ArgumentKind: ArgumentKind.ParamArray, Value: IArrayCreationOperation { Type: IArrayTypeSymbol arrayType } }] })
+        {
+            return null;
+        }
+
+        if (context.Assertion.ArgumentList.Arguments.Any(a => a.NameColon is not null))
+        {
+            return PatternResult.Manual($"{context.Name}(...) with named arguments: rewrite it by hand.");
+        }
+
+        // Same value-compared items as the collection case below (probed: reorder, duplicates, different length, null subject), written as the array FluentAssertions builds.
+        ITypeSymbol? subjectType = context.Model.GetTypeInfo(context.Subject).Type;
+        if (subjectType is null or IErrorTypeSymbol || ElementType(subjectType) is not { } element
+            || !SymbolEqualityComparer.Default.Equals(element, arrayType.ElementType) || !IsValueLike(element))
+        {
+            return PatternResult.Manual($"{context.Name}(params items) is a collection assertion on items that are no leaf, record or struct of leaf members, or of another type than the subject's elements: FluentAssertions ignores the item order by default, Shouldly does not.");
+        }
+
+        ExpressionSyntax array = ParamsArraySyntax.Create(context.Assertion, context.Assertion.ArgumentList.Arguments.Select(a => a.Expression), arrayType, context.Model);
+        ArgumentSyntax ignoreOrder = IgnoreOrder();
+        return PatternResult.Fixed(FluentAssertionsSyntax.Invoke(context.Subject.WithoutTrailingTrivia(), "ShouldBe", SyntaxFactory.Argument(array), ignoreOrder));
+    }
+
+    private static ArgumentSyntax IgnoreOrder() =>
+        SyntaxFactory.Argument(SyntaxFactory.NameColon("ignoreOrder").WithTrailingTrivia(SyntaxFactory.Space), default, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
 
     protected override PatternResult RewriteAssertion(AssertionContext context)
     {
@@ -52,13 +80,20 @@ public class BeEquivalentToObjectPattern : FluentAssertionPattern
             return PatternResult.Manual("The type of the subject or the expectation is unknown (null literal or unresolved).");
         }
 
-        // A collection of value-compared leaves: FA matches each item once in any order, like ShouldBe(ignoreOrder: true)
-        // (probed: duplicates, null items, empty, different lengths, null subject or expectation). TAAK-092.
-        if (ElementType(subjectType) is { } element && IsLeaf(element is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } n ? n.TypeArguments[0] : element)
+        // A collection of value-compared items (leaf, or a record/struct of leaves: IsValueLike): FA matches each item once in any
+        // order, like ShouldBe(ignoreOrder: true) (probed: duplicates, null items, empty, different lengths, null subject or
+        // expectation). TAAK-092, TAAK-172.
+        if (ElementType(subjectType) is { } element && IsValueLike(element)
             && SymbolEqualityComparer.Default.Equals(element, ElementType(expectedType)))
         {
-            ArgumentSyntax ignoreOrder = SyntaxFactory.Argument(SyntaxFactory.NameColon("ignoreOrder").WithTrailingTrivia(SyntaxFactory.Space), default, SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression));
-            return PatternResult.Fixed(FluentAssertionsSyntax.Invoke(subject.WithoutTrailingTrivia(), "ShouldBe", values[0], ignoreOrder, because));
+            return PatternResult.Fixed(FluentAssertionsSyntax.Invoke(subject.WithoutTrailingTrivia(), "ShouldBe", values[0], IgnoreOrder(), because));
+        }
+
+        if (ElementType(subjectType) is { } items && ElementType(expectedType) is not null && subjectType.SpecialType != SpecialType.System_String)
+        {
+            return PatternResult.Manual(IsValueLike(items)
+                ? $"The expectation has other items than the subject's {items.Name}: FluentAssertions converts or compares them by members, ShouldBe(ignoreOrder: true) needs the same element type."
+                : $"The items are {items.Name}, no leaf, record or struct of leaf members: FluentAssertions compares them by members in any order, Shouldly's ShouldBe(ignoreOrder: true) by Equals.");
         }
 
         if (!SymbolEqualityComparer.Default.Equals(subjectType, expectedType))

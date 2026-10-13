@@ -1,0 +1,1 @@
+is created with open type arguments in generic code

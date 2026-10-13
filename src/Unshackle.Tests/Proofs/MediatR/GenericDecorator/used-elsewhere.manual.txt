@@ -1,0 +1,1 @@
+is used other than in Autofac's RegisterGenericDecorator

@@ -78,6 +78,7 @@ public class RequestHandlerDelegatePattern : IPattern
         }
 
         var requestTypes = new List<ITypeSymbol>();
+        var handedArguments = new List<ExpressionSyntax>();
         var invocations = new List<InvocationExpressionSyntax>();
         var returns = new List<InvocationExpressionSyntax>();
         foreach (IdentifierNameSyntax use in type.DescendantNodes().OfType<IdentifierNameSyntax>()
@@ -91,6 +92,7 @@ public class RequestHandlerDelegatePattern : IPattern
                 case ArgumentSyntax { NameColon: null, Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax call } list } argument
                     when RequestOf(call, list.Arguments.IndexOf(argument), model) is { } handled:
                     requestTypes.Add(handled);
+                    handedArguments.Add(expression);
                     break;
                 default:
                     if (ConfiguredInvocation(expression) is { } invoke)
@@ -107,13 +109,29 @@ public class RequestHandlerDelegatePattern : IPattern
             }
         }
 
-        if (requestTypes.Select(t => t.ToDisplayString()).Distinct(StringComparer.Ordinal).Count() != 1)
+        int distinctRequests = requestTypes.Select(t => t.ToDisplayString()).Distinct(StringComparer.Ordinal).Count();
+        if (distinctRequests == 0)
         {
-            problems.Add($"{holder.Name} is not handed to exactly one request type of a behavior's Handle, so Mediator's request type cannot be derived");
+            problems.Add($"{holder.Name} is not handed to a behavior's Handle, so Mediator's request type cannot be derived");
             return;
         }
 
-        TypeSyntax request = SyntaxFactory.ParseTypeName(requestTypes[0].ToMinimalDisplayString(model, declared[0].SpanStart));
+        // MessageHandlerDelegate<TMessage, TResponse> is invariant in TMessage, so one field for several request types is typed on IMessage
+        // and every Handle call gets an adapter lambda that converts the delegate to that behavior's own request type.
+        bool shared = distinctRequests > 1;
+        TypeSyntax request = shared
+            ? SyntaxFactory.IdentifierName("IMessage")
+            : SyntaxFactory.ParseTypeName(requestTypes[0].ToMinimalDisplayString(model, declared[0].SpanStart));
+        if (shared)
+        {
+            string message = FreeName(type, "message");
+            string token = FreeName(type, "cancellationToken");
+            foreach (ExpressionSyntax handed in handedArguments)
+            {
+                edits[handed] = current => SyntaxFactory.ParseExpression($"({message}, {token}) => {current.WithoutTrivia()}({message}, {token})").WithTriviaFrom(current);
+            }
+        }
+
         foreach (GenericNameSyntax reference in declared)
         {
             if (reference.Parent is QualifiedNameSyntax)
@@ -137,8 +155,8 @@ public class RequestHandlerDelegatePattern : IPattern
         foreach (InvocationExpressionSyntax invoke in invocations)
         {
             // MediatR 12.5's delegate takes an optional CancellationToken: a given one stays the second argument.
-            string token = invoke.ArgumentList.Arguments.Count == 1 ? invoke.ArgumentList.Arguments[0].ToString() : "Arg.Any<CancellationToken>()";
-            edits[invoke.ArgumentList] = current => SyntaxFactory.ParseArgumentList($"(Arg.Any<{request}>(), {token})").WithTriviaFrom(current);
+            string cancellation = invoke.ArgumentList.Arguments.Count == 1 ? invoke.ArgumentList.Arguments[0].ToString() : "Arg.Any<CancellationToken>()";
+            edits[invoke.ArgumentList] = current => SyntaxFactory.ParseArgumentList($"(Arg.Any<{request}>(), {cancellation})").WithTriviaFrom(current);
         }
 
         foreach (ArgumentSyntax argument in returns.SelectMany(r => r.ArgumentList.Arguments))
@@ -239,6 +257,18 @@ public class RequestHandlerDelegatePattern : IPattern
         reference.Parent is ParameterSyntax { Parent.Parent: MethodDeclarationSyntax method }
         && model.GetDeclaredSymbol(method) is IMethodSymbol { Name: "Handle", ContainingType: { } owner }
         && owner.AllInterfaces.Any(i => MediatRSyntax.IsMediatR(i, "IPipelineBehavior"));
+
+    // A lambda parameter name that no identifier in the type already uses, so it cannot shadow or clash.
+    private static string FreeName(SyntaxNode scope, string name)
+    {
+        HashSet<string> used = [.. scope.DescendantTokens().Where(t => t.IsKind(SyntaxKind.IdentifierToken)).Select(t => t.ValueText)];
+        while (used.Contains(name))
+        {
+            name += "_";
+        }
+
+        return name;
+    }
 
     private static SyntaxNode? InnermostType(SyntaxNode node) => node.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
 

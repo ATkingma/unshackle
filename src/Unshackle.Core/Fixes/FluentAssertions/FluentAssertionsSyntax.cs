@@ -130,8 +130,15 @@ public static class FluentAssertionsSyntax
     public static ExpressionSyntax? ConvertExpected(ExpressionSyntax expected, ITypeSymbol subjectType, SemanticModel model, int position)
     {
         ITypeSymbol? expectedType = model.GetTypeInfo(expected).Type;
-        if (expectedType is null || SymbolEqualityComparer.Default.Equals(expectedType, subjectType)
-            || model.Compilation.ClassifyConversion(expectedType, subjectType).IsImplicit)
+        if (expectedType is null || SymbolEqualityComparer.Default.Equals(expectedType, subjectType))
+        {
+            return expected;
+        }
+
+        // A user-defined implicit operator (BsonValue b; b.Should().Be(42)) is no help to type inference: cast to the subject type.
+        // Both libraries then compare two subject-typed values with Equals (probed), so the cast keeps the assertion as strong.
+        Conversion toSubject = model.Compilation.ClassifyConversion(expectedType, subjectType);
+        if (toSubject.IsImplicit && !toSubject.IsUserDefined)
         {
             return expected;
         }

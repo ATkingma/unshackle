@@ -7,6 +7,6 @@ public class Case
 {
     public void Test(IReadOnlyDictionary<int, string> x)
     {
-        x.ShouldContainKey(1);
+        x.ContainsKey(1).ShouldBeTrue();
     }
 }

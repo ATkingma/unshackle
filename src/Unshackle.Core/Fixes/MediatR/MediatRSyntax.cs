@@ -98,6 +98,19 @@ public static class MediatRSyntax
     private static bool IsCompletedTask(ExpressionSyntax expression, SemanticModel model) =>
         expression is MemberAccessExpressionSyntax && IsTaskMember(expression, model, "CompletedTask");
 
+    /// <summary>The response type of a request: <c>IRequest&lt;T&gt;</c> → T, <c>IRequest</c> → Unit (Mediator's IRequest is IRequest&lt;Unit&gt;); null when it is neither.</summary>
+    public static string? ResponseOf(ITypeSymbol message, SemanticModel model, int position)
+    {
+        INamedTypeSymbol? request = message.AllInterfaces.Prepend(message as INamedTypeSymbol)
+            .FirstOrDefault(i => i is not null && IsMediatR(i, "IRequest"));
+        return request switch
+        {
+            { TypeArguments: [{ } result] } => result.ToMinimalDisplayString(model, position),
+            { TypeArguments: [] } => "Unit",
+            _ => null,
+        };
+    }
+
     /// <summary>The MediatR interface with this metadata name that <paramref name="type"/> declares itself (not through a base class or interface).</summary>
     public static INamedTypeSymbol? DeclaredInterface(INamedTypeSymbol type, string metadataName) =>
         type.Interfaces.FirstOrDefault(i => i.OriginalDefinition.MetadataName == metadataName

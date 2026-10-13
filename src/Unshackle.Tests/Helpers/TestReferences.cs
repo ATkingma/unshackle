@@ -26,10 +26,11 @@ public static class TestReferences
         MetadataReference.CreateFromFile(typeof(global::MediatR.INotification).Assembly.Location),
         DependencyInjection,
         NSubstitute,
+        .. Autofac,
     ];
 
     public static IReadOnlyList<MetadataReference> Mediator { get; } =
-        [.. Net, MetadataReference.CreateFromFile(typeof(global::Mediator.IMediator).Assembly.Location), DependencyInjection, NSubstitute];
+        [.. Net, MetadataReference.CreateFromFile(typeof(global::Mediator.IMediator).Assembly.Location), DependencyInjection, NSubstitute, .. Autofac];
 
     // Mediator writes AddMediator and MediatorOptions at compile time, so an "after" using them only compiles with its generator.
     public static IReadOnlyList<ISourceGenerator> MediatorGenerators { get; } =
@@ -41,6 +42,27 @@ public static class TestReferences
     // AutoMapper 14.0.0: the last free version. "After" keeps it while a Profile stays (an emptied one too).
     public static IReadOnlyList<MetadataReference> AutoMapper { get; } =
         [.. Net, MetadataReference.CreateFromFile(typeof(global::AutoMapper.Profile).Assembly.Location), DependencyInjection];
+
+    // MediatR registered by hand in an Autofac module (TAAK-196); Populate comes from Autofac.Extensions.DependencyInjection.
+    private static IReadOnlyList<MetadataReference> Autofac =>
+    [
+        MetadataReference.CreateFromFile(typeof(global::Autofac.ContainerBuilder).Assembly.Location),
+        MetadataReference.CreateFromFile(typeof(global::Autofac.Extensions.DependencyInjection.AutofacRegistration).Assembly.Location),
+    ];
+
+    // What Ardalis.SharedKernel 1.4.0 depended on: its vendored source needs them once the package is gone (TAAK-194).
+    public static IReadOnlyList<MetadataReference> SharedKernelDependencies { get; } =
+    [
+        MetadataReference.CreateFromFile(typeof(global::Ardalis.GuardClauses.Guard).Assembly.Location),
+        MetadataReference.CreateFromFile(typeof(global::Ardalis.Specification.IRepositoryBase<>).Assembly.Location),
+        MetadataReference.CreateFromFile(typeof(global::Microsoft.Extensions.Logging.ILogger).Assembly.Location),
+    ];
+
+    // MediatR plus a package that builds on it.
+    public static IReadOnlyList<MetadataReference> MediatRSharedKernel { get; } =
+        [.. MediatR, MetadataReference.CreateFromFile(typeof(global::Ardalis.SharedKernel.EntityBase).Assembly.Location), .. SharedKernelDependencies];
+
+    public static IReadOnlyList<MetadataReference> MediatorSharedKernel { get; } = [.. Mediator, .. SharedKernelDependencies];
 
     // Test code that mocks a pipeline behavior's next (RequestHandlerDelegate).
     private static MetadataReference NSubstitute =>

@@ -5,4 +5,10 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Unshackle.Tests" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Broncode die een fix in de oplossing van de gebruiker zet (TAAK-194): data, geen code van Core zelf -->
+    <Compile Remove="Fixes\*\Vendored\**" />
+    <None Remove="Fixes\*\Vendored\**" />
+    <EmbeddedResource Include="Fixes\*\Vendored\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
 </Project>

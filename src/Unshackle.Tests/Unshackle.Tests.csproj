@@ -23,6 +23,10 @@
     <!-- 14.0.0 is bewust de laatste vrije versie; alleen nodig als types voor proofs -->
     <PackageReference Include="AutoMapper" NoWarn="NU1903" />
     <PackageReference Include="Mediator.Abstractions" />
+    <!-- Bouwt op MediatR; de fix zet de broncode ervan in de oplossing (TAAK-194) -->
+    <PackageReference Include="Ardalis.SharedKernel" />
+    <PackageReference Include="Autofac" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" />
     <!-- Niet als analyzer van dit project: de proofs draaien de generator zelf op hun "after" (TestReferences.MediatorGenerators) -->
     <PackageReference Include="Mediator.SourceGenerator" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
     <None Include="$(PkgMediator_SourceGenerator)/analyzers/dotnet/cs/*.dll" Link="Generators/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />

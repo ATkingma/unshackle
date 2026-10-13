@@ -49,8 +49,19 @@ Alles-of-niets (2026-10-11): `MediatRFix.AllOrNothing`; één Manual-bevinding l
 | 16  | TAAK-182 | inactieve `#if`-code zonder MediatR houdt `global using MediatR` vast                        | jason          | klaar  |
 | 17  | TAAK-183 | `AddMediatR` over projectgrenzen (internal handlers, assembly-parameter, testproject)       | ardalis, evo1/2 | klaar (TAAK-183) |
 | 18  | TAAK-184 | request-processor `return Task.Run(...)` → `new ValueTask(...)`                             | nadirbad       | klaar  |
-| 19  | TAAK-190 | aanroepers van herschreven request-processor (`new P<Cmd>()`, `.Process(...)`) breken build stil | jason | open |
-| 20  | TAAK-191 | één `RequestHandlerDelegate`-mock gedeeld door meerdere requesttypen                         | amantin        | open   |
+| 19  | TAAK-190 | aanroepers van herschreven request-processor (`new P<Cmd>()`, `.Process(...)`) breken build stil | jason | klaar (TAAK-190) |
+| 20  | TAAK-191 | één `RequestHandlerDelegate`-mock gedeeld door meerdere requesttypen                         | amantin        | klaar (TAAK-191) |
+
+### 100%-ronde
+
+| #   | Taak     | Wat                                                                                         | Project        | Status |
+| --- | -------- | ------------------------------------------------------------------------------------------- | -------------- | ------ |
+| 22  | TAAK-192 | generieke notification `DomainEventNotification<T>` + handlers per gesloten type            | nadirbad       | klaar (TAAK-192) |
+| 23  | TAAK-193 | generieke decorators/handlers/messages (`*CommandHandlerDecorator<T>`, `DomainNotificationBase<T>`, `IdentifiedCommand<T,R>`) | kgrzybek, eShop | klaar (TAAK-193): `mediatr.generic-decorator`, `mediatr.generic-request`; corpus-herhaling open |
+| 24  | TAAK-194 | extern pakket op MediatR (Ardalis.SharedKernel): broncode lokaal vendoren, pakket vervangen | ardalis        | klaar (TAAK-194): vendored Ardalis.SharedKernel |
+| 25  | TAAK-195 | `AddMediatR` over projectgrenzen: internal handlers, `Assembly`-parameter, testproject      | ardalis, evo1/2 | mislukt (TAAK-195, poging 1): internal handlers klaar (`mediatr.internal-handler-access`, ardalis 0 Manual); evo1-testproject en evo2-`Assembly`-parameter geen exacte vertaling |
+| 26  | TAAK-196 | handmatige Autofac-registratie van MediatR (`MediatorModule`, 30× unmatched-use op `MediatR.Pipeline`) | kgrzybek | klaar (TAAK-196): `mediatr.autofac-mediator-module` |
+| 27  | TAAK-197 | eigen `IMediator`-implementatie in testcode (ardalis `NoOpMediator`, `Task`-signaturen) breekt de build | ardalis | open |
 
 ## Zie ook
 

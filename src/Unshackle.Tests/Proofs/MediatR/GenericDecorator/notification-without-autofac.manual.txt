@@ -1,0 +1,1 @@
+registers the open generic DispatchingDecorator<T> as a handler of every notification

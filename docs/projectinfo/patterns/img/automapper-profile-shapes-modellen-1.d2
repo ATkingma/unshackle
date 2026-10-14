@@ -1,0 +1,15 @@
+title: "[Classes] automapper.profile-shapes" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+CreateMapPattern: {shape: class; "+Find(root, model)"; "#Anchor(node): SyntaxNode"; "-Rewrite(node, model, mapInto, nested)"; "~MapStatements(constructor)"; "~ExtensionsName(profile): string"; "-Emptied(constructor)"; "-AtAnchor(written, type, model, position)"; "-OutsideProblem(options, model, position)"; "-Extensions(anchor, className, access, maps)"}
+Subclasses: "ForMemberIgnorePattern,\nForMemberMapFromPattern\n(Find via Anchor, share Rewrite)"
+MapCallPattern: {shape: class; "~GeneratedAsync(solution, model, source, destination, ct)"}
+NestedMaps: {shape: class; "-AddRewritten(maps, root, model, project)"}
+MemberValues: {shape: class; "+MemberValues(maps, model, position, namespaces)"}
+Shapes: "Syntax: TypeDeclarationSyntax (anchor),\nClassDeclarationSyntax (profile),\nConstructorDeclarationSyntax\n(Body | ArrowExpressionClause)"
+Result: "PatternResult:\nFixed([anchor with empty constructor,\n<Outer><Profile>Extensions])\n| Manual(reason)"
+Subclasses -> CreateMapPattern: inherit
+MapCallPattern -> CreateMapPattern: "RewriteMethodsAsync, MapStatements"
+NestedMaps -> CreateMapPattern: ExtensionsName
+CreateMapPattern -> MemberValues: "position = anchor"
+CreateMapPattern -> Shapes: reads
+CreateMapPattern -> Result: returns

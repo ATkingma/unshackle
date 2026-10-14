@@ -54,5 +54,4 @@ Summary: ~670 of 842 (80%) are a cascade of a Manual profile (often one map bloc
 ## See also
 
 - `claude/tasks/archief/TAAK-257-automapper-unsupported.md` (profile Manual reasons for options)
-- `claude/tasks/CORPUSRUN-automapper.md`
 - `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapBlockers.cs`

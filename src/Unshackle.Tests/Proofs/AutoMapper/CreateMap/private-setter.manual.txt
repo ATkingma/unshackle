@@ -1,0 +1,1 @@
+WebHookSettings.WebHookId has a non-public setter, which AutoMapper writes from WebHookViewModel

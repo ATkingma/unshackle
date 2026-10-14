@@ -22,8 +22,10 @@ public class CreateMapPatternTests
     }
 
     [Theory]
-    [InlineData("public class A { public int Other { get; set; } } public class B { public int Id { get; set; } }", "has no member with the same name")]
-    [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; private set; } }", "has no public setter")]
+    [InlineData("public class A { public int Other { get; set; } } public class B { public int Id { get; set; } } public static class T { public static void M(AutoMapper.MapperConfiguration c) => c.AssertConfigurationIsValid(); }", "the solution calls AssertConfigurationIsValid")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; private set; } }", "has a non-public setter")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; protected internal set; } }", "has a non-public setter")]
+    [InlineData("public class A { public System.Collections.Generic.List<int> Id { get; set; } = new(); } public class B { public System.Collections.Generic.IReadOnlyList<int> Id { get; } = new System.Collections.Generic.List<int>(); }", "is a get-only collection")]
     [InlineData("public class A { public int Id { get; set; } } public abstract class B { public int Id { get; set; } }", "no public parameterless constructor")]
     [InlineData("public class A { public int Id { get; set; } } public class B { public int[] Id { get; set; } = []; }", "(AutoMapper converts)")]
     [InlineData("public class A { public int Id { get; set; } } public class B { private B() { } public B(int id) { } }", "has several constructors or none that is public")]
@@ -40,6 +42,30 @@ public class CreateMapPatternTests
 
         // Assert
         result.ShouldBeOfType<ManualResult>().Reason.ShouldContain(reason);
+    }
+
+    // Measured (TAAK-261): AutoMapper leaves a destination member without a source alone (its initializer or default stays), and a
+    // get-only member that is not a collection; without AssertConfigurationIsValid in the code the method leaves them out too.
+    [Theory]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; set; } public string Other { get; set; } = \"x\"; }", "Other")]
+    [InlineData("public struct S { public int X { get; set; } } public class A { public int Id { get; set; } public S? P { get; set; } } public class B { public int Id { get; set; } public int PX { get; set; } }", "PX")]
+    [InlineData("public class A { public int Id { get; set; } public int[] Codes { get; set; } = []; } public class B { public int Id { get; set; } public int[] Codes { get; } = []; }", "Codes")]
+    [InlineData("public class A { public int Id { get; set; } public string Name { get; set; } = \"\"; } public class B { public int Id { get; set; } public string Name { get; } = \"\"; }", "Name")]
+    [InlineData("public class A { public int Id { get; set; } public int Total { get; set; } } public class B { public int Id { get; set; } public int Total => 0; }", "Total")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; set; } public System.Collections.Generic.List<int> Items { get; } = new(); }", "Items")]
+    public void Rewrite_MemberAutoMapperDoesNotWrite_LeftOut(string types, string member)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(types + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>(); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        string written = result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString();
+        written.ShouldContain("Id = source.Id");
+        written.ShouldNotContain(member + " =");
     }
 
     // AutoMapper 14 reads the member list only in AssertConfigurationIsValid (TAAK-246): every constant form gives the map without it.
@@ -126,7 +152,6 @@ public class CreateMapPatternTests
     }
 
     [Theory]
-    [InlineData("public struct S { public int X { get; set; } } public class A { public S? P { get; set; } } public class B { public int PX { get; set; } }", "has no member with the same name in A, nor one AutoMapper flattens")]
     [InlineData("public class A { public int Name() => 1; public int GetName() => 2; public int name; } public class B { public int Name { get; set; } }", "Name and name of A both match Name")]
     [InlineData("public class C { public int Age { get; set; } } public class A { public C Customer { get; set; } = new(); } public class B { public long? CustomerAge { get; set; } }", "may meet a null object")]
     public void Rewrite_OtherNameRuleUnsure_ReportsManual(string types, string reason)

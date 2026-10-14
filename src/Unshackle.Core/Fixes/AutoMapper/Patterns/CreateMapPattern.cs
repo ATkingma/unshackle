@@ -104,7 +104,7 @@ public class CreateMapPattern : ISolutionPattern
         foreach (SyntaxNode statement in MapStatements(constructor))
         {
             if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out Dictionary<string, SimpleLambdaExpressionSyntax?>? options,
-                    out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverseOptions)
+                    out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverseOptions, out Dictionary<string, InvocationExpressionSyntax> resolverCalls)
                 || invocation.Expression is not GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                 || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly } method)
             {
@@ -113,7 +113,13 @@ public class CreateMapPattern : ISolutionPattern
 
             ITypeSymbol sourceType = method.TypeArguments[0];
             ITypeSymbol destinationType = method.TypeArguments[1];
-            if (Problem(sourceType, destinationType, options, model, profileType, values, out List<(string Name, string Value)> members, out string? copied) is string problem)
+            if (reverseOptions is not null && resolverCalls.Count > 0)
+            {
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: ReverseMap next to a value resolver or a MapFrom lambda with more parameters (AutoMapper does not reverse those); write the mapping methods by hand.");
+            }
+
+            if (Problem(sourceType, destinationType, options, model, profileType, values, out List<(string Name, string Value)> members, out string? copied,
+                resolvers: new ValueResolvers(resolverCalls, model, anchor.SpanStart, profileType)) is string problem)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {problem}; write the mapping method by hand.");
             }
@@ -259,7 +265,7 @@ public class CreateMapPattern : ISolutionPattern
     // reversed MapFrom; a destination member without any source is then left alone instead of Manual.
     private static string? Problem(ITypeSymbol source, ITypeSymbol destination, Dictionary<string, SimpleLambdaExpressionSyntax?> options,
         SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out List<(string Name, string Value)> members, out string? copied,
-        Dictionary<string, string>? reversed = null)
+        Dictionary<string, string>? reversed = null, ValueResolvers? resolvers = null)
     {
         members = [];
         copied = null;
@@ -276,7 +282,7 @@ public class CreateMapPattern : ISolutionPattern
             _ => false,
         })];
         List<ISymbol> destinationMembers = [.. AllMembers(destination).Where(m => m is IPropertySymbol { IsIndexer: false } or IFieldSymbol { IsConst: false })];
-        foreach ((string name, SimpleLambdaExpressionSyntax? mapFrom) in options)
+        foreach ((string name, bool mapFrom) in options.Select(o => (o.Key, o.Value is not null)).Concat((resolvers?.Members ?? []).Select(m => (m, true))))
         {
             ISymbol? configured = destinationMembers.FirstOrDefault(m => m.Name == name);
             if (configured is null)
@@ -285,7 +291,7 @@ public class CreateMapPattern : ISolutionPattern
                 return $"ForMember configures {name}, which {destination.Name} does not have as a public property or field";
             }
 
-            if (mapFrom is not null && !(configured is IFieldSymbol { IsReadOnly: false } || configured is IPropertySymbol { SetMethod.DeclaredAccessibility: Accessibility.Public }))
+            if (mapFrom && !(configured is IFieldSymbol { IsReadOnly: false } || configured is IPropertySymbol { SetMethod.DeclaredAccessibility: Accessibility.Public }))
             {
                 return $"ForMember maps {destination.Name}.{name}, which has no public setter";
             }
@@ -293,6 +299,19 @@ public class CreateMapPattern : ISolutionPattern
 
         foreach (ISymbol target in destinationMembers.Where(m => m is IPropertySymbol or IFieldSymbol { IsReadOnly: false }))
         {
+            if (resolvers?.Has(target.Name) == true)
+            {
+                ITypeSymbol resolvedType = target is IPropertySymbol resolvedProperty ? resolvedProperty.Type : ((IFieldSymbol)target).Type;
+                if (resolvers.Problem(target.Name, resolvedType, destination, values, out string resolved, out bool resolvedCopies) is string resolverProblem)
+                {
+                    return resolverProblem;
+                }
+
+                members.Add((target.Name, resolved));
+                copied ??= resolvedCopies ? target.Name : null;
+                continue;
+            }
+
             // Ignore(): AutoMapper leaves the member alone, so the new object does too (also when the source has a member of that name).
             if (options.TryGetValue(target.Name, out SimpleLambdaExpressionSyntax? mapFromLambda))
             {
@@ -565,7 +584,7 @@ public class CreateMapPattern : ISolutionPattern
     }
 
     // A name that is read (not the right side of a.b, an initializer member, a named argument or a property name of an anonymous type).
-    private static bool IsReference(SimpleNameSyntax name) => name.Parent switch
+    internal static bool IsReference(SimpleNameSyntax name) => name.Parent switch
     {
         MemberAccessExpressionSyntax access => access.Expression == name,
         MemberBindingExpressionSyntax => false,
@@ -574,7 +593,7 @@ public class CreateMapPattern : ISolutionPattern
         _ => true,
     };
 
-    private static bool IsAvailableOutsideProfile(ISymbol? symbol, ExpressionSyntax body, INamedTypeSymbol? profileType) => symbol switch
+    internal static bool IsAvailableOutsideProfile(ISymbol? symbol, ExpressionSyntax body, INamedTypeSymbol? profileType) => symbol switch
     {
         null => false,
         INamedTypeSymbol or INamespaceSymbol or ITypeParameterSymbol => true,
@@ -639,11 +658,13 @@ public class CreateMapPattern : ISolutionPattern
     // `.ReverseMap()` and ForMember options of the reverse map (reverse: those options, null without ReverseMap); anything else in the chain is no match.
     // statement: a statement of a block body, or the arrow clause of an expression body.
     private static bool TryParseMap(SyntaxNode statement, SemanticModel model, [NotNullWhen(true)] out InvocationExpressionSyntax? createMap,
-        [NotNullWhen(true)] out Dictionary<string, SimpleLambdaExpressionSyntax?>? options, out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverse)
+        [NotNullWhen(true)] out Dictionary<string, SimpleLambdaExpressionSyntax?>? options, out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverse,
+        out Dictionary<string, InvocationExpressionSyntax> resolvers)
     {
         createMap = null;
         options = [];
         reverse = null;
+        resolvers = [];
         if (((statement as ExpressionStatementSyntax)?.Expression ?? (statement as ArrowExpressionClauseSyntax)?.Expression) is not InvocationExpressionSyntax expression)
         {
             return false;
@@ -652,7 +673,7 @@ public class CreateMapPattern : ISolutionPattern
         // The chain is read from the outside in: options seen before ReverseMap (outermost first) configure the reverse map.
         if (ReverseMapCall(expression, model) is { } reverseMap)
         {
-            if (!TryParseOptions(ref expression, model, options) || expression != reverseMap)
+            if (!TryParseOptions(ref expression, model, options, resolvers) || expression != reverseMap)
             {
                 return false;
             }
@@ -662,7 +683,7 @@ public class CreateMapPattern : ISolutionPattern
             expression = (InvocationExpressionSyntax)((MemberAccessExpressionSyntax)reverseMap.Expression).Expression;
         }
 
-        if (!TryParseOptions(ref expression, model, options))
+        if (!TryParseOptions(ref expression, model, options, resolvers))
         {
             return false;
         }
@@ -701,11 +722,25 @@ public class CreateMapPattern : ISolutionPattern
     }
 
     // Strips `.ForMember(...)` calls off expression into options, until the call they hang on.
-    private static bool TryParseOptions(ref InvocationExpressionSyntax expression, SemanticModel model, Dictionary<string, SimpleLambdaExpressionSyntax?> options)
+    // resolvers: the members a resolver form of MapFrom configures (see ValueResolvers), with that call.
+    private static bool TryParseOptions(ref InvocationExpressionSyntax expression, SemanticModel model, Dictionary<string, SimpleLambdaExpressionSyntax?> options,
+        Dictionary<string, InvocationExpressionSyntax> resolvers)
     {
         while (expression is { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ForMember" } access } forMember)
         {
-            if (ForMemberOption(forMember) is not var (member, mapFrom)
+            if (ValueResolvers.Option(forMember) is var (resolved, call))
+            {
+                if (model.GetSymbolInfo(forMember).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly }
+                    || access.Expression is not InvocationExpressionSyntax resolvedInner || options.ContainsKey(resolved) || !resolvers.TryAdd(resolved, call))
+                {
+                    return false;
+                }
+
+                expression = resolvedInner;
+                continue;
+            }
+
+            if (ForMemberOption(forMember) is not var (member, mapFrom) || resolvers.ContainsKey(member)
                 || model.GetSymbolInfo(forMember).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly }
                 || (mapFrom is not null && model.GetSymbolInfo((InvocationExpressionSyntax)mapFrom.Parent!.Parent!.Parent!).Symbol is not IMethodSymbol { Name: "MapFrom", ContainingAssembly.Name: AutoMapperAssembly })
                 || access.Expression is not InvocationExpressionSyntax inner

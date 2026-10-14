@@ -6,11 +6,11 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 924 proofs (excluding `_Pending`).
+Total: 930 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
-### _Combined (12)
+### _Combined (13)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -26,6 +26,7 @@ Total: 924 proofs (excluding `_Pending`).
 | `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
 | `nested-profiles-nested-map` | Fixed | `CreateMap<TodoList, TodoListDto>(); CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority,` → `} public static class TodoListDtoMappingExtensions` |
 | `reverse-map-call` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} }` |
+| `value-resolver-map-call` | Fixed | `CreateMap<ToDoTask, TaskDto>() .ForMember(x => x.IsPrivate, opt => opt.MapFrom<IsPrivateResolver>())` → `} public static class TaskProfileExtensions` |
 
 ### AddAutoMapper (4)
 
@@ -128,7 +129,7 @@ Total: 924 proofs (excluding `_Pending`).
 | `string-name` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Rank, o => o.Ignore()).ForMember("Note", o => o.Ignore());` — reason: is not a CreateMap<A, B>() without options |
 | `unmatched` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore());` — reason: OrderDto.Rank has no member with the same name in Order |
 
-### ForMemberMapFrom (17)
+### ForMemberMapFrom (16)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -144,7 +145,6 @@ Total: 924 proofs (excluding `_Pending`).
 | `nested-profile` | Fixed | `CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority, opt => opt.MapFrom(s => (int)s.Priority));` → `public static class TodoItemDtoMappingExtensions {` |
 | `null-deref` | Manual | `CreateMap<Order, OrderDto>()` — reason: which may be null |
 | `outside-profile` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not available outside the profile |
-| `resolver-form` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not a CreateMap<A, B>() without options |
 | `reverse-map` | Fixed | `CreateMap<Article, ArticleDto>() .ForMember(d => d.Title, o => o.MapFrom(s => s.Name))` → `public static class ArticleProfileExtensions {` |
 | `reverse-map-null-deref` | Manual | `CreateMap<UserProjectAccessPolicy, UserProjectAccessPolicyEntity>()` — reason: ReverseMap of CreateMap<UserProjectAccessPolicy, UserProjectAccessPolicyEntity>: MapFrom for OrganizationUserId dereferences src.OrganizationUser, which may be null |
 | `reverse-map-unflattening` | Manual | `CreateMap<Order, OrderDto>()` — reason: ReverseMap of CreateMap<Order, OrderDto>: MapFrom for CustomerName is the path s.Customer.Name; in reverse AutoMapper unflattens it |
@@ -173,6 +173,17 @@ Total: 924 proofs (excluding `_Pending`).
 | `object-source` | Manual |  — reason: no type of its own |
 | `receiver-call` | Manual |  — reason: plain field, property or variable |
 | `unknown-map` | Manual |  — reason: No CreateMap<Order, OrderDto> |
+
+### ValueResolver (6)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `context-items` | Manual | `CreateMap<ToDoList, ListDto>()` — reason: the resolver IsArchivedResolver for IsArchived uses context (AutoMapper's ResolutionContext), which a mapping method does not have |
+| `di-resolver` | Manual | `CreateMap<User, UserDto>()` — reason: the resolver ImageUriResolver for ImageUri takes constructor parameters (AutoMapper gets it from the DI container) |
+| `lambda` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Numbers, o => o.Ignore())` → `public static class OrderProfileExtensions {` |
+| `lambda-destination` | Manual | `CreateMap<Post, PostDto>()` — reason: MapFrom for Hostname uses post (the destination object AutoMapper is building), which a mapping method does not have |
+| `member-resolver` | Fixed | `CreateMap<Post, NoteObject>() .ForMember(d => d.MediaType, opt => opt.MapFrom<MediaTypeResolver, Content?>(s =…` → `public static class PostProfileExtensions {` |
+| `resolver-class` | Fixed | `CreateMap<ToDoList, ListDto>() .ForMember(x => x.IsShared, opt => opt.MapFrom<IsSharedResolver>())` → `public static class ToDoProfileExtensions {` |
 
 ## FluentAssertions
 

@@ -43,7 +43,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberMapFromPattern
 
 | Leaf                           | Condition                                                    | Evidence                                   |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------ |
-| Manual "without options"       | resolver lambda, string name, generic, X twice               | `resolver-form`, unit test                 |
+| Manual "without options"       | resolver lambda, string name, generic, X twice               | unit test (resolver lambdas: `automapper.value-resolver`, TAAK-254)                 |
 | Manual "no public setter"      | X has no public setter                                       | unit test                                  |
 | Manual "not available outside" | the expression uses an instance member of the profile        | `outside-profile`                          |
 | Manual "which may be null"     | the receiver is not `s`/a type and not NotNull               | `null-deref`, unit test                    |

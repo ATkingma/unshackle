@@ -1,0 +1,1 @@
+the resolver ImageUriResolver for ImageUri takes constructor parameters (AutoMapper gets it from the DI container)

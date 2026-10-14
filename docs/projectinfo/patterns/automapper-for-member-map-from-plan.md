@@ -55,7 +55,7 @@ AutoMapper executes a `MapFrom` expression null-safely (a `NullReferenceExceptio
 - **REQ-5**: IF the type of the expression is not equal to that of X (apart from implicitly numeric or nullable) THEN THE SYSTEM SHALL report Manual (proof `conversion`). _Superseded in part by TAAK-247_: the built-in conversions of [automapper-conversions-plan.md](automapper-conversions-plan.md) also apply to the expression; `conversion` (`int` → `string`) became an `.after.cs`.
 - **REQ-6**: IF X is a collection THEN THE SYSTEM SHALL report Manual (proof `collection`). _Superseded by TAAK-245_: a list or array (and a type pair with its own CreateMap) is copied now, see [automapper-nested-maps-plan.md](automapper-nested-maps-plan.md); `collection` became an `.after.cs`.
 - **REQ-7**: IF the expression uses something that does not exist outside the profile (instance field, `this`) THEN THE SYSTEM SHALL report Manual (proof `outside-profile`).
-- **REQ-8**: IF the MapFrom form is not supported (resolver lambda, X twice, X without a public setter) THEN THE SYSTEM SHALL report Manual (proof `resolver-form`, unit tests `Rewrite_MapFromConfiguredTwice_ReportsManual`, `Rewrite_MapFromOnReadOnlyMember_ReportsManual`).
+- **REQ-8**: IF the MapFrom form is not supported (resolver lambda, X twice, X without a public setter) THEN THE SYSTEM SHALL report Manual (resolver lambdas moved to `automapper.value-resolver`, TAAK-254; unit tests `Rewrite_MapFromConfiguredTwice_ReportsManual`, `Rewrite_MapFromOnReadOnlyMember_ReportsManual`).
 
 ## Assumptions
 

@@ -1,0 +1,1 @@
+MapFrom for Hostname uses post (the destination object AutoMapper is building), which a mapping method does not have

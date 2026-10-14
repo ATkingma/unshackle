@@ -21,7 +21,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberMapFromPattern.cs`,
 | REQ-5 | Met | `conversion` (an `.after.cs` since TAAK-247, see [automapper-conversions-verify.md](automapper-conversions-verify.md))                                                                                                                                        |
 | REQ-6 | Superseded | since TAAK-245 `collection` is rewritten (`Numbers = source.Numbers?.ToList() ?? []`); see [automapper-nested-maps-verify.md](automapper-nested-maps-verify.md) |
 | REQ-7 | Met | `outside-profile`                                                                                                                                   |
-| REQ-8 | Met | `resolver-form`, unittests `Rewrite_MapFromConfiguredTwice_ReportsManual`, `Rewrite_MapFromOnReadOnlyMember_ReportsManual`                           |
+| REQ-8 | Met | resolver form moved to `ValueResolver/lambda` (TAAK-254), unittests `Rewrite_MapFromConfiguredTwice_ReportsManual`, `Rewrite_MapFromOnReadOnlyMember_ReportsManual`                           |
 
 ## Deviations
 

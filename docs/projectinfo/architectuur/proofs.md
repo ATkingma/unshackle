@@ -195,7 +195,7 @@ Total: 974 proofs (excluding `_Pending`).
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `existing-method` | Fixed | `public OrderDto Get(Order order) => _mapper.Map<OrderDto>(order); public OrderDto First(Order[] orders) => thi…` → `public OrderDto Get(Order order) => order.ToOrderDto(); public OrderDto First(Order[] orders) => orders[0].ToO…` |
-| `manual-profile` | Manual | `CreateMap<Order, OrderDto>().BeforeMap((s, d) => d.Id = 1);` — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
+| `manual-profile` | Manual | `CreateMap<Order, OrderDto>().BeforeMap((s, d) => d.Id = 1);` — reason: CreateMap<Order, OrderDto> is in profile OrderProfile, which this fix does not rewrite: |
 | `maybe-null` | Manual |  — reason: may be null |
 | `maybe-null-target` | Fixed | `public OrderDto? Find(Order? order) => _mapper.Map<OrderDto?>(order); return _mapper.Map<OrderDto>(order);` → `public OrderDto? Find(Order? order) => order?.ToOrderDto(); return order?.ToOrderDto();` |
 | `object-source` | Manual |  — reason: no type of its own |

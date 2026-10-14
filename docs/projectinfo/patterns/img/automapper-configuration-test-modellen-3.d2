@@ -1,0 +1,28 @@
+title: "[Decision tree] automapper.configuration-test" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q0: "Node kind?" {shape: diamond}
+q1: "Lambda with only\nAddProfile/AddProfiles/AddMaps\nof source profiles?" {shape: diamond}
+m1: "Manual: new MapperConfiguration stays\n(inline-create-map, settings,\nmethod-group, package profile)"
+n1: "Built here and only checked,\nCreateMapper'd or mapped with?" {shape: diamond}
+n0: "Not reported: passed on\n(Find_MapperPassedOn_FindsNothing)"
+f1: "Declaration, assignments, field removed\n(setup-mapper, validity-test)"
+q2: "Check: receiver and arguments\nwithout side effects, a statement\n(or a test's expression body)?" {shape: diamond}
+m2: "Manual: AssertConfigurationIsValid stays\n(side-effect-receiver,\nRewrite_AssertAsExpressionBody)"
+q3: "Test member or lone constructor\nleft with nothing?" {shape: diamond}
+f2: "Member removed\n(local-configuration, validity-test,\nclass-fixture, _Combined)"
+f3: "Statements removed\n(assert-statement)"
+q4: "CreateMap outside a profile\nconstructor or [AutoMap]\nin project + dependencies?" {shape: diamond}
+m3: "Manual: still has maps to check\n(unmigrated-map)"
+q0 -> q1: "new MapperConfiguration"
+q1 -> m1: no
+q1 -> n1: yes
+n1 -> n0: no
+n1 -> f1: yes
+q0 -> q2: "AssertConfigurationIsValid"
+q2 -> m2: no
+q2 -> q3: yes
+q3 -> f2: yes
+q3 -> f3: no
+f2 -> q4: "holds a check"
+f3 -> q4: "holds a check"
+q4 -> m3: yes

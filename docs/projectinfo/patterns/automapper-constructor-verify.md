@@ -10,17 +10,21 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`. Proofs: `src/Unshackle.Tests/Proofs/AutoMapper/CreateMap/` (`constructor*`, `construct-using`, `for-ctor-param`), `ForMemberIgnore/constructor`, `ForMemberMapFrom/constructor`, `_Combined/constructor-map-call`. Unit tests: `src/Unshackle.Tests/Core/CreateMapPatternTests.cs`.
+Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`. Proofs: `src/Unshackle.Tests/Proofs/AutoMapper/CreateMap/` (`constructor*`, `construct-using*`, `max-depth*`, `for-ctor-param`), `ForMemberIgnore/constructor`, `ForMemberMapFrom/constructor`, `_Combined/constructor-map-call`. Unit tests: `src/Unshackle.Tests/Core/CreateMapPatternTests.cs`.
 
 | REQ   | Verdict | Evidence |
 | ----- | ------- | -------- |
 | REQ-1 | Met     | `CreateMap/constructor`, `CreateMap/constructor-record` (altinnauth record shape), unit test `Rewrite_ConstructorParameterOtherCase_PassesMember` |
 | REQ-2 | Met     | `ForMemberIgnore/constructor` (`List<Line>` → `List<LineDto>` argument through `ToLineDto`) |
 | REQ-3 | Met     | `ForMemberIgnore/constructor` (get-only `Id`/`Lines`, settable `Customer` filled by the constructor only, `init` `Note` assigned, ignored `Status` left alone) |
-| REQ-4 | Met     | `CreateMap/constructor-several`, unit test case "private B() + public B(int id)" |
+| REQ-4 | Met     | unit test case "private B() + private B(int id)" (Manual, "private or protected") |
 | REQ-5 | Met     | `CreateMap/constructor-default`, `ForMemberMapFrom/constructor`, unit test cases "matches several members", "ref, out or params" |
-| REQ-6 | Met     | `CreateMap/construct-using`, `CreateMap/for-ctor-param` |
+| REQ-6 | Met     | `CreateMap/for-ctor-param` |
 | REQ-7 | Met     | `_Combined/constructor-map-call`; the `MapInto` guard in `CreateMapPattern.Rewrite` |
+| REQ-8 | Met     | `CreateMap/constructor-several`, `-several-parameterless`, `-several-unresolved`, `-several-tie` (Fixed), `-several-private`, `-several-flatten` (Manual); unit tests `Rewrite_SeveralConstructors_*`. Measured with a probe against AutoMapper 14.0.0 (see TAAK-266) |
+| REQ-9 | Met     | `CreateMap/construct-using`, `-get-only` (Fixed), `ForMemberIgnore/construct-using-keeps` (block body), `CreateMap/construct-using-context`, `-captured`, `-profile-member`, `-reverse` (Manual); unit tests `Rewrite_ConstructUsing*` |
+| REQ-10 | Met    | `CreateMap/max-depth-acyclic` (Fixed), `max-depth-one`, `max-depth-cyclic` (Manual); unit test `Rewrite_MaxDepthOnNestedCopy_DroppedFromTwoUp` |
+| REQ-11 | Met    | unit test `Rewrite_ProfileMapsInConstructorWithService_NamesTheService` (dasblog shape) |
 
 ## Deviations
 

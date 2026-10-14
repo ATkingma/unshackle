@@ -19,6 +19,9 @@ public class MemberOptions
     /// <summary>Destination member A → the members B of ForPath(d => d.A.B, ...) with their MapFrom lambdas, in source order.</summary>
     public Dictionary<string, List<(string Member, SimpleLambdaExpressionSyntax MapFrom)>> Paths { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>The map's ConstructUsing call (TAAK-266), read by <see cref="CreateMapPattern"/>; null without one.</summary>
+    public InvocationExpressionSyntax? ConstructUsing { get; set; }
+
     /// <summary>Why a recognized member option is not migrated (a precise Manual reason), or null.</summary>
     public string? Unsupported { get; set; }
 

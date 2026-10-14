@@ -1,22 +1,39 @@
 direction: down
-q1: "Destination has a public\nparameterless constructor?"
-q2: "Exactly one constructor\n(record copy constructor excluded),\nand it is public?"
+c0: "ConstructUsing(s => expression)\non the map?"
+cu1: "One-parameter lambda with an expression body,\nnothing of the profile used?"
+cu2: "Expression (s → source) is the creation;\nall members mapped after it"
+q1: "Destination class has one public constructor\n(copy constructor excluded)?"
+q2: "Several constructors: take the one with the most\nparameters AutoMapper can resolve (first declared on a tie)"
+q2b: "Chosen constructor decidable\n(no flattening doubt, no private one,\nno ForMember on a parameter)?"
 q3: "Per parameter: one readable source member\nwith the same name in any case,\nnot ref/out/params, no ForMember on it?"
 q4: "MemberValues.Problem gives a value\n(copy, nested map, collection copy)?"
 q5: "Remaining members (not filled by a parameter)\npass the member rules?"
-new0: "new() { ... } (unchanged)"
+new0: "new() { ... } (public parameterless wins)"
 ok: "new(source.X, ...) { Y = ... }"
-m1: "Manual: several constructors or none public"
+okcu: "new T(...) { Y = ... } or a block body\nvar destination = expression; destination.Y = ...;"
+mcu: "Manual: ResolutionContext, block body,\nmethod group, profile member or captured parameter"
+m1: "Manual: no public constructor, or none resolvable"
+m1b: "Manual: choice not decided here"
 m2: "Manual: parameter reason"
 m3: "Manual: conversion / nested problem"
 m4: "Manual: member reason"
-q1 -> new0: yes
-q1 -> q2: no
-q2 -> m1: no
-q2 -> q3: yes
+c0 -> cu1: yes
+c0 -> q1: no
+cu1 -> mcu: no
+cu1 -> cu2: yes
+cu2 -> q5
+q1 -> new0: "only a parameterless one"
+q1 -> q2: "several"
+q1 -> q3: "one with parameters"
+q2 -> q2b
+q2b -> m1b: no
+q2b -> new0: "parameterless wins"
+q2b -> q3: yes
+q1 -> m1: none
 q3 -> m2: no
 q3 -> q4: yes
 q4 -> m3: no
 q4 -> q5: yes
 q5 -> m4: no
-q5 -> ok: yes
+q5 -> ok: "yes (constructor)"
+q5 -> okcu: "yes (ConstructUsing)"

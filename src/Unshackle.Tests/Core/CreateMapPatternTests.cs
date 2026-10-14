@@ -28,7 +28,7 @@ public class CreateMapPatternTests
     [InlineData("public class A { public System.Collections.Generic.List<int> Id { get; set; } = new(); } public class B { public System.Collections.Generic.IReadOnlyList<int> Id { get; } = new System.Collections.Generic.List<int>(); }", "is a get-only collection")]
     [InlineData("public class A { public int Id { get; set; } } public abstract class B { public int Id { get; set; } }", "no public parameterless constructor")]
     [InlineData("public class A { public int Id { get; set; } } public class B { public int[] Id { get; set; } = []; }", "(AutoMapper converts)")]
-    [InlineData("public class A { public int Id { get; set; } } public class B { private B() { } public B(int id) { } }", "has several constructors or none that is public")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { private B() { } private B(int id) { } }", "which is private or protected")]
     [InlineData("public class A { public int Id { get; set; } public int ID; } public class B { public B(int id) { } }", "matches several members of A")]
     [InlineData("public class A { public int Id { get; set; } } public class B { public B(ref int id) { } }", "has a ref, out or params parameter id")]
     public void Rewrite_MapAutoMapperDoesMoreFor_ReportsManual(string types, string reason)
@@ -490,6 +490,161 @@ public class CreateMapPatternTests
 
         // Assert
         result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString().ShouldContain("X = source.Flag ? (source.Flag ? 1 : 2) : default,");
+    }
+
+    // Measured (TAAK-266): AutoMapper takes the constructor with the most parameters it can resolve (also over a parameterless one, any
+    // accessibility), the first declared on a tie; a parameter counts as resolvable with a same-named source member (any case) or a default.
+    [Theory]
+    [InlineData("public B() { } public B(int id) { Id = id; }", "ToB(this A source) => new(source.Id)")]
+    [InlineData("public B(int id) { Id = id; } public B(int id, string name) { Id = id; Name = name; }", "ToB(this A source) => new(source.Id, source.Name)")]
+    [InlineData("public B(int id, string other) { Id = id; } public B(int id) { Id = id; }", "ToB(this A source) => new(source.Id)")]
+    [InlineData("public B(string name) { Name = name; } public B(int id) { Id = id; }", "ToB(this A source) => new(source.Name)")]
+    [InlineData("public B(int id) { Id = id; } internal B(int id, string name) { Id = id; Name = name; }", "ToB(this A source) => new(source.Id, source.Name)")]
+    [InlineData("public B(int id, string other = \"\") { Id = id; } public B(int id) { Id = id; }", "ToB(this A source) => new(source.Id)")]
+    public void Rewrite_SeveralConstructors_TakesTheOneAutoMapperPicks(string constructors, string expected)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(
+            "public class A { public int Id { get; set; } public string Name { get; set; } = \"\"; } public class B { " + constructors + " public int Id { get; } public string Name { get; } = \"\"; }"
+            + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>(); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert (the last is the optional-parameter tie: more parameters win, which stays Manual below)
+        if (constructors.Contains("other = ", StringComparison.Ordinal))
+        {
+            result.ShouldBeOfType<ManualResult>();
+            return;
+        }
+
+        result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString().ShouldContain(expected);
+    }
+
+    [Theory]
+    [InlineData("public B(int id) { Id = id; } private B(int id, string name) { Id = id; Name = name; }", "which is private or protected")]
+    [InlineData("public B(int id) { Id = id; } public B(int id, string nameLength) { Id = id; }", "by flattening or a Get method")]
+    [InlineData("public B(string x) { } public B(string y, int z) { }", "can resolve no constructor")]
+    public void Rewrite_SeveralConstructorsNotDecided_ReportsManual(string constructors, string reason)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(
+            "public class A { public int Id { get; set; } public string Name { get; set; } = \"\"; } public class B { " + constructors + " public int Id { get; } public string Name { get; } = \"\"; }"
+            + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>(); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain(reason);
+    }
+
+    // Measured (TAAK-266): ConstructUsing makes the destination, then the members are mapped as usual (a settable one is overwritten).
+    [Theory]
+    [InlineData(".ConstructUsing(s => new B(s.Id * 10))", "ToB(this A source) => new B(source.Id * 10)\n")]
+    [InlineData(".ConstructUsing((s) => new B(s.Id * 10))", "ToB(this A source) => new B(source.Id * 10)\n")]
+    [InlineData(".ConstructUsing(s => new B(s.Id) { Name = \"x\" })", "B destination = new B(source.Id) { Name = \"x\" };")]
+    [InlineData(".ConstructUsing(s => Make(s.Id))", "B destination = Make(source.Id);")]
+    public void Rewrite_ConstructUsing_UsesTheExpressionAsCreation(string chain, string expected)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(
+            "public class A { public int Id { get; set; } public string Name { get; set; } = \"\"; } public class B { public B(int id) { } public int Id { get; set; } public string Name { get; set; } = \"\"; public static B Make(int id) => new(id); }"
+            + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>()" + chain.Replace("Make(", "B.Make(", StringComparison.Ordinal) + "; } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        string text = result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString();
+        text.ShouldContain(expected.Replace("B.Make", "Make", StringComparison.Ordinal).Replace("Make(", "B.Make(", StringComparison.Ordinal).Replace("\n", "\n", StringComparison.Ordinal));
+        text.ShouldContain("Id = source.Id");
+        text.ShouldContain("Name = source.Name");
+    }
+
+    [Theory]
+    [InlineData(".ConstructUsing((s, ctx) => new B(s.Id))", "ResolutionContext")]
+    [InlineData(".ConstructUsing(s => new B(scale))", "not available outside the profile")]
+    [InlineData(".ConstructUsing(s => new B(s.Id)).ReverseMap().ConstructUsing(d => new A())", "ConstructUsing after ReverseMap")]
+    public void Rewrite_ConstructUsingAutoMapperDoesMoreFor_ReportsManual(string chain, string reason)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(
+            "public class A { public int Id { get; set; } } public class B { public B(int id) { } public int Id { get; set; } }"
+            + " public class P : AutoMapper.Profile { public P(int scale) { CreateMap<A, B>()" + chain + "; } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain(reason);
+    }
+
+    // Measured (TAAK-266): MaxDepth(n) from 2 up changes nothing on an acyclic nested copy; 1 cuts a collection member off.
+    [Theory]
+    [InlineData(64, true)]
+    [InlineData(2, true)]
+    [InlineData(1, false)]
+    public void Rewrite_MaxDepthOnNestedCopy_DroppedFromTwoUp(int depth, bool fixedResult)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(
+            "public class I { public int V { get; set; } } public class ID { public int V { get; set; } } public class A { public I Inner { get; set; } = new(); } public class B { public ID Inner { get; set; } = new(); }"
+            + $" public class P : AutoMapper.Profile {{ public P() {{ CreateMap<A, B>().MaxDepth({depth}); CreateMap<I, ID>().MaxDepth({depth}); }} }}");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        if (fixedResult)
+        {
+            result.ShouldBeOfType<FixedResult>();
+        }
+        else
+        {
+            result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("MaxDepth is only dropped from 2 up");
+        }
+    }
+
+    // Measured (TAAK-266): a ForMember on the member of a parameter's name does not make that parameter resolvable, so the shorter constructor is taken.
+    [Fact]
+    public void Rewrite_ForMemberOnUnresolvedParameter_TakesTheShorterConstructor()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(
+            "public class A { public int Id { get; set; } public string Title { get; set; } = \"\"; } public class B { public B(int id) { Id = id; } public B(int id, string name) { Id = id; Name = name; } public int Id { get; } public string Name { get; set; } = \"\"; }"
+            + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>().ForMember(d => d.Name, o => o.MapFrom(s => s.Title)); } }");
+        var pattern = new ForMemberMapFromPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        string text = result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString();
+        text.ShouldContain("new(source.Id)");
+        text.ShouldContain("Name = source.Title,");
+    }
+
+    // The common DI shape (dasblog): the maps sit in the one constructor that takes a service.
+    [Fact]
+    public void Rewrite_ProfileMapsInConstructorWithService_NamesTheService()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(
+            "public interface IS { string Url(int id); } public class A { public int Id { get; set; } } public class B { public string Url { get; set; } = \"\"; }"
+            + " public class P : AutoMapper.Profile { private readonly IS _s; public P() { } public P(IS s) { _s = s; CreateMap<A, B>().ForMember(d => d.Url, o => o.MapFrom(a => _s.Url(a.Id))); } }");
+        var pattern = new ForMemberMapFromPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("constructor (IS s) and read _s, s");
     }
 
     private static (SyntaxNode Root, SemanticModel Model) Compile(string code)

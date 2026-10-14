@@ -32,7 +32,7 @@ Tests summed over all assemblies; "fail" = real failures (skipped not counted).
 | jhipster | ok | 146 (146/0) | 0 | |
 | kavita | ok | 3326 (3305/0) | 28 | |
 | letterbook | ok | 616 (537/72) | 130 | many flaky: excluded per test from regression counting |
-| neozhu | ok | 42 (13/29) | 0 | solution is `CleanArchitecture.Blazor.sln` (corpus `repos.txt` says `CleanArchitecture.sln`) |
+| neozhu | ok | 42 (13/29) | 0 | solution is `CleanArchitecture.Blazor.sln` (fixed in `claude/tools/corpus-am-list.txt`) |
 | nop | ok | 1060 (1051/0) | 1 | |
 | personalasst | ok | 131 (131/0) | 0 | |
 | skoruba | ok | 272 (272/0) | 0 | |
@@ -166,3 +166,30 @@ Scan with `<corpus>/_results/266/<name>-voor|na.json` (voor = main 9a919ba, na =
 | letterbook | `Mention` several constructors (42), `ConstructUsing`/`MaxDepth` (~39) | `Mention` is created through its private parameterless constructor (42); `ConstructUsing` reads the profile parameter `opts`/`options` (27+6) | `ConvertUsing<DateTimeOffsetMapper>` over a built-in conversion (11), `ConstructUsing` + `Condition` (6), maps outside a profile constructor (`AstMapper`, 8), `IncludeBase`/`AfterMap` |
 
 Measured and implemented: AutoMapper takes the constructor with the most resolvable parameters (over a parameterless one, any accessibility, first declared on a tie); `ConstructUsing` makes the object and the members are then mapped on top; `MaxDepth(n>=2)` is a no-op without cycles, `MaxDepth(1)` cuts a collection member off. See `claude/tasks/archief/TAAK-266-automapper-several-constructors.md`.
+
+## After-fix round with main 756e2ec (TAAK-258, partial)
+
+Linux, tool `<corpus>/corpus-automapper/_results/tool-756e2ec/`, per repo `corpus-am.sh one base` then `one after` (3 repos at once;
+the Windows baseline results were not on this machine, so base was rerun). Stopped early at the user's request: 6 of 14 repos done.
+
+| Repo | base | after build | Fixed / Manual | tests before → after (pass/total) | regressions |
+| --- | --- | --- | --- | --- | ---: |
+| altinnauth | ok | ok | 0 / 14 | 534/534 → 534/534 | 0 |
+| cats | **build fails** (RZ9985, front-end; as in the scan) | fails the same way | 0 / 125 | – | – (nothing changed) |
+| dasblog | ok | ok | 0 / 54 | 51/70 → 51/70 | 0 |
+| devarch | ok | ok | 0 / 4 | 37/37 → 37/37 | 0 |
+| eshoponweb | ok | ok | **1 / 0** | 74/74 → 69/74 | **5** |
+| jason | ok | ok | 0 / 13 | 16/41 → 16/41 | 0 |
+| kavita, jhipster, letterbook, neozhu, nop, personalasst, skoruba, xipona | not run in this round | | | | stopped early (kavita base done, after interrupted) |
+| bitwarden, gnomeshade, lancommander, ombi | not run in this round | | | | front-end/Rust build step; no solution filters made |
+
+Regressions: eshoponweb, 5 PublicApi integration tests (HTTP 500 / 100 failed parallel calls). Cause: the endpoints call
+`items.Select(_mapper.Map<CatalogItemDto>)` (a method group); the fix does not see it as a map call, removes all three
+`CreateMap`s and AutoMapper throws "missing type map" at runtime. Build still succeeds. Follow-up **TAAK-267** (proof in
+`Proofs/_Pending/AutoMapper/MapCall/method-group.*`).
+
+Fixed/Manual: the six repos match the scan counts (1 Fixed / 210 Manual over these six; baseline scan 1 / 1373 over 18). No new
+Manual reasons; top reasons are unchanged from the TAAK-262 rescan above (all-or-nothing cascade). The one Fixed finding is the regression.
+
+Resume: `CORPUS=<corpus>/corpus-automapper TOOL=.../tool-756e2ec/unshackle.dll bash claude/tools/corpus-am.sh one base|after <name> <sln>`
+for the repos marked "not run".

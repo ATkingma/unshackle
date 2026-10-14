@@ -6,11 +6,11 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 930 proofs (excluding `_Pending`).
+Total: 937 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
-### _Combined (13)
+### _Combined (14)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -25,6 +25,7 @@ Total: 930 proofs (excluding `_Pending`).
 | `nested-profile-map-call` | Fixed | `CreateMap<CustomerDto,AddEditCustomerCommand>(MemberList.None); CreateMap<AddEditCustomerCommand,Customer>(Mem…` → `} }` |
 | `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
 | `nested-profiles-nested-map` | Fixed | `CreateMap<TodoList, TodoListDto>(); CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority,` → `} public static class TodoListDtoMappingExtensions` |
+| `project-to-query` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} public static class OrderProfileExtensions` |
 | `reverse-map-call` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} }` |
 | `value-resolver-map-call` | Fixed | `CreateMap<ToDoTask, TaskDto>() .ForMember(x => x.IsPrivate, opt => opt.MapFrom<IsPrivateResolver>())` → `} public static class TaskProfileExtensions` |
 
@@ -52,7 +53,7 @@ Total: 930 proofs (excluding `_Pending`).
 | `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check: the map at Test.cs:27 is not in a profile constructor this fix rewrites |
 | `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
-### CreateMap (58)
+### CreateMap (60)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -107,6 +108,8 @@ Total: 930 proofs (excluding `_Pending`).
 | `nested-several-profiles` | Manual | `CreateMap<PriDto, PriReleaseDto>(MemberList.None);` — reason: AddPri holds several profiles (Mapper, Mapper) |
 | `options` | Manual | `CreateMap<Order, OrderDto>().MaxDepth(1);` — reason: is not a CreateMap<A, B>() without options |
 | `partial` | Manual | `CreateMap<Affiliate, AffiliateModel>();` — reason: is partial (another part can add maps or members they use) |
+| `project-to` | Fixed | `CreateMap<Series, SeriesDto>(); CreateMap<Genre, GenreTagDto>();` → `} public static class AutoMapperProfilesExtensions` |
+| `project-to-conversion` | Manual | `CreateMap<Order, OrderDto>();` — reason: (ProjectTo converts it in the query, this fix does not) |
 | `reverse-map` | Fixed | `CreateMap<Region, RegionDto>().ReverseMap(); CreateMap<Folder, FolderEntity>(MemberList.Destination).ReverseMa…` → `public static class AutoMapperProfileExtensions {` |
 | `reverse-map-duplicate` | Manual | `CreateMap<Product, ProductDto>().ReverseMap();` — reason: maps ProductDto and Product the same way twice |
 | `reverse-map-get-method` | Manual | `CreateMap<Product, ProductDto>().ReverseMap();` — reason: ReverseMap of CreateMap<Product, ProductDto>: Product.Code has no member with the same name in ProductDto |
@@ -173,6 +176,15 @@ Total: 930 proofs (excluding `_Pending`).
 | `object-source` | Manual |  — reason: no type of its own |
 | `receiver-call` | Manual |  — reason: plain field, property or variable |
 | `unknown-map` | Manual |  — reason: No CreateMap<Order, OrderDto> |
+
+### ProjectTo (4)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `existing-projection` | Fixed | `.ProjectTo<OrderDto>(_mapper.ConfigurationProvider) public IQueryable<OrderDto> Query(IQueryable<Order> orders…` → `.Select(OrderMapping.OrderToOrderDtoProjection) public IQueryable<OrderDto> Query(IQueryable<Order> orders) =>…` |
+| `generic` | Manual |  — reason: has no destination type of its own |
+| `parameters` | Manual | `CreateMap<Order, OrderDto>();` — reason: ProjectTo with parameters or members to expand |
+| `unknown-map` | Manual |  — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
 
 ### ValueResolver (6)
 

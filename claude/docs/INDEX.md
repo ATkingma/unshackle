@@ -119,6 +119,8 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/CORPUSRUN-mediatr.md` | MediatR corpus runs: from 0/9 to 7/9 fully migrated (rounds 1–6), blockers and actions |
 | `claude/tasks/REGRESSIE-corpus.md` | Regression run per test: 8/10 identical; Polly → TAAK-140 |
 | `claude/tasks/REGRESSIE-corpus-2.md` | Regression run round 2 (Facility, MODiX): 0 regressions; error classes → TAAK-152..154 |
+| `claude/tasks/archief/TAAK-150-own-shouldbe-extension-ambiguous.md` | ✅ TAAK-150 — own `ShouldBe` extension makes Shouldly ambiguous (CS0121): already solved on main (TAAK-174/198/199); `81c3dd2` not ported (would silently rebind own calls) |
+| `claude/tasks/archief/TAAK-151-fa-contain-key-without-idictionary.md` | ✅ TAAK-151 — `ContainKey` only to `ShouldContainKey` where Shouldly has it: already solved on main in `ContainKeyPattern`; `c8a562a` not ported |
 | `claude/tasks/archief/TAAK-152-using-volgorde-na-hernoemen.md` | ✅ TAAK-152 — Renamed using not sorted → SA1210 (Facility) |
 | `claude/tasks/archief/TAAK-153-equal-sequence-opmaak-meerdere-regels.md` | ✅ TAAK-153 — `Equal(` over several lines becomes one line |
 | `claude/tasks/archief/TAAK-154-mediatr-handler-expression-body-task.md` | ✅ TAAK-154 — MediatR: `Task Handle(…) => X(…)` → Manual blocks the whole migration (MODiX) |

@@ -182,6 +182,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-242-using-kept-when-call-unbound-until-import.md` | ✅ TAAK-242 — old using kept when a Manual call only binds after `using System;` is added (EventFlow) |
 | `claude/tasks/archief/TAAK-243-fa-datetime-at.md` | ✅ TAAK-243 — FA `d.At(h, m)` / `1.October(y).At(..)` / `d.At(time)` → `DateTime` constructor or `d.Date + time` |
 | `claude/tasks/archief/TAAK-245-automapper-nested-maps.md` | ✅ `automapper.nested-maps` — member with its own CreateMap → `source.X?.ToY()`, lists/arrays copied element by element (AutoMapper 14 null behaviour measured) |
+| `claude/tasks/archief/TAAK-247-automapper-conversions.md` | ✅ `automapper.conversions` — AutoMapper 14's built-in member conversions (`T?` → `T`, to `string`, `Convert.ToX`, enum cast/switch, `Enum.Parse`) written by hand where measured identical (two cultures, runtime check); the rest Manual with reason |
 | `claude/tasks/archief/TAAK-246-automapper-member-list.md` | ✅ `automapper.member-list` — `CreateMap<A, B>(MemberList.X)` migrated like `CreateMap<A, B>()` (AutoMapper 14: member list only steers `AssertConfigurationIsValid`, measured + IL scan) |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: unused assembly parameter after AddMediator (IDE0060) → warning in the report |
 

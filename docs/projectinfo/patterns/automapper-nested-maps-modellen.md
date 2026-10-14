@@ -45,7 +45,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `
 | Leaf                                         | Condition                                                          | Evidence                                    |
 | -------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------- |
 | Manual "is a collection of a kind"           | dictionary, set, own collection type                               | `CreateMap/collection-dictionary`           |
-| Manual "AutoMapper converts"                 | element or member pair without a map and not the same type         | `CreateMap/nested-no-map`, `CreateMap/conversion` |
+| Manual "AutoMapper converts"                 | element or member pair without a map and not the same type         | `CreateMap/nested-no-map`, `CreateMap/conversion-operator` (built-in conversions: [automapper-conversions-modellen.md](automapper-conversions-modellen.md)) |
 | Manual "several profiles" / "internal" / "a cycle" | more than one map, internal class in another project, destination type reaches the outer one | `CreateMap/nested-several`, `CreateMap/nested-cycle`, unit test `FixAsync_NestedMapInternalInOtherProject_ReportsManual` |
 | Manual "null handling"                       | `AllowNullCollections`/`AllowNullDestinationValues` assigned        | unit test `Rewrite_AllowNullCollectionsConfigured_ReportsManual` |
 | Manual "MapInto would replace it"            | the map also needs `MapInto`                                        | unit test `FixAsync_MapIntoWithNestedMember_ReportsManual` |

@@ -6,14 +6,15 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 860 proofs (excluding `_Pending`).
+Total: 876 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
-### _Combined (6)
+### _Combined (7)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `conversion-map-into` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} }` |
 | `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
 | `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
 | `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
@@ -30,14 +31,28 @@ Total: 860 proofs (excluding `_Pending`).
 | `result-used` | Manual |  — reason: The result of AddAutoMapper is used |
 | `simple` | Fixed | `services.AddAutoMapper(typeof(OrderProfile).Assembly);` →  |
 
-### CreateMap (21)
+### CreateMap (35)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `collection` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `collection-dictionary` | Manual | `CreateMap<Order, OrderDto>();` — reason: is a collection of a kind this fix does not copy |
 | `constructor` | Manual | `CreateMap<Order, OrderDto>();` — reason: has no public parameterless constructor |
-| `conversion` | Manual | `CreateMap<Order, OrderDto>();` — reason: (AutoMapper converts) |
+| `conversion` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `conversion-collection` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `conversion-convert-using` | Manual | `CreateMap<OrderForm, Order>();` — reason: replaces AutoMapper's built-in conversion |
+| `conversion-enum` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `conversion-enum-member` | Manual | `CreateMap<Order, OrderDto>();` — reason: AutoMapper writes the [EnumMember] value of Status |
+| `conversion-enum-number` | Manual | `CreateMap<Order, OrderDto>();` — reason: AutoMapper 14 throws at run time for Status to long |
+| `conversion-from-string` | Fixed | `CreateMap<OrderForm, Order>();` → `public static class OrderProfileExtensions {` |
+| `conversion-nullable` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `conversion-nullable-enum-switch` | Manual | `CreateMap<Order, OrderDto>();` — reason: AutoMapper gives null the default PriorityDto |
+| `conversion-nullable-narrowing` | Manual | `CreateMap<Order, OrderDto>();` — reason: AutoMapper keeps null and converts any other value with an overflow check |
+| `conversion-numbers` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `conversion-operator` | Manual | `CreateMap<Order, OrderDto>();` — reason: Total is Money in Order but Decimal in OrderDto (AutoMapper converts) |
+| `conversion-string-guid` | Manual | `CreateMap<Order, OrderDto>();` — reason: AutoMapper parses the string to Guid and gives null the default Guid |
+| `conversion-string-nullable` | Manual | `CreateMap<Order, OrderDto>();` — reason: AutoMapper keeps null as null and parses any other string |
+| `conversion-to-string` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `flattening` | Manual | `CreateMap<Order, OrderDto>();` — reason: has no member with the same name |
 | `internal-types` | Fixed | `CreateMap<Order, OrderDto>();` → `internal static class OrderProfileExtensions {` |
 | `member-list` | Fixed | `CreateMap<Customer, CustomerDto>(MemberList.Destination); CreateMap<Tag, TagDto>(MemberList.Source);` → `public static class ShopProfileExtensions {` |
@@ -67,12 +82,13 @@ Total: 860 proofs (excluding `_Pending`).
 | `string-name` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Rank, o => o.Ignore()).ForMember("Note", o => o.Ignore());` — reason: is not a CreateMap<A, B>() without options |
 | `unmatched` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore());` — reason: OrderDto.Rank has no member with the same name in Order |
 
-### ForMemberMapFrom (9)
+### ForMemberMapFrom (10)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `collection` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Text, o => o.Ignore())` → `public static class OrderProfileExtensions {` |
-| `conversion` | Manual | `CreateMap<Order, OrderDto>()` — reason: (AutoMapper converts) |
+| `conversion` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Numbers, o => o.Ignore())` → `public static class OrderProfileExtensions {` |
+| `conversion-expression` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Total, o => o.MapFrom(s => s.Price * s.Quantity))` → `public static class OrderProfileExtensions {` |
 | `ignore-and-nullable` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `public static class OrderProfileExtensions {` |
 | `member-list` | Fixed | `CreateMap<Document, DocumentDto>(MemberList.Destination) .ForMember(x => x.TenantName, s => s.MapFrom(y => y.T…` → `public static class DocumentProfileExtensions {` |
 | `nested` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Shipping, o => o.MapFrom(s => s.Home))` → `public static class OrderProfileExtensions {` |

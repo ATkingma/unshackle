@@ -1,0 +1,17 @@
+title: "[Sequence] automapper.conversions" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+Fixer
+CreateMapPattern
+MemberValues
+NestedMaps
+MemberConversions
+Fixer -> CreateMapPattern: "RewriteAsync(profile, model, solution)"
+CreateMapPattern -> NestedMaps: "FromAsync (maps, configured pairs, null setting)"
+CreateMapPattern -> MemberValues: "Problem(target, source.X, from, to, destination)"
+MemberValues -> NestedMaps: "Find(from, to)"
+NestedMaps -> MemberValues: "no map"
+MemberValues -> NestedMaps: "ConfiguredAt(from, to)"
+MemberValues -> MemberConversions: "Problem(what, value, from, to)"
+MemberConversions -> MemberValues: "expression or reason"
+MemberValues -> CreateMapPattern: "assigned value or Manual reason"
+CreateMapPattern -> Fixer: "Fixed(profile, extensions, usings incl. System) / Manual"

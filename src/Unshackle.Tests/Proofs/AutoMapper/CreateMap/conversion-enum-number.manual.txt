@@ -1,0 +1,1 @@
+AutoMapper 14 throws at run time for Status to long

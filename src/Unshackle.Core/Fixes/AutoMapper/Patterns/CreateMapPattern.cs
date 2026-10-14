@@ -12,8 +12,10 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// A Profile whose constructor only holds CreateMap&lt;A, B&gt;() calls without options (a constant MemberList argument only steers
 /// AssertConfigurationIsValid and is dropped) → a static class next to it with
 /// one B ToB(this A source) per map, copying the members with the same name and type. Anything AutoMapper would do
-/// beyond that (conversion, flattening, constructors) is Manual, except a member whose type pair has its own CreateMap in a profile this fix
-/// rewrites (X = source.X?.ToY()) and a list or array (copied into a new one, element by element through such a map), see <see cref="MemberValues"/>.
+/// beyond that (flattening, constructors) is Manual, except a member whose type pair has its own CreateMap in a profile this fix
+/// rewrites (X = source.X?.ToY()), a list or array (copied into a new one, element by element through such a map), see <see cref="MemberValues"/>,
+/// and AutoMapper's built-in conversions with a hand-written form that gives the same result (X = source.X.GetValueOrDefault(),
+/// source.X.ToString(), Convert.ToInt32(source.X), (Color)source.X, ...), see <see cref="MemberConversions"/>.
 /// The rewrite also understands
 /// ForMember(d => d.X, o => o.Ignore()) (see <see cref="ForMemberIgnorePattern"/>) and ForMember(d => d.X, o => o.MapFrom(s => expr))
 /// (see <see cref="ForMemberMapFromPattern"/>); those two claim the profiles that use them. With the solution, a map that a
@@ -26,7 +28,7 @@ public class CreateMapPattern : ISolutionPattern
     public virtual string Id => "automapper.create-map";
 
     public virtual string Description =>
-        "Profile with CreateMap<A, B>() without options → static B ToB(this A source) => new() { X = source.X, ... } for the members with the same name and type; MapInto(this A source, B destination) when the solution calls Map(source, destination); Map with options and ProjectTo are Manual";
+        "Profile with CreateMap<A, B>() without options → static B ToB(this A source) => new() { X = source.X, ... } for the members with the same name and type (or a built-in conversion AutoMapper does the same way); MapInto(this A source, B destination) when the solution calls Map(source, destination); Map with options and ProjectTo are Manual";
 
     // Map and ProjectTo calls that MapCallPattern does not rewrite are found too: while they run, a removed CreateMap fails at run time,
     // so they make the fix all-or-nothing.

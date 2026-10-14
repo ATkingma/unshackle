@@ -66,7 +66,7 @@ Hits = regex matches over all repos; "Projects" = repos with at least one hit; "
 | `CreateMap<A,B>()`                                                          |  1084 |       20 |       69 | 1 (done) |
 | … of which without any option (or only `.ReverseMap()`)                     |   372 |       18 |        — | 1 (done) |
 | `class X : Profile`                                                         |   211 |       17 |       15 | 1 (done) |
-| … of which nested in the DTO (`class Mapping : Profile`, jason style)       |    73 |        6 |        — | 1 (done) |
+| … of which nested in the DTO (`class Mapping : Profile`, jason style)       |    73 |        6 |        — | 21 (Manual today) |
 | `.ForMember(...)` (all)                                                     |  2555 |       17 |      187 | 2/3 |
 | `opt.Ignore()`                                                              |  1378 |       11 |       44 | 2 (done) |
 | `opt.MapFrom(s => ...)` (lambda)                                            |  1339 |       17 |      340 | 3 (done) |
@@ -81,7 +81,7 @@ Hits = regex matches over all repos; "Projects" = repos with at least one hit; "
 | nested members (pairs / single members / collection members)                | 131 / 97 / 115 | 12 | — | 8 |
 | flattening (pairs / members)                                                |  10 / 13 |   3 |        — | 9 |
 | `.ReverseMap()`                                                             |   186 |       10 |        7 | 10 |
-| type conversions (pairs with ≥1)                                            |   207 |       15 |        — | 11 |
+| type conversions (pairs with ≥1)                                            |   207 |       15 |        — | 11 (done) |
 | … `T?` ↔ `T` / to `string` / enum ↔ other / other (members)                 | 191 / 71 / 29 / 113 | 12 / 11 / 3 / 11 | — | 11 |
 | destination without parameterless constructor (pairs)                       |    63 |        8 |        — | 12 |
 | `.ConstructUsing(...)`                                                      |    56 |        5 |        4 | 12 |

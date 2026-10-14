@@ -16,12 +16,13 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberMapFromPattern.cs`,
 | ----- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | REQ-1 | Met | `simple` (arithmetic, string concatenation, int to long), `ignore-and-nullable`, unit test `Rewrite_MapFromWithRenamedParameter_UsesSourceInTheExpression` |
 | REQ-2 | Met | `ignore-and-nullable`, unittest `Find_ProfileWithOrWithoutOptions_IsClaimedByOneOfThePatterns`                                                      |
-| REQ-3 | Met | `null-deref`, unittest `Rewrite_NullableAnnotatedReceiver_ReportsManual`                                                                            |
+| REQ-3 | Met | `may-be-null-call` (a call on a possibly-null receiver), ProjectTo unit test `FixAsync_MapFromThroughMaybeNullMember_ProjectionIsManual` (plain chains: REQ-9) |
 | REQ-4 | Met | `ignore-and-nullable` (`s.Note.ToUpper()` with `#nullable enable`), unit test `Rewrite_ReceiverCheckedForNull_IsMoved`                                |
 | REQ-5 | Met | `conversion` (an `.after.cs` since TAAK-247, see [automapper-conversions-verify.md](automapper-conversions-verify.md))                                                                                                                                        |
 | REQ-6 | Superseded | since TAAK-245 `collection` is rewritten (`Numbers = source.Numbers?.ToList() ?? []`); see [automapper-nested-maps-verify.md](automapper-nested-maps-verify.md) |
 | REQ-7 | Met | `outside-profile`                                                                                                                                   |
 | REQ-8 | Met | resolver form moved to `ValueResolver/lambda` (TAAK-254), unittests `Rewrite_MapFromConfiguredTwice_ReportsManual`, `Rewrite_MapFromOnReadOnlyMember_ReportsManual`                           |
+| REQ-9 | Met | `may-be-null` (`source.Customer?.Name`, `source.Customer?.Age ?? default`), `reverse-map-may-be-null`, `_Combined/may-be-null-profile`, unit test `Rewrite_NullableAnnotatedReceiver_UsesNullConditional` (`source.Customer?.Name!`) |
 
 ## Deviations
 

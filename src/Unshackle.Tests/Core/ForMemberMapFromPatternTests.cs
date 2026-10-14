@@ -71,17 +71,17 @@ public class ForMemberMapFromPatternTests
     }
 
     [Fact]
-    public void Rewrite_NullableAnnotatedReceiver_ReportsManual()
+    public void Rewrite_NullableAnnotatedReceiver_UsesNullConditional()
     {
         // Arrange
         (SyntaxNode root, SemanticModel model) = Compile(
             "CreateMap<A, B>().ForMember(d => d.Label, o => o.MapFrom(s => s.Customer.Name)).ForMember(d => d.Wide, o => o.Ignore()).ForMember(d => d.Other, o => o.Ignore());");
 
         // Act
-        PatternResult result = Rewrite(root, model);
+        string text = Rewrite(root, model).ShouldBeOfType<FixedResult>().NewNodes[^1].ToString();
 
         // Assert
-        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("which may be null");
+        text.ShouldContain("Label = source.Customer?.Name!,");
     }
 
     private static PatternResult Rewrite(SyntaxNode root, SemanticModel model)

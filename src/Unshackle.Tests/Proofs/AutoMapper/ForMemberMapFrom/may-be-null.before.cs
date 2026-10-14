@@ -6,6 +6,7 @@ namespace Shop;
 public class Customer
 {
     public string Name { get; set; } = "";
+    public int Age { get; set; }
 }
 
 public class Order
@@ -20,6 +21,7 @@ public class OrderDto
     public int Id { get; set; }
     public string CustomerName { get; set; } = "";
     public string Text { get; set; } = "";
+    public int CustomerAge { get; set; }
     public List<int> Numbers { get; set; } = [];
 }
 
@@ -32,6 +34,7 @@ public class OrderProfile : Profile
         CreateMap<Order, OrderDto>()
             .ForMember(d => d.Numbers, o => o.Ignore())
             .ForMember(d => d.Text, o => o.Ignore())
-            .ForMember(d => d.CustomerName, o => o.MapFrom(s => s.Customer.Name));
+            .ForMember(d => d.CustomerName, o => o.MapFrom(s => s.Customer.Name))
+            .ForMember(d => d.CustomerAge, o => o.MapFrom(s => s.Customer.Age));
     }
 }

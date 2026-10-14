@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 981 proofs (excluding `_Pending`).
+Total: 983 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -151,7 +151,7 @@ Total: 981 proofs (excluding `_Pending`).
 | `string-name` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Rank, o => o.Ignore()).ForMember("Note", o => o.Ignore());` — reason: ForMember in a form the rewrite does not read |
 | `unmatched` | Fixed | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore());` → `public static class OrderProfileExtensions {` |
 
-### ForMemberMapFrom (17)
+### ForMemberMapFrom (18)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -160,15 +160,16 @@ Total: 981 proofs (excluding `_Pending`).
 | `conversion` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Numbers, o => o.Ignore())` → `public static class OrderProfileExtensions {` |
 | `conversion-expression` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Total, o => o.MapFrom(s => s.Price * s.Quantity))` → `public static class OrderProfileExtensions {` |
 | `ignore-and-nullable` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `public static class OrderProfileExtensions {` |
+| `may-be-null` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Numbers, o => o.Ignore())` → `public static class OrderProfileExtensions {` |
+| `may-be-null-call` | Manual | `CreateMap<Order, OrderDto>()` — reason: which may be null |
 | `member-list` | Fixed | `CreateMap<Document, DocumentDto>(MemberList.Destination) .ForMember(x => x.TenantName, s => s.MapFrom(y => y.T…` → `public static class DocumentProfileExtensions {` |
 | `nested` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Shipping, o => o.MapFrom(s => s.Home))` → `public static class OrderProfileExtensions {` |
 | `nested-outer-member` | Manual | `CreateMap<AuditTrail, AuditTrailDto>(MemberList.None)` — reason: MapFrom for PrimaryKey uses Serialize, which means something else outside the type around the profile |
 | `nested-private-member` | Manual | `CreateMap<AuditTrail, AuditTrailDto>(MemberList.None)` — reason: MapFrom for PrimaryKey uses Serialize, which is private or protected |
 | `nested-profile` | Fixed | `CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority, opt => opt.MapFrom(s => (int)s.Priority));` → `public static class TodoItemDtoMappingExtensions {` |
-| `null-deref` | Manual | `CreateMap<Order, OrderDto>()` — reason: which may be null |
 | `outside-profile` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not available outside the profile |
 | `reverse-map` | Fixed | `CreateMap<Article, ArticleDto>() .ForMember(d => d.Title, o => o.MapFrom(s => s.Name))` → `public static class ArticleProfileExtensions {` |
-| `reverse-map-null-deref` | Manual | `CreateMap<UserProjectAccessPolicy, UserProjectAccessPolicyEntity>()` — reason: ReverseMap of CreateMap<UserProjectAccessPolicy, UserProjectAccessPolicyEntity>: MapFrom for OrganizationUserId dereferences src.OrganizationUser, which may be null |
+| `reverse-map-may-be-null` | Fixed | `CreateMap<UserProjectAccessPolicy, UserProjectAccessPolicyEntity>() .ForMember(dst => dst.OrganizationUser, op…` → `public static class AccessPolicyMapperProfileExtensions {` |
 | `reverse-map-unflattening` | Manual | `CreateMap<Order, OrderDto>()` — reason: ReverseMap of CreateMap<Order, OrderDto>: MapFrom for CustomerName is the path s.Customer.Name; in reverse AutoMapper unflattens it |
 | `reverse-pre-condition-map-from` | Fixed | `CreateMap<Person, PersonDto>() .ForMember(dto => dto.Alias, opt => opt.MapFrom(person => person.Nickname))` → `public static class OrderProfileExtensions {` |
 | `simple` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Total, o => o.MapFrom(s => s.Price * s.Quantity))` → `public static class OrderProfileExtensions {` |
@@ -217,7 +218,7 @@ Total: 981 proofs (excluding `_Pending`).
 | `member-resolver` | Fixed | `CreateMap<Post, NoteObject>() .ForMember(d => d.MediaType, opt => opt.MapFrom<MediaTypeResolver, Content?>(s =…` → `public static class PostProfileExtensions {` |
 | `resolver-class` | Fixed | `CreateMap<ToDoList, ListDto>() .ForMember(x => x.IsShared, opt => opt.MapFrom<IsSharedResolver>())` → `public static class ToDoProfileExtensions {` |
 
-### _Combined (19)
+### _Combined (20)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -232,6 +233,7 @@ Total: 981 proofs (excluding `_Pending`).
 | `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
 | `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
 | `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
+| `may-be-null-profile` | Fixed | `CreateMap<BookmarkPair, BookmarkDto>() .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Bookmark.Id))` → `} public static class AppProfilesExtensions` |
 | `member-list-map-call` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Destination); public Mapping.OrderDto Get(Mapping.Order order) => _mappe…` → `} public static class OrderProfileExtensions` |
 | `nested-map-call` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `} public static class OrderProfileExtensions` |
 | `nested-profile-map-call` | Fixed | `CreateMap<CustomerDto,AddEditCustomerCommand>(MemberList.None); CreateMap<AddEditCustomerCommand,Customer>(Mem…` → `} }` |

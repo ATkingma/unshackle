@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "automapper-for-member-map-from"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9]
 files_expected:
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberMapFromPattern.cs
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs
@@ -44,18 +44,19 @@ automapper.for-member-map-from: a `CreateMap<A, B>().ForMember(d => d.X, o => o.
 
 `ForMemberMapFromPattern` inherits from `CreateMapPattern` (like `ForMemberIgnorePattern`) and shares `Rewrite`: a profile is replaced as a whole by `[profile, <Profile>Extensions]`, so Ignore and MapFrom in one profile must share one rewrite. The `Find` split is exclusive: a profile with a MapFrom call (of any form) goes to this pattern, otherwise with `Ignore()` to `ForMemberIgnorePattern`, otherwise to `CreateMapPattern`. The member list of the rewrite now holds `(name, value)`: `source.X` or the rewritten expression, in the order of B's members.
 
-AutoMapper executes a `MapFrom` expression null-safely (a `NullReferenceException` gives the default value) and converts types; a plain assignment does neither. Therefore only an expression that cannot throw and needs no conversion is moved; Roslyn's nullable flow (`TypeInfo.Nullability`) decides whether a receiver is non-null. In code without a nullable context every dereference is therefore Manual.
+AutoMapper executes a `MapFrom` expression null-safely (a `NullReferenceException` gives the default value) and converts types; a plain assignment does neither. Therefore only an expression that cannot throw and needs no conversion is moved; Roslyn's nullable flow (`TypeInfo.Nullability`) decides whether a receiver is non-null. In code without a nullable context every dereference is null-safe or Manual (REQ-9, TAAK-263): a plain member chain becomes `source.A?.B` (the default AutoMapper returns), anything else (a call, an indexer, a Condition or ForPath expression) stays Manual.
 
 ## Requirements
 
 - **REQ-1**: WHEN a `CreateMap<A, B>()` has a `ForMember(d => d.X, o => o.MapFrom(s => expr))` THE SYSTEM SHALL have the ToB method assign `X = expr` with `s` replaced by `source` (proofs `simple`, `ignore-and-nullable`, unit test `Rewrite_MapFromWithRenamedParameter_UsesSourceInTheExpression`).
 - **REQ-2**: WHEN a profile combines Ignore and MapFrom THE SYSTEM SHALL process both in the same ToB method and have the profile found by exactly one pattern (proof `ignore-and-nullable`, unit test `Find_ProfileWithOrWithoutOptions_IsClaimedByOneOfThePatterns`).
-- **REQ-3**: IF the expression dereferences a receiver that can be null THEN THE SYSTEM SHALL report Manual (proof `null-deref`, unit test `Rewrite_NullableAnnotatedReceiver_ReportsManual`).
+- **REQ-3**: IF the expression dereferences a receiver that can be null THEN THE SYSTEM SHALL report Manual, unless the expression is a plain chain of properties and fields from `s` (REQ-9; proof `may-be-null-call`, ProjectTo unit test `FixAsync_MapFromThroughMaybeNullMember_ProjectionIsManual`).
 - **REQ-4**: WHEN a receiver is not null according to the nullable flow (non-nullable member, or tested for null first) THE SYSTEM SHALL move the expression (proof `ignore-and-nullable`, unit test `Rewrite_ReceiverCheckedForNull_IsMoved`).
 - **REQ-5**: IF the type of the expression is not equal to that of X (apart from implicitly numeric or nullable) THEN THE SYSTEM SHALL report Manual (proof `conversion`). _Superseded in part by TAAK-247_: the built-in conversions of [automapper-conversions-plan.md](automapper-conversions-plan.md) also apply to the expression; `conversion` (`int` → `string`) became an `.after.cs`.
 - **REQ-6**: IF X is a collection THEN THE SYSTEM SHALL report Manual (proof `collection`). _Superseded by TAAK-245_: a list or array (and a type pair with its own CreateMap) is copied now, see [automapper-nested-maps-plan.md](automapper-nested-maps-plan.md); `collection` became an `.after.cs`.
 - **REQ-7**: IF the expression uses something that does not exist outside the profile (instance field, `this`) THEN THE SYSTEM SHALL report Manual (proof `outside-profile`).
 - **REQ-8**: IF the MapFrom form is not supported (resolver lambda, X twice, X without a public setter) THEN THE SYSTEM SHALL report Manual (resolver lambdas moved to `automapper.value-resolver`, TAAK-254; unit tests `Rewrite_MapFromConfiguredTwice_ReportsManual`, `Rewrite_MapFromOnReadOnlyMember_ReportsManual`).
+- **REQ-9** (TAAK-263): WHEN the expression is a plain chain of properties and fields from `s` that dereferences a receiver that can be null THE SYSTEM SHALL write the chain null-safe (`source.A?.B`, `?? default` for a value type, a trailing `!` for a non-nullable reference member in a nullable context), which is what AutoMapper returns (the default); the projection of such a member stays Manual, since an expression tree cannot hold `?.` (proofs `may-be-null`, `reverse-map-may-be-null`, `_Combined/may-be-null-profile`, unit test `Rewrite_NullableAnnotatedReceiver_UsesNullConditional`).
 
 ## Assumptions
 
@@ -64,7 +65,7 @@ AutoMapper executes a `MapFrom` expression null-safely (a `NullReferenceExceptio
 
 ## Risks
 
-- Corpus code without a nullable context gets Manual more often (every dereference of a reference type), deliberately: a silent behaviour change is worse.
+- Corpus code without a nullable context gets `?.` on every reference receiver of a plain chain (kavita), and Manual for any other dereference, deliberately: a silent behaviour change is worse.
 - An empty source (`s` itself null) gives a NullReferenceException in `ToB`; cf. row 1.
 
 ## Models

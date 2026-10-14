@@ -192,6 +192,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-253-automapper-convert-using.md` | ✅ automapper.convert-using — ConvertUsing lambda/`ITypeConverter` → `ToB => converter call`; member `IValueConverter` → `X = conv.Convert(source.Y, null)`; DI/context Manual |
 | `claude/tasks/archief/TAAK-255-automapper-member-options.md` | ✅ automapper.member-options — Condition/PreCondition → `X = cond ? value : default`, ForPath `d.A.B` → `A = new() { B = ... }`; initializer/ctor/MapInto/ReverseMap/deep paths/NullSubstitute Manual |
 | `claude/tasks/archief/TAAK-256-automapper-flattening.md` | ✅ automapper.flattening — other case, `GetX()`, `Customer.Name` → `CustomerName = source.Customer?.Name` (AutoMapper 14 name rules and null behaviour measured) |
+| `claude/tasks/archief/TAAK-257-automapper-unsupported.md` | ✅ automapper.unsupported — specific Manual reason per unsupported option; MaxDepth/PreserveReferences/DoNotValidate dropped where without effect |
 | `claude/tasks/archief/TAAK-246-automapper-member-list.md` | ✅ `automapper.member-list` — `CreateMap<A, B>(MemberList.X)` migrated like `CreateMap<A, B>()` (AutoMapper 14: member list only steers `AssertConfigurationIsValid`, measured + IL scan) |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: unused assembly parameter after AddMediator (IDE0060) → warning in the report |
 

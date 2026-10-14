@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 961 proofs (excluding `_Pending`).
+Total: 968 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -56,17 +56,19 @@ Total: 961 proofs (excluding `_Pending`).
 | `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check: the map at Test.cs:27 is not in a profile constructor this fix rewrites |
 | `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
-### CreateMap (81)
+### CreateMap (88)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `after-map` | Manual | `CreateMap<Order, OrderDto>().AfterMap((s, d) => d.Name = d.Name.Trim());` — reason: AfterMap runs code after the members are set; write ToB with a block body |
+| `before-map` | Manual | `CreateMap<Order, OrderDto>().BeforeMap((s, d) => s.Name = s.Name.Trim());` — reason: BeforeMap runs code before the members are set |
 | `collection` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `collection-dictionary` | Manual | `CreateMap<Order, OrderDto>();` — reason: is a collection of a kind this fix does not copy |
 | `condition` | Fixed | `CreateMap<Activity, ActivityDto>() .ForMember(dest => dest.DocumentId, opt => opt.Condition(src => src.Documen…` → `public static class OrderProfileExtensions {` |
 | `condition-destination` | Manual | `CreateMap<Order, OrderDto>()` — reason: Condition for Version is not a lambda of the source alone |
 | `condition-initializer` | Manual | `CreateMap<PostForm, Post>()` — reason: Post.Id has an initializer or Post a constructor of its own |
 | `condition-map-from` | Fixed | `CreateMap<Note, NoteDto>() .ForMember(dest => dest.Summary, opt =>` → `public static class OrderProfileExtensions {` |
-| `construct-using` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not a CreateMap<A, B>() without options |
+| `construct-using` | Manual | `CreateMap<Order, OrderDto>()` — reason: ConstructUsing creates the destination itself |
 | `constructor` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `constructor-conversion` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `constructor-default` | Manual | `CreateMap<Order, OrderDto>();` — reason: the constructor parameter Currency of OrderDto has no member with the same name in Order |
@@ -102,12 +104,16 @@ Total: 961 proofs (excluding `_Pending`).
 | `flattening-nested-map` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `public static class OrderProfileExtensions {` |
 | `flattening-nullable` | Fixed | `CreateMap<Annotation, AnnotationDto>();` → `public static class AnnotationProfileExtensions {` |
 | `flattening-nullable-conversion` | Manual | `CreateMap<Order, OrderDto>();` — reason: OrderDto.CustomerAge: Customer.Age is Int32 and may meet a null object; AutoMapper's value for the long? member is not measured |
-| `for-ctor-param` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not a CreateMap<A, B>() without options |
+| `for-all-members` | Manual | `CreateMap<Order, OrderDto>().ForAllMembers(o => o.Condition((s, d, member) => member != null));` — reason: ForAllMembers applies an option to every member |
+| `for-ctor-param` | Manual | `CreateMap<Order, OrderDto>()` — reason: ForCtorParam maps a constructor parameter |
 | `for-path` | Fixed | `CreateMap<IngredientLine, RecipeIngredient>() .ForPath(x => x.Ingredient.Name, opt => opt.MapFrom(src => src.N…` → `public static class OrderProfileExtensions {` |
 | `for-path-deep` | Manual | `CreateMap<CustomerForm, Customer>()` — reason: ForPath to Address.Country.Code goes more than one object deep |
 | `for-path-member` | Fixed | `CreateMap<Activity, ActivityDto>() .ForPath(dest => dest.Heading, opt => opt.MapFrom(src => src.Title));` → `public static class OrderProfileExtensions {` |
+| `for-source-member-do-not-validate` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Source).ForSourceMember(s => s.Name, o => o.DoNotValidate());` → `public static class OrderProfileExtensions {` |
 | `generic` | Manual | `CreateMap<User, TUserDto>();` — reason: is generic or nested in a generic type |
 | `internal-types` | Fixed | `CreateMap<Order, OrderDto>();` → `internal static class OrderProfileExtensions {` |
+| `max-depth` | Fixed | `CreateMap<Order, OrderDto>().MaxDepth(1);` → `public static class OrderProfileExtensions {` |
+| `max-depth-nested` | Manual | `CreateMap<Order, OrderDto>().PreserveReferences();` — reason: PreserveReferences acts on Address |
 | `member-list` | Fixed | `CreateMap<Customer, CustomerDto>(MemberList.Destination); CreateMap<Tag, TagDto>(MemberList.Source);` → `public static class ShopProfileExtensions {` |
 | `member-list-named` | Fixed | `CreateMap<Customer, CustomerDto>(memberList: MemberList.Destination); CreateMap<Tag, TagDto>(AutoMapper.Member…` → `public static class ShopProfileExtensions {` |
 | `member-list-nested-profile` | Fixed | `public Mapping() => CreateMap<Note, NoteDto>(MemberList.None);` → `public Mapping() {` |
@@ -129,9 +135,10 @@ Total: 961 proofs (excluding `_Pending`).
 | `nested-several` | Manual | `CreateMap<Order, OrderDto>();` — reason: several profiles map Address to AddressDto |
 | `nested-several-profiles` | Manual | `CreateMap<PriDto, PriReleaseDto>(MemberList.None);` — reason: AddPri holds several profiles (Mapper, Mapper) |
 | `null-substitute` | Manual | `CreateMap<Order, OrderDto>()` — reason: NullSubstitute for Note is not migrated |
-| `options` | Manual | `CreateMap<Order, OrderDto>().MaxDepth(1);` — reason: is not a CreateMap<A, B>() without options |
 | `partial` | Manual | `CreateMap<Affiliate, AffiliateModel>();` — reason: is partial (another part can add maps or members they use) |
 | `pre-condition` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.PaidAmount, o =>` → `public static class OrderProfileExtensions {` |
+| `preserve-references` | Fixed | `CreateMap<Order, OrderDto>().PreserveReferences();` → `public static class OrderProfileExtensions {` |
+| `profile-setting` | Manual | `CreateMap<Order, OrderDto>();` — reason: AllowNullCollections changes how null collections are mapped |
 | `project-to` | Fixed | `CreateMap<Series, SeriesDto>(); CreateMap<Genre, GenreTagDto>();` → `} public static class AutoMapperProfilesExtensions` |
 | `project-to-conversion` | Manual | `CreateMap<Order, OrderDto>();` — reason: (ProjectTo converts it in the query, this fix does not) |
 | `reverse-map` | Fixed | `CreateMap<Region, RegionDto>().ReverseMap(); CreateMap<Folder, FolderEntity>(MemberList.Destination).ReverseMa…` → `public static class AutoMapperProfileExtensions {` |
@@ -153,7 +160,7 @@ Total: 961 proofs (excluding `_Pending`).
 | `reverse-map` | Fixed | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore()).ForMember(d => d.Rank, o => o.Ignore()).R…` → `public static class OrderProfileExtensions {` |
 | `reverse-map-options` | Fixed | `CreateMap<GroupProjectAccessPolicy, GroupProjectAccessPolicyEntity>() .ForMember(dst => dst.GrantedProject, op…` → `public static class AccessPolicyMapperProfileExtensions {` |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>() .ForMember(d => d.Secret, o => o.Ignore())` → `public static class ProductProfileExtensions {` |
-| `string-name` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Rank, o => o.Ignore()).ForMember("Note", o => o.Ignore());` — reason: is not a CreateMap<A, B>() without options |
+| `string-name` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Rank, o => o.Ignore()).ForMember("Note", o => o.Ignore());` — reason: ForMember in a form the rewrite does not read |
 | `unmatched` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore());` — reason: OrderDto.Rank has no member with the same name in Order |
 
 ### ForMemberMapFrom (16)
@@ -183,7 +190,7 @@ Total: 961 proofs (excluding `_Pending`).
 | --- | --- | --- |
 | `collection` | Manual | `CreateMap<Order, OrderDto>();` — reason: maps a collection |
 | `existing-method` | Fixed | `public OrderDto Get(Order order) => _mapper.Map<OrderDto>(order); public OrderDto First(Order[] orders) => thi…` → `public OrderDto Get(Order order) => order.ToOrderDto(); public OrderDto First(Order[] orders) => orders[0].ToO…` |
-| `manual-profile` | Manual | `CreateMap<Order, OrderDto>().MaxDepth(1);` — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
+| `manual-profile` | Manual | `CreateMap<Order, OrderDto>().BeforeMap((s, d) => d.Id = 1);` — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
 | `maybe-null` | Manual |  — reason: may be null |
 | `object-source` | Manual |  — reason: no type of its own |
 | `receiver-call` | Manual |  — reason: not called as mapper.Map on a plain field |

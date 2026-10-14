@@ -1,6 +1,6 @@
 # TAAK-244 — AutoMapper corpus survey
 
-**Status**: step 1/7 — in progress  
+**Status**: done (7/7)  
 **Created**: 2026-10-14  
 **Goal**: a larger AutoMapper ≤14 corpus (12–20 repos, pinned, preferably with tests) and API frequencies per project, so rows 9–15 of `claude/tasks/automapper-queue.md` can be ordered by data.
 
@@ -12,15 +12,20 @@
 - Measurement: regex over `*.cs` (no Roslyn), like the existing corpus doc.
 - Another agent works in `src/Unshackle.Core/Fixes/AutoMapper/` (TAAK-245): do not touch `src/`.
 
+- **Result**: 20 repos (12 build cleanly, 6 partially: only a front-end/AppHost/Rust project fails, 1 no build, abp not tried).
+  Numbers, method and recommended order: `docs/projectinfo/architectuur/corpus-automapper.md`. Queue updated: Corpus column of rows 8–15,
+  new proposed rows 17–20 (`member-list`, `configuration-test`, `convert-using`, `value-resolver`), recommended order under the table.
+- Measurement script + raw JSON: `D:\playground\corpus-automapper	ools\` (outside the repo). Build logs: `D:\playground\corpus-automapper\logs\`.
+
 ## Steps
 
-- [→] 1. Task file + INDEX row
-- [ ] 2. Choose 12–20 repos on AutoMapper ≤14 (gh search), pin at a commit/tag
-- [ ] 3. Clone shallowly, write `repos.txt`, check restore/build per repo
-- [ ] 4. Measure API frequencies per repo (regex script)
-- [ ] 5. Write `docs/projectinfo/architectuur/corpus-automapper.md` (+ INDEX, See also, link from `corpus-mediatr-automapper.md`)
-- [ ] 6. Update `claude/tasks/automapper-queue.md` (Corpus column rows 8–15, recommended order, row 7 done)
-- [ ] 7. Finish: status done, move to `claude/tasks/archief/`, fix the INDEX path
+- [x] 1. Task file + INDEX row
+- [x] 2. Choose 12–20 repos on AutoMapper ≤14 (gh search), pin at a commit/tag
+- [x] 3. Clone shallowly, write `repos.txt`, check restore/build per repo
+- [x] 4. Measure API frequencies per repo (regex script)
+- [x] 5. Write `docs/projectinfo/architectuur/corpus-automapper.md` (+ INDEX, See also, link from `corpus-mediatr-automapper.md`)
+- [x] 6. Update `claude/tasks/automapper-queue.md` (Corpus column rows 8–15, recommended order, row 7 done)
+- [x] 7. Finish: status done, move to `claude/tasks/archief/`, fix the INDEX path
 
 ## Changes
 

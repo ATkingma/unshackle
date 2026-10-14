@@ -1,0 +1,19 @@
+title: "[Decision tree] CreateMap<A, B>(...) arguments" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q0: "Chain only ForMember\nIgnore/MapFrom?" {shape: diamond}
+m0: "Manual: not a CreateMap<A, B>()\nwithout options\n(member-list-reverse-map, options)"
+q1: "Number of arguments?" {shape: diamond}
+f0: "Rewrite as CreateMap<A, B>()\n(simple)"
+q2: "Unnamed or memberList:,\ntype AutoMapper.MemberList?" {shape: diamond}
+q3: "Constant value?" {shape: diamond}
+m1: "Manual: not a CreateMap<A, B>()\nwithout options\n(member-list-variable)"
+f1: "Rewrite as CreateMap<A, B>(),\nargument dropped\n(member-list, member-list-named,\nForMember*/member-list)"
+q0 -> m0: no
+q0 -> q1: yes
+q1 -> f0: "0"
+q1 -> q2: "1"
+q1 -> m1: "2+"
+q2 -> m1: no
+q2 -> q3: yes
+q3 -> m1: no
+q3 -> f1: yes

@@ -10,8 +10,9 @@ Measured on 2026-10-14 for TAAK-244 (row 7 of `claude/tasks/automapper-queue.md`
   (`<name> <url> <ref> <solution path>`). Repos whose default branch is on AutoMapper 15/16 are pinned at the last commit
   before 2025-07-01 (before AutoMapper 15 went commercial); `jason` is pinned at tag `v8.0.0`, `nop` at `release-4.90.8`.
 - Measurement: a regex script over `*.cs` (comments stripped; `bin`, `obj`, `templates`, `wwwroot`, `*.g.cs`,
-  `*.Designer.cs` skipped). No Roslyn: numbers are indicative. The script lives outside the repo
-  (session scratchpad `measure.py`); re-running it is a matter of pointing it at the `src` directory.
+  `*.Designer.cs` skipped). No Roslyn: numbers are indicative. Script and raw output live outside the repo:
+  `python -I D:\playground\corpus-automapper\tools\measure.py <src dir> <out.json>`, then `agg.py <out.json>` for the table
+  (`tools\am.json` is this run).
 - Structural estimates (nested, flattening, conversions, constructors) use a crude type index: every
   `class`/`record`/`struct` by **simple name** with its public properties (plus base classes and positional record
   parameters). For every `CreateMap<A,B>` (and the reverse direction when the chain has `.ReverseMap()`), each
@@ -29,10 +30,32 @@ Measured on 2026-10-14 for TAAK-244 (row 7 of `claude/tasks/automapper-queue.md`
 ## Repos
 
 "Tests": test framework, number of test projects; "containers" = some test projects need Testcontainers/Docker.
+"partial" = every error is in one non-AutoMapper project (front-end npm/yarn step, Aspire AppHost, Rust tool);
+the rest of the solution compiles. Summary: 12 build cleanly, 6 partially, 1 does not, 1 not tried. Logs:
+`D:\playground\corpus-automapper\logs\<name>.log`.
 
-| Name           | Repo (ref)                                                   | AutoMapper | TFM    | Tests                         | Builds | `CreateMap` |
-| -------------- | ------------------------------------------------------------ | ---------- | ------ | ----------------------------- | ------ | ----------: |
-BUILDTABLE
+| Name | Repo (ref) | AutoMapper | TFM | Tests | Builds | `CreateMap` |
+| ---- | ---------- | ---------- | --- | ----- | ------ | ----------: |
+| abp | `abpframework/abp` (`d3c97e340785`) | 14.0.0 | net10.0 | xUnit, 151 | not tried (2.2 GB) | 34 |
+| altinnauth | `Altinn/altinn-auth` (`2355aed31457`) | 14.0.0 | net10.0 | xUnit (v2/v3), 17; containers | yes | 22 |
+| bitwarden | `bitwarden/server` (`a0058fb5a988`) | 14.0.0 | net10.0 | xUnit (v2/v3), 39; containers | partial: one project runs `cargo build` | 70 |
+| cats | `ministryofjustice/CFO-CaseAssessmentTrackingSystem` (`8e93a2a650e1`) | 14.0.0 | net10.0 | NUnit, 2 | partial: Aspire AppHost needs the Aspire CLI | 83 |
+| dasblog | `poppastring/dasblog-core` (`3d4a3b61f2d1`) | 13.0.1 | net8.0 | xUnit, 2 | yes | 28 |
+| devarch | `DevArchitecture/DevArchitecture` (`b59fe4adbc68`) | 13.0.1 | net9.0 | NUnit, 1 | yes | 1 |
+| eshoponweb | `dotnet-architecture/eShopOnWeb` (`4da8212117e8`) | 12.0.1 | net8.0 | xUnit + MSTest, 4 | yes | 3 |
+| gnomeshade | `VMelnalksnis/Gnomeshade` (`0ae798923f67`) | 14.0.0 | net10.0 | NUnit, 8; containers | partial: web project needs `npm install` | 44 |
+| iotsharp | `IoTSharp/IoTSharp` (`3e26d65e0cc5`) | 14.0.0 | net9.0 | MSTest, 2; containers | no (CS0103 in the main project) | 1 |
+| jason | `jasontaylordev/CleanArchitecture` (`v8.0.0 (f2f0445721f5)`) | 12.0.1 | net8.0 | NUnit, 5; containers | yes, with `-p:SkipNSwag=True -p:NuGetAudit=false` and NU1507 not as error | 5 |
+| jhipster | `jhipster/jhipster-sample-app-dotnetcore` (`7a799c7babb4`) | 13.0.1 | net9.0 | xUnit, 1 | partial: `npm install` step timed out | 11 |
+| kavita | `Kareadita/Kavita` (`3233c26dd5b6`) | 12.0.1 | net10.0 | xUnit, 7 | yes | 76 |
+| lancommander | `LANCommander/LANCommander` (`2e6fdd19253f`) | 13.0.1 | net9.0 | xUnit, 2 | partial: `npm run package` step | 56 |
+| letterbook | `Letterbook/Letterbook` (`dace8fbfb156`) | 14.0.0 | net9.0 | xUnit, 11 | yes | 88 |
+| neozhu | `neozhu/CleanArchitectureWithBlazorServer` (`c89f0f9c28d6`) | 13.0.1 | net8.0 | NUnit, 3 | yes | 23 |
+| nop | `nopSolutions/nopCommerce` (`release-4.90.8 (918444773367)`) | 14.0.0 | net9.0 | NUnit, 1 | yes | 245 |
+| ombi | `Ombi-app/Ombi` (`697d35647bf8`) | 12.0.0 | net8.0 | NUnit, 7 | partial: `yarn install` step | 62 |
+| personalasst | `davidtimovski/personal-assistant` (`ac7e1085c3db`) | 14.0.0 | net10.0 | xUnit, 2 | yes | 55 |
+| skoruba | `skoruba/Duende.IdentityServer.Admin` (`3fee47255860`) | 14.0.0 | net9.0 | xUnit, 5 | yes | 144 |
+| xipona | `Velociraptor45/Xipona` (`12677f35f17a`) | 13.0.1/14.0.0 | net9.0 | xUnit v3, 13 | yes | 33 |
 
 ## Frequencies
 

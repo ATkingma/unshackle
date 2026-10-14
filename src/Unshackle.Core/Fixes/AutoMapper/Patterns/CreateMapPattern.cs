@@ -9,7 +9,8 @@ using Unshackle.Core.Models;
 namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 
 /// <summary>
-/// A Profile whose constructor only holds CreateMap&lt;A, B&gt;() calls without options → a static class next to it with
+/// A Profile whose constructor only holds CreateMap&lt;A, B&gt;() calls without options (a constant MemberList argument only steers
+/// AssertConfigurationIsValid and is dropped) → a static class next to it with
 /// one B ToB(this A source) per map, copying the members with the same name and type. Anything AutoMapper would do
 /// beyond that (conversion, flattening, constructors) is Manual, except a member whose type pair has its own CreateMap in a profile this fix
 /// rewrites (X = source.X?.ToY()) and a list or array (copied into a new one, element by element through such a map), see <see cref="MemberValues"/>.
@@ -368,7 +369,7 @@ public class CreateMapPattern : ISolutionPattern
     private static bool IsMapFromCall(InvocationExpressionSyntax forMember) =>
         forMember.ArgumentList.Arguments is [_, { Expression: SimpleLambdaExpressionSyntax { Body: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "MapFrom" } } } }];
 
-    // `CreateMap<A, B>()` or `CreateMap<A, B>().ForMember(d => d.X, o => o.Ignore())...`; anything else in the chain is no match.
+    // `CreateMap<A, B>()` (or with a MemberList) or `CreateMap<A, B>().ForMember(d => d.X, o => o.Ignore())...`; anything else in the chain is no match.
     private static bool TryParseMap(StatementSyntax statement, SemanticModel model, [NotNullWhen(true)] out InvocationExpressionSyntax? createMap,
         [NotNullWhen(true)] out Dictionary<string, SimpleLambdaExpressionSyntax?>? options)
     {
@@ -394,8 +395,15 @@ public class CreateMapPattern : ISolutionPattern
         }
 
         createMap = expression;
-        return expression.ArgumentList.Arguments.Count == 0;
+        return expression.ArgumentList.Arguments is [] || (expression.ArgumentList.Arguments is [{ } memberList] && IsMemberList(memberList, model));
     }
+
+    // CreateMap<A, B>(MemberList.X) or (memberList: MemberList.X): AutoMapper 14 reads the member list only in AssertConfigurationIsValid
+    // (measured, TAAK-246), so the map is the same as without it. Only a constant: dropping any other expression could drop a side effect.
+    private static bool IsMemberList(ArgumentSyntax argument, SemanticModel model) =>
+        argument is { RefKindKeyword.RawKind: 0, NameColon: null or { Name.Identifier.ValueText: "memberList" } }
+        && model.GetTypeInfo(argument.Expression).Type is INamedTypeSymbol { TypeKind: TypeKind.Enum, Name: "MemberList", ContainingAssembly.Name: AutoMapperAssembly }
+        && model.GetConstantValue(argument.Expression).HasValue;
 
     // The X of `.ForMember(d => d.X, o => o.Ignore())` (MapFrom null) or `.ForMember(d => d.X, o => o.MapFrom(s => expr))` (MapFrom the lambda),
     // null for any other form (string member name, other option, nested member, block lambda, generic MapFrom).

@@ -1,0 +1,46 @@
+using AutoMapper;
+
+namespace Shop;
+
+public class Customer
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string PasswordHash { get; set; } = "";
+}
+
+public class CustomerDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+}
+
+public class Tag
+{
+    public string Value { get; set; } = "";
+}
+
+public class TagDto
+{
+    public string Value { get; set; } = "";
+}
+
+public class Note
+{
+    public string Text { get; set; } = "";
+}
+
+public class NoteDto
+{
+    public string Text { get; set; } = "";
+}
+
+public class ShopProfile : Profile
+{
+    private static MemberList Validation() => MemberList.None;
+
+    public ShopProfile()
+    {
+        CreateMap<Customer, CustomerDto>(Validation());
+    }
+}

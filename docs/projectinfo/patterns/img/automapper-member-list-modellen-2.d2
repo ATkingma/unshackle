@@ -1,0 +1,14 @@
+title: "[Sequence] automapper.member-list" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: CreateMapPattern
+model: SemanticModel
+fixer -> pattern: "RewriteAsync(profile, model, solution, ct)"
+pattern -> pattern: "Rewrite: TryParseMap(statement) per statement"
+pattern -> model: "GetSymbolInfo(ForMember ...) down the chain"
+pattern -> pattern: "IsMemberList(argument) when CreateMap has one argument"
+pattern -> model: "GetTypeInfo(argument).Type is AutoMapper.MemberList"
+pattern -> model: "GetConstantValue(argument).HasValue"
+model -> pattern: "yes: argument ignored / no: not a map" {style.stroke-dash: 3}
+pattern -> pattern: "Problem(A, B, options, ...): members as without the argument"
+pattern -> fixer: "Fixed([empty profile, <Profile>Extensions]) or Manual(reason)" {style.stroke-dash: 3}

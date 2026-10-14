@@ -163,6 +163,7 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `automapper.add-automapper` | [plan](patterns/automapper-add-automapper-plan.md) | [models](patterns/automapper-add-automapper-modellen.md) | [verify](patterns/automapper-add-automapper-verify.md) | TAAK-159 |
 | `automapper.map-into` | [plan](patterns/automapper-map-into-plan.md) | [models](patterns/automapper-map-into-modellen.md) | [verify](patterns/automapper-map-into-verify.md) | TAAK-158 |
 | `automapper.nested-maps` | [plan](patterns/automapper-nested-maps-plan.md) | [models](patterns/automapper-nested-maps-modellen.md) | [verify](patterns/automapper-nested-maps-verify.md) | TAAK-245 |
+| `automapper.member-list` | [plan](patterns/automapper-member-list-plan.md) | [models](patterns/automapper-member-list-modellen.md) | [verify](patterns/automapper-member-list-verify.md) | TAAK-246 |
 
 ## See also
 

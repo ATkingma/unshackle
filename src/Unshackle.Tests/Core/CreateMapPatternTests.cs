@@ -39,6 +39,46 @@ public class CreateMapPatternTests
         result.ShouldBeOfType<ManualResult>().Reason.ShouldContain(reason);
     }
 
+    // AutoMapper 14 reads the member list only in AssertConfigurationIsValid (TAAK-246): every constant form gives the map without it.
+    [Theory]
+    [InlineData("MemberList.Destination")]
+    [InlineData("MemberList.Source")]
+    [InlineData("memberList: MemberList.None")]
+    [InlineData("AutoMapper.MemberList.None")]
+    [InlineData("(MemberList)1")]
+    public void Rewrite_ConstantMemberList_SameAsWithout(string argument)
+    {
+        // Arrange
+        const string Types = "using AutoMapper; public class A { public int Id { get; set; } public string Extra { get; set; } = \"\"; } public class B { public int Id { get; set; } }";
+        (SyntaxNode root, SemanticModel model) = Compile(Types + " public class P : Profile { public P() { CreateMap<A, B>(" + argument + "); } }");
+        (SyntaxNode plainRoot, SemanticModel plainModel) = Compile(Types + " public class P : Profile { public P() { CreateMap<A, B>(); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+        PatternResult plain = pattern.Rewrite(pattern.Find(plainRoot, plainModel).ShouldHaveSingleItem(), plainModel);
+
+        // Assert
+        result.ShouldBeOfType<FixedResult>().NewNodes.Select(n => n.ToFullString())
+            .ShouldBe(plain.ShouldBeOfType<FixedResult>().NewNodes.Select(n => n.ToFullString()));
+    }
+
+    // Dropping an expression that is not a constant could drop a side effect.
+    [Fact]
+    public void Rewrite_MemberListParameter_ReportsManual()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(
+            "public class A { public int Id { get; set; } } public class B { public int Id { get; set; } } public class P : AutoMapper.Profile { public P(AutoMapper.MemberList list) { CreateMap<A, B>(list); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("is not a CreateMap<A, B>() without options");
+    }
+
     private static (SyntaxNode Root, SemanticModel Model) Compile(string code)
     {
         SyntaxTree tree = CSharpSyntaxTree.ParseText(code);

@@ -1,0 +1,13 @@
+title: "[Classes] automapper.member-list" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+CreateMapPattern: {shape: class; "-Rewrite(node, model, mapInto, nested)"; "-TryParseMap(statement, model, out createMap, out options)"; "-IsMemberList(argument, model): bool"; "-Problem(source, destination, options, ...)"}
+Subclasses: "ForMemberIgnorePattern,\nForMemberMapFromPattern\n(share Rewrite)"
+MapCallPattern: {shape: class; "~GeneratedAsync(solution, model, source, destination, ct)"}
+MemberList: {shape: class; "Destination"; "Source"; "None"}
+Profile: {shape: class; "#CreateMap<A, B>()"; "#CreateMap<A, B>(MemberList memberList)"}
+Result: "PatternResult:\nFixed(same nodes as CreateMap<A, B>())\n| Manual(reason)"
+Subclasses -> CreateMapPattern: inherit
+MapCallPattern -> CreateMapPattern: RewriteMethodsAsync
+CreateMapPattern -> Profile: recognizes call
+CreateMapPattern -> MemberList: "checks type + constant"
+CreateMapPattern -> Result: returns

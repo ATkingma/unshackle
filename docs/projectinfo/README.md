@@ -166,6 +166,7 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `automapper.member-list` | [plan](patterns/automapper-member-list-plan.md) | [models](patterns/automapper-member-list-modellen.md) | [verify](patterns/automapper-member-list-verify.md) | TAAK-246 |
 | `automapper.conversions` | [plan](patterns/automapper-conversions-plan.md) | [models](patterns/automapper-conversions-modellen.md) | [verify](patterns/automapper-conversions-verify.md) | TAAK-247 |
 | `automapper.reverse-map` | [plan](patterns/automapper-reverse-map-plan.md) | [models](patterns/automapper-reverse-map-modellen.md) | [verify](patterns/automapper-reverse-map-verify.md) | TAAK-249 |
+| `automapper.configuration-test` | [plan](patterns/automapper-configuration-test-plan.md) | [models](patterns/automapper-configuration-test-modellen.md) | [verify](patterns/automapper-configuration-test-verify.md) | TAAK-250 |
 
 ## See also
 

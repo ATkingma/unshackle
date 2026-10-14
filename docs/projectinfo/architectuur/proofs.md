@@ -6,14 +6,15 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 886 proofs (excluding `_Pending`).
+Total: 897 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
-### _Combined (8)
+### _Combined (9)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `configuration-test-fixture` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IConfigurationProvider _configuration;` → `} public static class OrderProfileExtensions` |
 | `conversion-map-into` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} }` |
 | `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
 | `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
@@ -31,6 +32,21 @@ Total: 886 proofs (excluding `_Pending`).
 | `parameter` | Fixed | `services.AddAutoMapper(profiles);` → `_ = profiles;` |
 | `result-used` | Manual |  — reason: The result of AddAutoMapper is used |
 | `simple` | Fixed | `services.AddAutoMapper(typeof(OrderProfile).Assembly);` →  |
+
+### ConfigurationTest (10)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `assert-statement` | Fixed | `AutoMapperConfiguration.MapperConfiguration.AssertConfigurationIsValid();` →  |
+| `class-fixture` | Fixed | `[Fact] public void ShouldHaveValidConfiguration()` →  |
+| `inline-create-map` | Manual | `MapperConfiguration mapperConfiguration = new MapperConfiguration(options => { options.CreateMap<ProduceData, …` — reason: 'options.CreateMap<ProduceData, AttributeLatest>()' is not an AddProfile or AddMaps call |
+| `local-configuration` | Fixed | `private static readonly IConfigurationProvider s_shared = new MapperConfiguration(cfg => cfg.AddProfile(typeof…` →  |
+| `method-group` | Manual | `var mapper = new MapperConfiguration(AddMapping).CreateMapper();` — reason: it is built from (AddMapping), not from a lambda that only adds profiles |
+| `settings` | Manual |  — reason: 'options.AllowNullCollections = true' is not an AddProfile or AddMaps call |
+| `setup-mapper` | Fixed | `private IMapper _mapper; [SetUp]` →  |
+| `side-effect-receiver` | Manual |  — reason: 'Configure().AssertConfigurationIsValid()' does more than check the configuration |
+| `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check: the map at Test.cs:27 is not in a profile constructor this fix rewrites |
+| `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
 ### CreateMap (40)
 

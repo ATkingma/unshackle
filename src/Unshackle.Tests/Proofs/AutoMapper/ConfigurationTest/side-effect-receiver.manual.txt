@@ -1,0 +1,1 @@
+'Configure().AssertConfigurationIsValid()' does more than check the configuration

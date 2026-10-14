@@ -50,7 +50,7 @@
 ## Result
 
 - Changed: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` (`Problem` gets `out string creation` and the constructor check, new `ConstructorProblem`, `Rewrite` threads `Creation` through the map tuple and guards `MapInto`, `Extensions` writes the creation expression, doc comment).
-- Proofs (Fixed): `CreateMap/constructor` (was Manual), `CreateMap/constructor-record`, `ForMemberIgnore/constructor`, `_Combined/constructor-map-call`. Proofs (Manual): `CreateMap/constructor-several`, `CreateMap/constructor-default`, `CreateMap/constructor-conversion`, `CreateMap/construct-using`, `CreateMap/for-ctor-param`, `ForMemberMapFrom/constructor`.
+- Proofs (Fixed): `CreateMap/constructor` (was Manual), `CreateMap/constructor-record`, `CreateMap/constructor-conversion` (built-in conversion on an argument, after the merge with TAAK-247), `ForMemberIgnore/constructor`, `_Combined/constructor-map-call`. Proofs (Manual): `CreateMap/constructor-several`, `CreateMap/constructor-default`, `CreateMap/construct-using`, `CreateMap/for-ctor-param`, `ForMemberMapFrom/constructor`.
 - Unit tests in `src/Unshackle.Tests/Core/CreateMapPatternTests.cs`: three new Manual cases, `Rewrite_ConstructorParameterOtherCase_PassesMember`.
 - Test results: see the verify document.
 - Open: `ConstructUsing`, `ForCtorParam`, several constructors, optional parameters without a source member.
@@ -61,3 +61,5 @@
 - `docs/projectinfo/patterns/automapper-constructor-plan.md`
 - `docs/projectinfo/patterns/automapper-constructor-verify.md`
 - `claude/tasks/archief/TAAK-246-automapper-member-list.md`
+
+- After merging main (TAAK-247/249/250): constructor arguments get built-in conversions through `MemberValues`; a `ReverseMap` whose reverse destination needs a constructor is rewritten only without reversed MapFrom and MapInto, otherwise Manual (`Reverse`).

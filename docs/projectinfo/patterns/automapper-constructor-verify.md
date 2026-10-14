@@ -18,7 +18,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`. Proofs
 | REQ-2 | Met     | `ForMemberIgnore/constructor` (`List<Line>` → `List<LineDto>` argument through `ToLineDto`) |
 | REQ-3 | Met     | `ForMemberIgnore/constructor` (get-only `Id`/`Lines`, settable `Customer` filled by the constructor only, `init` `Note` assigned, ignored `Status` left alone) |
 | REQ-4 | Met     | `CreateMap/constructor-several`, unit test case "private B() + public B(int id)" |
-| REQ-5 | Met     | `CreateMap/constructor-default`, `CreateMap/constructor-conversion`, `ForMemberMapFrom/constructor`, unit test cases "matches several members", "ref, out or params" |
+| REQ-5 | Met     | `CreateMap/constructor-default`, `ForMemberMapFrom/constructor`, unit test cases "matches several members", "ref, out or params" |
 | REQ-6 | Met     | `CreateMap/construct-using`, `CreateMap/for-ctor-param` |
 | REQ-7 | Met     | `_Combined/constructor-map-call`; the `MapInto` guard in `CreateMapPattern.Rewrite` |
 
@@ -31,7 +31,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`. Proofs
 | Check   | Command                                                     | Result   |
 | ------- | ----------------------------------------------------------- | -------- |
 | Build   | `dotnet build`                                              | passed (0 warnings, warnings = errors) |
-| Tests   | `dotnet test`                                               | 1193/1193 passed |
+| Tests   | `dotnet test`                                               | 1278/1278 passed |
 | Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 passed |
 | Lint    | _none_                                                      | _not run_: no lint command configured |
 

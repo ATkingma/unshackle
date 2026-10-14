@@ -1,0 +1,19 @@
+title: "[Sequence] automapper.configuration-test" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: ConfigurationTestPattern
+syntax: ConfigurationSyntax
+model: SemanticModel
+solution: Solution
+fixer -> pattern: "Find(root, model) (after MapCallPattern rewrote the Map calls)"
+pattern -> syntax: "Find(root, model)"
+syntax -> syntax: "RemovableSymbols: candidates, values, Use(reference) per read, fixpoint"
+syntax -> model: "GetSymbolInfo / GetTypeInfo (AutoMapper methods, test attributes)"
+syntax -> syntax: "IsRemovableStatement, IsRemovableMember (all statements go?)"
+syntax -> syntax: "ConfigurationProblem, AssertProblem for the rest"
+syntax -> fixer: "members, fields, statements, Manual nodes" {style.stroke-dash: 3}
+fixer -> pattern: "RewriteAsync(node, model, solution, ct)"
+pattern -> pattern: "Problem(node): creation or check → Manual(reason)"
+pattern -> solution: "UnmigratedMapAsync: project + dependencies (only when the node holds a check)"
+solution -> pattern: "file:line of a CreateMap outside a profile constructor, or none" {style.stroke-dash: 3}
+pattern -> fixer: "Fixed([]) or Manual(\"still has maps to check\")" {style.stroke-dash: 3}

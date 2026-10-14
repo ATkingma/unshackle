@@ -1,0 +1,23 @@
+using AutoMapper;
+
+namespace Shop;
+
+public enum Status { Open, Closed }
+
+public class Order
+{
+    public Status Status { get; set; }
+}
+
+public class OrderDto
+{
+    public long Status { get; set; }
+}
+
+public class OrderProfile : Profile
+{
+    public OrderProfile()
+    {
+        CreateMap<Order, OrderDto>();
+    }
+}

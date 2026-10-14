@@ -42,7 +42,7 @@ See the Evidence table in `claude/tasks/archief/TAAK-251-automapper-constructor.
 | REQ-2 | Arguments use the same value rules as members (`MemberValues`): plain copy of the same type, a nested map (`source.X?.ToY()`), a collection copy. |
 | REQ-3 | Destination members whose name equals a constructor parameter name ignoring case are not assigned again; other settable members follow the existing member rules (object initializer after the arguments; `Ignore()` and `MapFrom` on them work as before). |
 | REQ-4 | Manual when the destination has several constructors, a non-public one, or none public: "has several constructors or none that is public". |
-| REQ-5 | Manual per parameter: no source member (AutoMapper flattens, uses the default or throws), several members differing in case, a ref/out/params parameter, a type AutoMapper converts, a `ForMember` on the member the parameter fills. |
+| REQ-5 | Manual per parameter: no source member (AutoMapper flattens, uses the default or throws), several members differing in case, a ref/out/params parameter, a type AutoMapper converts without a built-in conversion (`MemberConversions`), a `ForMember` on the member the parameter fills. |
 | REQ-6 | `ConstructUsing` and `ForCtorParam` stay Manual (the chain is not a `CreateMap<A, B>()` without options). |
 | REQ-7 | A map that `Map(source, destination)` needs as `MapInto` and that uses a constructor is Manual; `Map<B>(a)` becomes `a.ToB()` as before. |
 

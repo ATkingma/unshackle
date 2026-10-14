@@ -18,7 +18,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberMapFromPattern.cs`,
 | REQ-2 | Met | `ignore-and-nullable`, unittest `Find_ProfileWithOrWithoutOptions_IsClaimedByOneOfThePatterns`                                                      |
 | REQ-3 | Met | `null-deref`, unittest `Rewrite_NullableAnnotatedReceiver_ReportsManual`                                                                            |
 | REQ-4 | Met | `ignore-and-nullable` (`s.Note.ToUpper()` with `#nullable enable`), unit test `Rewrite_ReceiverCheckedForNull_IsMoved`                                |
-| REQ-5 | Met | `conversion`                                                                                                                                        |
+| REQ-5 | Met | `conversion` (an `.after.cs` since TAAK-247, see [automapper-conversions-verify.md](automapper-conversions-verify.md))                                                                                                                                        |
 | REQ-6 | Superseded | since TAAK-245 `collection` is rewritten (`Numbers = source.Numbers?.ToList() ?? []`); see [automapper-nested-maps-verify.md](automapper-nested-maps-verify.md) |
 | REQ-7 | Met | `outside-profile`                                                                                                                                   |
 | REQ-8 | Met | `resolver-form`, unittests `Rewrite_MapFromConfiguredTwice_ReportsManual`, `Rewrite_MapFromOnReadOnlyMember_ReportsManual`                           |

@@ -18,9 +18,14 @@ public class NestedMaps
 
     private readonly Dictionary<(string Source, string Destination), List<NestedMap>> _maps;
 
-    private NestedMaps(Dictionary<(string Source, string Destination), List<NestedMap>> maps, string? nullSetting)
+    // Every CreateMap<A, B> type pair in the solution (also outside profiles, e.g. cfg.CreateMap<string, DateTime>().ConvertUsing(...)), with where it is.
+    private readonly Dictionary<(string Source, string Destination), string> _configured;
+
+    private NestedMaps(Dictionary<(string Source, string Destination), List<NestedMap>> maps, Dictionary<(string Source, string Destination), string> configured,
+        string? nullSetting)
     {
         _maps = maps;
+        _configured = configured;
         NullSetting = nullSetting;
     }
 
@@ -35,7 +40,14 @@ public class NestedMaps
     {
         Dictionary<(string Source, string Destination), List<NestedMap>> maps = [];
         AddCompilation(maps, model.Compilation, project: null);
-        return new NestedMaps(maps, model.Compilation.SyntaxTrees.Select(t => NullSettingIn(t, model.Compilation.GetSemanticModel(t))).FirstOrDefault(s => s is not null));
+        Dictionary<(string Source, string Destination), string> configured = [];
+        foreach (SyntaxTree tree in model.Compilation.SyntaxTrees)
+        {
+            AddConfigured(configured, tree, model.Compilation.GetSemanticModel(tree));
+        }
+
+        return new NestedMaps(maps, configured,
+            model.Compilation.SyntaxTrees.Select(t => NullSettingIn(t, model.Compilation.GetSemanticModel(t))).FirstOrDefault(s => s is not null));
     }
 
     public static Task<NestedMaps> FromAsync(SemanticModel model, Solution solution, CancellationToken cancellationToken) =>
@@ -45,6 +57,13 @@ public class NestedMaps
 
     public IReadOnlyList<NestedMap> Find(ITypeSymbol source, ITypeSymbol destination) =>
         _maps.TryGetValue((Key(source), Key(destination)), out List<NestedMap>? found) ? found : [];
+
+    /// <summary>
+    /// Where a CreateMap&lt;source, destination&gt; is ("file:line"), anywhere in the solution, or null. Such a map (typically with
+    /// ConvertUsing) replaces AutoMapper's built-in conversion of the pair.
+    /// </summary>
+    public string? ConfiguredAt(ITypeSymbol source, ITypeSymbol destination) =>
+        _configured.TryGetValue((Key(source), Key(destination)), out string? where) ? where : null;
 
     private static async Task<NestedMaps> BuildAsync(Compilation own, Solution solution, ProjectId ownId, CancellationToken cancellationToken)
     {
@@ -59,23 +78,30 @@ public class NestedMaps
             }
         }
 
-        // The settings can be anywhere, typically in the host project that calls AddAutoMapper (which depends on the profiles, not the reverse).
-        string? nullSetting = own.SyntaxTrees.Select(t => NullSettingIn(t, own.GetSemanticModel(t))).FirstOrDefault(s => s is not null);
+        // The settings and global maps can be anywhere, typically in the host project that calls AddAutoMapper (which depends on the
+        // profiles, not the reverse).
+        Dictionary<(string Source, string Destination), string> configured = [];
+        string? nullSetting = null;
+        foreach (SyntaxTree ownTree in own.SyntaxTrees)
+        {
+            SemanticModel ownModel = own.GetSemanticModel(ownTree);
+            nullSetting ??= NullSettingIn(ownTree, ownModel);
+            AddConfigured(configured, ownTree, ownModel);
+        }
+
         foreach (Document document in solution.Projects.Where(p => p.Id != ownId && p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents))
         {
-            if (nullSetting is not null)
-            {
-                break;
-            }
-
-            if (s_nullSettings.Any((await document.GetTextAsync(cancellationToken)).ToString().Contains)
+            string text = (await document.GetTextAsync(cancellationToken)).ToString();
+            bool hasSetting = nullSetting is null && s_nullSettings.Any(text.Contains);
+            if ((hasSetting || text.Contains("CreateMap", StringComparison.Ordinal))
                 && await document.GetSyntaxTreeAsync(cancellationToken) is { } tree && await document.GetSemanticModelAsync(cancellationToken) is { } documentModel)
             {
-                nullSetting = NullSettingIn(tree, documentModel);
+                nullSetting ??= hasSetting ? NullSettingIn(tree, documentModel) : null;
+                AddConfigured(configured, tree, documentModel);
             }
         }
 
-        return new NestedMaps(maps, nullSetting);
+        return new NestedMaps(maps, configured, nullSetting);
     }
 
     // project: null for the profile's own project.
@@ -109,10 +135,15 @@ public class NestedMaps
             foreach (InvocationExpressionSyntax createMap in profile.Members.OfType<ConstructorDeclarationSyntax>().SelectMany(c => c.DescendantNodes())
                 .OfType<InvocationExpressionSyntax>())
             {
-                if (createMap.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [_, { } destination] }
+                if (createMap.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                     && model.GetSymbolInfo(createMap).Symbol is IMethodSymbol { ContainingAssembly.Name: "AutoMapper", TypeArguments: [{ } from, { } to] })
                 {
                     found.Add((destination, from, to));
+                    if (CreateMapPattern.HasReverseMap(createMap))
+                    {
+                        // ReverseMap: the rewrite also writes A ToA(this B source).
+                        found.Add((source, to, from));
+                    }
                 }
             }
 
@@ -163,6 +194,24 @@ public class NestedMaps
         }
 
         list.Add(map);
+    }
+
+    private static void AddConfigured(Dictionary<(string Source, string Destination), string> configured, SyntaxTree tree, SemanticModel model)
+    {
+        if (!tree.GetText().ToString().Contains("CreateMap", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        foreach (InvocationExpressionSyntax createMap in tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            if ((createMap.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap" }
+                    || createMap.Expression is MemberAccessExpressionSyntax { Name: GenericNameSyntax { Identifier.ValueText: "CreateMap" } })
+                && model.GetSymbolInfo(createMap).Symbol is IMethodSymbol { ContainingAssembly.Name: "AutoMapper", TypeArguments: [{ } from, { } to] })
+            {
+                configured.TryAdd((Key(from), Key(to)), $"{tree.FilePath}:{createMap.GetLocation().GetLineSpan().StartLinePosition.Line + 1}");
+            }
+        }
     }
 
     // An assignment to AutoMapper's AllowNullCollections or AllowNullDestinationValues in the tree.

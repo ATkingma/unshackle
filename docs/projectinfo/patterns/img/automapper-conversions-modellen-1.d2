@@ -1,0 +1,11 @@
+title: "[Classes] automapper.conversions" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+CreateMapPattern: {shape: class; "-Problem(source, destination, options, model, profileType, values, out members, out copied)"; "-MapFromProblem(..., destination, values, out value, out copies)"}
+MemberValues: {shape: class; "+Problem(what, value, from, to, outer, out result, out copies)"; "-Nested(value, from, to, outer, out call)"; "-Conversion(what, value, from, to, out result, out exact)"; "-NullSettingProblem(what)"}
+MemberConversions: {shape: class; "+Problem(what, value, from, to, out result, out exact)"; "-ToStringProblem(...)"; "-FromStringProblem(...)"; "-CoreProblem(..., out form, out defaultSafe, out lifted, out implicitly)"; "-EnumProblem(...)"; "-HasEnumMember(type)"}
+NestedMaps: {shape: class; "+Find(source, destination)"; "+ConfiguredAt(source, destination)"; "+NullSetting"; "-AddConfigured(configured, tree, model)"}
+Output: "<Profile>Extensions:\nX = source.X.GetValueOrDefault()\nX = source.X.ToString()\nX = Convert.ToInt32(source.X)\nX = (StatusDto)source.X / switch"
+CreateMapPattern -> MemberValues: per member
+MemberValues -> NestedMaps: "Find, ConfiguredAt"
+MemberValues -> MemberConversions: no map, types differ
+CreateMapPattern -> Output: writes

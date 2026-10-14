@@ -17,7 +17,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberIgnorePattern.cs`, 
 | REQ-1 | Met | `simple` (Ignore with and without a source member, two ForMember links), `mixed`, unit test `Rewrite_IgnoredMemberHasSourceMember_LeavesItOut` |
 | REQ-2 | Met | `simple`, `mixed`                                                                                                                       |
 | REQ-3 | Met | `unmatched`                                                                                                                             |
-| REQ-4 | Met | `string-name`, `reverse-map`                                                                                                |
+| REQ-4 | Met | `string-name` (`reverse-map` Fixed since TAAK-249)                                                                                              |
 | REQ-5 | Met | unittest `Rewrite_IgnoredMemberNotPublic_ReportsManual`                                                                                 |
 | REQ-6 | Met | unittest `Find_ProfileWithOrWithoutIgnore_IsClaimedByOneOfThePatterns`                                                                  |
 

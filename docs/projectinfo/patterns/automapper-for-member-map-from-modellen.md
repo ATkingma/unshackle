@@ -47,7 +47,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberMapFromPattern
 | Manual "no public setter"      | X has no public setter                                       | unit test                                  |
 | Manual "not available outside" | the expression uses an instance member of the profile        | `outside-profile`                          |
 | Manual "which may be null"     | the receiver is not `s`/a type and not NotNull               | `null-deref`, unit test                    |
-| Manual "AutoMapper converts"   | type of the expression unequal to the type of X (apart from numeric/nullable) | `conversion`              |
+| Manual "AutoMapper converts"   | type of the expression unequal to the type of X and no built-in conversion this fix writes (TAAK-247) | `CreateMap/conversion-operator`; `conversion` is rewritten since TAAK-247 |
 | Manual "is a collection"       | X is a collection of another kind (dictionary, set); lists and arrays are copied since TAAK-245 ([automapper-nested-maps-modellen.md](automapper-nested-maps-modellen.md)) | `CreateMap/collection-dictionary` |
 | Fixed (`X = expr`)             | everything above passed                                      | `simple`, `ignore-and-nullable`, unit tests |
 

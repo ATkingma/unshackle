@@ -113,6 +113,8 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-136-mediatr-msg0005-zonder-handler.md` | ✅ TAAK-136 — MediatR: Mediator generator MSG0005 breaks the build with TreatWarningsAsErrors |
 | `claude/tasks/archief/TAAK-118-gedeeld-pakketbestand-niet-geladen-projecten.md` | ✅ TAAK-118 — A shared `Directory.*.props` keeps the old package if a non-migrated project on disk still uses it |
 | `claude/tasks/CORPUSRUN-fa.md` | FA corpus runs; round 4: 16/16 build, 13/16 green, regressions → TAAK-220..222; round 5: Akka/Steeltoe/LiteDB 0 new regressions |
+| `claude/tasks/CORPUSRUN-automapper.md` | AutoMapper corpus run: harness, baseline 14/18 repos (7851 tests), scan 1 Fixed / 1373 Manual, top Manual reasons |
+| `claude/tasks/TAAK-258-automapper-corpus-baseline.md` | TAAK-258 — AutoMapper corpus baseline and harness (row 16 preparation; after-fix round open) |
 | `claude/tasks/CORPUSRUN-mediatr.md` | MediatR corpus runs: from 0/9 to 7/9 fully migrated (rounds 1–6), blockers and actions |
 | `claude/tasks/REGRESSIE-corpus.md` | Regression run per test: 8/10 identical; Polly → TAAK-140 |
 | `claude/tasks/REGRESSIE-corpus-2.md` | Regression run round 2 (Facility, MODiX): 0 regressions; error classes → TAAK-152..154 |
@@ -193,6 +195,8 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-255-automapper-member-options.md` | ✅ automapper.member-options — Condition/PreCondition → `X = cond ? value : default`, ForPath `d.A.B` → `A = new() { B = ... }`; initializer/ctor/MapInto/ReverseMap/deep paths/NullSubstitute Manual |
 | `claude/tasks/archief/TAAK-256-automapper-flattening.md` | ✅ automapper.flattening — other case, `GetX()`, `Customer.Name` → `CustomerName = source.Customer?.Name` (AutoMapper 14 name rules and null behaviour measured) |
 | `claude/tasks/archief/TAAK-257-automapper-unsupported.md` | ✅ automapper.unsupported — specific Manual reason per unsupported option; MaxDepth/PreserveReferences/DoNotValidate dropped where without effect |
+| `claude/tasks/archief/TAAK-261-automapper-unmatched-members.md` | ✅ TAAK-261 — unmatched/get-only destination members left out like AutoMapper 14; Manual with `AssertConfigurationIsValid`, non-public setter or get-only collection |
+| `claude/tasks/archief/TAAK-259-automapper-map-collections.md` | ✅ TAAK-259 — `Map` on collections → `Select(x => x.ToB()).ToList()`, maybe-null source → `a?.ToB()` (AutoMapper 14 measured) |
 | `claude/tasks/archief/TAAK-246-automapper-member-list.md` | ✅ `automapper.member-list` — `CreateMap<A, B>(MemberList.X)` migrated like `CreateMap<A, B>()` (AutoMapper 14: member list only steers `AssertConfigurationIsValid`, measured + IL scan) |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: unused assembly parameter after AddMediator (IDE0060) → warning in the report |
 

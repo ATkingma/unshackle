@@ -20,5 +20,13 @@ public static class OrderMapping
 
 public class OrderService
 {
-    public OrderDto? Find(IMapper mapper, Order? order) => mapper.Map<OrderDto?>(order);
+    public void Send(IMapper mapper, Order? order)
+    {
+        var dto = mapper.Map<OrderDto>(order);
+        Publish(dto);
+    }
+
+    private static void Publish(OrderDto dto)
+    {
+    }
 }

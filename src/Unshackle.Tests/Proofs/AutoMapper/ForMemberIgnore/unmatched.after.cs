@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using AutoMapper;
 
 namespace Shop;
@@ -11,17 +10,21 @@ public class Order
 public class OrderDto
 {
     public int Id { get; set; }
+    public string Note { get; set; } = "";
+    public int Rank { get; set; }
 }
 
 public class OrderProfile : Profile
 {
     public OrderProfile()
     {
-        CreateMap<Order, OrderDto>();
     }
 }
 
-public class OrderService
+public static class OrderProfileExtensions
 {
-    public List<OrderDto> All(IMapper mapper, List<Order> orders) => mapper.Map<List<OrderDto>>(orders);
+    public static OrderDto ToOrderDto(this Order source) => new()
+    {
+        Id = source.Id,
+    };
 }

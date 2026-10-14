@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "automapper-create-map"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
 files_expected:
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs
     - src/Unshackle.Core/Fixes/AutoMapper/AutoMapperFix.cs
@@ -45,6 +45,7 @@ automapper.create-map: a `Profile` whose constructor only contains `CreateMap<A,
 - **REQ-5**: IF the types differ or the member is a collection THEN THE SYSTEM SHALL report Manual (proofs `conversion`, `collection`). _Superseded in part by TAAK-245_: a member whose type pair has its own CreateMap and a list or array are rewritten now ([automapper-nested-maps-plan.md](automapper-nested-maps-plan.md)); `collection` became an `.after.cs`. _Superseded in part by TAAK-247_: AutoMapper's built-in conversions are rewritten where a hand-written form gives the same result ([automapper-conversions-plan.md](automapper-conversions-plan.md)); `conversion` became an `.after.cs`, `conversion-operator` keeps the Manual reason.
 - **REQ-6**: IF B has no public parameterless constructor or is abstract THEN THE SYSTEM SHALL report Manual (proof `constructor`).
 - **REQ-7**: WHEN AutoMapper's `Map`/`ProjectTo` is called THE SYSTEM SHALL report Manual, so the fix changes nothing (proof `map-call`; since TAAK-157 only `ProjectTo`, `Map(src, dest)` and `Map` with options, proof `map-into`).
+- **REQ-8** (TAAK-261): WHEN a writable destination member has no source member AutoMapper reads (same name in any case, `GetX`, flattening), or is get-only without a setter and not a collection, THE SYSTEM SHALL leave it out of the object initializer, so the new object keeps its initializer or default exactly as AutoMapper 14 does (proofs `CreateMap/unmatched-member`, `ForMemberIgnore/unmatched`). IF the solution (without it: the compilation) calls `AssertConfigurationIsValid` anywhere THEN an unmatched member is Manual (proof `unmatched-asserted`): that check throws on such a member, so passing tests mean AutoMapper maps it in a way the fix does not see. IF the source has the member and the destination has a non-public setter (AutoMapper writes it) or is a get-only collection (AutoMapper clears it and adds the source items) THEN Manual (proofs `private-setter`, `get-only-collection`).
 
 ## Assumptions
 

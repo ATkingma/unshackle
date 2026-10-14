@@ -1,0 +1,1 @@
+yet the solution calls AssertConfigurationIsValid, which rejects such a member

@@ -129,6 +129,83 @@ public class MapCallPatternTests
         (await TextAsync(report.Solution, "Profile.cs")).ShouldContain("public static Order ToOrder(this OrderDto source)");
     }
 
+    // A collection with the profile in another file: each element through the generated method (TAAK-259).
+    [Theory]
+    [InlineData("List<Shop.Mapping.OrderDto>", "orders?.Select(x => x?.ToOrderDto()).ToList() ?? []")]
+    [InlineData("Shop.Mapping.OrderDto[]", "orders?.Select(x => x?.ToOrderDto()).ToArray() ?? []")]
+    [InlineData("IReadOnlyList<Shop.Mapping.OrderDto>", "orders?.Select(x => x?.ToOrderDto()).ToList() ?? []")]
+    public async Task FixAsync_CollectionWithProfileInOtherFile_SelectsGeneratedMethod(string destination, string expected)
+    {
+        // Arrange
+        var workspace = new AdhocWorkspace();
+        var project = ProjectId.CreateNewId();
+        string service = $$"""
+            using System.Collections.Generic;
+            using AutoMapper;
+
+            namespace Shop.Orders;
+
+            public class OrderService
+            {
+                internal IEnumerable<Shop.Mapping.OrderDto> All(IMapper mapper, List<Shop.Mapping.Order> orders) => mapper.Map<{{destination}}>(orders);
+            }
+            """;
+        Solution solution = AddProject(workspace.CurrentSolution, project, "Shop")
+            .AddDocument(DocumentId.CreateNewId(project), "Profile.cs", Profile.Replace("ACCESS", "public", StringComparison.Ordinal), filePath: "Profile.cs")
+            .AddDocument(DocumentId.CreateNewId(project), "Service.cs", service, filePath: "Service.cs");
+
+        // Act
+        FixReport report = await new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult);
+        string text = await TextAsync(report.Solution, "Service.cs");
+        text.ShouldContain($"=> {expected};");
+        text.ShouldContain("using System.Linq;");
+        text.ShouldContain("using Shop.Mapping;");
+    }
+
+    // A maybe-null source becomes source?.ToB() only where null may go (TAAK-259).
+    [Theory]
+    [InlineData("Shop.Mapping.OrderDto? Get(IMapper mapper, Shop.Mapping.Order? order) => mapper.Map<Shop.Mapping.OrderDto>(order);", "=> order?.ToOrderDto();")]
+    [InlineData("Shop.Mapping.OrderDto? Get(IMapper mapper, Shop.Mapping.Order? order) { Shop.Mapping.OrderDto? dto = mapper.Map<Shop.Mapping.OrderDto>(order); return dto; }", "dto = order?.ToOrderDto();")]
+    [InlineData("Shop.Mapping.OrderDto Get(IMapper mapper, Shop.Mapping.Order? order) => mapper.Map<Shop.Mapping.OrderDto>(order);", null)]
+    [InlineData("Shop.Mapping.OrderDto Get(IMapper mapper, Shop.Mapping.Order? order) { var dto = mapper.Map<Shop.Mapping.OrderDto>(order); return dto; }", null)]
+    public async Task FixAsync_MaybeNullSource_ConditionalOnlyWhereNullAllowed(string method, string? expected)
+    {
+        // Arrange
+        var workspace = new AdhocWorkspace();
+        var project = ProjectId.CreateNewId();
+        string service = $$"""
+            #nullable enable
+            using AutoMapper;
+
+            namespace Shop.Orders;
+
+            public class OrderService
+            {
+                internal {{method}}
+            }
+            """;
+        Solution solution = AddProject(workspace.CurrentSolution, project, "Shop")
+            .AddDocument(DocumentId.CreateNewId(project), "Profile.cs", Profile.Replace("ACCESS", "public", StringComparison.Ordinal), filePath: "Profile.cs")
+            .AddDocument(DocumentId.CreateNewId(project), "Service.cs", service, filePath: "Service.cs");
+
+        // Act
+        FixReport report = await new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        if (expected is null)
+        {
+            report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains("may be null", StringComparison.Ordinal));
+        }
+        else
+        {
+            report.Findings.ShouldAllBe(f => f.Result is FixedResult);
+            (await TextAsync(report.Solution, "Service.cs")).ShouldContain(expected);
+        }
+    }
+
     // No generated method: the reason names what blocks the map, the Manual profile or a CreateMap outside a profile constructor (TAAK-260).
     [Theory]
     [InlineData("AllowNullCollections = true; CreateMap<Order, OrderDto>();", "CreateMap<Order, OrderDto> is in profile OrderProfile, which this fix does not rewrite: ")]

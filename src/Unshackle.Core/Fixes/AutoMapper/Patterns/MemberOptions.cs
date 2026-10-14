@@ -94,7 +94,7 @@ public class MemberOptions
                 case "Condition" or "PreCondition":
                     Unsupported = $"{name.Identifier.ValueText} for {member} is not a lambda of the source alone (it reads the destination or the member values)";
                     return false;
-                case "NullSubstitute" or "UseDestinationValue" or "ConvertUsing" or "AllowNull" or "DoNotAllowNull" or "SetMappingOrder" or "ExplicitExpansion":
+                case "NullSubstitute" or "UseDestinationValue" or "AllowNull" or "DoNotAllowNull" or "SetMappingOrder" or "ExplicitExpansion":
                     Unsupported = $"{name.Identifier.ValueText} for {member} is not migrated";
                     return false;
                 default:

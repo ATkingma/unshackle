@@ -169,6 +169,9 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `automapper.configuration-test` | [plan](patterns/automapper-configuration-test-plan.md) | [models](patterns/automapper-configuration-test-modellen.md) | [verify](patterns/automapper-configuration-test-verify.md) | TAAK-250 |
 | `automapper.profile-shapes` | [plan](patterns/automapper-profile-shapes-plan.md) | [models](patterns/automapper-profile-shapes-modellen.md) | [verify](patterns/automapper-profile-shapes-verify.md) | TAAK-248 |
 | `automapper.constructor` | [plan](patterns/automapper-constructor-plan.md) | [models](patterns/automapper-constructor-modellen.md) | [verify](patterns/automapper-constructor-verify.md) | TAAK-251 |
+| `automapper.value-resolver` | [plan](patterns/automapper-value-resolver-plan.md) | [models](patterns/automapper-value-resolver-modellen.md) | [verify](patterns/automapper-value-resolver-verify.md) | TAAK-254 |
+| `automapper.project-to` | [plan](patterns/automapper-project-to-plan.md) | [models](patterns/automapper-project-to-modellen.md) | [verify](patterns/automapper-project-to-verify.md) | TAAK-252 |
+| `automapper.convert-using` | [plan](patterns/automapper-convert-using-plan.md) | [models](patterns/automapper-convert-using-modellen.md) | [verify](patterns/automapper-convert-using-verify.md) | TAAK-253 |
 
 ## See also
 

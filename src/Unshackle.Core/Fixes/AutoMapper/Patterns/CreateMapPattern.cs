@@ -29,7 +29,7 @@ public class CreateMapPattern : ISolutionPattern
     public virtual string Id => "automapper.create-map";
 
     public virtual string Description =>
-        "Profile with CreateMap<A, B>() without options → static B ToB(this A source) => new() { X = source.X, ... } for the members with the same name and type (or a built-in conversion AutoMapper does the same way); MapInto(this A source, B destination) when the solution calls Map(source, destination); Map with options and ProjectTo are Manual";
+        "Profile with CreateMap<A, B>() without options → static B ToB(this A source) => new() { X = source.X, ... } for the members with the same name and type (or a built-in conversion AutoMapper does the same way); MapInto(this A source, B destination) when the solution calls Map(source, destination); AToBProjection when the solution calls ProjectTo; Map with options is Manual";
 
     // Map and ProjectTo calls that MapCallPattern does not rewrite are found too: while they run, a removed CreateMap fails at run time,
     // so they make the fix all-or-nothing.
@@ -41,12 +41,13 @@ public class CreateMapPattern : ISolutionPattern
                 && (info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is IMethodSymbol { Name: "Map" or "ProjectTo" } method
                 && method.ContainingAssembly?.Name == AutoMapperAssembly
                 && !MapCallPattern.IsMapCall(i, model)
-                && !MapIntoPattern.IsMapIntoCall(i, model),
+                && !MapIntoPattern.IsMapIntoCall(i, model)
+                && !ProjectToPattern.IsProjectToCall(i, model),
             _ => false,
         }).Select(Anchor).Distinct();
 
     // Without the solution no MapInto is written: nothing says a Map(source, destination) call needs it.
-    public virtual PatternResult Rewrite(SyntaxNode node, SemanticModel model) => Rewrite(node, model, new HashSet<string>(), nested: null);
+    public virtual PatternResult Rewrite(SyntaxNode node, SemanticModel model) => Rewrite(node, model, new HashSet<string>(), nested: null, projectTo: new HashSet<string>());
 
     public virtual async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
@@ -54,16 +55,18 @@ public class CreateMapPattern : ISolutionPattern
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(solution);
         return node is TypeDeclarationSyntax
-            ? Rewrite(node, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken), await NestedMaps.FromAsync(model, solution, cancellationToken))
-            : Rewrite(node, model, new HashSet<string>(), nested: null);
+            ? Rewrite(node, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken), await NestedMaps.FromAsync(model, solution, cancellationToken),
+                await ProjectToPattern.TargetsAsync(solution, cancellationToken))
+            : Rewrite(node, model, new HashSet<string>(), nested: null, projectTo: new HashSet<string>());
     }
 
     // The ToB methods of a profile, with nested maps of the whole solution; no MapInto (MapCallPattern only needs the method names).
     internal static async Task<PatternResult> RewriteMethodsAsync(ClassDeclarationSyntax profile, SemanticModel model, Solution solution, CancellationToken cancellationToken) =>
-        Rewrite(profile, model, new HashSet<string>(), await NestedMaps.FromAsync(model, solution, cancellationToken));
+        Rewrite(profile, model, new HashSet<string>(), await NestedMaps.FromAsync(model, solution, cancellationToken), projectTo: new HashSet<string>());
 
     // mapInto: the maps (MapIntoPattern.Key) that get a MapInto next to ToB. nested: the maps a member can call (null: this project's).
-    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, IReadOnlySet<string> mapInto, NestedMaps? nested)
+    // projectTo: the maps that a ProjectTo call uses, which get an Expression<Func<A, B>> AToBProjection next to ToB (see Projections).
+    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, IReadOnlySet<string> mapInto, NestedMaps? nested, IReadOnlySet<string> projectTo)
     {
         if (node is InvocationExpressionSyntax)
         {
@@ -100,11 +103,15 @@ public class CreateMapPattern : ISolutionPattern
         bool isInternal = false;
         HashSet<string> pairs = new(StringComparer.Ordinal);
         HashSet<string> namespaces = new(StringComparer.Ordinal);
-        var values = new MemberValues(nested ?? NestedMaps.From(model), model, anchor.SpanStart, namespaces);
+        NestedMaps allMaps = nested ?? NestedMaps.From(model);
+        var values = new MemberValues(allMaps, model, anchor.SpanStart, namespaces);
+        Dictionary<string, (ITypeSymbol Source, ITypeSymbol Destination, IReadOnlyList<ProjectionMember> Members)> projectable = new(StringComparer.Ordinal);
+        List<(TypeSyntax Source, TypeSyntax Destination, string Key, string Name)> projected = [];
         foreach (SyntaxNode statement in MapStatements(constructor))
         {
             if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out Dictionary<string, SimpleLambdaExpressionSyntax?>? options,
-                    out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverseOptions, out MemberOptions extra)
+                    out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverseOptions, out Dictionary<string, InvocationExpressionSyntax> resolverCalls,
+                    out InvocationExpressionSyntax? convertUsing, out Dictionary<string, InvocationExpressionSyntax> converters, out MemberOptions extra)
                 || invocation.Expression is not GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                 || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly } method)
             {
@@ -115,10 +122,51 @@ public class CreateMapPattern : ISolutionPattern
 
             ITypeSymbol sourceType = method.TypeArguments[0];
             ITypeSymbol destinationType = method.TypeArguments[1];
-            if (Problem(sourceType, destinationType, options, model, profileType, values, out List<(string Name, string Value)> members, out string? copied, out string creation,
-                extra: extra) is string problem)
+            if ((convertUsing is not null || converters.Count > 0) && projectTo.Contains(MapIntoPattern.Key(sourceType, destinationType)))
+            {
+                // A converter runs code per object; an expression the query provider translates cannot call it (TAAK-253).
+                return PatternResult.Manual($"ProjectTo<{destinationType.Name}> uses CreateMap<{sourceType.Name}, {destinationType.Name}>, which has a ConvertUsing converter; write the projection by hand.");
+            }
+
+            if ((!extra.IsEmpty || extra.HasForPath) && projectTo.Contains(MapIntoPattern.Key(sourceType, destinationType)))
+            {
+                // Not measured for a projection (TAAK-255): the conditional and nested-object forms stay out of ProjectTo.
+                return PatternResult.Manual($"ProjectTo<{destinationType.Name}> uses CreateMap<{sourceType.Name}, {destinationType.Name}>, which has a Condition or ForPath; write the projection by hand.");
+            }
+
+            if (reverseOptions is not null && resolverCalls.Count > 0)
+            {
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: ReverseMap next to a value resolver or a MapFrom lambda with more parameters (AutoMapper does not reverse those); write the mapping methods by hand.");
+            }
+
+            if (resolverCalls.Count > 0 && projectTo.Contains(MapIntoPattern.Key(sourceType, destinationType)))
+            {
+                // A resolver runs code per object; an expression the query provider translates cannot call it.
+                return PatternResult.Manual($"ProjectTo<{destinationType.Name}> uses CreateMap<{sourceType.Name}, {destinationType.Name}>, which has a value resolver or a MapFrom lambda with more parameters; write the projection by hand.");
+            }
+
+            List<ProjectionMember> read = [];
+            List<(string Name, string Value)> members = [];
+            string? copied = null;
+            string creation;
+            if (convertUsing is not null)
+            {
+                // ConvertUsing replaces the whole map: ToB returns what the converter returns (TAAK-253).
+                if (Converters.TypeProblem(convertUsing, sourceType, destinationType, MethodName(destination), model, profileType, out creation) is string converterProblem)
+                {
+                    return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {converterProblem}; write the mapping method by hand.");
+                }
+            }
+            else if (Problem(sourceType, destinationType, options, model, profileType, values, out members, out copied, out creation,
+                resolvers: new ValueResolvers(resolverCalls, model, anchor.SpanStart, profileType), read: read, converters: converters, extra: extra) is string problem)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {problem}; write the mapping method by hand.");
+            }
+
+            // A projection needs the members as an object initializer; a constructor call is not measured for ProjectTo (left out).
+            if (creation == "new()" && converters.Count == 0)
+            {
+                projectable.TryAdd(MapIntoPattern.Key(sourceType, destinationType), (sourceType, destinationType, read));
             }
 
             bool needsMapInto = mapInto.Contains(MapIntoPattern.Key(sourceType, destinationType));
@@ -127,6 +175,12 @@ public class CreateMapPattern : ISolutionPattern
                 // Not migrated (TAAK-255): Map(source, destination) keeps the existing value or object, and ReverseMap may reverse a ForPath.
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: a Condition or ForPath is not migrated together with {(needsMapInto ? "Map(source, destination) (MapInto)" : "ReverseMap")}; write the mapping methods by hand.");
             }
+            if (needsMapInto && convertUsing is not null)
+            {
+                // Measured (TAAK-253): Map(source, destination) returns the converter's result and leaves the destination alone.
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: Map(source, destination) runs ConvertUsing, which returns a new value instead of filling the destination; migrate that call by hand.");
+            }
+
             if (needsMapInto && copied is not null)
             {
                 // Measured (TAAK-245): Map(source, destination) maps into the nested object or list the destination already has.
@@ -162,6 +216,15 @@ public class CreateMapPattern : ISolutionPattern
 
             isInternal |= access == Accessibility.Internal;
             maps.Add((source, destination, members, needsMapInto, creation));
+            if (projectTo.Contains(MapIntoPattern.Key(sourceType, destinationType)))
+            {
+                projected.Add((source, destination, MapIntoPattern.Key(sourceType, destinationType), Projections.Name(sourceType, destinationType)));
+            }
+
+            if (reverseOptions is not null && projectTo.Contains(MapIntoPattern.Key(destinationType, sourceType)))
+            {
+                return PatternResult.Manual($"ProjectTo<{sourceType.Name}> uses the ReverseMap of CreateMap<{sourceType.Name}, {destinationType.Name}>, which this fix writes no projection for; write the projection by hand.");
+            }
             if (reverseOptions is not null)
             {
                 if (Reverse(sourceType, destinationType, options, reverseOptions, model, profileType, values, mapInto, out List<(string Name, string Value)> reverseMembers,
@@ -187,9 +250,37 @@ public class CreateMapPattern : ISolutionPattern
             return PatternResult.Manual($"A type {className} already exists; write the mapping methods of {profile.Identifier} by hand.");
         }
 
+        // After all maps are known: a nested object or list of a later CreateMap is inlined too.
+        var projections = new Projections(projectable, allMaps, model, anchor.SpanStart);
+        List<(TypeSyntax Source, TypeSyntax Destination, string Name, List<(string Name, string Value)> Members)> withProjection = [];
+        foreach ((TypeSyntax source, TypeSyntax destination, string key, string name) in projected)
+        {
+            if (withProjection.Any(w => w.Name == name))
+            {
+                return PatternResult.Manual($"Two maps of {profile.Identifier} would both get a projection {name}; write them by hand.");
+            }
+
+            if (!projectable.ContainsKey(key))
+            {
+                return PatternResult.Manual($"ProjectTo uses {name[..^"Projection".Length]}, whose destination is created through its constructor; write the projection by hand.");
+            }
+
+            if (projections.Problem(key, out List<(string Name, string Value)> members) is string problem)
+            {
+                return PatternResult.Manual(problem + ".");
+            }
+
+            withProjection.Add((source, destination, name, members));
+            namespaces.UnionWith(["System", "System.Linq.Expressions"]);
+            if (members.Any(m => m.Value.Contains(".Select(", StringComparison.Ordinal)))
+            {
+                namespaces.Add("System.Linq");
+            }
+        }
+
         return PatternResult.Fixed([
             anchor.ReplaceNode(constructor, Emptied(constructor)),
-            Extensions(anchor, className, isInternal ? "internal" : "public", maps)], [.. namespaces.Order(StringComparer.Ordinal)]);
+            Extensions(anchor, className, isInternal ? "internal" : "public", maps, withProjection)], [.. namespaces.Order(StringComparer.Ordinal)]);
     }
 
     // The statements of a profile constructor: the block's, or the expression of `=> CreateMap<A, B>()`.
@@ -272,8 +363,11 @@ public class CreateMapPattern : ISolutionPattern
     // reversed MapFrom; a destination member without any source is then left alone instead of Manual.
     private static string? Problem(ITypeSymbol source, ITypeSymbol destination, Dictionary<string, SimpleLambdaExpressionSyntax?> options,
         SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out List<(string Name, string Value)> members, out string? copied, out string creation,
-        Dictionary<string, string>? reversed = null, MemberOptions? extra = null)
+        Dictionary<string, string>? reversed = null, ValueResolvers? resolvers = null, List<ProjectionMember>? read = null,
+        Dictionary<string, InvocationExpressionSyntax>? converters = null, MemberOptions? extra = null)
     {
+        converters ??= [];
+        // read: what AutoMapper reads for each assigned member, before the ToB-only rewrites (a projection uses it).
         members = [];
         copied = null;
         creation = "new()";
@@ -303,7 +397,7 @@ public class CreateMapPattern : ISolutionPattern
             _ => false,
         })];
         List<ISymbol> destinationMembers = [.. AllMembers(destination).Where(m => m is IPropertySymbol { IsIndexer: false } or IFieldSymbol { IsConst: false })];
-        foreach ((string name, SimpleLambdaExpressionSyntax? mapFrom) in options)
+        foreach ((string name, bool mapFrom) in options.Select(o => (o.Key, o.Value is not null)).Concat((resolvers?.Members ?? []).Select(m => (m, true))))
         {
             ISymbol? configured = destinationMembers.FirstOrDefault(m => m.Name == name);
             if (configured is null)
@@ -312,7 +406,7 @@ public class CreateMapPattern : ISolutionPattern
                 return $"ForMember configures {name}, which {destination.Name} does not have as a public property or field";
             }
 
-            if (mapFrom is not null && !(configured is IFieldSymbol { IsReadOnly: false } || configured is IPropertySymbol { SetMethod.DeclaredAccessibility: Accessibility.Public }))
+            if (mapFrom && !(configured is IFieldSymbol { IsReadOnly: false } || configured is IPropertySymbol { SetMethod.DeclaredAccessibility: Accessibility.Public }))
             {
                 return $"ForMember maps {destination.Name}.{name}, which has no public setter";
             }
@@ -321,6 +415,17 @@ public class CreateMapPattern : ISolutionPattern
         if (constructor is not null && extra is { IsEmpty: false })
         {
             return $"{destination.Name} is created through its constructor, which may set a member a Condition or ForPath keeps or fills (TAAK-255)";
+        }
+
+        if (converters.Keys.FirstOrDefault(name => !destinationMembers.Any(m => m.Name == name
+            && (m is IFieldSymbol { IsReadOnly: false } || m is IPropertySymbol { SetMethod.DeclaredAccessibility: Accessibility.Public }))) is { } unwritable)
+        {
+            return $"ForMember converts {destination.Name}.{unwritable}, which is not a public property with a setter or a field";
+        }
+
+        if (constructor is not null && converters.Count > 0)
+        {
+            return $"{destination.Name} is made through a constructor and ForMember uses a value converter; write the mapping method by hand";
         }
 
         if (constructor is not null && ConstructorProblem(constructor, source, destination, options, readable, values, out creation, ref copied) is string constructorProblem)
@@ -333,6 +438,36 @@ public class CreateMapPattern : ISolutionPattern
             // A member a constructor parameter of the same name (any case) filled is not mapped again (measured, TAAK-251).
             if (constructor is not null && constructor.Parameters.Any(p => string.Equals(p.Name, target.Name, StringComparison.OrdinalIgnoreCase)))
             {
+                if (resolvers?.Has(target.Name) == true)
+                {
+                    return $"a value resolver configures {target.Name}, which a constructor parameter of {destination.Name} also fills";
+                }
+
+                continue;
+            }
+
+            if (resolvers?.Has(target.Name) == true)
+            {
+                ITypeSymbol resolvedType = target is IPropertySymbol resolvedProperty ? resolvedProperty.Type : ((IFieldSymbol)target).Type;
+                if (resolvers.Problem(target.Name, resolvedType, destination, values, out string resolved, out bool resolvedCopies) is string resolverProblem)
+                {
+                    return resolverProblem;
+                }
+
+                members.Add((target.Name, resolved));
+                copied ??= resolvedCopies ? target.Name : null;
+                continue;
+            }
+
+            // ConvertUsing(converter[, s => s.Y]): X = converter.Convert(source.Y, null) (TAAK-253).
+            if (converters.TryGetValue(target.Name, out InvocationExpressionSyntax? converter))
+            {
+                if (Converters.MemberProblem(converter, target.Name, source, model, profileType, out string converted) is string converterProblem)
+                {
+                    return converterProblem;
+                }
+
+                members.Add((target.Name, converted));
                 continue;
             }
 
@@ -356,12 +491,14 @@ public class CreateMapPattern : ISolutionPattern
                 }
 
                 ITypeSymbol targetType = target is IPropertySymbol property ? property.Type : ((IFieldSymbol)target).Type;
-                if (MapFromProblem(target.Name, mapFromLambda, model, profileType, targetType, destination, values, out string value, out bool copies) is string mapFromProblem)
+                if (MapFromProblem(target.Name, mapFromLambda, model, profileType, targetType, destination, values, out string value, out bool copies,
+                    out string expression, out ITypeSymbol? expressionType) is string mapFromProblem)
                 {
                     return mapFromProblem;
                 }
 
                 members.Add((target.Name, value));
+                read?.Add(new ProjectionMember { Name = target.Name, Value = expression, From = expressionType!, To = targetType });
                 copied ??= copies ? target.Name : null;
                 continue;
             }
@@ -429,6 +566,7 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             members.Add((target.Name, assigned));
+            read?.Add(new ProjectionMember { Name = target.Name, Value = "source." + target.Name, From = from, To = to });
             copied ??= copy ? target.Name : null;
         }
 
@@ -468,7 +606,7 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             ITypeSymbol innerType = inner is IPropertySymbol innerProperty ? innerProperty.Type : ((IFieldSymbol)inner).Type;
-            if (MapFromProblem(target.Name + "." + member, mapFrom, model, profileType, innerType, named, values, out string value, out _) is string problem)
+            if (MapFromProblem(target.Name + "." + member, mapFrom, model, profileType, innerType, named, values, out string value, out _, out _, out _) is string problem)
             {
                 return problem;
             }
@@ -501,7 +639,7 @@ public class CreateMapPattern : ISolutionPattern
                 return $"{destination.Name}.{name} has an initializer or {destination.Name} a constructor of its own: when the Condition is false AutoMapper keeps that value, which an object initializer cannot";
             }
 
-            if (MapFromProblem("Condition of " + name, lambda, model, profileType, boolean, destination, values, out string condition, out _) is string problem)
+            if (MapFromProblem("Condition of " + name, lambda, model, profileType, boolean, destination, values, out string condition, out _, out _, out _) is string problem)
             {
                 return problem;
             }
@@ -698,10 +836,13 @@ public class CreateMapPattern : ISolutionPattern
     // AutoMapper runs a MapFrom expression null-safe (a NullReferenceException gives the default value) and converts types
     // where needed, a plain assignment does neither: so only expressions that cannot throw and need no conversion are moved.
     private static string? MapFromProblem(string member, SimpleLambdaExpressionSyntax lambda, SemanticModel model, INamedTypeSymbol? profileType,
-        ITypeSymbol targetType, ITypeSymbol destination, MemberValues values, out string value, out bool copies)
+        ITypeSymbol targetType, ITypeSymbol destination, MemberValues values, out string value, out bool copies,
+        out string read, out ITypeSymbol? readType)
     {
         value = "";
         copies = false;
+        read = "";
+        readType = null;
         if (lambda.Body is not ExpressionSyntax body || model.GetDeclaredSymbol(lambda.Parameter) is not IParameterSymbol parameter || lambda.AsyncKeyword != default)
         {
             return $"MapFrom for {member} is not a lambda with an expression body";
@@ -756,6 +897,8 @@ public class CreateMapPattern : ISolutionPattern
             ? body
             : body.ReplaceNodes(parameterUses, (original, _) => SyntaxFactory.IdentifierName("source").WithTriviaFrom(original));
         value = replaced.WithoutTrivia().ToString();
+        read = value;
+        readType = from;
         if (values.Problem("MapFrom for " + member, value, from, targetType, destination, out string? mapped, out copies) is string valueProblem)
         {
             return valueProblem;
@@ -776,7 +919,7 @@ public class CreateMapPattern : ISolutionPattern
     }
 
     // A name that is read (not the right side of a.b, an initializer member, a named argument or a property name of an anonymous type).
-    private static bool IsReference(SimpleNameSyntax name) => name.Parent switch
+    internal static bool IsReference(SimpleNameSyntax name) => name.Parent switch
     {
         MemberAccessExpressionSyntax access => access.Expression == name,
         MemberBindingExpressionSyntax => false,
@@ -785,7 +928,7 @@ public class CreateMapPattern : ISolutionPattern
         _ => true,
     };
 
-    private static bool IsAvailableOutsideProfile(ISymbol? symbol, ExpressionSyntax body, INamedTypeSymbol? profileType) => symbol switch
+    internal static bool IsAvailableOutsideProfile(ISymbol? symbol, ExpressionSyntax body, INamedTypeSymbol? profileType) => symbol switch
     {
         null => false,
         INamedTypeSymbol or INamespaceSymbol or ITypeParameterSymbol => true,
@@ -813,7 +956,7 @@ public class CreateMapPattern : ISolutionPattern
     }
 
     // Public instance members, the type's own first; a member hidden by a derived one counts once.
-    private static IEnumerable<ISymbol> AllMembers(ITypeSymbol type)
+    internal static IEnumerable<ISymbol> AllMembers(ITypeSymbol type)
     {
         HashSet<string> seen = new(StringComparer.Ordinal);
         for (ITypeSymbol? current = type; current is not null && current.SpecialType != SpecialType.System_Object; current = current.BaseType)
@@ -851,22 +994,36 @@ public class CreateMapPattern : ISolutionPattern
     // statement: a statement of a block body, or the arrow clause of an expression body.
     private static bool TryParseMap(SyntaxNode statement, SemanticModel model, [NotNullWhen(true)] out InvocationExpressionSyntax? createMap,
         [NotNullWhen(true)] out Dictionary<string, SimpleLambdaExpressionSyntax?>? options, out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverse,
+        out Dictionary<string, InvocationExpressionSyntax> resolvers, out InvocationExpressionSyntax? convertUsing, out Dictionary<string, InvocationExpressionSyntax> converters,
         out MemberOptions extra)
     {
         createMap = null;
         options = [];
         reverse = null;
         extra = new MemberOptions();
+        resolvers = [];
+        convertUsing = null;
+        converters = [];
         if (((statement as ExpressionStatementSyntax)?.Expression ?? (statement as ArrowExpressionClauseSyntax)?.Expression) is not InvocationExpressionSyntax expression)
         {
             return false;
+        }
+
+        // CreateMap<A, B>().ConvertUsing(...): the converter replaces the whole map, so nothing else may be configured (Converters checks the form).
+        if (expression is { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ConvertUsing", Expression: InvocationExpressionSyntax typeMap } })
+        {
+            convertUsing = expression;
+            createMap = typeMap;
+            return typeMap.Expression is GenericNameSyntax
+                && (typeMap.ArgumentList.Arguments is [] || (typeMap.ArgumentList.Arguments is [{ } typeMapList] && IsMemberList(typeMapList, model)));
         }
 
         // The chain is read from the outside in: options seen before ReverseMap (outermost first) configure the reverse map.
         if (ReverseMapCall(expression, model) is { } reverseMap)
         {
             var reverseExtra = new MemberOptions();
-            if (!TryParseOptions(ref expression, model, options, reverseExtra) || expression != reverseMap || !reverseExtra.IsEmpty || reverseExtra.HasForPath)
+            // A value converter has no reverse that is sure to be right: only plain options with ReverseMap.
+            if (!TryParseOptions(ref expression, model, options, resolvers, converters, reverseExtra) || expression != reverseMap || converters.Count > 0 || !reverseExtra.IsEmpty || reverseExtra.HasForPath)
             {
                 extra.Unsupported = reverseExtra.Unsupported ?? (reverseExtra.IsEmpty && !reverseExtra.HasForPath ? null : "a Condition or ForPath on the reverse map is not migrated");
                 return false;
@@ -877,7 +1034,7 @@ public class CreateMapPattern : ISolutionPattern
             expression = (InvocationExpressionSyntax)((MemberAccessExpressionSyntax)reverseMap.Expression).Expression;
         }
 
-        if (!TryParseOptions(ref expression, model, options, extra))
+        if (!TryParseOptions(ref expression, model, options, resolvers, converters, extra) || (reverse is not null && converters.Count > 0))
         {
             return false;
         }
@@ -916,10 +1073,34 @@ public class CreateMapPattern : ISolutionPattern
     }
 
     // Strips `.ForMember(...)` calls off expression into options, until the call they hang on.
-    private static bool TryParseOptions(ref InvocationExpressionSyntax expression, SemanticModel model, Dictionary<string, SimpleLambdaExpressionSyntax?> options, MemberOptions extra)
+    // resolvers: the members a resolver form of MapFrom configures (see ValueResolvers), with that call.
+    // converters: ForMember options with o.ConvertUsing(...) (TAAK-253).
+    private static bool TryParseOptions(ref InvocationExpressionSyntax expression, SemanticModel model, Dictionary<string, SimpleLambdaExpressionSyntax?> options,
+        Dictionary<string, InvocationExpressionSyntax> resolvers, Dictionary<string, InvocationExpressionSyntax> converters, MemberOptions extra)
     {
         while (expression is { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ForMember" or "ForPath" } access } forMember)
         {
+            if (Converters.MemberOption(forMember) is var (convertedMember, option)
+                && model.GetSymbolInfo(forMember).Symbol is IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly }
+                && access.Expression is InvocationExpressionSyntax beforeConverter && !options.ContainsKey(convertedMember) && !resolvers.ContainsKey(convertedMember)
+                && converters.TryAdd(convertedMember, option))
+            {
+                expression = beforeConverter;
+                continue;
+            }
+
+            if (ValueResolvers.Option(forMember) is var (resolved, call))
+            {
+                if (model.GetSymbolInfo(forMember).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly }
+                    || access.Expression is not InvocationExpressionSyntax resolvedInner || options.ContainsKey(resolved) || converters.ContainsKey(resolved) || !resolvers.TryAdd(resolved, call))
+                {
+                    return false;
+                }
+
+                expression = resolvedInner;
+                continue;
+            }
+
             // Condition, PreCondition and ForPath (TAAK-255).
             if (access.Name.Identifier.ValueText == "ForPath" || ForMemberOption(forMember) is null)
             {
@@ -933,7 +1114,7 @@ public class CreateMapPattern : ISolutionPattern
                 continue;
             }
 
-            if (ForMemberOption(forMember) is not var (member, mapFrom)
+            if (ForMemberOption(forMember) is not var (member, mapFrom) || resolvers.ContainsKey(member) || converters.ContainsKey(member)
                 || model.GetSymbolInfo(forMember).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly }
                 || (mapFrom is not null && model.GetSymbolInfo((InvocationExpressionSyntax)mapFrom.Parent!.Parent!.Parent!).Symbol is not IMethodSymbol { Name: "MapFrom", ContainingAssembly.Name: AutoMapperAssembly })
                 || access.Expression is not InvocationExpressionSyntax inner
@@ -1007,12 +1188,24 @@ public class CreateMapPattern : ISolutionPattern
     };
 
     // ToB for CreateMap<A, B>: the last name of the destination type as written.
+    // A keyword (a ConvertUsing to int, string, ...) gets the .NET name: ToInt32, ToString.
     internal static string MethodName(TypeSyntax destination) =>
-        "To" + (destination is GenericNameSyntax generic ? generic.Identifier.ValueText : destination.ToString().Split('.')[^1]);
+        "To" + destination switch
+        {
+            GenericNameSyntax generic => generic.Identifier.ValueText,
+            PredefinedTypeSyntax predefined => predefined.Keyword.ValueText switch
+            {
+                "bool" => "Boolean", "byte" => "Byte", "sbyte" => "SByte", "short" => "Int16", "ushort" => "UInt16", "int" => "Int32", "uint" => "UInt32",
+                "long" => "Int64", "ulong" => "UInt64", "float" => "Single", "double" => "Double", "decimal" => "Decimal", "char" => "Char",
+                "string" => "String", _ => "Object",
+            },
+            _ => destination.ToString().Split('.')[^1],
+        };
 
     // The static class goes right after the profile (the outermost type around a nested one), with its indentation and line endings.
     private static MemberDeclarationSyntax Extensions(TypeDeclarationSyntax anchor, string className, string access,
-        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto, string Creation)> maps)
+        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto, string Creation)> maps,
+        List<(TypeSyntax Source, TypeSyntax Destination, string Name, List<(string Name, string Value)> Members)> projections)
     {
         string indent = anchor.GetLeadingTrivia().LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToString();
         string eol = anchor.SyntaxTree.GetRoot().DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia)).ToString() is { Length: > 0 } found
@@ -1028,7 +1221,7 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             text.Append(indent).Append("    ").Append(access).Append(" static ").Append(destination).Append(' ').Append(MethodName(destination))
-                .Append("(this ").Append(source).Append(" source) => ").Append(creation);
+                .Append("(this ").Append(source).Append(" source) => ").Append(creation.Replace("\n", "\n" + indent + "    ", StringComparison.Ordinal));
             if (members.Count == 0)
             {
                 text.Append(';').Append(eol);
@@ -1056,6 +1249,26 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             text.Append(indent).Append("        return destination;").Append(eol).Append(indent).Append("    }").Append(eol);
+        }
+
+        // Properties, not methods: MapCallPattern counts only the ToB methods.
+        foreach ((TypeSyntax source, TypeSyntax destination, string name, List<(string Name, string Value)> members) in projections)
+        {
+            text.Append(eol).Append(indent).Append("    ").Append(access).Append(" static Expression<Func<").Append(source).Append(", ").Append(destination)
+                .Append(">> ").Append(name).Append(" => source => new ").Append(destination);
+            if (members.Count == 0)
+            {
+                text.Append("();").Append(eol);
+                continue;
+            }
+
+            text.Append(eol).Append(indent).Append("    {").Append(eol);
+            foreach ((string member, string value) in members)
+            {
+                text.Append(indent).Append("        ").Append(member).Append(" = ").Append(value).Append(',').Append(eol);
+            }
+
+            text.Append(indent).Append("    };").Append(eol);
         }
 
         text.Append(indent).Append('}').Append(eol);

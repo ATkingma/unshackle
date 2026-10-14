@@ -131,18 +131,18 @@ public class NestedMaps
     {
         foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => CreateMapPattern.IsProfileWithMaps(c, model)))
         {
-            List<(TypeSyntax Destination, ITypeSymbol From, ITypeSymbol To)> found = [];
+            List<(TypeSyntax Destination, ITypeSymbol From, ITypeSymbol To, bool Converts)> found = [];
             foreach (InvocationExpressionSyntax createMap in profile.Members.OfType<ConstructorDeclarationSyntax>().SelectMany(c => c.DescendantNodes())
                 .OfType<InvocationExpressionSyntax>())
             {
                 if (createMap.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                     && model.GetSymbolInfo(createMap).Symbol is IMethodSymbol { ContainingAssembly.Name: "AutoMapper", TypeArguments: [{ } from, { } to] })
                 {
-                    found.Add((destination, from, to));
+                    found.Add((destination, from, to, createMap.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ConvertUsing" }));
                     if (CreateMapPattern.HasReverseMap(createMap))
                     {
                         // ReverseMap: the rewrite also writes A ToA(this B source).
-                        found.Add((source, to, from));
+                        found.Add((source, to, from, false));
                     }
                 }
             }
@@ -150,9 +150,9 @@ public class NestedMaps
             // The generated class is internal when one of its maps uses an internal type (see CreateMapPattern.Rewrite).
             bool isInternal = found.Any(m => CreateMapPattern.Weakest(CreateMapPattern.Effective(m.From), CreateMapPattern.Effective(m.To)) != Accessibility.Public);
             string? ns = Namespace(model.GetDeclaredSymbol(profile)?.ContainingNamespace);
-            foreach ((TypeSyntax destination, ITypeSymbol from, ITypeSymbol to) in found)
+            foreach ((TypeSyntax destination, ITypeSymbol from, ITypeSymbol to, bool converts) in found)
             {
-                Add(maps, from, to, new NestedMap { Method = CreateMapPattern.MethodName(destination), Namespace = ns, IsInternal = isInternal, Project = project });
+                Add(maps, from, to, new NestedMap { Method = CreateMapPattern.MethodName(destination), Namespace = ns, IsInternal = isInternal, Project = project, Converts = converts });
             }
         }
     }
@@ -178,6 +178,7 @@ public class NestedMaps
                 {
                     Method = symbol.Name,
                     Namespace = Namespace(symbol.ContainingNamespace),
+                    Converts = method.ExpressionBody?.Expression is not ImplicitObjectCreationExpressionSyntax,
                     IsInternal = symbol.ContainingType.DeclaredAccessibility != Accessibility.Public,
                     Project = project,
                 });

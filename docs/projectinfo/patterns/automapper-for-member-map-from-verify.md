@@ -23,6 +23,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberMapFromPattern.cs`,
 | REQ-7 | Met | `outside-profile`                                                                                                                                   |
 | REQ-8 | Met | resolver form moved to `ValueResolver/lambda` (TAAK-254), unittests `Rewrite_MapFromConfiguredTwice_ReportsManual`, `Rewrite_MapFromOnReadOnlyMember_ReportsManual`                           |
 | REQ-9 | Met | `may-be-null` (`source.Customer?.Name`, `source.Customer?.Age ?? default`), `reverse-map-may-be-null`, `_Combined/may-be-null-profile`, unit test `Rewrite_NullableAnnotatedReceiver_UsesNullConditional` (`source.Customer?.Name!`) |
+| REQ-10 | Met | `_Combined/projection-parameters` (`int userId = 0;` becomes `ToSeriesDto(this Series source, int userId = 0)`; `Map` call keeps `ToSeriesDto()`) |
 
 ## Deviations
 

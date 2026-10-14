@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "automapper-for-member-map-from"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10]
 files_expected:
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberMapFromPattern.cs
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs
@@ -57,6 +57,7 @@ AutoMapper executes a `MapFrom` expression null-safely (a `NullReferenceExceptio
 - **REQ-7**: IF the expression uses something that does not exist outside the profile (instance field, `this`) THEN THE SYSTEM SHALL report Manual (proof `outside-profile`).
 - **REQ-8**: IF the MapFrom form is not supported (resolver lambda, X twice, X without a public setter) THEN THE SYSTEM SHALL report Manual (resolver lambdas moved to `automapper.value-resolver`, TAAK-254; unit tests `Rewrite_MapFromConfiguredTwice_ReportsManual`, `Rewrite_MapFromOnReadOnlyMember_ReportsManual`).
 - **REQ-9** (TAAK-263): WHEN the expression is a plain chain of properties and fields from `s` that dereferences a receiver that can be null THE SYSTEM SHALL write the chain null-safe (`source.A?.B`, `?? default` for a value type, a trailing `!` for a non-nullable reference member in a nullable context), which is what AutoMapper returns (the default); the projection of such a member stays Manual, since an expression tree cannot hold `?.` (proofs `may-be-null`, `reverse-map-may-be-null`, `_Combined/may-be-null-profile`, unit test `Rewrite_NullableAnnotatedReceiver_UsesNullConditional`).
+- **REQ-10** (TAAK-265): WHEN a `MapFrom` reads a local of the profile constructor with a literal value (`int userId = 0;`, `CapturedLocal`) THE SYSTEM SHALL keep the expression and give `ToB` that local as an optional parameter with the literal as default (`ToB(this A source, int userId = 0)`); with `Map(source, destination)` or `ReverseMap` in the same map it stays Manual (proof `_Combined/projection-parameters`, ProjectTo unit test `FixAsync_CapturedVariable_ProjectionTakesItAsParameter`).
 
 ## Assumptions
 

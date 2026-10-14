@@ -38,6 +38,9 @@ public class MemberValues
         _conversions = new MemberConversions(model, position, _nullableWarnings, namespaces);
     }
 
+    /// <summary>The locals of the profile constructor a MapFrom may read (see <see cref="CapturedLocal"/>); they become method parameters.</summary>
+    public HashSet<ISymbol> Captured { get; } = new(SymbolEqualityComparer.Default);
+
     // Whether the generated class gets nullable warnings (a null written into a non-nullable member then needs a !).
     public bool NullableWarnings => _nullableWarnings;
 
@@ -184,7 +187,7 @@ public class MemberValues
 
         if (maps.Count > 1)
         {
-            return $"several profiles map {source.Name} to {destination.Name}; choose the mapping method by hand";
+            return MapBlockers.Several(source, destination).TrimEnd('.');
         }
 
         NestedMap map = maps[0];

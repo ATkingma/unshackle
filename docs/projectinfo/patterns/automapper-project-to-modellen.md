@@ -38,8 +38,9 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ProjectToPattern.cs`, `
 ## Figure 4: decision tree (one call, `ProjectToPattern.Check`)
 
 1. Not bound to one AutoMapper `ProjectTo` called as `x.ProjectTo<B>(...)` → Manual.
-2. More than one argument (parameters, members to expand) → Manual.
+2. More than two arguments (members to expand), or a second argument that is no `new { name, name = value }` → Manual. The anonymous members are kept as `parameters` (TAAK-265).
 3. Dropped configuration or mapper with side effects → Manual.
 4. `B` a type parameter, `object` or `dynamic` → Manual.
 5. Query not an `IQueryable<A>` of a type of its own → Manual.
-6. Existing `AToBProjection` → `Select`; else one rewritable profile with the map → `Select`; else Manual.
+6. Existing `AToBProjection` (property, or method with parameters) → `Select`; else one rewritable profile with the map → `Select`; else Manual (several profiles: `MapBlockers.Several`, "the one registered last").
+7. Parameters (`Arguments`): each name must be a parameter of the generated `AToBProjection(...)` method (read back from `CreateMapPattern.RewriteProjectionAsync`) with the same type, else Manual; the call is `Class.AToBProjection(args)`, positional when the call passes the leading parameters in order, else named; unnamed parameters keep their default.

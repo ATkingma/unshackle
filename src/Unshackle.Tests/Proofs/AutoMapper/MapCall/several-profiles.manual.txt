@@ -1,0 +1,1 @@
+Several profiles map Series to SeriesDto; AutoMapper uses the one registered last

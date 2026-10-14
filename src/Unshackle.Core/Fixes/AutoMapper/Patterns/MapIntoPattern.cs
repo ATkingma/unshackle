@@ -55,7 +55,7 @@ public class MapIntoPattern : ISolutionPattern
 
         if (generated.Count > 1)
         {
-            return PatternResult.Manual($"Several profiles map {sourceType!.Name} to {destination!.Name}; choose the mapping method by hand.");
+            return PatternResult.Manual(MapBlockers.Several(sourceType!, destination!));
         }
 
         (_, string? ns, bool isInternal, ProjectId project) = generated[0];

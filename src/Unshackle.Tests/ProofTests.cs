@@ -100,7 +100,7 @@ public class ProofTests
         else
         {
             string after = Normalize(await File.ReadAllTextAsync(basePath + ".after.cs", TestContext.Current.CancellationToken));
-            report.Findings.ShouldContain(f => f.Result is FixedResult);
+            report.Findings.ShouldContain(f => f.Result is FixedResult, string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.Result.GetType().Name)));
             actual.ShouldBe(after);
             // A Manual finding can keep the old library (e.g. inactive #if code still uses it), and so does a kept removed
             // using (a catch of AssertionFailedException that now also catches Shouldly's); then both are referenced.

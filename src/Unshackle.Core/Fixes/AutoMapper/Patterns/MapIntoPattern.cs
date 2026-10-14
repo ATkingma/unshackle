@@ -50,7 +50,7 @@ public class MapIntoPattern : ISolutionPattern
             await MapCallPattern.GeneratedAsync(solution, model, sourceType!, destination!, cancellationToken);
         if (generated.Count == 0)
         {
-            return PatternResult.Manual(NoMap(sourceType!, destination!));
+            return PatternResult.Manual(await MapBlockers.ReasonAsync(solution, model, sourceType!, destination!, cancellationToken) ?? NoMap(sourceType!, destination!));
         }
 
         if (generated.Count > 1)

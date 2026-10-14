@@ -50,6 +50,11 @@ public class ProjectToPattern : ISolutionPattern
         List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)> generated =
             await MapCallPattern.GeneratedAsync(solution, model, source!, destination!, cancellationToken);
         List<string> profiles = await ProfilesAsync(solution, model, source!, destination!, cancellationToken);
+        if (generated.Count == 0 && await MapBlockers.ReasonAsync(solution, model, source!, destination!, cancellationToken) is { } blocker)
+        {
+            return PatternResult.Manual(blocker);
+        }
+
         if (generated.Count == 0 || profiles.Count == 0)
         {
             return PatternResult.Manual(NoMap(source!, destination!));

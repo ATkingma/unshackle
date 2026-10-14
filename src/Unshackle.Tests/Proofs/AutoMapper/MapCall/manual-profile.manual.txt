@@ -1,1 +1,1 @@
-No CreateMap<Order, OrderDto> in a profile this fix rewrites
+CreateMap<Order, OrderDto> is in profile OrderProfile, which this fix does not rewrite: 

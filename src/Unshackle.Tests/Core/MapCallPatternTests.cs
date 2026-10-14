@@ -129,6 +129,31 @@ public class MapCallPatternTests
         (await TextAsync(report.Solution, "Profile.cs")).ShouldContain("public static Order ToOrder(this OrderDto source)");
     }
 
+    // No generated method: the reason names what blocks the map, the Manual profile or a CreateMap outside a profile constructor (TAAK-260).
+    [Theory]
+    [InlineData("AllowNullCollections = true; CreateMap<Order, OrderDto>();", "CreateMap<Order, OrderDto> is in profile OrderProfile, which this fix does not rewrite: ")]
+    [InlineData("} public void Mapping(Profile profile) { profile.CreateMap<Order, OrderDto>();",
+        "CreateMap<Order, OrderDto> is in OrderProfile.Mapping, outside a Profile constructor")]
+    [InlineData("} public void Mapping(Profile profile) { profile.CreateMap(typeof(Order), typeof(OrderDto));",
+        "CreateMap<Order, OrderDto> is in OrderProfile.Mapping, outside a Profile constructor")]
+    public async Task FixAsync_MapNotRewritten_NamesTheBlocker(string body, string reason)
+    {
+        // Arrange
+        var workspace = new AdhocWorkspace();
+        var project = ProjectId.CreateNewId();
+        string profile = Profile.Replace("ACCESS", "public", StringComparison.Ordinal)
+            .Replace("CreateMap<Order, OrderDto>();", body, StringComparison.Ordinal);
+        Solution solution = AddProject(workspace.CurrentSolution, project, "Shop")
+            .AddDocument(DocumentId.CreateNewId(project), "Profile.cs", profile, filePath: "Profile.cs")
+            .AddDocument(DocumentId.CreateNewId(project), "Service.cs", Service, filePath: "Service.cs");
+
+        // Act
+        FixReport report = await new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.ShouldContain(f => f.PatternId == "automapper.map-call" && f.Result is ManualResult && ((ManualResult)f.Result).Reason.StartsWith(reason, StringComparison.Ordinal));
+    }
+
     private static Solution AddProject(Solution solution, ProjectId id, string name) =>
         solution.AddProject(id, name, name, LanguageNames.CSharp)
             .WithProjectCompilationOptions(id, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))

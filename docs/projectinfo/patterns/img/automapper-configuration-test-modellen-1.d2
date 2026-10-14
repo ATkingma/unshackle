@@ -1,0 +1,17 @@
+title: "[Classes] automapper.configuration-test" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+Pattern: ConfigurationTestPattern {shape: class; "+Find(root, model)"; "+Rewrite(node, model)"; "+RewriteAsync(node, model, solution, ct)"; "-Problem(node, model): string?"; "-UnmigratedMapAsync(solution, model, ct)"; "-UnmigratedMap(root, model, file)"}
+Syntax: ConfigurationSyntax {shape: class; "+Find(root, model)"; "+RemovableSymbols(root, model)"; "+ConfigurationProblem(creation, model)"; "+AssertProblem(invocation, model)"; "-IsRemovableMember(...)"; "-IsRemovableStatement(...)"; "-Use(reference, model, candidates)"}
+ISolutionPattern: {shape: class; "+RewriteAsync(...)"}
+MapCallPattern: {shape: class; "~HasNoSideEffects(receiver)"}
+CreateMapPattern: {shape: class; "~IsProfile(type)"}
+AutoMapper: "AutoMapper 14:\nMapperConfiguration, IConfigurationProvider,\nIMapper.CreateMapper/Map/ProjectTo,\nAssertConfigurationIsValid,\nAddProfile/AddProfiles/AddMaps, CreateMap, AutoMapAttribute"
+Tests: "Test attributes:\nXunit.Fact/Theory,\nNUnit.Framework.Test/TestCase/SetUp/OneTimeSetUp,\nMSTest TestMethod/TestInitialize"
+Result: "PatternResult:\nFixed([]) (removed) | Manual(reason)"
+Pattern -> ISolutionPattern: implements
+Pattern -> Syntax: Find, problems
+Syntax -> MapCallPattern: side effects
+Pattern -> CreateMapPattern: profile constructor
+Syntax -> AutoMapper: recognizes
+Syntax -> Tests: recognizes
+Pattern -> Result: returns

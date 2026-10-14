@@ -47,7 +47,7 @@ automapper.for-member-ignore: a `CreateMap<A, B>().ForMember(d => d.X, o => o.Ig
 - **REQ-1**: WHEN a `CreateMap<A, B>()` has one or more `ForMember(d => d.X, o => o.Ignore())` THE SYSTEM SHALL write the ToB method without X, also when A has a member X (proofs `simple`, `mixed`, unit test `Rewrite_IgnoredMemberHasSourceMember_LeavesItOut`).
 - **REQ-2**: WHEN an ignored member has no source member THE SYSTEM SHALL not report it as a missing member (proofs `simple`, `mixed`).
 - **REQ-3**: IF a member is not ignored and has no source member with the same name and type THEN THE SYSTEM SHALL report Manual, as with `create-map` (proof `unmatched`).
-- **REQ-4**: IF a `ForMember` has an option other than `Ignore()` (e.g. `MapFrom`), uses a string name or is not directly on `CreateMap` (e.g. after `ReverseMap`) THEN THE SYSTEM SHALL report Manual for the whole profile (proofs `string-name`, `reverse-map`; MapFrom is its own pattern since TAAK-156).
+- **REQ-4**: IF a `ForMember` has an option other than `Ignore()` (e.g. `MapFrom`), uses a string name or is not directly on `CreateMap` (e.g. after `ReverseMap`) THEN THE SYSTEM SHALL report Manual for the whole profile (proof `string-name`; MapFrom is its own pattern since TAAK-156; `ReverseMap` is rewritten since TAAK-249, proof `reverse-map` is now Fixed, see `automapper-reverse-map-plan.md`).
 - **REQ-5**: IF the ignored member does not exist as a public member of B THEN THE SYSTEM SHALL report Manual (unit test `Rewrite_IgnoredMemberNotPublic_ReportsManual`).
 - **REQ-6**: WHEN a profile occurs THE SYSTEM SHALL have it found by exactly one of `CreateMapPattern` and `ForMemberIgnorePattern` (unit test `Find_ProfileWithOrWithoutIgnore_IsClaimedByOneOfThePatterns`).
 

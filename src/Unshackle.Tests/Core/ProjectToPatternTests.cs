@@ -99,6 +99,56 @@ public class ProjectToPatternTests
     }
 
     [Fact]
+    public async Task FixAsync_NestedProfile_WritesProjectionNextToOutermostType()
+    {
+        // Arrange
+        const string Dto = """
+            using AutoMapper;
+
+            namespace Shop.Mapping;
+
+            public class TodoItem
+            {
+                public int Id { get; set; }
+            }
+
+            public class TodoItemDto
+            {
+                public int Id { get; set; }
+
+                private class Mapping : Profile
+                {
+                    public Mapping()
+                    {
+                        CreateMap<TodoItem, TodoItemDto>();
+                    }
+                }
+            }
+            """;
+        const string Query = """
+            using AutoMapper;
+            using AutoMapper.QueryableExtensions;
+
+            namespace Shop.Orders;
+
+            public class TodoQueries
+            {
+                public System.Linq.IQueryable<Shop.Mapping.TodoItemDto> All(IMapper mapper, System.Linq.IQueryable<Shop.Mapping.TodoItem> items) =>
+                    items.ProjectTo<Shop.Mapping.TodoItemDto>(mapper.ConfigurationProvider);
+            }
+            """;
+        Solution solution = Create(("Dto.cs", Dto), ("Queries.cs", Query));
+
+        // Act
+        FixReport report = await new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult, string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
+        (await TextAsync(report.Solution, "Dto.cs")).ShouldContain("public static Expression<Func<TodoItem, TodoItemDto>> TodoItemToTodoItemDtoProjection => source => new TodoItemDto");
+        (await TextAsync(report.Solution, "Queries.cs")).ShouldContain("items.Select(TodoItemDtoMappingExtensions.TodoItemToTodoItemDtoProjection);");
+    }
+
+    [Fact]
     public async Task FixAsync_NoProjectToCall_WritesNoProjection()
     {
         // Arrange

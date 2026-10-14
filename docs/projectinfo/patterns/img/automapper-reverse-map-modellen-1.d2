@@ -1,0 +1,15 @@
+title: "[Classes] automapper.reverse-map" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+CreateMapPattern: {shape: class; "-Rewrite(node, model, mapInto, nested)"; "-TryParseMap(statement, model, out createMap, out options, out reverse)"; "-ReverseMapCall(expression, model)"; "-TryParseOptions(ref expression, model, options)"; "~HasReverseMap(createMap): bool"; "-Reverse(source, destination, forward, options, ...)"; "-MemberPath(expression, model, lambda)"; "-MayFlatten(name, source): bool"; "-Problem(source, destination, options, ..., reversed)"}
+Subclasses: "ForMemberIgnorePattern,\nForMemberMapFromPattern\n(share Rewrite)"
+NestedMaps: {shape: class; "-AddProfiles(maps, root, model, project)"}
+MapCallPattern: {shape: class; "~GeneratedAsync(solution, model, source, destination, ct)"}
+MemberValues: {shape: class; "+Problem(what, value, from, to, outer, ...)"}
+Mapping: "IMappingExpression<A, B>\n.ReverseMap() / .ForMember(...)\n(AutoMapper)"
+Result: "PatternResult:\nFixed([empty profile, ToB + ToA])\n| Manual(reason)"
+Subclasses -> CreateMapPattern: inherit
+NestedMaps -> CreateMapPattern: HasReverseMap
+MapCallPattern -> CreateMapPattern: "HasReverseMap, RewriteMethodsAsync"
+CreateMapPattern -> MemberValues: "values of B → A members"
+CreateMapPattern -> Mapping: recognizes chain
+CreateMapPattern -> Result: returns

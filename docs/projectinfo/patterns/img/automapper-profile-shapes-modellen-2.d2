@@ -1,0 +1,16 @@
+title: "[Sequence] automapper.profile-shapes" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: CreateMapPattern
+model: SemanticModel
+fixer -> pattern: "Find(root, model)"
+pattern -> fixer: "outermost type of each nested profile (Anchor), Distinct" {style.stroke-dash: 3}
+fixer -> pattern: "RewriteAsync(anchor, model, solution, ct)"
+pattern -> pattern: "Rewrite: one profile with maps in the anchor; not generic, partial, several constructors"
+pattern -> pattern: "MapStatements(constructor): block statements or arrow expression"
+pattern -> pattern: "TryParseMap + Problem per statement (as before)"
+pattern -> model: "IsSymbolAccessibleWithin, GetSpeculativeSymbolInfo(anchor, name): OutsideProblem"
+pattern -> model: "GetSpeculativeTypeInfo(anchor, type): AtAnchor, ToMinimalDisplayString"
+pattern -> pattern: "ExtensionsName(profile); type of that name exists?"
+pattern -> pattern: "Emptied(constructor), Extensions(anchor, ...)"
+pattern -> fixer: "Fixed([anchor', <Outer><Profile>Extensions]) or Manual(reason)" {style.stroke-dash: 3}

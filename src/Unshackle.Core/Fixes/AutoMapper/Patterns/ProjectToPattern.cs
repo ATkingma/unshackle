@@ -68,7 +68,7 @@ public class ProjectToPattern : ISolutionPattern
 
         string? callNamespace = model.GetEnclosingSymbol(node.SpanStart, cancellationToken)?.ContainingNamespace is { IsGlobalNamespace: false } current ? current.ToDisplayString() : null;
         bool imported = ns is null || (callNamespace is not null && (callNamespace == ns || callNamespace.StartsWith(ns + ".", StringComparison.Ordinal)));
-        return Fixed(invocation, query!, profiles[0] + "Extensions." + Projections.Name(source!, destination!), imported ? ["System.Linq"] : ["System.Linq", ns!]);
+        return Fixed(invocation, query!, profiles[0] + "." + Projections.Name(source!, destination!), imported ? ["System.Linq"] : ["System.Linq", ns!]);
     }
 
     // Every AutoMapper ProjectTo: the extension on IQueryable and IMapper.ProjectTo. CreateMapPattern leaves them to this pattern.
@@ -184,7 +184,7 @@ public class ProjectToPattern : ISolutionPattern
         && SymbolEqualityComparer.Default.Equals(from, source)
         && SymbolEqualityComparer.Default.Equals(to, destination);
 
-    // The names of the profiles (in the calling project or one it depends on) whose constructor has a CreateMap<A, B>.
+    // The extension class names of the profiles (in the calling project or one it depends on) whose constructor has a CreateMap<A, B>.
     private static async Task<List<string>> ProfilesAsync(Solution solution, SemanticModel model, ITypeSymbol source, ITypeSymbol destination, CancellationToken cancellationToken)
     {
         string key = MapIntoPattern.Key(source, destination);
@@ -209,7 +209,7 @@ public class ProjectToPattern : ISolutionPattern
                         && profileModel.GetSymbolInfo(c, cancellationToken).Symbol is IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly, TypeArguments: [{ } from, { } to] }
                         && MapIntoPattern.Key(from, to) == key))
                 {
-                    found.Add(profile.Identifier.ValueText);
+                    found.Add(CreateMapPattern.ExtensionsName(profile));
                 }
             }
         }

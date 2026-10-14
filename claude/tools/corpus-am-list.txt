@@ -1,0 +1,19 @@
+# name solution (relative to $CORPUS/src/<name>); abp and iotsharp are left out
+altinnauth Altinn.Authorization.slnx
+bitwarden bitwarden-server.slnx
+cats cats.slnx
+dasblog "source/DasBlog All.sln"
+devarch DevArchitecture.sln
+eshoponweb eShopOnWeb.sln
+gnomeshade Gnomeshade.sln
+jason CleanArchitecture.sln
+jhipster JhipsterSampleApplication.sln
+kavita Kavita.sln
+lancommander LANCommander.sln
+letterbook Letterbook.sln
+neozhu CleanArchitecture.Blazor.sln
+nop src/NopCommerce.sln
+ombi src/Ombi.sln
+personalasst PersonalAssistant.sln
+skoruba Skoruba.Duende.IdentityServer.Admin.sln
+xipona Api/Xipona.Api.sln

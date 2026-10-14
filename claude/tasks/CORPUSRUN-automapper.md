@@ -103,3 +103,55 @@ these unblock the cascade in reasons 1 and 5–8.
 - `claude/tasks/automapper-queue.md` (row 16)
 - `docs/projectinfo/architectuur/corpus-automapper.md`
 - `claude/tasks/CORPUSRUN-fa.md`
+
+## Rescan on Linux with main 6d7e3c9 (TAAK-262, report only)
+
+The corpus now lives on Linux (24 cores, 31 GB) under `<corpus>/corpus-automapper/` (on this Linux machine on the large data disk) (`src/<name>` = untrusted
+shallow clones at the pinned commits, `_results/scan/<name>/`, tool in `_results/tool-6d7e3c9/`). Harness in the repo:
+`claude/tools/corpus-am.sh` (+ `corpus-am-repos.txt`, `corpus-am-list.txt`, `corpus-regression.py`); see its header for the modes.
+Run: `TOOL=<corpus>/corpus-automapper/_results/tool-<sha>/unshackle.dll bash claude/tools/corpus-am.sh list scan claude/tools/corpus-am-list.txt`.
+Build step: all repos but cats, gnomeshade, lancommander and bitwarden build; those four fail on the front-end/Aspire/cargo step as in the
+baseline, and the scan still runs on the rest of the solution. bitwarden only restores with `NOLOCK=1` (its `packages.lock.json` files
+break a nuget.org-only restore with NU1101) and its scan takes about 50 minutes (the others 10-160 s).
+
+| Repo | Fixed | Manual | Top Manual patterns | Was (4661eba) |
+| --- | ---: | ---: | --- | ---: |
+| altinnauth | 0 | 14 | map-call 12 | 14 |
+| bitwarden | 0 | 271 | map-call 202, create-map 57 | 271 |
+| cats | 0 | 125 | project-to 37, for-member-map-from 32, create-map 26 | 137 |
+| dasblog | 0 | 54 | map-call 48 | 54 |
+| devarch | 0 | 4 | map-call 2 | 4 |
+| eshoponweb | 1 | 0 | – | 0 (1 Fixed) |
+| gnomeshade | 0 | 56 | map-call 53 | 56 |
+| jason | 0 | 13 | create-map 4, configuration-test 4, project-to 3 | 13 |
+| jhipster | 0 | 126 | map-call 91, configuration-test 33 | 126 |
+| kavita | 0 | 164 | project-to 105, map-call 52 | 164 |
+| lancommander | 0 | 49 | map-call 39, project-to 7 | 49 |
+| letterbook | 0 | 156 | map-call 135, configuration-test 10 | 156 |
+| neozhu | 0 | 58 | project-to 23, create-map 13, map-call 8 | 58 |
+| nop | 0 | 5 | 1 each | 5 |
+| ombi | 0 | 78 | map-call 71 | 78 |
+| personalasst | 0 | 52 | map-call 35, create-map 11 | 52 |
+| skoruba | 0 | 120 | map-call 100, for-member-map-from 14 | 120 |
+| xipona | 0 | 16 | map-call 12, configuration-test 4 | 16 |
+| **Total** | **1** | **1361** | | **1 / 1373** |
+
+Still 1 Fixed (eshoponweb): the all-or-nothing rule per solution holds everything back; only cats changed (-12 Manual). The counts did not move
+because TAAK-259..261 changed the reasons, not what is blocked. About 300 of the 1361 are cascade ("Not rewritten while other findings are
+Manual": bitwarden 150, jhipster 33, ombi 27, skoruba 27, cats 33); the rest name the real blocker, grouped here (Manual findings):
+
+| # | Blocker (root cause) | Repo | Blocked |
+| ---: | --- | --- | ---: |
+| 1 | `CreateMap<BookmarkSeriesPair, BookmarkDto>`: `MapFrom` for `Id` dereferences `src.Bookmark`, which may be null | kavita | 145 |
+| 2 | Condition or `ForPath` on a reverse map in `AutoMapperProfile` | jhipster | 89 |
+| 3 | `Mention` has several constructors (`CreateMap<MentionDto, Mention>`), plus `ConstructUsing`/`MaxDepth` maps (`ModerationReport`, `Post`, `Uuid7`) | letterbook | 42 + 39 |
+| 4 | `MapFrom` dereferences a possibly-null source member (`UserProjectAccessPolicy` reverse map; others: ombi `TvMazeSearch` 16, skoruba `UserClaims` 21, personalasst, dasblog, cats) | bitwarden 32, ombi, skoruba | ~80 |
+| 5 | Profiles with several constructors (`ProfilePost`, `ProfileDasBlogUser`) | dasblog | 35 |
+| 6 | Reference cycles (`Server`/`Game`; `Secret`/`Project`) | lancommander 24, bitwarden 14 | 38 |
+| 7 | `Condition` in `CreateMap<Client, ClientDto>` and `Map` of `object`/`dynamic` | skoruba | 20 |
+| 8 | `AllowNullCollections = true` in a profile | altinnauth | 7 |
+| 9 | Members without a source (`TrackingState`, `Password`) in `ProjectTo` maps | neozhu | 10 |
+| 10 | Maps in an extension method outside a Profile constructor (`CreateMapsForV1_0`) | gnomeshade | 9 |
+
+Suggested order: kavita nullable `MapFrom` (1, 4: one rule serves five repos), jhipster reverse-map `Condition`/`ForPath` (2),
+constructor choice (3, 5), cycles (6).

@@ -1,0 +1,19 @@
+# name repo ref(short sha or tag)   -- solution path is found by corpus-am.sh clone (see list file it writes)
+altinnauth Altinn/altinn-auth 2355aed31457
+bitwarden bitwarden/server a0058fb5a988
+cats ministryofjustice/CFO-CaseAssessmentTrackingSystem 8e93a2a650e1
+dasblog poppastring/dasblog-core 3d4a3b61f2d1
+devarch DevArchitecture/DevArchitecture b59fe4adbc68
+eshoponweb dotnet-architecture/eShopOnWeb 4da8212117e8
+gnomeshade VMelnalksnis/Gnomeshade 0ae798923f67
+jason jasontaylordev/CleanArchitecture f2f0445721f5
+jhipster jhipster/jhipster-sample-app-dotnetcore 7a799c7babb4
+kavita Kareadita/Kavita 3233c26dd5b6
+lancommander LANCommander/LANCommander 2e6fdd19253f
+letterbook Letterbook/Letterbook dace8fbfb156
+neozhu neozhu/CleanArchitectureWithBlazorServer c89f0f9c28d6
+nop nopSolutions/nopCommerce 918444773367
+ombi Ombi-app/Ombi 697d35647bf8
+personalasst davidtimovski/personal-assistant ac7e1085c3db
+skoruba skoruba/Duende.IdentityServer.Admin 3fee47255860
+xipona Velociraptor45/Xipona 12677f35f17a

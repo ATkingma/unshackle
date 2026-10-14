@@ -1,0 +1,1 @@
+ReverseMap of CreateMap<Order, OrderDto>: MapFrom for CustomerName is the path s.Customer.Name; in reverse AutoMapper unflattens it

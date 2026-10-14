@@ -6,11 +6,11 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 876 proofs (excluding `_Pending`).
+Total: 886 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
-### _Combined (7)
+### _Combined (8)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -21,6 +21,7 @@ Total: 876 proofs (excluding `_Pending`).
 | `member-list-map-call` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Destination); public Mapping.OrderDto Get(Mapping.Order order) => _mappe…` → `} public static class OrderProfileExtensions` |
 | `nested-map-call` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `} public static class OrderProfileExtensions` |
 | `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
+| `reverse-map-call` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} }` |
 
 ### AddAutoMapper (4)
 
@@ -31,7 +32,7 @@ Total: 876 proofs (excluding `_Pending`).
 | `result-used` | Manual |  — reason: The result of AddAutoMapper is used |
 | `simple` | Fixed | `services.AddAutoMapper(typeof(OrderProfile).Assembly);` →  |
 
-### CreateMap (35)
+### CreateMap (40)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -58,7 +59,7 @@ Total: 876 proofs (excluding `_Pending`).
 | `member-list` | Fixed | `CreateMap<Customer, CustomerDto>(MemberList.Destination); CreateMap<Tag, TagDto>(MemberList.Source);` → `public static class ShopProfileExtensions {` |
 | `member-list-named` | Fixed | `CreateMap<Customer, CustomerDto>(memberList: MemberList.Destination); CreateMap<Tag, TagDto>(AutoMapper.Member…` → `public static class ShopProfileExtensions {` |
 | `member-list-nested-profile` | Manual | `public Mapping() => CreateMap<Note, NoteDto>(MemberList.None);` — reason: is nested, generic, partial or has several constructors |
-| `member-list-reverse-map` | Manual | `CreateMap<Customer, CustomerDto>(MemberList.Destination).ReverseMap();` — reason: is not a CreateMap<A, B>() without options |
+| `member-list-reverse-map` | Fixed | `CreateMap<Customer, CustomerDto>(MemberList.Destination).ReverseMap();` → `public static class ShopProfileExtensions {` |
 | `member-list-variable` | Manual | `CreateMap<Customer, CustomerDto>(Validation());` — reason: is not a CreateMap<A, B>() without options |
 | `nested` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `public static class OrderProfileExtensions {` |
 | `nested-collections` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Line, LineDto>();` → `public static class OrderProfileExtensions {` |
@@ -68,21 +69,27 @@ Total: 876 proofs (excluding `_Pending`).
 | `nested-other-profile` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>();` → `} public static class AddressProfileExtensions` |
 | `nested-same-type` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, Address>();` → `public static class OrderProfileExtensions {` |
 | `nested-several` | Manual | `CreateMap<Order, OrderDto>();` — reason: several profiles map Address to AddressDto |
-| `options` | Manual | `CreateMap<Order, OrderDto>().ReverseMap();` — reason: is not a CreateMap<A, B>() without options |
+| `options` | Manual | `CreateMap<Order, OrderDto>().MaxDepth(1);` — reason: is not a CreateMap<A, B>() without options |
+| `reverse-map` | Fixed | `CreateMap<Region, RegionDto>().ReverseMap(); CreateMap<Folder, FolderEntity>(MemberList.Destination).ReverseMa…` → `public static class AutoMapperProfileExtensions {` |
+| `reverse-map-duplicate` | Manual | `CreateMap<Product, ProductDto>().ReverseMap();` — reason: maps ProductDto and Product the same way twice |
+| `reverse-map-get-method` | Manual | `CreateMap<Product, ProductDto>().ReverseMap();` — reason: ReverseMap of CreateMap<Product, ProductDto>: Product.Code has no member with the same name in ProductDto |
+| `reverse-map-nested` | Fixed | `CreateMap<Employee, EmployeeDto>().ReverseMap(); CreateMap<Job, JobDto>().ReverseMap();` → `public static class AutoMapperProfileExtensions {` |
+| `reverse-map-options` | Manual | `CreateMap<User, UserDto>()` — reason: is not a CreateMap<A, B>() without options |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>(); CreateMap<Tag, TagDto>();` → `public static class ProductProfileExtensions {` |
 
-### ForMemberIgnore (6)
+### ForMemberIgnore (7)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `member-list` | Fixed | `CreateMap<Document, DocumentDto>(MemberList.None) .ForMember(x => x.TenantName, s => s.Ignore());` → `public static class DocumentProfileExtensions {` |
 | `mixed` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Line, LineDto>().ForMember(d => d.Total, o => o.Ignore());` → `public static class OrderProfileExtensions {` |
-| `reverse-map` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore()).ForMember(d => d.Rank, o => o.Ignore()).R…` — reason: is not a CreateMap<A, B>() without options |
+| `reverse-map` | Fixed | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore()).ForMember(d => d.Rank, o => o.Ignore()).R…` → `public static class OrderProfileExtensions {` |
+| `reverse-map-options` | Fixed | `CreateMap<GroupProjectAccessPolicy, GroupProjectAccessPolicyEntity>() .ForMember(dst => dst.GrantedProject, op…` → `public static class AccessPolicyMapperProfileExtensions {` |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>() .ForMember(d => d.Secret, o => o.Ignore())` → `public static class ProductProfileExtensions {` |
 | `string-name` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Rank, o => o.Ignore()).ForMember("Note", o => o.Ignore());` — reason: is not a CreateMap<A, B>() without options |
 | `unmatched` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore());` — reason: OrderDto.Rank has no member with the same name in Order |
 
-### ForMemberMapFrom (10)
+### ForMemberMapFrom (13)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -95,6 +102,9 @@ Total: 876 proofs (excluding `_Pending`).
 | `null-deref` | Manual | `CreateMap<Order, OrderDto>()` — reason: which may be null |
 | `outside-profile` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not available outside the profile |
 | `resolver-form` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not a CreateMap<A, B>() without options |
+| `reverse-map` | Fixed | `CreateMap<Article, ArticleDto>() .ForMember(d => d.Title, o => o.MapFrom(s => s.Name))` → `public static class ArticleProfileExtensions {` |
+| `reverse-map-null-deref` | Manual | `CreateMap<UserProjectAccessPolicy, UserProjectAccessPolicyEntity>()` — reason: ReverseMap of CreateMap<UserProjectAccessPolicy, UserProjectAccessPolicyEntity>: MapFrom for OrganizationUserId dereferences src.OrganizationUser, which may be null |
+| `reverse-map-unflattening` | Manual | `CreateMap<Order, OrderDto>()` — reason: ReverseMap of CreateMap<Order, OrderDto>: MapFrom for CustomerName is the path s.Customer.Name; in reverse AutoMapper unflattens it |
 | `simple` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Total, o => o.MapFrom(s => s.Price * s.Quantity))` → `public static class OrderProfileExtensions {` |
 
 ### MapCall (7)
@@ -103,7 +113,7 @@ Total: 876 proofs (excluding `_Pending`).
 | --- | --- | --- |
 | `collection` | Manual | `CreateMap<Order, OrderDto>();` — reason: maps a collection |
 | `existing-method` | Fixed | `public OrderDto Get(Order order) => _mapper.Map<OrderDto>(order); public OrderDto First(Order[] orders) => thi…` → `public OrderDto Get(Order order) => order.ToOrderDto(); public OrderDto First(Order[] orders) => orders[0].ToO…` |
-| `manual-profile` | Manual | `CreateMap<Order, OrderDto>().ReverseMap();` — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
+| `manual-profile` | Manual | `CreateMap<Order, OrderDto>().MaxDepth(1);` — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
 | `maybe-null` | Manual |  — reason: may be null |
 | `object-source` | Manual |  — reason: no type of its own |
 | `receiver-call` | Manual |  — reason: not called as mapper.Map on a plain field |

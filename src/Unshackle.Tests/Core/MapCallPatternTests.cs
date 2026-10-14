@@ -97,6 +97,38 @@ public class MapCallPatternTests
         }
     }
 
+    // The reverse map of a ReverseMap gets the method after its forward one; a Map call in another file still finds it (TAAK-249).
+    [Fact]
+    public async Task FixAsync_ReverseMapInOtherFile_CallsReverseMethod()
+    {
+        // Arrange
+        var workspace = new AdhocWorkspace();
+        var project = ProjectId.CreateNewId();
+        string profile = Profile.Replace("ACCESS", "public", StringComparison.Ordinal)
+            .Replace("CreateMap<Order, OrderDto>();", "CreateMap<Order, OrderDto>().ReverseMap();", StringComparison.Ordinal);
+        const string Service = """
+            using AutoMapper;
+
+            namespace Shop.Orders;
+
+            public class OrderService
+            {
+                internal Shop.Mapping.Order Create(IMapper mapper, Shop.Mapping.OrderDto dto) => mapper.Map<Shop.Mapping.Order>(dto);
+            }
+            """;
+        Solution solution = AddProject(workspace.CurrentSolution, project, "Shop")
+            .AddDocument(DocumentId.CreateNewId(project), "Profile.cs", profile, filePath: "Profile.cs")
+            .AddDocument(DocumentId.CreateNewId(project), "Service.cs", Service, filePath: "Service.cs");
+
+        // Act
+        FixReport report = await new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult);
+        (await TextAsync(report.Solution, "Service.cs")).ShouldContain("=> dto.ToOrder();");
+        (await TextAsync(report.Solution, "Profile.cs")).ShouldContain("public static Order ToOrder(this OrderDto source)");
+    }
+
     private static Solution AddProject(Solution solution, ProjectId id, string name) =>
         solution.AddProject(id, name, name, LanguageNames.CSharp)
             .WithProjectCompilationOptions(id, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))

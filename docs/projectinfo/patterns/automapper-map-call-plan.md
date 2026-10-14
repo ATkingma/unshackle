@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "automapper-map-call"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-11]
 files_expected:
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapCallPattern.cs
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs
@@ -60,6 +60,8 @@ automapper.map-call: `mapper.Map<B>(a)` and `mapper.Map<A, B>(a)` become `a.ToB(
 - **REQ-9**: WHEN `Map<List<B>>`, `Map<B[]>`, `Map<IEnumerable<B>>`, `Map<IList<B>>` (or another interface AutoMapper fills with a `List<T>`) maps a collection of A and A→B is rewritten THE SYSTEM SHALL write `items?.Select(x => x?.ToB()).ToList() ?? []` (`.ToArray()` for an array), with the collection logic of nested members (`MemberValues`); without `?.`/`?? []` when the source is not null by the nullable flow, and without `x?.` when the elements are declared non-null. Measured with AutoMapper 14.0.0: a null source gives an empty collection, a null element a null one, interfaces get a `List<T>` (combined proofs `collection-map-call`, `collection-nullable-map-call`, unit test `FixAsync_CollectionWithProfileInOtherFile_SelectsGeneratedMethod`). Other collections (sets, dictionaries) stay Manual.
 - **REQ-10**: WHEN the source may be null and the target allows null (`Map<B?>`, or a return, explicitly typed local, field, property or assignment declared `B?`) THE SYSTEM SHALL write `a?.ToB()` (measured: AutoMapper 14 returns null for a null source); a `var` local, a non-nullable target or a struct destination stays Manual (proofs `maybe-null-target`, `maybe-null`, unit test `FixAsync_MaybeNullSource_ConditionalOnlyWhereNullAllowed`).
 - **REQ-8**: WHEN `Map` with options or `ProjectTo` occurs THE SYSTEM SHALL leave it Manual in `CreateMapPattern` (no own proof any more: `CreateMap/map-into` was removed since `Map(src, dest)` went to `automapper.map-into`, see [automapper-map-into-plan.md](automapper-map-into-plan.md); updated in TAAK-159).
+
+- **REQ-11** (TAAK-265): IF two profiles hold a `CreateMap` for the same type pair THEN THE SYSTEM SHALL report Manual saying AutoMapper 14 uses the map registered last (measured: no exception at `Map`/`ProjectTo`, the earlier map is replaced whole, `AssertConfigurationIsValid` throws `DuplicateTypeMapConfigurationException`) and that the order is not known to the fix (proof `MapCall/several-profiles`); an existing `ToB` whose extra parameters are all optional counts as the method (a captured variable, REQ-10 of `automapper.for-member-map-from`).
 
 ## Assumptions
 

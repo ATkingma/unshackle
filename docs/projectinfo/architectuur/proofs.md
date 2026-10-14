@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 997 proofs (excluding `_Pending`).
+Total: 1000 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -126,7 +126,7 @@ Total: 997 proofs (excluding `_Pending`).
 | `nested-record` | Fixed | `public Mapping() => CreateMap<Tenant, TenantDto>(MemberList.None);` → `public Mapping() {` |
 | `nested-reverse-map` | Fixed | `public Mapping() => CreateMap<Note, NoteDto>(MemberList.None)` → `public Mapping() {` |
 | `nested-same-type` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, Address>();` → `public static class OrderProfileExtensions {` |
-| `nested-several` | Manual | `CreateMap<Order, OrderDto>();` — reason: several profiles map Address to AddressDto |
+| `nested-several` | Manual | `CreateMap<Order, OrderDto>();` — reason: Several profiles map Address to AddressDto |
 | `nested-several-profiles` | Manual | `CreateMap<PriDto, PriReleaseDto>(MemberList.None);` — reason: AddPri holds several profiles (Mapper, Mapper) |
 | `null-substitute` | Manual | `CreateMap<Order, OrderDto>()` — reason: NullSubstitute for Note is not migrated |
 | `partial` | Manual | `CreateMap<Affiliate, AffiliateModel>();` — reason: is partial (another part can add maps or members they use) |
@@ -188,7 +188,7 @@ Total: 997 proofs (excluding `_Pending`).
 | `reverse-pre-condition-map-from` | Fixed | `CreateMap<Person, PersonDto>() .ForMember(dto => dto.Alias, opt => opt.MapFrom(person => person.Nickname))` → `public static class OrderProfileExtensions {` |
 | `simple` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Total, o => o.MapFrom(s => s.Price * s.Quantity))` → `public static class OrderProfileExtensions {` |
 
-### MapCall (7)
+### MapCall (8)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -198,6 +198,7 @@ Total: 997 proofs (excluding `_Pending`).
 | `maybe-null-target` | Fixed | `public OrderDto? Find(Order? order) => _mapper.Map<OrderDto?>(order); return _mapper.Map<OrderDto>(order);` → `public OrderDto? Find(Order? order) => order?.ToOrderDto(); return order?.ToOrderDto();` |
 | `object-source` | Manual |  — reason: no type of its own |
 | `receiver-call` | Manual |  — reason: not called as mapper.Map on a plain field |
+| `several-profiles` | Manual | `// Kavita: CreateMap<Series, SeriesDto> in AutoMapperProfiles and again in AutoMapperSeriesProfile.` — reason: Several profiles map Series to SeriesDto; AutoMapper uses the one registered last |
 | `unknown-map` | Manual |  — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
 
 ### MapInto (7)
@@ -212,13 +213,14 @@ Total: 997 proofs (excluding `_Pending`).
 | `receiver-call` | Manual |  — reason: plain field, property or variable |
 | `unknown-map` | Manual |  — reason: No CreateMap<Order, OrderDto> |
 
-### ProjectTo (4)
+### ProjectTo (5)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `existing-projection` | Fixed | `.ProjectTo<OrderDto>(_mapper.ConfigurationProvider) public IQueryable<OrderDto> Query(IQueryable<Order> orders…` → `.Select(OrderMapping.OrderToOrderDtoProjection) public IQueryable<OrderDto> Query(IQueryable<Order> orders) =>…` |
 | `generic` | Manual |  — reason: has no destination type of its own |
-| `parameters` | Manual | `CreateMap<Order, OrderDto>();` — reason: ProjectTo with parameters or members to expand |
+| `parameters` | Manual | `CreateMap<Order, OrderDto>();` — reason: ProjectTo<OrderDto> passes userId, but CreateMap<Order, OrderDto> reads no variable of the profile constructor with that name |
+| `parameters-generic` | Manual |  — reason: ProjectTo<TDestination> has no destination type of its own |
 | `unknown-map` | Manual |  — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
 
 ### ValueResolver (6)
@@ -232,7 +234,7 @@ Total: 997 proofs (excluding `_Pending`).
 | `member-resolver` | Fixed | `CreateMap<Post, NoteObject>() .ForMember(d => d.MediaType, opt => opt.MapFrom<MediaTypeResolver, Content?>(s =…` → `public static class PostProfileExtensions {` |
 | `resolver-class` | Fixed | `CreateMap<ToDoList, ListDto>() .ForMember(x => x.IsShared, opt => opt.MapFrom<IsSharedResolver>())` → `public static class ToDoProfileExtensions {` |
 
-### _Combined (20)
+### _Combined (21)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -254,6 +256,7 @@ Total: 997 proofs (excluding `_Pending`).
 | `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
 | `nested-profiles-nested-map` | Fixed | `CreateMap<TodoList, TodoListDto>(); CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority,` → `} public static class TodoListDtoMappingExtensions` |
 | `project-to-query` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} public static class OrderProfileExtensions` |
+| `projection-parameters` | Fixed | `int userId = 0; // Placeholder, will be replaced at runtime CreateMap<Series, SeriesDto>()` → `} public static class SeriesProfileExtensions` |
 | `reverse-map-call` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} }` |
 | `value-resolver-map-call` | Fixed | `CreateMap<ToDoTask, TaskDto>() .ForMember(x => x.IsPrivate, opt => opt.MapFrom<IsPrivateResolver>())` → `} public static class TaskProfileExtensions` |
 

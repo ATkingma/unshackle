@@ -67,6 +67,11 @@ public class CreateMapPattern : ISolutionPattern
         Rewrite(profile, model, new HashSet<string>(), await NestedMaps.FromAsync(model, solution, cancellationToken), projectTo: new HashSet<string>(),
             await AssertsAsync(solution, cancellationToken));
 
+    // Like RewriteMethodsAsync, with the projection of the map with this key (MapIntoPattern.Key) written too: the parameters of ProjectTo's call come from it.
+    internal static async Task<PatternResult> RewriteProjectionAsync(ClassDeclarationSyntax profile, SemanticModel model, Solution solution, string key, CancellationToken cancellationToken) =>
+        Rewrite(profile, model, new HashSet<string>(), await NestedMaps.FromAsync(model, solution, cancellationToken), projectTo: new HashSet<string> { key },
+            await AssertsAsync(solution, cancellationToken));
+
     // Whether the solution (or, without it, the compilation) calls AssertConfigurationIsValid anywhere. Such a check rejects a map with a
     // destination member AutoMapper finds no source for, so with it a member that looks unmatched is taken as mapped in a way the fix
     // does not see (TAAK-261); counting any call, not only one that reaches the map, keeps that safe.
@@ -130,8 +135,17 @@ public class CreateMapPattern : ISolutionPattern
         var values = new MemberValues(allMaps, model, anchor.SpanStart, namespaces);
         Dictionary<string, (ITypeSymbol Source, ITypeSymbol Destination, IReadOnlyList<ProjectionMember> Members)> projectable = new(StringComparer.Ordinal);
         List<(TypeSyntax Source, TypeSyntax Destination, string Key, string Name)> projected = [];
+        List<CapturedLocal> captured = [];
         foreach (SyntaxNode statement in MapStatements(constructor))
         {
+            if (CapturedLocal.TryParse(statement, model) is { } local)
+            {
+                // `int userId = 0;` in the constructor: a MapFrom lambda reads it, ProjectTo fills it per call (TAAK-265).
+                captured.Add(local);
+                values.Captured.Add(local.Symbol);
+                continue;
+            }
+
             if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out Dictionary<string, SimpleLambdaExpressionSyntax?>? options,
                     out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverseOptions, out Dictionary<string, InvocationExpressionSyntax> resolverCalls,
                     out InvocationExpressionSyntax? convertUsing, out Dictionary<string, InvocationExpressionSyntax> converters, out MemberOptions extra, out MemberOptions reverseExtra)
@@ -216,6 +230,12 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             bool needsMapInto = mapInto.Contains(MapIntoPattern.Key(sourceType, destinationType));
+            if (CapturedLocal.Used(captured, members) is { Count: > 0 } usedLocals && (needsMapInto || reverseOptions is not null))
+            {
+                // Not measured (TAAK-265): MapInto and the reverse map do not take the captured variable as a parameter.
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: a MapFrom reads {string.Join(", ", usedLocals.Select(c => c.Name))}, a variable of the profile constructor that ProjectTo fills per call; this is not migrated together with Map(source, destination) or ReverseMap; write the mapping methods by hand.");
+            }
+
             if ((!extra.IsEmpty || extra.HasForPath) && needsMapInto)
             {
                 // Not migrated (TAAK-255): Map(source, destination) keeps the existing value or object.
@@ -305,7 +325,7 @@ public class CreateMapPattern : ISolutionPattern
 
         // After all maps are known: a nested object or list of a later CreateMap is inlined too.
         var projections = new Projections(projectable, allMaps, model, anchor.SpanStart);
-        List<(TypeSyntax Source, TypeSyntax Destination, string Name, List<(string Name, string Value)> Members)> withProjection = [];
+        List<(TypeSyntax Source, TypeSyntax Destination, string Name, List<(string Name, string Value)> Members, List<CapturedLocal> Parameters)> withProjection = [];
         foreach ((TypeSyntax source, TypeSyntax destination, string key, string name) in projected)
         {
             if (withProjection.Any(w => w.Name == name))
@@ -323,7 +343,7 @@ public class CreateMapPattern : ISolutionPattern
                 return PatternResult.Manual(problem + ".");
             }
 
-            withProjection.Add((source, destination, name, members));
+            withProjection.Add((source, destination, name, members, CapturedLocal.Used(captured, members)));
             namespaces.UnionWith(["System", "System.Linq.Expressions"]);
             if (members.Any(m => m.Value.Contains(".Select(", StringComparison.Ordinal)))
             {
@@ -333,7 +353,7 @@ public class CreateMapPattern : ISolutionPattern
 
         return PatternResult.Fixed([
             anchor.ReplaceNode(constructor, Emptied(constructor)),
-            Extensions(anchor, className, isInternal ? "internal" : "public", maps, withProjection)], [.. namespaces.Order(StringComparer.Ordinal)]);
+            Extensions(anchor, className, isInternal ? "internal" : "public", maps, withProjection, captured)], [.. namespaces.Order(StringComparer.Ordinal)]);
     }
 
     // Why a profile with several constructors stays Manual (TAAK-266): which maps exist depends on the constructor the caller runs. The common
@@ -1213,7 +1233,7 @@ public class CreateMapPattern : ISolutionPattern
                     {
                         return $"MapFrom for {member} already uses the name source for something else";
                     }
-                    else if (!IsAvailableOutsideProfile(symbol, body, profileType))
+                    else if (!(symbol is not null && values.Captured.Contains(symbol)) && !IsAvailableOutsideProfile(symbol, body, profileType))
                     {
                         return $"MapFrom for {member} uses {name.Identifier.ValueText}, which is not available outside the profile";
                     }
@@ -1629,7 +1649,8 @@ public class CreateMapPattern : ISolutionPattern
     // The static class goes right after the profile (the outermost type around a nested one), with its indentation and line endings.
     private static MemberDeclarationSyntax Extensions(TypeDeclarationSyntax anchor, string className, string access,
         List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto, string Creation)> maps,
-        List<(TypeSyntax Source, TypeSyntax Destination, string Name, List<(string Name, string Value)> Members)> projections)
+        List<(TypeSyntax Source, TypeSyntax Destination, string Name, List<(string Name, string Value)> Members, List<CapturedLocal> Parameters)> projections,
+        List<CapturedLocal> captured)
     {
         string indent = anchor.GetLeadingTrivia().LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToString();
         string eol = anchor.SyntaxTree.GetRoot().DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia)).ToString() is { Length: > 0 } found
@@ -1660,7 +1681,7 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             text.Append(indent).Append("    ").Append(access).Append(" static ").Append(destination).Append(' ').Append(MethodName(destination))
-                .Append("(this ").Append(source).Append(" source) => ").Append(creation.Replace("\n", "\n" + indent + "    ", StringComparison.Ordinal));
+                .Append("(this ").Append(source).Append(" source").Append(CapturedLocal.Declare(CapturedLocal.Used(captured, members))).Append(") => ").Append(creation.Replace("\n", "\n" + indent + "    ", StringComparison.Ordinal));
             if (members.Count == 0)
             {
                 text.Append(';').Append(eol);
@@ -1691,10 +1712,11 @@ public class CreateMapPattern : ISolutionPattern
         }
 
         // Properties, not methods: MapCallPattern counts only the ToB methods.
-        foreach ((TypeSyntax source, TypeSyntax destination, string name, List<(string Name, string Value)> members) in projections)
+        // A method when the map reads a captured variable of the profile constructor (ProjectTo's parameters), else a property.
+        foreach ((TypeSyntax source, TypeSyntax destination, string name, List<(string Name, string Value)> members, List<CapturedLocal> parameters) in projections)
         {
             text.Append(eol).Append(indent).Append("    ").Append(access).Append(" static Expression<Func<").Append(source).Append(", ").Append(destination)
-                .Append(">> ").Append(name).Append(" => source => new ").Append(destination);
+                .Append(">> ").Append(name).Append(parameters.Count == 0 ? "" : "(" + CapturedLocal.Declare(parameters)[2..] + ")").Append(" => source => new ").Append(destination);
             if (members.Count == 0)
             {
                 text.Append("();").Append(eol);

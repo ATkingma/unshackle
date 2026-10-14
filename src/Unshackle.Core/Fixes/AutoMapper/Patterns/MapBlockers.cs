@@ -13,6 +13,15 @@ internal static class MapBlockers
 {
     private const string AutoMapperAssembly = "AutoMapper";
 
+    /// <summary>
+    /// Why a type pair with several CreateMap definitions in different profiles is left to the user. Measured (AutoMapper 14.0.0, TAAK-265): Map and ProjectTo do not
+    /// throw, the definition registered last replaces the earlier ones whole (their members are not merged; with captured parameters too), and
+    /// AssertConfigurationIsValid throws DuplicateTypeMapConfigurationException. Which one is last depends on the order the profiles are added
+    /// (assembly scanning included), which this fix cannot read, so the generated method of one profile could be the wrong one.
+    /// </summary>
+    public static string Several(ITypeSymbol source, ITypeSymbol destination) =>
+        $"Several profiles map {source.Name} to {destination.Name}; AutoMapper uses the one registered last (its order is not known to this fix, and AssertConfigurationIsValid rejects the duplicate); keep one definition and run the fix again.";
+
     public static async Task<string?> ReasonAsync(Solution solution, SemanticModel model, ITypeSymbol source, ITypeSymbol destination, CancellationToken cancellationToken)
     {
         string map = $"CreateMap<{source.Name}, {destination.Name}>";

@@ -27,9 +27,9 @@ public class ProjectToPattern : ISolutionPattern
 
     // Without the solution only a projection the code already has counts.
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
-        Check((InvocationExpressionSyntax)node, model, out ExpressionSyntax? query, out ITypeSymbol? source, out ITypeSymbol? destination) is string problem
+        Check((InvocationExpressionSyntax)node, model, out ExpressionSyntax? query, out ITypeSymbol? source, out ITypeSymbol? destination, out List<(string Name, ExpressionSyntax Value)> parameters) is string problem
             ? PatternResult.Manual(problem)
-            : Existing((InvocationExpressionSyntax)node, model, query!, source!, destination!) ?? PatternResult.Manual(NoMap(source!, destination!));
+            : Existing((InvocationExpressionSyntax)node, model, query!, source!, destination!, parameters) ?? PatternResult.Manual(NoMap(source!, destination!));
 
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
@@ -37,19 +37,19 @@ public class ProjectToPattern : ISolutionPattern
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(solution);
         var invocation = (InvocationExpressionSyntax)node;
-        if (Check(invocation, model, out ExpressionSyntax? query, out ITypeSymbol? source, out ITypeSymbol? destination) is string problem)
+        if (Check(invocation, model, out ExpressionSyntax? query, out ITypeSymbol? source, out ITypeSymbol? destination, out List<(string Name, ExpressionSyntax Value)> parameters) is string problem)
         {
             return PatternResult.Manual(problem);
         }
 
-        if (Existing(invocation, model, query!, source!, destination!) is { } existing)
+        if (Existing(invocation, model, query!, source!, destination!, parameters) is { } existing)
         {
             return existing;
         }
 
         List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)> generated =
             await MapCallPattern.GeneratedAsync(solution, model, source!, destination!, cancellationToken);
-        List<string> profiles = await ProfilesAsync(solution, model, source!, destination!, cancellationToken);
+        List<(string Extensions, ClassDeclarationSyntax Profile, SemanticModel Model)> profiles = await ProfilesAsync(solution, model, source!, destination!, cancellationToken);
         if (generated.Count == 0 && await MapBlockers.ReasonAsync(solution, model, source!, destination!, cancellationToken) is { } blocker)
         {
             return PatternResult.Manual(blocker);
@@ -62,7 +62,7 @@ public class ProjectToPattern : ISolutionPattern
 
         if (generated.Count > 1 || profiles.Count > 1)
         {
-            return PatternResult.Manual($"Several profiles map {source!.Name} to {destination!.Name}; choose the projection by hand.");
+            return PatternResult.Manual(MapBlockers.Several(source!, destination!));
         }
 
         (_, string? ns, bool isInternal, ProjectId project) = generated[0];
@@ -73,7 +73,15 @@ public class ProjectToPattern : ISolutionPattern
 
         string? callNamespace = model.GetEnclosingSymbol(node.SpanStart, cancellationToken)?.ContainingNamespace is { IsGlobalNamespace: false } current ? current.ToDisplayString() : null;
         bool imported = ns is null || (callNamespace is not null && (callNamespace == ns || callNamespace.StartsWith(ns + ".", StringComparison.Ordinal)));
-        return Fixed(invocation, query!, profiles[0] + "." + Projections.Name(source!, destination!), imported ? ["System.Linq"] : ["System.Linq", ns!]);
+        string projection = Projections.Name(source!, destination!);
+        List<(string Name, string Type, bool Optional)> accepted = await ParametersAsync(profiles[0].Profile, profiles[0].Model, solution, MapIntoPattern.Key(source!, destination!), projection, cancellationToken);
+        (string? argumentProblem, string arguments) = Arguments(parameters, accepted, accepted.Count > 0, model, node.SpanStart, source!, destination!);
+        if (argumentProblem is not null)
+        {
+            return PatternResult.Manual(argumentProblem);
+        }
+
+        return Fixed(invocation, query!, profiles[0].Extensions + "." + projection + arguments, imported ? ["System.Linq"] : ["System.Linq", ns!]);
     }
 
     // Every AutoMapper ProjectTo: the extension on IQueryable and IMapper.ProjectTo. CreateMapPattern leaves them to this pattern.
@@ -98,7 +106,7 @@ public class ProjectToPattern : ISolutionPattern
 
             foreach (InvocationExpressionSyntax call in root.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => IsProjectToCall(i, model)))
             {
-                if (Check(call, model, out _, out ITypeSymbol? source, out ITypeSymbol? destination) is null)
+                if (Check(call, model, out _, out ITypeSymbol? source, out ITypeSymbol? destination, out _) is null)
                 {
                     keys.Add(MapIntoPattern.Key(source!, destination!));
                 }
@@ -109,8 +117,10 @@ public class ProjectToPattern : ISolutionPattern
     }
 
     // Why the call cannot become query.Select(projection), or null with the query and the types of the map.
-    private static string? Check(InvocationExpressionSyntax invocation, SemanticModel model, out ExpressionSyntax? query, out ITypeSymbol? source, out ITypeSymbol? destination)
+    private static string? Check(InvocationExpressionSyntax invocation, SemanticModel model, out ExpressionSyntax? query, out ITypeSymbol? source, out ITypeSymbol? destination,
+        out List<(string Name, ExpressionSyntax Value)> parameters)
     {
+        parameters = [];
         query = null;
         source = null;
         destination = null;
@@ -120,11 +130,11 @@ public class ProjectToPattern : ISolutionPattern
             return "ProjectTo does not bind to one AutoMapper method called as query.ProjectTo<B>(...); migrate it by hand.";
         }
 
-        // Parameters fill the captured variables of MapFrom lambdas per call, membersToExpand picks the ExplicitExpansion members
-        // per call; one fixed projection can do neither.
-        if (invocation.ArgumentList.Arguments.Count != 1)
+        // Parameters fill the captured variables of MapFrom lambdas per call (new { userId }: the projection takes them as arguments, TAAK-265),
+        // membersToExpand picks the ExplicitExpansion members per call; one fixed projection cannot do that.
+        if (invocation.ArgumentList.Arguments.Count > 2 || (invocation.ArgumentList.Arguments.Count == 2 && !TryParameters(invocation.ArgumentList.Arguments[1], parameters)))
         {
-            return "ProjectTo with parameters or members to expand fills in or leaves out members per call; write the projection by hand.";
+            return "ProjectTo with members to expand, or with parameters other than new { name, name = value }, fills in or leaves out members per call; write the projection by hand.";
         }
 
         ExpressionSyntax dropped;
@@ -160,28 +170,110 @@ public class ProjectToPattern : ISolutionPattern
         return null;
     }
 
+    // `new { userId }` or `new { userId = expression }`: the name and value of each member (an anonymous type names a member after its expression).
+    private static bool TryParameters(ArgumentSyntax argument, List<(string Name, ExpressionSyntax Value)> parameters)
+    {
+        if (argument.NameColon is { } colon && colon.Name.Identifier.ValueText != "parameters")
+        {
+            return false;
+        }
+
+        if (argument.Expression is not AnonymousObjectCreationExpressionSyntax anonymous)
+        {
+            return false;
+        }
+
+        foreach (AnonymousObjectMemberDeclaratorSyntax member in anonymous.Initializers)
+        {
+            string? name = member.NameEquals?.Name.Identifier.ValueText ?? member.Expression switch
+            {
+                IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+                MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText,
+                _ => null,
+            };
+            if (name is null || parameters.Any(p => p.Name == name))
+            {
+                return false;
+            }
+
+            parameters.Add((name, member.Expression));
+        }
+
+        return true;
+    }
+
+    // The parameters of the projection method the profile writes (none: a property), from the generated class itself.
+    private static async Task<List<(string Name, string Type, bool Optional)>> ParametersAsync(ClassDeclarationSyntax profile, SemanticModel profileModel, Solution solution, string key, string projection,
+        CancellationToken cancellationToken) =>
+        await CreateMapPattern.RewriteProjectionAsync(profile, profileModel, solution, key, cancellationToken) is FixedResult { NewNodes: [_, ClassDeclarationSyntax extensions] }
+            ? [.. extensions.Members.OfType<MethodDeclarationSyntax>().Where(m => m.Identifier.ValueText == projection)
+                .SelectMany(m => m.ParameterList.Parameters).Select(p => (p.Identifier.ValueText, p.Type!.ToString(), p.Default is not null))]
+            : [];
+
+    // The argument list text of the projection call: positional while the call passes the leading parameters in order, else named. A parameter the call
+    // leaves out keeps its default, the value the profile constructor gave the variable (AutoMapper does the same, measured TAAK-265).
+    private static (string? Problem, string Text) Arguments(List<(string Name, ExpressionSyntax Value)> supplied, List<(string Name, string Type, bool Optional)> accepted, bool isMethod,
+        SemanticModel model, int position, ITypeSymbol source, ITypeSymbol destination)
+    {
+        if (accepted.Any(a => !a.Optional && supplied.All(s => s.Name != a.Name)))
+        {
+            return ($"ProjectTo<{destination.Name}> leaves out {accepted.First(a => !a.Optional && supplied.All(s => s.Name != a.Name)).Name}, which the projection needs and has no default for; write the projection by hand.", "");
+        }
+
+        foreach ((string name, ExpressionSyntax value) in supplied)
+        {
+            if (accepted.FirstOrDefault(a => a.Name == name) is not { Type: { } type } || type is null)
+            {
+                return ($"ProjectTo<{destination.Name}> passes {name}, but CreateMap<{source.Name}, {destination.Name}> reads no variable of the profile constructor with that name; write the projection by hand.", "");
+            }
+
+            if (model.GetTypeInfo(value).Type?.ToMinimalDisplayString(model, position) != type)
+            {
+                return ($"ProjectTo<{destination.Name}> passes {name} with another type than the variable of the profile constructor ({type}); AutoMapper converts it, this fix does not; write the projection by hand.", "");
+            }
+        }
+
+        bool positional = supplied.Count == 0 || accepted.Take(supplied.Count).Select(a => a.Name).SequenceEqual(supplied.Select(s => s.Name));
+        IEnumerable<string> parts = accepted.Where(a => supplied.Any(s => s.Name == a.Name))
+            .Select(a => (positional ? "" : a.Name + ": ") + supplied.First(s => s.Name == a.Name).Value.WithoutTrivia());
+        return (null, isMethod ? "(" + string.Join(", ", parts) + ")" : "");
+    }
+
+    private static string WithParameters(ITypeSymbol source, ITypeSymbol destination) =>
+        $"ProjectTo<{destination.Name}> with parameters needs the projection method that the profile of CreateMap<{source.Name}, {destination.Name}> writes, not a projection written by hand; migrate it by hand.";
+
     private static ITypeSymbol? Element(ITypeSymbol? type) =>
         type is null ? null : new[] { type }.Concat(type.AllInterfaces)
             .OfType<INamedTypeSymbol>()
             .FirstOrDefault(t => t is { Name: "IQueryable", TypeArguments: [_] } && t.ContainingNamespace?.ToDisplayString() == "System.Linq")
             ?.TypeArguments[0];
 
-    // A static Expression<Func<A, B>> AToBProjection the code already has (also one the profile patterns just wrote in this file).
-    private static PatternResult? Existing(InvocationExpressionSyntax node, SemanticModel model, ExpressionSyntax query, ITypeSymbol source, ITypeSymbol destination)
+    // A static Expression<Func<A, B>> AToBProjection the code already has, a property or a method taking the captured variables of the profile
+    // (also one the profile patterns just wrote in this file).
+    private static PatternResult? Existing(InvocationExpressionSyntax node, SemanticModel model, ExpressionSyntax query, ITypeSymbol source, ITypeSymbol destination,
+        List<(string Name, ExpressionSyntax Value)> parameters)
     {
         string name = Projections.Name(source, destination);
         INamedTypeSymbol? within = model.GetEnclosingSymbol(node.SpanStart)?.ContainingType;
-        List<IPropertySymbol> declared = [.. model.Compilation.GetSymbolsWithName(name, SymbolFilter.Member).OfType<IPropertySymbol>()
-            .Where(p => p.IsStatic && IsProjection(p.Type, source, destination)
-                && (within is null ? p.DeclaredAccessibility != Accessibility.Private : model.Compilation.IsSymbolAccessibleWithin(p, within)))];
-        if (declared is not [{ ContainingType: { } type }])
+        List<ISymbol> declared = [.. model.Compilation.GetSymbolsWithName(name, SymbolFilter.Member)
+            .Where(m => m is IPropertySymbol or IMethodSymbol && m.IsStatic && IsProjection(m is IPropertySymbol p ? p.Type : ((IMethodSymbol)m).ReturnType, source, destination)
+                && (within is null ? m.DeclaredAccessibility != Accessibility.Private : model.Compilation.IsSymbolAccessibleWithin(m, within)))];
+        if (declared is not [{ ContainingType: { } type } found])
         {
             return null;
         }
 
+        List<(string Name, string Type, bool Optional)> accepted = [.. (found as IMethodSymbol)?.Parameters
+            .Select(p => (p.Name, p.Type.ToMinimalDisplayString(model, node.SpanStart), p.IsOptional)) ?? []];
+        (string? problem, string arguments) = Arguments(parameters, accepted, found is IMethodSymbol, model, node.SpanStart, source, destination);
+        if (problem is not null)
+        {
+            return PatternResult.Manual(problem);
+        }
+
         string? ns = type.ContainingNamespace is { IsGlobalNamespace: false } typeNamespace ? typeNamespace.ToDisplayString() : null;
         bool visible = model.LookupNamespacesAndTypes(node.SpanStart, name: type.Name).Any(t => SymbolEqualityComparer.Default.Equals(t, type));
-        return Fixed(node, query, type.Name + "." + name, visible || ns is null ? ["System.Linq"] : ["System.Linq", ns]);
+        return Fixed(node, query, type.Name + "." + name + arguments, visible || ns is null ? ["System.Linq"] : ["System.Linq", ns]);
     }
 
     private static bool IsProjection(ITypeSymbol type, ITypeSymbol source, ITypeSymbol destination) =>
@@ -190,13 +282,13 @@ public class ProjectToPattern : ISolutionPattern
         && SymbolEqualityComparer.Default.Equals(to, destination);
 
     // The extension class names of the profiles (in the calling project or one it depends on) whose constructor has a CreateMap<A, B>.
-    private static async Task<List<string>> ProfilesAsync(Solution solution, SemanticModel model, ITypeSymbol source, ITypeSymbol destination, CancellationToken cancellationToken)
+    private static async Task<List<(string Extensions, ClassDeclarationSyntax Profile, SemanticModel Model)>> ProfilesAsync(Solution solution, SemanticModel model, ITypeSymbol source, ITypeSymbol destination, CancellationToken cancellationToken)
     {
         string key = MapIntoPattern.Key(source, destination);
         IEnumerable<Project> projects = solution.GetDocument(model.SyntaxTree)?.Project is { } callProject
             ? solution.GetProjectDependencyGraph().GetProjectsThatThisProjectTransitivelyDependsOn(callProject.Id).Append(callProject.Id).Select(solution.GetProject).OfType<Project>()
             : solution.Projects;
-        List<string> found = [];
+        List<(string Extensions, ClassDeclarationSyntax Profile, SemanticModel Model)> found = [];
         foreach (Document document in projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -214,7 +306,7 @@ public class ProjectToPattern : ISolutionPattern
                         && profileModel.GetSymbolInfo(c, cancellationToken).Symbol is IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly, TypeArguments: [{ } from, { } to] }
                         && MapIntoPattern.Key(from, to) == key))
                 {
-                    found.Add(CreateMapPattern.ExtensionsName(profile));
+                    found.Add((CreateMapPattern.ExtensionsName(profile), profile, profileModel));
                 }
             }
         }

@@ -71,7 +71,7 @@ public class MapCallPattern : ISolutionPattern
 
         if (generated.Count > 1)
         {
-            return PatternResult.Manual($"Several profiles map {sourceType!.Name} to {destination!.Name}; choose the mapping method by hand.");
+            return PatternResult.Manual(MapBlockers.Several(sourceType!, destination!));
         }
 
         (string method, string? ns, bool isInternal, ProjectId project) = generated[0];
@@ -251,7 +251,7 @@ public class MapCallPattern : ISolutionPattern
     {
         string name = "To" + destination.Name;
         List<IMethodSymbol> visible = [.. model.LookupSymbols(node.SpanStart, sourceType, name, includeReducedExtensionMethods: true)
-            .OfType<IMethodSymbol>().Where(m => m.Parameters.Length == 0 && SymbolEqualityComparer.Default.Equals(m.ReturnType, destination))];
+            .OfType<IMethodSymbol>().Where(m => m.Parameters.All(p => p.IsOptional) && SymbolEqualityComparer.Default.Equals(m.ReturnType, destination))];
         if (visible is [{ ReducedFrom: not null }])
         {
             return Fixed(node, source, name, [], conditional);
@@ -264,7 +264,7 @@ public class MapCallPattern : ISolutionPattern
 
         INamedTypeSymbol? within = model.GetEnclosingSymbol(node.SpanStart)?.ContainingType;
         List<IMethodSymbol> declared = [.. model.Compilation.GetSymbolsWithName(name, SymbolFilter.Member).OfType<IMethodSymbol>()
-            .Where(m => m is { IsExtensionMethod: true, Parameters: [{ } self] } && SymbolEqualityComparer.Default.Equals(self.Type, sourceType)
+            .Where(m => m is { IsExtensionMethod: true, Parameters: [{ } self, .. { } rest] } && rest.All(p => p.IsOptional) && SymbolEqualityComparer.Default.Equals(self.Type, sourceType)
                 && SymbolEqualityComparer.Default.Equals(m.ReturnType, destination)
                 && (within is null ? m.DeclaredAccessibility != Accessibility.Private : model.Compilation.IsSymbolAccessibleWithin(m, within)))];
         return declared is [{ ContainingNamespace: { IsGlobalNamespace: false } ns }]

@@ -2,7 +2,7 @@
 
 Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberMapFromPattern.cs` and `CreateMapPattern.cs`.
 
-> The figures were created as D2 sources in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
+> Rendered with `kingmadoc render` (TAAK-265).
 
 ## Figure 1: classes
 
@@ -19,6 +19,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberMapFromPattern
 | `TryParseMap`             | Peels off the `.ForMember` links; collects `options` (name to lambda or null); a duplicate name is no match |
 | `Problem`                 | Per member of B: ignored, MapFrom, or a source member with the same name and type; returns `(name, value)` |
 | `MapFromProblem`          | Checks the expression and replaces `s` with `source`                                                       |
+| `CapturedLocal`           | A literal-valued local of the profile constructor (`int userId = 0;`) that a MapFrom may read; becomes an optional parameter of `ToB` and of the projection (TAAK-265) |
 
 ## Figure 2: sequence
 

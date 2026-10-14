@@ -24,6 +24,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapCallPattern.cs`, `CreateM
 | REQ-9 | Met | `_Combined/collection-map-call` (List, array, IEnumerable, IList with `.Count`), `_Combined/collection-nullable-map-call` (non-null source, nullable source), unit test `FixAsync_CollectionWithProfileInOtherFile_SelectsGeneratedMethod` (TAAK-259) |
 | REQ-10 | Met | `maybe-null-target` (`Map<B?>`, async `Task<B?>` return, `?.Id` after it), `maybe-null` (var local: Manual), unit test `FixAsync_MaybeNullSource_ConditionalOnlyWhereNullAllowed` (TAAK-259) |
 | REQ-8 | Met | `CreateMap/map-into` (voorheen `map-call`)                                                                                                   |
+| REQ-11 | Met | `MapCall/several-profiles` (Manual with the measured reason), unit test `FixAsync_SameMapInTwoProfiles_NamesTheMeasuredAutoMapperBehaviour`, `_Combined/projection-parameters` (`ToSeriesDto()` with an optional parameter) |
 
 ## Deviations
 

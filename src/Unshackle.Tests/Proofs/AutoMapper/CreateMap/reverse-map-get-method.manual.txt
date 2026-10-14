@@ -1,0 +1,1 @@
+ReverseMap of CreateMap<Product, ProductDto>: Product.Code has no member with the same name in ProductDto

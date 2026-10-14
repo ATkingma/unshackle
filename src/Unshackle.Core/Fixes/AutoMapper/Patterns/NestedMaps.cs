@@ -109,10 +109,15 @@ public class NestedMaps
             foreach (InvocationExpressionSyntax createMap in profile.Members.OfType<ConstructorDeclarationSyntax>().SelectMany(c => c.DescendantNodes())
                 .OfType<InvocationExpressionSyntax>())
             {
-                if (createMap.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [_, { } destination] }
+                if (createMap.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                     && model.GetSymbolInfo(createMap).Symbol is IMethodSymbol { ContainingAssembly.Name: "AutoMapper", TypeArguments: [{ } from, { } to] })
                 {
                     found.Add((destination, from, to));
+                    if (CreateMapPattern.HasReverseMap(createMap))
+                    {
+                        // ReverseMap: the rewrite also writes A ToA(this B source).
+                        found.Add((source, to, from));
+                    }
                 }
             }
 

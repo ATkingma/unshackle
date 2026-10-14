@@ -19,7 +19,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` (`TryPa
 | REQ-3 | Met     | `ForMemberIgnore/member-list`, `ForMemberMapFrom/member-list` (MapFrom + Ignore, named `memberList: MemberList.Source`) |
 | REQ-4 | Met     | `_Combined/member-list-map-call`                                                                               |
 | REQ-5 | Met     | `CreateMap/member-list-variable` (method call), unit test `Rewrite_MemberListParameter_ReportsManual`           |
-| REQ-6 | Met     | `CreateMap/member-list-reverse-map`, `CreateMap/member-list-nested-profile`                                     |
+| REQ-6 | Met     | `CreateMap/member-list-nested-profile` (`CreateMap/member-list-reverse-map` Fixed since TAAK-249)                |
 
 ## Deviations
 

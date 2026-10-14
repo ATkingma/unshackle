@@ -18,6 +18,7 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// ForMember(d => d.X, o => o.Ignore()) (see <see cref="ForMemberIgnorePattern"/>) and ForMember(d => d.X, o => o.MapFrom(s => expr))
 /// (see <see cref="ForMemberMapFromPattern"/>); those two claim the profiles that use them. With the solution, a map that a
 /// mapper.Map(source, destination) call uses also gets B MapInto(this A source, B destination) (see <see cref="MapIntoPattern"/>).
+/// CreateMap&lt;A, B&gt;().ReverseMap() also gets A ToA(this B source) for the reverse map (unflattening is Manual, TAAK-249).
 /// </summary>
 public class CreateMapPattern : ISolutionPattern
 {
@@ -79,11 +80,13 @@ public class CreateMapPattern : ISolutionPattern
 
         List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto)> maps = [];
         bool isInternal = false;
+        HashSet<string> pairs = new(StringComparer.Ordinal);
         HashSet<string> namespaces = new(StringComparer.Ordinal);
         var values = new MemberValues(nested ?? NestedMaps.From(model), model, profile.SpanStart, namespaces);
         foreach (StatementSyntax statement in body.Statements)
         {
-            if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out Dictionary<string, SimpleLambdaExpressionSyntax?>? options)
+            if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out Dictionary<string, SimpleLambdaExpressionSyntax?>? options,
+                    out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverseOptions)
                 || invocation.Expression is not GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                 || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly } method)
             {
@@ -112,6 +115,23 @@ public class CreateMapPattern : ISolutionPattern
 
             isInternal |= access == Accessibility.Internal;
             maps.Add((source, destination, members, needsMapInto));
+            if (reverseOptions is not null)
+            {
+                if (Reverse(sourceType, destinationType, options, reverseOptions, model, profileType, values, mapInto, out List<(string Name, string Value)> reverseMembers,
+                    out bool reverseMapInto) is string reverseProblem)
+                {
+                    return PatternResult.Manual($"ReverseMap of CreateMap<{sourceType.Name}, {destinationType.Name}>: {reverseProblem}; write the mapping method by hand.");
+                }
+
+                // After its forward map: MapCallPattern.GeneratedAsync counts the methods the same way.
+                maps.Add((destination, source, reverseMembers, reverseMapInto));
+            }
+
+            if (!pairs.Add(MapIntoPattern.Key(sourceType, destinationType)) || (reverseOptions is not null && !pairs.Add(MapIntoPattern.Key(destinationType, sourceType))))
+            {
+                // Two maps for one type pair (a ReverseMap and its own CreateMap<B, A>) would be two methods with the same signature.
+                return PatternResult.Manual($"Profile {profile.Identifier} maps {sourceType.Name} and {destinationType.Name} the same way twice (ReverseMap and a CreateMap of its own?); write the mapping methods by hand.");
+            }
         }
 
         string className = profile.Identifier.ValueText + "Extensions";
@@ -127,9 +147,11 @@ public class CreateMapPattern : ISolutionPattern
 
     // Why the map cannot be written as plain assignments, or null with the destination members AutoMapper writes (and what to assign),
     // each having a source member of the same name and type (or one MemberValues maps) or a MapFrom expression. copied: the first member
-    // that gets a new object or collection.
+    // that gets a new object or collection. reversed (only for the reverse map of a ReverseMap): destination member → source member of a
+    // reversed MapFrom; a destination member without any source is then left alone instead of Manual.
     private static string? Problem(ITypeSymbol source, ITypeSymbol destination, Dictionary<string, SimpleLambdaExpressionSyntax?> options,
-        SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out List<(string Name, string Value)> members, out string? copied)
+        SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out List<(string Name, string Value)> members, out string? copied,
+        Dictionary<string, string>? reversed = null)
     {
         members = [];
         copied = null;
@@ -183,7 +205,38 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             bool writable = target is IFieldSymbol || ((IPropertySymbol)target).SetMethod?.DeclaredAccessibility == Accessibility.Public;
+            if (reversed is not null && reversed.TryGetValue(target.Name, out string? reversedFrom))
+            {
+                // Measured (TAAK-249): the reversed MapFrom wins over a source member of the same name.
+                if (!writable || readable.FirstOrDefault(m => m.Name == reversedFrom) is not { } reversedMember)
+                {
+                    return $"{destination.Name}.{target.Name} gets {source.Name}.{reversedFrom} from the reversed MapFrom, but cannot be written or read that way";
+                }
+
+                ITypeSymbol reversedType = reversedMember is IPropertySymbol rp ? rp.Type : ((IFieldSymbol)reversedMember).Type;
+                ITypeSymbol targetMemberType = target is IPropertySymbol tmp ? tmp.Type : ((IFieldSymbol)target).Type;
+                if (values.Problem(target.Name, "source." + reversedFrom, reversedType, targetMemberType, destination, out string? reversedValue, out bool reversedCopy) is string reversedProblem)
+                {
+                    return reversedProblem;
+                }
+
+                if (reversedValue is null)
+                {
+                    return $"{target.Name} is {targetMemberType.Name} in {destination.Name} but {reversedFrom} is {reversedType.Name} in {source.Name} (AutoMapper converts){MemberValues.NoMap(reversedType, targetMemberType)}";
+                }
+
+                members.Add((target.Name, reversedValue));
+                copied ??= reversedCopy ? target.Name : null;
+                continue;
+            }
+
             List<ISymbol> matches = [.. readable.Where(m => string.Equals(m.Name, target.Name, StringComparison.OrdinalIgnoreCase))];
+            if (reversed is not null && matches.Count == 0 && !MayFlatten(target.Name, source))
+            {
+                // The reverse map has MemberList.None: AutoMapper leaves a member without a source alone (measured, TAAK-249).
+                continue;
+            }
+
             if (!writable)
             {
                 // AutoMapper fills a get-only member when the source has it (an existing collection, for one).
@@ -219,6 +272,108 @@ public class CreateMapPattern : ISolutionPattern
 
         return null;
     }
+
+    // Why the reverse map B → A of CreateMap<A, B>(forward).ReverseMap() cannot be written as plain assignments, or null with its members.
+    // Measured on AutoMapper 14 (TAAK-249): the reverse map has MemberList.None and maps same-named members like any map; a forward Ignore
+    // does not carry over; a forward MapFrom(s => s.X) for Y becomes X = source.Y (a longer path is unflattened, s => s maps into A itself);
+    // other MapFrom expressions are not reversed; ReverseMap().ForMember options configure the reverse map and win over a reversed MapFrom;
+    // a forward member AutoMapper flattened is unflattened.
+    private static string? Reverse(ITypeSymbol source, ITypeSymbol destination, Dictionary<string, SimpleLambdaExpressionSyntax?> forward,
+        Dictionary<string, SimpleLambdaExpressionSyntax?> options, SemanticModel model, INamedTypeSymbol? profileType, MemberValues values,
+        IReadOnlySet<string> mapInto, out List<(string Name, string Value)> members, out bool needsMapInto)
+    {
+        members = [];
+        needsMapInto = mapInto.Contains(MapIntoPattern.Key(destination, source));
+        Dictionary<string, string> reversed = new(StringComparer.Ordinal);
+        foreach ((string name, SimpleLambdaExpressionSyntax? mapFrom) in forward)
+        {
+            if (mapFrom?.Body is not ExpressionSyntax body)
+            {
+                continue;
+            }
+
+            ExpressionSyntax bare = Unwrap(body);
+            if (bare is CastExpressionSyntax)
+            {
+                return $"MapFrom for {name} casts; whether AutoMapper reverses it is not known";
+            }
+
+            if (MemberPath(bare, model, mapFrom) is not { } path)
+            {
+                continue;
+            }
+
+            if (path is not [{ } member])
+            {
+                return path.Count == 0
+                    ? $"MapFrom for {name} maps the whole {source.Name}; in reverse AutoMapper maps {name} into the {source.Name} itself"
+                    : $"MapFrom for {name} is the path {bare}; in reverse AutoMapper unflattens it (creating the objects on the way)";
+            }
+
+            if (!reversed.TryAdd(member, name))
+            {
+                return $"MapFrom for {reversed[member]} and {name} both read {member}; in reverse AutoMapper writes {member} from one of them";
+            }
+        }
+
+        // A destination member of the forward map that AutoMapper filled by flattening (B.CustomerName from A.Customer.Name) is unflattened
+        // in reverse; the forward rewrite only writes members of the same name, so this only concerns members it leaves alone (not Ignore()d ones).
+        List<ISymbol> sourceMembers = [.. AllMembers(source).Where(m => m is IPropertySymbol { IsIndexer: false } or IFieldSymbol)];
+        foreach (ISymbol member in AllMembers(destination).Where(m => m is IPropertySymbol { IsIndexer: false } or IFieldSymbol))
+        {
+            if (forward.TryGetValue(member.Name, out SimpleLambdaExpressionSyntax? configured) && configured is null)
+            {
+                continue;
+            }
+
+            if (!sourceMembers.Any(m => string.Equals(m.Name, member.Name, StringComparison.OrdinalIgnoreCase))
+                && sourceMembers.FirstOrDefault(m => member.Name.Length > m.Name.Length && member.Name.StartsWith(m.Name, StringComparison.OrdinalIgnoreCase)) is { } prefix)
+            {
+                return $"{destination.Name}.{member.Name} may be unflattened into {source.Name}.{prefix.Name} by AutoMapper";
+            }
+        }
+
+        if (Problem(destination, source, options, model, profileType, values, out members, out string? copied, reversed) is string problem)
+        {
+            return problem;
+        }
+
+        // Measured (TAAK-245, again for the reverse map): Map(source, destination) maps into the nested object or list the destination holds.
+        return needsMapInto && copied is not null
+            ? $"Map(source, destination) maps {copied} into the object or collection the destination already holds, MapInto would replace it"
+            : null;
+    }
+
+    // The members of `p.X.Y` (outermost last) when expression is a path of properties and fields from the lambda parameter p, [] for `p` itself, else null.
+    private static List<string>? MemberPath(ExpressionSyntax expression, SemanticModel model, SimpleLambdaExpressionSyntax lambda)
+    {
+        List<string> path = [];
+        while (Unwrap(expression) is MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access
+            && model.GetSymbolInfo(access).Symbol is IPropertySymbol or IFieldSymbol { IsStatic: false })
+        {
+            path.Insert(0, access.Name.Identifier.ValueText);
+            expression = access.Expression;
+        }
+
+        return Unwrap(expression) is IdentifierNameSyntax name && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(name).Symbol, model.GetDeclaredSymbol(lambda.Parameter))
+            ? path
+            : null;
+    }
+
+    // Parentheses and the null-forgiving ! are not in the expression tree AutoMapper sees.
+    private static ExpressionSyntax Unwrap(ExpressionSyntax expression) => expression switch
+    {
+        ParenthesizedExpressionSyntax parenthesized => Unwrap(parenthesized.Expression),
+        PostfixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.SuppressNullableWarningExpression } suppressed => Unwrap(suppressed.Operand),
+        _ => expression,
+    };
+
+    // Whether AutoMapper may fill a destination member that has no source member of its exact name: a member or method of that name in
+    // another case or with a Get prefix, or one whose name starts the member's name (flattening: Customer.Name → CustomerName).
+    private static bool MayFlatten(string name, ITypeSymbol source) =>
+        AllMembers(source).Any(m => (m is IPropertySymbol or IFieldSymbol || m is IMethodSymbol { MethodKind: MethodKind.Ordinary, Parameters: [], ReturnsVoid: false })
+            && (string.Equals(m.Name, name, StringComparison.OrdinalIgnoreCase) || string.Equals(m.Name, "Get" + name, StringComparison.OrdinalIgnoreCase)
+                || (name.Length > m.Name.Length && name.StartsWith(m.Name, StringComparison.OrdinalIgnoreCase))));
 
     // Why `s => expr` cannot move into the extension method as `X = expr`, or null with the text of expr (s becomes source).
     // AutoMapper runs a MapFrom expression null-safe (a NullReferenceException gives the default value) and converts types
@@ -369,17 +524,73 @@ public class CreateMapPattern : ISolutionPattern
     private static bool IsMapFromCall(InvocationExpressionSyntax forMember) =>
         forMember.ArgumentList.Arguments is [_, { Expression: SimpleLambdaExpressionSyntax { Body: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "MapFrom" } } } }];
 
-    // `CreateMap<A, B>()` (or with a MemberList) or `CreateMap<A, B>().ForMember(d => d.X, o => o.Ignore())...`; anything else in the chain is no match.
+    // `CreateMap<A, B>()` (or with a MemberList) or `CreateMap<A, B>().ForMember(d => d.X, o => o.Ignore())...`, optionally followed by
+    // `.ReverseMap()` and ForMember options of the reverse map (reverse: those options, null without ReverseMap); anything else in the chain is no match.
     private static bool TryParseMap(StatementSyntax statement, SemanticModel model, [NotNullWhen(true)] out InvocationExpressionSyntax? createMap,
-        [NotNullWhen(true)] out Dictionary<string, SimpleLambdaExpressionSyntax?>? options)
+        [NotNullWhen(true)] out Dictionary<string, SimpleLambdaExpressionSyntax?>? options, out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverse)
     {
         createMap = null;
         options = [];
+        reverse = null;
         if (statement is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax expression })
         {
             return false;
         }
 
+        // The chain is read from the outside in: options seen before ReverseMap (outermost first) configure the reverse map.
+        if (ReverseMapCall(expression, model) is { } reverseMap)
+        {
+            if (!TryParseOptions(ref expression, model, options) || expression != reverseMap)
+            {
+                return false;
+            }
+
+            reverse = options;
+            options = [];
+            expression = (InvocationExpressionSyntax)((MemberAccessExpressionSyntax)reverseMap.Expression).Expression;
+        }
+
+        if (!TryParseOptions(ref expression, model, options))
+        {
+            return false;
+        }
+
+        createMap = expression;
+        return expression.ArgumentList.Arguments is [] || (expression.ArgumentList.Arguments is [{ } memberList] && IsMemberList(memberList, model));
+    }
+
+    // The `.ReverseMap()` call of AutoMapper in the chain of expression, or null.
+    private static InvocationExpressionSyntax? ReverseMapCall(InvocationExpressionSyntax expression, SemanticModel model)
+    {
+        for (InvocationExpressionSyntax? call = expression; call is { Expression: MemberAccessExpressionSyntax access }; call = access.Expression as InvocationExpressionSyntax)
+        {
+            if (access is { Name.Identifier.ValueText: "ReverseMap", Expression: InvocationExpressionSyntax } && call.ArgumentList.Arguments.Count == 0
+                && model.GetSymbolInfo(call).Symbol is IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly })
+            {
+                return call;
+            }
+        }
+
+        return null;
+    }
+
+    // Syntactic: whether the CreateMap call has `.ReverseMap()` in its chain (the profile rewrite then also writes A ToA(this B source)).
+    internal static bool HasReverseMap(InvocationExpressionSyntax createMap)
+    {
+        for (SyntaxNode node = createMap; node.Parent is MemberAccessExpressionSyntax access && access.Expression == node && access.Parent is InvocationExpressionSyntax call; node = call)
+        {
+            if (access.Name.Identifier.ValueText == "ReverseMap" && call.ArgumentList.Arguments.Count == 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // Strips `.ForMember(...)` calls off expression into options, until the call they hang on.
+    private static bool TryParseOptions(ref InvocationExpressionSyntax expression, SemanticModel model, Dictionary<string, SimpleLambdaExpressionSyntax?> options)
+    {
         while (expression is { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ForMember" } access } forMember)
         {
             if (ForMemberOption(forMember) is not var (member, mapFrom)
@@ -394,8 +605,7 @@ public class CreateMapPattern : ISolutionPattern
             expression = inner;
         }
 
-        createMap = expression;
-        return expression.ArgumentList.Arguments is [] || (expression.ArgumentList.Arguments is [{ } memberList] && IsMemberList(memberList, model));
+        return true;
     }
 
     // CreateMap<A, B>(MemberList.X) or (memberList: MemberList.X): AutoMapper 14 reads the member list only in AssertConfigurationIsValid

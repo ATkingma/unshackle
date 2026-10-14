@@ -189,6 +189,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-251-automapper-constructor.md` | ✅ automapper.constructor — one public constructor (records) → `new(source.X, ...) { ... }`; several ctors/ConstructUsing/ForCtorParam Manual |
 | `claude/tasks/archief/TAAK-254-automapper-value-resolver.md` | ✅ automapper.value-resolver — `MapFrom<TResolver>()`/`IValueResolver`/`IMemberValueResolver`/`(s, d)` lambdas → `new R().Resolve(source, …)` or `X = expr`; DI/context/destination use Manual |
 | `claude/tasks/archief/TAAK-252-automapper-project-to.md` | ✅ automapper.project-to — `ProjectTo<B>(cfg)` → `Select(<Profile>Extensions.AToBProjection)`, expression built like AutoMapper 14's projection (measured) |
+| `claude/tasks/archief/TAAK-253-automapper-convert-using.md` | ✅ automapper.convert-using — ConvertUsing lambda/`ITypeConverter` → `ToB => converter call`; member `IValueConverter` → `X = conv.Convert(source.Y, null)`; DI/context Manual |
 | `claude/tasks/archief/TAAK-246-automapper-member-list.md` | ✅ `automapper.member-list` — `CreateMap<A, B>(MemberList.X)` migrated like `CreateMap<A, B>()` (AutoMapper 14: member list only steers `AssertConfigurationIsValid`, measured + IL scan) |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: unused assembly parameter after AddMediator (IDE0060) → warning in the report |
 

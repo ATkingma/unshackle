@@ -6,17 +6,18 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 937 proofs (excluding `_Pending`).
+Total: 943 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
-### _Combined (14)
+### _Combined (15)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `configuration-test-fixture` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IConfigurationProvider _configuration;` → `} public static class OrderProfileExtensions` |
 | `constructor-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
 | `conversion-map-into` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} }` |
+| `convert-using-map-call` | Fixed | `CreateMap<SigningKey, PublicKeyDto>() .ConvertUsing(src => new PublicKeyDto` → `} }` |
 | `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
 | `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
 | `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
@@ -53,7 +54,7 @@ Total: 937 proofs (excluding `_Pending`).
 | `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check: the map at Test.cs:27 is not in a profile constructor this fix rewrites |
 | `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
-### CreateMap (60)
+### CreateMap (65)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -80,6 +81,11 @@ Total: 937 proofs (excluding `_Pending`).
 | `conversion-string-guid` | Manual | `CreateMap<Order, OrderDto>();` — reason: AutoMapper parses the string to Guid and gives null the default Guid |
 | `conversion-string-nullable` | Manual | `CreateMap<Order, OrderDto>();` — reason: AutoMapper keeps null as null and parses any other string |
 | `conversion-to-string` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `convert-using-context` | Manual | `CreateMap<ItemEntity, Item>()` — reason: ConvertUsing uses the ResolutionContext |
+| `convert-using-lambda` | Fixed | `CreateMap<Guid, ProfileId>(MemberList.None) .ConvertUsing(id => new(id));` → `public static class SocialProfileExtensions {` |
+| `convert-using-member` | Fixed | `CreateMap<Client, ClientDto>() .ForMember(x => x.AllowedSigningAlgorithms, opts => opts.ConvertUsing(AllowedSi…` → `public static class ClientProfileExtensions {` |
+| `convert-using-service` | Manual | `CreateMap<Actor, Uri>().ConvertUsing<ActorIdConverter>();` — reason: has constructor parameters (a service provider creates it) |
+| `convert-using-type-converter` | Fixed | `CreateMap<Claim, ClaimCheckboxes>().ConvertUsing<ClaimsConverter>(); CreateMap<string, DateTime>().ConvertUsin…` → `public static class RequestProfileExtensions {` |
 | `expression-bodied` | Fixed | `public CustomerProfile() => CreateMap<Customer, CustomerDto>();` → `public CustomerProfile() {` |
 | `expression-bodied-base` | Fixed | `public CustomerProfile() : base("Customers") => CreateMap<Customer, CustomerDto>(); // only map` → `public CustomerProfile() : base("Customers") {` |
 | `flattening` | Manual | `CreateMap<Order, OrderDto>();` — reason: has no member with the same name |

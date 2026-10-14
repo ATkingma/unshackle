@@ -26,6 +26,9 @@ public class CreateMapPatternTests
     [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; private set; } }", "has no public setter")]
     [InlineData("public class A { public int Id { get; set; } } public abstract class B { public int Id { get; set; } }", "no public parameterless constructor")]
     [InlineData("public class A { public int Id { get; set; } } public class B { public int[] Id { get; set; } = []; }", "(AutoMapper converts)")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { private B() { } public B(int id) { } }", "has several constructors or none that is public")]
+    [InlineData("public class A { public int Id { get; set; } public int ID; } public class B { public B(int id) { } }", "matches several members of A")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public B(ref int id) { } }", "has a ref, out or params parameter id")]
     public void Rewrite_MapAutoMapperDoesMoreFor_ReportsManual(string types, string reason)
     {
         // Arrange
@@ -61,6 +64,25 @@ public class CreateMapPatternTests
         // Assert
         result.ShouldBeOfType<FixedResult>().NewNodes.Select(n => n.ToFullString())
             .ShouldBe(plain.ShouldBeOfType<FixedResult>().NewNodes.Select(n => n.ToFullString()));
+    }
+
+    // AutoMapper 14 fills a constructor parameter from the source member of the same name in any case (TAAK-251).
+    [Fact]
+    public void Rewrite_ConstructorParameterOtherCase_PassesMember()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(
+            "public class A { public int Id { get; set; } public string Name { get; set; } = \"\"; } public class B { public B(int id) { Id = id; } public int Id { get; set; } public string Name { get; set; } = \"\"; } public class P : AutoMapper.Profile { public P() { CreateMap<A, B>(); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        string text = result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString();
+        text.ShouldContain("public static B ToB(this A source) => new(source.Id)");
+        text.ShouldContain("Name = source.Name,");
+        text.ShouldNotContain("Id = source.Id");
     }
 
     // Dropping an expression that is not a constant could drop a side effect.
@@ -205,6 +227,53 @@ public class CreateMapPatternTests
         extensions.ShouldContain("X = source.X?.ToString()!,");
         extensions.ShouldContain("Y = source.Y?.ToString()!,");
         extensions.ShouldContain("Z = source.Z?.ToString(),");
+    }
+
+    // What AutoMapper 14's ReverseMap does beyond plain assignments (measured, TAAK-249) stays Manual.
+    [Theory]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public A Inner { get; set; } }",
+        ".ForMember(d => d.Inner, o => o.MapFrom(s => s))", "maps the whole A")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public long Big { get; set; } }",
+        ".ForMember(d => d.Big, o => o.MapFrom(s => (long)s.Id))", "casts")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public int X { get; set; } public int Y { get; set; } }",
+        ".ForMember(d => d.X, o => o.MapFrom(s => s.Id)).ForMember(d => d.Y, o => o.MapFrom(s => s.Id))", "both read Id")]
+    [InlineData("public class A { public int Id { get; } = 1; } public class B { public int Code { get; set; } }",
+        ".ForMember(d => d.Code, o => o.MapFrom(s => s.Id))", "cannot be written")]
+    [InlineData("public class C { public string Name { get; set; } } public class A { public int Id { get; set; } public C Customer { get; set; } } public class B { public int Id { get; set; } public string CustomerName { get; } }",
+        "", "may be unflattened into A.Customer")]
+    [InlineData("public class A { public int Id { get; set; } public string Code { get; set; } } public class B { public int Id { get; set; } public string code() => \"\"; }",
+        "", "A.Code has no member with the same name in B")]
+    public void Rewrite_ReverseMapAutoMapperDoesMoreFor_ReportsManual(string types, string forward, string reason)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(types + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>()" + forward + ".ReverseMap(); } }");
+        CreateMapPattern pattern = forward.Contains("MapFrom", StringComparison.Ordinal) ? new ForMemberMapFromPattern()
+            : forward.Contains("Ignore", StringComparison.Ordinal) ? new ForMemberIgnorePattern() : new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("ReverseMap of CreateMap<A, B>: ");
+        ((ManualResult)result).Reason.ShouldContain(reason);
+    }
+
+    // Measured (TAAK-249): a ReverseMap().ForMember option wins over the reversed MapFrom of the same member.
+    [Fact]
+    public void Rewrite_ReverseOptionAndReversedMapFrom_OptionWins()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(
+            "public class A { public int Id { get; set; } public string Note { get; set; } public string Other { get; set; } } public class B { public int Id { get; set; } public string Note { get; set; } }"
+            + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>().ForMember(d => d.Note, o => o.MapFrom(s => s.Other)).ReverseMap().ForMember(d => d.Other, o => o.Ignore()); } }");
+        var pattern = new ForMemberMapFromPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        string extensions = result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString().ReplaceLineEndings("\n");
+        extensions.ShouldContain("public static A ToA(this B source) => new()\n    {\n        Id = source.Id,\n        Note = source.Note,\n    };");
     }
 
     // TAAK-253: a converter that needs what a ToB method does not have (the destination, the ResolutionContext, a service provider) stays Manual.

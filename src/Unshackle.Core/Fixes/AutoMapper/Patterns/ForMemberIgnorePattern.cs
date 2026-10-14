@@ -16,5 +16,6 @@ public class ForMemberIgnorePattern : CreateMapPattern
         "CreateMap<A, B>().ForMember(d => d.X, o => o.Ignore()) → B ToB(this A source) without X; other options and unmatched members stay Manual";
 
     public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => IsProfileWithMaps(c, model) && UsesForMember(c, ignore: true) && !UsesForMember(c, ignore: false));
+        root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => IsProfileWithMaps(c, model) && UsesForMember(c, ignore: true) && !UsesForMember(c, ignore: false))
+            .Select(Anchor).Distinct();
 }

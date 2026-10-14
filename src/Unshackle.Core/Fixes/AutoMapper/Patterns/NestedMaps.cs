@@ -135,10 +135,15 @@ public class NestedMaps
             foreach (InvocationExpressionSyntax createMap in profile.Members.OfType<ConstructorDeclarationSyntax>().SelectMany(c => c.DescendantNodes())
                 .OfType<InvocationExpressionSyntax>())
             {
-                if (createMap.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [_, { } destination] }
+                if (createMap.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                     && model.GetSymbolInfo(createMap).Symbol is IMethodSymbol { ContainingAssembly.Name: "AutoMapper", TypeArguments: [{ } from, { } to] })
                 {
                     found.Add((destination, from, to, createMap.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ConvertUsing" }));
+                    if (CreateMapPattern.HasReverseMap(createMap))
+                    {
+                        // ReverseMap: the rewrite also writes A ToA(this B source).
+                        found.Add((source, to, from, false));
+                    }
                 }
             }
 
@@ -157,7 +162,7 @@ public class NestedMaps
     private static void AddRewritten(Dictionary<(string Source, string Destination), List<NestedMap>> maps, SyntaxNode root, SemanticModel model, ProjectId? project)
     {
         HashSet<string> extensions = [.. root.DescendantNodes().OfType<ClassDeclarationSyntax>()
-            .Where(c => model.GetDeclaredSymbol(c) is INamedTypeSymbol type && CreateMapPattern.IsProfile(type)).Select(c => c.Identifier.ValueText + "Extensions")];
+            .Where(c => model.GetDeclaredSymbol(c) is INamedTypeSymbol type && CreateMapPattern.IsProfile(type)).Select(CreateMapPattern.ExtensionsName)];
         if (extensions.Count == 0)
         {
             return;

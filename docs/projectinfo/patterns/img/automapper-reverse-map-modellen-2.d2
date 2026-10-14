@@ -1,0 +1,18 @@
+title: "[Sequence] automapper.reverse-map" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: CreateMapPattern
+model: SemanticModel
+values: MemberValues
+fixer -> pattern: "RewriteAsync(profile, model, solution, ct)"
+pattern -> pattern: "TryParseMap: ReverseMapCall, TryParseOptions (reverse, then forward)"
+pattern -> model: "GetSymbolInfo(ReverseMap / ForMember)"
+pattern -> pattern: "Problem(A, B, options): forward members"
+pattern -> pattern: "Reverse(A, B, forward, reverseOptions)"
+pattern -> model: "MemberPath: GetSymbolInfo of s.X in forward MapFrom"
+pattern -> pattern: "unflattening check (B member name starts with an A member)"
+pattern -> pattern: "Problem(B, A, reverseOptions, ..., reversed): MayFlatten for members without source"
+pattern -> values: "Problem(member, value, from, to, A)"
+values -> pattern: "value or nested call / copy" {style.stroke-dash: 3}
+pattern -> pattern: "Extensions: ToB, then ToA, then MapInto"
+pattern -> fixer: "Fixed([empty profile, <Profile>Extensions]) or Manual(reason)" {style.stroke-dash: 3}

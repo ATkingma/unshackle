@@ -1,0 +1,22 @@
+direction: down
+q1: "Destination has a public\nparameterless constructor?"
+q2: "Exactly one constructor\n(record copy constructor excluded),\nand it is public?"
+q3: "Per parameter: one readable source member\nwith the same name in any case,\nnot ref/out/params, no ForMember on it?"
+q4: "MemberValues.Problem gives a value\n(copy, nested map, collection copy)?"
+q5: "Remaining members (not filled by a parameter)\npass the member rules?"
+new0: "new() { ... } (unchanged)"
+ok: "new(source.X, ...) { Y = ... }"
+m1: "Manual: several constructors or none public"
+m2: "Manual: parameter reason"
+m3: "Manual: conversion / nested problem"
+m4: "Manual: member reason"
+q1 -> new0: yes
+q1 -> q2: no
+q2 -> m1: no
+q2 -> q3: yes
+q3 -> m2: no
+q3 -> q4: yes
+q4 -> m3: no
+q4 -> q5: yes
+q5 -> m4: no
+q5 -> ok: yes

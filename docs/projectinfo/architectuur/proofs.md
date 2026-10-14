@@ -6,15 +6,16 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 915 proofs (excluding `_Pending`).
+Total: 924 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
-### _Combined (11)
+### _Combined (12)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `configuration-test-fixture` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IConfigurationProvider _configuration;` → `} public static class OrderProfileExtensions` |
+| `constructor-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
 | `conversion-map-into` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} }` |
 | `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
 | `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
@@ -50,13 +51,18 @@ Total: 915 proofs (excluding `_Pending`).
 | `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check: the map at Test.cs:27 is not in a profile constructor this fix rewrites |
 | `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
-### CreateMap (52)
+### CreateMap (58)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `collection` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `collection-dictionary` | Manual | `CreateMap<Order, OrderDto>();` — reason: is a collection of a kind this fix does not copy |
-| `constructor` | Manual | `CreateMap<Order, OrderDto>();` — reason: has no public parameterless constructor |
+| `construct-using` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not a CreateMap<A, B>() without options |
+| `constructor` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `constructor-conversion` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `constructor-default` | Manual | `CreateMap<Order, OrderDto>();` — reason: the constructor parameter Currency of OrderDto has no member with the same name in Order |
+| `constructor-record` | Fixed | `CreateMap<AccessList, AccessListInfoDto>();` → `public static class AccessListProfileExtensions {` |
+| `constructor-several` | Manual | `CreateMap<Order, OrderDto>();` — reason: has several constructors or none that is public |
 | `conversion` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `conversion-collection` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `conversion-convert-using` | Manual | `CreateMap<OrderForm, Order>();` — reason: replaces AutoMapper's built-in conversion |
@@ -75,6 +81,7 @@ Total: 915 proofs (excluding `_Pending`).
 | `expression-bodied` | Fixed | `public CustomerProfile() => CreateMap<Customer, CustomerDto>();` → `public CustomerProfile() {` |
 | `expression-bodied-base` | Fixed | `public CustomerProfile() : base("Customers") => CreateMap<Customer, CustomerDto>(); // only map` → `public CustomerProfile() : base("Customers") {` |
 | `flattening` | Manual | `CreateMap<Order, OrderDto>();` — reason: has no member with the same name |
+| `for-ctor-param` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not a CreateMap<A, B>() without options |
 | `generic` | Manual | `CreateMap<User, TUserDto>();` — reason: is generic or nested in a generic type |
 | `internal-types` | Fixed | `CreateMap<Order, OrderDto>();` → `internal static class OrderProfileExtensions {` |
 | `member-list` | Fixed | `CreateMap<Customer, CustomerDto>(MemberList.Destination); CreateMap<Tag, TagDto>(MemberList.Source);` → `public static class ShopProfileExtensions {` |
@@ -107,10 +114,11 @@ Total: 915 proofs (excluding `_Pending`).
 | `several-constructors` | Manual | `CreateMap<User, UserViewModel>();` — reason: has several constructors (which maps exist depends on the one that runs) |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>(); CreateMap<Tag, TagDto>();` → `public static class ProductProfileExtensions {` |
 
-### ForMemberIgnore (8)
+### ForMemberIgnore (9)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `constructor` | Fixed | `CreateMap<Line, LineDto>(); CreateMap<Order, OrderDto>()` → `public static class OrderProfileExtensions {` |
 | `member-list` | Fixed | `CreateMap<Document, DocumentDto>(MemberList.None) .ForMember(x => x.TenantName, s => s.Ignore());` → `public static class DocumentProfileExtensions {` |
 | `mixed` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Line, LineDto>().ForMember(d => d.Total, o => o.Ignore());` → `public static class OrderProfileExtensions {` |
 | `nested-profile` | Fixed | `public Mapping() => CreateMap<Activity, ActivitySummaryDto>(MemberList.None)` → `public Mapping() {` |
@@ -120,11 +128,12 @@ Total: 915 proofs (excluding `_Pending`).
 | `string-name` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Rank, o => o.Ignore()).ForMember("Note", o => o.Ignore());` — reason: is not a CreateMap<A, B>() without options |
 | `unmatched` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore());` — reason: OrderDto.Rank has no member with the same name in Order |
 
-### ForMemberMapFrom (16)
+### ForMemberMapFrom (17)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `collection` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Text, o => o.Ignore())` → `public static class OrderProfileExtensions {` |
+| `constructor` | Manual | `CreateMap<Order, OrderDto>()` — reason: which the constructor parameter Name of OrderDto fills |
 | `conversion` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Numbers, o => o.Ignore())` → `public static class OrderProfileExtensions {` |
 | `conversion-expression` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Total, o => o.MapFrom(s => s.Price * s.Quantity))` → `public static class OrderProfileExtensions {` |
 | `ignore-and-nullable` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `public static class OrderProfileExtensions {` |

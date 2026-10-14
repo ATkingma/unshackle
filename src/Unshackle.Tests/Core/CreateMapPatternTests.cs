@@ -26,6 +26,9 @@ public class CreateMapPatternTests
     [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; private set; } }", "has no public setter")]
     [InlineData("public class A { public int Id { get; set; } } public abstract class B { public int Id { get; set; } }", "no public parameterless constructor")]
     [InlineData("public class A { public int Id { get; set; } } public class B { public int[] Id { get; set; } = []; }", "(AutoMapper converts)")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { private B() { } public B(int id) { } }", "has several constructors or none that is public")]
+    [InlineData("public class A { public int Id { get; set; } public int ID; } public class B { public B(int id) { } }", "matches several members of A")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public B(ref int id) { } }", "has a ref, out or params parameter id")]
     public void Rewrite_MapAutoMapperDoesMoreFor_ReportsManual(string types, string reason)
     {
         // Arrange
@@ -61,6 +64,25 @@ public class CreateMapPatternTests
         // Assert
         result.ShouldBeOfType<FixedResult>().NewNodes.Select(n => n.ToFullString())
             .ShouldBe(plain.ShouldBeOfType<FixedResult>().NewNodes.Select(n => n.ToFullString()));
+    }
+
+    // AutoMapper 14 fills a constructor parameter from the source member of the same name in any case (TAAK-251).
+    [Fact]
+    public void Rewrite_ConstructorParameterOtherCase_PassesMember()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(
+            "public class A { public int Id { get; set; } public string Name { get; set; } = \"\"; } public class B { public B(int id) { Id = id; } public int Id { get; set; } public string Name { get; set; } = \"\"; } public class P : AutoMapper.Profile { public P() { CreateMap<A, B>(); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        string text = result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString();
+        text.ShouldContain("public static B ToB(this A source) => new(source.Id)");
+        text.ShouldContain("Name = source.Name,");
+        text.ShouldNotContain("Id = source.Id");
     }
 
     // Dropping an expression that is not a constant could drop a side effect.

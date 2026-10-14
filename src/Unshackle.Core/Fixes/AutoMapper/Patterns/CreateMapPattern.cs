@@ -12,7 +12,7 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// A Profile whose constructor only holds CreateMap&lt;A, B&gt;() calls without options (a constant MemberList argument only steers
 /// AssertConfigurationIsValid and is dropped) → a static class next to it (next to the outermost type for a profile nested in a DTO) with
 /// one B ToB(this A source) per map, copying the members with the same name and type. Anything AutoMapper would do
-/// beyond that (flattening, constructors) is Manual, except a member whose type pair has its own CreateMap in a profile this fix
+/// beyond that (flattening, ConstructUsing) is Manual, except a destination with one public constructor (new(source.X, ...), parameters matched by name in any case), a member whose type pair has its own CreateMap in a profile this fix
 /// rewrites (X = source.X?.ToY()), a list or array (copied into a new one, element by element through such a map), see <see cref="MemberValues"/>,
 /// and AutoMapper's built-in conversions with a hand-written form that gives the same result (X = source.X.GetValueOrDefault(),
 /// source.X.ToString(), Convert.ToInt32(source.X), (Color)source.X, ...), see <see cref="MemberConversions"/>.
@@ -96,7 +96,7 @@ public class CreateMapPattern : ISolutionPattern
             return PatternResult.Manual($"Profile {profile.Identifier} has several constructors (which maps exist depends on the one that runs); write its mapping methods by hand.");
         }
 
-        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto)> maps = [];
+        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto, string Creation)> maps = [];
         bool isInternal = false;
         HashSet<string> pairs = new(StringComparer.Ordinal);
         HashSet<string> namespaces = new(StringComparer.Ordinal);
@@ -118,7 +118,7 @@ public class CreateMapPattern : ISolutionPattern
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: ReverseMap next to a value resolver or a MapFrom lambda with more parameters (AutoMapper does not reverse those); write the mapping methods by hand.");
             }
 
-            if (Problem(sourceType, destinationType, options, model, profileType, values, out List<(string Name, string Value)> members, out string? copied,
+            if (Problem(sourceType, destinationType, options, model, profileType, values, out List<(string Name, string Value)> members, out string? copied, out string creation,
                 resolvers: new ValueResolvers(resolverCalls, model, anchor.SpanStart, profileType)) is string problem)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {problem}; write the mapping method by hand.");
@@ -129,6 +129,11 @@ public class CreateMapPattern : ISolutionPattern
             {
                 // Measured (TAAK-245): Map(source, destination) maps into the nested object or list the destination already has.
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: Map(source, destination) maps {copied} into the object or collection the destination already holds, MapInto would replace it; write MapInto by hand.");
+            }
+
+            if (needsMapInto && creation != "new()")
+            {
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: Map(source, destination) fills an existing {destinationType.Name}, whose constructor parameters MapInto cannot set; write MapInto by hand.");
             }
 
             Accessibility access = Weakest(Weakest(Effective(sourceType), Effective(destinationType)), Accessibility.Public);
@@ -154,17 +159,17 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             isInternal |= access == Accessibility.Internal;
-            maps.Add((source, destination, members, needsMapInto));
+            maps.Add((source, destination, members, needsMapInto, creation));
             if (reverseOptions is not null)
             {
                 if (Reverse(sourceType, destinationType, options, reverseOptions, model, profileType, values, mapInto, out List<(string Name, string Value)> reverseMembers,
-                    out bool reverseMapInto) is string reverseProblem)
+                    out bool reverseMapInto, out string reverseCreation) is string reverseProblem)
                 {
                     return PatternResult.Manual($"ReverseMap of CreateMap<{sourceType.Name}, {destinationType.Name}>: {reverseProblem}; write the mapping method by hand.");
                 }
 
                 // After its forward map: MapCallPattern.GeneratedAsync counts the methods the same way.
-                maps.Add((destination, source, reverseMembers, reverseMapInto));
+                maps.Add((destination, source, reverseMembers, reverseMapInto, reverseCreation));
             }
 
             if (!pairs.Add(MapIntoPattern.Key(sourceType, destinationType)) || (reverseOptions is not null && !pairs.Add(MapIntoPattern.Key(destinationType, sourceType))))
@@ -264,15 +269,29 @@ public class CreateMapPattern : ISolutionPattern
     // that gets a new object or collection. reversed (only for the reverse map of a ReverseMap): destination member → source member of a
     // reversed MapFrom; a destination member without any source is then left alone instead of Manual.
     private static string? Problem(ITypeSymbol source, ITypeSymbol destination, Dictionary<string, SimpleLambdaExpressionSyntax?> options,
-        SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out List<(string Name, string Value)> members, out string? copied,
+        SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out List<(string Name, string Value)> members, out string? copied, out string creation,
         Dictionary<string, string>? reversed = null, ValueResolvers? resolvers = null)
     {
         members = [];
         copied = null;
-        if (destination is not INamedTypeSymbol { IsAbstract: false } named || destination.TypeKind is not (TypeKind.Class or TypeKind.Struct)
-            || (destination.TypeKind == TypeKind.Class && !named.InstanceConstructors.Any(c => c.Parameters.Length == 0 && c.DeclaredAccessibility == Accessibility.Public)))
+        creation = "new()";
+        if (destination is not INamedTypeSymbol { IsAbstract: false } named || destination.TypeKind is not (TypeKind.Class or TypeKind.Struct))
         {
             return $"{destination.Name} has no public parameterless constructor (AutoMapper would map constructor parameters)";
+        }
+
+        IMethodSymbol? constructor = null;
+        if (destination.TypeKind == TypeKind.Class && !named.InstanceConstructors.Any(c => c.Parameters.Length == 0 && c.DeclaredAccessibility == Accessibility.Public))
+        {
+            // Measured (TAAK-251): AutoMapper takes the constructor with the most parameters it can resolve (the first declared on a tie)
+            // and maps no member a parameter already filled. Only a single constructor is that choice for sure; the record copy constructor does not count.
+            if (named.InstanceConstructors.Where(c => !(c.IsImplicitlyDeclared && c.Parameters.Length == 1 && SymbolEqualityComparer.Default.Equals(c.Parameters[0].Type, named))).ToList()
+                is not [{ DeclaredAccessibility: Accessibility.Public } single])
+            {
+                return $"{destination.Name} has several constructors or none that is public (AutoMapper picks the one with the most parameters it can resolve)";
+            }
+
+            constructor = single;
         }
 
         List<ISymbol> readable = [.. AllMembers(source).Where(m => m switch
@@ -297,8 +316,24 @@ public class CreateMapPattern : ISolutionPattern
             }
         }
 
+        if (constructor is not null && ConstructorProblem(constructor, source, destination, options, readable, values, out creation, ref copied) is string constructorProblem)
+        {
+            return constructorProblem;
+        }
+
         foreach (ISymbol target in destinationMembers.Where(m => m is IPropertySymbol or IFieldSymbol { IsReadOnly: false }))
         {
+            // A member a constructor parameter of the same name (any case) filled is not mapped again (measured, TAAK-251).
+            if (constructor is not null && constructor.Parameters.Any(p => string.Equals(p.Name, target.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                if (resolvers?.Has(target.Name) == true)
+                {
+                    return $"a value resolver configures {target.Name}, which a constructor parameter of {destination.Name} also fills";
+                }
+
+                continue;
+            }
+
             if (resolvers?.Has(target.Name) == true)
             {
                 ITypeSymbol resolvedType = target is IPropertySymbol resolvedProperty ? resolvedProperty.Type : ((IFieldSymbol)target).Type;
@@ -400,6 +435,52 @@ public class CreateMapPattern : ISolutionPattern
         return null;
     }
 
+    // Why the single constructor cannot be called as new(source.X, ...), or null with that call in creation. AutoMapper fills each parameter
+    // from the source member of the same name in any case (measured, TAAK-251); a parameter without one gets its default value or makes Map throw.
+    private static string? ConstructorProblem(IMethodSymbol constructor, ITypeSymbol source, ITypeSymbol destination,
+        Dictionary<string, SimpleLambdaExpressionSyntax?> options, List<ISymbol> readable, MemberValues values, out string creation, ref string? copied)
+    {
+        creation = "";
+        List<string> arguments = [];
+        foreach (IParameterSymbol parameter in constructor.Parameters)
+        {
+            if (parameter.RefKind != RefKind.None || parameter.IsParams)
+            {
+                return $"the constructor of {destination.Name} has a ref, out or params parameter {parameter.Name}";
+            }
+
+            if (options.Keys.FirstOrDefault(k => string.Equals(k, parameter.Name, StringComparison.OrdinalIgnoreCase)) is { } configured)
+            {
+                return $"ForMember configures {configured}, which the constructor parameter {parameter.Name} of {destination.Name} fills (AutoMapper may apply it to the parameter)";
+            }
+
+            List<ISymbol> matches = [.. readable.Where(m => string.Equals(m.Name, parameter.Name, StringComparison.OrdinalIgnoreCase))];
+            if (matches is not [{ } match])
+            {
+                return matches.Count == 0
+                    ? $"the constructor parameter {parameter.Name} of {destination.Name} has no member with the same name in {source.Name} (AutoMapper flattens, uses the default value or throws)"
+                    : $"the constructor parameter {parameter.Name} of {destination.Name} matches several members of {source.Name}";
+            }
+
+            ITypeSymbol from = match is IPropertySymbol property ? property.Type : ((IFieldSymbol)match).Type;
+            if (values.Problem(parameter.Name, "source." + match.Name, from, parameter.Type, destination, out string? argument, out bool copy) is string valueProblem)
+            {
+                return valueProblem;
+            }
+
+            if (argument is null)
+            {
+                return $"the constructor parameter {parameter.Name} is {parameter.Type.Name} but {match.Name} is {from.Name} in {source.Name} (AutoMapper converts){MemberValues.NoMap(from, parameter.Type)}";
+            }
+
+            arguments.Add(argument);
+            copied ??= copy ? parameter.Name : null;
+        }
+
+        creation = $"new({string.Join(", ", arguments)})";
+        return null;
+    }
+
     // Why the reverse map B → A of CreateMap<A, B>(forward).ReverseMap() cannot be written as plain assignments, or null with its members.
     // Measured on AutoMapper 14 (TAAK-249): the reverse map has MemberList.None and maps same-named members like any map; a forward Ignore
     // does not carry over; a forward MapFrom(s => s.X) for Y becomes X = source.Y (a longer path is unflattened, s => s maps into A itself);
@@ -407,9 +488,10 @@ public class CreateMapPattern : ISolutionPattern
     // a forward member AutoMapper flattened is unflattened.
     private static string? Reverse(ITypeSymbol source, ITypeSymbol destination, Dictionary<string, SimpleLambdaExpressionSyntax?> forward,
         Dictionary<string, SimpleLambdaExpressionSyntax?> options, SemanticModel model, INamedTypeSymbol? profileType, MemberValues values,
-        IReadOnlySet<string> mapInto, out List<(string Name, string Value)> members, out bool needsMapInto)
+        IReadOnlySet<string> mapInto, out List<(string Name, string Value)> members, out bool needsMapInto, out string creation)
     {
         members = [];
+        creation = "new()";
         needsMapInto = mapInto.Contains(MapIntoPattern.Key(destination, source));
         Dictionary<string, string> reversed = new(StringComparer.Ordinal);
         foreach ((string name, SimpleLambdaExpressionSyntax? mapFrom) in forward)
@@ -460,9 +542,15 @@ public class CreateMapPattern : ISolutionPattern
             }
         }
 
-        if (Problem(destination, source, options, model, profileType, values, out members, out string? copied, reversed) is string problem)
+        if (Problem(destination, source, options, model, profileType, values, out members, out string? copied, out creation, reversed) is string problem)
         {
             return problem;
+        }
+
+        // Not measured how a reversed MapFrom reaches a constructor parameter, nor can MapInto set one (TAAK-251).
+        if (creation != "new()" && (reversed.Count > 0 || needsMapInto))
+        {
+            return $"{source.Name} is created through its constructor, which a reversed MapFrom or MapInto cannot be applied to";
         }
 
         // Measured (TAAK-245, again for the reverse map): Map(source, destination) maps into the nested object or list the destination holds.
@@ -819,7 +907,7 @@ public class CreateMapPattern : ISolutionPattern
 
     // The static class goes right after the profile (the outermost type around a nested one), with its indentation and line endings.
     private static MemberDeclarationSyntax Extensions(TypeDeclarationSyntax anchor, string className, string access,
-        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto)> maps)
+        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto, string Creation)> maps)
     {
         string indent = anchor.GetLeadingTrivia().LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToString();
         string eol = anchor.SyntaxTree.GetRoot().DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia)).ToString() is { Length: > 0 } found
@@ -827,7 +915,7 @@ public class CreateMapPattern : ISolutionPattern
             : "\n";
         var text = new StringBuilder();
         text.Append(access).Append(" static class ").Append(className).Append(eol).Append(indent).Append('{').Append(eol);
-        foreach ((TypeSyntax source, TypeSyntax destination, List<(string Name, string Value)> members, _) in maps)
+        foreach ((TypeSyntax source, TypeSyntax destination, List<(string Name, string Value)> members, _, string creation) in maps)
         {
             if (text[^(eol.Length + 1)] != '{')
             {
@@ -835,7 +923,7 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             text.Append(indent).Append("    ").Append(access).Append(" static ").Append(destination).Append(' ').Append(MethodName(destination))
-                .Append("(this ").Append(source).Append(" source) => new()");
+                .Append("(this ").Append(source).Append(" source) => ").Append(creation);
             if (members.Count == 0)
             {
                 text.Append(';').Append(eol);
@@ -852,7 +940,7 @@ public class CreateMapPattern : ISolutionPattern
         }
 
         // After all ToB methods: MapCallPattern pairs the i-th method with the i-th CreateMap.
-        foreach ((TypeSyntax source, TypeSyntax destination, List<(string Name, string Value)> members, _) in maps.Where(m => m.MapInto))
+        foreach ((TypeSyntax source, TypeSyntax destination, List<(string Name, string Value)> members, _, _) in maps.Where(m => m.MapInto))
         {
             text.Append(eol).Append(indent).Append("    ").Append(access).Append(" static ").Append(destination)
                 .Append(" MapInto(this ").Append(source).Append(" source, ").Append(destination).Append(" destination)").Append(eol)

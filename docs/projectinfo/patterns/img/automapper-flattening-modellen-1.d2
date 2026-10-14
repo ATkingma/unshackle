@@ -1,0 +1,22 @@
+title: "[Class diagram] automapper.flattening" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+CreateMapPattern: {
+  shape: class
+  "-Problem(...)": "string?"
+  "-FlattenedProblem(source, destination, name, to, values, out read, out from)": "string?"
+}
+Flattening: {
+  shape: class
+  "+Problem(source, destination, name, out path)": "string?"
+  "+Value(path, to, nullableWarnings, out value, out from)": "string?"
+  "-Paths(type, words, start, prefix, found)": "string?"
+  "-Direct(type, name, out member)": "string?"
+  "-Readable(type)": "List<ISymbol>"
+}
+MemberValues: {
+  shape: class
+  "+NullableWarnings": "bool"
+  "+Problem(what, value, from, to, outer, out result, out copies)": "string?"
+}
+CreateMapPattern -> Flattening: "path, expression"
+CreateMapPattern -> MemberValues: "value of the expression"

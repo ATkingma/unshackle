@@ -38,6 +38,9 @@ public class MemberValues
         _conversions = new MemberConversions(model, position, _nullableWarnings, namespaces);
     }
 
+    // Whether the generated class gets nullable warnings (a null written into a non-nullable member then needs a !).
+    public bool NullableWarnings => _nullableWarnings;
+
     /// <summary>
     /// Why value (an expression of type from) cannot become AutoMapper's value for a member of type to in a map to outer, or null with that
     /// value in result; result null when no rule applies (the types differ and nothing maps them). copies: a nested map or collection copy.

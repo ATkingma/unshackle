@@ -1,0 +1,12 @@
+title: "[Sequence] automapper.flattening" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+p: CreateMapPattern
+f: Flattening
+v: MemberValues
+p -> f: "Problem(source, destination, name)"
+f -> f: "Direct / Paths (word split, shortest prefix first)"
+f -> p: "path or Manual reason"
+p -> f: "Value(path, to, NullableWarnings)"
+f -> p: "source.A?.B ?? default, type"
+p -> v: "Problem(name, read, from, to)"
+v -> p: "assignment (nested map / conversion) or Manual"

@@ -1,0 +1,1 @@
+OrderDto.CustomerAddressCity can be read from Order as Customer.Address.City and as CustomerAddress.City; AutoMapper takes the first

@@ -12,7 +12,8 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// A Profile whose constructor only holds CreateMap&lt;A, B&gt;() calls without options (a constant MemberList argument only steers
 /// AssertConfigurationIsValid and is dropped) → a static class next to it (next to the outermost type for a profile nested in a DTO) with
 /// one B ToB(this A source) per map, copying the members with the same name and type. Anything AutoMapper would do
-/// beyond that (flattening, ConstructUsing) is Manual, except a destination with one public constructor (new(source.X, ...), parameters matched by name in any case), a member whose type pair has its own CreateMap in a profile this fix
+/// beyond that (ConstructUsing) is Manual, except a member AutoMapper reads under another name (any case, GetX(), flattening:
+/// CustomerName = source.Customer?.Name, see <see cref="Flattening"/>), a destination with one public constructor (new(source.X, ...), parameters matched by name in any case), a member whose type pair has its own CreateMap in a profile this fix
 /// rewrites (X = source.X?.ToY()), a list or array (copied into a new one, element by element through such a map), see <see cref="MemberValues"/>,
 /// and AutoMapper's built-in conversions with a hand-written form that gives the same result (X = source.X.GetValueOrDefault(),
 /// source.X.ToString(), Convert.ToInt32(source.X), (Color)source.X, ...), see <see cref="MemberConversions"/>.
@@ -386,15 +387,25 @@ public class CreateMapPattern : ISolutionPattern
                 continue;
             }
 
-            if (matches is not [{ } match] || match.Name != target.Name)
+            ITypeSymbol to = target is IPropertySymbol tp ? tp.Type : ((IFieldSymbol)target).Type;
+            ITypeSymbol from;
+            string read;
+            if (matches is [{ } match] && match.Name == target.Name)
             {
-                // No member of that exact name: AutoMapper may flatten (Customer.Name → CustomerName), call GetX() or match case-insensitively.
+                from = match is IPropertySymbol fp ? fp.Type : ((IFieldSymbol)match).Type;
+                read = "source." + target.Name;
+            }
+            else if (reversed is not null)
+            {
                 return $"{destination.Name}.{target.Name} has no member with the same name in {source.Name}";
             }
+            else if (FlattenedProblem(source, destination, target.Name, to, values, out read, out from) is string flattened)
+            {
+                // AutoMapper's other name rules (TAAK-256): any case, a Get prefix, flattening (Customer.Name → CustomerName).
+                return flattened;
+            }
 
-            ITypeSymbol from = match is IPropertySymbol fp ? fp.Type : ((IFieldSymbol)match).Type;
-            ITypeSymbol to = target is IPropertySymbol tp ? tp.Type : ((IFieldSymbol)target).Type;
-            if (values.Problem(target.Name, "source." + target.Name, from, to, destination, out string? assigned, out bool copy) is string valueProblem)
+            if (values.Problem(target.Name, read, from, to, destination, out string? assigned, out bool copy) is string valueProblem)
             {
                 return valueProblem;
             }
@@ -409,6 +420,27 @@ public class CreateMapPattern : ISolutionPattern
         }
 
         return null;
+    }
+
+    // Why a member without a source member of its exact name cannot be read the way AutoMapper reads it, or null with the expression in read.
+    private static string? FlattenedProblem(ITypeSymbol source, ITypeSymbol destination, string name, ITypeSymbol to, MemberValues values,
+        out string read, out ITypeSymbol from)
+    {
+        read = "";
+        from = to;
+        if (Flattening.Problem(source, destination, name, out IReadOnlyList<ISymbol> path) is string problem)
+        {
+            return problem;
+        }
+
+        if (path.Count == 0)
+        {
+            return $"{destination.Name}.{name} has no member with the same name in {source.Name}, nor one AutoMapper flattens or reads through a Get method";
+        }
+
+        return Flattening.Value(path, to, values.NullableWarnings, out read, out from) is string valueProblem
+            ? $"{destination.Name}.{name}: {valueProblem}"
+            : null;
     }
 
     // Why the single constructor cannot be called as new(source.X, ...), or null with that call in creation. AutoMapper fills each parameter

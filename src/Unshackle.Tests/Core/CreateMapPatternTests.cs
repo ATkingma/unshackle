@@ -22,7 +22,7 @@ public class CreateMapPatternTests
     }
 
     [Theory]
-    [InlineData("public class A { public int id { get; set; } } public class B { public int Id { get; set; } }", "has no member with the same name")]
+    [InlineData("public class A { public int Other { get; set; } } public class B { public int Id { get; set; } }", "has no member with the same name")]
     [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; private set; } }", "has no public setter")]
     [InlineData("public class A { public int Id { get; set; } } public abstract class B { public int Id { get; set; } }", "no public parameterless constructor")]
     [InlineData("public class A { public int Id { get; set; } } public class B { public int[] Id { get; set; } = []; }", "(AutoMapper converts)")]
@@ -99,6 +99,47 @@ public class CreateMapPatternTests
 
         // Assert
         result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("is not a CreateMap<A, B>() without options");
+    }
+
+    // AutoMapper 14's other name rules as measured (TAAK-256): any case, a Get prefix (also on a property), flattening with the shortest
+    // prefix first and a direct match winning; the proofs in CreateMap/flattening-* show the common ones.
+    [Theory]
+    [InlineData("public class A { public int id { get; set; } } public class B { public int Id { get; set; } }", "Id = source.id,")]
+    [InlineData("public class A { public string GetCode { get; set; } = \"\"; } public class B { public string Code { get; set; } = \"\"; }", "Code = source.GetCode,")]
+    [InlineData("public class A { public int Total; public int GetTotal() => 2; } public class B { public int Total { get; set; } }", "Total = source.Total,")]
+    [InlineData("public class A { public string Name { get; set; } = \"\"; } public class B { public int NameLength { get; set; } }", "NameLength = source.Name?.Length ?? default,")]
+    [InlineData("public class A { public string Name { get; set; } = \"\"; } public class B { public string NameTrim { get; set; } = \"\"; }", "NameTrim = source.Name?.Trim(),")]
+    [InlineData("public class C { public string X { get; set; } = \"\"; } public class A { public C Customer { get; set; } = new(); public string CustomerName { get; set; } = \"\"; } public class B { public string CustomerName { get; set; } = \"\"; }", "CustomerName = source.CustomerName,")]
+    [InlineData("public class N { public string X { get; set; } = \"\"; } public class A { public string Customer { get; set; } = \"\"; public N CustomerName2 { get; set; } = new(); } public class B { public string CustomerName2X { get; set; } = \"\"; }", "CustomerName2X = source.CustomerName2?.X,")]
+    [InlineData("public class C { public int? When { get; set; } } public class A { public C Customer { get; set; } = new(); } public class B { public int CustomerWhen { get; set; } }", "CustomerWhen = (source.Customer?.When).GetValueOrDefault(),")]
+    public void Rewrite_OtherNameRule_ReadsWhatAutoMapperReads(string types, string assignment)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(types + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>(); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString().ShouldContain(assignment);
+    }
+
+    [Theory]
+    [InlineData("public struct S { public int X { get; set; } } public class A { public S? P { get; set; } } public class B { public int PX { get; set; } }", "has no member with the same name in A, nor one AutoMapper flattens")]
+    [InlineData("public class A { public int Name() => 1; public int GetName() => 2; public int name; } public class B { public int Name { get; set; } }", "Name and name of A both match Name")]
+    [InlineData("public class C { public int Age { get; set; } } public class A { public C Customer { get; set; } = new(); } public class B { public long? CustomerAge { get; set; } }", "may meet a null object")]
+    public void Rewrite_OtherNameRuleUnsure_ReportsManual(string types, string reason)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(types + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>(); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain(reason);
     }
 
     // AutoMapper 14's built-in conversions as measured (TAAK-247); the proofs in CreateMap/conversion-* show the common ones.

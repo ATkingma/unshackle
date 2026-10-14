@@ -10,7 +10,7 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 
 /// <summary>
 /// A Profile whose constructor only holds CreateMap&lt;A, B&gt;() calls without options (a constant MemberList argument only steers
-/// AssertConfigurationIsValid and is dropped) → a static class next to it with
+/// AssertConfigurationIsValid and is dropped) → a static class next to it (next to the outermost type for a profile nested in a DTO) with
 /// one B ToB(this A source) per map, copying the members with the same name and type. Anything AutoMapper would do
 /// beyond that (flattening, ConstructUsing) is Manual, except a destination with one public constructor (new(source.X, ...), parameters matched by name in any case), a member whose type pair has its own CreateMap in a profile this fix
 /// rewrites (X = source.X?.ToY()), a list or array (copied into a new one, element by element through such a map), see <see cref="MemberValues"/>,
@@ -43,7 +43,7 @@ public class CreateMapPattern : ISolutionPattern
                 && !MapCallPattern.IsMapCall(i, model)
                 && !MapIntoPattern.IsMapIntoCall(i, model),
             _ => false,
-        });
+        }).Select(Anchor).Distinct();
 
     // Without the solution no MapInto is written: nothing says a Map(source, destination) call needs it.
     public virtual PatternResult Rewrite(SyntaxNode node, SemanticModel model) => Rewrite(node, model, new HashSet<string>(), nested: null);
@@ -53,7 +53,7 @@ public class CreateMapPattern : ISolutionPattern
         ArgumentNullException.ThrowIfNull(node);
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(solution);
-        return node is ClassDeclarationSyntax
+        return node is TypeDeclarationSyntax
             ? Rewrite(node, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken), await NestedMaps.FromAsync(model, solution, cancellationToken))
             : Rewrite(node, model, new HashSet<string>(), nested: null);
     }
@@ -71,21 +71,37 @@ public class CreateMapPattern : ISolutionPattern
                 "AutoMapper's ProjectTo and Map with options are not migrated yet (automapper.unsupported); while they run, the CreateMap rewrites of this fix stay undone.");
         }
 
-        var profile = (ClassDeclarationSyntax)node;
-        INamedTypeSymbol? profileType = model.GetDeclaredSymbol(profile);
-        if (profile.Parent is not (BaseNamespaceDeclarationSyntax or CompilationUnitSyntax) || profile.TypeParameterList is not null
-            || profile.Modifiers.Any(SyntaxKind.PartialKeyword)
-            || profile.Members.OfType<ConstructorDeclarationSyntax>().ToList() is not [{ Body: { } body }])
+        // node: a profile, or (from Find) the outermost type around a nested one. An extension class must be top-level, so it goes
+        // right after that outermost type (the anchor), which then can hold only one profile.
+        TypeDeclarationSyntax anchor = node.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().Last();
+        List<ClassDeclarationSyntax> profiles = [.. anchor.DescendantNodesAndSelf().OfType<ClassDeclarationSyntax>().Where(c => IsProfileWithMaps(c, model))];
+        if (profiles is not [{ } profile])
         {
-            return PatternResult.Manual($"Profile {profile.Identifier} is nested, generic, partial or has several constructors; write its mapping methods by hand.");
+            return PatternResult.Manual($"{anchor.Identifier} holds several profiles ({string.Join(", ", profiles.Select(p => p.Identifier.ValueText))}), whose extension classes would all go next to it; write their mapping methods by hand.");
+        }
+
+        INamedTypeSymbol? profileType = model.GetDeclaredSymbol(profile);
+        if (profile.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().Any(t => t.TypeParameterList is not null))
+        {
+            return PatternResult.Manual($"Profile {profile.Identifier} is generic or nested in a generic type (its maps can use the type parameters); write its mapping methods by hand.");
+        }
+
+        if (profile.Modifiers.Any(SyntaxKind.PartialKeyword))
+        {
+            return PatternResult.Manual($"Profile {profile.Identifier} is partial (another part can add maps or members they use); write its mapping methods by hand.");
+        }
+
+        if (profile.Members.OfType<ConstructorDeclarationSyntax>().ToList() is not [{ } constructor])
+        {
+            return PatternResult.Manual($"Profile {profile.Identifier} has several constructors (which maps exist depends on the one that runs); write its mapping methods by hand.");
         }
 
         List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto, string Creation)> maps = [];
         bool isInternal = false;
         HashSet<string> pairs = new(StringComparer.Ordinal);
         HashSet<string> namespaces = new(StringComparer.Ordinal);
-        var values = new MemberValues(nested ?? NestedMaps.From(model), model, profile.SpanStart, namespaces);
-        foreach (StatementSyntax statement in body.Statements)
+        var values = new MemberValues(nested ?? NestedMaps.From(model), model, anchor.SpanStart, namespaces);
+        foreach (SyntaxNode statement in MapStatements(constructor))
         {
             if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out Dictionary<string, SimpleLambdaExpressionSyntax?>? options,
                     out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverseOptions)
@@ -120,6 +136,22 @@ public class CreateMapPattern : ISolutionPattern
                 return PatternResult.Manual($"{sourceType.Name} or {destinationType.Name} is private or protected; an extension method cannot use it.");
             }
 
+            if ((OutsideProblem(options, model, anchor.SpanStart) ?? OutsideProblem(reverseOptions ?? [], model, anchor.SpanStart)) is string outside)
+            {
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {outside}; write the mapping method by hand.");
+            }
+
+            if (anchor != profile)
+            {
+                // A nested profile can name a type of its containing types without their names (Command for AddNote.Command).
+                (string written, string writtenReverse) = (MethodName(destination), MethodName(source));
+                (source, destination) = (AtAnchor(source, sourceType, model, anchor.SpanStart), AtAnchor(destination, destinationType, model, anchor.SpanStart));
+                if (MethodName(destination) != written || (reverseOptions is not null && MethodName(source) != writtenReverse))
+                {
+                    return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {destinationType.Name} has to be written as {destination} outside {anchor.Identifier}; write the mapping method by hand.");
+                }
+            }
+
             isInternal |= access == Accessibility.Internal;
             maps.Add((source, destination, members, needsMapInto, creation));
             if (reverseOptions is not null)
@@ -141,15 +173,89 @@ public class CreateMapPattern : ISolutionPattern
             }
         }
 
-        string className = profile.Identifier.ValueText + "Extensions";
+        string className = ExtensionsName(profile);
         if (model.Compilation.GetSymbolsWithName(className, SymbolFilter.Type).Any())
         {
             return PatternResult.Manual($"A type {className} already exists; write the mapping methods of {profile.Identifier} by hand.");
         }
 
         return PatternResult.Fixed([
-            profile.ReplaceNode(body, body.WithStatements([])),
-            Extensions(profile, className, isInternal ? "internal" : "public", maps)], [.. namespaces.Order(StringComparer.Ordinal)]);
+            anchor.ReplaceNode(constructor, Emptied(constructor)),
+            Extensions(anchor, className, isInternal ? "internal" : "public", maps)], [.. namespaces.Order(StringComparer.Ordinal)]);
+    }
+
+    // The statements of a profile constructor: the block's, or the expression of `=> CreateMap<A, B>()`.
+    internal static IReadOnlyList<SyntaxNode> MapStatements(ConstructorDeclarationSyntax constructor) =>
+        constructor.Body is { } body ? body.Statements : constructor.ExpressionBody is { } arrow ? [arrow] : [];
+
+    // <Profile>Extensions; a nested profile gets the names of its containing types in front (TodoItemDtoMappingExtensions), because the
+    // jason style names every nested profile Mapping.
+    internal static string ExtensionsName(ClassDeclarationSyntax profile) =>
+        string.Concat(profile.AncestorsAndSelf().OfType<BaseTypeDeclarationSyntax>().Reverse().Select(t => t.Identifier.ValueText)) + "Extensions";
+
+    // The constructor without its maps: an empty block, also for an expression body (which then gets its own lines).
+    private static ConstructorDeclarationSyntax Emptied(ConstructorDeclarationSyntax constructor)
+    {
+        if (constructor.Body is { } body)
+        {
+            return constructor.WithBody(body.WithStatements([]));
+        }
+
+        string indent = constructor.GetLeadingTrivia().LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToString();
+        string eol = constructor.SyntaxTree.GetRoot().DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia)).ToString() is { Length: > 0 } found
+            ? found
+            : "\n";
+        BlockSyntax block = SyntaxFactory.Block()
+            .WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken).WithLeadingTrivia(SyntaxFactory.EndOfLine(eol), SyntaxFactory.Whitespace(indent)).WithTrailingTrivia(SyntaxFactory.EndOfLine(eol)))
+            .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken).WithLeadingTrivia(SyntaxFactory.Whitespace(indent)).WithTrailingTrivia(constructor.SemicolonToken.TrailingTrivia));
+        ConstructorDeclarationSyntax headed = constructor.Initializer is { } initializer
+            ? constructor.WithInitializer(initializer.WithoutTrailingTrivia())
+            : constructor.WithParameterList(constructor.ParameterList.WithoutTrailingTrivia());
+        return headed.WithExpressionBody(null).WithSemicolonToken(default).WithBody(block);
+    }
+
+    // A type written in a nested profile, as the code next to the outermost type has to write it.
+    private static TypeSyntax AtAnchor(TypeSyntax written, ITypeSymbol type, SemanticModel model, int position) =>
+        SymbolEqualityComparer.Default.Equals(model.GetSpeculativeTypeInfo(position, written, SpeculativeBindingOption.BindAsTypeOrNamespace).Type, type)
+            ? written
+            : SyntaxFactory.ParseTypeName(type.ToMinimalDisplayString(model, position));
+
+    // Why a MapFrom expression cannot move to the extension class next to the outermost type: it uses a private or protected member or
+    // type (of the profile, a containing type or Profile itself), or a name that means something else there (a member of a containing type).
+    private static string? OutsideProblem(Dictionary<string, SimpleLambdaExpressionSyntax?> options, SemanticModel model, int position)
+    {
+        foreach ((string member, SimpleLambdaExpressionSyntax? lambda) in options)
+        {
+            foreach (SimpleNameSyntax name in lambda?.Body.DescendantNodesAndSelf().OfType<SimpleNameSyntax>() ?? [])
+            {
+                if (name.Parent is NameColonSyntax or NameEqualsSyntax || model.GetSymbolInfo(name).Symbol is not { } symbol
+                    || symbol is ILocalSymbol or IParameterSymbol or IRangeVariableSymbol)
+                {
+                    continue;
+                }
+
+                if (!model.Compilation.IsSymbolAccessibleWithin(symbol is IMethodSymbol { ReducedFrom: { } extension } ? extension : symbol, model.Compilation.Assembly))
+                {
+                    return $"MapFrom for {member} uses {name.Identifier.ValueText}, which is private or protected";
+                }
+
+                // Only a name that starts a lookup (not the right side of a.b or N.T) is bound again at the new place.
+                if (!IsReference(name) || (name.Parent is QualifiedNameSyntax { Right: var right } && right == name)
+                    || (name.Parent is AliasQualifiedNameSyntax { Name: var aliased } && aliased == name))
+                {
+                    continue;
+                }
+
+                SymbolInfo there = model.GetSpeculativeSymbolInfo(position, name,
+                    SyntaxFacts.IsInNamespaceOrTypeContext(name) ? SpeculativeBindingOption.BindAsTypeOrNamespace : SpeculativeBindingOption.BindAsExpression);
+                if (!there.CandidateSymbols.Append(there.Symbol).Any(s => SymbolEqualityComparer.Default.Equals(s?.OriginalDefinition, symbol.OriginalDefinition)))
+                {
+                    return $"MapFrom for {member} uses {name.Identifier.ValueText}, which means something else outside the type around the profile";
+                }
+            }
+        }
+
+        return null;
     }
 
     // Why the map cannot be written as plain assignments, or null with the destination members AutoMapper writes (and what to assign),
@@ -594,6 +700,9 @@ public class CreateMapPattern : ISolutionPattern
         }
     }
 
+    // Find reports a nested profile at its outermost type: the rewrite replaces that type, so the extension class can go next to it.
+    protected static SyntaxNode Anchor(SyntaxNode node) => node is ClassDeclarationSyntax c ? c.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().Last() : node;
+
     protected internal static bool IsProfileWithMaps(ClassDeclarationSyntax c, SemanticModel model) =>
         model.GetDeclaredSymbol(c) is INamedTypeSymbol type && IsProfile(type)
         && c.Members.OfType<ConstructorDeclarationSyntax>().Any(ctor => ctor.Body is { Statements.Count: > 0 } || ctor.ExpressionBody is not null);
@@ -611,13 +720,14 @@ public class CreateMapPattern : ISolutionPattern
 
     // `CreateMap<A, B>()` (or with a MemberList) or `CreateMap<A, B>().ForMember(d => d.X, o => o.Ignore())...`, optionally followed by
     // `.ReverseMap()` and ForMember options of the reverse map (reverse: those options, null without ReverseMap); anything else in the chain is no match.
-    private static bool TryParseMap(StatementSyntax statement, SemanticModel model, [NotNullWhen(true)] out InvocationExpressionSyntax? createMap,
+    // statement: a statement of a block body, or the arrow clause of an expression body.
+    private static bool TryParseMap(SyntaxNode statement, SemanticModel model, [NotNullWhen(true)] out InvocationExpressionSyntax? createMap,
         [NotNullWhen(true)] out Dictionary<string, SimpleLambdaExpressionSyntax?>? options, out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverse)
     {
         createMap = null;
         options = [];
         reverse = null;
-        if (statement is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax expression })
+        if (((statement as ExpressionStatementSyntax)?.Expression ?? (statement as ArrowExpressionClauseSyntax)?.Expression) is not InvocationExpressionSyntax expression)
         {
             return false;
         }
@@ -755,12 +865,12 @@ public class CreateMapPattern : ISolutionPattern
     internal static string MethodName(TypeSyntax destination) =>
         "To" + (destination is GenericNameSyntax generic ? generic.Identifier.ValueText : destination.ToString().Split('.')[^1]);
 
-    // The static class goes right after the profile, with its indentation and line endings.
-    private static MemberDeclarationSyntax Extensions(ClassDeclarationSyntax profile, string className, string access,
+    // The static class goes right after the profile (the outermost type around a nested one), with its indentation and line endings.
+    private static MemberDeclarationSyntax Extensions(TypeDeclarationSyntax anchor, string className, string access,
         List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto, string Creation)> maps)
     {
-        string indent = profile.GetLeadingTrivia().LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToString();
-        string eol = profile.SyntaxTree.GetRoot().DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia)).ToString() is { Length: > 0 } found
+        string indent = anchor.GetLeadingTrivia().LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToString();
+        string eol = anchor.SyntaxTree.GetRoot().DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia)).ToString() is { Length: > 0 } found
             ? found
             : "\n";
         var text = new StringBuilder();

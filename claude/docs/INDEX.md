@@ -185,6 +185,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-247-automapper-conversions.md` | ✅ `automapper.conversions` — AutoMapper 14's built-in member conversions (`T?` → `T`, to `string`, `Convert.ToX`, enum cast/switch, `Enum.Parse`) written by hand where measured identical (two cultures, runtime check); the rest Manual with reason |
 | `claude/tasks/archief/TAAK-249-automapper-reverse-map.md` | ✅ automapper.reverse-map — `CreateMap<A, B>().ReverseMap()` also gets `A ToA(this B source)` (AutoMapper 14 reverse map measured); unflattening Manual |
 | `claude/tasks/archief/TAAK-250-automapper-configuration-test.md` | ✅ automapper.configuration-test — `AssertConfigurationIsValid` and test mappers built from profiles removed; own maps/settings, side effects and maps outside profiles Manual |
+| `claude/tasks/archief/TAAK-248-automapper-profile-shapes.md` | ✅ automapper.profile-shapes — profiles nested in a DTO and expression-bodied constructors; generic/partial/several constructors Manual |
 | `claude/tasks/archief/TAAK-246-automapper-member-list.md` | ✅ `automapper.member-list` — `CreateMap<A, B>(MemberList.X)` migrated like `CreateMap<A, B>()` (AutoMapper 14: member list only steers `AssertConfigurationIsValid`, measured + IL scan) |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: unused assembly parameter after AddMediator (IDE0060) → warning in the report |
 

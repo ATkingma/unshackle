@@ -41,7 +41,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` an
 | Leaf                                             | Condition                                  | Evidence                   |
 | ------------------------------------------------ | ------------------------------------------ | -------------------------- |
 | Manual "not migrated yet"                        | AutoMapper's `ProjectTo`, `Map(src, dest)` | `map-into`                 |
-| Manual "nested, generic, partial…"               | the profile is not a simple top-level class | n/a (rare)                |
+| Manual "several profiles" / "generic" / "partial" / "several constructors" | see [automapper-profile-shapes-modellen.md](automapper-profile-shapes-modellen.md) (nested and `=>` profiles are rewritten since TAAK-248) | `generic`, `partial`, `several-constructors`, `nested-several-profiles` |
 | Manual "not a CreateMap without options"         | another option (`MaxDepth`, ...; `ReverseMap` since TAAK-249 and `ForMember` are rewritten), another statement | `options` |
 | Manual "no public parameterless constructor"     | positional record, abstract                | `constructor`, unit test   |
 | Manual "no member with the same name"            | flattening, `GetX()`, different case       | `flattening`, unit test    |

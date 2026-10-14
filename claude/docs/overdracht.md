@@ -13,13 +13,14 @@ nested maps, member list, conversions, profile shapes, reverse map, configuratio
 member options, flattening, unsupported (TAAK-245..257). The `/loop` was stopped by the user's time box (14:00).
 
 **Corpus work after the patterns (2026-10-14 afternoon), all pushed (`a903203`, CI green, 1430 tests):** TAAK-258 (baseline: harness
-`<corpus>/corpus-automapper/tools/corpus-am.sh`, 14 of 18 repos with a usable baseline, 7851 tests; bitwarden/gnomeshade/lancommander/ombi
+`claude/tools/corpus-am.sh` (Windows original: `<corpus>/corpus-automapper/tools/`), 14 of 18 repos with a usable baseline, 7851 tests; bitwarden/gnomeshade/lancommander/ombi
 do not build (npm/cargo/yarn); `claude/tasks/CORPUSRUN-automapper.md`), TAAK-259 (`Map` on collections, maybe-null sources), TAAK-261
 (destination members without a source left out like AutoMapper), TAAK-260 (Map/ProjectTo reasons name the real blocker).
 
 **Next for the next agent (AutoMapper to 100%):**
-1. Rescan: publish the tool from a clean worktree of HEAD, run `<corpus>/corpus-automapper/_results/scan2.sh` (report-only on 18 repos; a run with
-   tool `a903203` was stopped half-way at the user's request). The last full scan (before TAAK-259..261) was 1 Fixed / 1373 Manual: all-or-nothing per solution.
+1. Rescan done on Linux (TAAK-262, main `6d7e3c9`): 1 Fixed / 1361 Manual, top blockers in `claude/tasks/CORPUSRUN-automapper.md` ("Rescan on Linux").
+   The corpus now lives on Linux under `/mnt/dikkeschijf/unshackle-corpus/corpus-automapper/` (clones in `src/`, results in `_results/`), harness in the repo:
+   `claude/tools/corpus-am.sh` (`clone`, `base|scan|after`, `list`, `summary`; never use `/tmp`, it is RAM). The Windows harness notes are obsolete.
 2. Fix the biggest blockers (TAAK-260 table): kavita (one map `BookmarkSeriesPair` → `BookmarkDto` blocks 146), jhipster (Condition/ForPath on a
    reverse map, 89), dasblog (several constructors), letterbook, cats, skoruba (generic maps), the `IMapFrom<T>` convention (personalasst).
 3. Then the after-fix round with tests (`corpus-am.sh after`), 0 regressions → AutoMapper 100%, then the launch together with the user.
@@ -35,7 +36,7 @@ TAAK-220/221/222 → Manual (AggregateException unwrapping, cancelled task, meta
 
 **Way of working that worked:** parallel agents with strictly separated files (MediatR code / FA patterns / `Fixer.cs`+`UsingDirectives.cs`),
 reserve task numbers per agent in advance, `TEMP`/`TMP` on a `D:` folder, never kill other people's dotnet processes, one commit+push after all agents.
-## Local environment (Windows)
+## Local environment (Windows, obsolete: the corpus work moved to Linux, TAAK-262)
 
 - This machine blocks starting `.exe` files from `%TEMP%` ("Access is denied"). The two `SampleShopTests` integration tests that build and test a fixed copy therefore fail locally.
   Run them with `TEMP`/`TMP` pointing to a folder outside `%TEMP%` (e.g. `TEMP=<map op D:> TMP=<map op D:> dotnet test`); in CI (Linux) this does not apply.

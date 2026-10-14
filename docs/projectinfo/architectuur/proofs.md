@@ -6,14 +6,16 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 972 proofs (excluding `_Pending`).
+Total: 974 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
-### _Combined (17)
+### _Combined (19)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `collection-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public List<OrderDto> All(List<Order> orders) => _mapper.Map<List<OrderDto>>(ord…` → `} public static class OrderProfileExtensions` |
+| `collection-nullable-map-call` | Fixed | `CreateMap<Order, OrderDto>(); return _mapper.Map<List<OrderDto>>(orders);` → `} public static class OrderProfileExtensions` |
 | `condition-map-call` | Fixed | `CreateMap<Line, LineDto>() .ForMember(d => d.Id, o => o.Condition(s => s.Id != Guid.Empty))` → `} public static class LineProfileExtensions` |
 | `configuration-test-fixture` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IConfigurationProvider _configuration;` → `} public static class OrderProfileExtensions` |
 | `constructor-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
@@ -192,10 +194,10 @@ Total: 972 proofs (excluding `_Pending`).
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
-| `collection` | Manual | `CreateMap<Order, OrderDto>();` — reason: maps a collection |
 | `existing-method` | Fixed | `public OrderDto Get(Order order) => _mapper.Map<OrderDto>(order); public OrderDto First(Order[] orders) => thi…` → `public OrderDto Get(Order order) => order.ToOrderDto(); public OrderDto First(Order[] orders) => orders[0].ToO…` |
 | `manual-profile` | Manual | `CreateMap<Order, OrderDto>().BeforeMap((s, d) => d.Id = 1);` — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
 | `maybe-null` | Manual |  — reason: may be null |
+| `maybe-null-target` | Fixed | `public OrderDto? Find(Order? order) => _mapper.Map<OrderDto?>(order); return _mapper.Map<OrderDto>(order);` → `public OrderDto? Find(Order? order) => order?.ToOrderDto(); return order?.ToOrderDto();` |
 | `object-source` | Manual |  — reason: no type of its own |
 | `receiver-call` | Manual |  — reason: not called as mapper.Map on a plain field |
 | `unknown-map` | Manual |  — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |

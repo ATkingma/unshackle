@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "automapper-member-options"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11]
 files_expected:
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/MemberOptions.cs
@@ -43,8 +43,11 @@ See the Evidence table in `claude/tasks/archief/TAAK-255-automapper-member-optio
 | REQ-4 | Manual when the destination member has an initializer, a constructor is declared on the destination or a base type, the destination is created through a constructor, or the member is not written (Ignore, no setter): "when the Condition is false AutoMapper keeps that value". |
 | REQ-5 | `ForPath(d => d.A, o => o.MapFrom(...))` is a `MapFrom` for `A`; `ForPath(d => d.A.B, o => o.MapFrom(s => expr))` (one or more members of the same `A`) becomes `A = new() { B = expr, ... }` when `A` is settable, its type a class with a public parameterless constructor, and AutoMapper does not map `A` itself (no source member of that name or prefix, no `ForMember` on it). |
 | REQ-6 | Manual with a precise reason: a `ForPath` more than one object deep, a `Condition` that reads the destination or the member values, `NullSubstitute`, `UseDestinationValue` and other member options. |
-| REQ-7 | A map with a `Condition` or `ForPath` that also needs `MapInto` or has `ReverseMap` is Manual; a `Condition` or `ForPath` on the reverse map is Manual. |
+| REQ-7 | A map with a `Condition` or `ForPath` that also needs `MapInto` is Manual (a `Condition` or `ForPath` on the reverse map of a `ReverseMap` that needs `MapInto` too). |
 | REQ-8 | `Map<B>(a)` on such a map becomes `a.ToB()` as before. |
+| REQ-9 | `ReverseMap().ForMember(d => d.X, o => o.Condition(...))` (or `PreCondition`, with or without `MapFrom`) and `ReverseMap().ForPath(...)` (one member, or `d.A.B`) configure the reverse map `ToA` like a forward map; the rules of REQ-1 to REQ-5 apply with the reverse destination (TAAK-264). A `ForPath` into a member the reversed `MapFrom` also fills is Manual. |
+| REQ-10 | A `Condition` on the forward map next to a plain `ReverseMap()` is rewritten for `ToB` only: AutoMapper does not carry a `Condition` over to the reverse map (measured, TAAK-264). |
+| REQ-11 | A `ForPath` on the forward map next to `ReverseMap()` is Manual: AutoMapper reverses it (`ForPath(d => d.A.B, MapFrom(s => s.T))` gives `T = source.A.B` in reverse; measured, TAAK-264). |
 
 ## Design
 
@@ -54,7 +57,7 @@ See the Evidence table in `claude/tasks/archief/TAAK-255-automapper-member-optio
 
 ## Out of scope
 
-- `NullSubstitute`, `UseDestinationValue` (0 hits), `Condition` reading the destination, `ForPath` deeper than one object, `MapInto` and `ReverseMap` with these options.
+- `NullSubstitute`, `UseDestinationValue` (0 hits), `Condition` reading the destination, `ForPath` deeper than one object, `MapInto` with these options, and a forward `ForPath` with `ReverseMap`.
 
 ## Models
 

@@ -65,7 +65,7 @@ automapper.reverse-map: for `CreateMap<A, B>().ReverseMap()` the profile rewrite
 - **REQ-7**: WHEN `mapper.Map<A>(b)` or `mapper.Map(b, a)` uses the reverse map THE SYSTEM SHALL rewrite it to `b.ToA()` / `b.MapInto(a)` (proof `_Combined/reverse-map-call`, unit test `FixAsync_ReverseMapInOtherFile_CallsReverseMethod`).
 - **REQ-8**: IF AutoMapper unflattens in reverse (forward `MapFrom` path of two or more members or of the whole source, a flattened forward member) THEN THE SYSTEM SHALL report Manual (proof `ForMemberMapFrom/reverse-map-unflattening`; unit test cases "maps the whole A", "may be unflattened").
 - **REQ-9**: IF a reverse member may be filled another way (case, `GetX`, flattening prefix), a reversed `MapFrom` casts, reads a member twice or targets a member without a setter, or a reverse `MapFrom` may dereference null THEN THE SYSTEM SHALL report Manual (proofs `CreateMap/reverse-map-get-method`, `ForMemberMapFrom/reverse-map-null-deref`; unit test `Rewrite_ReverseMapAutoMapperDoesMoreFor_ReportsManual`).
-- **REQ-10**: IF `ReverseMap()` is followed by another option, or the profile also has its own `CreateMap<B, A>` THEN THE SYSTEM SHALL report Manual (proofs `CreateMap/reverse-map-options`, `CreateMap/reverse-map-duplicate`).
+- **REQ-10**: IF `ReverseMap()` is followed by another option (except `Condition`, `PreCondition` and `ForPath`, TAAK-264: see `automapper-member-options`), or the profile also has its own `CreateMap<B, A>` THEN THE SYSTEM SHALL report Manual (proofs `CreateMap/reverse-map-options`, `CreateMap/reverse-map-duplicate`).
 
 ## Assumptions
 

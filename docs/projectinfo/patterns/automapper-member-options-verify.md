@@ -10,7 +10,7 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `MemberOptions.cs`. Proofs: `src/Unshackle.Tests/Proofs/AutoMapper/CreateMap/` (`condition*`, `pre-condition`, `for-path*`, `null-substitute`, `reverse-map-options`), `_Combined/condition-map-call`. Unit tests: `src/Unshackle.Tests/Core/CreateMapPatternTests.cs` (`Rewrite_MemberOptionAutoMapperDoesMoreFor_ReportsManual`, `Rewrite_ConditionOnConditionalValue_GroupsTheValue`).
+Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `MemberOptions.cs`. Proofs: `src/Unshackle.Tests/Proofs/AutoMapper/CreateMap/` (`condition*`, `pre-condition`, `for-path*`, `null-substitute`, `reverse-map-options`, `reverse-condition*`, `reverse-for-path*`, `forward-condition-reverse-map`, `forward-for-path-reverse-map`), `_Combined/condition-map-call`. Unit tests: `src/Unshackle.Tests/Core/CreateMapPatternTests.cs` (`Rewrite_MemberOptionAutoMapperDoesMoreFor_ReportsManual`, `Rewrite_ConditionOnConditionalValue_GroupsTheValue`, `Rewrite_ConditionOrForPathOnReverseMapAutoMapperDoesMoreFor_ReportsManual`), `MapIntoPatternTests`.
 
 | REQ   | Verdict | Evidence |
 | ----- | ------- | -------- |
@@ -20,8 +20,11 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `Membe
 | REQ-4 | Met     | `CreateMap/condition-initializer` (letterbook `Id = Guid.NewGuid()` shape), unit test case "is created through its constructor" |
 | REQ-5 | Met     | `CreateMap/for-path` (personalasst shape), `CreateMap/for-path-member` (cats shape), unit test cases "also maps itself", "not a class with a public parameterless constructor" |
 | REQ-6 | Met     | `CreateMap/for-path-deep`, `CreateMap/condition-destination`, `CreateMap/null-substitute`, unit test cases `UseDestinationValue`, four-parameter `Condition` |
-| REQ-7 | Met     | `CreateMap/reverse-map-options` (jhipster shape, reason now precise), unit test case "not migrated together with ReverseMap"; the MapInto guard in `CreateMapPattern.Rewrite` |
+| REQ-7 | Met     | `MapIntoPatternTests.FixAsync_ReverseMapConditionWithMapInto_ReportsManual` (reverse map), the MapInto guard in `CreateMapPattern.Rewrite`; `CreateMap/reverse-map-options` (jhipster shape) now stops at the collection copy |
 | REQ-8 | Met     | `_Combined/condition-map-call` |
+| REQ-9 | Met     | `CreateMap/reverse-condition`, `ForMemberMapFrom/reverse-pre-condition-map-from` (condition over a reversed `MapFrom`), `CreateMap/reverse-for-path-member`, `ForMemberIgnore/reverse-for-path`; Manual: `CreateMap/reverse-condition-initializer`, unit test cases "Condition for Id is not a lambda of the source alone", "A.Name has an initializer", "ForPath writes into X, which the reversed MapFrom ..." |
+| REQ-10 | Met    | `CreateMap/forward-condition-reverse-map` |
+| REQ-11 | Met    | `CreateMap/forward-for-path-reverse-map`, unit test cases "ReverseMap reverses the ForPath" |
 
 ## Deviations
 

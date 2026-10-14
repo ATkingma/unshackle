@@ -104,21 +104,29 @@ public class CreateMapPattern : ISolutionPattern
         foreach (SyntaxNode statement in MapStatements(constructor))
         {
             if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out Dictionary<string, SimpleLambdaExpressionSyntax?>? options,
-                    out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverseOptions)
+                    out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverseOptions, out MemberOptions extra)
                 || invocation.Expression is not GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                 || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly } method)
             {
-                return PatternResult.Manual($"'{string.Join(' ', statement.ToString().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))}' is not a CreateMap<A, B>() without options; migrate Profile {profile.Identifier} by hand.");
+                return PatternResult.Manual(extra.Unsupported is { } unsupported
+                    ? $"{unsupported}; migrate Profile {profile.Identifier} by hand."
+                    : $"'{string.Join(' ', statement.ToString().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))}' is not a CreateMap<A, B>() without options; migrate Profile {profile.Identifier} by hand.");
             }
 
             ITypeSymbol sourceType = method.TypeArguments[0];
             ITypeSymbol destinationType = method.TypeArguments[1];
-            if (Problem(sourceType, destinationType, options, model, profileType, values, out List<(string Name, string Value)> members, out string? copied, out string creation) is string problem)
+            if (Problem(sourceType, destinationType, options, model, profileType, values, out List<(string Name, string Value)> members, out string? copied, out string creation,
+                extra: extra) is string problem)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {problem}; write the mapping method by hand.");
             }
 
             bool needsMapInto = mapInto.Contains(MapIntoPattern.Key(sourceType, destinationType));
+            if ((!extra.IsEmpty || extra.HasForPath) && (needsMapInto || reverseOptions is not null))
+            {
+                // Not migrated (TAAK-255): Map(source, destination) keeps the existing value or object, and ReverseMap may reverse a ForPath.
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: a Condition or ForPath is not migrated together with {(needsMapInto ? "Map(source, destination) (MapInto)" : "ReverseMap")}; write the mapping methods by hand.");
+            }
             if (needsMapInto && copied is not null)
             {
                 // Measured (TAAK-245): Map(source, destination) maps into the nested object or list the destination already has.
@@ -136,7 +144,7 @@ public class CreateMapPattern : ISolutionPattern
                 return PatternResult.Manual($"{sourceType.Name} or {destinationType.Name} is private or protected; an extension method cannot use it.");
             }
 
-            if ((OutsideProblem(options, model, anchor.SpanStart) ?? OutsideProblem(reverseOptions ?? [], model, anchor.SpanStart)) is string outside)
+            if ((OutsideProblem(options, model, anchor.SpanStart) ?? OutsideProblem(reverseOptions ?? [], model, anchor.SpanStart) ?? OutsideProblem(extra.Lambdas(), model, anchor.SpanStart)) is string outside)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {outside}; write the mapping method by hand.");
             }
@@ -264,7 +272,7 @@ public class CreateMapPattern : ISolutionPattern
     // reversed MapFrom; a destination member without any source is then left alone instead of Manual.
     private static string? Problem(ITypeSymbol source, ITypeSymbol destination, Dictionary<string, SimpleLambdaExpressionSyntax?> options,
         SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out List<(string Name, string Value)> members, out string? copied, out string creation,
-        Dictionary<string, string>? reversed = null)
+        Dictionary<string, string>? reversed = null, MemberOptions? extra = null)
     {
         members = [];
         copied = null;
@@ -310,6 +318,11 @@ public class CreateMapPattern : ISolutionPattern
             }
         }
 
+        if (constructor is not null && extra is { IsEmpty: false })
+        {
+            return $"{destination.Name} is created through its constructor, which may set a member a Condition or ForPath keeps or fills (TAAK-255)";
+        }
+
         if (constructor is not null && ConstructorProblem(constructor, source, destination, options, readable, values, out creation, ref copied) is string constructorProblem)
         {
             return constructorProblem;
@@ -320,6 +333,17 @@ public class CreateMapPattern : ISolutionPattern
             // A member a constructor parameter of the same name (any case) filled is not mapped again (measured, TAAK-251).
             if (constructor is not null && constructor.Parameters.Any(p => string.Equals(p.Name, target.Name, StringComparison.OrdinalIgnoreCase)))
             {
+                continue;
+            }
+
+            if (extra is not null && extra.Paths.TryGetValue(target.Name, out List<(string Member, SimpleLambdaExpressionSyntax MapFrom)>? path))
+            {
+                if (PathProblem(target, path, source, options, extra, model, profileType, values, out string created) is string pathProblem)
+                {
+                    return pathProblem;
+                }
+
+                members.Add((target.Name, created));
                 continue;
             }
 
@@ -408,8 +432,112 @@ public class CreateMapPattern : ISolutionPattern
             copied ??= copy ? target.Name : null;
         }
 
+        return extra is null ? null : ConditionProblem(destination, extra, model, profileType, values, members);
+    }
+
+    // Why a ForPath(d => d.A.B, o => o.MapFrom(...)) group cannot be written as A = new() { B = ... }, or null with that value in created.
+    // Measured (TAAK-255): on a new object AutoMapper creates A with its parameterless constructor (initializers run) even when every
+    // value is null, and a ForPath MapFrom is null-safe like a ForMember one.
+    private static string? PathProblem(ISymbol target, List<(string Member, SimpleLambdaExpressionSyntax MapFrom)> path, ITypeSymbol source,
+        Dictionary<string, SimpleLambdaExpressionSyntax?> options, MemberOptions extra, SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out string created)
+    {
+        created = "";
+        ITypeSymbol type = target is IPropertySymbol property ? property.Type : ((IFieldSymbol)target).Type;
+        if (!(target is IFieldSymbol { IsReadOnly: false } || target is IPropertySymbol { SetMethod.DeclaredAccessibility: Accessibility.Public }))
+        {
+            return $"ForPath writes into {target.Name}, which has no public setter (AutoMapper fills the object it already holds)";
+        }
+
+        if (options.ContainsKey(target.Name) || extra.Conditions.ContainsKey(target.Name) || MayFlatten(target.Name, source))
+        {
+            return $"ForPath writes into {target.Name}, which AutoMapper also maps itself (from a member of {source.Name} or a ForMember option)";
+        }
+
+        if (type is not INamedTypeSymbol { IsAbstract: false, TypeKind: TypeKind.Class } named
+            || !named.InstanceConstructors.Any(c => c.Parameters.Length == 0 && c.DeclaredAccessibility == Accessibility.Public))
+        {
+            return $"ForPath writes into {target.Name}, whose type {type.Name} is not a class with a public parameterless constructor";
+        }
+
+        List<string> assignments = [];
+        foreach ((string member, SimpleLambdaExpressionSyntax mapFrom) in path)
+        {
+            if (AllMembers(named).FirstOrDefault(m => m.Name == member) is not ({ } inner and (IFieldSymbol { IsReadOnly: false } or IPropertySymbol { SetMethod.DeclaredAccessibility: Accessibility.Public })))
+            {
+                return $"ForPath to {target.Name}.{member}: {type.Name} has no public settable member {member}";
+            }
+
+            ITypeSymbol innerType = inner is IPropertySymbol innerProperty ? innerProperty.Type : ((IFieldSymbol)inner).Type;
+            if (MapFromProblem(target.Name + "." + member, mapFrom, model, profileType, innerType, named, values, out string value, out _) is string problem)
+            {
+                return problem;
+            }
+
+            assignments.Add($"{member} = {value}");
+        }
+
+        created = $"new() {{ {string.Join(", ", assignments)} }}";
         return null;
     }
+
+    // Why a Condition or PreCondition cannot become X = cond ? value : default, or null with the members rewritten that way. Measured (TAAK-255):
+    // when the condition is false AutoMapper leaves the member at the value the new object has (its initializer or default); Condition
+    // runs after the value is resolved (a MapFrom still runs), PreCondition before; a condition that dereferences null throws.
+    private static string? ConditionProblem(ITypeSymbol destination, MemberOptions extra, SemanticModel model, INamedTypeSymbol? profileType, MemberValues values,
+        List<(string Name, string Value)> members)
+    {
+        ITypeSymbol boolean = model.Compilation.GetSpecialType(SpecialType.System_Boolean);
+        foreach ((string name, SimpleLambdaExpressionSyntax? lambda) in extra.Conditions)
+        {
+            int index = members.FindIndex(m => m.Name == name);
+            if (index < 0 || lambda is null)
+            {
+                return $"the Condition for {name} is on a member the map does not write (Ignore or no public setter)";
+            }
+
+            ISymbol member = AllMembers(destination).First(m => m.Name == name);
+            if (!KeepsDefault(member, destination))
+            {
+                return $"{destination.Name}.{name} has an initializer or {destination.Name} a constructor of its own: when the Condition is false AutoMapper keeps that value, which an object initializer cannot";
+            }
+
+            if (MapFromProblem("Condition of " + name, lambda, model, profileType, boolean, destination, values, out string condition, out _) is string problem)
+            {
+                return problem;
+            }
+
+            ITypeSymbol type = member is IPropertySymbol property ? property.Type : ((IFieldSymbol)member).Type;
+            string fallback = type.IsValueType || type.NullableAnnotation == NullableAnnotation.Annotated ? "default" : "default!";
+            members[index] = (name, $"{Grouped(condition)} ? {Grouped(members[index].Value)} : {fallback}");
+        }
+
+        return null;
+    }
+
+    // Whether a new destination holds the default value in member before mapping: no initializer and no constructor declared on the way up.
+    private static bool KeepsDefault(ISymbol member, ITypeSymbol destination)
+    {
+        if (member.DeclaringSyntaxReferences.Length == 0 || member.DeclaringSyntaxReferences.Any(r => r.GetSyntax() is PropertyDeclarationSyntax { Initializer: not null } or VariableDeclaratorSyntax { Initializer: not null } or ParameterSyntax))
+        {
+            return false;
+        }
+
+        for (ITypeSymbol? current = destination; current is not null && current.SpecialType != SpecialType.System_Object; current = current.BaseType)
+        {
+            if (current is not INamedTypeSymbol named || named.InstanceConstructors.Any(c => !c.IsImplicitlyDeclared) || current.DeclaringSyntaxReferences.Length == 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // An expression that may not stand bare as a part of cond ? a : b.
+    private static string Grouped(string expression) =>
+        SyntaxFactory.ParseExpression(expression) is ConditionalExpressionSyntax or AssignmentExpressionSyntax or LambdaExpressionSyntax or SwitchExpressionSyntax
+            ? $"({expression})"
+            : expression;
 
     // Why the single constructor cannot be called as new(source.X, ...), or null with that call in creation. AutoMapper fills each parameter
     // from the source member of the same name in any case (measured, TAAK-251); a parameter without one gets its default value or makes Map throw.
@@ -722,11 +850,13 @@ public class CreateMapPattern : ISolutionPattern
     // `.ReverseMap()` and ForMember options of the reverse map (reverse: those options, null without ReverseMap); anything else in the chain is no match.
     // statement: a statement of a block body, or the arrow clause of an expression body.
     private static bool TryParseMap(SyntaxNode statement, SemanticModel model, [NotNullWhen(true)] out InvocationExpressionSyntax? createMap,
-        [NotNullWhen(true)] out Dictionary<string, SimpleLambdaExpressionSyntax?>? options, out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverse)
+        [NotNullWhen(true)] out Dictionary<string, SimpleLambdaExpressionSyntax?>? options, out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverse,
+        out MemberOptions extra)
     {
         createMap = null;
         options = [];
         reverse = null;
+        extra = new MemberOptions();
         if (((statement as ExpressionStatementSyntax)?.Expression ?? (statement as ArrowExpressionClauseSyntax)?.Expression) is not InvocationExpressionSyntax expression)
         {
             return false;
@@ -735,8 +865,10 @@ public class CreateMapPattern : ISolutionPattern
         // The chain is read from the outside in: options seen before ReverseMap (outermost first) configure the reverse map.
         if (ReverseMapCall(expression, model) is { } reverseMap)
         {
-            if (!TryParseOptions(ref expression, model, options) || expression != reverseMap)
+            var reverseExtra = new MemberOptions();
+            if (!TryParseOptions(ref expression, model, options, reverseExtra) || expression != reverseMap || !reverseExtra.IsEmpty || reverseExtra.HasForPath)
             {
+                extra.Unsupported = reverseExtra.Unsupported ?? (reverseExtra.IsEmpty && !reverseExtra.HasForPath ? null : "a Condition or ForPath on the reverse map is not migrated");
                 return false;
             }
 
@@ -745,7 +877,7 @@ public class CreateMapPattern : ISolutionPattern
             expression = (InvocationExpressionSyntax)((MemberAccessExpressionSyntax)reverseMap.Expression).Expression;
         }
 
-        if (!TryParseOptions(ref expression, model, options))
+        if (!TryParseOptions(ref expression, model, options, extra))
         {
             return false;
         }
@@ -784,10 +916,23 @@ public class CreateMapPattern : ISolutionPattern
     }
 
     // Strips `.ForMember(...)` calls off expression into options, until the call they hang on.
-    private static bool TryParseOptions(ref InvocationExpressionSyntax expression, SemanticModel model, Dictionary<string, SimpleLambdaExpressionSyntax?> options)
+    private static bool TryParseOptions(ref InvocationExpressionSyntax expression, SemanticModel model, Dictionary<string, SimpleLambdaExpressionSyntax?> options, MemberOptions extra)
     {
-        while (expression is { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ForMember" } access } forMember)
+        while (expression is { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ForMember" or "ForPath" } access } forMember)
         {
+            // Condition, PreCondition and ForPath (TAAK-255).
+            if (access.Name.Identifier.ValueText == "ForPath" || ForMemberOption(forMember) is null)
+            {
+                if (model.GetSymbolInfo(forMember).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly }
+                    || access.Expression is not InvocationExpressionSyntax other || !extra.TryParse(forMember, model, options))
+                {
+                    return false;
+                }
+
+                expression = other;
+                continue;
+            }
+
             if (ForMemberOption(forMember) is not var (member, mapFrom)
                 || model.GetSymbolInfo(forMember).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly }
                 || (mapFrom is not null && model.GetSymbolInfo((InvocationExpressionSyntax)mapFrom.Parent!.Parent!.Parent!).Symbol is not IMethodSymbol { Name: "MapFrom", ContainingAssembly.Name: AutoMapperAssembly })

@@ -276,6 +276,49 @@ public class CreateMapPatternTests
         extensions.ShouldContain("public static A ToA(this B source) => new()\n    {\n        Id = source.Id,\n        Note = source.Note,\n    };");
     }
 
+    // Member options the rewrite cannot reproduce exactly (TAAK-255) stay Manual with their own reason.
+    [Theory]
+    [InlineData("public class A { public int Id { get; set; } public string Name { get; set; } } public class B { public B(int id) { } public string Name { get; set; } }",
+        ".ForMember(d => d.Name, o => o.Condition(s => s.Id > 0))", "is created through its constructor")]
+    [InlineData("public class C { public string Name { get; set; } } public class A { public C Inner { get; set; } public string Name { get; set; } } public class B { public C Inner { get; set; } }",
+        ".ForPath(d => d.Inner.Name, o => o.MapFrom(s => s.Name))", "which AutoMapper also maps itself")]
+    [InlineData("public struct C { public string Name { get; set; } } public class A { public string Name { get; set; } } public class B { public C Inner { get; set; } }",
+        ".ForPath(d => d.Inner.Name, o => o.MapFrom(s => s.Name))", "is not a class with a public parameterless constructor")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; set; } }",
+        ".ForMember(d => d.Id, o => o.Condition(s => s.Id > 0)).ReverseMap()", "not migrated together with ReverseMap")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; set; } }",
+        ".ForMember(d => d.Id, o => o.UseDestinationValue())", "UseDestinationValue for Id is not migrated")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; set; } }",
+        ".ForMember(d => d.Id, o => o.Condition((s, d, sm, dm) => sm > dm))", "Condition for Id is not a lambda of the source alone")]
+    public void Rewrite_MemberOptionAutoMapperDoesMoreFor_ReportsManual(string types, string options, string reason)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(types + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>()" + options + "; } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain(reason);
+    }
+
+    // A conditional MapFrom value is grouped, so cond ? (a ? b : c) : default keeps its meaning.
+    [Fact]
+    public void Rewrite_ConditionOnConditionalValue_GroupsTheValue()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile("public class A { public bool Flag { get; set; } } public class B { public int X { get; set; } }"
+            + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>().ForMember(d => d.X, o => { o.Condition(s => s.Flag); o.MapFrom(s => s.Flag ? 1 : 2); }); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString().ShouldContain("X = source.Flag ? (source.Flag ? 1 : 2) : default,");
+    }
+
     private static (SyntaxNode Root, SemanticModel Model) Compile(string code)
     {
         SyntaxTree tree = CSharpSyntaxTree.ParseText(code);

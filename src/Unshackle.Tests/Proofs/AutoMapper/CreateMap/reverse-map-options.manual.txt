@@ -1,1 +1,1 @@
-is not a CreateMap<A, B>() without options
+a Condition or ForPath on the reverse map is not migrated

@@ -1,0 +1,27 @@
+direction: down
+p1: "ForMember/ForPath option the old parser\ndoes not know: MemberOptions.TryParse"
+p2: "Condition/PreCondition of the source,\nMapFrom, or ForPath at most one object deep?"
+q1: "Map needs MapInto or has ReverseMap?"
+q2: "ForPath d.A.B: A settable, class with public\nparameterless constructor, not mapped itself?"
+q3: "Condition: member written, no initializer,\nno declared constructor, new()?"
+q4: "Condition passes the MapFrom rules?"
+okp: "A = new() { B = expr }"
+okc: "X = cond ? value : default"
+m0: "Manual: <option> for X is not migrated"
+m1: "Manual: not migrated together with MapInto/ReverseMap"
+m2: "Manual: ForPath reason"
+m3: "Manual: AutoMapper keeps that value"
+m4: "Manual: MapFrom reason"
+p1 -> p2
+p2 -> m0: no
+p2 -> q2: ForPath
+p2 -> q3: Condition
+q2 -> m2: no
+q2 -> q1: yes
+q3 -> m3: no
+q3 -> q4: yes
+q4 -> m4: no
+q4 -> q1: yes
+q1 -> m1: yes
+q1 -> okp: no (ForPath)
+q1 -> okc: no (Condition)

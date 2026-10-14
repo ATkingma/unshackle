@@ -1,0 +1,1 @@
+BeforeMap runs code before the members are set

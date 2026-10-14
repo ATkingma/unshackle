@@ -16,7 +16,7 @@ public class OrderProfile : Profile
 {
     public OrderProfile()
     {
-        CreateMap<Order, OrderDto>().MaxDepth(1);
+        CreateMap<Order, OrderDto>().BeforeMap((s, d) => d.Id = 1);
     }
 }
 

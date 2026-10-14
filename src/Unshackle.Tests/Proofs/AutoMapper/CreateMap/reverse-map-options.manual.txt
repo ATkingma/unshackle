@@ -1,1 +1,1 @@
-is not a CreateMap<A, B>() without options
+ForPath sets a nested destination member

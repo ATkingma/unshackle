@@ -1,0 +1,1 @@
+AllowNullCollections changes how null collections are mapped

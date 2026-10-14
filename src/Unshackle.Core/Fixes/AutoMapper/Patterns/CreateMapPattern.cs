@@ -108,7 +108,10 @@ public class CreateMapPattern : ISolutionPattern
                 || invocation.Expression is not GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                 || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly } method)
             {
-                return PatternResult.Manual($"'{string.Join(' ', statement.ToString().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))}' is not a CreateMap<A, B>() without options; migrate Profile {profile.Identifier} by hand.");
+                string written = string.Join(' ', statement.ToString().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+                return PatternResult.Manual(UnsupportedOptions.Reason(statement, model) is string unsupported
+                    ? $"'{written}' in Profile {profile.Identifier}: {unsupported} (automapper.unsupported)."
+                    : $"'{written}' is not a CreateMap<A, B>() without options; migrate Profile {profile.Identifier} by hand.");
             }
 
             ITypeSymbol sourceType = method.TypeArguments[0];
@@ -116,6 +119,12 @@ public class CreateMapPattern : ISolutionPattern
             if (Problem(sourceType, destinationType, options, model, profileType, values, out List<(string Name, string Value)> members, out string? copied, out string creation) is string problem)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {problem}; write the mapping method by hand.");
+            }
+
+            // MaxDepth and PreserveReferences only act on nested objects and collections (measured, TAAK-257).
+            if (UnsupportedOptions.DepthOption(statement, model) is string depth && (copied is not null || reverseOptions is not null))
+            {
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {depth} acts on {copied ?? "the reverse map"}, which the hand-written method copies without it; write the mapping method by hand (automapper.unsupported).");
             }
 
             bool needsMapInto = mapInto.Contains(MapIntoPattern.Key(sourceType, destinationType));
@@ -786,8 +795,18 @@ public class CreateMapPattern : ISolutionPattern
     // Strips `.ForMember(...)` calls off expression into options, until the call they hang on.
     private static bool TryParseOptions(ref InvocationExpressionSyntax expression, SemanticModel model, Dictionary<string, SimpleLambdaExpressionSyntax?> options)
     {
-        while (expression is { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ForMember" } access } forMember)
+        // Options without effect on the hand-written method (TAAK-257) are skipped; MaxDepth and PreserveReferences are checked in Rewrite.
+        while (expression is { Expression: MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax skipped } } option
+            && (UnsupportedOptions.IsDoNotValidate(option, model) || UnsupportedOptions.IsDepthOption(option, model)
+                || option.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ForMember" }))
         {
+            if (option.Expression is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ForMember" } access)
+            {
+                expression = skipped;
+                continue;
+            }
+
+            InvocationExpressionSyntax forMember = option;
             if (ForMemberOption(forMember) is not var (member, mapFrom)
                 || model.GetSymbolInfo(forMember).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly }
                 || (mapFrom is not null && model.GetSymbolInfo((InvocationExpressionSyntax)mapFrom.Parent!.Parent!.Parent!).Symbol is not IMethodSymbol { Name: "MapFrom", ContainingAssembly.Name: AutoMapperAssembly })

@@ -1,1 +1,1 @@
-is not a CreateMap<A, B>() without options
+ForMember with a MapFrom form the rewrite does not read

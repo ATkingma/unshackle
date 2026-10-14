@@ -12,10 +12,18 @@ CI on main green. Step 6 (SharpGrep) dropped from the roadmap by the user.
 nested maps, member list, conversions, profile shapes, reverse map, configuration test, constructor, value resolver, ProjectTo, ConvertUsing,
 member options, flattening, unsupported (TAAK-245..257). The `/loop` was stopped by the user's time box (14:00).
 
-**Next: row 16, the large AutoMapper corpus run.** TAAK-258 (baseline: harness in `<corpus>/corpus-automapper/tools/`, baseline tests of the 20 repos,
-`claude/tasks/CORPUSRUN-automapper.md`) was still running at 14:10; check its results, then publish the tool from a clean worktree of HEAD,
-run the after-fix round, fix regressions. Untested corners noted by agents: ProjectTo + value resolver/ConvertUsing (Manual), flattening inside a projection
-(written without null checks, like AutoMapper's expression). Way of working today: up to 4 (briefly 8) agents in worktrees, merged one by one by the main session.
+**Corpus work after the patterns (2026-10-14 afternoon), all pushed (`a903203`, CI green, 1430 tests):** TAAK-258 (baseline: harness
+`<corpus>/corpus-automapper/tools/corpus-am.sh`, 14 of 18 repos with a usable baseline, 7851 tests; bitwarden/gnomeshade/lancommander/ombi
+do not build (npm/cargo/yarn); `claude/tasks/CORPUSRUN-automapper.md`), TAAK-259 (`Map` on collections, maybe-null sources), TAAK-261
+(destination members without a source left out like AutoMapper), TAAK-260 (Map/ProjectTo reasons name the real blocker).
+
+**Next for the next agent (AutoMapper to 100%):**
+1. Rescan: publish the tool from a clean worktree of HEAD, run `<corpus>/corpus-automapper/_results/scan2.sh` (report-only on 18 repos; a run with
+   tool `a903203` was stopped half-way at the user's request). The last full scan (before TAAK-259..261) was 1 Fixed / 1373 Manual: all-or-nothing per solution.
+2. Fix the biggest blockers (TAAK-260 table): kavita (one map `BookmarkSeriesPair` → `BookmarkDto` blocks 146), jhipster (Condition/ForPath on a
+   reverse map, 89), dasblog (several constructors), letterbook, cats, skoruba (generic maps), the `IMapFrom<T>` convention (personalasst).
+3. Then the after-fix round with tests (`corpus-am.sh after`), 0 regressions → AutoMapper 100%, then the launch together with the user.
+Way of working: 2–3 sub-agents on effort low, each in a worktree; the main session merges one by one, then worktree check + push.
 
 **Roadmap:** 1 Scan 100% · 2 FA 100% · 3 MediatR 100% · 4 Launch ~80% (together with the user after AutoMapper) · 5 AutoMapper ~85% (corpus run left).
 

@@ -1,8 +1,10 @@
 using System.Globalization;
 using System.IO.Abstractions;
+using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.MSBuild;
+using Microsoft.CodeAnalysis.Text;
 using Unshackle.Core.Abstractions;
 
 namespace Unshackle.DataAccess.Solutions;
@@ -18,6 +20,8 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
         ["NuGetAudit"] = "false",
         ["WarningsNotAsErrors"] = "NU1701;NU1900;NU1901;NU1902;NU1903;NU1904;NU1905",
     };
+
+    private static readonly UTF8Encoding s_strictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
     private readonly IFileSystem _fileSystem;
     private readonly HashSet<string> _libraries;
@@ -58,6 +62,7 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
         Solution solution = isProject
             ? (await _workspace.OpenProjectAsync(fullPath, cancellationToken: cancellationToken)).Solution
             : await _workspace.OpenSolutionAsync(fullPath, cancellationToken: cancellationToken);
+        solution = await MarkNotUtf8FilesAsync(solution, cancellationToken);
 
         var errors = new List<string>();
         var warnings = new List<string>();
@@ -143,6 +148,34 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
     }
 
     public IReadOnlyList<string> Warnings { get; private set; } = [];
+
+    // Roslyn decodes a file that is not valid UTF-8 with the system ANSI code page. On Windows that is 1252; on Linux and macOS
+    // it is UTF-8 itself, so a Latin-1 file loads as UTF-8 with replacement characters and the fixer would rewrite it (TAAK-167,
+    // red CI). Such a file gets its text as Latin-1, so every platform reports it as not UTF-8. Only a text with a replacement
+    // character can be one, which keeps the extra read to those files.
+    private async Task<Solution> MarkNotUtf8FilesAsync(Solution solution, CancellationToken cancellationToken)
+    {
+        foreach (Document document in solution.Projects.SelectMany(p => p.Documents).ToList())
+        {
+            SourceText text = await document.GetTextAsync(cancellationToken);
+            if (document.FilePath is null || text.Encoding is not UTF8Encoding || !text.ToString().Contains('�', StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            byte[] bytes = await _fileSystem.File.ReadAllBytesAsync(document.FilePath, cancellationToken);
+            try
+            {
+                _ = s_strictUtf8.GetCharCount(bytes);
+            }
+            catch (DecoderFallbackException)
+            {
+                solution = solution.WithDocumentText(document.Id, SourceText.From(bytes, bytes.Length, Encoding.Latin1));
+            }
+        }
+
+        return solution;
+    }
 
     // A migrated library is in use when the project references its assembly or names it in a name that does not resolve.
     private bool UsesLibrary(Project project, List<string> messages) =>

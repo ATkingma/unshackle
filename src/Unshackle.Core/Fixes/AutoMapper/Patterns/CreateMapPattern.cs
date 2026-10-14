@@ -16,6 +16,8 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// rewrites (X = source.X?.ToY()), a list or array (copied into a new one, element by element through such a map), see <see cref="MemberValues"/>,
 /// and AutoMapper's built-in conversions with a hand-written form that gives the same result (X = source.X.GetValueOrDefault(),
 /// source.X.ToString(), Convert.ToInt32(source.X), (Color)source.X, ...), see <see cref="MemberConversions"/>.
+/// CreateMap&lt;A, B&gt;().ConvertUsing(...) and ForMember(d =&gt; d.X, o =&gt; o.ConvertUsing(converter, s =&gt; s.Y)) are written as the converter
+/// call, see <see cref="Converters"/>.
 /// The rewrite also understands
 /// ForMember(d => d.X, o => o.Ignore()) (see <see cref="ForMemberIgnorePattern"/>) and ForMember(d => d.X, o => o.MapFrom(s => expr))
 /// (see <see cref="ForMemberMapFromPattern"/>); those two claim the profiles that use them. With the solution, a map that a
@@ -79,13 +81,14 @@ public class CreateMapPattern : ISolutionPattern
             return PatternResult.Manual($"Profile {profile.Identifier} is nested, generic, partial or has several constructors; write its mapping methods by hand.");
         }
 
-        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto)> maps = [];
+        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto, string? Body)> maps = [];
         bool isInternal = false;
         HashSet<string> namespaces = new(StringComparer.Ordinal);
         var values = new MemberValues(nested ?? NestedMaps.From(model), model, profile.SpanStart, namespaces);
         foreach (StatementSyntax statement in body.Statements)
         {
-            if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out Dictionary<string, SimpleLambdaExpressionSyntax?>? options)
+            if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out Dictionary<string, SimpleLambdaExpressionSyntax?>? options,
+                    out InvocationExpressionSyntax? convertUsing, out Dictionary<string, InvocationExpressionSyntax>? converters)
                 || invocation.Expression is not GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                 || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly } method)
             {
@@ -94,12 +97,29 @@ public class CreateMapPattern : ISolutionPattern
 
             ITypeSymbol sourceType = method.TypeArguments[0];
             ITypeSymbol destinationType = method.TypeArguments[1];
-            if (Problem(sourceType, destinationType, options, model, profileType, values, out List<(string Name, string Value)> members, out string? copied) is string problem)
+            List<(string Name, string Value)> members = [];
+            string? copied = null;
+            string? converted = null;
+            if (convertUsing is not null)
+            {
+                // ConvertUsing replaces the whole map: ToB returns what the converter returns (TAAK-253).
+                if (Converters.TypeProblem(convertUsing, sourceType, destinationType, MethodName(destination), model, profileType, out converted) is string converterProblem)
+                {
+                    return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {converterProblem}; write the mapping method by hand.");
+                }
+            }
+            else if (Problem(sourceType, destinationType, options, converters, model, profileType, values, out members, out copied) is string problem)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {problem}; write the mapping method by hand.");
             }
 
             bool needsMapInto = mapInto.Contains(MapIntoPattern.Key(sourceType, destinationType));
+            if (needsMapInto && converted is not null)
+            {
+                // Measured (TAAK-253): Map(source, destination) returns the converter's result and leaves the destination alone.
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: Map(source, destination) runs ConvertUsing, which returns a new value instead of filling the destination; migrate that call by hand.");
+            }
+
             if (needsMapInto && copied is not null)
             {
                 // Measured (TAAK-245): Map(source, destination) maps into the nested object or list the destination already has.
@@ -113,7 +133,7 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             isInternal |= access == Accessibility.Internal;
-            maps.Add((source, destination, members, needsMapInto));
+            maps.Add((source, destination, members, needsMapInto, converted));
         }
 
         string className = profile.Identifier.ValueText + "Extensions";
@@ -131,7 +151,7 @@ public class CreateMapPattern : ISolutionPattern
     // each having a source member of the same name and type (or one MemberValues maps) or a MapFrom expression. copied: the first member
     // that gets a new object or collection.
     private static string? Problem(ITypeSymbol source, ITypeSymbol destination, Dictionary<string, SimpleLambdaExpressionSyntax?> options,
-        SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out List<(string Name, string Value)> members, out string? copied)
+        Dictionary<string, InvocationExpressionSyntax> converters, SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out List<(string Name, string Value)> members, out string? copied)
     {
         members = [];
         copied = null;
@@ -163,8 +183,26 @@ public class CreateMapPattern : ISolutionPattern
             }
         }
 
+        if (converters.Keys.FirstOrDefault(name => !destinationMembers.Any(m => m.Name == name
+            && (m is IFieldSymbol { IsReadOnly: false } || m is IPropertySymbol { SetMethod.DeclaredAccessibility: Accessibility.Public }))) is { } unwritable)
+        {
+            return $"ForMember converts {destination.Name}.{unwritable}, which is not a public property with a setter or a field";
+        }
+
         foreach (ISymbol target in destinationMembers.Where(m => m is IPropertySymbol or IFieldSymbol { IsReadOnly: false }))
         {
+            // ConvertUsing(converter[, s => s.Y]): X = converter.Convert(source.Y, null) (TAAK-253).
+            if (converters.TryGetValue(target.Name, out InvocationExpressionSyntax? converter))
+            {
+                if (Converters.MemberProblem(converter, target.Name, source, model, profileType, out string converted) is string converterProblem)
+                {
+                    return converterProblem;
+                }
+
+                members.Add((target.Name, converted));
+                continue;
+            }
+
             // Ignore(): AutoMapper leaves the member alone, so the new object does too (also when the source has a member of that name).
             if (options.TryGetValue(target.Name, out SimpleLambdaExpressionSyntax? mapFromLambda))
             {
@@ -304,7 +342,7 @@ public class CreateMapPattern : ISolutionPattern
     }
 
     // A name that is read (not the right side of a.b, an initializer member, a named argument or a property name of an anonymous type).
-    private static bool IsReference(SimpleNameSyntax name) => name.Parent switch
+    internal static bool IsReference(SimpleNameSyntax name) => name.Parent switch
     {
         MemberAccessExpressionSyntax access => access.Expression == name,
         MemberBindingExpressionSyntax => false,
@@ -313,7 +351,7 @@ public class CreateMapPattern : ISolutionPattern
         _ => true,
     };
 
-    private static bool IsAvailableOutsideProfile(ISymbol? symbol, ExpressionSyntax body, INamedTypeSymbol? profileType) => symbol switch
+    internal static bool IsAvailableOutsideProfile(ISymbol? symbol, ExpressionSyntax body, INamedTypeSymbol? profileType) => symbol switch
     {
         null => false,
         INamedTypeSymbol or INamespaceSymbol or ITypeParameterSymbol => true,
@@ -341,7 +379,7 @@ public class CreateMapPattern : ISolutionPattern
     }
 
     // Public instance members, the type's own first; a member hidden by a derived one counts once.
-    private static IEnumerable<ISymbol> AllMembers(ITypeSymbol type)
+    internal static IEnumerable<ISymbol> AllMembers(ITypeSymbol type)
     {
         HashSet<string> seen = new(StringComparer.Ordinal);
         for (ITypeSymbol? current = type; current is not null && current.SpecialType != SpecialType.System_Object; current = current.BaseType)
@@ -373,18 +411,36 @@ public class CreateMapPattern : ISolutionPattern
 
     // `CreateMap<A, B>()` (or with a MemberList) or `CreateMap<A, B>().ForMember(d => d.X, o => o.Ignore())...`; anything else in the chain is no match.
     private static bool TryParseMap(StatementSyntax statement, SemanticModel model, [NotNullWhen(true)] out InvocationExpressionSyntax? createMap,
-        [NotNullWhen(true)] out Dictionary<string, SimpleLambdaExpressionSyntax?>? options)
+        [NotNullWhen(true)] out Dictionary<string, SimpleLambdaExpressionSyntax?>? options, out InvocationExpressionSyntax? convertUsing,
+        [NotNullWhen(true)] out Dictionary<string, InvocationExpressionSyntax>? converters)
     {
         createMap = null;
         options = [];
+        convertUsing = null;
+        converters = [];
         if (statement is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax expression })
         {
             return false;
         }
 
+        // CreateMap<A, B>().ConvertUsing(...): the converter replaces the whole map, so nothing else may be configured (Converters checks the form).
+        if (expression is { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ConvertUsing", Expression: InvocationExpressionSyntax typeMap } })
+        {
+            convertUsing = expression;
+            expression = typeMap;
+        }
+
         while (expression is { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ForMember" } access } forMember)
         {
-            if (ForMemberOption(forMember) is not var (member, mapFrom)
+            if (convertUsing is null && Converters.MemberOption(forMember) is var (convertedMember, option)
+                && model.GetSymbolInfo(forMember).Symbol is IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly }
+                && access.Expression is InvocationExpressionSyntax beforeConverter && !options.ContainsKey(convertedMember) && converters.TryAdd(convertedMember, option))
+            {
+                expression = beforeConverter;
+                continue;
+            }
+
+            if (convertUsing is not null || ForMemberOption(forMember) is not var (member, mapFrom) || converters.ContainsKey(member)
                 || model.GetSymbolInfo(forMember).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly }
                 || (mapFrom is not null && model.GetSymbolInfo((InvocationExpressionSyntax)mapFrom.Parent!.Parent!.Parent!).Symbol is not IMethodSymbol { Name: "MapFrom", ContainingAssembly.Name: AutoMapperAssembly })
                 || access.Expression is not InvocationExpressionSyntax inner
@@ -459,12 +515,23 @@ public class CreateMapPattern : ISolutionPattern
     };
 
     // ToB for CreateMap<A, B>: the last name of the destination type as written.
+    // A keyword (a ConvertUsing to int, string, ...) gets the .NET name: ToInt32, ToString.
     internal static string MethodName(TypeSyntax destination) =>
-        "To" + (destination is GenericNameSyntax generic ? generic.Identifier.ValueText : destination.ToString().Split('.')[^1]);
+        "To" + destination switch
+        {
+            GenericNameSyntax generic => generic.Identifier.ValueText,
+            PredefinedTypeSyntax predefined => predefined.Keyword.ValueText switch
+            {
+                "bool" => "Boolean", "byte" => "Byte", "sbyte" => "SByte", "short" => "Int16", "ushort" => "UInt16", "int" => "Int32", "uint" => "UInt32",
+                "long" => "Int64", "ulong" => "UInt64", "float" => "Single", "double" => "Double", "decimal" => "Decimal", "char" => "Char",
+                "string" => "String", _ => "Object",
+            },
+            _ => destination.ToString().Split('.')[^1],
+        };
 
     // The static class goes right after the profile, with its indentation and line endings.
     private static MemberDeclarationSyntax Extensions(ClassDeclarationSyntax profile, string className, string access,
-        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto)> maps)
+        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto, string? Body)> maps)
     {
         string indent = profile.GetLeadingTrivia().LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToString();
         string eol = profile.SyntaxTree.GetRoot().DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia)).ToString() is { Length: > 0 } found
@@ -472,7 +539,7 @@ public class CreateMapPattern : ISolutionPattern
             : "\n";
         var text = new StringBuilder();
         text.Append(access).Append(" static class ").Append(className).Append(eol).Append(indent).Append('{').Append(eol);
-        foreach ((TypeSyntax source, TypeSyntax destination, List<(string Name, string Value)> members, _) in maps)
+        foreach ((TypeSyntax source, TypeSyntax destination, List<(string Name, string Value)> members, _, string? converted) in maps)
         {
             if (text[^(eol.Length + 1)] != '{')
             {
@@ -480,7 +547,14 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             text.Append(indent).Append("    ").Append(access).Append(" static ").Append(destination).Append(' ').Append(MethodName(destination))
-                .Append("(this ").Append(source).Append(" source) => new()");
+                .Append("(this ").Append(source).Append(" source)");
+            if (converted is not null)
+            {
+                text.Append(" => ").Append(converted.Replace("\n", "\n" + indent + "    ", StringComparison.Ordinal)).Append(';').Append(eol);
+                continue;
+            }
+
+            text.Append(" => new()");
             if (members.Count == 0)
             {
                 text.Append(';').Append(eol);
@@ -497,7 +571,7 @@ public class CreateMapPattern : ISolutionPattern
         }
 
         // After all ToB methods: MapCallPattern pairs the i-th method with the i-th CreateMap.
-        foreach ((TypeSyntax source, TypeSyntax destination, List<(string Name, string Value)> members, _) in maps.Where(m => m.MapInto))
+        foreach ((TypeSyntax source, TypeSyntax destination, List<(string Name, string Value)> members, _, _) in maps.Where(m => m.MapInto))
         {
             text.Append(eol).Append(indent).Append("    ").Append(access).Append(" static ").Append(destination)
                 .Append(" MapInto(this ").Append(source).Append(" source, ").Append(destination).Append(" destination)").Append(eol)

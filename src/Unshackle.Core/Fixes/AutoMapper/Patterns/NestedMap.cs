@@ -14,4 +14,7 @@ public class NestedMap
 
     // Null: the project of the profile that calls it.
     public required ProjectId? Project { get; init; }
+
+    // A ConvertUsing map: AutoMapper calls the converter with a null source too, so a member calls it without ?. (TAAK-253).
+    public required bool Converts { get; init; }
 }

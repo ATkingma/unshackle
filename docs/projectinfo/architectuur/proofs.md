@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 983 proofs (excluding `_Pending`).
+Total: 997 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -34,7 +34,7 @@ Total: 983 proofs (excluding `_Pending`).
 | `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check: the map at Test.cs:27 is not in a profile constructor this fix rewrites |
 | `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
-### CreateMap (97)
+### CreateMap (110)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -46,12 +46,22 @@ Total: 983 proofs (excluding `_Pending`).
 | `condition-destination` | Manual | `CreateMap<Order, OrderDto>()` — reason: Condition for Version is not a lambda of the source alone |
 | `condition-initializer` | Manual | `CreateMap<PostForm, Post>()` — reason: Post.Id has an initializer or Post a constructor of its own |
 | `condition-map-from` | Fixed | `CreateMap<Note, NoteDto>() .ForMember(dest => dest.Summary, opt =>` → `public static class OrderProfileExtensions {` |
-| `construct-using` | Manual | `CreateMap<Order, OrderDto>()` — reason: ConstructUsing creates the destination itself |
+| `construct-using` | Fixed | `CreateMap<Order, OrderDto>() .ConstructUsing(s => new OrderDto(s.Id * 10));` → `public static class OrderProfileExtensions {` |
+| `construct-using-captured` | Manual | `CreateMap<Order, OrderDto>()` — reason: ConstructUsing uses options, which is not available outside the profile |
+| `construct-using-context` | Manual | `CreateMap<Order, OrderDto>()` — reason: ConstructUsing takes a ResolutionContext |
+| `construct-using-get-only` | Fixed | `CreateMap<Order, OrderDto>() .ConstructUsing(s => new OrderDto(s.Id * 10));` → `public static class OrderProfileExtensions {` |
+| `construct-using-profile-member` | Manual | `CreateMap<Order, OrderDto>()` — reason: ConstructUsing uses Make, which is not available outside the profile |
+| `construct-using-reverse` | Manual | `CreateMap<Order, OrderDto>()` — reason: ConstructUsing after ReverseMap |
 | `constructor` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `constructor-conversion` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `constructor-default` | Manual | `CreateMap<Order, OrderDto>();` — reason: the constructor parameter Currency of OrderDto has no member with the same name in Order |
 | `constructor-record` | Fixed | `CreateMap<AccessList, AccessListInfoDto>();` → `public static class AccessListProfileExtensions {` |
-| `constructor-several` | Manual | `CreateMap<Order, OrderDto>();` — reason: has several constructors or none that is public |
+| `constructor-several` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `constructor-several-flatten` | Manual | `CreateMap<Order, OrderDto>();` — reason: may fill the parameter nameLength of one by flattening |
+| `constructor-several-parameterless` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `constructor-several-private` | Manual | `CreateMap<Order, OrderDto>();` — reason: AutoMapper picks the constructor (id, name) of OrderDto, which is private or protected |
+| `constructor-several-tie` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `constructor-several-unresolved` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `conversion` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `conversion-collection` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `conversion-convert-using` | Manual | `CreateMap<OrderForm, Order>();` — reason: replaces AutoMapper's built-in conversion |
@@ -94,7 +104,10 @@ Total: 983 proofs (excluding `_Pending`).
 | `get-only-collection` | Manual | `CreateMap<Post, PostDto>();` — reason: PostDto.Tags is a get-only collection, which AutoMapper fills with the items from Post |
 | `internal-types` | Fixed | `CreateMap<Order, OrderDto>();` → `internal static class OrderProfileExtensions {` |
 | `max-depth` | Fixed | `CreateMap<Order, OrderDto>().MaxDepth(1);` → `public static class OrderProfileExtensions {` |
+| `max-depth-acyclic` | Fixed | `CreateMap<Order, OrderDto>().MaxDepth(64); CreateMap<Address, AddressDto>().MaxDepth(64);` → `public static class OrderProfileExtensions {` |
+| `max-depth-cyclic` | Manual | `CreateMap<Comment, CommentDto>().MaxDepth(64);` — reason: can lead back to CommentDto, a cycle |
 | `max-depth-nested` | Manual | `CreateMap<Order, OrderDto>().PreserveReferences();` — reason: PreserveReferences acts on Address |
+| `max-depth-one` | Manual | `CreateMap<Order, OrderDto>().MaxDepth(1);` — reason: MaxDepth is only dropped from 2 up |
 | `member-list` | Fixed | `CreateMap<Customer, CustomerDto>(MemberList.Destination); CreateMap<Tag, TagDto>(MemberList.Source);` → `public static class ShopProfileExtensions {` |
 | `member-list-named` | Fixed | `CreateMap<Customer, CustomerDto>(memberList: MemberList.Destination); CreateMap<Tag, TagDto>(AutoMapper.Member…` → `public static class ShopProfileExtensions {` |
 | `member-list-nested-profile` | Fixed | `public Mapping() => CreateMap<Note, NoteDto>(MemberList.None);` → `public Mapping() {` |
@@ -136,10 +149,11 @@ Total: 983 proofs (excluding `_Pending`).
 | `unmatched-asserted` | Manual | `CreateMap<Customer, CustomerDto>();` — reason: yet the solution calls AssertConfigurationIsValid, which rejects such a member |
 | `unmatched-member` | Fixed | `CreateMap<Customer, CustomerEntity>();` → `public static class CustomerProfileExtensions {` |
 
-### ForMemberIgnore (10)
+### ForMemberIgnore (11)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `construct-using-keeps` | Fixed | `CreateMap<Order, OrderDto>() .ConstructUsing(s => new OrderDto { Label = "order " + s.Id })` → `public static class OrderProfileExtensions {` |
 | `constructor` | Fixed | `CreateMap<Line, LineDto>(); CreateMap<Order, OrderDto>()` → `public static class OrderProfileExtensions {` |
 | `member-list` | Fixed | `CreateMap<Document, DocumentDto>(MemberList.None) .ForMember(x => x.TenantName, s => s.Ignore());` → `public static class DocumentProfileExtensions {` |
 | `mixed` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Line, LineDto>().ForMember(d => d.Total, o => o.Ignore());` → `public static class OrderProfileExtensions {` |

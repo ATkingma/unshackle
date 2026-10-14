@@ -155,3 +155,14 @@ Manual": bitwarden 150, jhipster 33, ombi 27, skoruba 27, cats 33); the rest nam
 
 Suggested order: kavita nullable `MapFrom` (1, 4: one rule serves five repos), jhipster reverse-map `Condition`/`ForPath` (2),
 constructor choice (3, 5), cycles (6).
+
+## TAAK-266: several constructors, ConstructUsing, MaxDepth (dasblog, letterbook)
+
+Scan with `<corpus>/_results/266/<name>-voor|na.json` (voor = main 9a919ba, na = TAAK-266). Both still 0 Fixed / 54 and 156 Manual (all-or-nothing); the reasons moved:
+
+| Repo | Blocker before | Blocker now (real cause) | Next |
+| --- | --- | --- | --- |
+| dasblog | `ProfilePost`/`ProfileDasBlogUser` "have several constructors" (35) | the maps sit in the constructor that takes `IDasBlogSettings` / `ISiteSecurityManager` and read that service (a static `ToB` cannot) | `MapFrom` of `WebFinger.Aliases` null (5), `CategoryCacheEntryCollection` copy (3) |
+| letterbook | `Mention` several constructors (42), `ConstructUsing`/`MaxDepth` (~39) | `Mention` is created through its private parameterless constructor (42); `ConstructUsing` reads the profile parameter `opts`/`options` (27+6) | `ConvertUsing<DateTimeOffsetMapper>` over a built-in conversion (11), `ConstructUsing` + `Condition` (6), maps outside a profile constructor (`AstMapper`, 8), `IncludeBase`/`AfterMap` |
+
+Measured and implemented: AutoMapper takes the constructor with the most resolvable parameters (over a parameterless one, any accessibility, first declared on a tie); `ConstructUsing` makes the object and the members are then mapped on top; `MaxDepth(n>=2)` is a no-op without cycles, `MaxDepth(1)` cuts a collection member off. See `claude/tasks/archief/TAAK-266-automapper-several-constructors.md`.

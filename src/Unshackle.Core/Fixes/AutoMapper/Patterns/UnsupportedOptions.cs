@@ -76,6 +76,13 @@ internal static class UnsupportedOptions
             ? access.Name.Identifier.ValueText
             : null;
 
+    // The constant n of the MaxDepth(n) call in the map statement; null without one (PreserveReferences) or when it is no constant.
+    public static int? MaxDepthLimit(SyntaxNode statement, SemanticModel model) =>
+        Chain(statement).FirstOrDefault(i => IsDepthOption(i, model)) is { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "MaxDepth" } } call
+        && model.GetConstantValue(call.ArgumentList.Arguments[0].Expression) is { HasValue: true, Value: int limit }
+            ? limit
+            : null;
+
     // A Manual reason for a statement of a profile constructor that is no CreateMap the rewrite understands, naming the first
     // unsupported AutoMapper API in it; null when it names none (the caller keeps its generic reason).
     public static string? Reason(SyntaxNode statement, SemanticModel model)

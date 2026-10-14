@@ -119,7 +119,7 @@ public class CreateMapPattern : ISolutionPattern
 
         if (profile.Members.OfType<ConstructorDeclarationSyntax>().ToList() is not [{ } constructor])
         {
-            return PatternResult.Manual($"Profile {profile.Identifier} has several constructors (which maps exist depends on the one that runs); write its mapping methods by hand.");
+            return PatternResult.Manual(SeveralConstructorsReason(profile, model));
         }
 
         List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto, string Creation)> maps = [];
@@ -148,6 +148,12 @@ public class CreateMapPattern : ISolutionPattern
 
             ITypeSymbol sourceType = method.TypeArguments[0];
             ITypeSymbol destinationType = method.TypeArguments[1];
+            if (reverseExtra.ConstructUsing is not null)
+            {
+                // The reverse map's own construction (ReverseMap().ConstructUsing(...)) is not measured with the reverse rewrite.
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: ConstructUsing after ReverseMap builds the reverse destination; write the mapping methods by hand.");
+            }
+
             if ((convertUsing is not null || converters.Count > 0) && projectTo.Contains(MapIntoPattern.Key(sourceType, destinationType)))
             {
                 // A converter runs code per object; an expression the query provider translates cannot call it (TAAK-253).
@@ -190,9 +196,17 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             // MaxDepth and PreserveReferences only act on nested objects and collections (measured, TAAK-257).
-            if (UnsupportedOptions.DepthOption(statement, model) is string depth && (copied is not null || reverseOptions is not null))
+            // Measured (TAAK-266): MaxDepth(n) with n of 2 or more also changes nothing on nested copies as long as no type pair can stack in
+            // itself, and a cycle is already Manual in MemberValues; MaxDepth(1) cuts a collection member off, and a ProjectTo expression is
+            // built with the depth, so those stay Manual.
+            if (UnsupportedOptions.DepthOption(statement, model) is string depth
+                && (reverseOptions is not null || (copied is not null
+                    && !(UnsupportedOptions.MaxDepthLimit(statement, model) is >= 2 && !projectTo.Contains(MapIntoPattern.Key(sourceType, destinationType))))))
             {
-                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {depth} acts on {copied ?? "the reverse map"}, which the hand-written method copies without it; write the mapping method by hand (automapper.unsupported).");
+                string why = depth == "MaxDepth" && copied is not null && reverseOptions is null
+                    ? "; MaxDepth is only dropped from 2 up and without ProjectTo"
+                    : "";
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {depth} acts on {copied ?? "the reverse map"}, which the hand-written method copies without it{why}; write the mapping method by hand (automapper.unsupported).");
             }
 
             // A projection needs the members as an object initializer; a constructor call is not measured for ProjectTo (left out).
@@ -227,7 +241,7 @@ public class CreateMapPattern : ISolutionPattern
 
             if (needsMapInto && creation != "new()")
             {
-                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: Map(source, destination) fills an existing {destinationType.Name}, whose constructor parameters MapInto cannot set; write MapInto by hand.");
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: Map(source, destination) fills an existing {destinationType.Name}, whose constructor parameters (or ConstructUsing) MapInto cannot run; write MapInto by hand.");
             }
 
             Accessibility access = Weakest(Weakest(Effective(sourceType), Effective(destinationType)), Accessibility.Public);
@@ -236,7 +250,8 @@ public class CreateMapPattern : ISolutionPattern
                 return PatternResult.Manual($"{sourceType.Name} or {destinationType.Name} is private or protected; an extension method cannot use it.");
             }
 
-            if ((OutsideProblem(options, model, anchor.SpanStart) ?? OutsideProblem(reverseOptions ?? [], model, anchor.SpanStart) ?? OutsideProblem(extra.Lambdas(), model, anchor.SpanStart) ?? OutsideProblem(reverseExtra.Lambdas(), model, anchor.SpanStart)) is string outside)
+            if ((OutsideProblem(options, model, anchor.SpanStart) ?? OutsideProblem(reverseOptions ?? [], model, anchor.SpanStart) ?? OutsideProblem(extra.Lambdas(), model, anchor.SpanStart) ?? OutsideProblem(reverseExtra.Lambdas(), model, anchor.SpanStart)
+                ?? (extra.ConstructUsing is { ArgumentList.Arguments: [{ Expression: LambdaExpressionSyntax { Body: { } constructed } }] } ? OutsideProblem("ConstructUsing", constructed, model, anchor.SpanStart) : null)) is string outside)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {outside}; write the mapping method by hand.");
             }
@@ -321,6 +336,37 @@ public class CreateMapPattern : ISolutionPattern
             Extensions(anchor, className, isInternal ? "internal" : "public", maps, withProjection)], [.. namespaces.Order(StringComparer.Ordinal)]);
     }
 
+    // Why a profile with several constructors stays Manual (TAAK-266): which maps exist depends on the constructor the caller runs. The common
+    // shape (dasblog) keeps the maps in the one constructor that takes services; the lambdas then read those services through parameters or
+    // fields, which a static ToB method cannot reach (nor can it know which constructor the application calls).
+    private static string SeveralConstructorsReason(ClassDeclarationSyntax profile, SemanticModel model)
+    {
+        List<ConstructorDeclarationSyntax> constructors = [.. profile.Members.OfType<ConstructorDeclarationSyntax>().Where(c => !c.Modifiers.Any(SyntaxKind.StaticKeyword))];
+        List<ConstructorDeclarationSyntax> withMaps = [.. constructors.Where(c => MapStatements(c).Count > 0)];
+        string reason = $"Profile {profile.Identifier} has several constructors (which maps exist depends on the one that runs)";
+        if (withMaps is not [{ } holder])
+        {
+            return reason + "; write its mapping methods by hand.";
+        }
+
+        List<string> captured = [];
+        foreach (SimpleNameSyntax name in holder.DescendantNodes().OfType<SimpleNameSyntax>().Where(IsReference))
+        {
+            if (model.GetSymbolInfo(name).Symbol is { IsStatic: false } symbol
+                && ((symbol is IParameterSymbol { ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.Constructor } } && holder.ParameterList.Parameters.Any(p => p.Identifier.ValueText == symbol.Name))
+                    || (symbol is IFieldSymbol or IMethodSymbol && symbol.ContainingType is { } owner && owner.Name == profile.Identifier.ValueText))
+                && !captured.Contains(symbol.Name))
+            {
+                captured.Add(symbol.Name);
+            }
+        }
+
+        return captured.Count == 0
+            ? reason + $"; the maps are only in the constructor ({string.Join(", ", holder.ParameterList.Parameters.Select(p => p.ToString()))}), so the application has to call that one; write its mapping methods by hand."
+            : reason + $"; the maps are in the constructor ({string.Join(", ", holder.ParameterList.Parameters.Select(p => p.ToString()))}) and read {string.Join(", ", captured)} "
+                + "(a service handed in by the caller), which a static ToB method cannot reach; write its mapping methods by hand (pass the service as an argument).";
+    }
+
     // The statements of a profile constructor: the block's, or the expression of `=> CreateMap<A, B>()`.
     internal static IReadOnlyList<SyntaxNode> MapStatements(ConstructorDeclarationSyntax constructor) =>
         constructor.Body is { } body ? body.Statements : constructor.ExpressionBody is { } arrow ? [arrow] : [];
@@ -363,32 +409,43 @@ public class CreateMapPattern : ISolutionPattern
     {
         foreach ((string member, SimpleLambdaExpressionSyntax? lambda) in options)
         {
-            foreach (SimpleNameSyntax name in lambda?.Body.DescendantNodesAndSelf().OfType<SimpleNameSyntax>() ?? [])
+            if (lambda is not null && OutsideProblem("MapFrom for " + member, lambda.Body, model, position) is string problem)
             {
-                if (name.Parent is NameColonSyntax or NameEqualsSyntax || model.GetSymbolInfo(name).Symbol is not { } symbol
-                    || symbol is ILocalSymbol or IParameterSymbol or IRangeVariableSymbol)
-                {
-                    continue;
-                }
+                return problem;
+            }
+        }
 
-                if (!model.Compilation.IsSymbolAccessibleWithin(symbol is IMethodSymbol { ReducedFrom: { } extension } ? extension : symbol, model.Compilation.Assembly))
-                {
-                    return $"MapFrom for {member} uses {name.Identifier.ValueText}, which is private or protected";
-                }
+        return null;
+    }
 
-                // Only a name that starts a lookup (not the right side of a.b or N.T) is bound again at the new place.
-                if (!IsReference(name) || (name.Parent is QualifiedNameSyntax { Right: var right } && right == name)
-                    || (name.Parent is AliasQualifiedNameSyntax { Name: var aliased } && aliased == name))
-                {
-                    continue;
-                }
+    // The same check for any expression that moves (what: "MapFrom for X", "ConstructUsing").
+    private static string? OutsideProblem(string what, SyntaxNode body, SemanticModel model, int position)
+    {
+        foreach (SimpleNameSyntax name in body.DescendantNodesAndSelf().OfType<SimpleNameSyntax>())
+        {
+            if (name.Parent is NameColonSyntax or NameEqualsSyntax || model.GetSymbolInfo(name).Symbol is not { } symbol
+                || symbol is ILocalSymbol or IParameterSymbol or IRangeVariableSymbol)
+            {
+                continue;
+            }
 
-                SymbolInfo there = model.GetSpeculativeSymbolInfo(position, name,
-                    SyntaxFacts.IsInNamespaceOrTypeContext(name) ? SpeculativeBindingOption.BindAsTypeOrNamespace : SpeculativeBindingOption.BindAsExpression);
-                if (!there.CandidateSymbols.Append(there.Symbol).Any(s => SymbolEqualityComparer.Default.Equals(s?.OriginalDefinition, symbol.OriginalDefinition)))
-                {
-                    return $"MapFrom for {member} uses {name.Identifier.ValueText}, which means something else outside the type around the profile";
-                }
+            if (!model.Compilation.IsSymbolAccessibleWithin(symbol is IMethodSymbol { ReducedFrom: { } extension } ? extension : symbol, model.Compilation.Assembly))
+            {
+                return $"{what} uses {name.Identifier.ValueText}, which is private or protected";
+            }
+
+            // Only a name that starts a lookup (not the right side of a.b or N.T) is bound again at the new place.
+            if (!IsReference(name) || (name.Parent is QualifiedNameSyntax { Right: var right } && right == name)
+                || (name.Parent is AliasQualifiedNameSyntax { Name: var aliased } && aliased == name))
+            {
+                continue;
+            }
+
+            SymbolInfo there = model.GetSpeculativeSymbolInfo(position, name,
+                SyntaxFacts.IsInNamespaceOrTypeContext(name) ? SpeculativeBindingOption.BindAsTypeOrNamespace : SpeculativeBindingOption.BindAsExpression);
+            if (!there.CandidateSymbols.Append(there.Symbol).Any(s => SymbolEqualityComparer.Default.Equals(s?.OriginalDefinition, symbol.OriginalDefinition)))
+            {
+                return $"{what} uses {name.Identifier.ValueText}, which means something else outside the type around the profile";
             }
         }
 
@@ -414,26 +471,28 @@ public class CreateMapPattern : ISolutionPattern
             return $"{destination.Name} has no public parameterless constructor (AutoMapper would map constructor parameters)";
         }
 
-        IMethodSymbol? constructor = null;
-        if (destination.TypeKind == TypeKind.Class && !named.InstanceConstructors.Any(c => c.Parameters.Length == 0 && c.DeclaredAccessibility == Accessibility.Public))
-        {
-            // Measured (TAAK-251): AutoMapper takes the constructor with the most parameters it can resolve (the first declared on a tie)
-            // and maps no member a parameter already filled. Only a single constructor is that choice for sure; the record copy constructor does not count.
-            if (named.InstanceConstructors.Where(c => !(c.IsImplicitlyDeclared && c.Parameters.Length == 1 && SymbolEqualityComparer.Default.Equals(c.Parameters[0].Type, named))).ToList()
-                is not [{ DeclaredAccessibility: Accessibility.Public } single])
-            {
-                return $"{destination.Name} has several constructors or none that is public (AutoMapper picks the one with the most parameters it can resolve)";
-            }
-
-            constructor = single;
-        }
-
         List<ISymbol> readable = [.. AllMembers(source).Where(m => m switch
         {
             IPropertySymbol p => !p.IsIndexer && p.GetMethod?.DeclaredAccessibility == Accessibility.Public,
             IFieldSymbol => true,
             _ => false,
         })];
+
+        // ConstructUsing (TAAK-266) makes the destination through its own expression, so no constructor of the type is chosen.
+        string? constructUsing = null;
+        bool plainCreation = false;
+        IMethodSymbol? constructor = null;
+        if (extra?.ConstructUsing is { } constructCall)
+        {
+            if (ConstructUsingProblem(constructCall, destination, model, profileType, out constructUsing, out plainCreation) is string constructProblem)
+            {
+                return constructProblem;
+            }
+        }
+        else if (destination.TypeKind == TypeKind.Class && ConstructorChoice(named, source, readable, model, out constructor) is string choiceProblem)
+        {
+            return choiceProblem;
+        }
         List<ISymbol> destinationMembers = [.. AllMembers(destination).Where(m => m is IPropertySymbol { IsIndexer: false } or IFieldSymbol { IsConst: false })];
         foreach ((string name, bool mapFrom) in options.Select(o => (o.Key, o.Value is not null)).Concat((resolvers?.Members ?? []).Select(m => (m, true))))
         {
@@ -450,9 +509,9 @@ public class CreateMapPattern : ISolutionPattern
             }
         }
 
-        if (constructor is not null && extra is { IsEmpty: false })
+        if ((constructor is not null || constructUsing is not null) && extra is { IsEmpty: false })
         {
-            return $"{destination.Name} is created through its constructor, which may set a member a Condition or ForPath keeps or fills (TAAK-255)";
+            return $"{destination.Name} is created through its constructor or ConstructUsing, which may set a member a Condition or ForPath keeps or fills (TAAK-255)";
         }
 
         if (converters.Keys.FirstOrDefault(name => !destinationMembers.Any(m => m.Name == name
@@ -641,7 +700,179 @@ public class CreateMapPattern : ISolutionPattern
             copied ??= copy ? target.Name : null;
         }
 
+        if (constructUsing is not null)
+        {
+            // The expression runs first, then the members are assigned: onto a plain `new T(...)` as its initializer, otherwise in a block body.
+            creation = members.Count == 0 || plainCreation ? constructUsing : BlockMarker + constructUsing;
+        }
+
         return extra is null ? null : ConditionProblem(destination, extra, model, profileType, values, members);
+    }
+
+    // Starts the creation text of a map that needs a block body (var destination = expression; destination.X = ...; return destination;).
+    private const char BlockMarker = '\u0001';
+
+    // Measured (TAAK-266, AutoMapper 14.0.0): AutoMapper takes the constructor with the most parameters it can resolve (a parameter with a source member
+    // of the same name in any case, flattened or read through a Get method, or an optional one), the first declared on a tie, over a parameterless one
+    // and whatever its accessibility (private ones too); it throws when none can be resolved. Why that choice cannot be frozen into one new(...) call, or null
+    // with the chosen constructor (null: the public parameterless one, `new()`).
+    private static string? ConstructorChoice(INamedTypeSymbol destination, ITypeSymbol source,
+        List<ISymbol> readable, SemanticModel model, out IMethodSymbol? chosen)
+    {
+        chosen = null;
+        // The record copy constructor does not count.
+        List<IMethodSymbol> candidates = [.. destination.InstanceConstructors.Where(c => !(c.IsImplicitlyDeclared && c.Parameters.Length == 1 && SymbolEqualityComparer.Default.Equals(c.Parameters[0].Type, destination)))];
+        if (candidates is [{ DeclaredAccessibility: Accessibility.Public } only])
+        {
+            // The common case: its parameters are checked by ConstructorProblem.
+            chosen = only.Parameters.Length == 0 ? null : only;
+            return null;
+        }
+
+        if (candidates.Count == 0 || candidates is [var lone] && lone.DeclaredAccessibility != Accessibility.Public)
+        {
+            return $"{destination.Name} has no public constructor (AutoMapper uses the one with the most parameters it can resolve, also a private one)";
+        }
+
+        IMethodSymbol? winner = null;
+        List<IMethodSymbol> sameCount = [];
+        foreach (IMethodSymbol candidate in candidates.OrderByDescending(c => c.Parameters.Length))
+        {
+            if (winner is not null && candidate.Parameters.Length < winner.Parameters.Length)
+            {
+                break;
+            }
+
+            if (candidate.Parameters.FirstOrDefault(p => p.RefKind != RefKind.None || p.IsParams) is { } odd)
+            {
+                return $"a constructor of {destination.Name} has a ref, out or params parameter {odd.Name}";
+            }
+
+            bool resolvable = true;
+            foreach (IParameterSymbol parameter in candidate.Parameters)
+            {
+                // A ForMember on the member of that name does not make the parameter resolvable (measured, TAAK-266).
+                int matches = readable.Count(m => string.Equals(m.Name, parameter.Name, StringComparison.OrdinalIgnoreCase));
+                if (matches > 1)
+                {
+                    return $"the constructor parameter {parameter.Name} of {destination.Name} matches several members of {source.Name}";
+                }
+
+                if (matches == 0 && MayFlatten(parameter.Name, source))
+                {
+                    return $"{destination.Name} has several constructors and AutoMapper may fill the parameter {parameter.Name} of one by flattening or a Get method of {source.Name}; which one it picks is not decided here";
+                }
+
+                resolvable &= matches == 1 || parameter.HasExplicitDefaultValue;
+            }
+
+            if (resolvable)
+            {
+                winner ??= candidate;
+                sameCount.Add(candidate);
+            }
+        }
+
+        if (winner is null)
+        {
+            return $"AutoMapper can resolve no constructor of {destination.Name} from {source.Name} (it throws)";
+        }
+
+        if (sameCount.Count > 1 && sameCount.Select(c => c.Locations.FirstOrDefault()?.SourceTree).Distinct().Count() > 1)
+        {
+            return $"{destination.Name} has several constructors with {winner.Parameters.Length} parameters AutoMapper can resolve, declared in different files (the first declared wins, which is not decided here)";
+        }
+
+        // sameCount holds them in the order AutoMapper tries (declaration order).
+        winner = sameCount[0];
+        if (winner.Parameters.Length == 0)
+        {
+            return winner.DeclaredAccessibility == Accessibility.Public
+                ? null
+                : $"AutoMapper would create {destination.Name} through its parameterless constructor, which is not public";
+        }
+
+        if (!model.Compilation.IsSymbolAccessibleWithin(winner, model.Compilation.Assembly))
+        {
+            return $"AutoMapper picks the constructor ({string.Join(", ", winner.Parameters.Select(p => p.Name))}) of {destination.Name}, which is private or protected; the extension method cannot call it";
+        }
+
+        chosen = winner;
+        return null;
+    }
+
+    // Why `ConstructUsing(s => expression)` cannot become the creation of the new object, or null with that expression over the name source.
+    // Measured (TAAK-266): the destination is made by the expression instead of a constructor of the type (also one the type has no parameterless
+    // for), then every member is mapped as without it: a settable member is overwritten from its source member, one without a source keeps what the
+    // expression gave it, Ignore leaves it, MapFrom wins, a get-only member is not written; the expression runs unguarded (a null inside throws).
+    private static string? ConstructUsingProblem(InvocationExpressionSyntax call, ITypeSymbol destination, SemanticModel model, INamedTypeSymbol? profileType,
+        out string? text, out bool plain)
+    {
+        text = null;
+        plain = false;
+        if (call.ArgumentList.Arguments is not [{ Expression: LambdaExpressionSyntax lambda, NameColon: null, RefKindKeyword.RawKind: 0 }])
+        {
+            return "ConstructUsing is not given a lambda (a method group or ConstructUsing<TServiceConstructor>()); write the construction by hand";
+        }
+
+        ParameterSyntax? parameterSyntax = lambda switch
+        {
+            SimpleLambdaExpressionSyntax simple => simple.Parameter,
+            ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: [{ } only] } => only,
+            _ => null,
+        };
+        if (parameterSyntax is null)
+        {
+            return "ConstructUsing takes a ResolutionContext (ctx.Mapper, ctx.Items), which only exists while AutoMapper maps; write the construction by hand";
+        }
+
+        if (lambda.Body is not ExpressionSyntax body || lambda.AsyncKeyword != default || model.GetDeclaredSymbol(parameterSyntax) is not IParameterSymbol parameter)
+        {
+            return "ConstructUsing has a lambda without an expression body; write the construction by hand";
+        }
+
+        if (destination is not INamedTypeSymbol { IsAbstract: false } || destination.TypeKind is not (TypeKind.Class or TypeKind.Struct))
+        {
+            return $"{destination.Name} is abstract or no class or struct; ConstructUsing may return a derived type, write the construction by hand";
+        }
+
+        List<SimpleNameSyntax> parameterUses = [];
+        foreach (SyntaxNode node in body.DescendantNodesAndSelf())
+        {
+            switch (node)
+            {
+                case ThisExpressionSyntax or BaseExpressionSyntax:
+                    return "ConstructUsing uses this or base of the profile";
+                case SimpleNameSyntax name when IsReference(name):
+                    ISymbol? symbol = model.GetSymbolInfo(name).Symbol;
+                    if (SymbolEqualityComparer.Default.Equals(symbol, parameter))
+                    {
+                        parameterUses.Add(name);
+                    }
+                    else if (name.Identifier.ValueText is "source" or "destination" && symbol is not INamedTypeSymbol)
+                    {
+                        return $"ConstructUsing already uses the name {name.Identifier.ValueText} for something else";
+                    }
+                    else if (!IsAvailableOutsideProfile(symbol, body, profileType))
+                    {
+                        return $"ConstructUsing uses {name.Identifier.ValueText}, which is not available outside the profile (a constructor parameter, field or private member of it)";
+                    }
+
+                    break;
+            }
+        }
+
+        if (model.GetTypeInfo(body).Type is not { TypeKind: not TypeKind.Error })
+        {
+            return "ConstructUsing returns an expression without a type of its own (a null literal, for one)";
+        }
+
+        ExpressionSyntax replaced = parameter.Name == "source"
+            ? body
+            : body.ReplaceNodes(parameterUses, (original, _) => SyntaxFactory.IdentifierName("source").WithTriviaFrom(original));
+        text = replaced.WithoutTrivia().ToString();
+        plain = body is BaseObjectCreationExpressionSyntax { Initializer: null };
+        return null;
     }
 
     // Why a ForPath(d => d.A.B, o => o.MapFrom(...)) group cannot be written as A = new() { B = ... }, or null with that value in created.
@@ -1247,8 +1478,22 @@ public class CreateMapPattern : ISolutionPattern
     {
         // Options without effect on the hand-written method (TAAK-257) are skipped; MaxDepth and PreserveReferences are checked in Rewrite.
         while (expression is { Expression: MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax skipped } access } forMember
-            && (access.Name.Identifier.ValueText is "ForMember" or "ForPath" || UnsupportedOptions.IsDoNotValidate(forMember, model) || UnsupportedOptions.IsDepthOption(forMember, model)))
+            && (access.Name.Identifier.ValueText is "ForMember" or "ForPath" || UnsupportedOptions.IsDoNotValidate(forMember, model) || UnsupportedOptions.IsDepthOption(forMember, model)
+                || IsConstructUsing(forMember, model)))
         {
+            if (IsConstructUsing(forMember, model))
+            {
+                // Read in Problem (TAAK-266); a second one in the chain is no plain map.
+                if (extra.ConstructUsing is not null)
+                {
+                    return false;
+                }
+
+                extra.ConstructUsing = forMember;
+                expression = skipped;
+                continue;
+            }
+
             if (access.Name.Identifier.ValueText is not ("ForMember" or "ForPath"))
             {
                 expression = skipped;
@@ -1303,6 +1548,10 @@ public class CreateMapPattern : ISolutionPattern
 
         return true;
     }
+
+    private static bool IsConstructUsing(InvocationExpressionSyntax call, SemanticModel model) =>
+        call.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ConstructUsing" }
+        && model.GetSymbolInfo(call) is var info && (info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly };
 
     // CreateMap<A, B>(MemberList.X) or (memberList: MemberList.X): AutoMapper 14 reads the member list only in AssertConfigurationIsValid
     // (measured, TAAK-246), so the map is the same as without it. Only a constant: dropping any other expression could drop a side effect.
@@ -1393,6 +1642,21 @@ public class CreateMapPattern : ISolutionPattern
             if (text[^(eol.Length + 1)] != '{')
             {
                 text.Append(eol);
+            }
+
+            if (creation.StartsWith(BlockMarker))
+            {
+                // ConstructUsing with members left to assign (TAAK-266).
+                text.Append(indent).Append("    ").Append(access).Append(" static ").Append(destination).Append(' ').Append(MethodName(destination))
+                    .Append("(this ").Append(source).Append(" source)").Append(eol).Append(indent).Append("    {").Append(eol)
+                    .Append(indent).Append("        ").Append(destination).Append(" destination = ").Append(creation[1..].Replace("\n", "\n" + indent + "        ", StringComparison.Ordinal)).Append(';').Append(eol);
+                foreach ((string member, string value) in members)
+                {
+                    text.Append(indent).Append("        destination.").Append(member).Append(" = ").Append(value).Append(';').Append(eol);
+                }
+
+                text.Append(indent).Append("        return destination;").Append(eol).Append(indent).Append("    }").Append(eol);
+                continue;
             }
 
             text.Append(indent).Append("    ").Append(access).Append(" static ").Append(destination).Append(' ').Append(MethodName(destination))

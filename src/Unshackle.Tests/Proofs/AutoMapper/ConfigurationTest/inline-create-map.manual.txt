@@ -1,0 +1,1 @@
+'options.CreateMap<ProduceData, AttributeLatest>()' is not an AddProfile or AddMaps call

@@ -1,0 +1,1 @@
+AutoMapper parses the string to Guid and gives null the default Guid

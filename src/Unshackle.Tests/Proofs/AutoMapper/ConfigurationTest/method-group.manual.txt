@@ -1,0 +1,1 @@
+it is built from (AddMapping), not from a lambda that only adds profiles

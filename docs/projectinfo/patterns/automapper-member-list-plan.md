@@ -51,7 +51,7 @@ The member list is a capability of the shared profile rewrite in `CreateMapPatte
 - **REQ-3**: WHEN the map with a member list carries `ForMember(... Ignore())` or `ForMember(... MapFrom(...))` THE SYSTEM SHALL apply those options as without the member list (proofs `ForMemberIgnore/member-list`, `ForMemberMapFrom/member-list`).
 - **REQ-4**: WHEN a `Map<B>(a)` call uses a map with a member list THE SYSTEM SHALL rewrite it to `a.ToB()` (proof `_Combined/member-list-map-call`).
 - **REQ-5**: IF the argument is not a constant `MemberList` THEN THE SYSTEM SHALL report Manual (proof `CreateMap/member-list-variable`, unit test `Rewrite_MemberListParameter_ReportsManual`).
-- **REQ-6**: IF the map also has `.ReverseMap()` or sits in a nested profile THEN THE SYSTEM SHALL report Manual as before (proofs `CreateMap/member-list-reverse-map`, `CreateMap/member-list-nested-profile`).
+- **REQ-6**: IF the map sits in a nested profile THEN THE SYSTEM SHALL report Manual as before (proof `CreateMap/member-list-nested-profile`). With `.ReverseMap()` it was Manual too; since TAAK-249 that is rewritten (proof `CreateMap/member-list-reverse-map` is now Fixed, see `automapper-reverse-map-plan.md`).
 
 ## Assumptions
 

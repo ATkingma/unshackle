@@ -1,0 +1,1 @@
+AutoMapper keeps null and converts any other value with an overflow check

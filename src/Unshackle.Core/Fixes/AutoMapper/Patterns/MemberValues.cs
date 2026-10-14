@@ -6,7 +6,8 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// <summary>
 /// What a generated ToB method assigns to a member whose type AutoMapper maps itself: a nested object through the map of its type pair
 /// (X = source.X?.ToY()), a collection copied element by element into a new one (Xs = source.Xs?.Select(x => x?.ToY()).ToList() ?? []).
-/// AutoMapper 14 maps a null object to null and a null collection to an empty one (TAAK-245 has the measured behaviour).
+/// AutoMapper 14 maps a null object to null and a null collection to an empty one (TAAK-245 has the measured behaviour). A member (or element)
+/// whose type differs without a map gets AutoMapper's built-in conversion, see <see cref="MemberConversions"/> (TAAK-247).
 /// </summary>
 public class MemberValues
 {
@@ -21,6 +22,7 @@ public class MemberValues
     private readonly bool _nullableWarnings;
     private readonly bool _collectionExpressions;
     private readonly HashSet<string> _namespaces;
+    private readonly MemberConversions _conversions;
 
     // position: where the generated class goes (the profile); namespaces collects the usings the values need.
     public MemberValues(NestedMaps maps, SemanticModel model, int position, HashSet<string> namespaces)
@@ -33,6 +35,7 @@ public class MemberValues
         _nullableWarnings = model.GetNullableContext(position).WarningsEnabled();
         _collectionExpressions = ((CSharpParseOptions)model.SyntaxTree.Options).LanguageVersion >= LanguageVersion.CSharp12;
         _namespaces = namespaces;
+        _conversions = new MemberConversions(model, position, _nullableWarnings, namespaces);
     }
 
     /// <summary>
@@ -71,6 +74,16 @@ public class MemberValues
             {
                 copy = Receiver(value) + "?";
             }
+            else if (Conversion(what + " element", Element, fromElement, toElement, out string? converted, out bool exact) is string conversionProblem)
+            {
+                return conversionProblem;
+            }
+            else if (converted is not null)
+            {
+                // Select must yield the destination element type itself (int[] → long[]: x => (long)x).
+                string typed = exact ? converted : $"({toElement.ToMinimalDisplayString(_model, _position)}){Receiver(converted)}";
+                copy = $"{Receiver(value)}?.Select({Element} => {typed})";
+            }
             else
             {
                 return $"{what} holds {fromElement.Name} but the destination holds {toElement.Name} (AutoMapper converts){NoMap(fromElement, toElement)}";
@@ -106,9 +119,39 @@ public class MemberValues
         {
             result = value;
         }
+        else
+        {
+            return Conversion(what, value, from, to, out result, out _);
+        }
 
         return null;
     }
+
+    // AutoMapper's built-in conversion, unless a CreateMap of the pair (a ConvertUsing, typically) or a null setting changes it.
+    private string? Conversion(string what, string value, ITypeSymbol from, ITypeSymbol to, out string? result, out bool exact)
+    {
+        result = null;
+        exact = true;
+        if ((_maps.ConfiguredAt(from, to) ?? _maps.ConfiguredAt(WithoutNullable(from), WithoutNullable(to))) is string where)
+        {
+            return $"{what}: the CreateMap<{from.ToMinimalDisplayString(_model, _position)}, {to.ToMinimalDisplayString(_model, _position)}> at {where} replaces AutoMapper's built-in conversion";
+        }
+
+        if (_conversions.Problem(what, value, from, to, out result, out exact) is string problem)
+        {
+            return problem;
+        }
+
+        if (result is not null && NullSettingProblem(what) is string setting)
+        {
+            result = null;
+            return setting;
+        }
+
+        return null;
+    }
+
+    private static ITypeSymbol WithoutNullable(ITypeSymbol type) => IsNullable(type, out ITypeSymbol? value) ? value! : type;
 
     private string? NullSettingProblem(string what) => _maps.NullSetting is { } setting
         ? $"{what} is copied by AutoMapper with the null handling that {setting} changes; write the mapping by hand"

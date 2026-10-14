@@ -1,0 +1,33 @@
+title: "[Decision tree] MemberConversions.Problem" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q0: "CreateMap of the pair anywhere\nor a null setting?" {shape: diamond}
+m0: "Manual: replaces the built-in conversion /\nnull handling (conversion-convert-using)"
+q1: "Destination string?" {shape: diamond}
+q1e: "[EnumMember] enum?" {shape: diamond}
+m1: "Manual (conversion-enum-member)"
+f1: "source.X.ToString() / ?.ToString()[!]\n(conversion-to-string, conversion)"
+q2: "Source string?" {shape: diamond}
+f2: "Convert.ToX(source.X) /\nIsNullOrEmpty ? default : Enum.Parse\n(conversion-from-string)"
+m2: "Manual: T?, Guid, [EnumMember]\n(conversion-string-nullable, -guid)"
+q3: "Same type apart from Nullable?" {shape: diamond}
+f3: "source.X.GetValueOrDefault() / source.X\n(conversion-nullable)"
+q4: "Core conversion known?\n(number, enum, DateTime→DateTimeOffset)" {shape: diamond}
+m4: "Manual: throws at run time / no rule\n(conversion-enum-number, conversion-operator)"
+q5: "Nullable lift keeps\nAutoMapper's null result?" {shape: diamond}
+m5: "Manual (conversion-nullable-narrowing,\nconversion-nullable-enum-switch)"
+f5: "(E)x / switch / Convert.ToX(x) / x\n(conversion-enum, conversion-numbers)"
+q0 -> m0: yes
+q0 -> q1: no
+q1 -> q1e: yes
+q1e -> m1: yes
+q1e -> f1: no
+q1 -> q2: no
+q2 -> f2: "number, bool, DateTime, enum"
+q2 -> m2: other
+q2 -> q3: no
+q3 -> f3: yes
+q3 -> q4: no
+q4 -> m4: no
+q4 -> q5: yes
+q5 -> f5: yes
+q5 -> m5: no

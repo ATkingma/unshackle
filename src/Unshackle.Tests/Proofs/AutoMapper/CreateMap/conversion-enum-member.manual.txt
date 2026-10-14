@@ -1,0 +1,1 @@
+AutoMapper writes the [EnumMember] value of Status

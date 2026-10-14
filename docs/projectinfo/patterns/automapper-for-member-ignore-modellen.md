@@ -42,7 +42,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberIgnorePattern.
 
 | Leaf                                        | Condition                                                   | Evidence                                 |
 | ------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------- |
-| Manual "not a CreateMap without options"    | `MapFrom`, string name, nested member or `ReverseMap` in the chain | `string-name`, `reverse-map`      |
+| Manual "not a CreateMap without options"    | `MapFrom`, string name, nested member or `ReverseMap` in the chain | `string-name` (`reverse-map`: Fixed since TAAK-249) |
 | Manual "does not have as a public property" | the ignored member does not exist publicly on B             | unit test                                |
 | Manual "no member with the same name"       | a non-ignored member without a source member                | `unmatched`                              |
 | Fixed (member left out)                     | an ignored member, with or without a source member          | `simple`, `mixed`, unit test             |

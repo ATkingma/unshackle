@@ -46,7 +46,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` (`
 | Rewrite as `CreateMap<A, B>()`                   | no argument                                            | `CreateMap/simple`                          |
 | Rewrite as `CreateMap<A, B>()`, argument dropped | one constant `MemberList`, positional or `memberList:` | `CreateMap/member-list`, `CreateMap/member-list-named`, `ForMemberIgnore/member-list`, `ForMemberMapFrom/member-list`, `_Combined/member-list-map-call`, unit test `Rewrite_ConstantMemberList_SameAsWithout` |
 | Manual "not a CreateMap<A, B>() without options" | a non-constant or other argument                       | `CreateMap/member-list-variable`, unit test `Rewrite_MemberListParameter_ReportsManual` |
-| Manual "not a CreateMap<A, B>() without options" | another option in the chain (`ReverseMap`, ...)        | `CreateMap/member-list-reverse-map`, `CreateMap/options` |
+| Manual "not a CreateMap<A, B>() without options" | another option in the chain (`MaxDepth`, ...; `ReverseMap` is rewritten since TAAK-249) | `CreateMap/options` |
 
 ## See also
 

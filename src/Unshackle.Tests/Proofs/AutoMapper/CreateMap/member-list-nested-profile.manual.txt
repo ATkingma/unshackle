@@ -1,1 +1,0 @@
-is nested, generic, partial or has several constructors

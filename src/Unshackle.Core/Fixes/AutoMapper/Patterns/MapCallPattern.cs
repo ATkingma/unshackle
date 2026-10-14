@@ -170,17 +170,16 @@ public class MapCallPattern : ISolutionPattern
                 foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => CreateMapPattern.IsProfileWithMaps(c, profileModel)))
                 {
                     // With the solution: a member may call the map of a profile in a project this one depends on.
-                    if (await CreateMapPattern.RewriteMethodsAsync(profile, profileModel, solution, cancellationToken) is not FixedResult { NewNodes: [ClassDeclarationSyntax rewritten, ClassDeclarationSyntax extensions] }
-                        || rewritten.Members.OfType<ConstructorDeclarationSyntax>().FirstOrDefault()?.Body is null)
+                    if (await CreateMapPattern.RewriteMethodsAsync(profile, profileModel, solution, cancellationToken) is not FixedResult { NewNodes: [_, ClassDeclarationSyntax extensions] })
                     {
                         continue;
                     }
 
-                    // One generated method per CreateMap statement, in the same order, followed by the reverse one for a ReverseMap.
+                    // One generated method per CreateMap statement (or expression body), in the same order, followed by the reverse one for a ReverseMap.
                     List<MethodDeclarationSyntax> methods = [.. extensions.Members.OfType<MethodDeclarationSyntax>()];
-                    List<StatementSyntax> statements = [.. profile.Members.OfType<ConstructorDeclarationSyntax>().Single().Body!.Statements];
+                    IReadOnlyList<SyntaxNode> statements = CreateMapPattern.MapStatements(profile.Members.OfType<ConstructorDeclarationSyntax>().Single());
                     List<(ITypeSymbol From, ITypeSymbol To)> pairs = [];
-                    foreach (StatementSyntax statement in statements)
+                    foreach (SyntaxNode statement in statements)
                     {
                         InvocationExpressionSyntax? createMap = statement.DescendantNodes().OfType<InvocationExpressionSyntax>()
                             .LastOrDefault(c => c.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap" });

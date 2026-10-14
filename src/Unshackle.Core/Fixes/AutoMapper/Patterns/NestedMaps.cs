@@ -162,7 +162,7 @@ public class NestedMaps
     private static void AddRewritten(Dictionary<(string Source, string Destination), List<NestedMap>> maps, SyntaxNode root, SemanticModel model, ProjectId? project)
     {
         HashSet<string> extensions = [.. root.DescendantNodes().OfType<ClassDeclarationSyntax>()
-            .Where(c => model.GetDeclaredSymbol(c) is INamedTypeSymbol type && CreateMapPattern.IsProfile(type)).Select(c => c.Identifier.ValueText + "Extensions")];
+            .Where(c => model.GetDeclaredSymbol(c) is INamedTypeSymbol type && CreateMapPattern.IsProfile(type)).Select(CreateMapPattern.ExtensionsName)];
         if (extensions.Count == 0)
         {
             return;

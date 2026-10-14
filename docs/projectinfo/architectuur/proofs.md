@@ -6,33 +6,9 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 974 proofs (excluding `_Pending`).
+Total: 981 proofs (excluding `_Pending`).
 
 ## AutoMapper
-
-### _Combined (19)
-
-| Proof | Outcome | What it proves |
-| --- | --- | --- |
-| `collection-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public List<OrderDto> All(List<Order> orders) => _mapper.Map<List<OrderDto>>(ord…` → `} public static class OrderProfileExtensions` |
-| `collection-nullable-map-call` | Fixed | `CreateMap<Order, OrderDto>(); return _mapper.Map<List<OrderDto>>(orders);` → `} public static class OrderProfileExtensions` |
-| `condition-map-call` | Fixed | `CreateMap<Line, LineDto>() .ForMember(d => d.Id, o => o.Condition(s => s.Id != Guid.Empty))` → `} public static class LineProfileExtensions` |
-| `configuration-test-fixture` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IConfigurationProvider _configuration;` → `} public static class OrderProfileExtensions` |
-| `constructor-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
-| `conversion-map-into` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} }` |
-| `convert-using-map-call` | Fixed | `CreateMap<SigningKey, PublicKeyDto>() .ConvertUsing(src => new PublicKeyDto` → `} }` |
-| `flattening-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Get(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class OrderProfileExtensions` |
-| `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
-| `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
-| `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
-| `member-list-map-call` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Destination); public Mapping.OrderDto Get(Mapping.Order order) => _mappe…` → `} public static class OrderProfileExtensions` |
-| `nested-map-call` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `} public static class OrderProfileExtensions` |
-| `nested-profile-map-call` | Fixed | `CreateMap<CustomerDto,AddEditCustomerCommand>(MemberList.None); CreateMap<AddEditCustomerCommand,Customer>(Mem…` → `} }` |
-| `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
-| `nested-profiles-nested-map` | Fixed | `CreateMap<TodoList, TodoListDto>(); CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority,` → `} public static class TodoListDtoMappingExtensions` |
-| `project-to-query` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} public static class OrderProfileExtensions` |
-| `reverse-map-call` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} }` |
-| `value-resolver-map-call` | Fixed | `CreateMap<ToDoTask, TaskDto>() .ForMember(x => x.IsPrivate, opt => opt.MapFrom<IsPrivateResolver>())` → `} public static class TaskProfileExtensions` |
 
 ### AddAutoMapper (4)
 
@@ -58,7 +34,7 @@ Total: 974 proofs (excluding `_Pending`).
 | `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check: the map at Test.cs:27 is not in a profile constructor this fix rewrites |
 | `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
-### CreateMap (92)
+### CreateMap (97)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -112,6 +88,8 @@ Total: 974 proofs (excluding `_Pending`).
 | `for-path-deep` | Manual | `CreateMap<CustomerForm, Customer>()` — reason: ForPath to Address.Country.Code goes more than one object deep |
 | `for-path-member` | Fixed | `CreateMap<Activity, ActivityDto>() .ForPath(dest => dest.Heading, opt => opt.MapFrom(src => src.Title));` → `public static class OrderProfileExtensions {` |
 | `for-source-member-do-not-validate` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Source).ForSourceMember(s => s.Name, o => o.DoNotValidate());` → `public static class OrderProfileExtensions {` |
+| `forward-condition-reverse-map` | Fixed | `CreateMap<Person, PersonDto>() .ForMember(dto => dto.Nickname, opt => opt.Condition(person => person.Active))` → `public static class OrderProfileExtensions {` |
+| `forward-for-path-reverse-map` | Manual | `CreateMap<CustomerDto, Customer>()` — reason: ReverseMap reverses the ForPath of the forward map |
 | `generic` | Manual | `CreateMap<User, TUserDto>();` — reason: is generic or nested in a generic type |
 | `get-only-collection` | Manual | `CreateMap<Post, PostDto>();` — reason: PostDto.Tags is a get-only collection, which AutoMapper fills with the items from Post |
 | `internal-types` | Fixed | `CreateMap<Order, OrderDto>();` → `internal static class OrderProfileExtensions {` |
@@ -145,17 +123,20 @@ Total: 974 proofs (excluding `_Pending`).
 | `profile-setting` | Manual | `CreateMap<Order, OrderDto>();` — reason: AllowNullCollections changes how null collections are mapped |
 | `project-to` | Fixed | `CreateMap<Series, SeriesDto>(); CreateMap<Genre, GenreTagDto>();` → `} public static class AutoMapperProfilesExtensions` |
 | `project-to-conversion` | Manual | `CreateMap<Order, OrderDto>();` — reason: (ProjectTo converts it in the query, this fix does not) |
+| `reverse-condition` | Fixed | `CreateMap<Person, PersonDto>() .ReverseMap()` → `public static class OrderProfileExtensions {` |
+| `reverse-condition-initializer` | Manual | `CreateMap<Person, PersonDto>()` — reason: Person.Nickname has an initializer |
+| `reverse-for-path-member` | Fixed | `CreateMap<Activity, ActivityDto>() .ReverseMap()` → `public static class OrderProfileExtensions {` |
 | `reverse-map` | Fixed | `CreateMap<Region, RegionDto>().ReverseMap(); CreateMap<Folder, FolderEntity>(MemberList.Destination).ReverseMa…` → `public static class AutoMapperProfileExtensions {` |
 | `reverse-map-duplicate` | Manual | `CreateMap<Product, ProductDto>().ReverseMap();` — reason: maps ProductDto and Product the same way twice |
 | `reverse-map-get-method` | Manual | `CreateMap<Product, ProductDto>().ReverseMap();` — reason: ReverseMap of CreateMap<Product, ProductDto>: Product.Code has no member with the same name in ProductDto |
 | `reverse-map-nested` | Fixed | `CreateMap<Employee, EmployeeDto>().ReverseMap(); CreateMap<Job, JobDto>().ReverseMap();` → `public static class AutoMapperProfileExtensions {` |
-| `reverse-map-options` | Manual | `CreateMap<User, UserDto>()` — reason: a Condition or ForPath on the reverse map is not migrated |
+| `reverse-map-options` | Manual | `CreateMap<User, UserDto>()` — reason: is a collection of a kind this fix does not copy |
 | `several-constructors` | Manual | `CreateMap<User, UserViewModel>();` — reason: has several constructors (which maps exist depends on the one that runs) |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>(); CreateMap<Tag, TagDto>();` → `public static class ProductProfileExtensions {` |
 | `unmatched-asserted` | Manual | `CreateMap<Customer, CustomerDto>();` — reason: yet the solution calls AssertConfigurationIsValid, which rejects such a member |
 | `unmatched-member` | Fixed | `CreateMap<Customer, CustomerEntity>();` → `public static class CustomerProfileExtensions {` |
 
-### ForMemberIgnore (9)
+### ForMemberIgnore (10)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -163,13 +144,14 @@ Total: 974 proofs (excluding `_Pending`).
 | `member-list` | Fixed | `CreateMap<Document, DocumentDto>(MemberList.None) .ForMember(x => x.TenantName, s => s.Ignore());` → `public static class DocumentProfileExtensions {` |
 | `mixed` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Line, LineDto>().ForMember(d => d.Total, o => o.Ignore());` → `public static class OrderProfileExtensions {` |
 | `nested-profile` | Fixed | `public Mapping() => CreateMap<Activity, ActivitySummaryDto>(MemberList.None)` → `public Mapping() {` |
+| `reverse-for-path` | Fixed | `CreateMap<Customer, CustomerDto>() .ForMember(dto => dto.Street, opt => opt.Ignore())` → `public static class OrderProfileExtensions {` |
 | `reverse-map` | Fixed | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore()).ForMember(d => d.Rank, o => o.Ignore()).R…` → `public static class OrderProfileExtensions {` |
 | `reverse-map-options` | Fixed | `CreateMap<GroupProjectAccessPolicy, GroupProjectAccessPolicyEntity>() .ForMember(dst => dst.GrantedProject, op…` → `public static class AccessPolicyMapperProfileExtensions {` |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>() .ForMember(d => d.Secret, o => o.Ignore())` → `public static class ProductProfileExtensions {` |
 | `string-name` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Rank, o => o.Ignore()).ForMember("Note", o => o.Ignore());` — reason: ForMember in a form the rewrite does not read |
 | `unmatched` | Fixed | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore());` → `public static class OrderProfileExtensions {` |
 
-### ForMemberMapFrom (16)
+### ForMemberMapFrom (17)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -188,6 +170,7 @@ Total: 974 proofs (excluding `_Pending`).
 | `reverse-map` | Fixed | `CreateMap<Article, ArticleDto>() .ForMember(d => d.Title, o => o.MapFrom(s => s.Name))` → `public static class ArticleProfileExtensions {` |
 | `reverse-map-null-deref` | Manual | `CreateMap<UserProjectAccessPolicy, UserProjectAccessPolicyEntity>()` — reason: ReverseMap of CreateMap<UserProjectAccessPolicy, UserProjectAccessPolicyEntity>: MapFrom for OrganizationUserId dereferences src.OrganizationUser, which may be null |
 | `reverse-map-unflattening` | Manual | `CreateMap<Order, OrderDto>()` — reason: ReverseMap of CreateMap<Order, OrderDto>: MapFrom for CustomerName is the path s.Customer.Name; in reverse AutoMapper unflattens it |
+| `reverse-pre-condition-map-from` | Fixed | `CreateMap<Person, PersonDto>() .ForMember(dto => dto.Alias, opt => opt.MapFrom(person => person.Nickname))` → `public static class OrderProfileExtensions {` |
 | `simple` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Total, o => o.MapFrom(s => s.Price * s.Quantity))` → `public static class OrderProfileExtensions {` |
 
 ### MapCall (7)
@@ -234,26 +217,31 @@ Total: 974 proofs (excluding `_Pending`).
 | `member-resolver` | Fixed | `CreateMap<Post, NoteObject>() .ForMember(d => d.MediaType, opt => opt.MapFrom<MediaTypeResolver, Content?>(s =…` → `public static class PostProfileExtensions {` |
 | `resolver-class` | Fixed | `CreateMap<ToDoList, ListDto>() .ForMember(x => x.IsShared, opt => opt.MapFrom<IsSharedResolver>())` → `public static class ToDoProfileExtensions {` |
 
-## FluentAssertions
-
-### _Combined (14)
+### _Combined (19)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
-| `akka-own-kit-mixed` | Fixed | `reply.Should().NotBeNull(); members.Should().Contain("node-1");` → `reply.ShouldNotBeNull(); members.ShouldContain("node-1");` |
-| `all-satisfy-be` | Fixed | `orders.Should().AllSatisfy(o => o.Total.Should().Be(20m));` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
-| `all-satisfy-other` | Fixed | `orders.Should().AllSatisfy(o => o.Note.Should().NotBeNull();` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
-| `lambda-overload-one-run` | Fixed | `ctx.Should().Be(context); maybe2.HasValue.Should().BeTrue();` → `ctx.ShouldBe(context); maybe2.HasValue.ShouldBeTrue();` |
-| `litedb-bson-assertions` | Fixed | `docs.Length.Should().BeOneOf(1, 101); first.Should().BeOneOf("owner1", "owner2");` → `docs.Length.ShouldBeOneOf(1, 101); first.ShouldBeOneOf("owner1", "owner2");` |
-| `manual-and-fixed` | Fixed | `y.Should().Be(1); y.Should().Be(2);` → `y.ShouldBe(1); y.ShouldBe(2);` |
-| `mixed` | Fixed | `order.Id.Should().Be(1); order.Total.Should().BeGreaterThan(10m).And.BeLessThan(30m);` → `order.Id.ShouldBe(1); order.Total.ShouldBeGreaterThan(10m);` |
-| `scope-using-block` | Fixed | `{ x.Should().Be(1);` → `x.ShouldSatisfyAllConditions( () => { x.ShouldBe(1); },` |
-| `scope-using-var` | Fixed | `y.Should().Be(2); name.Should().StartWith("a");` → `y.ShouldSatisfyAllConditions( () => { y.ShouldBe(2); },` |
-| `steeltoe-http-client` | Fixed | `httpClient.Timeout.Should().Be(30.Seconds()); httpClient.DefaultRequestHeaders.UserAgent.Should().ContainSingl…` → `httpClient.Timeout.ShouldBe(TimeSpan.FromSeconds(30)); httpClient.DefaultRequestHeaders.UserAgent.ShouldHaveSi…` |
-| `usings` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
-| `usings-existing` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
-| `usings-sorted` | Fixed | `Calc.Sum(values).Should().Be(3);` → `Calc.Sum(values).ShouldBe(3);` |
-| `usings-unsorted` | Fixed | `Calc.Sum(values).Should().Be(3);` → `Calc.Sum(values).ShouldBe(3);` |
+| `collection-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public List<OrderDto> All(List<Order> orders) => _mapper.Map<List<OrderDto>>(ord…` → `} public static class OrderProfileExtensions` |
+| `collection-nullable-map-call` | Fixed | `CreateMap<Order, OrderDto>(); return _mapper.Map<List<OrderDto>>(orders);` → `} public static class OrderProfileExtensions` |
+| `condition-map-call` | Fixed | `CreateMap<Line, LineDto>() .ForMember(d => d.Id, o => o.Condition(s => s.Id != Guid.Empty))` → `} public static class LineProfileExtensions` |
+| `configuration-test-fixture` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IConfigurationProvider _configuration;` → `} public static class OrderProfileExtensions` |
+| `constructor-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
+| `conversion-map-into` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} }` |
+| `convert-using-map-call` | Fixed | `CreateMap<SigningKey, PublicKeyDto>() .ConvertUsing(src => new PublicKeyDto` → `} }` |
+| `flattening-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Get(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class OrderProfileExtensions` |
+| `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
+| `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
+| `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
+| `member-list-map-call` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Destination); public Mapping.OrderDto Get(Mapping.Order order) => _mappe…` → `} public static class OrderProfileExtensions` |
+| `nested-map-call` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `} public static class OrderProfileExtensions` |
+| `nested-profile-map-call` | Fixed | `CreateMap<CustomerDto,AddEditCustomerCommand>(MemberList.None); CreateMap<AddEditCustomerCommand,Customer>(Mem…` → `} }` |
+| `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
+| `nested-profiles-nested-map` | Fixed | `CreateMap<TodoList, TodoListDto>(); CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority,` → `} public static class TodoListDtoMappingExtensions` |
+| `project-to-query` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} public static class OrderProfileExtensions` |
+| `reverse-map-call` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} }` |
+| `value-resolver-map-call` | Fixed | `CreateMap<ToDoTask, TaskDto>() .ForMember(x => x.IsPrivate, opt => opt.MapFrom<IsPrivateResolver>())` → `} public static class TaskProfileExtensions` |
+
+## FluentAssertions
 
 ### AllSatisfy (15)
 
@@ -1105,23 +1093,26 @@ Total: 974 proofs (excluding `_Pending`).
 | `steeltoe-arithmetic` | Fixed | `public TimeSpan Test(bool slow) => slow ? 1.Minutes() + 30.Seconds() : 250.Milliseconds();` → `public TimeSpan Test(bool slow) => slow ? TimeSpan.FromMinutes(1) + TimeSpan.FromSeconds(30) : TimeSpan.FromMi…` |
 | `steeltoe-assert-argument` | Fixed | `httpClient.Timeout.Should().Be(30.Seconds());` → `httpClient.Timeout.Should().Be(TimeSpan.FromSeconds(30));` |
 
-## MediatR
-
-### _Combined (11)
+### _Combined (14)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
-| `add-mediatr-internal-handlers-other-project` | Fixed | `public Task Handle(ContributorDeletedEvent domainEvent, CancellationToken cancellationToken) => Task.Completed…` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Clean.Architecture.Web")] public ValueTask Hand…` |
-| `autofac-mediator-module` | Fixed | `where TCommand : ICommand public class AddMeetingCommentCommand : ICommand` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyMeetings.Modules.Meetings.Infrastructure")] w…` |
-| `generic-decorator-marker-without-using` | Fixed | `where TCommand : ICommand public class CreateMeetingCommand : ICommand` → `where TCommand : global::App.ICommand public class CreateMeetingCommand : global::App.ICommand` |
-| `generic-decorators-kgrzybek` | Fixed | `public class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : ICommand` → `public abstract class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : global::Proofs.…` |
-| `generic-notification-nadirbad` | Fixed | `public class DomainEventNotification<TDomainEvent> : INotification public Task Handle(DomainEventNotification<…` → `public abstract class DomainEventNotification<TDomainEvent> : INotification public class DomainEventNotificati…` |
-| `host-references-host` | Fixed | `public Task Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Task.CompletedTask; bu…` → `public ValueTask<Unit> Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Unit.ValueT…` |
-| `identified-command-eshop` | Fixed | `public class IdentifiedCommand<T, R> : IRequest<R> public async Task<R> Handle(IdentifiedCommand<T, R> message…` → `public abstract class IdentifiedCommand<T, R> : IRequest<R> }` |
-| `internal-message-access` | Fixed | `public Task Handle(CancelMeetingCommand request, CancellationToken cancellationToken) => Task.CompletedTask; b…` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyMeetings.Modules.Meetings.Infrastructure")] p…` |
-| `request-handler-delegate` | Fixed | `public async Task<int> Handle(Register command, RequestHandlerDelegate<int> next, CancellationToken token) ret…` → `public async ValueTask<int> Handle(Register command, MessageHandlerDelegate<Register, int> next, CancellationT…` |
-| `request-handler-delegate-shared-field` | Fixed | `public async Task<Response> Handle(TRequest request, RequestHandlerDelegate<Response> next, CancellationToken …` → `public async ValueTask<Response> Handle(TRequest request, MessageHandlerDelegate<TRequest, Response> next, Can…` |
-| `request-processor-callers` | Fixed | `public class LoggingBehaviour<TRequest> : IRequestPreProcessor<TRequest> where TRequest : notnull public Task …` → `public class LoggingBehaviour<TRequest, TResponse> : MessagePreProcessor<TRequest, TResponse> where TRequest :…` |
+| `akka-own-kit-mixed` | Fixed | `reply.Should().NotBeNull(); members.Should().Contain("node-1");` → `reply.ShouldNotBeNull(); members.ShouldContain("node-1");` |
+| `all-satisfy-be` | Fixed | `orders.Should().AllSatisfy(o => o.Total.Should().Be(20m));` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
+| `all-satisfy-other` | Fixed | `orders.Should().AllSatisfy(o => o.Note.Should().NotBeNull();` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
+| `lambda-overload-one-run` | Fixed | `ctx.Should().Be(context); maybe2.HasValue.Should().BeTrue();` → `ctx.ShouldBe(context); maybe2.HasValue.ShouldBeTrue();` |
+| `litedb-bson-assertions` | Fixed | `docs.Length.Should().BeOneOf(1, 101); first.Should().BeOneOf("owner1", "owner2");` → `docs.Length.ShouldBeOneOf(1, 101); first.ShouldBeOneOf("owner1", "owner2");` |
+| `manual-and-fixed` | Fixed | `y.Should().Be(1); y.Should().Be(2);` → `y.ShouldBe(1); y.ShouldBe(2);` |
+| `mixed` | Fixed | `order.Id.Should().Be(1); order.Total.Should().BeGreaterThan(10m).And.BeLessThan(30m);` → `order.Id.ShouldBe(1); order.Total.ShouldBeGreaterThan(10m);` |
+| `scope-using-block` | Fixed | `{ x.Should().Be(1);` → `x.ShouldSatisfyAllConditions( () => { x.ShouldBe(1); },` |
+| `scope-using-var` | Fixed | `y.Should().Be(2); name.Should().StartWith("a");` → `y.ShouldSatisfyAllConditions( () => { y.ShouldBe(2); },` |
+| `steeltoe-http-client` | Fixed | `httpClient.Timeout.Should().Be(30.Seconds()); httpClient.DefaultRequestHeaders.UserAgent.Should().ContainSingl…` → `httpClient.Timeout.ShouldBe(TimeSpan.FromSeconds(30)); httpClient.DefaultRequestHeaders.UserAgent.ShouldHaveSi…` |
+| `usings` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
+| `usings-existing` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
+| `usings-sorted` | Fixed | `Calc.Sum(values).Should().Be(3);` → `Calc.Sum(values).ShouldBe(3);` |
+| `usings-unsorted` | Fixed | `Calc.Sum(values).Should().Be(3);` → `Calc.Sum(values).ShouldBe(3);` |
+
+## MediatR
 
 ### AddMediatR (14)
 
@@ -1326,6 +1317,22 @@ Total: 974 proofs (excluding `_Pending`).
 | `explicit` | Manual | `Task IRequestHandler<Command>.Handle(Command request, CancellationToken cancellationToken) => Task.CompletedTa…` — reason: explicit interface |
 | `other-return` | Manual | `public Task Handle(Command request, CancellationToken cancellationToken) =>` — reason: not Task.CompletedTask |
 | `throw-at-end` | Fixed | `public async Task Handle(Command request, CancellationToken cancellationToken)` → `public async ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken)` |
+
+### _Combined (11)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `add-mediatr-internal-handlers-other-project` | Fixed | `public Task Handle(ContributorDeletedEvent domainEvent, CancellationToken cancellationToken) => Task.Completed…` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Clean.Architecture.Web")] public ValueTask Hand…` |
+| `autofac-mediator-module` | Fixed | `where TCommand : ICommand public class AddMeetingCommentCommand : ICommand` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyMeetings.Modules.Meetings.Infrastructure")] w…` |
+| `generic-decorator-marker-without-using` | Fixed | `where TCommand : ICommand public class CreateMeetingCommand : ICommand` → `where TCommand : global::App.ICommand public class CreateMeetingCommand : global::App.ICommand` |
+| `generic-decorators-kgrzybek` | Fixed | `public class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : ICommand` → `public abstract class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : global::Proofs.…` |
+| `generic-notification-nadirbad` | Fixed | `public class DomainEventNotification<TDomainEvent> : INotification public Task Handle(DomainEventNotification<…` → `public abstract class DomainEventNotification<TDomainEvent> : INotification public class DomainEventNotificati…` |
+| `host-references-host` | Fixed | `public Task Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Task.CompletedTask; bu…` → `public ValueTask<Unit> Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Unit.ValueT…` |
+| `identified-command-eshop` | Fixed | `public class IdentifiedCommand<T, R> : IRequest<R> public async Task<R> Handle(IdentifiedCommand<T, R> message…` → `public abstract class IdentifiedCommand<T, R> : IRequest<R> }` |
+| `internal-message-access` | Fixed | `public Task Handle(CancelMeetingCommand request, CancellationToken cancellationToken) => Task.CompletedTask; b…` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyMeetings.Modules.Meetings.Infrastructure")] p…` |
+| `request-handler-delegate` | Fixed | `public async Task<int> Handle(Register command, RequestHandlerDelegate<int> next, CancellationToken token) ret…` → `public async ValueTask<int> Handle(Register command, MessageHandlerDelegate<Register, int> next, CancellationT…` |
+| `request-handler-delegate-shared-field` | Fixed | `public async Task<Response> Handle(TRequest request, RequestHandlerDelegate<Response> next, CancellationToken …` → `public async ValueTask<Response> Handle(TRequest request, MessageHandlerDelegate<TRequest, Response> next, Can…` |
+| `request-processor-callers` | Fixed | `public class LoggingBehaviour<TRequest> : IRequestPreProcessor<TRequest> where TRequest : notnull public Task …` → `public class LoggingBehaviour<TRequest, TResponse> : MessagePreProcessor<TRequest, TResponse> where TRequest :…` |
 
 ## See also
 

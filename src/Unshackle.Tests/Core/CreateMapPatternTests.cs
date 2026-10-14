@@ -434,7 +434,7 @@ public class CreateMapPatternTests
     [InlineData("public struct C { public string Name { get; set; } } public class A { public string Name { get; set; } } public class B { public C Inner { get; set; } }",
         ".ForPath(d => d.Inner.Name, o => o.MapFrom(s => s.Name))", "is not a class with a public parameterless constructor")]
     [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; set; } }",
-        ".ForMember(d => d.Id, o => o.Condition(s => s.Id > 0)).ReverseMap()", "not migrated together with ReverseMap")]
+        ".ForPath(d => d.Id, o => o.MapFrom(s => s.Id)).ReverseMap()", "ReverseMap reverses the ForPath")]
     [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; set; } }",
         ".ForMember(d => d.Id, o => o.UseDestinationValue())", "UseDestinationValue for Id is not migrated")]
     [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; set; } }",
@@ -444,6 +444,30 @@ public class CreateMapPatternTests
         // Arrange
         (SyntaxNode root, SemanticModel model) = Compile(types + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>()" + options + "; } }");
         var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain(reason);
+    }
+
+    // Condition and ForPath on a ReverseMap (TAAK-264): the reverse map takes them like any map, but a ForPath of the forward map is reversed by AutoMapper
+    // (measured), so a forward ForPath next to ReverseMap, a ForPath into a member the reversed MapFrom fills, and an initializer a Condition would keep are Manual.
+    [Theory]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public int Code { get; set; } }",
+        ".ForPath(d => d.Code, o => o.MapFrom(s => s.Id)).ReverseMap()", "ReverseMap reverses the ForPath of the forward map")]
+    [InlineData("public class A { public int Id { get; set; } public bool Flag { get; set; } } public class B { public int Id { get; set; } public bool Flag { get; set; } }",
+        ".ReverseMap().ForMember(d => d.Id, o => o.Condition((s, d) => d.Id == 0))", "Condition for Id is not a lambda of the source alone")]
+    [InlineData("public class A { public int Id { get; set; } public string Name { get; set; } = \"x\"; } public class B { public int Id { get; set; } public string Name { get; set; } = \"\"; public bool Flag { get; set; } }",
+        ".ReverseMap().ForMember(d => d.Name, o => o.Condition(s => s.Flag))", "A.Name has an initializer")]
+    [InlineData("public class H { public string V { get; set; } } public class A { public H X { get; set; } } public class B { public H Y { get; set; } }",
+        ".ForMember(d => d.Y, o => o.MapFrom(s => s.X)).ReverseMap().ForPath(d => d.X.V, o => o.MapFrom(s => s.Y.V))", "ForPath writes into X, which the reversed MapFrom of the forward map also fills")]
+    public void Rewrite_ConditionOrForPathOnReverseMapAutoMapperDoesMoreFor_ReportsManual(string types, string chain, string reason)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(types + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>()" + chain + "; } }");
+        CreateMapPattern pattern = chain.Contains("ForMember(", StringComparison.Ordinal) && chain.Contains("MapFrom", StringComparison.Ordinal) ? new ForMemberMapFromPattern() : new CreateMapPattern();
 
         // Act
         PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);

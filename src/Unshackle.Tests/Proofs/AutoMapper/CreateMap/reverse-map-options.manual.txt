@@ -1,1 +1,1 @@
-a Condition or ForPath on the reverse map is not migrated
+is a collection of a kind this fix does not copy

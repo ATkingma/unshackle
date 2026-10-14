@@ -134,7 +134,7 @@ public class CreateMapPattern : ISolutionPattern
         {
             if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out Dictionary<string, SimpleLambdaExpressionSyntax?>? options,
                     out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverseOptions, out Dictionary<string, InvocationExpressionSyntax> resolverCalls,
-                    out InvocationExpressionSyntax? convertUsing, out Dictionary<string, InvocationExpressionSyntax> converters, out MemberOptions extra)
+                    out InvocationExpressionSyntax? convertUsing, out Dictionary<string, InvocationExpressionSyntax> converters, out MemberOptions extra, out MemberOptions reverseExtra)
                 || invocation.Expression is not GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                 || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly } method)
             {
@@ -202,10 +202,16 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             bool needsMapInto = mapInto.Contains(MapIntoPattern.Key(sourceType, destinationType));
-            if ((!extra.IsEmpty || extra.HasForPath) && (needsMapInto || reverseOptions is not null))
+            if ((!extra.IsEmpty || extra.HasForPath) && needsMapInto)
             {
-                // Not migrated (TAAK-255): Map(source, destination) keeps the existing value or object, and ReverseMap may reverse a ForPath.
-                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: a Condition or ForPath is not migrated together with {(needsMapInto ? "Map(source, destination) (MapInto)" : "ReverseMap")}; write the mapping methods by hand.");
+                // Not migrated (TAAK-255): Map(source, destination) keeps the existing value or object.
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: a Condition or ForPath is not migrated together with Map(source, destination) (MapInto); write the mapping methods by hand.");
+            }
+
+            if (extra.HasForPath && reverseOptions is not null)
+            {
+                // Measured (TAAK-264): ReverseMap reverses a forward ForPath (ForPath(d => d.A.B, MapFrom(s => s.T)) gives T = source.A.B in reverse); a Condition it does not carry over.
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: ReverseMap reverses the ForPath of the forward map (it reads the path back into the source member); write the mapping methods by hand.");
             }
             if (needsMapInto && convertUsing is not null)
             {
@@ -230,7 +236,7 @@ public class CreateMapPattern : ISolutionPattern
                 return PatternResult.Manual($"{sourceType.Name} or {destinationType.Name} is private or protected; an extension method cannot use it.");
             }
 
-            if ((OutsideProblem(options, model, anchor.SpanStart) ?? OutsideProblem(reverseOptions ?? [], model, anchor.SpanStart) ?? OutsideProblem(extra.Lambdas(), model, anchor.SpanStart)) is string outside)
+            if ((OutsideProblem(options, model, anchor.SpanStart) ?? OutsideProblem(reverseOptions ?? [], model, anchor.SpanStart) ?? OutsideProblem(extra.Lambdas(), model, anchor.SpanStart) ?? OutsideProblem(reverseExtra.Lambdas(), model, anchor.SpanStart)) is string outside)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {outside}; write the mapping method by hand.");
             }
@@ -259,7 +265,7 @@ public class CreateMapPattern : ISolutionPattern
             }
             if (reverseOptions is not null)
             {
-                if (Reverse(sourceType, destinationType, options, reverseOptions, model, profileType, values, mapInto, out List<(string Name, string Value)> reverseMembers,
+                if (Reverse(sourceType, destinationType, options, reverseOptions, reverseExtra, model, profileType, values, mapInto, out List<(string Name, string Value)> reverseMembers,
                     out bool reverseMapInto, out string reverseCreation) is string reverseProblem)
                 {
                     return PatternResult.Manual($"ReverseMap of CreateMap<{sourceType.Name}, {destinationType.Name}>: {reverseProblem}; write the mapping method by hand.");
@@ -819,7 +825,7 @@ public class CreateMapPattern : ISolutionPattern
     // other MapFrom expressions are not reversed; ReverseMap().ForMember options configure the reverse map and win over a reversed MapFrom;
     // a forward member AutoMapper flattened is unflattened.
     private static string? Reverse(ITypeSymbol source, ITypeSymbol destination, Dictionary<string, SimpleLambdaExpressionSyntax?> forward,
-        Dictionary<string, SimpleLambdaExpressionSyntax?> options, SemanticModel model, INamedTypeSymbol? profileType, MemberValues values,
+        Dictionary<string, SimpleLambdaExpressionSyntax?> options, MemberOptions extra, SemanticModel model, INamedTypeSymbol? profileType, MemberValues values,
         IReadOnlySet<string> mapInto, out List<(string Name, string Value)> members, out bool needsMapInto, out string creation)
     {
         members = [];
@@ -874,7 +880,18 @@ public class CreateMapPattern : ISolutionPattern
             }
         }
 
-        if (Problem(destination, source, options, model, profileType, values, out members, out string? copied, out creation, reversed) is string problem)
+        if (needsMapInto && (!extra.IsEmpty || extra.HasForPath))
+        {
+            return "a Condition or ForPath is not migrated together with Map(source, destination) (MapInto)";
+        }
+
+        // Measured (TAAK-264): a Condition acts on a reversed value like on any other; a ForPath next to a reversed MapFrom of the same member was not measured.
+        if (extra.Paths.Keys.FirstOrDefault(reversed.ContainsKey) is { } pathTarget)
+        {
+            return $"ForPath writes into {pathTarget}, which the reversed MapFrom of the forward map also fills";
+        }
+
+        if (Problem(destination, source, options, model, profileType, values, out members, out string? copied, out creation, reversed, extra: extra) is string problem)
         {
             return problem;
         }
@@ -1091,10 +1108,11 @@ public class CreateMapPattern : ISolutionPattern
     private static bool TryParseMap(SyntaxNode statement, SemanticModel model, [NotNullWhen(true)] out InvocationExpressionSyntax? createMap,
         [NotNullWhen(true)] out Dictionary<string, SimpleLambdaExpressionSyntax?>? options, out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverse,
         out Dictionary<string, InvocationExpressionSyntax> resolvers, out InvocationExpressionSyntax? convertUsing, out Dictionary<string, InvocationExpressionSyntax> converters,
-        out MemberOptions extra)
+        out MemberOptions extra, out MemberOptions reverseExtra)
     {
         createMap = null;
         options = [];
+        reverseExtra = new MemberOptions();
         reverse = null;
         extra = new MemberOptions();
         resolvers = [];
@@ -1117,11 +1135,10 @@ public class CreateMapPattern : ISolutionPattern
         // The chain is read from the outside in: options seen before ReverseMap (outermost first) configure the reverse map.
         if (ReverseMapCall(expression, model) is { } reverseMap)
         {
-            var reverseExtra = new MemberOptions();
-            // A value converter has no reverse that is sure to be right: only plain options with ReverseMap.
-            if (!TryParseOptions(ref expression, model, options, resolvers, converters, reverseExtra) || expression != reverseMap || converters.Count > 0 || !reverseExtra.IsEmpty || reverseExtra.HasForPath)
+            // A value converter has no reverse that is sure to be right: only plain options (and Condition/ForPath, TAAK-264) with ReverseMap.
+            if (!TryParseOptions(ref expression, model, options, resolvers, converters, reverseExtra) || expression != reverseMap || converters.Count > 0)
             {
-                extra.Unsupported = reverseExtra.Unsupported ?? (reverseExtra.IsEmpty && !reverseExtra.HasForPath ? null : "a Condition or ForPath on the reverse map is not migrated");
+                extra.Unsupported = reverseExtra.Unsupported;
                 return false;
             }
 

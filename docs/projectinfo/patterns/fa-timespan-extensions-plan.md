@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "fa-timespan-extensions"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10]
 files_expected:
     - src/Unshackle.Core/Fixes/FluentAssertions/Patterns/TimeSpanExtensionsPattern.cs
     - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
@@ -44,8 +44,11 @@ The time extensions from `FluentAssertions.Extensions` (`FluentTimeSpanExtension
 - **REQ-3**: WHEN `TimeSpan`/`DateTime` does not bind at that location THE SYSTEM SHALL add `using System;` (proof `no-using-system`); WHEN an own type captures the name THE SYSTEM SHALL write `global::System.TimeSpan` (unit test `Rewrite_OwnTimeSpanTypeInScope_QualifiesSystemTimeSpan`).
 - **REQ-4**: WHEN `d.March(y)` with a constant day or year is present THE SYSTEM SHALL produce `new DateTime(y, 3, d)` (proof `month`).
 - **REQ-5**: IF day and year are both computed THEN THE SYSTEM SHALL produce Manual (proof `month-computed`).
-- **REQ-6**: IF another extension from `FluentAssertions.Extensions` is present (`And`, `Seconds(n, offset)`, `At`, …) THEN THE SYSTEM SHALL produce Manual (proofs `and`, `offset`; unit test `Rewrite_DateTimeAt_Manual`).
+- **REQ-6**: IF another extension from `FluentAssertions.Extensions` is present (`And`, `Seconds(n, offset)`, …) THEN THE SYSTEM SHALL produce Manual (proofs `and`, `offset`). `At` on a `DateTime`: see REQ-8/9 (TAAK-243).
 - **REQ-7**: WHEN an own `Seconds()` extension binds THE SYSTEM SHALL find nothing (unit test `Find_OwnSecondsExtension_FindsNothing`).
+- **REQ-8** (TAAK-243): WHEN `d.At(h, m[, s[, ms]])` on a `DateTime` d that is safe to evaluate twice is present THE SYSTEM SHALL produce `new DateTime(d.Year, d.Month, d.Day, h, m, s, ms, d.Kind)` (missing parts 0), what FluentAssertions 7.2.2 computes (Kind included); WHEN d is a month call `n.October(y)` THE SYSTEM SHALL produce one constructor `new DateTime(y, 10, n, h, m, s)` and not rewrite the month call on its own (proofs `at-variable`, `month-at`; unit test `Rewrite_DateTimeAt_ConstructorWithDateParts`).
+- **REQ-9** (TAAK-243): WHEN `d.At(time)` with a `TimeSpan` is present THE SYSTEM SHALL produce `d.Date + time` (with a month call: `new DateTime(y, m, n) + time`), in parentheses where it is an operand or receiver (proof `at-timespan`).
+- **REQ-10** (TAAK-243): IF `At` gets microseconds/nanoseconds, OR its date is a computed expression THEN THE SYSTEM SHALL produce Manual (proofs `at-microseconds`, `at-computed`; unit test `Rewrite_DateTimeAtMicroseconds_Manual`).
 
 ## Assumptions
 

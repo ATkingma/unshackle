@@ -177,6 +177,8 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-214-mediatr-archtests-gegenereerde-mediator.md` | ✅ TAAK-214 — kgrzybek archtests: generated dispatcher, legitimate difference |
 | `claude/tasks/archief/TAAK-240-mediatr-archtest-waarschuwing.md` | ✅ TAAK-240 — report warning with an archtest library: exclude namespace `Mediator` |
 | `claude/tasks/archief/TAAK-241-and-chain-repeated-statement.md` | ✅ TAAK-241 — `.And` chain: a repeated statement (`NotBeEmpty().And.OnlyContain`) is written once |
+| `claude/tasks/archief/TAAK-242-using-kept-when-call-unbound-until-import.md` | ✅ TAAK-242 — old using kept when a Manual call only binds after `using System;` is added (EventFlow) |
+| `claude/tasks/archief/TAAK-243-fa-datetime-at.md` | ✅ TAAK-243 — FA `d.At(h, m)` / `1.October(y).At(..)` / `d.At(time)` → `DateTime` constructor or `d.Date + time` |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: unused assembly parameter after AddMediator (IDE0060) → warning in the report |
 
 ## Skills

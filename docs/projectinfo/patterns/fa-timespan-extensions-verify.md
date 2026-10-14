@@ -15,8 +15,11 @@
 | REQ-3 | Met | proof `no-using-system`; unit test `Rewrite_OwnTimeSpanTypeInScope_QualifiesSystemTimeSpan` |
 | REQ-4 | Met | proof `month` |
 | REQ-5 | Met | proof `month-computed` |
-| REQ-6 | Met | proofs `and`, `offset`; unit test `Rewrite_DateTimeAt_Manual` |
+| REQ-6 | Met | proofs `and`, `offset`; `and-no-using-system` (the Manual `And` keeps `using FluentAssertions.Extensions;` when `using System;` is added, TAAK-242) |
 | REQ-7 | Met | unit test `Find_OwnSecondsExtension_FindsNothing` |
+| REQ-8 | Met | proofs `at-variable`, `month-at` (EventFlow); unit test `Rewrite_DateTimeAt_ConstructorWithDateParts`; equivalence with FluentAssertions 7.2.2 checked for Unspecified/Utc/Local and sub-millisecond ticks (TAAK-243) |
+| REQ-9 | Met | proof `at-timespan` |
+| REQ-10 | Met | proofs `at-microseconds`, `at-computed`; unit test `Rewrite_DateTimeAtMicroseconds_Manual` |
 
 ## Deviations
 

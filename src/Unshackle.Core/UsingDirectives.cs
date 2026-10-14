@@ -29,6 +29,19 @@ internal static class UsingDirectives
         List<string> missing = [.. addedNamespaces.Distinct().Where(ns => !imported.Contains(ns)).Order(StringComparer.Ordinal)];
 
         HashSet<string> used = UsedRemovedNamespaces(root, model, removedNamespaces, swappedTypes, cancellationToken);
+        // A rewrite can leave an old call unbound until a namespace it needs is imported: `new DateTime(..).At(..)` without
+        // `using System;` (TAAK-242). What the file uses with the missing usings added counts too.
+        if (missing.Count > 0)
+        {
+            Document withMissing = document.WithSyntaxRoot(
+                root.AddUsings([.. missing.Select(ns => SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(ns)))]));
+            if (await withMissing.GetSyntaxRootAsync(cancellationToken) is CompilationUnitSyntax withMissingRoot
+                && await withMissing.GetSemanticModelAsync(cancellationToken) is SemanticModel withMissingModel)
+            {
+                used.UnionWith(UsedRemovedNamespaces(withMissingRoot, withMissingModel, removedNamespaces, swappedTypes, cancellationToken));
+            }
+        }
+
         if (UnboundCalls(root, model, removedExtensionMethods, cancellationToken).Any())
         {
             used.UnionWith(removedNamespaces);

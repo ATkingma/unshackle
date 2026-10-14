@@ -42,7 +42,7 @@ public class TimeSpanExtensionsPatternTests
     }
 
     [Fact]
-    public void Rewrite_DateTimeAt_Manual()
+    public void Rewrite_DateTimeAt_ConstructorWithDateParts()
     {
         // Arrange
         const string code = "using System; using FluentAssertions.Extensions;\nclass C { DateTime T(DateTime d) => d.At(10, 30); }";
@@ -53,7 +53,22 @@ public class TimeSpanExtensionsPatternTests
         PatternResult result = pattern.Rewrite(node, model);
 
         // Assert
-        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("FluentDateTimeExtensions.At");
+        result.ShouldBeOfType<FixedResult>().NewNodes.Single().ToString().ShouldBe("new DateTime(d.Year, d.Month, d.Day, 10, 30, 0, 0, d.Kind)");
+    }
+
+    [Fact]
+    public void Rewrite_DateTimeAtMicroseconds_Manual()
+    {
+        // Arrange
+        const string code = "using System; using FluentAssertions.Extensions;\nclass C { DateTime T(DateTime d) => d.At(10, 30, 0, 0, 5); }";
+        (TimeSpanExtensionsPattern pattern, SemanticModel model, SyntaxNode root) = Arrange(code);
+        SyntaxNode node = pattern.Find(root, model).Single();
+
+        // Act
+        PatternResult result = pattern.Rewrite(node, model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("microseconds");
     }
 
     private static (TimeSpanExtensionsPattern Pattern, SemanticModel Model, SyntaxNode Root) Arrange(string code)

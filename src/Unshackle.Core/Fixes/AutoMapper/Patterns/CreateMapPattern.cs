@@ -28,7 +28,7 @@ public class CreateMapPattern : ISolutionPattern
     public virtual string Id => "automapper.create-map";
 
     public virtual string Description =>
-        "Profile with CreateMap<A, B>() without options → static B ToB(this A source) => new() { X = source.X, ... } for the members with the same name and type (or a built-in conversion AutoMapper does the same way); MapInto(this A source, B destination) when the solution calls Map(source, destination); Map with options and ProjectTo are Manual";
+        "Profile with CreateMap<A, B>() without options → static B ToB(this A source) => new() { X = source.X, ... } for the members with the same name and type (or a built-in conversion AutoMapper does the same way); MapInto(this A source, B destination) when the solution calls Map(source, destination); AToBProjection when the solution calls ProjectTo; Map with options is Manual";
 
     // Map and ProjectTo calls that MapCallPattern does not rewrite are found too: while they run, a removed CreateMap fails at run time,
     // so they make the fix all-or-nothing.
@@ -40,12 +40,13 @@ public class CreateMapPattern : ISolutionPattern
                 && (info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is IMethodSymbol { Name: "Map" or "ProjectTo" } method
                 && method.ContainingAssembly?.Name == AutoMapperAssembly
                 && !MapCallPattern.IsMapCall(i, model)
-                && !MapIntoPattern.IsMapIntoCall(i, model),
+                && !MapIntoPattern.IsMapIntoCall(i, model)
+                && !ProjectToPattern.IsProjectToCall(i, model),
             _ => false,
         });
 
     // Without the solution no MapInto is written: nothing says a Map(source, destination) call needs it.
-    public virtual PatternResult Rewrite(SyntaxNode node, SemanticModel model) => Rewrite(node, model, new HashSet<string>(), nested: null);
+    public virtual PatternResult Rewrite(SyntaxNode node, SemanticModel model) => Rewrite(node, model, new HashSet<string>(), nested: null, projectTo: new HashSet<string>());
 
     public virtual async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
@@ -53,16 +54,18 @@ public class CreateMapPattern : ISolutionPattern
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(solution);
         return node is ClassDeclarationSyntax
-            ? Rewrite(node, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken), await NestedMaps.FromAsync(model, solution, cancellationToken))
-            : Rewrite(node, model, new HashSet<string>(), nested: null);
+            ? Rewrite(node, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken), await NestedMaps.FromAsync(model, solution, cancellationToken),
+                await ProjectToPattern.TargetsAsync(solution, cancellationToken))
+            : Rewrite(node, model, new HashSet<string>(), nested: null, projectTo: new HashSet<string>());
     }
 
     // The ToB methods of a profile, with nested maps of the whole solution; no MapInto (MapCallPattern only needs the method names).
     internal static async Task<PatternResult> RewriteMethodsAsync(ClassDeclarationSyntax profile, SemanticModel model, Solution solution, CancellationToken cancellationToken) =>
-        Rewrite(profile, model, new HashSet<string>(), await NestedMaps.FromAsync(model, solution, cancellationToken));
+        Rewrite(profile, model, new HashSet<string>(), await NestedMaps.FromAsync(model, solution, cancellationToken), projectTo: new HashSet<string>());
 
     // mapInto: the maps (MapIntoPattern.Key) that get a MapInto next to ToB. nested: the maps a member can call (null: this project's).
-    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, IReadOnlySet<string> mapInto, NestedMaps? nested)
+    // projectTo: the maps that a ProjectTo call uses, which get an Expression<Func<A, B>> AToBProjection next to ToB (see Projections).
+    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, IReadOnlySet<string> mapInto, NestedMaps? nested, IReadOnlySet<string> projectTo)
     {
         if (node is InvocationExpressionSyntax)
         {
@@ -82,7 +85,10 @@ public class CreateMapPattern : ISolutionPattern
         List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto)> maps = [];
         bool isInternal = false;
         HashSet<string> namespaces = new(StringComparer.Ordinal);
-        var values = new MemberValues(nested ?? NestedMaps.From(model), model, profile.SpanStart, namespaces);
+        NestedMaps allMaps = nested ?? NestedMaps.From(model);
+        var values = new MemberValues(allMaps, model, profile.SpanStart, namespaces);
+        Dictionary<string, (ITypeSymbol Source, ITypeSymbol Destination, IReadOnlyList<ProjectionMember> Members)> projectable = new(StringComparer.Ordinal);
+        List<(TypeSyntax Source, TypeSyntax Destination, string Key, string Name)> projected = [];
         foreach (StatementSyntax statement in body.Statements)
         {
             if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out Dictionary<string, SimpleLambdaExpressionSyntax?>? options)
@@ -94,9 +100,17 @@ public class CreateMapPattern : ISolutionPattern
 
             ITypeSymbol sourceType = method.TypeArguments[0];
             ITypeSymbol destinationType = method.TypeArguments[1];
-            if (Problem(sourceType, destinationType, options, model, profileType, values, out List<(string Name, string Value)> members, out string? copied) is string problem)
+            if (Problem(sourceType, destinationType, options, model, profileType, values, out List<(string Name, string Value)> members, out string? copied,
+                out List<ProjectionMember> read) is string problem)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {problem}; write the mapping method by hand.");
+            }
+
+            string key = MapIntoPattern.Key(sourceType, destinationType);
+            projectable.TryAdd(key, (sourceType, destinationType, read));
+            if (projectTo.Contains(key))
+            {
+                projected.Add((source, destination, key, Projections.Name(sourceType, destinationType)));
             }
 
             bool needsMapInto = mapInto.Contains(MapIntoPattern.Key(sourceType, destinationType));
@@ -122,19 +136,44 @@ public class CreateMapPattern : ISolutionPattern
             return PatternResult.Manual($"A type {className} already exists; write the mapping methods of {profile.Identifier} by hand.");
         }
 
+        // After all maps are known: a nested object or list of a later CreateMap is inlined too.
+        var projections = new Projections(projectable, allMaps, model, profile.SpanStart);
+        List<(TypeSyntax Source, TypeSyntax Destination, string Name, List<(string Name, string Value)> Members)> written = [];
+        foreach ((TypeSyntax source, TypeSyntax destination, string key, string name) in projected)
+        {
+            if (written.Any(w => w.Name == name))
+            {
+                return PatternResult.Manual($"Two maps of {profile.Identifier} would both get a projection {name}; write them by hand.");
+            }
+
+            if (projections.Problem(key, out List<(string Name, string Value)> members) is string problem)
+            {
+                return PatternResult.Manual(problem + ".");
+            }
+
+            written.Add((source, destination, name, members));
+            namespaces.UnionWith(["System", "System.Linq.Expressions"]);
+            if (members.Any(m => m.Value.Contains(".Select(", StringComparison.Ordinal)))
+            {
+                namespaces.Add("System.Linq");
+            }
+        }
+
         return PatternResult.Fixed([
             profile.ReplaceNode(body, body.WithStatements([])),
-            Extensions(profile, className, isInternal ? "internal" : "public", maps)], [.. namespaces.Order(StringComparer.Ordinal)]);
+            Extensions(profile, className, isInternal ? "internal" : "public", maps, written)], [.. namespaces.Order(StringComparer.Ordinal)]);
     }
 
     // Why the map cannot be written as plain assignments, or null with the destination members AutoMapper writes (and what to assign),
     // each having a source member of the same name and type (or one MemberValues maps) or a MapFrom expression. copied: the first member
-    // that gets a new object or collection.
+    // that gets a new object or collection. read: what AutoMapper reads for each assigned member, before the ToB-only rewrites (a projection uses it).
     private static string? Problem(ITypeSymbol source, ITypeSymbol destination, Dictionary<string, SimpleLambdaExpressionSyntax?> options,
-        SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out List<(string Name, string Value)> members, out string? copied)
+        SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out List<(string Name, string Value)> members, out string? copied,
+        out List<ProjectionMember> read)
     {
         members = [];
         copied = null;
+        read = [];
         if (destination is not INamedTypeSymbol { IsAbstract: false } named || destination.TypeKind is not (TypeKind.Class or TypeKind.Struct)
             || (destination.TypeKind == TypeKind.Class && !named.InstanceConstructors.Any(c => c.Parameters.Length == 0 && c.DeclaredAccessibility == Accessibility.Public)))
         {
@@ -174,12 +213,14 @@ public class CreateMapPattern : ISolutionPattern
                 }
 
                 ITypeSymbol targetType = target is IPropertySymbol property ? property.Type : ((IFieldSymbol)target).Type;
-                if (MapFromProblem(target.Name, mapFromLambda, model, profileType, targetType, destination, values, out string value, out bool copies) is string mapFromProblem)
+                if (MapFromProblem(target.Name, mapFromLambda, model, profileType, targetType, destination, values, out string value, out bool copies,
+                    out string expression, out ITypeSymbol? expressionType) is string mapFromProblem)
                 {
                     return mapFromProblem;
                 }
 
                 members.Add((target.Name, value));
+                read.Add(new ProjectionMember { Name = target.Name, Value = expression, From = expressionType!, To = targetType });
                 copied ??= copies ? target.Name : null;
                 continue;
             }
@@ -216,6 +257,7 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             members.Add((target.Name, assigned));
+            read.Add(new ProjectionMember { Name = target.Name, Value = "source." + target.Name, From = from, To = to });
             copied ??= copy ? target.Name : null;
         }
 
@@ -226,10 +268,12 @@ public class CreateMapPattern : ISolutionPattern
     // AutoMapper runs a MapFrom expression null-safe (a NullReferenceException gives the default value) and converts types
     // where needed, a plain assignment does neither: so only expressions that cannot throw and need no conversion are moved.
     private static string? MapFromProblem(string member, SimpleLambdaExpressionSyntax lambda, SemanticModel model, INamedTypeSymbol? profileType,
-        ITypeSymbol targetType, ITypeSymbol destination, MemberValues values, out string value, out bool copies)
+        ITypeSymbol targetType, ITypeSymbol destination, MemberValues values, out string value, out bool copies, out string read, out ITypeSymbol? readType)
     {
         value = "";
         copies = false;
+        read = "";
+        readType = null;
         if (lambda.Body is not ExpressionSyntax body || model.GetDeclaredSymbol(lambda.Parameter) is not IParameterSymbol parameter || lambda.AsyncKeyword != default)
         {
             return $"MapFrom for {member} is not a lambda with an expression body";
@@ -284,6 +328,8 @@ public class CreateMapPattern : ISolutionPattern
             ? body
             : body.ReplaceNodes(parameterUses, (original, _) => SyntaxFactory.IdentifierName("source").WithTriviaFrom(original));
         value = replaced.WithoutTrivia().ToString();
+        read = value;
+        readType = from;
         if (values.Problem("MapFrom for " + member, value, from, targetType, destination, out string? mapped, out copies) is string valueProblem)
         {
             return valueProblem;
@@ -464,7 +510,8 @@ public class CreateMapPattern : ISolutionPattern
 
     // The static class goes right after the profile, with its indentation and line endings.
     private static MemberDeclarationSyntax Extensions(ClassDeclarationSyntax profile, string className, string access,
-        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto)> maps)
+        List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto)> maps,
+        List<(TypeSyntax Source, TypeSyntax Destination, string Name, List<(string Name, string Value)> Members)> projections)
     {
         string indent = profile.GetLeadingTrivia().LastOrDefault(t => t.IsKind(SyntaxKind.WhitespaceTrivia)).ToString();
         string eol = profile.SyntaxTree.GetRoot().DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia)).ToString() is { Length: > 0 } found
@@ -508,6 +555,26 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             text.Append(indent).Append("        return destination;").Append(eol).Append(indent).Append("    }").Append(eol);
+        }
+
+        // Properties, not methods: MapCallPattern counts only the ToB methods.
+        foreach ((TypeSyntax source, TypeSyntax destination, string name, List<(string Name, string Value)> members) in projections)
+        {
+            text.Append(eol).Append(indent).Append("    ").Append(access).Append(" static Expression<Func<").Append(source).Append(", ").Append(destination)
+                .Append(">> ").Append(name).Append(" => source => new ").Append(destination);
+            if (members.Count == 0)
+            {
+                text.Append("();").Append(eol);
+                continue;
+            }
+
+            text.Append(eol).Append(indent).Append("    {").Append(eol);
+            foreach ((string member, string value) in members)
+            {
+                text.Append(indent).Append("        ").Append(member).Append(" = ").Append(value).Append(',').Append(eol);
+            }
+
+            text.Append(indent).Append("    };").Append(eol);
         }
 
         text.Append(indent).Append('}').Append(eol);

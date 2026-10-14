@@ -219,7 +219,7 @@ public class MemberValues
     }
 
     // An array, List<T> or one of the interfaces AutoMapper fills with a List<T>; other collections (sets, dictionaries, own types) are not copied.
-    private static bool TryElement(ITypeSymbol type, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out ITypeSymbol? element, out bool array)
+    internal static bool TryElement(ITypeSymbol type, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out ITypeSymbol? element, out bool array)
     {
         element = null;
         array = type is IArrayTypeSymbol;

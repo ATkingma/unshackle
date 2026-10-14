@@ -46,7 +46,8 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberMapFromPattern
 | Manual "without options"       | resolver lambda, string name, generic, X twice               | unit test (resolver lambdas: `automapper.value-resolver`, TAAK-254)                 |
 | Manual "no public setter"      | X has no public setter                                       | unit test                                  |
 | Manual "not available outside" | the expression uses an instance member of the profile        | `outside-profile`                          |
-| Manual "which may be null"     | the receiver is not `s`/a type and not NotNull               | `null-deref`, unit test                    |
+| Fixed (`X = source.A?.B`)      | receiver may be null and the expression is a plain member chain (TAAK-263); `?? default` for a value type | `may-be-null`, `reverse-map-may-be-null`, unit test |
+| Manual "which may be null"     | receiver may be null and the expression is anything else (call, indexer) | `may-be-null-call`                         |
 | Manual "AutoMapper converts"   | type of the expression unequal to the type of X and no built-in conversion this fix writes (TAAK-247) | `CreateMap/conversion-operator`; `conversion` is rewritten since TAAK-247 |
 | Manual "is a collection"       | X is a collection of another kind (dictionary, set); lists and arrays are copied since TAAK-245 ([automapper-nested-maps-modellen.md](automapper-nested-maps-modellen.md)) | `CreateMap/collection-dictionary` |
 | Fixed (`X = expr`)             | everything above passed                                      | `simple`, `ignore-and-nullable`, unit tests |

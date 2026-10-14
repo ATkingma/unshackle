@@ -44,6 +44,11 @@ public class Projections
         (ITypeSymbol source, ITypeSymbol destination, IReadOnlyList<ProjectionMember> mapMembers) = _maps[key];
         foreach (ProjectionMember member in mapMembers)
         {
+            if (member.Problem is not null)
+            {
+                return $"ProjectTo<{destination.Name}> from {source.Name}: {member.Problem}; write the projection by hand";
+            }
+
             if (Value(member.Name, member.Value, member.From, member.To, [key], out string value) is string problem)
             {
                 return $"ProjectTo<{destination.Name}> from {source.Name}: {problem}; write the projection by hand";
@@ -132,6 +137,11 @@ public class Projections
         List<string> inner = [.. path, key];
         foreach (ProjectionMember member in members)
         {
+            if (member.Problem is not null)
+            {
+                return $"{what}.{member.Name}: {member.Problem}";
+            }
+
             if (Value(what + "." + member.Name, Substitute(member.Value, receiver), member.From, member.To, inner, out string value) is string problem)
             {
                 return problem;

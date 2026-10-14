@@ -149,6 +149,22 @@ public class ProjectToPatternTests
     }
 
     [Fact]
+    public async Task FixAsync_MapFromThroughMaybeNullMember_ProjectionIsManual()
+    {
+        // Arrange: nullable oblivious, so Order.Address may be null; ToOrderDto can say ?. like AutoMapper's null-safe MapFrom, an expression tree cannot.
+        string profile = Profile.ReplaceLineEndings("\n")
+            .Replace("        CreateMap<Order, OrderDto>();\n", "        CreateMap<Order, OrderDto>().ForMember(d => d.Id, o => o.MapFrom(s => s.Address.City.Length));\n", StringComparison.Ordinal);
+        Solution solution = Create(("Profile.cs", profile), ("Queries.cs", Queries));
+
+        // Act
+        FixReport report = await new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains("an expression tree throws"), string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
+        (await TextAsync(report.Solution, "Queries.cs")).ShouldContain("ProjectTo<Shop.Mapping.OrderDto>");
+    }
+
+    [Fact]
     public async Task FixAsync_NoProjectToCall_WritesNoProjection()
     {
         // Arrange

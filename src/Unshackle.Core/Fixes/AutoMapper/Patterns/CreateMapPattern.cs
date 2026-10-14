@@ -523,14 +523,14 @@ public class CreateMapPattern : ISolutionPattern
                 }
 
                 ITypeSymbol targetType = target is IPropertySymbol property ? property.Type : ((IFieldSymbol)target).Type;
-                if (MapFromProblem(target.Name, mapFromLambda, model, profileType, targetType, destination, values, out string value, out bool copies,
-                    out string expression, out ITypeSymbol? expressionType) is string mapFromProblem)
+                if (MapFromProblem(target.Name, mapFromLambda, model, profileType, targetType, destination, values, nullSafe: true, out string value, out bool copies,
+                    out string expression, out ITypeSymbol? expressionType, out string? readProblem) is string mapFromProblem)
                 {
                     return mapFromProblem;
                 }
 
                 members.Add((target.Name, value));
-                read?.Add(new ProjectionMember { Name = target.Name, Value = expression, From = expressionType!, To = targetType });
+                read?.Add(new ProjectionMember { Name = target.Name, Value = expression, From = expressionType!, To = targetType, Problem = readProblem });
                 copied ??= copies ? target.Name : null;
                 continue;
             }
@@ -671,7 +671,7 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             ITypeSymbol innerType = inner is IPropertySymbol innerProperty ? innerProperty.Type : ((IFieldSymbol)inner).Type;
-            if (MapFromProblem(target.Name + "." + member, mapFrom, model, profileType, innerType, named, values, out string value, out _, out _, out _) is string problem)
+            if (MapFromProblem(target.Name + "." + member, mapFrom, model, profileType, innerType, named, values, nullSafe: false, out string value, out _, out _, out _, out _) is string problem)
             {
                 return problem;
             }
@@ -704,7 +704,7 @@ public class CreateMapPattern : ISolutionPattern
                 return $"{destination.Name}.{name} has an initializer or {destination.Name} a constructor of its own: when the Condition is false AutoMapper keeps that value, which an object initializer cannot";
             }
 
-            if (MapFromProblem("Condition of " + name, lambda, model, profileType, boolean, destination, values, out string condition, out _, out _, out _) is string problem)
+            if (MapFromProblem("Condition of " + name, lambda, model, profileType, boolean, destination, values, nullSafe: false, out string condition, out _, out _, out _, out _) is string problem)
             {
                 return problem;
             }
@@ -932,9 +932,10 @@ public class CreateMapPattern : ISolutionPattern
     // AutoMapper runs a MapFrom expression null-safe (a NullReferenceException gives the default value) and converts types
     // where needed, a plain assignment does neither: so only expressions that cannot throw and need no conversion are moved.
     private static string? MapFromProblem(string member, SimpleLambdaExpressionSyntax lambda, SemanticModel model, INamedTypeSymbol? profileType,
-        ITypeSymbol targetType, ITypeSymbol destination, MemberValues values, out string value, out bool copies,
-        out string read, out ITypeSymbol? readType)
+        ITypeSymbol targetType, ITypeSymbol destination, MemberValues values, bool nullSafe, out string value, out bool copies,
+        out string read, out ITypeSymbol? readType, out string? readProblem)
     {
+        readProblem = null;
         value = "";
         copies = false;
         read = "";
@@ -945,6 +946,7 @@ public class CreateMapPattern : ISolutionPattern
         }
 
         string parameterName = parameter.Name;
+        string? nullProblem = null;
         List<SimpleNameSyntax> parameterUses = [];
         foreach (SyntaxNode node in body.DescendantNodesAndSelf())
         {
@@ -977,9 +979,20 @@ public class CreateMapPattern : ISolutionPattern
                     break;
             }
 
-            if (receiver is not null && MayBeNull(receiver, model, parameter))
+            if (receiver is not null && nullProblem is null && MayBeNull(receiver, model, parameter))
             {
-                return $"MapFrom for {member} dereferences {receiver.ToString().Trim()}, which may be null (AutoMapper returns the default value, a plain assignment throws)";
+                nullProblem = $"MapFrom for {member} dereferences {receiver.ToString().Trim()}, which may be null (AutoMapper returns the default value, a plain assignment throws)";
+            }
+        }
+
+        // A plain chain of members is null-safe with ?. (and ?? default for a value type): the same default AutoMapper returns (TAAK-263).
+        string? chain = null;
+        if (nullProblem is not null)
+        {
+            chain = nullSafe ? NullSafeChain(body, model, parameter) : null;
+            if (chain is null)
+            {
+                return nullProblem;
             }
         }
 
@@ -995,9 +1008,23 @@ public class CreateMapPattern : ISolutionPattern
         value = replaced.WithoutTrivia().ToString();
         read = value;
         readType = from;
+        bool nullable = from.IsValueType && from.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
+        if (chain is not null)
+        {
+            readProblem = nullProblem!.Replace("a plain assignment throws", "an expression tree throws", StringComparison.Ordinal);
+            value = from.IsValueType && !nullable ? chain + " ?? default"
+                : values.NullableWarnings && targetType.IsReferenceType && targetType.NullableAnnotation == NullableAnnotation.NotAnnotated ? chain + "!" : chain;
+        }
+
+        string plainValue = value;
         if (values.Problem("MapFrom for " + member, value, from, targetType, destination, out string? mapped, out copies) is string valueProblem)
         {
             return valueProblem;
+        }
+
+        if (chain is not null && mapped is not null && mapped != plainValue)
+        {
+            return nullProblem;
         }
 
         if (mapped is not null)
@@ -1012,6 +1039,33 @@ public class CreateMapPattern : ISolutionPattern
         }
 
         return null;
+    }
+
+    // `source.A?.B.C`: body (a plain chain of properties and fields from the lambda parameter) over the name source, with ?. after every
+    // receiver that may be null, or null when body is anything else.
+    private static string? NullSafeChain(ExpressionSyntax body, SemanticModel model, IParameterSymbol parameter)
+    {
+        List<MemberAccessExpressionSyntax> links = [];
+        ExpressionSyntax current = Unwrap(body);
+        while (current is MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access
+            && model.GetSymbolInfo(access).Symbol is IPropertySymbol { IsStatic: false } or IFieldSymbol { IsStatic: false })
+        {
+            links.Insert(0, access);
+            current = Unwrap(access.Expression);
+        }
+
+        if (links.Count == 0 || current is not IdentifierNameSyntax name || !SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(name).Symbol, parameter))
+        {
+            return null;
+        }
+
+        StringBuilder chain = new("source");
+        foreach (MemberAccessExpressionSyntax link in links)
+        {
+            chain.Append(MayBeNull(link.Expression, model, parameter) ? "?." : ".").Append(link.Name.Identifier.ValueText);
+        }
+
+        return chain.ToString();
     }
 
     // A name that is read (not the right side of a.b, an initializer member, a named argument or a property name of an anonymous type).

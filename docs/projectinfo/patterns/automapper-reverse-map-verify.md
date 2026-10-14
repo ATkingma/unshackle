@@ -22,7 +22,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` (`Rewri
 | REQ-6  | Met     | `CreateMap/reverse-map-nested` (`Job = source.Job?.ToJob()`, list copy through `ToJob`)                        |
 | REQ-7  | Met     | `_Combined/reverse-map-call` (`dto.ToOrder()`, `dto.MapInto(order)`), unit test `FixAsync_ReverseMapInOtherFile_CallsReverseMethod` |
 | REQ-8  | Met     | `ForMemberMapFrom/reverse-map-unflattening`, unit test cases "maps the whole A", "may be unflattened into A.Customer" |
-| REQ-9  | Met     | `CreateMap/reverse-map-get-method`, `ForMemberMapFrom/reverse-map-null-deref`, unit test cases "casts", "both read Id", "cannot be written", method `code()` |
+| REQ-9  | Met     | `CreateMap/reverse-map-get-method`, `ForMemberMapFrom/reverse-map-may-be-null` (plain chain, TAAK-263), unit test cases "casts", "both read Id", "cannot be written", method `code()` |
 | REQ-10 | Met     | `CreateMap/reverse-map-options` (jhipster `ForPath`), `CreateMap/reverse-map-duplicate`                       |
 
 ## Deviations

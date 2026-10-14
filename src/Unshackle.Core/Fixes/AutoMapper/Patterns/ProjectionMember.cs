@@ -15,4 +15,7 @@ public class ProjectionMember
     public required ITypeSymbol From { get; init; }
 
     public required ITypeSymbol To { get; init; }
+
+    /// <summary>Why a projection cannot read this member as is (an expression tree throws where AutoMapper returns the default), or null.</summary>
+    public string? Problem { get; init; }
 }

@@ -1,0 +1,1 @@
+Condition for Version is not a lambda of the source alone

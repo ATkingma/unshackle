@@ -198,7 +198,8 @@ public class MemberValues
             return $"{source.Name} already has a member {map.Method}, so the extension method would not be called";
         }
 
-        if (Reaches(destination, outer))
+        // A converter does not map members, so it cannot recurse.
+        if (!map.Converts && Reaches(destination, outer))
         {
             return $"{destination.Name} can lead back to {outer.Name}, a cycle (AutoMapper keeps the references, a mapping method would recurse)";
         }
@@ -213,6 +214,8 @@ public class MemberValues
         {
             (true, _, _) => $"{receiver}?.{map.Method}()",
             (false, true, _) => $"{receiver}.{map.Method}()",
+            // Measured (TAAK-253): AutoMapper calls a ConvertUsing converter with a null member or element too.
+            _ when map.Converts => receiver + (_nullableWarnings && from.NullableAnnotation == NullableAnnotation.Annotated ? "!" : "") + $".{map.Method}()",
             // AutoMapper gives a null source the default struct (not one made by its parameterless constructor).
             (false, false, true) => $"{receiver}?.{map.Method}() ?? default",
             // AutoMapper writes null into a non-nullable member too; the ! keeps that without a warning.
@@ -222,7 +225,7 @@ public class MemberValues
     }
 
     // An array, List<T> or one of the interfaces AutoMapper fills with a List<T>; other collections (sets, dictionaries, own types) are not copied.
-    private static bool TryElement(ITypeSymbol type, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out ITypeSymbol? element, out bool array)
+    internal static bool TryElement(ITypeSymbol type, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out ITypeSymbol? element, out bool array)
     {
         element = null;
         array = type is IArrayTypeSymbol;

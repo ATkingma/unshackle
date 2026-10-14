@@ -80,9 +80,8 @@ State on 2026-10-14 (see `claude/docs/overdracht.md` for the ongoing work).
 | 3 | MediatR → Mediator: handlers, `ValueTask`, DI registration (behaviors → report) | 100%: 7 of 9 corpus projects fully migrated and green; evo1/evo2 rightly Manual |
 | 4 | Launch: README with GIF, NuGet, testing on a real open-source project, post on r/dotnet | Done in substance (TAAK-019); waiting on the user (publishing, post) |
 | 5 | AutoMapper → hand-written mapping (`ToB()` extensions) | ~40%: patterns create-map, ignore, map-from, map-call, map-into, add-automapper done (TAAK-146, -155..159). First work it out further (row 7 + frequently used advanced APIs), then a large corpus run as for FA/MediatR |
-| 6 | Later: make the engine available separately as a general search-and-replace (working title SharpGrep) | Not started |
 
 ## Risks
-- **The hype fades.** Hence keep the engine generic (see step 6).
+- **The hype fades.** Hence keep the engine generic (a separate general search-and-replace was considered and dropped from the roadmap, 2026-10-14).
 - **Small differences in behaviour.** Hence always a report and `--dry-run` first, and run the user's tests after the fix.
 - **Others come out with separate converters.** Speed matters.

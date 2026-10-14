@@ -6,17 +6,19 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 802 proofs (excluding `_Pending`).
+Total: 852 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
-### _Combined (3)
+### _Combined (5)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
 | `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
 | `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
+| `nested-map-call` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `} public static class OrderProfileExtensions` |
+| `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
 
 ### AddAutoMapper (4)
 
@@ -27,15 +29,24 @@ Total: 802 proofs (excluding `_Pending`).
 | `result-used` | Manual |  — reason: The result of AddAutoMapper is used |
 | `simple` | Fixed | `services.AddAutoMapper(typeof(OrderProfile).Assembly);` →  |
 
-### CreateMap (7)
+### CreateMap (16)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
-| `collection` | Manual | `CreateMap<Order, OrderDto>();` — reason: is a collection |
+| `collection` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `collection-dictionary` | Manual | `CreateMap<Order, OrderDto>();` — reason: is a collection of a kind this fix does not copy |
 | `constructor` | Manual | `CreateMap<Order, OrderDto>();` — reason: has no public parameterless constructor |
 | `conversion` | Manual | `CreateMap<Order, OrderDto>();` — reason: (AutoMapper converts) |
 | `flattening` | Manual | `CreateMap<Order, OrderDto>();` — reason: has no member with the same name |
 | `internal-types` | Fixed | `CreateMap<Order, OrderDto>();` → `internal static class OrderProfileExtensions {` |
+| `nested` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `public static class OrderProfileExtensions {` |
+| `nested-collections` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Line, LineDto>();` → `public static class OrderProfileExtensions {` |
+| `nested-cycle` | Manual | `CreateMap<Category, CategoryDto>();` — reason: a cycle |
+| `nested-no-map` | Manual | `CreateMap<Order, OrderDto>();` — reason: no profile this fix rewrites has a CreateMap<Address, AddressDto> |
+| `nested-nullable` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `public static class OrderProfileExtensions {` |
+| `nested-other-profile` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>();` → `} public static class AddressProfileExtensions` |
+| `nested-same-type` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, Address>();` → `public static class OrderProfileExtensions {` |
+| `nested-several` | Manual | `CreateMap<Order, OrderDto>();` — reason: several profiles map Address to AddressDto |
 | `options` | Manual | `CreateMap<Order, OrderDto>().ReverseMap();` — reason: is not a CreateMap<A, B>() without options |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>(); CreateMap<Tag, TagDto>();` → `public static class ProductProfileExtensions {` |
 
@@ -49,13 +60,14 @@ Total: 802 proofs (excluding `_Pending`).
 | `string-name` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Rank, o => o.Ignore()).ForMember("Note", o => o.Ignore());` — reason: is not a CreateMap<A, B>() without options |
 | `unmatched` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore());` — reason: OrderDto.Rank has no member with the same name in Order |
 
-### ForMemberMapFrom (7)
+### ForMemberMapFrom (8)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
-| `collection` | Manual | `CreateMap<Order, OrderDto>()` — reason: is a collection |
+| `collection` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Text, o => o.Ignore())` → `public static class OrderProfileExtensions {` |
 | `conversion` | Manual | `CreateMap<Order, OrderDto>()` — reason: (AutoMapper converts) |
 | `ignore-and-nullable` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `public static class OrderProfileExtensions {` |
+| `nested` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Shipping, o => o.MapFrom(s => s.Home))` → `public static class OrderProfileExtensions {` |
 | `null-deref` | Manual | `CreateMap<Order, OrderDto>()` — reason: which may be null |
 | `outside-profile` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not available outside the profile |
 | `resolver-form` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not a CreateMap<A, B>() without options |
@@ -87,17 +99,20 @@ Total: 802 proofs (excluding `_Pending`).
 
 ## FluentAssertions
 
-### _Combined (11)
+### _Combined (14)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `akka-own-kit-mixed` | Fixed | `reply.Should().NotBeNull(); members.Should().Contain("node-1");` → `reply.ShouldNotBeNull(); members.ShouldContain("node-1");` |
 | `all-satisfy-be` | Fixed | `orders.Should().AllSatisfy(o => o.Total.Should().Be(20m));` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
 | `all-satisfy-other` | Fixed | `orders.Should().AllSatisfy(o => o.Note.Should().NotBeNull();` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
 | `lambda-overload-one-run` | Fixed | `ctx.Should().Be(context); maybe2.HasValue.Should().BeTrue();` → `ctx.ShouldBe(context); maybe2.HasValue.ShouldBeTrue();` |
+| `litedb-bson-assertions` | Fixed | `docs.Length.Should().BeOneOf(1, 101); first.Should().BeOneOf("owner1", "owner2");` → `docs.Length.ShouldBeOneOf(1, 101); first.ShouldBeOneOf("owner1", "owner2");` |
 | `manual-and-fixed` | Fixed | `y.Should().Be(1); y.Should().Be(2);` → `y.ShouldBe(1); y.ShouldBe(2);` |
 | `mixed` | Fixed | `order.Id.Should().Be(1); order.Total.Should().BeGreaterThan(10m).And.BeLessThan(30m);` → `order.Id.ShouldBe(1); order.Total.ShouldBeGreaterThan(10m);` |
 | `scope-using-block` | Fixed | `{ x.Should().Be(1);` → `x.ShouldSatisfyAllConditions( () => { x.ShouldBe(1); },` |
 | `scope-using-var` | Fixed | `y.Should().Be(2); name.Should().StartWith("a");` → `y.ShouldSatisfyAllConditions( () => { y.ShouldBe(2); },` |
+| `steeltoe-http-client` | Fixed | `httpClient.Timeout.Should().Be(30.Seconds()); httpClient.DefaultRequestHeaders.UserAgent.Should().ContainSingl…` → `httpClient.Timeout.ShouldBe(TimeSpan.FromSeconds(30)); httpClient.DefaultRequestHeaders.UserAgent.ShouldHaveSi…` |
 | `usings` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
 | `usings-existing` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
 | `usings-sorted` | Fixed | `Calc.Sum(values).Should().Be(3);` → `Calc.Sum(values).ShouldBe(3);` |
@@ -123,7 +138,7 @@ Total: 802 proofs (excluding `_Pending`).
 | `typed-parameter` | Fixed | `x.Should().AllSatisfy((int i) => Check(i));` → `x.ShouldNotBeEmpty(); foreach (int i in x)` |
 | `used` | Manual | `x.Should().AllSatisfy(i => Check(i)).And.NotBeEmpty();` — reason: is used |
 
-### AndChain (46)
+### AndChain (47)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -155,6 +170,7 @@ Total: 802 proofs (excluding `_Pending`).
 | `not-contain-keys` | Fixed | `x.Should().NotContainKeys("a", "b");` → `x.ShouldNotContainKey("a"); x.ShouldNotContainKey("b");` |
 | `not-contain-value` | Fixed | `x.Should().NotContainValue(1);` → `x.Values.ShouldNotContain(1);` |
 | `not-contain-values` | Fixed | `x.Should().NotContainValues(1, 2);` → `x.Values.ShouldNotContain(1); x.Values.ShouldNotContain(2);` |
+| `not-empty-only-contain` | Fixed | `positions.Should().NotBeEmpty().And.OnlyContain(p => p % 8192 == 0);` → `positions.ShouldNotBeEmpty(); positions.ShouldAllBe(p => p % 8192 == 0);` |
 | `nullable` | Fixed | `name.Should().NotBeNull().And.Be("Ann");` → `name.ShouldNotBeNull(); name.ShouldBe("Ann");` |
 | `simple` | Fixed | `items.Should().NotBeEmpty().And.HaveCount(2); name.Should().NotBeNull().And.Be("Ann");` → `items.ShouldNotBeEmpty(); items.Count.ShouldBe(2);` |
 | `subject-call` | Fixed | `GetItems().Should().NotBeEmpty().And.HaveCount(2);` → `var subject = GetItems(); subject.ShouldNotBeEmpty();` |
@@ -197,10 +213,11 @@ Total: 802 proofs (excluding `_Pending`).
 | `nullable-not` | Manual | `d.Should().NotBeApproximately(1.5, 0.01);` — reason: nullable subject |
 | `simple` | Fixed | `d.Should().BeApproximately(1.5, 0.01); f.Should().BeApproximately(1.5f, 0.01f);` → `d.ShouldBe(1.5, 0.01); f.ShouldBe(1.5f, 0.01f);` |
 
-### BeEmpty (16)
+### BeEmpty (17)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `akka-own-kit` | Fixed | `pending.Should().BeEmpty();` → `pending.ShouldBeEmpty();` |
 | `and-chain` | Manual | `text.Should().NotBeNull().And.NotBeEmpty();` — reason: is not in the form |
 | `be-empty-list` | Fixed | `list.Should().BeEmpty();` → `list.ShouldBeEmpty();` |
 | `because` | Fixed | `list.Should().BeEmpty("fresh order"); text.Should().NotBeEmpty("must be filled");` → `list.ShouldBeEmpty("fresh order"); text.ShouldNotBeEmpty("must be filled");` |
@@ -274,10 +291,11 @@ Total: 802 proofs (excluding `_Pending`).
 | `simple` | Fixed | `s.Should().BeEquivalentTo("ab");` → `s.ShouldBe("ab", StringCompareShould.IgnoreCase);` |
 | `value-used` | Manual | `var c = s.Should().BeEquivalentTo("ab");` — reason: is used |
 
-### BeGreaterLess (21)
+### BeGreaterLess (22)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `akka-own-kit-ambiguous` | Manual | `received.Should().BeGreaterThan(0);` — reason: is ambiguous with Proofs.TestKit.SpecExtensions.ShouldBeGreaterThan (CS0121) |
 | `because` | Fixed | `x.Should().BeGreaterThan(1, "it grew"); x.Should().BeInRange(1, 5, "it is small");` → `x.ShouldBeGreaterThan(1, "it grew"); x.ShouldBeInRange(1, 5, "it is small");` |
 | `because-args` | Fixed | `x.Should().BeGreaterThan(1, "it is {0}", 1);` → `x.ShouldBeGreaterThan(1, string.Format(System.Globalization.CultureInfo.InvariantCulture, "it is {0}", 1));` |
 | `because-variable` | Manual | `x.Should().BeGreaterThan(1, why, 1);` — reason: becauseArgs whose because is no constant format string |
@@ -300,10 +318,11 @@ Total: 802 proofs (excluding `_Pending`).
 | `value-type-differs` | Manual | `score.Should<int>().BeGreaterThan(5);` — reason: differs from subject type |
 | `value-used` | Manual | `var c = x.Should().BeGreaterThan(1);` — reason: is used |
 
-### BeNull (15)
+### BeNull (16)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `akka-own-kit` | Fixed | `reply.Should().NotBeNull();` → `reply.ShouldNotBeNull();` |
 | `and-chain` | Manual | `text.Should().NotBeEmpty().And.NotBeNull();` — reason: is not in the form |
 | `be-null` | Fixed | `text.Should().BeNull();` → `text.ShouldBeNull();` |
 | `because` | Fixed | `text.Should().BeNull("not set yet"); text.Should().NotBeNull("must be set");` → `text.ShouldBeNull("not set yet"); text.ShouldNotBeNull("must be set");` |
@@ -320,10 +339,11 @@ Total: 802 proofs (excluding `_Pending`).
 | `struct` | Fixed | `entry.Should().NotBeNull("the check should be registered");` → `((object)entry).ShouldNotBeNull("the check should be registered");` |
 | `value-used` | Manual | `var constraint = text.Should().NotBeNull();` — reason: is used |
 
-### BeOfType (12)
+### BeOfType (13)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `akka-own-kit` | Fixed | `message.Should().BeOfType<string>();` → `message.ShouldBeOfType<string>();` |
 | `and` | Manual | `obj.Should().BeOfType<Dto>().And.NotBeNull();` — reason: is used |
 | `assertion-scope` | Manual | `obj.Should().BeOfType<Dto>();` — reason: AssertionScope |
 | `because` | Fixed | `obj.Should().BeOfType<Dto>("mapped");` → `obj.ShouldBeOfType<Dto>("mapped");` |
@@ -349,10 +369,11 @@ Total: 802 proofs (excluding `_Pending`).
 | `result-used` | Manual | `var c = a.Should().BeSameAs(b).And;` — reason: is used |
 | `simple` | Fixed | `a.Should().BeSameAs(b);` → `a.ShouldBeSameAs(b);` |
 
-### BeTrueFalse (13)
+### BeTrueFalse (14)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `akka-own-kit-ambiguous` | Manual | `terminated.Should().BeTrue();` — reason: is ambiguous with Proofs.TestKit.SpecExtensions.ShouldBeTrue (CS0121) |
 | `assertion-helper` | Manual | `candidate.Should().Throw<AssertionFailedException>();` — reason: Throw<XunitException> |
 | `be-false` | Fixed | `(a == b).Should().BeFalse();` → `(a == b).ShouldBeFalse();` |
 | `be-true` | Fixed | `flag.Should().BeTrue();` → `flag.ShouldBeTrue();` |
@@ -376,10 +397,11 @@ Total: 802 proofs (excluding `_Pending`).
 | `retry-filter` | Fixed | `if (!(e is AssertionFailedException) \|\| i == attempts)` → `if (!(e is AssertionFailedException \|\| e is ShouldAssertException) \|\| i == attempts)` |
 | `when-filter` | Fixed | `catch (Exception e) when (e is AssertionFailedException)` → `catch (Exception e) when (e is AssertionFailedException \|\| e is ShouldAssertException)` |
 
-### Contain (20)
+### Contain (21)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `akka-own-kit` | Fixed | `members.Should().Contain("node-1");` → `members.ShouldContain("node-1");` |
 | `and-chain` | Manual | `x.Should().NotBeEmpty().And.Contain(2);` — reason: is not in the form |
 | `because` | Fixed | `x.Should().Contain(2, "it was added"); text.Should().Contain("ab", "the prefix");` → `x.ShouldContain(2, "it was added"); text.ShouldContain("ab", Shouldly.Case.Sensitive, "the prefix");` |
 | `because-args` | Fixed | `x.Should().Contain(2, "it was {0}", "added");` → `x.ShouldContain(2, string.Format(System.Globalization.CultureInfo.InvariantCulture, "it was {0}", "added"));` |
@@ -485,10 +507,12 @@ Total: 802 proofs (excluding `_Pending`).
 | `unique` | Fixed | `x.Should().OnlyHaveUniqueItems();` → `x.ShouldBeUnique();` |
 | `unique-key` | Manual | `x.Should().OnlyHaveUniqueItems(s => s.Length);` — reason: key selector |
 
-### EqualSequence (16)
+### EqualSequence (18)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `akka-immutable-dictionary` | Fixed | `entries.Should().Equal(ImmutableDictionary<string, long>.Empty.Add("a", 1L).Add("b", 2L));` → `entries.ShouldBe(ImmutableDictionary<string, long>.Empty.Add("a", 1L).Add("b", 2L), ignoreOrder: true);` |
+| `akka-read-only-dictionary-literal` | Fixed | `counts.Should().Equal(new Dictionary<string, int> { ["a"] = 1, ["b"] = 2 });` → `counts.ShouldBe(new Dictionary<string, int> { ["a"] = 1, ["b"] = 2 }, ignoreOrder: true);` |
 | `and` | Manual | `x.Should().Equal(y).And.HaveCount(3);` — reason: .And |
 | `assertion-scope` | Manual | `x.Should().Equal(y);` — reason: AssertionScope |
 | `because` | Fixed | `x.Should().Equal(y, "order matters");` → `x.ShouldBe(y, ignoreOrder: false, "order matters");` |
@@ -544,10 +568,11 @@ Total: 802 proofs (excluding `_Pending`).
 | `without-strict-ordering` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithoutStrictOrdering());` → `a.ShouldBe(b, ignoreOrder: true);` |
 | `without-then-strict` | Fixed | `a.Should().BeEquivalentTo(b, o => o.WithoutStrictOrdering().WithStrictOrdering());` → `a.ShouldBe(b);` |
 
-### HaveCount (19)
+### HaveCount (20)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `akka-own-kit` | Manual | `acks.Should().HaveCount(2);` — reason: is ambiguous with Proofs.TestKit.SpecExtensions.ShouldBe (CS0121) |
 | `array` | Fixed | `x.Should().HaveCount(3);` → `x.Length.ShouldBe(3);` |
 | `because-args` | Fixed | `x.Should().HaveCount(2, "x {0}", y);` → `x.Count.ShouldBe(2, string.Format(System.Globalization.CultureInfo.InvariantCulture, "x {0}", y));` |
 | `chain` | Manual | `x.Should().HaveCount(2).And.Contain(1);` — reason: is used |
@@ -580,13 +605,14 @@ Total: 802 proofs (excluding `_Pending`).
 | `simple` | Fixed | `s.Should().HaveLength(5);` → `s.Length.ShouldBe(5);` |
 | `stream` | Manual | `s.Should().HaveLength(5);` — reason: stream |
 
-### Invoking (20)
+### Invoking (21)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `aggregate` | Manual | `order.Invoking(o => o.CancelAsync().Wait()).Should().Throw<InvalidOperationException>();` — reason: AggregateException |
 | `aggregate-parameter-and` | Manual | `task.Invoking(_ => _.Wait(TimeSpan.FromSeconds(3))).Should().Throw<Exception>().And.Should().Be(expected);` — reason: the unwrapped inner exception |
 | `aggregate-parameter-message` | Manual | `future.Invoking(f => f.Wait()).Should().Throw<Exception>().WithMessage("Stream failed.");` — reason: the unwrapped inner exception |
+| `akka-lambda-parameter-result` | Manual | `future.Invoking(f => f.Result).Should().Throw<InvalidOperationException>();` — reason: FluentAssertions unwraps AggregateException; Shouldly does not |
 | `assertion-scope` | Manual | `order.Invoking(o => o.Cancel()).Should().Throw<InvalidOperationException>();` — reason: AssertionScope |
 | `awaiting` | Fixed | `await order.Awaiting(o => o.CancelAsync()).Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(() => order.CancelAsync());` |
 | `awaiting-exactly` | Fixed | `await order.Awaiting(o => o.CancelAsync()).Should().ThrowExactlyAsync<InvalidOperationException>();` → `(await Should.ThrowAsync<InvalidOperationException>(() => order.CancelAsync())).ShouldBeOfType<InvalidOperatio…` |
@@ -754,10 +780,12 @@ Total: 802 proofs (excluding `_Pending`).
 | `string-elements` | Fixed | `x.Should().BeInDescendingOrder();` → `x.ShouldBeInOrder(SortDirection.Descending, System.StringComparer.Ordinal);` |
 | `string-key` | Fixed | `x.Should().BeInAscendingOrder(p => p.Sku);` → `x.Select(p => p.Sku).ShouldBeInOrder(SortDirection.Ascending, System.StringComparer.Ordinal);` |
 
-### ShouldBe (34)
+### ShouldBe (36)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `akka-object-subject-generic` | Fixed | `actual.Should().Be(expected);` → `actual.ShouldBe(expected);` |
+| `akka-own-kit-ambiguous` | Manual | `count.Should().Be(3);` — reason: is ambiguous with Proofs.TestKit.SpecExtensions.ShouldBe (CS0121) |
 | `assertion-scope-nested` | Manual | `x.Should().Be(1);` — reason: Inside an AssertionScope |
 | `assertion-scope-using-block` | Manual | `x.Should().Be(1);` — reason: Inside an AssertionScope |
 | `assertion-scope-using-var` | Manual | `x.Should().Be(1);` — reason: Inside an AssertionScope |
@@ -808,7 +836,7 @@ Total: 802 proofs (excluding `_Pending`).
 | `nullable` | Fixed | `s.Should().StartWith("Ti"); s.Should().NotBeNullOrWhiteSpace();` → `s.ShouldStartWith("Ti", Shouldly.Case.Sensitive); s.ShouldNotBeNullOrWhiteSpace();` |
 | `simple` | Fixed | `s.Should().StartWith("Ti"); s.Should().EndWith("me");` → `s.ShouldStartWith("Ti", Shouldly.Case.Sensitive); s.ShouldEndWith("me", Shouldly.Case.Sensitive);` |
 
-### Throw (46)
+### Throw (48)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -819,6 +847,7 @@ Total: 802 proofs (excluding `_Pending`).
 | `aggregate-helper-method` | Manual | `fail.Should().Throw<InvalidOperationException>();` — reason: unwraps AggregateException |
 | `aggregate-method-group` | Manual | `act.Should().Throw<InvalidOperationException>();` — reason: unwraps AggregateException |
 | `aggregate-wait` | Manual | `act.Should().Throw<InvalidOperationException>();` — reason: unwraps AggregateException |
+| `akka-own-kit` | Fixed | `tell.Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(tell);` |
 | `assertion-helper` | Manual | `candidate.Should().Throw<AssertionFailedException>();` — reason: Throw<XunitException> |
 | `because` | Fixed | `act.Should().Throw<InvalidOperationException>("it is shipped");` → `Should.Throw<InvalidOperationException>(act, "it is shipped");` |
 | `because-args` | Fixed | `act.Should().Throw<InvalidOperationException>("because {0}", 1);` → `Should.Throw<InvalidOperationException>(act, string.Format(System.Globalization.CultureInfo.InvariantCulture, …` |
@@ -829,6 +858,7 @@ Total: 802 proofs (excluding `_Pending`).
 | `edge-which-message` | Fixed | `string message = act.Should().Throw<Exception>().Which.Message;` → `string message = Should.Throw<Exception>(act).Message;` |
 | `func` | Fixed | `func.Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(func);` |
 | `lambda` | Fixed | `Action run = () => act.Should().Throw<InvalidOperationException>();` → `Action run = () => Should.Throw<InvalidOperationException>(act);` |
+| `litedb-helper-two-levels` | Manual | `candidate.Should().Throw<AssertionFailedException>();` — reason: rewrite the assertion and its Throw together by hand |
 | `message-because` | Fixed | `act.Should().Throw<InvalidOperationException>("a").WithMessage("*shipped*", "b");` → `Should.Throw<InvalidOperationException>(act, "a").Message.ShouldContain("shipped", Shouldly.Case.Insensitive, …` |
 | `message-because-args` | Fixed | `act.Should().Throw<InvalidOperationException>().WithMessage("*a*", "because {0}", 1);` → `Should.Throw<InvalidOperationException>(act).Message.ShouldContain("a", Shouldly.Case.Insensitive, string.Form…` |
 | `message-contains` | Fixed | `act.Should().Throw<InvalidOperationException>().WithMessage("*shipped*");` → `Should.Throw<InvalidOperationException>(act).Message.ShouldContain("shipped", Shouldly.Case.Insensitive);` |
@@ -859,7 +889,7 @@ Total: 802 proofs (excluding `_Pending`).
 | `value-func` | Manual | `func.Should().Throw<InvalidOperationException>();` — reason: reference type |
 | `value-used` | Fixed | `var exception = act.Should().Throw<InvalidOperationException>().Which;` → `var exception = Should.Throw<InvalidOperationException>(act);` |
 
-### ThrowAsync (31)
+### ThrowAsync (32)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -891,11 +921,12 @@ Total: 802 proofs (excluding `_Pending`).
 | `result-local-message-inner` | Fixed | `var ex = await act.Should().ThrowAsync<InvalidOperationException>() .WithMessage("The circuit is now open and …` → `var ex = await Should.ThrowAsync<InvalidOperationException>(act); ex.Message.ShouldBe("The circuit is now open…` |
 | `result-parenthesized-and` | Fixed | `(await act.Should().ThrowAsync<ArgumentException>()).And.ParamName.Should().Be("id");` → `(await Should.ThrowAsync<ArgumentException>(act)).ParamName.Should().Be("id");` |
 | `simple` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
+| `steeltoe-cancelled-plain` | Fixed | `await action.Should().ThrowAsync<OperationCanceledException>();` → `await Should.ThrowAsync<OperationCanceledException>(action);` |
 | `value-func` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>();` — reason: reference type |
 | `value-used` | Fixed | `var thrown = await act.Should().ThrowAsync<InvalidOperationException>();` → `var thrown = await Should.ThrowAsync<InvalidOperationException>(act);` |
 | `where` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>().Where(e => e.Message.Length > 0);` → `var exception = await Should.ThrowAsync<InvalidOperationException>(act); (exception.Message.Length > 0).Should…` |
 
-### ThrowExactly (12)
+### ThrowExactly (14)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -910,19 +941,32 @@ Total: 802 proofs (excluding `_Pending`).
 | `message` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>().WithMessage("Order*");` → `Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>().Message.ShouldStartWi…` |
 | `result-exactly-inner` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>().WithInnerException<ArgumentException>();` → `Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>().InnerException.Should…` |
 | `simple` | Fixed | `act.Should().ThrowExactly<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>();` |
+| `steeltoe-http-request-exception` | Fixed | `await action.Should().ThrowExactlyAsync<HttpRequestException>();` → `(await Should.ThrowAsync<HttpRequestException>(action)).ShouldBeOfType<HttpRequestException>();` |
+| `steeltoe-task-canceled-inner-timeout` | Manual | `(await action.Should().ThrowExactlyAsync<TaskCanceledException>()).WithInnerException<TimeoutException>();` — reason: Shouldly's ThrowAsync returns a new TaskCanceledException |
 | `value-used` | Fixed | `string message = act.Should().ThrowExactly<InvalidOperationException>().Which.Message;` → `string message = Should.Throw<InvalidOperationException>(act).ShouldBeOfType<InvalidOperationException>().Mess…` |
 
-### TimeSpanExtensions (7)
+### TimeSpanExtensions (18)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `akka-dilated` | Fixed | `public TimeSpan Test() => 3.Seconds().Dilated();` → `public TimeSpan Test() => TimeSpan.FromSeconds(3).Dilated();` |
+| `akka-field-initializer` | Fixed | `private static readonly TimeSpan Timeout = 10.Seconds(); public TimeSpan Remaining { get; } = 500.Milliseconds…` → `private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10); public TimeSpan Remaining { get; } = Time…` |
+| `akka-nullable-timeout` | Fixed | `ExpectMsg("done", 3.Seconds());` → `ExpectMsg("done", TimeSpan.FromSeconds(3));` |
 | `and` | Manual |  — reason: has no direct replacement |
+| `and-no-using-system` | Fixed | `public object Test() => 5.Seconds().And(3.Seconds());` → `public object Test() => TimeSpan.FromSeconds(5).And(TimeSpan.FromSeconds(3));` |
+| `at-computed` | Manual |  — reason: At(...) on a computed date: put the date in a local first |
+| `at-microseconds` | Manual |  — reason: At(...) with microseconds or nanoseconds has no DateTime constructor |
+| `at-timespan` | Fixed | `public string Test(DateTime date, TimeSpan time) => date.At(time).ToString("o"); public DateTime Month(TimeSpa…` → `public string Test(DateTime date, TimeSpan time) => (date.Date + time).ToString("o"); public DateTime Month(Ti…` |
+| `at-variable` | Fixed | `public DateTime Test(DateTime date) => date.At(9, 15, 30); public DateTime WithMilliseconds(DateTime date) => …` → `public DateTime Test(DateTime date) => new DateTime(date.Year, date.Month, date.Day, 9, 15, 30, 0, date.Kind);…` |
 | `month` | Fixed | `public DateTime Test(int year) => 1.March(year);` → `public DateTime Test(int year) => new DateTime(year, 3, 1);` |
+| `month-at` | Fixed | `public List<object> Departures() => [1.October(2008).At(12, 00), 3.October(2008).At(14, 30)];` → `public List<object> Departures() => [new DateTime(2008, 10, 1, 12, 00, 0), new DateTime(2008, 10, 3, 14, 30, 0…` |
 | `month-computed` | Manual |  — reason: with a computed day and year |
 | `no-using-system` | Fixed | `public object Test() => 5.Seconds();` → `public object Test() => TimeSpan.FromSeconds(5);` |
 | `offset` | Manual |  — reason: has no direct replacement |
 | `simple` | Fixed | `Wait(3.Seconds()); Wait(200.Milliseconds());` → `Wait(TimeSpan.FromSeconds(3)); Wait(TimeSpan.FromMilliseconds(200));` |
 | `static-call` | Fixed | `public TimeSpan Test() => FluentTimeSpanExtensions.Seconds(5);` → `public TimeSpan Test() => TimeSpan.FromSeconds(5);` |
+| `steeltoe-arithmetic` | Fixed | `public TimeSpan Test(bool slow) => slow ? 1.Minutes() + 30.Seconds() : 250.Milliseconds();` → `public TimeSpan Test(bool slow) => slow ? TimeSpan.FromMinutes(1) + TimeSpan.FromSeconds(30) : TimeSpan.FromMi…` |
+| `steeltoe-assert-argument` | Fixed | `httpClient.Timeout.Should().Be(30.Seconds());` → `httpClient.Timeout.Should().Be(TimeSpan.FromSeconds(30));` |
 
 ## MediatR
 
@@ -1020,7 +1064,7 @@ Total: 802 proofs (excluding `_Pending`).
 | `publisher` | Fixed | `public Task Publish(object notification, CancellationToken cancellationToken = default) {` → `public ValueTask Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = defa…` |
 | `with-logic` | Manual |  — reason: does more than complete |
 
-### NotificationHandler (10)
+### NotificationHandler (11)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1030,18 +1074,21 @@ Total: 802 proofs (excluding `_Pending`).
 | `edge-marker-interface` | Fixed | `public async Task Handle(OrderPlaced notification, CancellationToken cancellationToken)` → `public async ValueTask Handle(OrderPlaced notification, CancellationToken cancellationToken)` |
 | `edge-namespace-shadow` | Fixed | `public Task Handle(OrderPlaced notification, CancellationToken cancellationToken) => Task.CompletedTask;` → `public ValueTask Handle(OrderPlaced notification, CancellationToken cancellationToken) => ValueTask.CompletedT…` |
 | `explicit` | Manual | `Task INotificationHandler<Placed>.Handle(Placed notification, CancellationToken cancellationToken) => Task.Com…` — reason: explicit interface |
+| `kgr-publish-loop` | Fixed | `public Task Handle(MeetingCreated notification, CancellationToken cancellationToken) return Task.CompletedTask…` → `public ValueTask Handle(MeetingCreated notification, CancellationToken cancellationToken) return ValueTask.Com…` |
 | `null-return` | Manual | `public Task Handle(Placed notification, CancellationToken cancellationToken) => null!;` — reason: not a Task |
 | `other-task` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) => Task.Delay(notification.Id, ca…` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) => new ValueTask(Task.Delay(…` |
 | `other-task-block` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) return Task.CompletedTask;` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) return ValueTask.CompletedTa…` |
 | `two-handlers` | Fixed | `public Task Handle(Placed notification, CancellationToken cancellationToken) => Task.CompletedTask; public asy…` → `public ValueTask Handle(Placed notification, CancellationToken cancellationToken) => ValueTask.CompletedTask; …` |
 
-### PipelineBehavior (10)
+### PipelineBehavior (12)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `closed` | Fixed | `public Task<int> Handle(Register command, RequestHandlerDelegate<int> next, CancellationToken token) return Ta…` → `public ValueTask<int> Handle(Register command, MessageHandlerDelegate<Register, int> next, CancellationToken t…` |
 | `edge-notnull-constraint` | Fixed | `where TRequest : notnull public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRespons…` → `where TRequest : notnull, IMessage public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDe…` |
 | `edge-request-constraint` | Fixed | `public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToke…` → `public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest, TResponse> next, C…` |
+| `eshop-next-in-lambda` | Fixed | `public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToke…` → `public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest, TResponse> next, C…` |
+| `eshop-validator-throws` | Fixed | `public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToke…` → `public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest, TResponse> next, C…` |
 | `explicit` | Manual | `Task<TResponse> IPipelineBehavior<TRequest, TResponse>.Handle(TRequest request, RequestHandlerDelegate<TRespon…` — reason: explicit interface implementation |
 | `new-constraint` | Fixed | `where TRequest : class, new() public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRe…` → `where TRequest : class, IMessage, new() public async ValueTask<TResponse> Handle(TRequest request, MessageHand…` |
 | `next-passed` | Manual | `public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken canc…` — reason: Handle returns a Task that is not next() |
@@ -1050,7 +1097,7 @@ Total: 802 proofs (excluding `_Pending`).
 | `no-constraint` | Fixed | `public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken canc…` → `where TRequest : IMessage public ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest…` |
 | `open-async` | Fixed | `where TRequest : notnull public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRespons…` → `where TRequest : notnull, IMessage public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDe…` |
 
-### RequestHandler (16)
+### RequestHandler (18)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1063,10 +1110,12 @@ Total: 802 proofs (excluding `_Pending`).
 | `edge-own-command-name` | Fixed | `public async Task<int> Handle(Ping request, CancellationToken cancellationToken) public async Task<int> Execut…` → `public async ValueTask<int> Handle(Ping request, CancellationToken cancellationToken) public async Task<int> E…` |
 | `edge-own-command-name-global` | Fixed | `global using MediatR; public async Task<int> Handle(Ping request, CancellationToken cancellationToken)` → `global using Mediator; public async ValueTask<int> Handle(Ping request, CancellationToken cancellationToken)` |
 | `edge-primary-ctor` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => Task.FromResult(request.Id + cl…` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) => ValueTask.FromResult(reque…` |
+| `eshop-early-return` | Fixed | `public async Task<bool> Handle(CancelOrderCommand command, CancellationToken cancellationToken)` → `public async ValueTask<bool> Handle(CancelOrderCommand command, CancellationToken cancellationToken)` |
 | `explicit` | Manual | `Task<int> IRequestHandler<Query, int>.Handle(Query request, CancellationToken cancellationToken) =>` — reason: explicit interface implementation |
 | `from-result-block` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) return Task.FromResult(0);` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) return ValueTask.FromResult(0…` |
 | `from-result-expression` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => Task.FromResult(request.Id);` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) => ValueTask.FromResult(reque…` |
 | `generic` | Fixed | `public Task<T> Handle(Wrapped<T> request, CancellationToken ct) => Task.FromResult(request.Value);` → `public ValueTask<T> Handle(Wrapped<T> request, CancellationToken ct) => ValueTask.FromResult(request.Value);` |
+| `kgr-command-with-result` | Fixed | `where TCommand : ICommand<TResult> public class CreateMeetingCommand : ICommand<Guid>` → `where TCommand : global::Proofs.ICommand<TResult> public class CreateMeetingCommand : global::Proofs.ICommand<…` |
 | `null-return` | Manual | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => null!;` — reason: not a Task<T> |
 | `other-task` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => Task.Run(() => request.Id, canc…` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) => new ValueTask<int>(Task.Ru…` |
 | `token-name` | Fixed | `public async Task<int> Handle(Query query, CancellationToken token)` → `public async ValueTask<int> Handle(Query query, CancellationToken token)` |
@@ -1099,10 +1148,11 @@ Total: 802 proofs (excluding `_Pending`).
 | `through-interface` | Manual |  — reason: is called through the MediatR interface |
 | `unknown-response` | Manual |  — reason: the response type of T is unknown |
 
-### SendAsTask (5)
+### SendAsTask (6)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `eshop-mediator-extension` | Fixed | `List<Task> tasks = domainEvents.Select(domainEvent => mediator.Publish(domainEvent)).ToList();` → `List<Task> tasks = domainEvents.Select(domainEvent => mediator.Publish(domainEvent).AsTask()).ToList();` |
 | `nsubstitute-returns` | Fixed | `_mediator.Send(Arg.Any<IRequest<bool>>(), default).Returns(Task.FromResult(true)); _mediator.Send(Arg.Any<Quer…` → `_mediator.Send(Arg.Any<IRequest<bool>>(), default).Returns(ValueTask.FromResult(true)); _mediator.Send(Arg.Any…` |
 | `nsubstitute-returns-lambda` | Manual |  — reason: set up on an NSubstitute mock |
 | `null-conditional` | Manual |  — reason: called with ?. |

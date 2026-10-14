@@ -1,0 +1,19 @@
+title: "[Sequence] automapper.nested-maps" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+shape: sequence_diagram
+fixer: Fixer
+pattern: CreateMapPattern
+maps: NestedMaps
+values: MemberValues
+solution: Solution
+fixer -> pattern: "RewriteAsync(profile, model, solution, ct)"
+pattern -> maps: "FromAsync(model, solution, ct)"
+maps -> solution: "own compilation + GetProjectsThatThisProjectTransitivelyDependsOn: AddProfiles (CreateMap<A, B> per profile)"
+maps -> solution: "every project: NullSettingIn (AllowNullCollections / AllowNullDestinationValues)"
+maps -> pattern: "index by type pair" {style.stroke-dash: 3}
+pattern -> pattern: "Rewrite(node, model, mapInto, nested): TryParseMap per statement"
+pattern -> values: "Problem(name, source.X, from, to, B, out result, out copies) per member"
+values -> maps: "Find(A, B): NestedMap"
+values -> values: "Nested: LookupSymbols, Reaches(B, outer), namespace"
+values -> pattern: "source.X?.ToY() / ?.Select(..).ToList() ?? [] or Manual reason" {style.stroke-dash: 3}
+pattern -> pattern: "MapInto needed and copied? Manual"
+pattern -> fixer: "Fixed([empty profile, <Profile>Extensions], usings) or Manual(reason)" {style.stroke-dash: 3}

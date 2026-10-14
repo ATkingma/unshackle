@@ -20,7 +20,7 @@ Read this first if you are taking over this session. Then `CLAUDE.md` and `claud
    Green → FA = 100%, update the roadmap in `docs/projectinfo/project.md`.
 3. Then step 5: AutoMapper (`claude/tasks/automapper-queue.md`, ~40% done). User decision: first work it out further (split row 7), *then* a large corpus run. Priority FA → MediatR → AutoMapper, each to 100% first.
 
-**Roadmap:** 1 Scan 100% · 2 FA ~97% · 3 MediatR 100% (7/9; evo1/evo2 rightly Manual; kgrzybek archtests: warning TAAK-240) · 4 Launch ~80% (waiting on user) · 5 AutoMapper ~40% · 6 SharpGrep 0%.
+**Roadmap:** 1 Scan 100% · 2 FA ~97% · 3 MediatR 100% (7/9; evo1/evo2 rightly Manual; kgrzybek archtests: warning TAAK-240) · 4 Launch ~80% (waiting on user) · 5 AutoMapper ~40% (step 6 SharpGrep dropped by the user, 2026-10-14).
 
 **Corpus status:** FA round 4: 16/16 builds, 13/16 green; after TAAK-220..223 (round 5, partial run) LiteDB and Steeltoe also 0 regressions, Akka 1 (known).
 MediatR round 6: jason, ardalis, amantin, nadirbad, eShopOnWeb, dotnet/eShop, kgrzybek migrated.

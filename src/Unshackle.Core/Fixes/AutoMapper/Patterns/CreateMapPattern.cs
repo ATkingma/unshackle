@@ -11,7 +11,9 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// <summary>
 /// A Profile whose constructor only holds CreateMap&lt;A, B&gt;() calls without options → a static class next to it with
 /// one B ToB(this A source) per map, copying the members with the same name and type. Anything AutoMapper would do
-/// beyond that (conversion, flattening, collections, constructors) is Manual. The rewrite also understands
+/// beyond that (conversion, flattening, constructors) is Manual, except a member whose type pair has its own CreateMap in a profile this fix
+/// rewrites (X = source.X?.ToY()) and a list or array (copied into a new one, element by element through such a map), see <see cref="MemberValues"/>.
+/// The rewrite also understands
 /// ForMember(d => d.X, o => o.Ignore()) (see <see cref="ForMemberIgnorePattern"/>) and ForMember(d => d.X, o => o.MapFrom(s => expr))
 /// (see <see cref="ForMemberMapFromPattern"/>); those two claim the profiles that use them. With the solution, a map that a
 /// mapper.Map(source, destination) call uses also gets B MapInto(this A source, B destination) (see <see cref="MapIntoPattern"/>).
@@ -40,7 +42,7 @@ public class CreateMapPattern : ISolutionPattern
         });
 
     // Without the solution no MapInto is written: nothing says a Map(source, destination) call needs it.
-    public virtual PatternResult Rewrite(SyntaxNode node, SemanticModel model) => Rewrite(node, model, new HashSet<string>());
+    public virtual PatternResult Rewrite(SyntaxNode node, SemanticModel model) => Rewrite(node, model, new HashSet<string>(), nested: null);
 
     public virtual async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
@@ -48,12 +50,16 @@ public class CreateMapPattern : ISolutionPattern
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(solution);
         return node is ClassDeclarationSyntax
-            ? Rewrite(node, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken))
-            : Rewrite(node, model, new HashSet<string>());
+            ? Rewrite(node, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken), await NestedMaps.FromAsync(model, solution, cancellationToken))
+            : Rewrite(node, model, new HashSet<string>(), nested: null);
     }
 
-    // mapInto: the maps (MapIntoPattern.Key) that get a MapInto next to ToB.
-    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, IReadOnlySet<string> mapInto)
+    // The ToB methods of a profile, with nested maps of the whole solution; no MapInto (MapCallPattern only needs the method names).
+    internal static async Task<PatternResult> RewriteMethodsAsync(ClassDeclarationSyntax profile, SemanticModel model, Solution solution, CancellationToken cancellationToken) =>
+        Rewrite(profile, model, new HashSet<string>(), await NestedMaps.FromAsync(model, solution, cancellationToken));
+
+    // mapInto: the maps (MapIntoPattern.Key) that get a MapInto next to ToB. nested: the maps a member can call (null: this project's).
+    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, IReadOnlySet<string> mapInto, NestedMaps? nested)
     {
         if (node is InvocationExpressionSyntax)
         {
@@ -72,6 +78,8 @@ public class CreateMapPattern : ISolutionPattern
 
         List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto)> maps = [];
         bool isInternal = false;
+        HashSet<string> namespaces = new(StringComparer.Ordinal);
+        var values = new MemberValues(nested ?? NestedMaps.From(model), model, profile.SpanStart, namespaces);
         foreach (StatementSyntax statement in body.Statements)
         {
             if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out Dictionary<string, SimpleLambdaExpressionSyntax?>? options)
@@ -83,9 +91,16 @@ public class CreateMapPattern : ISolutionPattern
 
             ITypeSymbol sourceType = method.TypeArguments[0];
             ITypeSymbol destinationType = method.TypeArguments[1];
-            if (Problem(sourceType, destinationType, options, model, profileType, out List<(string Name, string Value)> members) is string problem)
+            if (Problem(sourceType, destinationType, options, model, profileType, values, out List<(string Name, string Value)> members, out string? copied) is string problem)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {problem}; write the mapping method by hand.");
+            }
+
+            bool needsMapInto = mapInto.Contains(MapIntoPattern.Key(sourceType, destinationType));
+            if (needsMapInto && copied is not null)
+            {
+                // Measured (TAAK-245): Map(source, destination) maps into the nested object or list the destination already has.
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: Map(source, destination) maps {copied} into the object or collection the destination already holds, MapInto would replace it; write MapInto by hand.");
             }
 
             Accessibility access = Weakest(Weakest(Effective(sourceType), Effective(destinationType)), Accessibility.Public);
@@ -95,7 +110,7 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             isInternal |= access == Accessibility.Internal;
-            maps.Add((source, destination, members, mapInto.Contains(MapIntoPattern.Key(sourceType, destinationType))));
+            maps.Add((source, destination, members, needsMapInto));
         }
 
         string className = profile.Identifier.ValueText + "Extensions";
@@ -106,15 +121,17 @@ public class CreateMapPattern : ISolutionPattern
 
         return PatternResult.Fixed([
             profile.ReplaceNode(body, body.WithStatements([])),
-            Extensions(profile, className, isInternal ? "internal" : "public", maps)]);
+            Extensions(profile, className, isInternal ? "internal" : "public", maps)], [.. namespaces.Order(StringComparer.Ordinal)]);
     }
 
     // Why the map cannot be written as plain assignments, or null with the destination members AutoMapper writes (and what to assign),
-    // each having a source member of the same name and type or a MapFrom expression.
+    // each having a source member of the same name and type (or one MemberValues maps) or a MapFrom expression. copied: the first member
+    // that gets a new object or collection.
     private static string? Problem(ITypeSymbol source, ITypeSymbol destination, Dictionary<string, SimpleLambdaExpressionSyntax?> options,
-        SemanticModel model, INamedTypeSymbol? profileType, out List<(string Name, string Value)> members)
+        SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out List<(string Name, string Value)> members, out string? copied)
     {
         members = [];
+        copied = null;
         if (destination is not INamedTypeSymbol { IsAbstract: false } named || destination.TypeKind is not (TypeKind.Class or TypeKind.Struct)
             || (destination.TypeKind == TypeKind.Class && !named.InstanceConstructors.Any(c => c.Parameters.Length == 0 && c.DeclaredAccessibility == Accessibility.Public)))
         {
@@ -154,12 +171,13 @@ public class CreateMapPattern : ISolutionPattern
                 }
 
                 ITypeSymbol targetType = target is IPropertySymbol property ? property.Type : ((IFieldSymbol)target).Type;
-                if (MapFromProblem(target.Name, mapFromLambda, model, profileType, targetType, out string value) is string mapFromProblem)
+                if (MapFromProblem(target.Name, mapFromLambda, model, profileType, targetType, destination, values, out string value, out bool copies) is string mapFromProblem)
                 {
                     return mapFromProblem;
                 }
 
                 members.Add((target.Name, value));
+                copied ??= copies ? target.Name : null;
                 continue;
             }
 
@@ -184,17 +202,18 @@ public class CreateMapPattern : ISolutionPattern
 
             ITypeSymbol from = match is IPropertySymbol fp ? fp.Type : ((IFieldSymbol)match).Type;
             ITypeSymbol to = target is IPropertySymbol tp ? tp.Type : ((IFieldSymbol)target).Type;
-            if (!SymbolEqualityComparer.Default.Equals(from, to))
+            if (values.Problem(target.Name, "source." + target.Name, from, to, destination, out string? assigned, out bool copy) is string valueProblem)
             {
-                return $"{target.Name} is {from.Name} in {source.Name} but {to.Name} in {destination.Name} (AutoMapper converts)";
+                return valueProblem;
             }
 
-            if (to.SpecialType != SpecialType.System_String && (to is IArrayTypeSymbol || to.AllInterfaces.Any(i => i.SpecialType == SpecialType.System_Collections_IEnumerable)))
+            if (assigned is null)
             {
-                return $"{target.Name} is a collection (AutoMapper copies it into a new one)";
+                return $"{target.Name} is {from.Name} in {source.Name} but {to.Name} in {destination.Name} (AutoMapper converts){MemberValues.NoMap(from, to)}";
             }
 
-            members.Add((target.Name, "source." + target.Name));
+            members.Add((target.Name, assigned));
+            copied ??= copy ? target.Name : null;
         }
 
         return null;
@@ -204,9 +223,10 @@ public class CreateMapPattern : ISolutionPattern
     // AutoMapper runs a MapFrom expression null-safe (a NullReferenceException gives the default value) and converts types
     // where needed, a plain assignment does neither: so only expressions that cannot throw and need no conversion are moved.
     private static string? MapFromProblem(string member, SimpleLambdaExpressionSyntax lambda, SemanticModel model, INamedTypeSymbol? profileType,
-        ITypeSymbol targetType, out string value)
+        ITypeSymbol targetType, ITypeSymbol destination, MemberValues values, out string value, out bool copies)
     {
         value = "";
+        copies = false;
         if (lambda.Body is not ExpressionSyntax body || model.GetDeclaredSymbol(lambda.Parameter) is not IParameterSymbol parameter || lambda.AsyncKeyword != default)
         {
             return $"MapFrom for {member} is not a lambda with an expression body";
@@ -257,21 +277,26 @@ public class CreateMapPattern : ISolutionPattern
             return $"MapFrom for {member} has no type of its own (a null literal, for one)";
         }
 
-        if (!SymbolEqualityComparer.Default.Equals(from, targetType)
-            && !(model.Compilation.ClassifyConversion(from, targetType) is { IsImplicit: true } conversion && (conversion.IsNumeric || conversion.IsNullable)))
-        {
-            return $"MapFrom for {member} is {from.Name} but {member} is {targetType.Name} (AutoMapper converts)";
-        }
-
-        if (targetType.SpecialType != SpecialType.System_String && (targetType is IArrayTypeSymbol || targetType.AllInterfaces.Any(i => i.SpecialType == SpecialType.System_Collections_IEnumerable)))
-        {
-            return $"MapFrom for {member} is a collection (AutoMapper copies it into a new one)";
-        }
-
         ExpressionSyntax replaced = parameterName == "source"
             ? body
             : body.ReplaceNodes(parameterUses, (original, _) => SyntaxFactory.IdentifierName("source").WithTriviaFrom(original));
         value = replaced.WithoutTrivia().ToString();
+        if (values.Problem("MapFrom for " + member, value, from, targetType, destination, out string? mapped, out copies) is string valueProblem)
+        {
+            return valueProblem;
+        }
+
+        if (mapped is not null)
+        {
+            value = mapped;
+            return null;
+        }
+
+        if (!(model.Compilation.ClassifyConversion(from, targetType) is { IsImplicit: true } conversion && (conversion.IsNumeric || conversion.IsNullable)))
+        {
+            return $"MapFrom for {member} is {from.Name} but {member} is {targetType.Name} (AutoMapper converts){MemberValues.NoMap(from, targetType)}";
+        }
+
         return null;
     }
 
@@ -392,7 +417,7 @@ public class CreateMapPattern : ISolutionPattern
         };
     }
 
-    private static bool IsProfile(INamedTypeSymbol type)
+    internal static bool IsProfile(INamedTypeSymbol type)
     {
         for (INamedTypeSymbol? current = type.BaseType; current is not null; current = current.BaseType)
         {
@@ -406,7 +431,7 @@ public class CreateMapPattern : ISolutionPattern
     }
 
     // The accessibility a type really has, through its containing types and type arguments.
-    private static Accessibility Effective(ITypeSymbol type) => type switch
+    internal static Accessibility Effective(ITypeSymbol type) => type switch
     {
         IArrayTypeSymbol array => Effective(array.ElementType),
         INamedTypeSymbol named => named.TypeArguments.Aggregate(
@@ -415,13 +440,17 @@ public class CreateMapPattern : ISolutionPattern
         _ => Accessibility.Public,
     };
 
-    private static Accessibility Weakest(Accessibility a, Accessibility b) => (a, b) switch
+    internal static Accessibility Weakest(Accessibility a, Accessibility b) => (a, b) switch
     {
         (Accessibility.Public, _) => b,
         (_, Accessibility.Public) => a,
         (Accessibility.Internal, Accessibility.Internal) => Accessibility.Internal,
         _ => Accessibility.Private,
     };
+
+    // ToB for CreateMap<A, B>: the last name of the destination type as written.
+    internal static string MethodName(TypeSyntax destination) =>
+        "To" + (destination is GenericNameSyntax generic ? generic.Identifier.ValueText : destination.ToString().Split('.')[^1]);
 
     // The static class goes right after the profile, with its indentation and line endings.
     private static MemberDeclarationSyntax Extensions(ClassDeclarationSyntax profile, string className, string access,
@@ -440,8 +469,7 @@ public class CreateMapPattern : ISolutionPattern
                 text.Append(eol);
             }
 
-            string name = destination is GenericNameSyntax generic ? generic.Identifier.ValueText : destination.ToString().Split('.')[^1];
-            text.Append(indent).Append("    ").Append(access).Append(" static ").Append(destination).Append(" To").Append(name)
+            text.Append(indent).Append("    ").Append(access).Append(" static ").Append(destination).Append(' ').Append(MethodName(destination))
                 .Append("(this ").Append(source).Append(" source) => new()");
             if (members.Count == 0)
             {

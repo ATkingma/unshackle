@@ -15,14 +15,6 @@ public class MapCallPattern : ISolutionPattern
 {
     private const string AutoMapperAssembly = "AutoMapper";
 
-    // Rewrite is the same for every profile pattern; only Find differs (which one claims the profile).
-    private readonly CreateMapPattern _profiles;
-
-    public MapCallPattern()
-    {
-        _profiles = new CreateMapPattern();
-    }
-
     public string Id => "automapper.map-call";
 
     public string Description =>
@@ -155,7 +147,7 @@ public class MapCallPattern : ISolutionPattern
 
     // Every CreateMap<A, B> in a profile the profile patterns rewrite, in the calling project or one it depends on: the generated method,
     // the namespace of its class (null: global) and whether it becomes internal.
-    internal async Task<List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)>> GeneratedAsync(Solution solution, SemanticModel model,
+    internal static async Task<List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)>> GeneratedAsync(Solution solution, SemanticModel model,
         ITypeSymbol sourceType, ITypeSymbol destination, CancellationToken cancellationToken)
     {
         string sourceName = sourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
@@ -177,7 +169,8 @@ public class MapCallPattern : ISolutionPattern
 
                 foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => CreateMapPattern.IsProfileWithMaps(c, profileModel)))
                 {
-                    if (_profiles.Rewrite(profile, profileModel) is not FixedResult { NewNodes: [ClassDeclarationSyntax rewritten, ClassDeclarationSyntax extensions] }
+                    // With the solution: a member may call the map of a profile in a project this one depends on.
+                    if (await CreateMapPattern.RewriteMethodsAsync(profile, profileModel, solution, cancellationToken) is not FixedResult { NewNodes: [ClassDeclarationSyntax rewritten, ClassDeclarationSyntax extensions] }
                         || rewritten.Members.OfType<ConstructorDeclarationSyntax>().FirstOrDefault()?.Body is null)
                     {
                         continue;

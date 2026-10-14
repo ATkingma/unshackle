@@ -18,7 +18,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `AutoM
 | REQ-2 | Met | `internal-types`                                                              |
 | REQ-3 | Met | `options`                                                                     |
 | REQ-4 | Met | `flattening`, unit test for case                                             |
-| REQ-5 | Met | `conversion`, `collection`, unittest `int[]`                                  |
+| REQ-5 | Met | `conversion`, unittest `int[]`; `collection` is rewritten since TAAK-245 (see [automapper-nested-maps-verify.md](automapper-nested-maps-verify.md)) |
 | REQ-6 | Met | `constructor`, unittest abstract                                              |
 | REQ-7 | Met | `map-into`                                                                    |
 

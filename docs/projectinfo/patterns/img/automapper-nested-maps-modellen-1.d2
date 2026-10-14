@@ -1,0 +1,15 @@
+title: "[Classes] automapper.nested-maps" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: right
+CreateMapPattern: {shape: class; "+RewriteAsync(node, model, solution, ct)"; "~RewriteMethodsAsync(profile, model, solution, ct)"; "-Rewrite(node, model, mapInto, nested)"; "-Problem(source, destination, options, model, profileType, values, out members, out copied)"; "-MapFromProblem(..., destination, values, out value, out copies)"; "~MethodName(destination)"}
+MemberValues: {shape: class; "+Problem(what, value, from, to, outer, out result, out copies)"; "-Nested(value, from, to, outer, out call)"; "-TryElement(type, out element, out array)"; "-Reaches(type, target)"; "-Empty(element, array)"}
+NestedMaps: {shape: class; "+From(model)"; "+FromAsync(model, solution, ct)"; "+Find(source, destination)"; "+NullSetting"}
+NestedMap: {shape: class; "+Method"; "+Namespace"; "+IsInternal"; "+Project"}
+MapCallPattern: {shape: class; "~GeneratedAsync(solution, model, source, destination, ct)"}
+Subclasses: "ForMemberIgnorePattern,\nForMemberMapFromPattern\n(share Rewrite)"
+Output: "<Profile>Extensions:\nX = source.X?.ToY()\nXs = source.Xs?.Select(x => x?.ToY()).ToList() ?? []"
+Subclasses -> CreateMapPattern: inherit
+CreateMapPattern -> MemberValues: per member
+MemberValues -> NestedMaps: Find(pair)
+NestedMaps -> NestedMap: holds
+MapCallPattern -> CreateMapPattern: RewriteMethodsAsync
+CreateMapPattern -> Output: writes

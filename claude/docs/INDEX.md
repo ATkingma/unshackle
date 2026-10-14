@@ -15,6 +15,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `docs/projectinfo/architectuur/core.md` | Fixer → Fix → Pattern (design + as built), SOLID |
 | `docs/projectinfo/architectuur/testen.md` | Proofs, types, mocking, samples |
 | `docs/projectinfo/architectuur/corpus.md` | Test corpus: FA API frequency in 14 projects, coverage, fix runs (FluentResults, Ardalis.Result) |
+| `docs/projectinfo/architectuur/corpus-automapper.md` | AutoMapper ≤14 survey: 20 repos (pinned, build status), API frequencies per project, recommended order of the AutoMapper queue |
 | `docs/projectinfo/architectuur/edge-cases.md` | Edge cases from open-source projects → `edge-*` proofs, pending bugs |
 | `docs/projectinfo/architectuur/proofs.md` | All proof tests per pattern with outcome and short explanation (generated: `python3 claude/tools/proofs-doc.py`) |
 | `docs/projectinfo/architectuur/rapportage.md` | Report formats |
@@ -46,6 +47,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | -------- | -------- |
 | `claude/tasks/` | Active tasks: `TAAK-NNN-<slug>.md` |
 | `claude/tasks/TAAK-019-lancering.md` | Next step: launch (real case, NuGet, public, README GIF) |
+| `claude/tasks/TAAK-244-automapper-corpus-survey.md` | AutoMapper ≤14 corpus survey: API frequencies per project, orders automapper-queue rows 9–15 |
 | `claude/tasks/archief/TAAK-220-throw-aggregateexception-uitpakken.md` | ✅ `Throw<T>()` on a blocking delegate, FA unwraps `AggregateException` (Akka.Streams, 9 regressions) |
 | `claude/tasks/archief/TAAK-221-throwasync-geannuleerde-task.md` | ✅ `ThrowAsync` on a cancelled task loses the real exception (Steeltoe, 18 regressions) |
 | `claude/tasks/archief/TAAK-222-meta-test-op-eigen-assertion-helper.md` | ✅ `Throw<XunitException>()` on a migrated own assertion helper (LiteDB, 26 regressions) |
@@ -179,6 +181,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-241-and-chain-repeated-statement.md` | ✅ TAAK-241 — `.And` chain: a repeated statement (`NotBeEmpty().And.OnlyContain`) is written once |
 | `claude/tasks/archief/TAAK-242-using-kept-when-call-unbound-until-import.md` | ✅ TAAK-242 — old using kept when a Manual call only binds after `using System;` is added (EventFlow) |
 | `claude/tasks/archief/TAAK-243-fa-datetime-at.md` | ✅ TAAK-243 — FA `d.At(h, m)` / `1.October(y).At(..)` / `d.At(time)` → `DateTime` constructor or `d.Date + time` |
+| `claude/tasks/archief/TAAK-245-automapper-nested-maps.md` | ✅ `automapper.nested-maps` — member with its own CreateMap → `source.X?.ToY()`, lists/arrays copied element by element (AutoMapper 14 null behaviour measured) |
 | `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: unused assembly parameter after AddMediator (IDE0060) → warning in the report |
 
 ## Skills

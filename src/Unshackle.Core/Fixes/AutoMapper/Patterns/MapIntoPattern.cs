@@ -16,14 +16,6 @@ public class MapIntoPattern : ISolutionPattern
     private const string AutoMapperAssembly = "AutoMapper";
     private const string MethodName = "MapInto";
 
-    // Finds the CreateMap the call needs; its Rewrite is the same for every profile pattern.
-    private readonly MapCallPattern _maps;
-
-    public MapIntoPattern()
-    {
-        _maps = new MapCallPattern();
-    }
-
     public string Id => "automapper.map-into";
 
     public string Description =>
@@ -55,7 +47,7 @@ public class MapIntoPattern : ISolutionPattern
         }
 
         List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)> generated =
-            await _maps.GeneratedAsync(solution, model, sourceType!, destination!, cancellationToken);
+            await MapCallPattern.GeneratedAsync(solution, model, sourceType!, destination!, cancellationToken);
         if (generated.Count == 0)
         {
             return PatternResult.Manual(NoMap(sourceType!, destination!));

@@ -8,10 +8,10 @@ q3: "expr gebruikt alleen s, lokale lambda-\nparameters, typen, statics buiten h
 m3: "Manual: not available\noutside the profile (outside-profile)"
 q4: "elke ontvanger van .lid / [ ]\nis s, een type of niet-null (nullable-flow)?" {shape: diamond}
 m4: "Manual: which may be null\n(null-deref)"
-q5: "type van expr gelijk aan type X\n(of impliciet numeriek/nullable)?" {shape: diamond}
+q5: "type van expr gelijk aan type X, een eigen CreateMap\n(nested-maps) of impliciet numeriek/nullable?" {shape: diamond}
 m5: "Manual: AutoMapper converts\n(conversion)"
-q6: "X geen collectie?" {shape: diamond}
-m6: "Manual: is a collection\n(collection)"
+q6: "X geen collectie, of een lijst/array\n(nested-maps)?" {shape: diamond}
+m6: "Manual: is a collection of a kind\nthis fix does not copy"
 f: "Fixed: X = expr met s -> source\n(simple, ignore-and-nullable)"
 q1 -> m1: nee
 q1 -> q2: ja

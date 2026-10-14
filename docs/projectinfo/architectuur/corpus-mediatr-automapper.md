@@ -71,10 +71,12 @@ Nearly all usage is in nopCommerce (235 of 243 `CreateMap`); the other two proje
 | `ReverseMap`, resolvers, converters, `AfterMap`, `Include(Base)`, `ConstructUsing`, `Condition`, `NullSubstitute`, `ForPath`, `ForAllMembers` |        0 |         0 | not seen in this corpus                   |
 
 Caveat: the AutoMapper corpus is small and skewed (nop). The advanced APIs need a larger corpus before patterns are made for them.
+That larger corpus (20 repos) is in `docs/projectinfo/architectuur/corpus-automapper.md` (TAAK-244); prefer its numbers for AutoMapper.
 
 ## See also
 
 - `claude/tasks/mediatr-queue.md`
 - `claude/tasks/automapper-queue.md`
+- `docs/projectinfo/architectuur/corpus-automapper.md` — larger AutoMapper ≤14 survey (20 repos)
 - `docs/projectinfo/architectuur/edge-cases.md`
 - `docs/projectinfo/architectuur/testen.md`

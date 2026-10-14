@@ -6,11 +6,11 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 953 proofs (excluding `_Pending`).
+Total: 961 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
-### _Combined (16)
+### _Combined (17)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -19,6 +19,7 @@ Total: 953 proofs (excluding `_Pending`).
 | `constructor-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
 | `conversion-map-into` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} }` |
 | `convert-using-map-call` | Fixed | `CreateMap<SigningKey, PublicKeyDto>() .ConvertUsing(src => new PublicKeyDto` → `} }` |
+| `flattening-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Get(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class OrderProfileExtensions` |
 | `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
 | `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
 | `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
@@ -55,7 +56,7 @@ Total: 953 proofs (excluding `_Pending`).
 | `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check: the map at Test.cs:27 is not in a profile constructor this fix rewrites |
 | `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
-### CreateMap (74)
+### CreateMap (81)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -93,7 +94,14 @@ Total: 953 proofs (excluding `_Pending`).
 | `convert-using-type-converter` | Fixed | `CreateMap<Claim, ClaimCheckboxes>().ConvertUsing<ClaimsConverter>(); CreateMap<string, DateTime>().ConvertUsin…` → `public static class RequestProfileExtensions {` |
 | `expression-bodied` | Fixed | `public CustomerProfile() => CreateMap<Customer, CustomerDto>();` → `public CustomerProfile() {` |
 | `expression-bodied-base` | Fixed | `public CustomerProfile() : base("Customers") => CreateMap<Customer, CustomerDto>(); // only map` → `public CustomerProfile() : base("Customers") {` |
-| `flattening` | Manual | `CreateMap<Order, OrderDto>();` — reason: has no member with the same name |
+| `flattening` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `flattening-ambiguous` | Manual | `CreateMap<Order, OrderDto>();` — reason: OrderDto.CustomerAddressCity can be read from Order as Customer.Address.City and as CustomerAddress.City; AutoMapper takes the first |
+| `flattening-case` | Manual | `CreateMap<Order, OrderDto>();` — reason: OrderDto.NAME: Name and name of Order both match NAME; AutoMapper takes one of them |
+| `flattening-get-method` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `flattening-multi-level` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `flattening-nested-map` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `public static class OrderProfileExtensions {` |
+| `flattening-nullable` | Fixed | `CreateMap<Annotation, AnnotationDto>();` → `public static class AnnotationProfileExtensions {` |
+| `flattening-nullable-conversion` | Manual | `CreateMap<Order, OrderDto>();` — reason: OrderDto.CustomerAge: Customer.Age is Int32 and may meet a null object; AutoMapper's value for the long? member is not measured |
 | `for-ctor-param` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not a CreateMap<A, B>() without options |
 | `for-path` | Fixed | `CreateMap<IngredientLine, RecipeIngredient>() .ForPath(x => x.Ingredient.Name, opt => opt.MapFrom(src => src.N…` → `public static class OrderProfileExtensions {` |
 | `for-path-deep` | Manual | `CreateMap<CustomerForm, Customer>()` — reason: ForPath to Address.Country.Code goes more than one object deep |

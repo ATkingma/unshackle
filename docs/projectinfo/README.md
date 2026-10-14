@@ -173,6 +173,7 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `automapper.project-to` | [plan](patterns/automapper-project-to-plan.md) | [models](patterns/automapper-project-to-modellen.md) | [verify](patterns/automapper-project-to-verify.md) | TAAK-252 |
 | `automapper.convert-using` | [plan](patterns/automapper-convert-using-plan.md) | [models](patterns/automapper-convert-using-modellen.md) | [verify](patterns/automapper-convert-using-verify.md) | TAAK-253 |
 | `automapper.member-options` | [plan](patterns/automapper-member-options-plan.md) | [models](patterns/automapper-member-options-modellen.md) | [verify](patterns/automapper-member-options-verify.md) | TAAK-255 |
+| `automapper.flattening` | [plan](patterns/automapper-flattening-plan.md) | [models](patterns/automapper-flattening-modellen.md) | [verify](patterns/automapper-flattening-verify.md) | TAAK-256 |
 
 ## See also
 

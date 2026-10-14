@@ -2,27 +2,20 @@
 
 Read this first if you are taking over this session. Then `CLAUDE.md` and `claude/docs/INDEX.md`.
 
-## Status (2026-10-14)
+## Status (2026-10-14, afternoon)
 
-**CI on main is green again** since `91f85de` (Latin-1 read on every platform; fixed the Linux-only failure of
-`SampleShopTests.Fix_FileInLatin1_LeavesItAndMigratesTheRest`). `c35b41a` (TAAK-220..225, -240) is pushed with it.
+**FA is at 100%**: corpus round 5 on all 16 solutions, 0 regressions apart from the known Akka TAAK-200 warning (`claude/tasks/CORPUSRUN-fa.md`).
+EventFlow needed TAAK-242 (keep an old using a Manual call only binds to after `using System;` is added) and TAAK-243 (`DateTime.At`).
+CI on main green. Step 6 (SharpGrep) dropped from the roadmap by the user.
 
-**2026-10-14:** the corpus regression proofs (step 3b of 2026-10-13: 31 proofs from Akka, Steeltoe, LiteDB, kgrzybek, eShop) got their
-`after.cs`/`manual.txt`; one bug found and fixed: TAAK-241 (`.And` chain wrote `ShouldNotBeEmpty()` twice). All docs are now in English
-(the last two files, `CORPUSRUN-fa.md` and `corpus-mediatr-automapper.md`, translated too). 1141/1141, SampleShop 38/38.
+**Running: a `/loop` (user, 2026-10-14) to take AutoMapper to 100%**, then the launch (step 4) is done *together with the user*.
+Queue: `claude/tasks/automapper-queue.md`. Done: rows 0–6, 7 (corpus survey TAAK-244, 20 repos, `docs/projectinfo/architectuur/corpus-automapper.md`,
+clones in `<corpus>/corpus-automapper/src/`), 8 (`automapper.nested-maps`, TAAK-245). Next in the recommended order under the queue table:
+17 → 11 → 10 → 12 → 14 → 18 → 19 → 20 → 13 → 9 → 15, then 16 (corpus run). Rows 8–14 mostly change `CreateMapPattern.cs`: one pattern agent at a time.
 
-**First action for the next agent:**
-1. Check whether the corpus repetition of TAAK-224/225 is done: `<corpus>/corpus-fa/_results/r5-224/` (akka, steeltoe). The section is still missing from
-   `claude/tasks/CORPUSRUN-fa.md`: compare `compare.json` with round 5 (`_results/r5/`): expect fewer Manual, 0 new regressions.
-   If `r5-224/akka` is incomplete, rerun `tools/corpus-regression-r4.sh` for Akka and Steeltoe.
-2. FA corpus round 5 on all 16 solutions (`tools/corpus-regression-r4.sh`, publish the tool from a clean worktree of HEAD). Goal: 16/16 builds,
-   0 regressions except Akka DData `ReplicatorMessageSerializerSpec` (TAAK-200, asymmetric `Equals` in Akka; listed as a warning in the report).
-   Green → FA = 100%, update the roadmap in `docs/projectinfo/project.md`.
-3. Then step 5: AutoMapper (`claude/tasks/automapper-queue.md`, ~40% done). User decision: first work it out further (split row 7), *then* a large corpus run. Priority FA → MediatR → AutoMapper, each to 100% first.
+**Roadmap:** 1 Scan 100% · 2 FA 100% · 3 MediatR 100% · 4 Launch ~80% (together with the user after AutoMapper) · 5 AutoMapper ~35% (more rows after the survey).
 
-**Roadmap:** 1 Scan 100% · 2 FA ~97% · 3 MediatR 100% (7/9; evo1/evo2 rightly Manual; kgrzybek archtests: warning TAAK-240) · 4 Launch ~80% (waiting on user) · 5 AutoMapper ~40% (step 6 SharpGrep dropped by the user, 2026-10-14).
-
-**Corpus status:** FA round 4: 16/16 builds, 13/16 green; after TAAK-220..223 (round 5, partial run) LiteDB and Steeltoe also 0 regressions, Akka 1 (known).
+**Corpus status:** FA round 5 full: 16/16 builds, 0 regressions (Akka: only TAAK-200).
 MediatR round 6: jason, ardalis, amantin, nadirbad, eShopOnWeb, dotnet/eShop, kgrzybek migrated.
 
 **User decisions today:** TAAK-200 → "Fixed with warning" for possibly asymmetric `Equals`. Chosen by agents themselves (present to the user when in doubt):

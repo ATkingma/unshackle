@@ -199,3 +199,33 @@ Tool published from the **working folder** (not from a commit): main `04f113b` p
 Excluding `project-file`/`usings`. LiteDB: Fixed 6917 → 7649 is mainly due to TAAK-223. Steeltoe "after" has 123 more tests (test names with variable parts, counted as "new"/flaky, not a regression). New Manual reasons: LiteDB 25 (helper + meta tests, TAAK-222), Akka 23 + 2 (aggregate/`WaitAsync`, TAAK-220) and 6 (TAAK-222 rule), Steeltoe 6 (cancelled task, TAAK-221).
 
 Conclusion: the three causes from round 4 are gone; together with round 4, 15 of 16 solutions are now green, Akka only keeps the known TAAK-200 warning.
+
+## Round 5 full (2026-10-14): all 16 solutions, plus EventFlow rerun after TAAK-242/243
+
+Tool published from a clean worktree of `91f85de` (TAAK-220..225, -240 and the Latin-1 fix). Same harness and commits, `JOBS=2`; a watchdog stops EventFlow test hosts after 4 minutes (EventStore/MSSQL tests wait for a server). Results: `<corpus>/corpus-fa/_results/r5full/<name>/`. EventFlow did not build after the fix (`'DateTime' does not contain a definition for 'At'`) → TAAK-242 (old using removed while a Manual `At` still needed it) and TAAK-243 (`At` is now rewritten); rerun with a tool from `b82e79f`: `<corpus>/corpus-fa/_results/r5-243/eventflow/`.
+
+| Project | Fixed | Manual | build after | tests before (pass/fail) | tests after (pass/fail) | regressions |
+| --- | ---: | ---: | --- | --- | --- | ---: |
+| Akka.NET | 6999 | 4330 | 0 | 8972/8 | 8973/10 | 9 → **1** (see below) |
+| Ardalis.Result | 287 | 45 | 0 | 1068/0 | 1068/0 | 0 |
+| Bogus | 883 | 93 | 0 | 3149/0 | 3149/0 | 0 |
+| CSharpFunctionalExtensions | 4526 | 27 | 0 | 4226/0 | 4226/0 | 0 |
+| EventFlow (rerun) | 508 | 45 | 0 | 642/326 | 640/277 | 0 (see below) |
+| Facility | 512 | 0 | 0 | 1552/0 | 1552/0 | 0 |
+| FluentResults | 614 | 79 | 0 | 864/0 | 864/0 | 0 |
+| LiteDB | 7654 | 295 | 0 | 9918/1 | 9919/0 | 0 |
+| Mapperly | 113 | 6 | 0 | 1094/0 | 1094/0 | 0 |
+| modular-monolith (kgrzybek) | 61 | 1 | 0 | 246/40 | 246/40 | 0 |
+| NUKE | 346 | 19 | 0 | 389/2 | 389/2 | 0 |
+| Polly | 5652 | 171 | 0 | 5685/0 | 5685/0 | 0 |
+| PowerApps-Samples | 296 | 168 | 0 | 1765/2 | 1765/2 | 0 |
+| SmartEnum | 378 | 48 | 0 | 1293/0 | 1293/0 | 0 |
+| Ardalis.Specification | 840 | 34 | 0 | 823/0 | 823/0 | 0 |
+| Steeltoe | 5149 | 494 | 0 | 6070/21 | 6099/21 | 0 |
+
+Excluding `project-file`/`usings`.
+
+- **Akka**: of the 9 regressions, 8 pass when run on their own on the migrated code (`ConductorBindSpec` ×3 and `ReplicatedDataSerializerBackCompatSpec`: "Failed to bind to 0.0.0.0:2552", a port taken by a parallel test run; `BugFixSpec`, `ObservableSinkSpec`, `SqliteJournalPerfSpec` ×2: timeouts). The one left is the known DData `ReplicatorMessageSerializerSpec` (TAAK-200, asymmetric `Equals` in Akka; reported as a warning). The 29 "missing" are theory cases whose names hold a timestamp.
+- **EventFlow**: 51 "missing" are `EventFlow.EntityFramework.Tests` (test host stopped by the watchdog in the run after the fix); 49 failed before as well (no database server), the 2 that passed (`EfSqliteSnapshotTests`) pass on the migrated code when run on their own.
+
+Conclusion: **16/16 solutions build after the fix and have 0 regressions**, apart from the known Akka TAAK-200 warning. FA → Shouldly is at 100% for this corpus.

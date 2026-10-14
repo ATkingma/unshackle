@@ -76,10 +76,10 @@ State on 2026-10-14 (see `claude/docs/overdracht.md` for the ongoing work).
 | Step | Goal | State |
 | --- | --- | --- |
 | 1 | Scan + report (CSV/JSON/Markdown), load solution, count calls | Done |
-| 2 | FluentAssertions → Shouldly: the 15 most used assertions, `--dry-run` with diff | ~97%: corpus round 4: 16/16 build after the fix, 13/16 green; regressions solved afterwards (TAAK-220..223), only Akka DData remains (bug in Akka, warning). Open: corpus round 5 ([corpus.md](architectuur/corpus.md)) |
+| 2 | FluentAssertions → Shouldly: the 15 most used assertions, `--dry-run` with diff | 100%: corpus round 5 (2026-10-14): 16/16 solutions build after the fix, 0 regressions apart from Akka DData (bug in Akka, reported as a warning, TAAK-200). See `claude/tasks/CORPUSRUN-fa.md` |
 | 3 | MediatR → Mediator: handlers, `ValueTask`, DI registration (behaviors → report) | 100%: 7 of 9 corpus projects fully migrated and green; evo1/evo2 rightly Manual |
 | 4 | Launch: README with GIF, NuGet, testing on a real open-source project, post on r/dotnet | Done in substance (TAAK-019); waiting on the user (publishing, post) |
-| 5 | AutoMapper → hand-written mapping (`ToB()` extensions) | ~40%: patterns create-map, ignore, map-from, map-call, map-into, add-automapper done (TAAK-146, -155..159). First work it out further (row 7 + frequently used advanced APIs), then a large corpus run as for FA/MediatR |
+| 5 | AutoMapper → hand-written mapping (`ToB()` extensions) | ~35%: create-map, ignore, map-from, map-call, map-into, add-automapper, nested/collection maps done (TAAK-146, -155..159, -245). The corpus survey of 20 repos (TAAK-244, `architectuur/corpus-automapper.md`) added rows: member lists, conversions, ReverseMap, constructors, ProjectTo, configuration tests, converters, resolvers. Then a large corpus run as for FA/MediatR (`claude/tasks/automapper-queue.md`) |
 
 ## Risks
 - **The hype fades.** Hence keep the engine generic (a separate general search-and-replace was considered and dropped from the roadmap, 2026-10-14).

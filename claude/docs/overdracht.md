@@ -8,12 +8,16 @@ Read this first if you are taking over this session. Then `CLAUDE.md` and `claud
 EventFlow needed TAAK-242 (keep an old using a Manual call only binds to after `using System;` is added) and TAAK-243 (`DateTime.At`).
 CI on main green. Step 6 (SharpGrep) dropped from the roadmap by the user.
 
-**Running: a `/loop` (user, 2026-10-14) to take AutoMapper to 100%**, then the launch (step 4) is done *together with the user*.
-Queue: `claude/tasks/automapper-queue.md`. Done: rows 0–6, 7 (corpus survey TAAK-244, 20 repos, `docs/projectinfo/architectuur/corpus-automapper.md`,
-clones in `<corpus>/corpus-automapper/src/`), 8 (`automapper.nested-maps`, TAAK-245). Next in the recommended order under the queue table:
-17 → 11 → 10 → 12 → 14 → 18 → 19 → 20 → 13 → 9 → 15, then 16 (corpus run). Rows 8–14 mostly change `CreateMapPattern.cs`: one pattern agent at a time.
+**AutoMapper (2026-10-14, 14:10): all pattern rows of `claude/tasks/automapper-queue.md` are done and pushed** (`8b06170`, CI green, 1407 tests):
+nested maps, member list, conversions, profile shapes, reverse map, configuration test, constructor, value resolver, ProjectTo, ConvertUsing,
+member options, flattening, unsupported (TAAK-245..257). The `/loop` was stopped by the user's time box (14:00).
 
-**Roadmap:** 1 Scan 100% · 2 FA 100% · 3 MediatR 100% · 4 Launch ~80% (together with the user after AutoMapper) · 5 AutoMapper ~35% (more rows after the survey).
+**Next: row 16, the large AutoMapper corpus run.** TAAK-258 (baseline: harness in `<corpus>/corpus-automapper/tools/`, baseline tests of the 20 repos,
+`claude/tasks/CORPUSRUN-automapper.md`) was still running at 14:10; check its results, then publish the tool from a clean worktree of HEAD,
+run the after-fix round, fix regressions. Untested corners noted by agents: ProjectTo + value resolver/ConvertUsing (Manual), flattening inside a projection
+(written without null checks, like AutoMapper's expression). Way of working today: up to 4 (briefly 8) agents in worktrees, merged one by one by the main session.
+
+**Roadmap:** 1 Scan 100% · 2 FA 100% · 3 MediatR 100% · 4 Launch ~80% (together with the user after AutoMapper) · 5 AutoMapper ~85% (corpus run left).
 
 **Corpus status:** FA round 5 full: 16/16 builds, 0 regressions (Akka: only TAAK-200).
 MediatR round 6: jason, ardalis, amantin, nadirbad, eShopOnWeb, dotnet/eShop, kgrzybek migrated.

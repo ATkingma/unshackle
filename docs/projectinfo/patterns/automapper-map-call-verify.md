@@ -17,10 +17,12 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapCallPattern.cs`, `CreateM
 | REQ-1 | Met | `existing-method` (`Map<B>`, `Map<A, B>` via `this._mapper`, parentheses around `new Order { .. }`)                                           |
 | REQ-2 | Met | `_Combined/map-call-profile` (using added), `_Combined/map-call-global` (with MapFrom), unit test `FixAsync_ProfileInOtherFile_CallsGeneratedMethodWithUsing` |
 | REQ-3 | Met | unittest `FixAsync_ProfileInReferencedProject_FollowsAccessibility` (public: Fixed; internal: Manual)                                        |
-| REQ-4 | Met | `collection`                                                                                                                                 |
+| REQ-4 | Superseded by REQ-9 | `collection`                                                                                                                                 |
 | REQ-5 | Met | `unknown-map`, `manual-profile`                                                                                                              |
 | REQ-6 | Met | `maybe-null`                                                                                                                                 |
 | REQ-7 | Met | `object-source`, `receiver-call`                                                                                                             |
+| REQ-9 | Met | `_Combined/collection-map-call` (List, array, IEnumerable, IList with `.Count`), `_Combined/collection-nullable-map-call` (non-null source, nullable source), unit test `FixAsync_CollectionWithProfileInOtherFile_SelectsGeneratedMethod` (TAAK-259) |
+| REQ-10 | Met | `maybe-null-target` (`Map<B?>`, async `Task<B?>` return, `?.Id` after it), `maybe-null` (var local: Manual), unit test `FixAsync_MaybeNullSource_ConditionalOnlyWhereNullAllowed` (TAAK-259) |
 | REQ-8 | Met | `CreateMap/map-into` (voorheen `map-call`)                                                                                                   |
 
 ## Deviations

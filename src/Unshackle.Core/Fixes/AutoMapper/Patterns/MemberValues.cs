@@ -265,7 +265,7 @@ public class MemberValues
         return $"new List<{name}>()";
     }
 
-    private static string Receiver(string value) =>
+    internal static string Receiver(string value) =>
         MapCallPattern.NeedsParentheses(SyntaxFactory.ParseExpression(value)) ? $"({value})" : value;
 
     // Whether target is reachable from type through public members, type arguments and array elements: a map from type would

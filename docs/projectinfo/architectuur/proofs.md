@@ -6,11 +6,11 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 897 proofs (excluding `_Pending`).
+Total: 915 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
-### _Combined (9)
+### _Combined (11)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -21,7 +21,9 @@ Total: 897 proofs (excluding `_Pending`).
 | `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
 | `member-list-map-call` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Destination); public Mapping.OrderDto Get(Mapping.Order order) => _mappe…` → `} public static class OrderProfileExtensions` |
 | `nested-map-call` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `} public static class OrderProfileExtensions` |
+| `nested-profile-map-call` | Fixed | `CreateMap<CustomerDto,AddEditCustomerCommand>(MemberList.None); CreateMap<AddEditCustomerCommand,Customer>(Mem…` → `} }` |
 | `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
+| `nested-profiles-nested-map` | Fixed | `CreateMap<TodoList, TodoListDto>(); CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority,` → `} public static class TodoListDtoMappingExtensions` |
 | `reverse-map-call` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} }` |
 
 ### AddAutoMapper (4)
@@ -48,7 +50,7 @@ Total: 897 proofs (excluding `_Pending`).
 | `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check: the map at Test.cs:27 is not in a profile constructor this fix rewrites |
 | `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
-### CreateMap (40)
+### CreateMap (52)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -70,42 +72,55 @@ Total: 897 proofs (excluding `_Pending`).
 | `conversion-string-guid` | Manual | `CreateMap<Order, OrderDto>();` — reason: AutoMapper parses the string to Guid and gives null the default Guid |
 | `conversion-string-nullable` | Manual | `CreateMap<Order, OrderDto>();` — reason: AutoMapper keeps null as null and parses any other string |
 | `conversion-to-string` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
+| `expression-bodied` | Fixed | `public CustomerProfile() => CreateMap<Customer, CustomerDto>();` → `public CustomerProfile() {` |
+| `expression-bodied-base` | Fixed | `public CustomerProfile() : base("Customers") => CreateMap<Customer, CustomerDto>(); // only map` → `public CustomerProfile() : base("Customers") {` |
 | `flattening` | Manual | `CreateMap<Order, OrderDto>();` — reason: has no member with the same name |
+| `generic` | Manual | `CreateMap<User, TUserDto>();` — reason: is generic or nested in a generic type |
 | `internal-types` | Fixed | `CreateMap<Order, OrderDto>();` → `internal static class OrderProfileExtensions {` |
 | `member-list` | Fixed | `CreateMap<Customer, CustomerDto>(MemberList.Destination); CreateMap<Tag, TagDto>(MemberList.Source);` → `public static class ShopProfileExtensions {` |
 | `member-list-named` | Fixed | `CreateMap<Customer, CustomerDto>(memberList: MemberList.Destination); CreateMap<Tag, TagDto>(AutoMapper.Member…` → `public static class ShopProfileExtensions {` |
-| `member-list-nested-profile` | Manual | `public Mapping() => CreateMap<Note, NoteDto>(MemberList.None);` — reason: is nested, generic, partial or has several constructors |
+| `member-list-nested-profile` | Fixed | `public Mapping() => CreateMap<Note, NoteDto>(MemberList.None);` → `public Mapping() {` |
 | `member-list-reverse-map` | Fixed | `CreateMap<Customer, CustomerDto>(MemberList.Destination).ReverseMap();` → `public static class ShopProfileExtensions {` |
 | `member-list-variable` | Manual | `CreateMap<Customer, CustomerDto>(Validation());` — reason: is not a CreateMap<A, B>() without options |
 | `nested` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `public static class OrderProfileExtensions {` |
 | `nested-collections` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Line, LineDto>();` → `public static class OrderProfileExtensions {` |
 | `nested-cycle` | Manual | `CreateMap<Category, CategoryDto>();` — reason: a cycle |
+| `nested-in-nested` | Fixed | `public Mapping() => CreateMap<Command, Note>(MemberList.None);` → `public Mapping() {` |
+| `nested-name-taken` | Manual | `CreateMap<TodoItem, LookupDto>();` — reason: A type LookupDtoMappingExtensions already exists |
 | `nested-no-map` | Manual | `CreateMap<Order, OrderDto>();` — reason: no profile this fix rewrites has a CreateMap<Address, AddressDto> |
 | `nested-nullable` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `public static class OrderProfileExtensions {` |
 | `nested-other-profile` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>();` → `} public static class AddressProfileExtensions` |
+| `nested-private-dto` | Manual | `CreateMap<Order, OrderDto>();` — reason: OrderDto is private or protected; an extension method cannot use it |
+| `nested-profile` | Fixed | `CreateMap<TodoList, LookupDto>(); CreateMap<TodoItem, LookupDto>();` → `} public static class LookupDtoMappingExtensions` |
+| `nested-record` | Fixed | `public Mapping() => CreateMap<Tenant, TenantDto>(MemberList.None);` → `public Mapping() {` |
+| `nested-reverse-map` | Fixed | `public Mapping() => CreateMap<Note, NoteDto>(MemberList.None)` → `public Mapping() {` |
 | `nested-same-type` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, Address>();` → `public static class OrderProfileExtensions {` |
 | `nested-several` | Manual | `CreateMap<Order, OrderDto>();` — reason: several profiles map Address to AddressDto |
+| `nested-several-profiles` | Manual | `CreateMap<PriDto, PriReleaseDto>(MemberList.None);` — reason: AddPri holds several profiles (Mapper, Mapper) |
 | `options` | Manual | `CreateMap<Order, OrderDto>().MaxDepth(1);` — reason: is not a CreateMap<A, B>() without options |
+| `partial` | Manual | `CreateMap<Affiliate, AffiliateModel>();` — reason: is partial (another part can add maps or members they use) |
 | `reverse-map` | Fixed | `CreateMap<Region, RegionDto>().ReverseMap(); CreateMap<Folder, FolderEntity>(MemberList.Destination).ReverseMa…` → `public static class AutoMapperProfileExtensions {` |
 | `reverse-map-duplicate` | Manual | `CreateMap<Product, ProductDto>().ReverseMap();` — reason: maps ProductDto and Product the same way twice |
 | `reverse-map-get-method` | Manual | `CreateMap<Product, ProductDto>().ReverseMap();` — reason: ReverseMap of CreateMap<Product, ProductDto>: Product.Code has no member with the same name in ProductDto |
 | `reverse-map-nested` | Fixed | `CreateMap<Employee, EmployeeDto>().ReverseMap(); CreateMap<Job, JobDto>().ReverseMap();` → `public static class AutoMapperProfileExtensions {` |
 | `reverse-map-options` | Manual | `CreateMap<User, UserDto>()` — reason: is not a CreateMap<A, B>() without options |
+| `several-constructors` | Manual | `CreateMap<User, UserViewModel>();` — reason: has several constructors (which maps exist depends on the one that runs) |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>(); CreateMap<Tag, TagDto>();` → `public static class ProductProfileExtensions {` |
 
-### ForMemberIgnore (7)
+### ForMemberIgnore (8)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `member-list` | Fixed | `CreateMap<Document, DocumentDto>(MemberList.None) .ForMember(x => x.TenantName, s => s.Ignore());` → `public static class DocumentProfileExtensions {` |
 | `mixed` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Line, LineDto>().ForMember(d => d.Total, o => o.Ignore());` → `public static class OrderProfileExtensions {` |
+| `nested-profile` | Fixed | `public Mapping() => CreateMap<Activity, ActivitySummaryDto>(MemberList.None)` → `public Mapping() {` |
 | `reverse-map` | Fixed | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore()).ForMember(d => d.Rank, o => o.Ignore()).R…` → `public static class OrderProfileExtensions {` |
 | `reverse-map-options` | Fixed | `CreateMap<GroupProjectAccessPolicy, GroupProjectAccessPolicyEntity>() .ForMember(dst => dst.GrantedProject, op…` → `public static class AccessPolicyMapperProfileExtensions {` |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>() .ForMember(d => d.Secret, o => o.Ignore())` → `public static class ProductProfileExtensions {` |
 | `string-name` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Rank, o => o.Ignore()).ForMember("Note", o => o.Ignore());` — reason: is not a CreateMap<A, B>() without options |
 | `unmatched` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore());` — reason: OrderDto.Rank has no member with the same name in Order |
 
-### ForMemberMapFrom (13)
+### ForMemberMapFrom (16)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -115,6 +130,9 @@ Total: 897 proofs (excluding `_Pending`).
 | `ignore-and-nullable` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `public static class OrderProfileExtensions {` |
 | `member-list` | Fixed | `CreateMap<Document, DocumentDto>(MemberList.Destination) .ForMember(x => x.TenantName, s => s.MapFrom(y => y.T…` → `public static class DocumentProfileExtensions {` |
 | `nested` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Shipping, o => o.MapFrom(s => s.Home))` → `public static class OrderProfileExtensions {` |
+| `nested-outer-member` | Manual | `CreateMap<AuditTrail, AuditTrailDto>(MemberList.None)` — reason: MapFrom for PrimaryKey uses Serialize, which means something else outside the type around the profile |
+| `nested-private-member` | Manual | `CreateMap<AuditTrail, AuditTrailDto>(MemberList.None)` — reason: MapFrom for PrimaryKey uses Serialize, which is private or protected |
+| `nested-profile` | Fixed | `CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority, opt => opt.MapFrom(s => (int)s.Priority));` → `public static class TodoItemDtoMappingExtensions {` |
 | `null-deref` | Manual | `CreateMap<Order, OrderDto>()` — reason: which may be null |
 | `outside-profile` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not available outside the profile |
 | `resolver-form` | Manual | `CreateMap<Order, OrderDto>()` — reason: is not a CreateMap<A, B>() without options |

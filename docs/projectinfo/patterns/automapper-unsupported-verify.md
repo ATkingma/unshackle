@@ -17,7 +17,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/UnsupportedOptions.cs`, hook
 | REQ-3 | Met | `CreateMap/for-source-member-do-not-validate`, unit test |
 | REQ-4 | Met | `CreateMap/max-depth-nested`, `Rewrite_UnsupportedOption_NamesTheApi` (nested list, `ReverseMap`, non-constant) |
 | REQ-5 | Met | `after-map`, `before-map`, `for-all-members`, `construct-using`, `for-ctor-param`, `reverse-map-options`; unit tests for `Include`, `IncludeBase`, `IncludeAllDerived` |
-| REQ-6 | Met | `for-member-condition`, `ForMemberIgnore/string-name`, `ForMemberMapFrom/resolver-form`; unit test `NullSubstitute` |
+| REQ-6 | Met | `ForMemberIgnore/string-name`, `ForMemberIgnore/string-name` only (Condition, ForPath, ConvertUsing and resolver MapFrom are supported on main since TAAK-253/254/255); unit test `NullSubstitute` |
 | REQ-7 | Met | `profile-setting`; unit tests `ShouldMapProperty`, `SourceMemberNamingConvention`, `RecognizePrefixes` |
 
 ## Deviations
@@ -30,7 +30,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/UnsupportedOptions.cs`, hook
 | Check   | Command | Result |
 | ------- | ------- | ------ |
 | Build   | `dotnet build` | passed (0 warnings) |
-| Tests   | `dotnet test` | 1326/1326 passed |
+| Tests   | `dotnet test` | 1407/1407 passed |
 | Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 passed |
 
 ## See also

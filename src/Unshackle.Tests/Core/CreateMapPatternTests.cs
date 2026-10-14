@@ -22,7 +22,7 @@ public class CreateMapPatternTests
     }
 
     [Theory]
-    [InlineData("public class A { public int id { get; set; } } public class B { public int Id { get; set; } }", "has no member with the same name")]
+    [InlineData("public class A { public int Other { get; set; } } public class B { public int Id { get; set; } }", "has no member with the same name")]
     [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; private set; } }", "has no public setter")]
     [InlineData("public class A { public int Id { get; set; } } public abstract class B { public int Id { get; set; } }", "no public parameterless constructor")]
     [InlineData("public class A { public int Id { get; set; } } public class B { public int[] Id { get; set; } = []; }", "(AutoMapper converts)")]
@@ -99,6 +99,47 @@ public class CreateMapPatternTests
 
         // Assert
         result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("is not a CreateMap<A, B>() without options");
+    }
+
+    // AutoMapper 14's other name rules as measured (TAAK-256): any case, a Get prefix (also on a property), flattening with the shortest
+    // prefix first and a direct match winning; the proofs in CreateMap/flattening-* show the common ones.
+    [Theory]
+    [InlineData("public class A { public int id { get; set; } } public class B { public int Id { get; set; } }", "Id = source.id,")]
+    [InlineData("public class A { public string GetCode { get; set; } = \"\"; } public class B { public string Code { get; set; } = \"\"; }", "Code = source.GetCode,")]
+    [InlineData("public class A { public int Total; public int GetTotal() => 2; } public class B { public int Total { get; set; } }", "Total = source.Total,")]
+    [InlineData("public class A { public string Name { get; set; } = \"\"; } public class B { public int NameLength { get; set; } }", "NameLength = source.Name?.Length ?? default,")]
+    [InlineData("public class A { public string Name { get; set; } = \"\"; } public class B { public string NameTrim { get; set; } = \"\"; }", "NameTrim = source.Name?.Trim(),")]
+    [InlineData("public class C { public string X { get; set; } = \"\"; } public class A { public C Customer { get; set; } = new(); public string CustomerName { get; set; } = \"\"; } public class B { public string CustomerName { get; set; } = \"\"; }", "CustomerName = source.CustomerName,")]
+    [InlineData("public class N { public string X { get; set; } = \"\"; } public class A { public string Customer { get; set; } = \"\"; public N CustomerName2 { get; set; } = new(); } public class B { public string CustomerName2X { get; set; } = \"\"; }", "CustomerName2X = source.CustomerName2?.X,")]
+    [InlineData("public class C { public int? When { get; set; } } public class A { public C Customer { get; set; } = new(); } public class B { public int CustomerWhen { get; set; } }", "CustomerWhen = (source.Customer?.When).GetValueOrDefault(),")]
+    public void Rewrite_OtherNameRule_ReadsWhatAutoMapperReads(string types, string assignment)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(types + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>(); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString().ShouldContain(assignment);
+    }
+
+    [Theory]
+    [InlineData("public struct S { public int X { get; set; } } public class A { public S? P { get; set; } } public class B { public int PX { get; set; } }", "has no member with the same name in A, nor one AutoMapper flattens")]
+    [InlineData("public class A { public int Name() => 1; public int GetName() => 2; public int name; } public class B { public int Name { get; set; } }", "Name and name of A both match Name")]
+    [InlineData("public class C { public int Age { get; set; } } public class A { public C Customer { get; set; } = new(); } public class B { public long? CustomerAge { get; set; } }", "may meet a null object")]
+    public void Rewrite_OtherNameRuleUnsure_ReportsManual(string types, string reason)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(types + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>(); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain(reason);
     }
 
     // AutoMapper 14's built-in conversions as measured (TAAK-247); the proofs in CreateMap/conversion-* show the common ones.
@@ -274,6 +315,132 @@ public class CreateMapPatternTests
         // Assert
         string extensions = result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString().ReplaceLineEndings("\n");
         extensions.ShouldContain("public static A ToA(this B source) => new()\n    {\n        Id = source.Id,\n        Note = source.Note,\n    };");
+    }
+
+    // TAAK-253: a converter that needs what a ToB method does not have (the destination, the ResolutionContext, a service provider) stays Manual.
+    [Theory]
+    [InlineData("CreateMap<A, B>().ConvertUsing((s, d) => d ?? new B());", "", "ConvertUsing reads the destination")]
+    [InlineData("CreateMap<A, B>().ConvertUsing((s, d, c) => c.Mapper.Map<B>(s));", "", "ConvertUsing uses the ResolutionContext")]
+    [InlineData("CreateMap<A, B>().ConvertUsing((s, d) => { return new B(); });", "", "a lambda with a block body")]
+    [InlineData("CreateMap<A, B>().ConvertUsing<C>();", "public class C : ITypeConverter<A, B> { public B Convert(A s, B d, ResolutionContext c) => c.Mapper.Map<B>(s); }", "C.Convert uses the ResolutionContext")]
+    [InlineData("CreateMap<A, B>().ConvertUsing<C>();", "public class C : ITypeConverter<A, B> { public B Convert(A s, B d, ResolutionContext c) => d; }", "C.Convert reads the destination")]
+    [InlineData("CreateMap<A, B>().ConvertUsing<C>();", "public class C : ITypeConverter<A, B> { B ITypeConverter<A, B>.Convert(A s, B d, ResolutionContext c) => new B(); }", "implements ITypeConverter explicitly")]
+    [InlineData("CreateMap<A, B>().ConvertUsing(new C(1));", "public class C : ITypeConverter<A, B> { public C(int x) { } public B Convert(A s, B d, ResolutionContext c) => new B(); }", "is not new C() or a static field")]
+    [InlineData("CreateMap<A, string>().ConvertUsing(s => s.Name);", "", "A already has a member ToString")]
+    [InlineData("CreateMap<A, B>().ForMember(d => d.Name, o => o.ConvertUsing(new V())).ConvertUsing(s => new B());", "public class V : IValueConverter<string, string> { public string Convert(string s, ResolutionContext c) => s; }", "is not a CreateMap<A, B>() without options")]
+    [InlineData("CreateMap<A, B>().ForMember(d => d.Name, o => o.ConvertUsing(new V(), \"Name\"));", "public class V : IValueConverter<string, string> { public string Convert(string s, ResolutionContext c) => s; }", "names its source member with a string")]
+    [InlineData("CreateMap<A, B>().ForMember(d => d.Name, o => o.ConvertUsing(new V()));", "public class V : IValueConverter<string, string> { public string Convert(string s, ResolutionContext c) => c.Mapper.Map<string>(s); }", "V.Convert uses the ResolutionContext")]
+    public void Rewrite_ConvertUsingNotWritable_ReportsManual(string map, string converter, string reason)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile($$"""
+            using AutoMapper;
+            public class A { public string Name { get; set; } }
+            public class B { public string Name { get; set; } }
+            {{converter}}
+            public class P : Profile { public P() { {{map}} } }
+            """);
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain(reason);
+    }
+
+    // Several Convert overloads would make Convert(source, null, null) ambiguous: a typed default picks the implementation of the map's pair.
+    [Fact]
+    public void Rewrite_ConverterWithSeveralOverloads_PassesATypedDestination()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile("""
+            using AutoMapper;
+            public class A { } public class B { } public class D { }
+            public class C : ITypeConverter<A, B>, ITypeConverter<A, D>
+            {
+                public B Convert(A s, B d, ResolutionContext c) => new B();
+                public D Convert(A s, D d, ResolutionContext c) => new D();
+            }
+            public class P : Profile { public P() { CreateMap<A, B>().ConvertUsing<C>(); } }
+            """);
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString().ShouldContain("public static B ToB(this A source) => new C().Convert(source, default(B), null);");
+    }
+
+    // AutoMapper calls a converter with a null member too (measured, TAAK-253): no ?. but a ! for a maybe-null member, null! for unread parameters.
+    [Fact]
+    public void Rewrite_ConverterInNullableContext_CallsItWithoutNullCheck()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile("""
+            #nullable enable
+            using AutoMapper;
+            public class Tag { public string V { get; set; } = ""; }
+            public class TagDto { public string V { get; set; } = ""; }
+            public class A { public Tag? Tag { get; set; } public Tag Main { get; set; } = new(); }
+            public class B { public TagDto? Tag { get; set; } public TagDto Main { get; set; } = new(); }
+            public class C : ITypeConverter<Tag?, TagDto> { public TagDto Convert(Tag? s, TagDto d, ResolutionContext c) => new() { V = s?.V ?? "" }; }
+            public class P : Profile { public P() { CreateMap<Tag, TagDto>().ConvertUsing<C>(); CreateMap<A, B>(); } }
+            """);
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        string extensions = result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString();
+        extensions.ShouldContain("public static TagDto ToTagDto(this Tag source) => new C().Convert(source, null!, null!);");
+        extensions.ShouldContain("Tag = source.Tag!.ToTagDto(),");
+        extensions.ShouldContain("Main = source.Main.ToTagDto(),");
+    }
+
+    // Member options the rewrite cannot reproduce exactly (TAAK-255) stay Manual with their own reason.
+    [Theory]
+    [InlineData("public class A { public int Id { get; set; } public string Name { get; set; } } public class B { public B(int id) { } public string Name { get; set; } }",
+        ".ForMember(d => d.Name, o => o.Condition(s => s.Id > 0))", "is created through its constructor")]
+    [InlineData("public class C { public string Name { get; set; } } public class A { public C Inner { get; set; } public string Name { get; set; } } public class B { public C Inner { get; set; } }",
+        ".ForPath(d => d.Inner.Name, o => o.MapFrom(s => s.Name))", "which AutoMapper also maps itself")]
+    [InlineData("public struct C { public string Name { get; set; } } public class A { public string Name { get; set; } } public class B { public C Inner { get; set; } }",
+        ".ForPath(d => d.Inner.Name, o => o.MapFrom(s => s.Name))", "is not a class with a public parameterless constructor")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; set; } }",
+        ".ForMember(d => d.Id, o => o.Condition(s => s.Id > 0)).ReverseMap()", "not migrated together with ReverseMap")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; set; } }",
+        ".ForMember(d => d.Id, o => o.UseDestinationValue())", "UseDestinationValue for Id is not migrated")]
+    [InlineData("public class A { public int Id { get; set; } } public class B { public int Id { get; set; } }",
+        ".ForMember(d => d.Id, o => o.Condition((s, d, sm, dm) => sm > dm))", "Condition for Id is not a lambda of the source alone")]
+    public void Rewrite_MemberOptionAutoMapperDoesMoreFor_ReportsManual(string types, string options, string reason)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile(types + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>()" + options + "; } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain(reason);
+    }
+
+    // A conditional MapFrom value is grouped, so cond ? (a ? b : c) : default keeps its meaning.
+    [Fact]
+    public void Rewrite_ConditionOnConditionalValue_GroupsTheValue()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile("public class A { public bool Flag { get; set; } } public class B { public int X { get; set; } }"
+            + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>().ForMember(d => d.X, o => { o.Condition(s => s.Flag); o.MapFrom(s => s.Flag ? 1 : 2); }); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString().ShouldContain("X = source.Flag ? (source.Flag ? 1 : 2) : default,");
     }
 
     private static (SyntaxNode Root, SemanticModel Model) Compile(string code)

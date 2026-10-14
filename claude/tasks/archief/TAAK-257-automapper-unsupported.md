@@ -30,7 +30,7 @@
 
 - [x] Measure the options against AutoMapper 14.0.0
 - [x] `UnsupportedOptions.cs` + hooks in `CreateMapPattern.cs`
-- [x] Proofs `CreateMap/max-depth`, `preserve-references`, `for-source-member-do-not-validate` (Fixed), `max-depth-nested`, `after-map`, `before-map`, `for-all-members`, `for-member-condition`, `profile-setting` (Manual); updated reasons in `construct-using`, `for-ctor-param`, `reverse-map-options`, `ForMemberIgnore/string-name`, `ForMemberMapFrom/resolver-form`; `MapCall/manual-profile` now uses `BeforeMap`; `options` became `max-depth`
+- [x] Proofs `CreateMap/max-depth`, `preserve-references`, `for-source-member-do-not-validate` (Fixed), `max-depth-nested`, `after-map`, `before-map`, `for-all-members`, `profile-setting` (Manual); updated reasons in `construct-using`, `for-ctor-param`, `reverse-map-options`, `ForMemberIgnore/string-name`, `ForMemberIgnore/string-name` only (Condition, ForPath, ConvertUsing and resolver MapFrom are supported on main since TAAK-253/254/255); `MapCall/manual-profile` now uses `BeforeMap`; `options` became `max-depth`
 - [x] Unit tests `src/Unshackle.Tests/Core/UnsupportedOptionsTests.cs`
 - [x] Plan, models, verify in `docs/projectinfo/patterns/automapper-unsupported-*`
 

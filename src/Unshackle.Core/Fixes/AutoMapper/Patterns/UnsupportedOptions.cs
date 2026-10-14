@@ -27,9 +27,7 @@ internal static class UnsupportedOptions
         ["ForSourceMember"] = "ForSourceMember in a form other than ForSourceMember(s => s.X, o => o.DoNotValidate()); write ToB by hand",
         ["ForAllMembers"] = "ForAllMembers applies an option to every member; write ToB by hand with that option per member (a condition becomes an if or ?:)",
         ["ForAllOtherMembers"] = "ForAllOtherMembers applies an option to the remaining members; write ToB by hand",
-        ["ForPath"] = "ForPath sets a nested destination member; write ToB by hand with a nested object initializer",
         ["ForCtorParam"] = "ForCtorParam maps a constructor parameter; write ToB by hand with new B(...)",
-        ["ConvertUsing"] = "ConvertUsing replaces the whole map with a converter; write ToB as that conversion",
         ["ConstructUsing"] = "ConstructUsing creates the destination itself; write ToB by hand starting from that expression",
         ["ProjectUsing"] = "ProjectUsing sets the projection; write the Select by hand",
         ["AddTransform"] = "AddTransform changes values of a type after mapping; apply the transformation in ToB by hand",
@@ -129,18 +127,14 @@ internal static class UnsupportedOptions
     }
 
     // ForMember with an option the rewrite does not read (Condition, NullSubstitute, a resolver, ...).
-    // Null for the Ignore and MapFrom forms the rewrite reads (the map then fails for another reason).
+    // Null for Ignore, MapFrom, Condition, PreCondition and ConvertUsing: the rewrite reads those (or reports its own reason).
     private static string? ForMemberReason(InvocationExpressionSyntax forMember) =>
         forMember.ArgumentList.Arguments is [{ Expression: SimpleLambdaExpressionSyntax { Body: MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax } } },
             { Expression: SimpleLambdaExpressionSyntax { Body: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: var option } } call } }]
             ? (option, call.ArgumentList.Arguments) switch
             {
-                ("Ignore", []) => null,
-                ("MapFrom", [{ Expression: SimpleLambdaExpressionSyntax { Body: ExpressionSyntax } }]) => null,
-                ("Condition" or "PreCondition", _) => $"ForMember with {option} sets the member only when the condition holds; write ToB by hand with ?: or an if",
+                ("Ignore", []) or ("Condition" or "PreCondition" or "MapFrom" or "ConvertUsing", _) => null,
                 ("NullSubstitute", _) => "ForMember with NullSubstitute; write ToB by hand with ?? and the substitute",
-                ("MapFrom", _) => "ForMember with a MapFrom form the rewrite does not read (resolver, string member, two-parameter lambda); write that member by hand",
-                ("ConvertUsing", _) => "ForMember with ConvertUsing (a value converter); write that member by hand as the conversion",
                 ("UseDestinationValue", _) => "ForMember with UseDestinationValue keeps the destination's existing value; write MapInto by hand",
                 ("SetMappingOrder", _) => "ForMember with SetMappingOrder; write ToB by hand in that order",
                 ("AllowNull" or "DoNotAllowNull", _) => $"ForMember with {option} changes the null handling; write that member by hand",

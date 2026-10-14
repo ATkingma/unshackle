@@ -1,1 +1,1 @@
-ForPath sets a nested destination member
+a Condition or ForPath on the reverse map is not migrated

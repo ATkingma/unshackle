@@ -22,7 +22,7 @@ files_expected:
 
 ## One-sentence summary
 
-automapper.unsupported: `MaxDepth`/`PreserveReferences` on a map without nested objects or collections and `ForSourceMember(..., o => o.DoNotValidate())` are dropped; `AfterMap`, `BeforeMap`, `Include*`, `ForAllMembers`, `ForPath`, unsupported `ForMember` options, profile settings and the like stay Manual with a reason that names the API and what to write by hand.
+automapper.unsupported: `MaxDepth`/`PreserveReferences` on a map without nested objects or collections and `ForSourceMember(..., o => o.DoNotValidate())` are dropped; `AfterMap`, `BeforeMap`, `Include*`, `ForAllMembers`, unsupported `ForMember` options, profile settings and the like stay Manual with a reason that names the API and what to write by hand.
 
 ## Scope (in / out)
 
@@ -45,8 +45,8 @@ automapper.unsupported: `MaxDepth`/`PreserveReferences` on a map without nested 
 - **REQ-2**: WHEN such a map carries `PreserveReferences()` THE SYSTEM SHALL write the same `ToB` as without it (proof `CreateMap/preserve-references`).
 - **REQ-3**: WHEN a map carries `ForSourceMember(s => s.X, o => o.DoNotValidate())` THE SYSTEM SHALL drop it (proof `CreateMap/for-source-member-do-not-validate`).
 - **REQ-4**: IF `MaxDepth`/`PreserveReferences` sits on a map that copies a nested object or collection, has a `ReverseMap`, or `MaxDepth` has a non-constant argument THEN THE SYSTEM SHALL report Manual naming the option (proof `CreateMap/max-depth-nested`, unit tests).
-- **REQ-5**: IF the chain holds `AfterMap`, `BeforeMap`, `Include`, `IncludeBase`, `IncludeAllDerived`, `ForAllMembers`, `ForPath`, `ForCtorParam`, `ConstructUsing`, `ConvertUsing` or another listed API THEN THE SYSTEM SHALL report Manual naming it and what to write by hand (proofs `after-map`, `before-map`, `for-all-members`, `construct-using`, `for-ctor-param`, `reverse-map-options`).
-- **REQ-6**: IF a `ForMember` uses an option the rewrite does not read (`Condition`, `NullSubstitute`, resolver `MapFrom`, string member name, ...) THEN THE SYSTEM SHALL report Manual naming that option (proofs `for-member-condition`, `ForMemberIgnore/string-name`, `ForMemberMapFrom/resolver-form`).
+- **REQ-5**: IF the chain holds `AfterMap`, `BeforeMap`, `Include`, `IncludeBase`, `IncludeAllDerived`, `ForAllMembers`, `ForCtorParam`, `ConstructUsing`, `ConvertUsing` or another listed API THEN THE SYSTEM SHALL report Manual naming it and what to write by hand (proofs `after-map`, `before-map`, `for-all-members`, `construct-using`, `for-ctor-param`, `reverse-map-options`).
+- **REQ-6**: IF a `ForMember` uses an option the rewrite does not read (`NullSubstitute`, `UseDestinationValue`, string member name, ...) THEN THE SYSTEM SHALL report Manual naming that option (proofs `ForMemberIgnore/string-name`, `ForMemberIgnore/string-name` only (Condition, ForPath, ConvertUsing and resolver MapFrom are supported on main since TAAK-253/254/255)).
 - **REQ-7**: IF the profile constructor sets a profile setting (`AllowNullCollections`, `ShouldMapProperty`, naming conventions) or calls `RecognizePrefixes` and the like THEN THE SYSTEM SHALL report Manual naming it (proof `profile-setting`, unit tests).
 
 ## Assumptions

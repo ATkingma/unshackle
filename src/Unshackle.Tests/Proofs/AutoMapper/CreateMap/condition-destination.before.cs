@@ -1,3 +1,4 @@
+using System;
 using AutoMapper;
 
 namespace Shop;
@@ -5,19 +6,20 @@ namespace Shop;
 public class Order
 {
     public int Id { get; set; }
-    public string Name { get; set; } = "";
+    public int Version { get; set; }
 }
 
 public class OrderDto
 {
     public int Id { get; set; }
-    public string Name { get; set; } = "";
+    public int Version { get; set; }
 }
 
 public class OrderProfile : Profile
 {
     public OrderProfile()
     {
-        CreateMap<Order, OrderDto>().ForMember(d => d.Name, o => o.Condition(s => s.Id > 0));
+        CreateMap<Order, OrderDto>()
+            .ForMember(d => d.Version, o => o.Condition((s, d) => s.Version > d.Version));
     }
 }

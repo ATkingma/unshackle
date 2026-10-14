@@ -46,7 +46,7 @@ public class UnsupportedOptionsTests
     [InlineData("CreateMap<C, D>().IncludeBase<C, D>();", "IncludeBase inherits the options of the base map")]
     [InlineData("CreateMap<C, D>().Include<C, D>();", "Include makes this map also serve derived types")]
     [InlineData("CreateMap<C, D>().IncludeAllDerived();", "IncludeAllDerived")]
-    [InlineData("CreateMap<C, D>().ForMember(d => d.Id, o => o.NullSubstitute(1));", "ForMember with NullSubstitute")]
+    [InlineData("CreateMap<C, D>().ForMember(d => d.Id, o => o.NullSubstitute(1));", "NullSubstitute")]
     [InlineData("CreateMap<C, D>().ForMember(\"Id\", o => o.Ignore());", "ForMember in a form the rewrite does not read")]
     [InlineData("ShouldMapProperty = p => true; CreateMap<C, D>();", "ShouldMapProperty changes which members AutoMapper maps")]
     [InlineData("SourceMemberNamingConvention = new LowerUnderscoreNamingConvention(); CreateMap<C, D>();", "a naming convention changes which members match")]

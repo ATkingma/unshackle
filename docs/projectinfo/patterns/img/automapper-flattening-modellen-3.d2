@@ -1,0 +1,28 @@
+title: "[Decision tree] member without an exact-named source member" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q0: "Reverse map?" {shape: diamond}
+m0: "Manual: has no member with the same name\n(reverse-map-get-method)"
+q1: "Two members match a name\n(any case, then Get)?" {shape: diamond}
+m1: "Manual: both match (flattening-case)"
+q2: "How many complete paths?" {shape: diamond}
+m2: "Manual: nor one AutoMapper flattens"
+m3: "Manual: can be read as ... and as ...\n(flattening-ambiguous)"
+q3: "Value leaf behind a possibly\nnull object?" {shape: diamond}
+q4: "Destination U? with U != leaf?" {shape: diamond}
+m4: "Manual: may meet a null object\n(flattening-nullable-conversion)"
+f1: "source.A?.B ?? default / lifted T?\n(flattening-nullable)"
+f2: "source.A?.B (+ !)\n(flattening, flattening-get-method)"
+f3: "MemberValues.Problem: nested map or conversion\n(flattening-nested-map, flattening-multi-level)"
+q0 -> m0: yes
+q0 -> q1: no
+q1 -> m1: yes
+q1 -> q2: no
+q2 -> m2: "0"
+q2 -> m3: "2+"
+q2 -> q3: "1"
+q3 -> q4: yes
+q3 -> f2: no
+q4 -> m4: yes
+q4 -> f1: no
+f1 -> f3
+f2 -> f3

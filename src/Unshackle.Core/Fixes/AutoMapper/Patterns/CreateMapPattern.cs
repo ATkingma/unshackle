@@ -48,7 +48,8 @@ public class CreateMapPattern : ISolutionPattern
         }).Select(Anchor).Distinct();
 
     // Without the solution no MapInto is written: nothing says a Map(source, destination) call needs it.
-    public virtual PatternResult Rewrite(SyntaxNode node, SemanticModel model) => Rewrite(node, model, new HashSet<string>(), nested: null, projectTo: new HashSet<string>());
+    public virtual PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
+        Rewrite(node, model, new HashSet<string>(), nested: null, projectTo: new HashSet<string>(), asserted: Asserts(model));
 
     public virtual async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
@@ -57,17 +58,38 @@ public class CreateMapPattern : ISolutionPattern
         ArgumentNullException.ThrowIfNull(solution);
         return node is TypeDeclarationSyntax
             ? Rewrite(node, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken), await NestedMaps.FromAsync(model, solution, cancellationToken),
-                await ProjectToPattern.TargetsAsync(solution, cancellationToken))
-            : Rewrite(node, model, new HashSet<string>(), nested: null, projectTo: new HashSet<string>());
+                await ProjectToPattern.TargetsAsync(solution, cancellationToken), await AssertsAsync(solution, cancellationToken))
+            : Rewrite(node, model, new HashSet<string>(), nested: null, projectTo: new HashSet<string>(), asserted: true);
     }
 
     // The ToB methods of a profile, with nested maps of the whole solution; no MapInto (MapCallPattern only needs the method names).
     internal static async Task<PatternResult> RewriteMethodsAsync(ClassDeclarationSyntax profile, SemanticModel model, Solution solution, CancellationToken cancellationToken) =>
-        Rewrite(profile, model, new HashSet<string>(), await NestedMaps.FromAsync(model, solution, cancellationToken), projectTo: new HashSet<string>());
+        Rewrite(profile, model, new HashSet<string>(), await NestedMaps.FromAsync(model, solution, cancellationToken), projectTo: new HashSet<string>(),
+            await AssertsAsync(solution, cancellationToken));
+
+    // Whether the solution (or, without it, the compilation) calls AssertConfigurationIsValid anywhere. Such a check rejects a map with a
+    // destination member AutoMapper finds no source for, so with it a member that looks unmatched is taken as mapped in a way the fix
+    // does not see (TAAK-261); counting any call, not only one that reaches the map, keeps that safe.
+    private static bool Asserts(SemanticModel model) =>
+        model.Compilation.SyntaxTrees.Any(t => t.GetText().ToString().Contains("AssertConfigurationIsValid", StringComparison.Ordinal));
+
+    private static async Task<bool> AssertsAsync(Solution solution, CancellationToken cancellationToken)
+    {
+        foreach (Document document in solution.Projects.SelectMany(p => p.Documents))
+        {
+            if ((await document.GetTextAsync(cancellationToken)).ToString().Contains("AssertConfigurationIsValid", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     // mapInto: the maps (MapIntoPattern.Key) that get a MapInto next to ToB. nested: the maps a member can call (null: this project's).
     // projectTo: the maps that a ProjectTo call uses, which get an Expression<Func<A, B>> AToBProjection next to ToB (see Projections).
-    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, IReadOnlySet<string> mapInto, NestedMaps? nested, IReadOnlySet<string> projectTo)
+    // asserted: the solution calls AssertConfigurationIsValid (see Asserts).
+    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, IReadOnlySet<string> mapInto, NestedMaps? nested, IReadOnlySet<string> projectTo, bool asserted)
     {
         if (node is InvocationExpressionSyntax)
         {
@@ -162,7 +184,7 @@ public class CreateMapPattern : ISolutionPattern
                 }
             }
             else if (Problem(sourceType, destinationType, options, model, profileType, values, out members, out copied, out creation,
-                resolvers: new ValueResolvers(resolverCalls, model, anchor.SpanStart, profileType), read: read, converters: converters, extra: extra) is string problem)
+                resolvers: new ValueResolvers(resolverCalls, model, anchor.SpanStart, profileType), read: read, converters: converters, extra: extra, asserted: asserted) is string problem)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: {problem}; write the mapping method by hand.");
             }
@@ -374,7 +396,7 @@ public class CreateMapPattern : ISolutionPattern
     private static string? Problem(ITypeSymbol source, ITypeSymbol destination, Dictionary<string, SimpleLambdaExpressionSyntax?> options,
         SemanticModel model, INamedTypeSymbol? profileType, MemberValues values, out List<(string Name, string Value)> members, out string? copied, out string creation,
         Dictionary<string, string>? reversed = null, ValueResolvers? resolvers = null, List<ProjectionMember>? read = null,
-        Dictionary<string, InvocationExpressionSyntax>? converters = null, MemberOptions? extra = null)
+        Dictionary<string, InvocationExpressionSyntax>? converters = null, MemberOptions? extra = null, bool asserted = false)
     {
         converters ??= [];
         // read: what AutoMapper reads for each assigned member, before the ToB-only rewrites (a projection uses it).
@@ -548,10 +570,16 @@ public class CreateMapPattern : ISolutionPattern
 
             if (!writable)
             {
-                // AutoMapper fills a get-only member when the source has it (an existing collection, for one).
-                if (matches.Count > 0)
+                // Measured (TAAK-261): when the source has the member, AutoMapper writes a non-public setter and fills a get-only collection
+                // (clears it, adds the source items); a get-only member of another type (an array, a string, an object) it leaves alone.
+                if (MayFlatten(target.Name, source) && target is IPropertySymbol { SetMethod: not null })
                 {
-                    return $"{destination.Name}.{target.Name} has no public setter but {source.Name} has the member";
+                    return $"{destination.Name}.{target.Name} has a non-public setter, which AutoMapper writes from {source.Name}";
+                }
+
+                if (MayFlatten(target.Name, source) && IsFilledCollection(target is IPropertySymbol gp ? gp.Type : ((IFieldSymbol)target).Type))
+                {
+                    return $"{destination.Name}.{target.Name} is a get-only collection, which AutoMapper fills with the items from {source.Name}";
                 }
 
                 continue;
@@ -572,6 +600,18 @@ public class CreateMapPattern : ISolutionPattern
             else if (reversed is not null)
             {
                 return $"{destination.Name}.{target.Name} has no member with the same name in {source.Name}";
+            }
+            else if (Flattening.Problem(source, destination, target.Name, out IReadOnlyList<ISymbol> found) is null && found.Count == 0)
+            {
+                // Measured (TAAK-261): AutoMapper leaves a member without a source alone, so the new object keeps its initializer or default.
+                // Only AssertConfigurationIsValid rejects that; when the solution calls it, the member must be mapped in a way this fix does not see.
+                if (asserted)
+                {
+                    return $"{destination.Name}.{target.Name} has no member with the same name in {source.Name}, nor one AutoMapper flattens or reads through a Get method, "
+                        + "yet the solution calls AssertConfigurationIsValid, which rejects such a member";
+                }
+
+                continue;
             }
             else if (FlattenedProblem(source, destination, target.Name, to, values, out reads, out from, out plain, out plainType) is string flattened)
             {
@@ -874,6 +914,12 @@ public class CreateMapPattern : ISolutionPattern
         PostfixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.SuppressNullableWarningExpression } suppressed => Unwrap(suppressed.Operand),
         _ => expression,
     };
+
+    // Whether AutoMapper fills a get-only member of this type with the source items (measured on List and IReadOnlyList, TAAK-261):
+    // any enumerable except an array or a string.
+    private static bool IsFilledCollection(ITypeSymbol type) =>
+        type is not IArrayTypeSymbol && type.SpecialType != SpecialType.System_String
+        && (type.SpecialType == SpecialType.System_Collections_IEnumerable || type.AllInterfaces.Any(i => i.SpecialType == SpecialType.System_Collections_IEnumerable));
 
     // Whether AutoMapper may fill a destination member that has no source member of its exact name: a member or method of that name in
     // another case or with a Get prefix, or one whose name starts the member's name (flattening: Customer.Name → CustomerName).

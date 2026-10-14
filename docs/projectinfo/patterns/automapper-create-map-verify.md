@@ -21,8 +21,11 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `AutoM
 | REQ-5 | Met | `conversion-operator` (until TAAK-247: `conversion`), unittest `int[]`; `collection` is rewritten since TAAK-245 (see [automapper-nested-maps-verify.md](automapper-nested-maps-verify.md)) |
 | REQ-6 | Met | `constructor`, unittest abstract                                              |
 | REQ-7 | Met | `map-into`                                                                    |
+| REQ-8 | Met | `unmatched-member`, `ForMemberIgnore/unmatched` (Fixed); `unmatched-asserted`, `private-setter`, `get-only-collection` (Manual); unit tests `Rewrite_MemberAutoMapperDoesNotWrite_LeftOut` |
 
 End-to-end test of SampleShop (copy in `<corpus>/t146/`): 0 Fixed, 10 Manual (8× `Map`, 2 profiles with options), 0 files changed (AllOrNothing); the copy builds and 38/38 tests are green.
+
+TAAK-261 measurement (AutoMapper 14.0.0, `CreateMap<S, D>()`): a destination member without a source keeps its initializer (`"init"`) or default (`0`), and only `AssertConfigurationIsValid` reports it ("Unmapped properties"); `{ get; private set; }` and `{ get; protected set; }` are written from the source; get-only `List<int>` and `IReadOnlyList<int>` (backed by a list) end with exactly the source items; a get-only `int[]`, `string`, computed property, `readonly` field and get-only object with its own map keep their value; `S? P` is not flattened into `PX`.
 
 ## Deviations
 

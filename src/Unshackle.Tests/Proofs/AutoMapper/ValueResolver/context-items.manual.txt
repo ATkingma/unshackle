@@ -1,0 +1,1 @@
+the resolver IsArchivedResolver for IsArchived uses context (AutoMapper's ResolutionContext), which a mapping method does not have

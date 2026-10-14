@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 968 proofs (excluding `_Pending`).
+Total: 972 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -56,7 +56,7 @@ Total: 968 proofs (excluding `_Pending`).
 | `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check: the map at Test.cs:27 is not in a profile constructor this fix rewrites |
 | `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
-### CreateMap (88)
+### CreateMap (92)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -111,6 +111,7 @@ Total: 968 proofs (excluding `_Pending`).
 | `for-path-member` | Fixed | `CreateMap<Activity, ActivityDto>() .ForPath(dest => dest.Heading, opt => opt.MapFrom(src => src.Title));` → `public static class OrderProfileExtensions {` |
 | `for-source-member-do-not-validate` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Source).ForSourceMember(s => s.Name, o => o.DoNotValidate());` → `public static class OrderProfileExtensions {` |
 | `generic` | Manual | `CreateMap<User, TUserDto>();` — reason: is generic or nested in a generic type |
+| `get-only-collection` | Manual | `CreateMap<Post, PostDto>();` — reason: PostDto.Tags is a get-only collection, which AutoMapper fills with the items from Post |
 | `internal-types` | Fixed | `CreateMap<Order, OrderDto>();` → `internal static class OrderProfileExtensions {` |
 | `max-depth` | Fixed | `CreateMap<Order, OrderDto>().MaxDepth(1);` → `public static class OrderProfileExtensions {` |
 | `max-depth-nested` | Manual | `CreateMap<Order, OrderDto>().PreserveReferences();` — reason: PreserveReferences acts on Address |
@@ -138,6 +139,7 @@ Total: 968 proofs (excluding `_Pending`).
 | `partial` | Manual | `CreateMap<Affiliate, AffiliateModel>();` — reason: is partial (another part can add maps or members they use) |
 | `pre-condition` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.PaidAmount, o =>` → `public static class OrderProfileExtensions {` |
 | `preserve-references` | Fixed | `CreateMap<Order, OrderDto>().PreserveReferences();` → `public static class OrderProfileExtensions {` |
+| `private-setter` | Manual | `CreateMap<WebHookViewModel, WebHookSettings>();` — reason: WebHookSettings.WebHookId has a non-public setter, which AutoMapper writes from WebHookViewModel |
 | `profile-setting` | Manual | `CreateMap<Order, OrderDto>();` — reason: AllowNullCollections changes how null collections are mapped |
 | `project-to` | Fixed | `CreateMap<Series, SeriesDto>(); CreateMap<Genre, GenreTagDto>();` → `} public static class AutoMapperProfilesExtensions` |
 | `project-to-conversion` | Manual | `CreateMap<Order, OrderDto>();` — reason: (ProjectTo converts it in the query, this fix does not) |
@@ -148,6 +150,8 @@ Total: 968 proofs (excluding `_Pending`).
 | `reverse-map-options` | Manual | `CreateMap<User, UserDto>()` — reason: a Condition or ForPath on the reverse map is not migrated |
 | `several-constructors` | Manual | `CreateMap<User, UserViewModel>();` — reason: has several constructors (which maps exist depends on the one that runs) |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>(); CreateMap<Tag, TagDto>();` → `public static class ProductProfileExtensions {` |
+| `unmatched-asserted` | Manual | `CreateMap<Customer, CustomerDto>();` — reason: yet the solution calls AssertConfigurationIsValid, which rejects such a member |
+| `unmatched-member` | Fixed | `CreateMap<Customer, CustomerEntity>();` → `public static class CustomerProfileExtensions {` |
 
 ### ForMemberIgnore (9)
 
@@ -161,7 +165,7 @@ Total: 968 proofs (excluding `_Pending`).
 | `reverse-map-options` | Fixed | `CreateMap<GroupProjectAccessPolicy, GroupProjectAccessPolicyEntity>() .ForMember(dst => dst.GrantedProject, op…` → `public static class AccessPolicyMapperProfileExtensions {` |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>() .ForMember(d => d.Secret, o => o.Ignore())` → `public static class ProductProfileExtensions {` |
 | `string-name` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Rank, o => o.Ignore()).ForMember("Note", o => o.Ignore());` — reason: ForMember in a form the rewrite does not read |
-| `unmatched` | Manual | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore());` — reason: OrderDto.Rank has no member with the same name in Order |
+| `unmatched` | Fixed | `CreateMap<Order, OrderDto>().ForMember(d => d.Note, o => o.Ignore());` → `public static class OrderProfileExtensions {` |
 
 ### ForMemberMapFrom (16)
 

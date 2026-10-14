@@ -113,6 +113,8 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-136-mediatr-msg0005-zonder-handler.md` | ✅ TAAK-136 — MediatR: Mediator generator MSG0005 breaks the build with TreatWarningsAsErrors |
 | `claude/tasks/archief/TAAK-118-gedeeld-pakketbestand-niet-geladen-projecten.md` | ✅ TAAK-118 — A shared `Directory.*.props` keeps the old package if a non-migrated project on disk still uses it |
 | `claude/tasks/CORPUSRUN-fa.md` | FA corpus runs; round 4: 16/16 build, 13/16 green, regressions → TAAK-220..222; round 5: Akka/Steeltoe/LiteDB 0 new regressions |
+| `claude/tasks/CORPUSRUN-automapper.md` | AutoMapper corpus run: harness, baseline 14/18 repos (7851 tests), scan 1 Fixed / 1373 Manual, top Manual reasons |
+| `claude/tasks/TAAK-258-automapper-corpus-baseline.md` | TAAK-258 — AutoMapper corpus baseline and harness (row 16 preparation; after-fix round open) |
 | `claude/tasks/CORPUSRUN-mediatr.md` | MediatR corpus runs: from 0/9 to 7/9 fully migrated (rounds 1–6), blockers and actions |
 | `claude/tasks/REGRESSIE-corpus.md` | Regression run per test: 8/10 identical; Polly → TAAK-140 |
 | `claude/tasks/REGRESSIE-corpus-2.md` | Regression run round 2 (Facility, MODiX): 0 regressions; error classes → TAAK-152..154 |

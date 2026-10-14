@@ -1,41 +1,41 @@
-# TAAK-024 — Gelijknamige typen in de namespace-swap
+# TAAK-024 — Same-named types in the namespace swap
 
-**Status**: voltooid
-**Aangemaakt**: 2026-10-11
-**Gevonden in**: TAAK-023, sectie Blokkade
+**Status**: done
+**Created**: 2026-10-11
+**Found in**: TAAK-023, section Blocker
 
-## Probleem
+## Problem
 
-`UsingDirectives.UpdateAsync` wisselt `using MediatR;` alleen als niets meer aan `MediatR` bindt, en `ProjectPackages`
-houdt het pakket zolang een symbool uit de assembly gebruikt wordt. `IRequest<T>`, `Unit`, `IRequestHandler<,>` enz. bestaan
-in Mediator met dezelfde naam, maar houden using en pakket vast: `after` compileert nooit. `MediatR.Contracts` los
-gerefereerd blijft staan → `IRequest` ambigu.
+`UsingDirectives.UpdateAsync` only swaps `using MediatR;` if nothing binds to `MediatR` anymore, and `ProjectPackages`
+keeps the package as long as a symbol from the assembly is used. `IRequest<T>`, `Unit`, `IRequestHandler<,>` etc. exist
+in Mediator with the same name, but hold on to the using and the package: `after` never compiles. A separately referenced
+`MediatR.Contracts` stays → `IRequest` ambiguous.
 
-## Wat, waar, hoe, waarom
+## What, where, how, why
 
-| Wat                     | Waar                                                                       | Hoe                                                                                                  | Waarom / verbetering                                                                                                                    |
-| ----------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `SwappedTypes`          | `src/Unshackle.Core/Abstractions/IFix.cs`                                  | default-member `=> []`, namen als `MediatR.IRequest\`1`                                              | FA hoeft niets te doen; metadata-naam is eenduidig (ariteit)                                                                            |
-| Swap negeert tweelingen | `src/Unshackle.Core/UsingDirectives.cs`                                    | `IsSwapped(symbol)`: type of `ContainingType`, `OriginalDefinition`                                  | Ook leden (`Unit.Value`, `sender.Send`) tellen niet als gebruik                                                                         |
-| Bestand zonder patroon  | `src/Unshackle.Core/Fixer.cs`                                              | `HasUnusedRemovedUsingAsync` → ook dan `UpdateAsync`                                                 | Een bestand met alleen `IRequest<T>` heeft geen patroon nodig, wel de swap; zonder deze check zou elk bestand `using Mediator;` krijgen |
-| Pakketcheck             | `src/Unshackle.Core/ProjectPackages.cs`                                    | `IsSwapped` overslaan; match op `RemovedPackage` ∪ `AlsoRemovedPackages`                             | Pakket gaat weg als alleen tweelingen overblijven                                                                                       |
-| Extra oud pakket        | `Models/PackageMigration.cs`, `DataAccess/Projects/XmlProjectFileStore.cs` | `AlsoRemovedPackages` (default `[]`), verwijderd uit referenties en `PackageVersion` tenzij gehouden | `MediatR.Contracts` naast Mediator geeft ambigue typen                                                                                  |
-| Lijst                   | `src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs`                           | 11 typen, geen `IPipelineBehavior`                                                                   | Signatuur/constraint verschilt (`MessageHandlerDelegate`, `IMessage`) → eigen patroon (rij 4)                                           |
+| What                     | Where                                                                      | How                                                                                                   | Why / improvement                                                                                                                      |
+| ------------------------ | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `SwappedTypes`           | `src/Unshackle.Core/Abstractions/IFix.cs`                                  | default member `=> []`, names like `MediatR.IRequest\`1`                                              | FA needs to do nothing; metadata name is unambiguous (arity)                                                                           |
+| Swap ignores twins       | `src/Unshackle.Core/UsingDirectives.cs`                                    | `IsSwapped(symbol)`: type or `ContainingType`, `OriginalDefinition`                                   | Members too (`Unit.Value`, `sender.Send`) do not count as usage                                                                        |
+| File without a pattern   | `src/Unshackle.Core/Fixer.cs`                                              | `HasUnusedRemovedUsingAsync` → `UpdateAsync` in that case too                                         | A file with only `IRequest<T>` needs no pattern, but does need the swap; without this check every file would get `using Mediator;`     |
+| Package check            | `src/Unshackle.Core/ProjectPackages.cs`                                    | skip `IsSwapped`; match on `RemovedPackage` ∪ `AlsoRemovedPackages`                                   | Package is removed if only twins remain                                                                                                |
+| Extra old package        | `Models/PackageMigration.cs`, `DataAccess/Projects/XmlProjectFileStore.cs` | `AlsoRemovedPackages` (default `[]`), removed from references and `PackageVersion` unless kept        | `MediatR.Contracts` next to Mediator gives ambiguous types                                                                             |
+| List                     | `src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs`                           | 11 types, no `IPipelineBehavior`                                                                      | Signature/constraint differs (`MessageHandlerDelegate`, `IMessage`) → own pattern (row 4)                                              |
 
-## Stappen
+## Steps
 
-- [x] 1. Typen verifiëren in de echte assemblies (theory-test per type tegen `TestReferences.MediatR`/`.Mediator`).
+- [x] 1. Verify types in the real assemblies (theory test per type against `TestReferences.MediatR`/`.Mediator`).
 - [x] 2. `IFix.SwappedTypes`, `UsingDirectives`, `ProjectPackages`, `Fixer`.
 - [x] 3. `PackageMigration.AlsoRemovedPackages` + `XmlProjectFileStore`.
 - [x] 4. Tests: `SwappedTypesTests`, `XmlProjectFileStoreTests.EditAsync_AlsoRemovedPackageReferenced_RemovesIt`.
-- [x] 5. Plan/verify, `core.md`, INDEX, README; `mediatr-queue.md` rij 1 terug op open.
+- [x] 5. Plan/verify, `core.md`, INDEX, README; `mediatr-queue.md` row 1 back to open.
 
-## Resultaat
+## Result
 
-Build 0 warnings, 295 tests groen, sample 38 groen, hook groen. Shortcut: een contracts-project zonder `MediatR` krijgt ook
-`Mediator.SourceGenerator` erbij (eerste toegevoegde pakket komt "transitief" binnen).
+Build 0 warnings, 295 tests green, sample 38 green, hook green. Shortcut: a contracts project without `MediatR` also gets
+`Mediator.SourceGenerator` (the first added package comes in "transitively").
 
-## Zie ook
+## See also
 
 - `claude/tasks/TAAK-023-mediatr-request-handler.md`
 - `claude/tasks/mediatr-queue.md`

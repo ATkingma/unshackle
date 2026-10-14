@@ -1,28 +1,28 @@
-# TAAK-223 — Multi-target project: alleen de eerste TFM wordt gemigreerd, code onder `#if !NETFRAMEWORK` blijft liggen
+# TAAK-223 — Multi-target project: only the first TFM is migrated, code under `#if !NETFRAMEWORK` stays behind
 
-**Status**: ✅ klaar (2026-10-13)
-**Aangemaakt**: 2026-10-13 (FA-corpusrun ronde 4)
-**Doel**: bestanden in multi-target projecten migreren in een TFM waarin de code actief is.
+**Status**: ✅ done (2026-10-13)
+**Created**: 2026-10-13 (FA corpus run round 4)
+**Goal**: migrate files in multi-target projects in a TFM in which the code is active.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- LiteDB `7b71bc4`: 709 `unmatched-use`-Manuals (593× `x.Should()`), vooral in `LiteDB.Tests/Engine/Coordinator*_Tests.cs` en `SharedCoordination*_Tests.cs`. Daarnaast 14 `usings`-findings "Code in an inactive #if branch".
-- `LiteDB.Tests.csproj` heeft `TargetFrameworks net462;net481;net8.0;net10.0`, met `NETFRAMEWORK` gedefinieerd voor net4x. De betreffende bestanden staan helemaal in `#if !NETFRAMEWORK`.
-- `Fixer.FixAsync` (`src/Unshackle.Core/Fixer.cs`, "A multi-target project is loaded once per target framework") groepeert documenten per pad en neemt `file.First()`. Dat is hier de net462-kopie, waarin de code inactief is. `ProjectPackages.RemainingUsesAsync` vindt de calls wel in een andere TFM, en dat geeft `unmatched-use`.
+- LiteDB `7b71bc4`: 709 `unmatched-use` Manuals (593× `x.Should()`), mainly in `LiteDB.Tests/Engine/Coordinator*_Tests.cs` and `SharedCoordination*_Tests.cs`. Besides that 14 `usings` findings "Code in an inactive #if branch".
+- `LiteDB.Tests.csproj` has `TargetFrameworks net462;net481;net8.0;net10.0`, with `NETFRAMEWORK` defined for net4x. The files concerned are entirely inside `#if !NETFRAMEWORK`.
+- `Fixer.FixAsync` (`src/Unshackle.Core/Fixer.cs`, "A multi-target project is loaded once per target framework") groups documents per path and takes `file.First()`. Here that is the net462 copy, in which the code is inactive. `ProjectPackages.RemainingUsesAsync` does find the calls in another TFM, and that gives `unmatched-use`.
 
-## Stappen
+## Steps
 
-- [x] 1. Per bestand de projectkopie kiezen waarin de takken met FA-calls actief zijn (bijv. de kopie met de meeste actieve FA-calls), of per TFM fixen en alleen schrijven als de uitkomst gelijk is.
-- [x] 2. Unittest met een multi-target project en `#if !NETFRAMEWORK`.
-- [x] 3. LiteDB-herhaling: unmatched-use ≈ 0, build en tests groen.
+- [x] 1. Per file choose the project copy in which the branches with FA calls are active (e.g. the copy with the most active FA calls), or fix per TFM and only write if the outcome is equal.
+- [x] 2. Unit test with a multi-target project and `#if !NETFRAMEWORK`.
+- [x] 3. LiteDB repeat: unmatched-use ≈ 0, build and tests green.
 
-## Uitkomst
+## Outcome
 
-- `Fixer.PassCopiesAsync`: per bestand één pass per kopie met een afwijkende set inactieve `#if`-code (bestand zonder directives: alleen de eerste kopie). Pass 2+ werkt op de tekst tot dan toe en fixt alleen nodes die in alle eerdere passes inactief waren (`Fixer.NewCode`, herparse met de eerdere `ParseOptions`); gedeelde code wordt dus één keer gefixt en gerapporteerd. Conflictcontroles (TAAK-174/198/199) per pass (`FixCopyAsync`). De usings-rij "inactive #if branch" van een eerdere pass vervalt als een latere pass de usings bijwerkt.
-- Tests: `FixerTests.FixAsync_CodeOnlyActiveInLaterTargetFramework_IsFixedOnceInEveryBranch` (compileert in beide TFM's), `FixAsync_ManualInSharedCode_IsReportedOnceAcrossTargetFrameworks`. Geen proof: dit is Fixer-gedrag, geen pattern.
-- LiteDB (`<corpus>/corpus-fa/_results/r5-litedb/`): unmatched-use 709 → 2, usings 15 → 2, Fixed 6917 → 7649; build groen; alleen de 26 bekende regressies van TAAK-222.
+- `Fixer.PassCopiesAsync`: per file one pass per copy with a differing set of inactive `#if` code (a file without directives: only the first copy). Pass 2+ works on the text so far and only fixes nodes that were inactive in all earlier passes (`Fixer.NewCode`, reparse with the earlier `ParseOptions`); shared code is therefore fixed and reported once. Conflict checks (TAAK-174/198/199) per pass (`FixCopyAsync`). The usings row "inactive #if branch" of an earlier pass is dropped when a later pass updates the usings.
+- Tests: `FixerTests.FixAsync_CodeOnlyActiveInLaterTargetFramework_IsFixedOnceInEveryBranch` (compiles in both TFMs), `FixAsync_ManualInSharedCode_IsReportedOnceAcrossTargetFrameworks`. No proof: this is Fixer behaviour, not a pattern.
+- LiteDB (`<corpus>/corpus-fa/_results/r5-litedb/`): unmatched-use 709 → 2, usings 15 → 2, Fixed 6917 → 7649; build green; only the 26 known regressions of TAAK-222.
 
-## Zie ook
+## See also
 
-- `claude/tasks/CORPUSRUN-fa.md` (ronde 4)
+- `claude/tasks/CORPUSRUN-fa.md` (round 4)
 - `claude/tasks/patroon-queue.md`

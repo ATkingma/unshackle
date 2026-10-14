@@ -10,35 +10,35 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainPattern.cs`; registratie in `FluentAssertionsFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainPattern.cs`; registration in `FluentAssertionsFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/`, run by `ProofTests`.
 
-| REQ    | Oordeel | Bewijs |
-| ------ | ------- | ------ |
-| REQ-1  | Gehaald | `list.*.cs`, `enumerable.*.cs` |
-| REQ-2  | Gehaald | `predicate.*.cs` |
-| REQ-3  | Gehaald | `not-contain.*.cs` |
-| REQ-4  | Gehaald | `string.*.cs` (after bevat `Shouldly.Case.Sensitive`, compileert tegen Shouldly) |
-| REQ-5  | Gehaald | `because.*.cs` |
-| REQ-6  | Gehaald | `lambda.*.cs` |
-| REQ-7  | Vervangen | Door Uitbreiding TAAK-097: `because-args` is nu Fixed |
-| REQ-8  | Gehaald | `chain.*`, `value-used.*` |
-| REQ-9  | Gehaald | `and-chain.*` |
-| REQ-10 | Gehaald | `dictionary.*` |
-| REQ-11 | Gehaald | `items.*`, `occurrence.*` |
-| REQ-12 | Gehaald | `nullable-string.*` |
-| Uitbreiding TAAK-097 | Gehaald | `because-args.before.cs` / `because-args.after.cs` |
+| REQ    | Verdict | Evidence |
+| ------ | ------- | -------- |
+| REQ-1  | Met | `list.*.cs`, `enumerable.*.cs` |
+| REQ-2  | Met | `predicate.*.cs` |
+| REQ-3  | Met | `not-contain.*.cs` |
+| REQ-4  | Met | `string.*.cs` (after contains `Shouldly.Case.Sensitive`, compiles against Shouldly) |
+| REQ-5  | Met | `because.*.cs` |
+| REQ-6  | Met | `lambda.*.cs` |
+| REQ-7  | Replaced | By Extension TAAK-097: `because-args` is now Fixed |
+| REQ-8  | Met | `chain.*`, `value-used.*` |
+| REQ-9  | Met | `and-chain.*` |
+| REQ-10 | Met | `dictionary.*` |
+| REQ-11 | Met | `items.*`, `occurrence.*` |
+| REQ-12 | Met | `nullable-string.*` |
+| Extension TAAK-097 | Met | `because-args.before.cs` / `because-args.after.cs` |
 
 ## Deviations
 
 | # | Area | Plan says | Code does | Impact |
 | - | ---- | --------- | --------- | ------ |
-| 1 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because`; gedocumenteerd verschil | Low |
-| 2 | Behaviour | Substring-check gelijk aan FA | Shouldly is standaard hoofdletterongevoelig; `Case.Sensitive` wordt expliciet toegevoegd | Low |
+| 1 | Behaviour | Error message equal to FA | Shouldly puts "Additional Info:" before the `because`; a documented difference | Low |
+| 2 | Behaviour | Substring check equal to FA | Shouldly is case-insensitive by default; `Case.Sensitive` is added explicitly | Low |
 
 ## Validation results
 
 | Check | Command        | Result |
 | ----- | -------------- | ------ |
 | Build | `dotnet build` | passed (0 warnings) |
-| Tests | `dotnet test`  | passed: 71 of 71 (inclusief alle ProofTests); sample-tests 15 van 15 |
-| Lint  | _geen_         | _not run_: geen lint-commando ingesteld |
+| Tests | `dotnet test`  | passed: 71 of 71 (including all ProofTests); sample tests 15 of 15 |
+| Lint  | _none_         | _not run_: no lint command configured   |

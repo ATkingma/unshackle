@@ -8,7 +8,7 @@ files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
   - src/Unshackle.Tests/Proofs/FluentAssertions/ThrowAsync/
 ---
-# Feature: fa.throw-async: await act.Should().ThrowAsync<T>() (+ WithMessage) wordt await Should.ThrowAsync<T>(act) (+ Message-check)
+# Feature: fa.throw-async: await act.Should().ThrowAsync<T>() (+ WithMessage) becomes await Should.ThrowAsync<T>(act) (+ Message check)
 
 | | |
 |---|---|
@@ -16,73 +16,73 @@ files_expected:
 | **Status** | Approved |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-012, voortbouwend op `fa.throw` (TAAK-008).
+> Drawn up from TAAK-012, building on `fa.throw` (TAAK-008).
 
 ## One-sentence summary
 
-fa.throw-async: `await act.Should().ThrowAsync<T>()` wordt `await Should.ThrowAsync<T>(act)`; een direct volgende `.WithMessage(patroon)` wordt `(await Should.ThrowAsync<T>(act)).Message.ShouldContain/StartWith/EndWith/Be(...)`.
+fa.throw-async: `await act.Should().ThrowAsync<T>()` becomes `await Should.ThrowAsync<T>(act)`; a directly following `.WithMessage(pattern)` becomes `(await Should.ThrowAsync<T>(act)).Message.ShouldContain/StartWith/EndWith/Be(...)`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Een als statement geawaite `ThrowAsync<T>()` op een `Func<Task>` of `Func<Task<T>>` (T referentietype), met optionele `because` zonder `becauseArgs`.
-- Een direct volgende `.WithMessage(p[, because])` met een constante string `p` zonder andere wildcards dan een voorloop- en/of afsluitende `*`.
-- `Manual(reden)` voor `ThrowExactlyAsync`, niet direct geawaite aanroepen, gebruikt resultaat, `Awaiting(...)`/`Invoking(...)`, andere subjecttypes en niet-vertaalbare patronen.
+- A `ThrowAsync<T>()` awaited as a statement on a `Func<Task>` or `Func<Task<T>>` (T a reference type), with an optional `because` without `becauseArgs`.
+- A directly following `.WithMessage(p[, because])` with a constant string `p` without wildcards other than a leading and/or trailing `*`.
+- `Manual(reason)` for `ThrowExactlyAsync`, calls that are not awaited directly, a used result, `Awaiting(...)`/`Invoking(...)`, other subject types and untranslatable patterns.
 
 **Out of scope**
 
-- `Func<ValueTask>` (FA 7.2.2 heeft er geen `Should()` voor), `NotThrowAsync`, `ThrowWithinAsync`, `.WithInnerException`, `.Where` (blijven Manual).
-- Beheer van `using`-directives: de `Fixer` doet dat via `IFix`.
+- `Func<ValueTask>` (FA 7.2.2 has no `Should()` for it), `NotThrowAsync`, `ThrowWithinAsync`, `.WithInnerException`, `.Where` (stay Manual).
+- Management of `using` directives: the `Fixer` does that via `IFix`.
 
 ## Requirements
 
-- **REQ-1**: WHEN `await act.Should().ThrowAsync<T>()` als statement op een `Func<Task>` staat THE SYSTEM SHALL het vervangen door `await Should.ThrowAsync<T>(act)` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ThrowAsync/simple.*.cs`).
-- **REQ-2**: WHEN het subject een `Func<Task<T>>` met T een referentietype is THE SYSTEM SHALL `await Should.ThrowAsync<T>(func)` geven (proof `.../ThrowAsync/func-task-reference.*.cs`).
-- **REQ-3**: WHEN een `because` zonder `becauseArgs` staat THE SYSTEM SHALL die als tweede argument van `Should.ThrowAsync` overnemen (proof `.../because.*.cs`).
-- **REQ-4**: WHEN `.WithMessage("*x*")` direct op `ThrowAsync<T>()` volgt THE SYSTEM SHALL `(await Should.ThrowAsync<T>(act)).Message.ShouldContain("x", Shouldly.Case.Insensitive)` geven (proof `.../message-contains.*.cs`).
-- **REQ-5**: WHEN het patroon `x*` of `*x` is THE SYSTEM SHALL `ShouldStartWith` resp. `ShouldEndWith` met `Case.Insensitive` gebruiken (proofs `message-starts.*`, `message-ends.*`).
-- **REQ-6**: WHEN het patroon geen wildcards bevat THE SYSTEM SHALL `ShouldBe(x, Shouldly.StringCompareShould.IgnoreCase)` geven (proof `message-exact.*`).
-- **REQ-7**: WHEN `WithMessage` een `because` heeft THE SYSTEM SHALL die als `customMessage` van de message-check overnemen; bij `ShouldBe` vóór de `StringCompareShould` (proofs `message-because.*`, `message-exact-because.*`).
-- **REQ-8**: IF `ThrowExactlyAsync<T>` wordt gebruikt THEN THE SYSTEM SHALL Manual geven (proof `throw-exactly.*`).
-- **REQ-9**: IF `becauseArgs` worden gebruikt (op `ThrowAsync` of `WithMessage`) THEN THE SYSTEM SHALL Manual geven (proofs `because-args.*`, `message-because-args.*`).
-- **REQ-10**: IF het patroon een `*`/`?` midden in de tekst bevat, of geen string-constante is, THEN THE SYSTEM SHALL Manual geven (proofs `message-wildcard.*`, `message-variable.*`).
-- **REQ-11**: IF de aanroep niet direct geawaite wordt (geen `await`, of gevolgd door `.Where`/…) THEN THE SYSTEM SHALL Manual geven (proofs `no-await.*`, `where.*`).
-- **REQ-12**: IF de uitkomst van de await wordt gebruikt (variabele) THEN THE SYSTEM SHALL Manual geven (proof `value-used.*`).
-- **REQ-13**: IF het subject met `Awaiting(...)` is gebouwd, of een `Func<Task<ValueType>>` is THEN THE SYSTEM SHALL Manual geven (proofs `awaiting.*`, `value-func.*`).
-- **Uitbreiding ThrowExactly**: `ThrowExactlyAsync<T>` wordt niet meer Manual: `fa.throw-exactly` vindt het en laat deze `Rewrite` `(await Should.ThrowAsync<T>(act)).ShouldBeOfType<T>()` bouwen (proofs `ThrowExactly/async.*`, `async-message.*`). Vervangt REQ-8; er is geen `ThrowAsync/throw-exactly.*`-proof.
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan (op `ThrowAsync` of `WithMessage`) THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als `customMessage` geven (proofs `because-args.*`, `message-because-args.*`, nu `.after.cs`); named arguments of een niet-constante `because` blijven Manual. Vervangt REQ-9.
-- **Uitbreiding Awaiting**: `x.Awaiting(s => ...)`-subjects vindt `fa.invoking` (`InvokingPattern`), dat deze `Rewrite` aanroept: stabiele referentie-receiver plus lambda wordt `await Should.ThrowAsync<T>(async () => ...)` (proofs `Invoking/awaiting.*`, `awaiting-exactly.*`); anders Manual. Vervangt het Awaiting-deel van REQ-13; er is geen `ThrowAsync/awaiting.*`-proof.
-- **Uitbreiding ConfigureAwait**: WHEN `.ConfigureAwait(...)` tussen de aanroep en de `await` staat THE SYSTEM SHALL die op `Should.ThrowAsync` houden (proof `edge-configure-await.*`).
-- **Uitbreiding AggregateException**: IF de actie zichtbaar blokkeert (`.Result`, `Wait`, ...) en T geen `AggregateException` accepteert THEN THE SYSTEM SHALL Manual geven (proof `aggregate-result.*`); een geawaite taak blijft Fixed (proof `aggregate-awaited.*`). Niet bij ThrowExactlyAsync.
-- **Uitbreiding regeleinden**: WHEN het `WithMessage`-patroon zonder wildcards een regeleinde bevat THE SYSTEM SHALL `ShouldBe(lit, StringCompareShould.IgnoreCase | StringCompareShould.IgnoreLineEndings)` geven (proof `message-line-break.*`); met een `*` erbij Manual (proof `message-contains-line-break.*`).
-- **Uitbreiding TAAK-100**: IF de assertie in een niet omgezette `AssertionScope` staat THEN THE SYSTEM SHALL Manual "Inside an AssertionScope" geven (geen eigen proof; zie `ThrowExactly/assertion-scope`).
-- **Uitbreiding TAAK-170**: dezelfde ketenomzetting als `fa.throw` (`ThrowChains`) op `await Should.ThrowAsync<T>(…)`; proofs `ThrowAsync/result-*`, `where`, `value-used`.
-- **Uitbreiding TAAK-221**: IF `T` `OperationCanceledException` is of daarvan afgeleid, en er volgt een stap (`WithMessage`/`WithInnerException`/`Where`) of het is `ThrowExactlyAsync` (behalve exact `TaskCanceledException`) THEN THE SYSTEM SHALL Manual geven: eindigt de task geannuleerd, dan geeft Shouldly's `ThrowAsync` een nieuwe `TaskCanceledException` (zonder inner exception) terug (probe Shouldly 4.3.0). `.And.CancellationToken` blijft Fixed (de nieuwe exception krijgt het token van de task). Proofs `ThrowAsync/cancelled-inner`, `ThrowExactly/async-cancelled` (Manual), `ThrowExactly/async-task-canceled`, `ThrowAsync/result-local-and` (Fixed).
-- **Uitbreiding TAAK-220 (async)**: IF de actie een lambda `x => x.WaitAsync(..)` is (wacht op een elders gemaakte task) en `T` geen `AggregateException` is THEN THE SYSTEM SHALL Manual geven: is die task gefaald met een geneste `AggregateException`, dan vlakt FA die af en Shouldly niet (probe). Proof `Invoking/awaiting-wait-async`.
+- **REQ-1**: WHEN `await act.Should().ThrowAsync<T>()` is a statement on a `Func<Task>` THE SYSTEM SHALL replace it with `await Should.ThrowAsync<T>(act)` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ThrowAsync/simple.*.cs`).
+- **REQ-2**: WHEN the subject is a `Func<Task<T>>` with T a reference type THE SYSTEM SHALL give `await Should.ThrowAsync<T>(func)` (proof `.../ThrowAsync/func-task-reference.*.cs`).
+- **REQ-3**: WHEN there is a `because` without `becauseArgs` THE SYSTEM SHALL take it over as the second argument of `Should.ThrowAsync` (proof `.../because.*.cs`).
+- **REQ-4**: WHEN `.WithMessage("*x*")` directly follows `ThrowAsync<T>()` THE SYSTEM SHALL give `(await Should.ThrowAsync<T>(act)).Message.ShouldContain("x", Shouldly.Case.Insensitive)` (proof `.../message-contains.*.cs`).
+- **REQ-5**: WHEN the pattern is `x*` or `*x` THE SYSTEM SHALL use `ShouldStartWith` or `ShouldEndWith` respectively with `Case.Insensitive` (proofs `message-starts.*`, `message-ends.*`).
+- **REQ-6**: WHEN the pattern contains no wildcards THE SYSTEM SHALL give `ShouldBe(x, Shouldly.StringCompareShould.IgnoreCase)` (proof `message-exact.*`).
+- **REQ-7**: WHEN `WithMessage` has a `because` THE SYSTEM SHALL take it over as the `customMessage` of the message check; for `ShouldBe` before the `StringCompareShould` (proofs `message-because.*`, `message-exact-because.*`).
+- **REQ-8**: IF `ThrowExactlyAsync<T>` is used THEN THE SYSTEM SHALL give Manual (proof `throw-exactly.*`).
+- **REQ-9**: IF `becauseArgs` are used (on `ThrowAsync` or `WithMessage`) THEN THE SYSTEM SHALL give Manual (proofs `because-args.*`, `message-because-args.*`).
+- **REQ-10**: IF the pattern contains a `*`/`?` in the middle of the text, or is not a string constant, THEN THE SYSTEM SHALL give Manual (proofs `message-wildcard.*`, `message-variable.*`).
+- **REQ-11**: IF the call is not awaited directly (no `await`, or followed by `.Where`/…) THEN THE SYSTEM SHALL give Manual (proofs `no-await.*`, `where.*`).
+- **REQ-12**: IF the outcome of the await is used (variable) THEN THE SYSTEM SHALL give Manual (proof `value-used.*`).
+- **REQ-13**: IF the subject is built with `Awaiting(...)`, or is a `Func<Task<ValueType>>` THEN THE SYSTEM SHALL give Manual (proofs `awaiting.*`, `value-func.*`).
+- **Extension ThrowExactly**: `ThrowExactlyAsync<T>` is no longer Manual: `fa.throw-exactly` finds it and has this `Rewrite` build `(await Should.ThrowAsync<T>(act)).ShouldBeOfType<T>()` (proofs `ThrowExactly/async.*`, `async-message.*`). Replaces REQ-8; there is no `ThrowAsync/throw-exactly.*` proof.
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` (on `ThrowAsync` or `WithMessage`) THE SYSTEM SHALL give `string.Format(CultureInfo.InvariantCulture, because, args)` as `customMessage` (proofs `because-args.*`, `message-because-args.*`, now `.after.cs`); named arguments or a non-constant `because` stay Manual. Replaces REQ-9.
+- **Extension Awaiting**: `x.Awaiting(s => ...)` subjects are found by `fa.invoking` (`InvokingPattern`), which calls this `Rewrite`: a stable reference receiver plus lambda becomes `await Should.ThrowAsync<T>(async () => ...)` (proofs `Invoking/awaiting.*`, `awaiting-exactly.*`); otherwise Manual. Replaces the Awaiting part of REQ-13; there is no `ThrowAsync/awaiting.*` proof.
+- **Extension ConfigureAwait**: WHEN `.ConfigureAwait(...)` sits between the call and the `await` THE SYSTEM SHALL keep it on `Should.ThrowAsync` (proof `edge-configure-await.*`).
+- **Extension AggregateException**: IF the action visibly blocks (`.Result`, `Wait`, ...) and T does not accept an `AggregateException` THEN THE SYSTEM SHALL give Manual (proof `aggregate-result.*`); an awaited task stays Fixed (proof `aggregate-awaited.*`). Not for ThrowExactlyAsync.
+- **Extension line endings**: WHEN the `WithMessage` pattern without wildcards contains a line break THE SYSTEM SHALL give `ShouldBe(lit, StringCompareShould.IgnoreCase | StringCompareShould.IgnoreLineEndings)` (proof `message-line-break.*`); with a `*` as well, Manual (proof `message-contains-line-break.*`).
+- **Extension TAAK-100**: IF the assertion is inside an `AssertionScope` that is not converted THEN THE SYSTEM SHALL give Manual "Inside an AssertionScope" (no own proof; see `ThrowExactly/assertion-scope`).
+- **Extension TAAK-170**: the same chain conversion as `fa.throw` (`ThrowChains`) on `await Should.ThrowAsync<T>(…)`; proofs `ThrowAsync/result-*`, `where`, `value-used`.
+- **Extension TAAK-221**: IF `T` is `OperationCanceledException` or derived from it, and a step follows (`WithMessage`/`WithInnerException`/`Where`) or it is `ThrowExactlyAsync` (except exactly `TaskCanceledException`) THEN THE SYSTEM SHALL give Manual: if the task ends cancelled, Shouldly's `ThrowAsync` returns a new `TaskCanceledException` (without inner exception) (probe Shouldly 4.3.0). `.And.CancellationToken` stays Fixed (the new exception gets the task's token). Proofs `ThrowAsync/cancelled-inner`, `ThrowExactly/async-cancelled` (Manual), `ThrowExactly/async-task-canceled`, `ThrowAsync/result-local-and` (Fixed).
+- **Extension TAAK-220 (async)**: IF the action is a lambda `x => x.WaitAsync(..)` (waits for a task created elsewhere) and `T` is not `AggregateException` THEN THE SYSTEM SHALL give Manual: if that task faulted with a nested `AggregateException`, FA flattens it and Shouldly does not (probe). Proof `Invoking/awaiting-wait-async`.
 
 ## Assumptions
 
-- Shouldly 4.3.0 heeft `Should.ThrowAsync<T>(Func<Task>, string? customMessage)`; `Func<Task<T>>` met T referentietype converteert via covariantie. Net als `Throw<T>` accepteert het afgeleide exceptions (vastgesteld met een proefprogramma).
-- FA's `WithMessage` op de taak is een extensiemethode (`ExceptionAssertionsExtensions`) die het hele bericht hoofdletterongevoelig met een wildcard vergelijkt.
-- De `Fixer` beheert `using Shouldly;`/`using FluentAssertions;` via `IFix`.
+- Shouldly 4.3.0 has `Should.ThrowAsync<T>(Func<Task>, string? customMessage)`; `Func<Task<T>>` with T a reference type converts via covariance. Like `Throw<T>` it accepts derived exceptions (established with a test program).
+- FA's `WithMessage` on the task is an extension method (`ExceptionAssertionsExtensions`) that compares the whole message case-insensitively with a wildcard.
+- The `Fixer` manages `using Shouldly;`/`using FluentAssertions;` via `IFix`.
 
 ## Risks
 
-- Foutmelding krijgt "Additional Info:" in plaats van FA's "because"-voorvoegsel: gedocumenteerd verschil.
-- Het statement wordt als geheel vervangen (await + keten); afwijkende opmaak kan veranderen.
-- `Func<Task<int>>` valt onder Manual omdat er geen implicit conversie naar `Func<Task>` bestaat.
+- The error message gets "Additional Info:" instead of FA's "because" prefix: a documented difference.
+- The statement is replaced as a whole (await + chain); deviating formatting can change.
+- `Func<Task<int>>` falls under Manual because there is no implicit conversion to `Func<Task>`.
 
-## Modellen
+## Models
 
-Klassen-, sequence- en beslisdiagram: [fa-throw-async-modellen.md](fa-throw-async-modellen.md).
+Class, sequence and decision diagram: [fa-throw-async-modellen.md](fa-throw-async-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.
 
-## Zie ook
+## See also
 
-- `claude/docs/INDEX.md` — index voor agents
-- `claude/docs/patroon-loop.md` — hoe patronen gemaakt en gedocumenteerd worden
-- `docs/projectinfo/patterns/fa-throw-plan.md` — het synchrone patroon
+- `claude/docs/INDEX.md` — index for agents
+- `claude/docs/patroon-loop.md` — how patterns are made and documented
+- `docs/projectinfo/patterns/fa-throw-plan.md` — the synchronous pattern

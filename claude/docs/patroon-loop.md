@@ -1,125 +1,125 @@
-# Patroon-loop
+# Pattern loop
 
-Elke 15 minuten start de hoofdsessie een achtergrond-agent die één patroon uit
-`claude/tasks/patroon-queue.md` oppakt: eerst onderzoek in een taak (`/taak-specifiek`-formaat), dan realisatie.
-Agents draaien parallel. De voortgang en keuzes staan in de taakbestanden; de wachtrij zegt welke taak bij welk patroon hoort.
+Every 15 minutes the main session starts a background agent that picks up one pattern from
+`claude/tasks/patroon-queue.md`: first research in a task (`/taak-specifiek` format), then implementation.
+Agents run in parallel. Progress and choices are in the task files; the queue says which task belongs to which pattern.
 
-## Tick (hoofdsessie, elke 15 min)
+## Tick (main session, every 15 min)
 
-1. Lees `claude/tasks/patroon-queue.md`.
-2. Alle rijen `klaar`? → loop stoppen (`CronDelete`), gebruiker melden. Klaar.
-3. Kies de eerste rij met `open`, of `geblokkeerd` waarvan de blokkerende taak klaar is, of `mislukt` met poging < 3.
-   Geen kandidaat (alles `bezig`/geblokkeerd)? → niets starten.
-4. Zet de rij op `bezig (wordt geclaimd)` zodat de volgende tick hem overslaat.
-5. Start één achtergrond-agent met de **Agent-brief** hieronder plus het rijnummer.
-   Model: rij 0 (fundament) → `opus`; patronen → `sonnet`; `mislukt` poging 2 → `opus`, poging 3 → `fable`.
-6. Als een agent klaar is met een patroon (rij `klaar`): start eerst één achtergrond-agent (`sonnet`) met de
-   **Modellen-brief** hieronder en wacht op zijn verslag. Daarna controleer zelf `dotnet build`, `dotnet test` en
-   `dotnet test --solution samples/SampleShop/SampleShop.slnx`. Alles groen → `git add -A` (zonder bestanden van nog lopende patroon-agents), commit
-   (`Add <patroon-ID> pattern`, Engels, geen Claude-vermelding) en `git push origin main` (staande opdracht van de
-   gebruiker, 2026-10-10). Draai de checks op de commit zelf in een losse worktree (`git worktree add --detach <scratchpad>/verify HEAD`), zodat half werk van lopende agents niet meetelt. Iets rood → niet pushen (`claude/docs/agent-werkwijze.md` §6), melden.
-7. Geef de gebruiker een kort verslag (wat, waar, keuzes, testresultaat, commit-hash).
-8. **Meteen door**: na de push niet wachten op de volgende tick. Is er een kandidaat (stap 3), claim en start die
-   direct (stap 4–5). De cron blijft daarnaast elke 15 min een extra agent starten (parallel). (Gebruiker, 2026-10-11.)
+1. Read `claude/tasks/patroon-queue.md`.
+2. All rows `klaar`? → stop the loop (`CronDelete`), tell the user. Done.
+3. Pick the first row with `open`, or `geblokkeerd` whose blocking task is done, or `mislukt` with attempt < 3.
+   No candidate (everything `bezig`/blocked)? → start nothing.
+4. Set the row to `bezig (wordt geclaimd)` so the next tick skips it.
+5. Start one background agent with the **Agent brief** below plus the row number.
+   Model: row 0 (foundation) → `opus`; patterns → `sonnet`; `mislukt` attempt 2 → `opus`, attempt 3 → `fable`.
+6. When an agent has finished a pattern (row `klaar`): first start one background agent (`sonnet`) with the
+   **Models brief** below and wait for its report. Then check `dotnet build`, `dotnet test` and
+   `dotnet test --solution samples/SampleShop/SampleShop.slnx` yourself. All green → `git add -A` (without files of pattern agents still running), commit
+   (`Add <patroon-ID> pattern`, English, no Claude mention) and `git push origin main` (standing instruction from the
+   user, 2026-10-10). Run the checks on the commit itself in a separate worktree (`git worktree add --detach <scratchpad>/verify HEAD`), so that half-finished work of running agents does not count. Anything red → do not push (`claude/docs/agent-werkwijze.md` §6), report it.
+7. Give the user a short report (what, where, choices, test result, commit hash).
+8. **Keep going immediately**: after the push, do not wait for the next tick. If there is a candidate (step 3), claim and start it
+   right away (steps 4–5). The cron also keeps starting an extra agent every 15 min (in parallel). (User, 2026-10-11.)
 
-## Agent-brief
+## Agent brief
 
-Je werkt in `/mnt/dikkeschijf/documenten/Git/unshackle`. Lees eerst `CLAUDE.md`, `docs/projectinfo/README.md` (+ `architectuur/core.md`),
-`claude/docs/code-standaarden.md` en `claude/docs/agent-werkwijze.md`. Docs in het Nederlands, code in het Engels.
-Niet committen of pushen (zie `claude/docs/agent-werkwijze.md` §6: main blijft groen). Andere agents werken tegelijk in dezelfde map.
+You work in the repository root. First read `CLAUDE.md`, `docs/projectinfo/README.md` (+ `architectuur/core.md`),
+`claude/docs/code-standaarden.md` and `claude/docs/agent-werkwijze.md`. Docs in Dutch, code in English.
+Do not commit or push (see `claude/docs/agent-werkwijze.md` §6: main stays green). Other agents work in the same folder at the same time.
 
-1. **Claim**: zet jouw rij in `claude/tasks/patroon-queue.md` op `bezig (TAAK-NNN)`. Was er al een taakbestand
-   voor deze rij (geblokkeerd/mislukt)? Hervat dat volgens `.claude/skills/taak-oppakken/SKILL.md` in plaats van een nieuwe.
-2. **Onderzoek → taak**: maak de taak volgens `.claude/skills/taak-specifiek/SKILL.md`. Onderzoek:
-    - de FluentAssertions 7.2.2-API (overloads, `because`-argumenten, ketens met `.And`/`.Which`);
-    - het Shouldly 4.3.0-equivalent en verschillen in gedrag;
-    - gevallen die van het type afhangen, en gevallen die `Manual` moeten worden;
-    - voorkomens in `samples/SampleShop/SampleShop.Tests/`.
-      Leg elke keuze met reden vast in de taak (sectie **Keuzes**).
-3. **KingmaDoc-plan** (slug = patroon-ID met `.` → `-`, bv. `fa-be-null`): als `docs/projectinfo/patterns/<slug>-plan.md`
-   nog niet bestaat, `kingmadoc plan --no-input -o docs/projectinfo/patterns/<slug>-plan.md "<patroon-ID>: <één zin>"`.
-   Vul daarna scope, requirements (EARS, één per proof-geval of groep), aannames, risico's en open vragen in vanuit
-   je taak; geen `_TODO_` laten staan als de taak het antwoord heeft. `files_expected` = je pattern-bestand,
-   `FluentAssertionsFix.cs` en de proof-map. Zet in de frontmatter `feature: "<slug>"` (de CLI maakt anders een lange slug uit de omschrijving). Dan `kingmadoc check <slug>` en `kingmadoc approve <slug>` (de loop is
-   door de gebruiker goedgekeurd). Het plan krijgt **geen C4** (staat uit in `.featuredoc.yml`; staat er toch een C4-sectie, vervang die door een link naar `<slug>-modellen.md`). Voeg een rij toe aan de patroontabel in `docs/projectinfo/README.md` (kolommen Plan, Modellen, Verificatie, Taak).
-4. **Blokkade**: is rij 0 (fundament) nog niet `klaar`? Zet de realisatiestap op `[!]`, de rij op
-   `geblokkeerd (TAAK-NNN, wacht op fundament)` en stop.
-5. **Realiseer** (alleen je eigen bestanden):
+1. **Claim**: set your row in `claude/tasks/patroon-queue.md` to `bezig (TAAK-NNN)`. Was there already a task file
+   for this row (blocked/failed)? Resume it according to `.claude/skills/taak-oppakken/SKILL.md` instead of creating a new one.
+2. **Research → task**: create the task according to `.claude/skills/taak-specifiek/SKILL.md`. Research:
+    - the FluentAssertions 7.2.2 API (overloads, `because` arguments, chains with `.And`/`.Which`);
+    - the Shouldly 4.3.0 equivalent and differences in behavior;
+    - cases that depend on the type, and cases that must become `Manual`;
+    - occurrences in `samples/SampleShop/SampleShop.Tests/`.
+      Record every choice with its reason in the task (section **Choices**).
+3. **KingmaDoc plan** (slug = pattern ID with `.` → `-`, e.g. `fa-be-null`): if `docs/projectinfo/patterns/<slug>-plan.md`
+   does not exist yet, `kingmadoc plan --no-input -o docs/projectinfo/patterns/<slug>-plan.md "<patroon-ID>: <één zin>"`.
+   Then fill in scope, requirements (EARS, one per proof case or group), assumptions, risks and open questions from
+   your task; leave no `_TODO_` where the task has the answer. `files_expected` = your pattern file,
+   `FluentAssertionsFix.cs` and the proof folder. Put `feature: "<slug>"` in the frontmatter (otherwise the CLI makes a long slug from the description). Then `kingmadoc check <slug>` and `kingmadoc approve <slug>` (the loop has been
+   approved by the user). The plan gets **no C4** (disabled in `.featuredoc.yml`; if there is a C4 section anyway, replace it with a link to `<slug>-modellen.md`). Add a row to the pattern table in `docs/projectinfo/README.md` (columns Plan, Modellen, Verificatie, Taak).
+4. **Blocker**: is row 0 (foundation) not `klaar` yet? Set the implementation step to `[!]`, the row to
+   `geblokkeerd (TAAK-NNN, wacht op fundament)` and stop.
+5. **Implement** (only your own files):
     - `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/<Naam>Pattern.cs`;
-    - één regel in de `Patterns`-lijst van `FluentAssertionsFix`;
-    - proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/<Naam>/` (`*.before.cs` + `*.after.cs` of `*.manual.txt`),
-      minimaal: simpel geval, `because`-argument, elk type-afhankelijk geval, elk Manual-geval.
-    - daarna `python3 claude/tools/proofs-doc.py` (werkt `docs/projectinfo/architectuur/proofs.md` bij).
-      Contracten in `Abstractions/`, `Models/` of de `Fixer` wijzigen mag **niet**; nodig? → stap `[!]` met reden, rij `mislukt`.
-6. **Verifieer**: `dotnet build` en `dotnet test` groen. Faalt het door een file-lock of een half-af bestand van een
-   andere agent? Wacht 30 s en probeer opnieuw (max 5×) voordat je het als eigen fout ziet.
-6b. **Patroon-modellen**: schrijf `docs/projectinfo/patterns/<slug>-modellen.md` volgens de **Patroon-modellen-brief**
-   hieronder en link het vanuit het plan (sectie "Modellen") en de README-rij.
-7. **KingmaDoc-verify**: schrijf `docs/projectinfo/patterns/<slug>-verify.md` volgens de KingmaDoc-skill (verify-modus,
-   `~/.claude/skills/kingmadoc/SKILL.md`). `kingmadoc verify` mag als start, maar beoordeel alleen jouw eigen bestanden
-   (andere agents wijzigen tegelijk). Elke REQ: gehaald (noem proof) / deels / niet. Vul de echte build/test-uitkomst in.
-8. **Afronden**: taak `✅ voltooid`, naar `claude/tasks/archief/`, rij `klaar (TAAK-NNN)`. Lukt het niet:
-   context in de taak, rij `mislukt (TAAK-NNN, poging N)`. De SubagentStop-hook blokkeert je stop zolang plan, verify
-   of de README-rij van jouw patroon ontbreekt.
-9. **Verslag** (max 8 regels): patroon, gewijzigde bestanden, kernkeuzes, proofs, testresultaat.
+    - one line in the `Patterns` list of `FluentAssertionsFix`;
+    - proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/<Naam>/` (`*.before.cs` + `*.after.cs` or `*.manual.txt`),
+      at least: simple case, `because` argument, every type-dependent case, every Manual case.
+    - then `python3 claude/tools/proofs-doc.py` (updates `docs/projectinfo/architectuur/proofs.md`).
+      Changing contracts in `Abstractions/`, `Models/` or the `Fixer` is **not** allowed; needed? → step `[!]` with reason, row `mislukt`.
+6. **Verify**: `dotnet build` and `dotnet test` green. Does it fail because of a file lock or a half-finished file of another
+   agent? Wait 30 s and retry (max 5×) before treating it as your own failure.
+6b. **Pattern models**: write `docs/projectinfo/patterns/<slug>-modellen.md` according to the **Pattern models brief**
+   below and link it from the plan (section "Modellen") and the README row.
+7. **KingmaDoc verify**: write `docs/projectinfo/patterns/<slug>-verify.md` according to the KingmaDoc skill (verify mode,
+   `~/.claude/skills/kingmadoc/SKILL.md`). `kingmadoc verify` may serve as a start, but judge only your own files
+   (other agents are making changes at the same time). Each REQ: met (name the proof) / partially / not. Fill in the real build/test outcome.
+8. **Finish**: task `✅ done`, to `claude/tasks/archief/`, row `klaar (TAAK-NNN)`. If it does not work out:
+   context in the task, row `mislukt (TAAK-NNN, poging N)`. The SubagentStop hook blocks your stop as long as the plan, verify
+   or the README row of your pattern is missing.
+9. **Report** (max 8 lines): pattern, changed files, key choices, proofs, test result.
 
-### Patroon-modellen-brief (per patroon)
+### Pattern models brief (per pattern)
 
-`docs/projectinfo/patterns/<slug>-modellen.md`, Nederlands, volgens de explaining-code-skill
-(`~/.claude-timme/skills/explaining-code/SKILL.md` + alleen de secties van `reference/models.md` die je tekent).
-Feiten uit de code van **dit** pattern; niets verzinnen. Drie genummerde figuren in D2, elk met een tabel:
+`docs/projectinfo/patterns/<slug>-modellen.md`, in Dutch, according to the explaining-code skill
+(`~/.claude-timme/skills/explaining-code/SKILL.md` + only the sections of `reference/models.md` that you draw).
+Facts from the code of **this** pattern; invent nothing. Three numbered figures in D2, each with a table:
 
-1. **Klassendiagram**: de pattern-klasse, `IPattern`, de helpers die hij gebruikt (bv. `FluentAssertionsSyntax`),
-   `PatternResult`/`FixedResult`/`ManualResult`, en de FA- en Shouldly-types die hij herkent of aanmaakt.
-2. **Sequencediagram**: `Fixer` → `<Naam>Pattern.Find` → `Rewrite` → helpers/`SemanticModel` → `Fixed`/`Manual`,
-   met de echte methodenamen uit de code.
-3. **Beslisboom** (UML-activity of flowchart): elke vraag die `Rewrite` stelt (type, overload, because-args, keten,
-   gebruikt resultaat…) met als bladeren de exacte Shouldly-vorm of de Manual-reden. Elk blad noemt de proof die het bewijst.
+1. **Class diagram**: the pattern class, `IPattern`, the helpers it uses (e.g. `FluentAssertionsSyntax`),
+   `PatternResult`/`FixedResult`/`ManualResult`, and the FA and Shouldly types it recognizes or creates.
+2. **Sequence diagram**: `Fixer` → `<Naam>Pattern.Find` → `Rewrite` → helpers/`SemanticModel` → `Fixed`/`Manual`,
+   with the real method names from the code.
+3. **Decision tree** (UML activity or flowchart): every question `Rewrite` asks (type, overload, because args, chain,
+   result used…) with as leaves the exact Shouldly form or the Manual reason. Each leaf names the proof that proves it.
 
-Render met `kingmadoc render docs/projectinfo/patterns/<slug>-modellen.md` (afbeeldingen in `docs/projectinfo/patterns/img/`).
-`## Zie ook` onderaan (plan, verify, pattern-bestand, proof-map).
+Render with `kingmadoc render docs/projectinfo/patterns/<slug>-modellen.md` (images in `docs/projectinfo/patterns/img/`).
+`## See also` at the bottom (plan, verify, pattern file, proof folder).
 
-### Modellen-brief (na elk afgerond patroon)
+### Models brief (after every finished pattern)
 
-Werk de visuele modellen van het hele project bij in `/mnt/dikkeschijf/documenten/Git/unshackle`, volgens de
-explaining-code-skill (`~/.claude-timme/skills/explaining-code/SKILL.md` + alleen de benodigde secties van
-`reference/c4-model.md` en `reference/models.md`). Nederlands. Alleen docs en afbeeldingen; geen code wijzigen,
-niet committen.
+Update the visual models of the whole project in the repository root, according to the
+explaining-code skill (`~/.claude-timme/skills/explaining-code/SKILL.md` + only the needed sections of
+`reference/c4-model.md` and `reference/models.md`). In Dutch. Only docs and images; do not change code,
+do not commit.
 
-- Feiten: `kingmadoc explain facts` (en `--only` voor delen). Niets verzinnen; tekst moet bij de figuren passen.
-- Plek: **niet** `docs/explain/`, maar `docs/projectinfo/`:
-  - `README.md`: C4 Context, Container en Component (Core) als D2-figuren (vervang de Mermaid-blokken), plus een
-    tabel "Modellen" met links naar de bestanden hieronder.
-  - `modellen/klassen.md`: UML-klassendiagram van contracten en modellen (`Abstractions/`, `Models/`).
-  - `modellen/fix-flow.md`: UML-sequence van `FixAsync`: Fixer → IFix → IPattern.Find/Rewrite → ReplaceNode → usings.
-  - `modellen/pattern-beslissing.md`: UML-activity: hoe een pattern kiest tussen Fixed en Manual (generiek, met de
-    gedeelde stappen uit `FluentAssertionsSyntax`).
-  - `modellen/patronen.md`: overzicht van alle patterns (tabel + figuur: welke FA-vorm → welke Shouldly-vorm,
-    welke gevallen Manual), bijgewerkt met het nieuwste patroon.
-  - Andere modellen alleen als het signaal in de code duidelijk is (zie de beslistabel in `reference/models.md`).
-  - Figuren genummerd per document, max ~15 elementen per figuur, elke figuur met tabel; `## Zie ook` onderaan;
-    nieuwe bestanden in `claude/docs/INDEX.md`.
+- Facts: `kingmadoc explain facts` (and `--only` for parts). Invent nothing; text must match the figures.
+- Location: **not** `docs/explain/`, but `docs/projectinfo/`:
+  - `README.md`: C4 Context, Container and Component (Core) as D2 figures (replace the Mermaid blocks), plus a
+    "Modellen" table with links to the files below.
+  - `modellen/klassen.md`: UML class diagram of contracts and models (`Abstractions/`, `Models/`).
+  - `modellen/fix-flow.md`: UML sequence of `FixAsync`: Fixer → IFix → IPattern.Find/Rewrite → ReplaceNode → usings.
+  - `modellen/pattern-beslissing.md`: UML activity: how a pattern chooses between Fixed and Manual (generic, with the
+    shared steps from `FluentAssertionsSyntax`).
+  - `modellen/patronen.md`: overview of all patterns (table + figure: which FA form → which Shouldly form,
+    which cases Manual), updated with the newest pattern.
+  - Other models only if the signal in the code is clear (see the decision table in `reference/models.md`).
+  - Figures numbered per document, max ~15 elements per figure, each figure with a table; `## See also` at the bottom;
+    new files in `claude/docs/INDEX.md`.
 - Render: `kingmadoc render docs/projectinfo/README.md docs/projectinfo/modellen/*.md` (PNG + SVG + D2 in `img/`).
-  Bij een D2-fout: `.d2` repareren en opnieuw renderen. Bestaat het al: alleen bijwerken wat het nieuwe patroon raakt.
-- Verslag (max 5 regels): gewijzigde bestanden, aantal figuren, wat er nieuw is.
+  On a D2 error: fix the `.d2` and render again. If it already exists: only update what the new pattern touches.
+- Report (max 5 lines): changed files, number of figures, what is new.
 
-### Extra voor rij 0 (fundament)
+### Extra for row 0 (foundation)
 
-Bouw wat `docs/projectinfo/architectuur/core.md` beschrijft, minimaal en volgens de code-standaarden:
+Build what `docs/projectinfo/architectuur/core.md` describes, minimally and following the code standards:
 
-- `Abstractions/`: `IPattern`, `IFix`, `IFixer` (met XML-docs);
+- `Abstractions/`: `IPattern`, `IFix`, `IFixer` (with XML docs);
 - `Models/`: `Finding`, `PatternResult` + `FixedResult` + `ManualResult`, `FixRequest`, `FixReport`;
-- `Fixer`: draait alle patterns van de gekozen fix op een `Solution`, vangt exceptions per pattern (Manual), geeft een
-  nieuwe `Solution` + rapport terug;
-- `Fixes/FluentAssertions/FluentAssertionsFix.cs` met een `Patterns`-lijst;
-- tests: `Helpers/TestReferences` (echte assemblies per fix), een in-memory solution-helper, `ProofTests` die alle
-  proofs vindt en de compileercheck (before met FA, after met Shouldly) doet;
-- het eerste patroon `fa.should-be` met proofs, zodat de hele keten bewezen is;
-- unittests voor de `Fixer` met NSubstitute.
-  Leg de vorm van `IPattern` en hoe herschrijvingen in de `Solution` komen vast onder **Keuzes**, met reden.
+- `Fixer`: runs all patterns of the chosen fix on a `Solution`, catches exceptions per pattern (Manual), returns a
+  new `Solution` + report;
+- `Fixes/FluentAssertions/FluentAssertionsFix.cs` with a `Patterns` list;
+- tests: `Helpers/TestReferences` (real assemblies per fix), an in-memory solution helper, `ProofTests` that finds all
+  proofs and does the compile check (before with FA, after with Shouldly);
+- the first pattern `fa.should-be` with proofs, so the whole chain is proven;
+- unit tests for the `Fixer` with NSubstitute.
+  Record the shape of `IPattern` and how rewrites get into the `Solution` under **Choices**, with reasons.
 
-## Zie ook
+## See also
 
-- `claude/tasks/patroon-queue.md` — de wachtrij
-- `.claude/skills/taak-specifiek/SKILL.md` — taakformaat
-- `claude/docs/code-standaarden.md` — codestijl
+- `claude/tasks/patroon-queue.md` — the queue
+- `.claude/skills/taak-specifiek/SKILL.md` — task format
+- `claude/docs/code-standaarden.md` — code style

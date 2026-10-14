@@ -1,51 +1,51 @@
-# Modellen: mediatr.stream-pipeline-behavior
+# Models: mediatr.stream-pipeline-behavior
 
-Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/StreamPipelineBehaviorPattern.cs` en `MediatRSyntax.cs`.
+Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/StreamPipelineBehaviorPattern.cs` and `MediatRSyntax.cs`.
 
-## Figuur 1: klassen
+## Figure 1: classes
 
-**Figure 1.** `StreamPipelineBehaviorPattern`, zijn helper en de MediatR- en Mediator-typen.
+**Figure 1.** `StreamPipelineBehaviorPattern`, its helper and the MediatR and Mediator types.
 
 <!-- kingmadoc:diagram img/mediatr-stream-pipeline-behavior-modellen-1.d2 -->
-![Figuur 1: klassen](img/mediatr-stream-pipeline-behavior-modellen-1.png)
+![Figure 1: classes](img/mediatr-stream-pipeline-behavior-modellen-1.png)
 
-| Element | Rol |
-| ------- | --- |
-| `StreamPipelineBehaviorPattern` | Vindt het type met `Handle` van `MediatR.IStreamPipelineBehavior<,>` en herschrijft het type |
+| Element | Role |
+| ------- | ---- |
+| `StreamPipelineBehaviorPattern` | Finds the type with `Handle` of `MediatR.IStreamPipelineBehavior<,>` and rewrites the type |
 | `MediatRSyntax` | `FindHandleMethods`, `RejectExplicit`, `CommaList`, `WithConstraint` |
-| `Mediator.IStreamPipelineBehavior<,>` | Zelfde naam, `StreamHandlerDelegate<TMessage, TResponse>` en `IStreamMessage`-constraint |
+| `Mediator.IStreamPipelineBehavior<,>` | Same name, `StreamHandlerDelegate<TMessage, TResponse>` and `IStreamMessage` constraint |
 
-## Figuur 2: sequence
+## Figure 2: sequence
 
-**Figure 2.** Van `Fixer` via `Find` en `Rewrite` naar `Fixed` of `Manual`.
+**Figure 2.** From `Fixer` via `Find` and `Rewrite` to `Fixed` or `Manual`.
 
 <!-- kingmadoc:diagram img/mediatr-stream-pipeline-behavior-modellen-2.d2 -->
-![Figuur 2: sequence](img/mediatr-stream-pipeline-behavior-modellen-2.png)
+![Figure 2: sequence](img/mediatr-stream-pipeline-behavior-modellen-2.png)
 
-| Stap | Methode in de code | Wat gebeurt er |
-| ---- | ------------------ | -------------- |
-| Vinden | `MediatRSyntax.FindHandleMethods` (`IStreamPipelineBehavior\`2`) | Het type (Parent van `Handle`), want de constraint staat op het type |
-| `next` | `GetDeclaredSymbol` / `GetSymbolInfo` | Elk gebruik van de parameter moet `next()` zijn |
-| Herschrijven | `ReplaceNodes`, `CommaList` | `next(request, token)`, `StreamHandlerDelegate<TReq, TRes>` |
-| Constraint | `WithConstraint` | `IStreamMessage` op een typeparameter-request, niet als de constraint al `IStreamRequest<T>` is |
-| Fix | `IFix.AllOrNothing` | Eén Manual in de solution: niets geschreven |
+| Step | Method in the code | What happens |
+| ---- | ------------------ | ------------ |
+| Find | `MediatRSyntax.FindHandleMethods` (`IStreamPipelineBehavior\`2`) | The type (Parent of `Handle`), because the constraint is on the type |
+| `next` | `GetDeclaredSymbol` / `GetSymbolInfo` | Every use of the parameter must be `next()` |
+| Rewrite | `ReplaceNodes`, `CommaList` | `next(request, token)`, `StreamHandlerDelegate<TReq, TRes>` |
+| Constraint | `WithConstraint` | `IStreamMessage` on a type-parameter request, not if the constraint is already `IStreamRequest<T>` |
+| Fix | `IFix.AllOrNothing` | One Manual in the solution: nothing written |
 
-## Figuur 3: beslisboom
+## Figure 3: decision tree
 
-**Figure 3.** Vragen van `Rewrite`.
+**Figure 3.** Questions asked by `Rewrite`.
 
 <!-- kingmadoc:diagram img/mediatr-stream-pipeline-behavior-modellen-3.d2 -->
-![Figuur 3: beslisboom](img/mediatr-stream-pipeline-behavior-modellen-3.png)
+![Figure 3: decision tree](img/mediatr-stream-pipeline-behavior-modellen-3.png)
 
-| Blad | Voorwaarde | Bewijs |
-| ---- | ---------- | ------ |
-| Manual "explicit interface" | `Handle` expliciet geïmplementeerd | geen proof |
-| Manual "does not have the form" | andere parameters | geen proof |
-| Manual "next is used other than as next()" | `next` doorgegeven, opgeslagen of met argumenten | `StreamPipelineBehavior/next-passed` |
-| Fixed + `where T : IStreamMessage` | request is typeparameter zonder `IStreamRequest`-constraint | `StreamPipelineBehavior/open` |
-| Fixed, constraint ongemoeid | constraint al `IStreamRequest<TResponse>` | `StreamPipelineBehavior/request-constraint` |
+| Leaf | Condition | Proof |
+| ---- | --------- | ----- |
+| Manual "explicit interface" | `Handle` implemented explicitly | no proof |
+| Manual "does not have the form" | other parameters | no proof |
+| Manual "next is used other than as next()" | `next` passed on, stored or with arguments | `StreamPipelineBehavior/next-passed` |
+| Fixed + `where T : IStreamMessage` | request is a type parameter without `IStreamRequest` constraint | `StreamPipelineBehavior/open` |
+| Fixed, constraint untouched | constraint already `IStreamRequest<TResponse>` | `StreamPipelineBehavior/request-constraint` |
 
-## Zie ook
+## See also
 
 - [mediatr-stream-pipeline-behavior-plan.md](mediatr-stream-pipeline-behavior-plan.md)
 - [mediatr-stream-pipeline-behavior-verify.md](mediatr-stream-pipeline-behavior-verify.md)

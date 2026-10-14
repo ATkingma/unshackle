@@ -1,45 +1,45 @@
-# TAAK-171 — `ContainKey(k).WhoseValue` en `ContainKeys(..).And.ContainValues(..)`
+# TAAK-171 — `ContainKey(k).WhoseValue` and `ContainKeys(..).And.ContainValues(..)`
 
-**Status**: ✅ voltooid — 2026-10-12 (stap 3: harnas niet herdraaid, zie Keuzes)
-**Aangemaakt**: 2026-10-12 (corpus-run, `claude/tasks/CORPUSRUN-fa.md`)
-**Doel**: de 377 Manuals rond `ContainKey`/`ContainKeys`/`ContainValues` (Steeltoe 249, Polly 120) worden Fixed waar dat veilig kan.
+**Status**: ✅ completed — 2026-10-12 (step 3: harness not rerun, see Choices)
+**Created**: 2026-10-12 (corpus run, `claude/tasks/CORPUSRUN-fa.md`)
+**Goal**: the 377 Manuals around `ContainKey`/`ContainKeys`/`ContainValues` (Steeltoe 249, Polly 120) become Fixed where that is safe.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- In Steeltoe is de reden "The result of ContainKey(...) is used (.And/.Which or a value)"; meestal gaat het om `.ContainKey(k).WhoseValue.Should().Be(v)`.
+- In Steeltoe the reason is "The result of ContainKey(...) is used (.And/.Which or a value)"; mostly it is `.ContainKey(k).WhoseValue.Should().Be(v)`.
 - Polly 7.2.4, `src/Polly.Specs/CircuitBreaker/AdvancedCircuitBreakerAsyncSpecs.cs:2576`: `contextData.Should().ContainKeys("key1", "key2").And.ContainValues("value1", "value2");`
-- Nu maakt `ContainKeyPattern.cs:19-31` alle Keys/Values-varianten meteen Manual.
+- Now `ContainKeyPattern.cs:19-31` makes all Keys/Values variants Manual right away.
 
-## Nieuwe situatie
+## New situation
 
 - `ContainKey(k).WhoseValue.Should().Be(v)` → `x.ShouldContainKeyAndValue(k, v)`.
-- `ContainKey(k)` met een andere vervolg-assertie → `x.ShouldContainKey(k);` gevolgd door `x[k].<rest>`, maar alleen als `x` een lokale variabele, parameter of veld is.
-- `ContainKeys(a, b)` → één `ShouldContainKey` per key, als losse statements.
+- `ContainKey(k)` with another follow-up assertion → `x.ShouldContainKey(k);` followed by `x[k].<rest>`, but only if `x` is a local variable, parameter or field.
+- `ContainKeys(a, b)` → one `ShouldContainKey` per key, as separate statements.
 - `ContainValues(a, b)` → `x.Values.ShouldContain(a)` per value.
-- De typebeperking uit TAAK-168 geldt hier ook.
+- The type restriction from TAAK-168 applies here too.
 
-## Stappen
+## Steps
 
-- [x] 1. Proofs voor de drie vormen (`Proofs/FluentAssertions/AndChain/`: `contain-keys*`, `contain-value*`, `not-contain-*`, `whose-value*`).
-- [x] 2. Implementatie in `AndChainPattern` (`ContainKeyPattern` bleef ongewijzigd).
-- [x] 3. Bewijs: de Polly-regel staat letterlijk als proof `contain-keys-values`, het Steeltoe-geval als `whose-value`. De corpus-kloons zijn weg; het harnas is niet herdraaid (hoort bij de volgende corpus-ronde).
+- [x] 1. Proofs for the three forms (`Proofs/FluentAssertions/AndChain/`: `contain-keys*`, `contain-value*`, `not-contain-*`, `whose-value*`).
+- [x] 2. Implementation in `AndChainPattern` (`ContainKeyPattern` stayed unchanged).
+- [x] 3. Proof: the Polly line is literally the proof `contain-keys-values`, the Steeltoe case is `whose-value`. The corpus clones are gone; the harness was not rerun (belongs to the next corpus round).
 
-## Keuzes
+## Choices
 
-- De splitsing zit al in `AndChainPattern`; de nieuwe vormen zijn "uitbreidingen van een keten": een `entries`-lijst met één FA-statement per uitkomst, daarna dezelfde `RewriteLink`-lus. Daardoor beslist `ContainKeyPattern`/`ContainPattern` per statement (ook `IReadOnlyDictionary`, `because`, nullable), zonder logica te dupliceren.
-- `ContainKey(k).WhoseValue.Should().Be(v)` wordt `x.ShouldContainKey(k); x[k].ShouldBe(v);`, niet `ShouldContainKeyAndValue`: zo gelden de bewezen regels voor het waarde-patroon (typeconversie, because, strings) en werkt elk vervolg (`StartWith`, `.And`). Vereisten: x heeft een publieke indexer op het key-type; k is constant of veilig twee keer te evalueren; anders Manual. x telt als subject voor de hoist (`subject2` omdat `Y.WhoseValue` ook meetelt).
-- `ContainKeys`/`ContainValues`: alleen de params-vorm met losse argumenten (via `IInvocationOperation`, `ArgumentKind.ParamArray`); collectie of becauseArgs is Manual. Ook `NotContainKeys`, `NotContainValues` en de enkelvoudige `ContainValue`/`NotContainValue` (die houden `because`) zijn meegenomen, want ze hebben dezelfde uitkomst: `x.Values.Should().Contain(v)` voor `ContainPattern`.
-- Probe FA 7.2.2 vs Shouldly 4.3.0: `ContainValue` en `Values.ShouldContain` falen allebei op een array met gelijke inhoud en op `"X"` tegenover `"x"`; geen verzwakking.
-- Nullable dictionary bij `ContainValue(s)`: `x!.Values` (een null-subject faalt met een NullReferenceException; de test blijft rood).
-- `.WhoseValue` zonder `.Should()` erachter (`var v = x.Should().ContainKey(k).WhoseValue;`) blijft Manual (bestaand proof `ContainKey/which`).
+- The split already lives in `AndChainPattern`; the new forms are "extensions of a chain": an `entries` list with one FA statement per outcome, then the same `RewriteLink` loop. That way `ContainKeyPattern`/`ContainPattern` decide per statement (also `IReadOnlyDictionary`, `because`, nullable), without duplicating logic.
+- `ContainKey(k).WhoseValue.Should().Be(v)` becomes `x.ShouldContainKey(k); x[k].ShouldBe(v);`, not `ShouldContainKeyAndValue`: that way the proven rules for the value pattern apply (type conversion, because, strings) and every follow-up works (`StartWith`, `.And`). Requirements: x has a public indexer on the key type; k is constant or safe to evaluate twice; otherwise Manual. x counts as a subject for the hoist (`subject2` because `Y.WhoseValue` counts too).
+- `ContainKeys`/`ContainValues`: only the params form with separate arguments (via `IInvocationOperation`, `ArgumentKind.ParamArray`); a collection or becauseArgs is Manual. `NotContainKeys`, `NotContainValues` and the singular `ContainValue`/`NotContainValue` (those keep `because`) are included too, because they have the same outcome: `x.Values.Should().Contain(v)` for `ContainPattern`.
+- Probe FA 7.2.2 vs Shouldly 4.3.0: `ContainValue` and `Values.ShouldContain` both fail on an array with equal content and on `"X"` against `"x"`; no weakening.
+- Nullable dictionary with `ContainValue(s)`: `x!.Values` (a null subject fails with a NullReferenceException; the test stays red).
+- `.WhoseValue` without `.Should()` after it (`var v = x.Should().ContainKey(k).WhoseValue;`) stays Manual (existing proof `ContainKey/which`).
 
-## Gewijzigde bestanden
+## Changed files
 
 - `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AndChainPattern.cs`
-- `src/Unshackle.Tests/Proofs/FluentAssertions/AndChain/` (27 nieuwe proofs)
+- `src/Unshackle.Tests/Proofs/FluentAssertions/AndChain/` (27 new proofs)
 - `docs/projectinfo/patterns/fa-and-chain-{plan,modellen,verify}.md` (REQ-10..13), `docs/projectinfo/README.md`, `docs/projectinfo/architectuur/proofs.md`, `claude/docs/INDEX.md`, `claude/tasks/patroon-queue.md`
 
-## Zie ook
+## See also
 
-- `claude/tasks/TAAK-168-should-contain-key-readonly-dictionary.md`
+- `claude/tasks/archief/TAAK-168-should-contain-key-readonly-dictionary.md`
 - `claude/tasks/CORPUSRUN-fa.md`

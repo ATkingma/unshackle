@@ -1,168 +1,170 @@
-# Unshackle — projectinfo
+# Unshackle — project info
 
-Hoofddocument van de projectdocumentatie. Het overzicht en de C4-diagrammen staan hier; details staan in losse
-documenten, en elk patroon heeft een eigen plan en verificatie (KingmaDoc) in `patterns/`.
+Main document of the project documentation. The overview and the C4 diagrams are here; details are in separate
+documents, and every pattern has its own plan and verification (KingmaDoc) in `patterns/`.
 
-## Documenten
+## Documents
 
-| Document                                                 | Inhoud                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [project.md](project.md)                                 | Idee, probleem, bestaande tools, CLI, voorbeelden, roadmap, risico's                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| [architectuur/projecten.md](architectuur/projecten.md)   | Projecten, afhankelijkheden, build-instellingen                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| [architectuur/core.md](architectuur/core.md)             | Fixer → Fix → Pattern, zoals ontworpen en zoals gebouwd, SOLID                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| [architectuur/testen.md](architectuur/testen.md)         | Proofs, types zonder te builden, mocking, samples                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| [architectuur/rapportage.md](architectuur/rapportage.md) | Rapportformaten (nog niet gebouwd)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| [beslissingen.md](beslissingen.md)                       | Codestijl en wat nog beslist moet worden                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| [features/](features/end-to-end-keten-plan.md)           | KingmaDoc plan + verify per feature (niet-patroon), bv. [end-to-end-keten](features/end-to-end-keten-plan.md) ([verify](features/end-to-end-keten-verify.md)), [projectbestanden-migreren](features/projectbestanden-migreren-plan.md) ([verify](features/projectbestanden-migreren-verify.md)), [mediatr-fix](features/mediatr-fix-plan.md) ([verify](features/mediatr-fix-verify.md)), [gelijknamige-typen-swap](features/gelijknamige-typen-swap-plan.md) ([verify](features/gelijknamige-typen-swap-verify.md)) |
+| Document | Contents |
+| -------- | -------- |
+| [project.md](project.md) | Idea, problem, existing tools, CLI, examples, roadmap, risks |
+| [architectuur/projecten.md](architectuur/projecten.md) | Projects, dependencies, build settings |
+| [architectuur/core.md](architectuur/core.md) | Fixer → Fix → Pattern, as designed and as built, SOLID |
+| [architectuur/testen.md](architectuur/testen.md) | Proofs, types without building, mocking, samples |
+| [architectuur/rapportage.md](architectuur/rapportage.md) | Report formats |
+| [beslissingen.md](beslissingen.md) | Code style and what still has to be decided |
+| [features/](features/end-to-end-keten-plan.md) | KingmaDoc plan + verify per feature (not a pattern), e.g. [end-to-end-keten](features/end-to-end-keten-plan.md) ([verify](features/end-to-end-keten-verify.md)), [projectbestanden-migreren](features/projectbestanden-migreren-plan.md) ([verify](features/projectbestanden-migreren-verify.md)), [mediatr-fix](features/mediatr-fix-plan.md) ([verify](features/mediatr-fix-verify.md)), [gelijknamige-typen-swap](features/gelijknamige-typen-swap-plan.md) ([verify](features/gelijknamige-typen-swap-verify.md)) |
 
 ## C4 Context
 
-**Figure 1.** Wie Unshackle gebruikt en waar het van afhangt.
+**Figure 1.** Who uses Unshackle and what it depends on.
 
 <!-- kingmadoc:diagram img/README-1.d2 -->
 
 ![C4 Context](img/README-1.png)
 
-| Element                   | Type    | Rol                                             |
-| ------------------------- | ------- | ----------------------------------------------- |
-| Developer                 | Persoon | Draait de tool op zijn solution                 |
-| Unshackle                 | Systeem | `src/`: `dotnet tool` met scan, fix, list       |
-| Solution van de gebruiker | Extern  | `.sln`/`.slnx` die gelezen en herschreven wordt |
-| MSBuild / .NET SDK        | Extern  | Laadt projecten en referenties                  |
-| git                       | Extern  | `fix` controleert of de werkmap schoon is       |
+| Element | Type | Role |
+| ------- | ---- | ---- |
+| Developer | Person | Runs the tool on their solution |
+| Unshackle | System | `src/`: `dotnet tool` with scan, fix, list |
+| User's solution | External | `.sln`/`.slnx` that is read and rewritten |
+| MSBuild / .NET SDK | External | Loads projects and references |
+| git | External | `fix` checks whether the working tree is clean |
 
 ## C4 Container
 
-**Figure 2.** De projecten in `src/`. Het testproject staat er niet in.
+**Figure 2.** The projects in `src/`. The test project is not included.
 
 <!-- kingmadoc:diagram img/README-2.d2 -->
 
 ![C4 Container](img/README-2.png)
 
-| Container            | Pad                         | Rol                                                                        |
-| -------------------- | --------------------------- | -------------------------------------------------------------------------- |
-| Unshackle.Interface  | `src/Unshackle.Interface/`  | `dotnet tool` `unshackle`; composition root in `Cli.cs`, commands, console |
-| Unshackle.Core       | `src/Unshackle.Core/`       | Fixer, fixes, patterns                                                     |
-| Unshackle.DataAccess | `src/Unshackle.DataAccess/` | MSBuild laden/opslaan, rapporten (CSV/JSON/Markdown), git-status           |
+| Container | Path | Role |
+| --------- | ---- | ---- |
+| Unshackle.Interface | `src/Unshackle.Interface/` | `dotnet tool` `unshackle`; composition root in `Cli.cs`, commands, console |
+| Unshackle.Core | `src/Unshackle.Core/` | Fixer, fixes, patterns |
+| Unshackle.DataAccess | `src/Unshackle.DataAccess/` | MSBuild loading, project-file editing and saving, reports (CSV/JSON/Markdown), git status |
 
 ## C4 Component: Unshackle.Core
 
-**Figure 3.** Onderdelen van Core, met de vijftien patterns die er nu zijn. Contracten en modellen staan in [modellen/klassen.md](modellen/klassen.md).
+**Figure 3.** Parts of Core. Contracts and models are in [modellen/klassen.md](modellen/klassen.md).
 
 <!-- kingmadoc:diagram img/README-3.d2 -->
 
 ![C4 Component: Unshackle.Core](img/README-3.png)
 
-| Component              | Pad                                                                   | Rol                                                                                                                 |
-| ---------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Fixer                  | `src/Unshackle.Core/Fixer.cs`                                         | Zie [modellen/fix-flow.md](modellen/fix-flow.md)                                                                    |
-| UsingDirectives        | `src/Unshackle.Core/UsingDirectives.cs`                               | Alleen usings op bovenste niveau                                                                                    |
-| FluentAssertionsFix    | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs`    | Patterns in vaste volgorde                                                                                          |
-| MediatRFix             | `src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs`                      | MediatR 12.5.0 → Mediator 3.0.2; patronen volgen (zie [features/mediatr-fix-plan.md](features/mediatr-fix-plan.md)) |
-| FluentAssertionsSyntax | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde bouwstenen                                                                                                 |
-| Patterns (15)          | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/`                 | Zie [modellen/patronen.md](modellen/patronen.md)                                                                    |
+| Component | Path | Role |
+| --------- | ---- | ---- |
+| Fixer | `src/Unshackle.Core/Fixer.cs` | See [modellen/fix-flow.md](modellen/fix-flow.md) |
+| UsingDirectives | `src/Unshackle.Core/UsingDirectives.cs` | Swaps usings (top level, inside namespaces, global usings) |
+| FluentAssertionsFix | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` | Patterns in a fixed order |
+| MediatRFix | `src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs` | MediatR 12.5.0 → Mediator 3.0.2; patterns follow (see [features/mediatr-fix-plan.md](features/mediatr-fix-plan.md)) |
+| AutoMapperFix | `src/Unshackle.Core/Fixes/AutoMapper/AutoMapperFix.cs` | AutoMapper 14.0.0 → hand-written `ToB()` extension methods |
+| FluentAssertionsSyntax | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Shared building blocks |
+| Patterns | `src/Unshackle.Core/Fixes/*/Patterns/` | See [modellen/patronen.md](modellen/patronen.md) and the pattern table below |
 
-## C4 Component: Unshackle.Interface en Unshackle.DataAccess
+## C4 Component: Unshackle.Interface and Unshackle.DataAccess
 
-**Figure 4.** De keten van commando tot bestand. Exitcodes: 0 = ok (ook met Manual), 1 = laad- of schrijffout of vuile werkmap, 2 = ongeldige argumenten.
+**Figure 4.** The chain from command to file. Exit codes: 0 = ok (also with Manual), 1 = load or write error or dirty working tree, 2 = invalid arguments.
 
 <!-- kingmadoc:diagram img/README-4.d2 -->
 
-![C4 Component: Unshackle.Interface en Unshackle.DataAccess](img/README-4.png)
+![C4 Component: Unshackle.Interface and Unshackle.DataAccess](img/README-4.png)
 
-| Component                              | Pad                                       | Rol                                                                        |
-| -------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------- |
-| Cli                                    | `src/Unshackle.Interface/Cli.cs`          | Composition root, command-boom, parsefout → 2                              |
-| ScanCommand / FixCommand / ListCommand | `src/Unshackle.Interface/Commands/`       | Zie [features/end-to-end-keten-plan.md](features/end-to-end-keten-plan.md) |
-| SpectreConsoleView, LineDiff           | `src/Unshackle.Interface/Output/`         | Tabellen en regel-diff; fouten naar stderr                                 |
-| MsBuildSolutionStore                   | `src/Unshackle.DataAccess/Solutions/`     | Laden en opslaan met één `MSBuildWorkspace`                                |
-| Report writers                         | `src/Unshackle.DataAccess/Reports/`       | CSV, JSON, Markdown                                                        |
-| GitSourceControl                       | `src/Unshackle.DataAccess/SourceControl/` | `git status --porcelain`                                                   |
+| Component | Path | Role |
+| --------- | ---- | ---- |
+| Cli | `src/Unshackle.Interface/Cli.cs` | Composition root, command tree, parse error → 2 |
+| ScanCommand / FixCommand / ListCommand | `src/Unshackle.Interface/Commands/` | See [features/end-to-end-keten-plan.md](features/end-to-end-keten-plan.md) |
+| SpectreConsoleView, LineDiff | `src/Unshackle.Interface/Output/` | Tables and line diff; errors to stderr |
+| MsBuildSolutionStore | `src/Unshackle.DataAccess/Solutions/` | Loading with one `MSBuildWorkspace` (writing goes through `XmlProjectFileStore.SaveAsync`) |
+| XmlProjectFileStore | `src/Unshackle.DataAccess/Projects/` | Project-file edits and the one checked save of source and project files |
+| Report writers | `src/Unshackle.DataAccess/Reports/` | CSV, JSON, Markdown |
+| GitSourceControl | `src/Unshackle.DataAccess/SourceControl/` | `git status --porcelain` |
 
-## Modellen
+## Models
 
-| Model                                                                      | Document                                                         |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| UML-klassendiagram: contracten, modellen, I/O-contracten en implementaties | [modellen/klassen.md](modellen/klassen.md)                       |
-| UML-sequence: `FixAsync`                                                   | [modellen/fix-flow.md](modellen/fix-flow.md)                     |
-| UML-activity: Fixed of Manual                                              | [modellen/pattern-beslissing.md](modellen/pattern-beslissing.md) |
-| Overzicht van alle 31 FA-patterns in zes groepen                           | [modellen/patronen.md](modellen/patronen.md)                     |
+| Model | Document |
+| ----- | -------- |
+| UML class diagram: contracts, models, I/O contracts and implementations | [modellen/klassen.md](modellen/klassen.md) |
+| UML sequence: `FixAsync` | [modellen/fix-flow.md](modellen/fix-flow.md) |
+| UML activity: Fixed or Manual | [modellen/pattern-beslissing.md](modellen/pattern-beslissing.md) |
+| Overview of the FA patterns in groups | [modellen/patronen.md](modellen/patronen.md) |
 
-## Patronen
+## Patterns
 
-Elk patroon heeft een KingmaDoc-plan (vóór de bouw) en -verificatie (na de bouw) in `patterns/`.
-Wachtrij en status: `claude/tasks/patroon-queue.md`.
+Every pattern has a KingmaDoc plan (before the build) and verification (after the build) in `patterns/`.
+Queue and status: `claude/tasks/patroon-queue.md`.
 
-| Patroon-ID                         | Plan                                                      | Modellen                                                          | Verificatie                                                   | Taak     |
-| ---------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------- | -------- |
-| `fa.should-be`                     | [plan](patterns/fa-should-be-plan.md)                     | [modellen](patterns/fa-should-be-modellen.md)                     | [verify](patterns/fa-should-be-verify.md)                     | TAAK-001 |
-| `fa.have-count`                    | [plan](patterns/fa-have-count-plan.md)                    | [modellen](patterns/fa-have-count-modellen.md)                    | [verify](patterns/fa-have-count-verify.md)                    | TAAK-002 |
-| `fa.be-true-false`                 | [plan](patterns/fa-be-true-false-plan.md)                 | [modellen](patterns/fa-be-true-false-modellen.md)                 | [verify](patterns/fa-be-true-false-verify.md)                 | TAAK-003 |
-| `fa.be-null`                       | [plan](patterns/fa-be-null-plan.md)                       | [modellen](patterns/fa-be-null-modellen.md)                       | [verify](patterns/fa-be-null-verify.md)                       | TAAK-004 |
-| `fa.be-empty`                      | [plan](patterns/fa-be-empty-plan.md)                      | [modellen](patterns/fa-be-empty-modellen.md)                      | [verify](patterns/fa-be-empty-verify.md)                      | TAAK-006 |
-| `fa.contain`                       | [plan](patterns/fa-contain-plan.md)                       | [modellen](patterns/fa-contain-modellen.md)                       | [verify](patterns/fa-contain-verify.md)                       | TAAK-007 |
-| `fa.contain-key`                   | [plan](patterns/fa-contain-key-plan.md)                   | [modellen](patterns/fa-contain-key-modellen.md)                   | [verify](patterns/fa-contain-key-verify.md)                   | TAAK-013, TAAK-168, TAAK-171 |
-| `fa.throw`                         | [plan](patterns/fa-throw-plan.md)                         | [modellen](patterns/fa-throw-modellen.md)                         | [verify](patterns/fa-throw-verify.md)                         | TAAK-008 |
-| `fa.throw-async`                   | [plan](patterns/fa-throw-async-plan.md)                   | [modellen](patterns/fa-throw-async-modellen.md)                   | [verify](patterns/fa-throw-async-verify.md)                   | TAAK-012 |
-| `fa.not-throw`                     | [plan](patterns/fa-not-throw-plan.md)                     | [modellen](patterns/fa-not-throw-modellen.md)                     | [verify](patterns/fa-not-throw-verify.md)                     | TAAK-011 |
-| `fa.be-equivalent-to-string`       | [plan](patterns/fa-be-equivalent-to-string-plan.md)       | [modellen](patterns/fa-be-equivalent-to-string-modellen.md)       | [verify](patterns/fa-be-equivalent-to-string-verify.md)       | TAAK-009 |
-| `fa.be-equivalent-to-object`       | [plan](patterns/fa-be-equivalent-to-object-plan.md)       | [modellen](patterns/fa-be-equivalent-to-object-modellen.md)       | [verify](patterns/fa-be-equivalent-to-object-verify.md)       | TAAK-016 |
-| `fa.be-equivalent-to-object` (collectie) | [plan](patterns/fa-be-equivalent-to-collection-plan.md)   | [modellen](patterns/fa-be-equivalent-to-collection-modellen.md)   | [verify](patterns/fa-be-equivalent-to-collection-verify.md)   | TAAK-172 |
-| `fa.equivalent-options`            | [plan](patterns/fa-equivalent-options-plan.md)            | [modellen](patterns/fa-equivalent-options-modellen.md)            | [verify](patterns/fa-equivalent-options-verify.md)            | TAAK-163 |
-| `fa.contain-equivalent-of`         | [plan](patterns/fa-contain-equivalent-of-plan.md)         | [modellen](patterns/fa-contain-equivalent-of-modellen.md)         | [verify](patterns/fa-contain-equivalent-of-verify.md)         | TAAK-164 |
-| `fa.be-greater-less`               | [plan](patterns/fa-be-greater-less-plan.md)               | [modellen](patterns/fa-be-greater-less-modellen.md)               | [verify](patterns/fa-be-greater-less-verify.md)               | TAAK-010 |
-| `fa.only-contain`                  | [plan](patterns/fa-only-contain-plan.md)                  | [modellen](patterns/fa-only-contain-modellen.md)                  | [verify](patterns/fa-only-contain-verify.md)                  | TAAK-015 |
-| `fa.all-satisfy`                   | [plan](patterns/fa-all-satisfy-plan.md)                   | [modellen](patterns/fa-all-satisfy-modellen.md)                   | [verify](patterns/fa-all-satisfy-verify.md)                   | TAAK-014 |
-| `fa.assertion-scope`               | [plan](patterns/fa-assertion-scope-plan.md)               | [modellen](patterns/fa-assertion-scope-modellen.md)               | [verify](patterns/fa-assertion-scope-verify.md)               | TAAK-031 |
-| `fa.custom-assertion`              | [plan](patterns/fa-custom-assertion-plan.md)              | [modellen](patterns/fa-custom-assertion-modellen.md)              | [verify](patterns/fa-custom-assertion-verify.md)              | TAAK-091 |
-| `fa.catch-assertion-exception`     | [plan](patterns/fa-catch-assertion-exception-plan.md)     | [modellen](patterns/fa-catch-assertion-exception-modellen.md)     | [verify](patterns/fa-catch-assertion-exception-verify.md)     | TAAK-140 |
-| `fa.timespan-extensions` | [plan](patterns/fa-timespan-extensions-plan.md) | [modellen](patterns/fa-timespan-extensions-modellen.md) | [verify](patterns/fa-timespan-extensions-verify.md) | TAAK-224 |
-| `fa.not-be`                        | [plan](patterns/fa-not-be-plan.md)                        | [modellen](patterns/fa-not-be-modellen.md)                        | [verify](patterns/fa-not-be-verify.md)                        | TAAK-032 |
-| `fa.and-chain`                     | [plan](patterns/fa-and-chain-plan.md)                     | [modellen](patterns/fa-and-chain-modellen.md)                     | [verify](patterns/fa-and-chain-verify.md)                     | TAAK-033, TAAK-171 |
-| `fa.be-of-type`                    | [plan](patterns/fa-be-of-type-plan.md)                    | [modellen](patterns/fa-be-of-type-modellen.md)                    | [verify](patterns/fa-be-of-type-verify.md)                    | TAAK-034 |
-| `fa.string-start-end`              | [plan](patterns/fa-string-start-end-plan.md)              | [modellen](patterns/fa-string-start-end-modellen.md)              | [verify](patterns/fa-string-start-end-verify.md)              | TAAK-035 |
-| `fa.contain-single-which`          | [plan](patterns/fa-contain-single-which-plan.md)          | [modellen](patterns/fa-contain-single-which-modellen.md)          | [verify](patterns/fa-contain-single-which-verify.md)          | TAAK-036 |
-| `fa.equal-sequence`                | [plan](patterns/fa-equal-sequence-plan.md)                | [modellen](patterns/fa-equal-sequence-modellen.md)                | [verify](patterns/fa-equal-sequence-verify.md)                | TAAK-038 |
-| `fa.not-equal`                     | [plan](patterns/fa-not-equal-plan.md)                     | [modellen](patterns/fa-not-equal-modellen.md)                     | [verify](patterns/fa-not-equal-verify.md)                     | TAAK-160 |
-| `fa.not-contain-nulls`             | [plan](patterns/fa-not-contain-nulls-plan.md)             | [modellen](patterns/fa-not-contain-nulls-modellen.md)             | [verify](patterns/fa-not-contain-nulls-verify.md)             | TAAK-161 |
-| `fa.order`                         | [plan](patterns/fa-order-plan.md)                         | [modellen](patterns/fa-order-modellen.md)                         | [verify](patterns/fa-order-verify.md)                         | TAAK-162 |
-| `fa.have-length`                   | [plan](patterns/fa-have-length-plan.md)                   | [modellen](patterns/fa-have-length-modellen.md)                   | [verify](patterns/fa-have-length-verify.md)                   | TAAK-039 |
-| `fa.be-approximately`              | [plan](patterns/fa-be-approximately-plan.md)              | [modellen](patterns/fa-be-approximately-modellen.md)              | [verify](patterns/fa-be-approximately-verify.md)              | TAAK-050 |
-| `fa.throw-exactly`                 | [plan](patterns/fa-throw-exactly-plan.md)                 | [modellen](patterns/fa-throw-exactly-modellen.md)                 | [verify](patterns/fa-throw-exactly-verify.md)                 | TAAK-051 |
-| `fa.invoking`                      | [plan](patterns/fa-invoking-plan.md)                      | [modellen](patterns/fa-invoking-modellen.md)                      | [verify](patterns/fa-invoking-verify.md)                      | TAAK-052 |
-| `mediatr.request-handler`          | [plan](patterns/mediatr-request-handler-plan.md)          | [modellen](patterns/mediatr-request-handler-modellen.md)          | [verify](patterns/mediatr-request-handler-verify.md)          | TAAK-023 |
-| `mediatr.void-request-handler`     | [plan](patterns/mediatr-void-request-handler-plan.md)     | [modellen](patterns/mediatr-void-request-handler-modellen.md)     | [verify](patterns/mediatr-void-request-handler-verify.md)     | TAAK-025 |
-| `mediatr.notification-handler`     | [plan](patterns/mediatr-notification-handler-plan.md)     | [modellen](patterns/mediatr-notification-handler-modellen.md)     | [verify](patterns/mediatr-notification-handler-verify.md)     | TAAK-026 |
-| `mediatr.pipeline-behavior`        | [plan](patterns/mediatr-pipeline-behavior-plan.md)        | [modellen](patterns/mediatr-pipeline-behavior-modellen.md)        | [verify](patterns/mediatr-pipeline-behavior-verify.md)        | TAAK-027 |
-| `mediatr.add-mediatr`              | [plan](patterns/mediatr-add-mediatr-plan.md)              | [modellen](patterns/mediatr-add-mediatr-modellen.md)              | [verify](patterns/mediatr-add-mediatr-verify.md)              | TAAK-028 |
-| `mediatr.send-as-task`             | [plan](patterns/mediatr-send-as-task-plan.md)             | [modellen](patterns/mediatr-send-as-task-modellen.md)             | [verify](patterns/mediatr-send-as-task-verify.md)             | TAAK-029 |
-| `mediatr.unsupported`              | [plan](patterns/mediatr-unsupported-plan.md)              | [modellen](patterns/mediatr-unsupported-modellen.md)              | [verify](patterns/mediatr-unsupported-verify.md)              | TAAK-037 |
-| `mediatr.request-processor`        | [plan](patterns/mediatr-request-processor-plan.md)        | [modellen](patterns/mediatr-request-processor-modellen.md)        | [verify](patterns/mediatr-request-processor-verify.md)        | TAAK-061 |
-| `mediatr.exception-handler`        | [plan](patterns/mediatr-exception-handler-plan.md)        | [modellen](patterns/mediatr-exception-handler-modellen.md)        | [verify](patterns/mediatr-exception-handler-verify.md)        | TAAK-061 |
-| `mediatr.stream-pipeline-behavior` | [plan](patterns/mediatr-stream-pipeline-behavior-plan.md) | [modellen](patterns/mediatr-stream-pipeline-behavior-modellen.md) | [verify](patterns/mediatr-stream-pipeline-behavior-verify.md) | TAAK-062 |
-| `mediatr.behavior-di-registration` | [plan](patterns/mediatr-behavior-di-registration-plan.md) | [modellen](patterns/mediatr-behavior-di-registration-modellen.md) | [verify](patterns/mediatr-behavior-di-registration-verify.md) | TAAK-145 |
-| `mediatr.request-handler-delegate`  | [plan](patterns/mediatr-request-handler-delegate-plan.md) | [modellen](patterns/mediatr-request-handler-delegate-modellen.md) | [verify](patterns/mediatr-request-handler-delegate-verify.md) | TAAK-180 |
-| `mediatr.request-processor-caller` | [plan](patterns/mediatr-request-processor-caller-plan.md) | [modellen](patterns/mediatr-request-processor-caller-modellen.md) | [verify](patterns/mediatr-request-processor-caller-verify.md) | TAAK-190 |
-| `mediatr.generic-notification`     | [plan](patterns/mediatr-generic-notification-plan.md)     | [modellen](patterns/mediatr-generic-notification-modellen.md)     | [verify](patterns/mediatr-generic-notification-verify.md)     | TAAK-192 |
-| `mediatr.autofac-mediator-module`  | [plan](patterns/mediatr-autofac-mediator-module-plan.md)  | [modellen](patterns/mediatr-autofac-mediator-module-modellen.md)  | [verify](patterns/mediatr-autofac-mediator-module-verify.md)  | TAAK-196 |
-| `mediatr.mediator-implementation`  | [plan](patterns/mediatr-mediator-implementation-plan.md)  | [modellen](patterns/mediatr-mediator-implementation-modellen.md)  | [verify](patterns/mediatr-mediator-implementation-verify.md)  | TAAK-197 |
-| `mediatr.generic-decorator`        | [plan](patterns/mediatr-generic-decorator-plan.md)        | [modellen](patterns/mediatr-generic-decorator-modellen.md)        | [verify](patterns/mediatr-generic-decorator-verify.md)        | TAAK-193 |
-| `mediatr.generic-request`          | [plan](patterns/mediatr-generic-request-plan.md)          | [modellen](patterns/mediatr-generic-request-modellen.md)          | [verify](patterns/mediatr-generic-request-verify.md)          | TAAK-193 |
-| `mediatr.vendored-package` (geen pattern-klasse) | [plan](patterns/mediatr-vendored-package-plan.md) | [modellen](patterns/mediatr-vendored-package-modellen.md) | [verify](patterns/mediatr-vendored-package-verify.md) | TAAK-194 |
-| `mediatr.internal-handler-access`  | [plan](patterns/mediatr-internal-handler-access-plan.md)  | [modellen](patterns/mediatr-internal-handler-access-modellen.md)  | [verify](patterns/mediatr-internal-handler-access-verify.md)  | TAAK-195 |
-| `fa.be-same-as`                    | [plan](patterns/fa-be-same-as-plan.md)                    | [modellen](patterns/fa-be-same-as-modellen.md)                    | [verify](patterns/fa-be-same-as-verify.md)                    | TAAK-093 |
-| `fa.not-throw-async`               | [plan](patterns/fa-not-throw-async-plan.md)               | [modellen](patterns/fa-not-throw-async-modellen.md)               | [verify](patterns/fa-not-throw-async-verify.md)               | TAAK-094 |
-| `fa.match`                         | [plan](patterns/fa-match-plan.md)                         | [modellen](patterns/fa-match-modellen.md)                         | [verify](patterns/fa-match-verify.md)                         | TAAK-099 |
-| `fa.direct-mapping`                | [plan](patterns/fa-direct-mapping-plan.md)                | [modellen](patterns/fa-direct-mapping-modellen.md)                | [verify](patterns/fa-direct-mapping-verify.md)                | TAAK-101 |
-| `automapper.create-map`            | [plan](patterns/automapper-create-map-plan.md)            | [modellen](patterns/automapper-create-map-modellen.md)            | [verify](patterns/automapper-create-map-verify.md)            | TAAK-146 |
-| `automapper.for-member-ignore`      | [plan](patterns/automapper-for-member-ignore-plan.md)     | [modellen](patterns/automapper-for-member-ignore-modellen.md)     | [verify](patterns/automapper-for-member-ignore-verify.md)     | TAAK-155 |
-| `automapper.for-member-map-from`    | [plan](patterns/automapper-for-member-map-from-plan.md)   | [modellen](patterns/automapper-for-member-map-from-modellen.md)   | [verify](patterns/automapper-for-member-map-from-verify.md)   | TAAK-156 |
-| `automapper.map-call`               | [plan](patterns/automapper-map-call-plan.md)              | [modellen](patterns/automapper-map-call-modellen.md)              | [verify](patterns/automapper-map-call-verify.md)              | TAAK-157 |
-| `automapper.add-automapper`         | [plan](patterns/automapper-add-automapper-plan.md)        | [modellen](patterns/automapper-add-automapper-modellen.md)        | [verify](patterns/automapper-add-automapper-verify.md)        | TAAK-159 |
-| `automapper.map-into`               | [plan](patterns/automapper-map-into-plan.md)              | [modellen](patterns/automapper-map-into-modellen.md)              | [verify](patterns/automapper-map-into-verify.md)              | TAAK-158 |
+| Pattern ID | Plan | Models | Verification | Task |
+| ---------- | ---- | ------ | ------------ | ---- |
+| `fa.should-be` | [plan](patterns/fa-should-be-plan.md) | [models](patterns/fa-should-be-modellen.md) | [verify](patterns/fa-should-be-verify.md) | TAAK-001 |
+| `fa.have-count` | [plan](patterns/fa-have-count-plan.md) | [models](patterns/fa-have-count-modellen.md) | [verify](patterns/fa-have-count-verify.md) | TAAK-002 |
+| `fa.be-true-false` | [plan](patterns/fa-be-true-false-plan.md) | [models](patterns/fa-be-true-false-modellen.md) | [verify](patterns/fa-be-true-false-verify.md) | TAAK-003 |
+| `fa.be-null` | [plan](patterns/fa-be-null-plan.md) | [models](patterns/fa-be-null-modellen.md) | [verify](patterns/fa-be-null-verify.md) | TAAK-004 |
+| `fa.be-empty` | [plan](patterns/fa-be-empty-plan.md) | [models](patterns/fa-be-empty-modellen.md) | [verify](patterns/fa-be-empty-verify.md) | TAAK-006 |
+| `fa.contain` | [plan](patterns/fa-contain-plan.md) | [models](patterns/fa-contain-modellen.md) | [verify](patterns/fa-contain-verify.md) | TAAK-007 |
+| `fa.contain-key` | [plan](patterns/fa-contain-key-plan.md) | [models](patterns/fa-contain-key-modellen.md) | [verify](patterns/fa-contain-key-verify.md) | TAAK-013, TAAK-168, TAAK-171 |
+| `fa.throw` | [plan](patterns/fa-throw-plan.md) | [models](patterns/fa-throw-modellen.md) | [verify](patterns/fa-throw-verify.md) | TAAK-008 |
+| `fa.throw-async` | [plan](patterns/fa-throw-async-plan.md) | [models](patterns/fa-throw-async-modellen.md) | [verify](patterns/fa-throw-async-verify.md) | TAAK-012 |
+| `fa.not-throw` | [plan](patterns/fa-not-throw-plan.md) | [models](patterns/fa-not-throw-modellen.md) | [verify](patterns/fa-not-throw-verify.md) | TAAK-011 |
+| `fa.be-equivalent-to-string` | [plan](patterns/fa-be-equivalent-to-string-plan.md) | [models](patterns/fa-be-equivalent-to-string-modellen.md) | [verify](patterns/fa-be-equivalent-to-string-verify.md) | TAAK-009 |
+| `fa.be-equivalent-to-object` | [plan](patterns/fa-be-equivalent-to-object-plan.md) | [models](patterns/fa-be-equivalent-to-object-modellen.md) | [verify](patterns/fa-be-equivalent-to-object-verify.md) | TAAK-016 |
+| `fa.be-equivalent-to-object` (collection) | [plan](patterns/fa-be-equivalent-to-collection-plan.md) | [models](patterns/fa-be-equivalent-to-collection-modellen.md) | [verify](patterns/fa-be-equivalent-to-collection-verify.md) | TAAK-172 |
+| `fa.equivalent-options` | [plan](patterns/fa-equivalent-options-plan.md) | [models](patterns/fa-equivalent-options-modellen.md) | [verify](patterns/fa-equivalent-options-verify.md) | TAAK-163 |
+| `fa.contain-equivalent-of` | [plan](patterns/fa-contain-equivalent-of-plan.md) | [models](patterns/fa-contain-equivalent-of-modellen.md) | [verify](patterns/fa-contain-equivalent-of-verify.md) | TAAK-164 |
+| `fa.be-greater-less` | [plan](patterns/fa-be-greater-less-plan.md) | [models](patterns/fa-be-greater-less-modellen.md) | [verify](patterns/fa-be-greater-less-verify.md) | TAAK-010 |
+| `fa.only-contain` | [plan](patterns/fa-only-contain-plan.md) | [models](patterns/fa-only-contain-modellen.md) | [verify](patterns/fa-only-contain-verify.md) | TAAK-015 |
+| `fa.all-satisfy` | [plan](patterns/fa-all-satisfy-plan.md) | [models](patterns/fa-all-satisfy-modellen.md) | [verify](patterns/fa-all-satisfy-verify.md) | TAAK-014 |
+| `fa.assertion-scope` | [plan](patterns/fa-assertion-scope-plan.md) | [models](patterns/fa-assertion-scope-modellen.md) | [verify](patterns/fa-assertion-scope-verify.md) | TAAK-031 |
+| `fa.custom-assertion` | [plan](patterns/fa-custom-assertion-plan.md) | [models](patterns/fa-custom-assertion-modellen.md) | [verify](patterns/fa-custom-assertion-verify.md) | TAAK-091 |
+| `fa.catch-assertion-exception` | [plan](patterns/fa-catch-assertion-exception-plan.md) | [models](patterns/fa-catch-assertion-exception-modellen.md) | [verify](patterns/fa-catch-assertion-exception-verify.md) | TAAK-140 |
+| `fa.timespan-extensions` | [plan](patterns/fa-timespan-extensions-plan.md) | [models](patterns/fa-timespan-extensions-modellen.md) | [verify](patterns/fa-timespan-extensions-verify.md) | TAAK-224 |
+| `fa.not-be` | [plan](patterns/fa-not-be-plan.md) | [models](patterns/fa-not-be-modellen.md) | [verify](patterns/fa-not-be-verify.md) | TAAK-032 |
+| `fa.and-chain` | [plan](patterns/fa-and-chain-plan.md) | [models](patterns/fa-and-chain-modellen.md) | [verify](patterns/fa-and-chain-verify.md) | TAAK-033, TAAK-171 |
+| `fa.be-of-type` | [plan](patterns/fa-be-of-type-plan.md) | [models](patterns/fa-be-of-type-modellen.md) | [verify](patterns/fa-be-of-type-verify.md) | TAAK-034 |
+| `fa.string-start-end` | [plan](patterns/fa-string-start-end-plan.md) | [models](patterns/fa-string-start-end-modellen.md) | [verify](patterns/fa-string-start-end-verify.md) | TAAK-035 |
+| `fa.contain-single-which` | [plan](patterns/fa-contain-single-which-plan.md) | [models](patterns/fa-contain-single-which-modellen.md) | [verify](patterns/fa-contain-single-which-verify.md) | TAAK-036 |
+| `fa.equal-sequence` | [plan](patterns/fa-equal-sequence-plan.md) | [models](patterns/fa-equal-sequence-modellen.md) | [verify](patterns/fa-equal-sequence-verify.md) | TAAK-038 |
+| `fa.not-equal` | [plan](patterns/fa-not-equal-plan.md) | [models](patterns/fa-not-equal-modellen.md) | [verify](patterns/fa-not-equal-verify.md) | TAAK-160 |
+| `fa.not-contain-nulls` | [plan](patterns/fa-not-contain-nulls-plan.md) | [models](patterns/fa-not-contain-nulls-modellen.md) | [verify](patterns/fa-not-contain-nulls-verify.md) | TAAK-161 |
+| `fa.order` | [plan](patterns/fa-order-plan.md) | [models](patterns/fa-order-modellen.md) | [verify](patterns/fa-order-verify.md) | TAAK-162 |
+| `fa.have-length` | [plan](patterns/fa-have-length-plan.md) | [models](patterns/fa-have-length-modellen.md) | [verify](patterns/fa-have-length-verify.md) | TAAK-039 |
+| `fa.be-approximately` | [plan](patterns/fa-be-approximately-plan.md) | [models](patterns/fa-be-approximately-modellen.md) | [verify](patterns/fa-be-approximately-verify.md) | TAAK-050 |
+| `fa.throw-exactly` | [plan](patterns/fa-throw-exactly-plan.md) | [models](patterns/fa-throw-exactly-modellen.md) | [verify](patterns/fa-throw-exactly-verify.md) | TAAK-051 |
+| `fa.invoking` | [plan](patterns/fa-invoking-plan.md) | [models](patterns/fa-invoking-modellen.md) | [verify](patterns/fa-invoking-verify.md) | TAAK-052 |
+| `mediatr.request-handler` | [plan](patterns/mediatr-request-handler-plan.md) | [models](patterns/mediatr-request-handler-modellen.md) | [verify](patterns/mediatr-request-handler-verify.md) | TAAK-023 |
+| `mediatr.void-request-handler` | [plan](patterns/mediatr-void-request-handler-plan.md) | [models](patterns/mediatr-void-request-handler-modellen.md) | [verify](patterns/mediatr-void-request-handler-verify.md) | TAAK-025 |
+| `mediatr.notification-handler` | [plan](patterns/mediatr-notification-handler-plan.md) | [models](patterns/mediatr-notification-handler-modellen.md) | [verify](patterns/mediatr-notification-handler-verify.md) | TAAK-026 |
+| `mediatr.pipeline-behavior` | [plan](patterns/mediatr-pipeline-behavior-plan.md) | [models](patterns/mediatr-pipeline-behavior-modellen.md) | [verify](patterns/mediatr-pipeline-behavior-verify.md) | TAAK-027 |
+| `mediatr.add-mediatr` | [plan](patterns/mediatr-add-mediatr-plan.md) | [models](patterns/mediatr-add-mediatr-modellen.md) | [verify](patterns/mediatr-add-mediatr-verify.md) | TAAK-028 |
+| `mediatr.send-as-task` | [plan](patterns/mediatr-send-as-task-plan.md) | [models](patterns/mediatr-send-as-task-modellen.md) | [verify](patterns/mediatr-send-as-task-verify.md) | TAAK-029 |
+| `mediatr.unsupported` | [plan](patterns/mediatr-unsupported-plan.md) | [models](patterns/mediatr-unsupported-modellen.md) | [verify](patterns/mediatr-unsupported-verify.md) | TAAK-037 |
+| `mediatr.request-processor` | [plan](patterns/mediatr-request-processor-plan.md) | [models](patterns/mediatr-request-processor-modellen.md) | [verify](patterns/mediatr-request-processor-verify.md) | TAAK-061 |
+| `mediatr.exception-handler` | [plan](patterns/mediatr-exception-handler-plan.md) | [models](patterns/mediatr-exception-handler-modellen.md) | [verify](patterns/mediatr-exception-handler-verify.md) | TAAK-061 |
+| `mediatr.stream-pipeline-behavior` | [plan](patterns/mediatr-stream-pipeline-behavior-plan.md) | [models](patterns/mediatr-stream-pipeline-behavior-modellen.md) | [verify](patterns/mediatr-stream-pipeline-behavior-verify.md) | TAAK-062 |
+| `mediatr.behavior-di-registration` | [plan](patterns/mediatr-behavior-di-registration-plan.md) | [models](patterns/mediatr-behavior-di-registration-modellen.md) | [verify](patterns/mediatr-behavior-di-registration-verify.md) | TAAK-145 |
+| `mediatr.request-handler-delegate` | [plan](patterns/mediatr-request-handler-delegate-plan.md) | [models](patterns/mediatr-request-handler-delegate-modellen.md) | [verify](patterns/mediatr-request-handler-delegate-verify.md) | TAAK-180 |
+| `mediatr.request-processor-caller` | [plan](patterns/mediatr-request-processor-caller-plan.md) | [models](patterns/mediatr-request-processor-caller-modellen.md) | [verify](patterns/mediatr-request-processor-caller-verify.md) | TAAK-190 |
+| `mediatr.generic-notification` | [plan](patterns/mediatr-generic-notification-plan.md) | [models](patterns/mediatr-generic-notification-modellen.md) | [verify](patterns/mediatr-generic-notification-verify.md) | TAAK-192 |
+| `mediatr.autofac-mediator-module` | [plan](patterns/mediatr-autofac-mediator-module-plan.md) | [models](patterns/mediatr-autofac-mediator-module-modellen.md) | [verify](patterns/mediatr-autofac-mediator-module-verify.md) | TAAK-196 |
+| `mediatr.mediator-implementation` | [plan](patterns/mediatr-mediator-implementation-plan.md) | [models](patterns/mediatr-mediator-implementation-modellen.md) | [verify](patterns/mediatr-mediator-implementation-verify.md) | TAAK-197 |
+| `mediatr.generic-decorator` | [plan](patterns/mediatr-generic-decorator-plan.md) | [models](patterns/mediatr-generic-decorator-modellen.md) | [verify](patterns/mediatr-generic-decorator-verify.md) | TAAK-193 |
+| `mediatr.generic-request` | [plan](patterns/mediatr-generic-request-plan.md) | [models](patterns/mediatr-generic-request-modellen.md) | [verify](patterns/mediatr-generic-request-verify.md) | TAAK-193 |
+| `mediatr.vendored-package` (no pattern class) | [plan](patterns/mediatr-vendored-package-plan.md) | [models](patterns/mediatr-vendored-package-modellen.md) | [verify](patterns/mediatr-vendored-package-verify.md) | TAAK-194 |
+| `mediatr.internal-handler-access` | [plan](patterns/mediatr-internal-handler-access-plan.md) | [models](patterns/mediatr-internal-handler-access-modellen.md) | [verify](patterns/mediatr-internal-handler-access-verify.md) | TAAK-195 |
+| `fa.be-same-as` | [plan](patterns/fa-be-same-as-plan.md) | [models](patterns/fa-be-same-as-modellen.md) | [verify](patterns/fa-be-same-as-verify.md) | TAAK-093 |
+| `fa.not-throw-async` | [plan](patterns/fa-not-throw-async-plan.md) | [models](patterns/fa-not-throw-async-modellen.md) | [verify](patterns/fa-not-throw-async-verify.md) | TAAK-094 |
+| `fa.match` | [plan](patterns/fa-match-plan.md) | [models](patterns/fa-match-modellen.md) | [verify](patterns/fa-match-verify.md) | TAAK-099 |
+| `fa.direct-mapping` | [plan](patterns/fa-direct-mapping-plan.md) | [models](patterns/fa-direct-mapping-modellen.md) | [verify](patterns/fa-direct-mapping-verify.md) | TAAK-101 |
+| `automapper.create-map` | [plan](patterns/automapper-create-map-plan.md) | [models](patterns/automapper-create-map-modellen.md) | [verify](patterns/automapper-create-map-verify.md) | TAAK-146 |
+| `automapper.for-member-ignore` | [plan](patterns/automapper-for-member-ignore-plan.md) | [models](patterns/automapper-for-member-ignore-modellen.md) | [verify](patterns/automapper-for-member-ignore-verify.md) | TAAK-155 |
+| `automapper.for-member-map-from` | [plan](patterns/automapper-for-member-map-from-plan.md) | [models](patterns/automapper-for-member-map-from-modellen.md) | [verify](patterns/automapper-for-member-map-from-verify.md) | TAAK-156 |
+| `automapper.map-call` | [plan](patterns/automapper-map-call-plan.md) | [models](patterns/automapper-map-call-modellen.md) | [verify](patterns/automapper-map-call-verify.md) | TAAK-157 |
+| `automapper.add-automapper` | [plan](patterns/automapper-add-automapper-plan.md) | [models](patterns/automapper-add-automapper-modellen.md) | [verify](patterns/automapper-add-automapper-verify.md) | TAAK-159 |
+| `automapper.map-into` | [plan](patterns/automapper-map-into-plan.md) | [models](patterns/automapper-map-into-modellen.md) | [verify](patterns/automapper-map-into-verify.md) | TAAK-158 |
 
-## Zie ook
+## See also
 
-- `claude/docs/INDEX.md` — index voor agents
-- `claude/docs/patroon-loop.md` — hoe patronen gemaakt en gedocumenteerd worden
-- `claude/docs/code-standaarden.md` — codestijl
+- `claude/docs/INDEX.md` — index for agents
+- `claude/docs/patroon-loop.md` — how patterns are made and documented
+- `claude/docs/code-standaarden.md` — code style

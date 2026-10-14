@@ -10,14 +10,14 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/DirectMappingPattern.cs`; registratie in `FluentAssertionsFix.cs` (`s_assertions`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/DirectMapping/`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/DirectMappingPattern.cs`; registration in `FluentAssertionsFix.cs` (`s_assertions`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/DirectMapping/`.
 
-| REQ | Oordeel | Bewijs |
+| REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Gehaald | `be-one-of, be-one-of-convert` |
-| REQ-2 | Gehaald | `be-subset-of, unique` |
-| REQ-3 | Gehaald | `have-value, not-have-value` |
-| REQ-4 | Gehaald | `be-one-of-enumerable, unique-key, contain-in-order` |
+| REQ-1 | Met | `be-one-of, be-one-of-convert` |
+| REQ-2 | Met | `be-subset-of, unique` |
+| REQ-3 | Met | `have-value, not-have-value` |
+| REQ-4 | Met | `be-one-of-enumerable, unique-key, contain-in-order` |
 
 ## Validation results
 
@@ -27,7 +27,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/DirectMappingPattern.c
 | Test | `dotnet test` | passed (621 tests) |
 | Sample | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | passed (38 tests) |
 
-## Zie ook
+## See also
 
 - [fa-direct-mapping-plan.md](fa-direct-mapping-plan.md)
 - [fa-direct-mapping-modellen.md](fa-direct-mapping-modellen.md)

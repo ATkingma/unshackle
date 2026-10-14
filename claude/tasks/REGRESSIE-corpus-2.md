@@ -1,49 +1,49 @@
-# Regressie-run corpus, ronde 2: twee nieuwe repo's (2026-10-11)
+# Corpus regression run, round 2: two new repos (2026-10-11)
 
-Tool gepubliceerd uit main `3e97abd` (worktree), harnas `claude/tools/corpus-regression.sh`. Bron als tarball van een vaste commit in `/mnt/dikkeschijf/unshackle-corpus/src2/`, uitvoer in `/mnt/dikkeschijf/unshackle-corpus/out2/<naam>/` (diffs: `out2/facility.diff`, `out2/modixb.diff`).
+Tool published from main `3e97abd` (worktree), harness `claude/tools/corpus-regression.sh`. Source as a tarball of a fixed commit in `<corpus>/src2/`, output in `<corpus>/out2/<naam>/` (diffs: `out2/facility.diff`, `out2/modixb.diff`).
 
-| Repo                                                            | Commit                                                  | Fix              | Waarom gekozen                                   |
+| Repo                                                            | Commit                                                  | Fix              | Why chosen                                       |
 | --------------------------------------------------------------- | ------------------------------------------------------- | ---------------- | ------------------------------------------------ |
-| [FacilityApi/Facility](https://github.com/FacilityApi/Facility) | `6e147bfb693c34543d350d631ba3c555f088587c` (2026-10-09) | fluentassertions | FA 7.2.2, NUnit, 512 `Should()`; StyleCop actief |
-| [discord-csharp/MODiX](https://github.com/discord-csharp/MODiX) | `6322ec4c36e5116ce3de94e8097c1424c80cadb2`              | mediatr          | MediatR 12.4.1 in 21 bestanden, 5 testprojecten  |
+| [FacilityApi/Facility](https://github.com/FacilityApi/Facility) | `6e147bfb693c34543d350d631ba3c555f088587c` (2026-10-09) | fluentassertions | FA 7.2.2, NUnit, 512 `Should()`; StyleCop active |
+| [discord-csharp/MODiX](https://github.com/discord-csharp/MODiX) | `6322ec4c36e5116ce3de94e8097c1424c80cadb2`              | mediatr          | MediatR 12.4.1 in 21 files, 5 test projects      |
 
-Beide staan niet in `CORPUSRUN-fa.md`, `CORPUSRUN-mediatr.md` of `REGRESSIE-corpus.md`. Afgevallen: error-or en sharpliner (inmiddels FA 8), realworld-example-app (geen MediatR meer), jeangatto/ASP.NET-Core-API-DDD-SOLID (MediatR alleen in `Directory.Packages.props`, eigen `IRequest`).
+Neither is in `CORPUSRUN-fa.md`, `CORPUSRUN-mediatr.md` or `REGRESSIE-corpus.md`. Dropped: error-or and sharpliner (now on FA 8), realworld-example-app (no longer uses MediatR), jeangatto/ASP.NET-Core-API-DDD-SOLID (MediatR only in `Directory.Packages.props`, own `IRequest`).
 
-## Resultaten
+## Results
 
-| Run      | status harnas                      | Fixed / Manual | tests vóór    | tests na       | regressies        |
-| -------- | ---------------------------------- | -------------- | ------------- | -------------- | ----------------- |
-| facility | BUILD-NA-FIX-FAALT (96× SA1210)    | 513 / 2        | 1164 (1164/0) | 1164 (1164/0)¹ | 0                 |
-| modix    | ok, maar **0 bestanden gewijzigd** | 0 / 23         | 477 (477/0)   | 477 (477/0)    | 0 (niets omgezet) |
-| modix-b² | ok                                 | 23 / 0         | 477 (477/0)   | 477 (477/0)    | 0                 |
+| Run      | harness status                     | Fixed / Manual | tests before  | tests after    | regressions        |
+| -------- | ---------------------------------- | -------------- | ------------- | -------------- | ------------------ |
+| facility | BUILD-NA-FIX-FAALT (96× SA1210)    | 513 / 2        | 1164 (1164/0) | 1164 (1164/0)¹ | 0                  |
+| modix    | ok, but **0 files changed**        | 0 / 23         | 477 (477/0)   | 477 (477/0)    | 0 (nothing converted) |
+| modix-b² | ok                                 | 23 / 0         | 477 (477/0)   | 477 (477/0)    | 0                  |
 
-¹ Na de fix handmatig `dotnet_diagnostic.SA1210.severity = none` in de `.editorconfig` van de werkkopie, daarna build + test + `compare` (1164 = 388 tests × net8/9/10).
-² MODiX met drie handlers vooraf met de hand `async` gemaakt (`=> X(...)` → `async … => await X(...)`), zodat de rest van de migratie niet geblokkeerd wordt. Tarball `src2/modix-b.tgz`.
+¹ After the fix, manually set `dotnet_diagnostic.SA1210.severity = none` in the working copy's `.editorconfig`, then build + test + `compare` (1164 = 388 tests × net8/9/10).
+² MODiX with three handlers made `async` by hand beforehand (`=> X(...)` → `async … => await X(...)`), so the rest of the migration is not blocked. Tarball `src2/modix-b.tgz`.
 
-Build-warnings vóór en na zijn in MODiX identiek (10). De MODiX-tests raken de Mediator-afhandeling nauwelijks; 0 regressies zegt daar vooral dat de build en DI-registratie heel blijven.
+Build warnings before and after are identical in MODiX (10). The MODiX tests barely touch the Mediator handling; 0 regressions there mainly says that the build and DI registration stay intact.
 
-## Foutklassen
+## Error classes
 
-| #   | Klasse                                                                                                                                       | Repo     |                                                      Aantal | Soort                               | Taak     |
+| #   | Class                                                                                                                                        | Repo     |                                                       Count | Kind                                | Task     |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------: | ----------------------------------- | -------- |
-| 1   | `using FluentAssertions;` → `using Shouldly;` op dezelfde plek, niet opnieuw gesorteerd → StyleCop SA1210 (warning-as-error)                 | Facility |         16 bestanden (96 meldingen over 3 TFM's × 2 builds) | build-fout na fix                   | TAAK-152 |
-| 2   | `Should().Equal(` met argumenten over meerdere regels → `ShouldBe(new string[] { … })` op één regel; opmaak gaat verloren                    | Facility |                                  21 van 26 `Equal`-rewrites | leesbaarheid (geen gedragsverschil) | TAAK-153 |
-| 3   | Handler met expression body `Task Handle(…) => AndereAsync(…)` → Manual; door de alles-of-niets-regel blijft de hele MediatR-migratie liggen | MODiX    | 3 Manual → 20 andere findings niet herschreven, 0 bestanden | dekking (blokkeert alles)           | TAAK-154 |
+| 1   | `using FluentAssertions;` → `using Shouldly;` in the same place, not re-sorted → StyleCop SA1210 (warning-as-error)                          | Facility |             16 files (96 messages across 3 TFMs × 2 builds) | build error after fix               | TAAK-152 |
+| 2   | `Should().Equal(` with arguments over multiple lines → `ShouldBe(new string[] { … })` on one line; formatting is lost                       | Facility |                                  21 of 26 `Equal` rewrites | readability (no behavior difference) | TAAK-153 |
+| 3   | Handler with expression body `Task Handle(…) => AndereAsync(…)` → Manual; because of the all-or-nothing rule the whole MediatR migration stalls | MODiX | 3 Manual → 20 other findings not rewritten, 0 files | coverage (blocks everything)        | TAAK-154 |
 
-Voorbeelden:
+Examples:
 
-1. `tests/Facility.Definition.UnitTests/DtoTests.cs:1`: voor `using FluentAssertions;` / `using NUnit.Framework;`, na `using Shouldly;` / `using NUnit.Framework;` → `error SA1210`. Oorzaak: `src/Unshackle.Core/UsingDirectives.cs:52` vervangt de naam in place (`WithName`) zonder de lijst opnieuw te ordenen.
-2. `tests/Facility.Definition.UnitTests/AttributeTests.cs:12`: `GenerateFsd(service).Should().Equal(` + 7 regels → `GenerateFsd(service).ShouldBe(new string[] { "// DO NOT EDIT: generated by TestUtility", "", "[x]", "service TestApi", "{", "}", "" });`. Oorzaak: `EqualSequencePattern` bouwt de array uit de argumenten zonder hun trivia (regeleinden/inspringing).
-3. `src/Modix.Bot/Responders/CommandErrors/CommandErrorResponder.cs:16,57`, `src/Modix.Bot/Responders/MutedUserJoinedResponder.cs:16`: `public Task Handle(…) => ReactionAddedAsync(…);` → Manual "Handle returns a Task that is not Task.CompletedTask". Oorzaak: `NotificationHandlerPattern` herschrijft een niet-async Task-expressie niet, terwijl `async ValueTask Handle(…) => await X(…);` veilig is (zie modix-b: precies zo omgezet, build groen).
+1. `tests/Facility.Definition.UnitTests/DtoTests.cs:1`: before `using FluentAssertions;` / `using NUnit.Framework;`, after `using Shouldly;` / `using NUnit.Framework;` → `error SA1210`. Cause: `src/Unshackle.Core/UsingDirectives.cs:52` replaces the name in place (`WithName`) without reordering the list.
+2. `tests/Facility.Definition.UnitTests/AttributeTests.cs:12`: `GenerateFsd(service).Should().Equal(` + 7 lines → `GenerateFsd(service).ShouldBe(new string[] { "// DO NOT EDIT: generated by TestUtility", "", "[x]", "service TestApi", "{", "}", "" });`. Cause: `EqualSequencePattern` builds the array from the arguments without their trivia (line breaks/indentation).
+3. `src/Modix.Bot/Responders/CommandErrors/CommandErrorResponder.cs:16,57`, `src/Modix.Bot/Responders/MutedUserJoinedResponder.cs:16`: `public Task Handle(…) => ReactionAddedAsync(…);` → Manual "Handle returns a Task that is not Task.CompletedTask". Cause: `NotificationHandlerPattern` does not rewrite a non-async Task expression, while `async ValueTask Handle(…) => await X(…);` is safe (see modix-b: converted exactly like that, build green).
 
-## Steekproef in de diffs (geen fout gevonden)
+## Spot check in the diffs (no error found)
 
-- Facility: `Be` (369), `BeNull` (72), `BeEmpty` (27), `BeTrue/False`, `BeGreater/LessThan`, `Throw<T>` → `Should.Throw<T>(action)`, `Equal` met één regel: semantisch gelijk. `BeEquivalentTo(params)` in `AttributeTests.cs:214` terecht Manual (volgorde); FA-pakket blijft daarom in het testproject.
-- MODiX-b: `Task` → `ValueTask` in 16 handlers, `AddMediatR(RegisterServicesFromAssembly)` → `AddMediator(ServiceLifetime.Transient)`, `IMessage` → `global::Discord.IMessage` (naamconflict met `Mediator.IMessage`, correct maar breedsprakig), `MSG0005` in `WarningsNotAsErrors`. Geen fouten.
-- Bekend: TAAK-150 (eigen `ShouldBe`-extensie) en TAAK-151 (`ShouldContainKey` op `IReadOnlyDictionary`/`HttpHeaders`): **0 keer** in deze twee repo's.
+- Facility: `Be` (369), `BeNull` (72), `BeEmpty` (27), `BeTrue/False`, `BeGreater/LessThan`, `Throw<T>` → `Should.Throw<T>(action)`, `Equal` with one line: semantically equal. `BeEquivalentTo(params)` in `AttributeTests.cs:214` correctly Manual (order); the FA package therefore stays in the test project.
+- MODiX-b: `Task` → `ValueTask` in 16 handlers, `AddMediatR(RegisterServicesFromAssembly)` → `AddMediator(ServiceLifetime.Transient)`, `IMessage` → `global::Discord.IMessage` (name conflict with `Mediator.IMessage`, correct but verbose), `MSG0005` in `WarningsNotAsErrors`. No errors.
+- Known: TAAK-150 (own `ShouldBe` extension) and TAAK-151 (`ShouldContainKey` on `IReadOnlyDictionary`/`HttpHeaders`): **0 times** in these two repos.
 
-## Zie ook
+## See also
 
-- `claude/tasks/REGRESSIE-corpus.md` — ronde 1
-- `claude/tools/corpus-regression.sh` — harnas
+- `claude/tasks/REGRESSIE-corpus.md` — round 1
+- `claude/tools/corpus-regression.sh` — harness
 - `claude/tasks/archief/TAAK-152-using-volgorde-na-hernoemen.md`, `claude/tasks/archief/TAAK-153-equal-sequence-opmaak-meerdere-regels.md`, `claude/tasks/archief/TAAK-154-mediatr-handler-expression-body-task.md`

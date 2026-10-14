@@ -1,8 +1,8 @@
-# Modellen: fa.order
+# Models: fa.order
 
-`x.Should().BeInAscendingOrder(p => p.K)` wordt `x.Select(p => p.K).ShouldBeInOrder(SortDirection.Ascending)`. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/OrderPattern.cs`. Diagrammen met de hand in Mermaid (kingmadoc/d2 ontbreken).
+`x.Should().BeInAscendingOrder(p => p.K)` becomes `x.Select(p => p.K).ShouldBeInOrder(SortDirection.Ascending)`. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/OrderPattern.cs`. Diagrams by hand in Mermaid (kingmadoc/d2 missing).
 
-**Figure 1.** Klassen rond `OrderPattern`.
+**Figure 1.** Classes around `OrderPattern`.
 
 ```mermaid
 classDiagram
@@ -14,59 +14,59 @@ classDiagram
     PatternResult <|-- ManualResult
 ```
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
-| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: scope, vorm, resultaat, because(-args) |
-| `OrderPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/OrderPattern.cs` | Dit patroon, Id `fa.order` |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: scope, shape, result, because(-args) |
+| `OrderPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/OrderPattern.cs` | This pattern, Id `fa.order` |
 | `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | `FindInvocations`, `NotNullReceiver`, `Invoke` |
-| `PatternResult` e.a. | `src/Unshackle.Core/Models/` | Uitkomst |
+| `PatternResult` etc. | `src/Unshackle.Core/Models/` | Outcome |
 
-**Figure 2.** Volgorde.
+**Figure 2.** Sequence.
 
 ```mermaid
 sequenceDiagram
     Fixer->>OrderPattern: Find(root, model)
     OrderPattern->>FluentAssertionsSyntax: FindInvocations("BeInAscendingOrder", "BeInDescendingOrder")
     Fixer->>OrderPattern: Rewrite
-    OrderPattern->>OrderPattern: RewriteAssertion (overload, sleuteltype)
+    OrderPattern->>OrderPattern: RewriteAssertion (overload, key type)
     OrderPattern->>FluentAssertionsSyntax: NotNullReceiver, Invoke("Select"), Invoke("ShouldBeInOrder")
     OrderPattern-->>Fixer: Fixed (+ System.Linq) / Manual
 ```
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Place | What happens |
 | --- | --- | --- |
-| Find | `OrderPattern.Find` | Alle Be-In-Ascending/Descending-Order-aanroepen op FA |
-| Overload | `RewriteAssertion` | Geen argument of selector-lambda; anders Manual |
-| Herschrijven | `RewriteAssertion` | `Select` (bij selector) en `ShouldBeInOrder` met richting, comparer en because |
+| Find | `OrderPattern.Find` | All Be-In-Ascending/Descending-Order calls on FA |
+| Overload | `RewriteAssertion` | No argument or a selector lambda; otherwise Manual |
+| Rewrite | `RewriteAssertion` | `Select` (with a selector) and `ShouldBeInOrder` with direction, comparer and because |
 
-**Figure 3.** Beslisboom.
+**Figure 3.** Decision tree.
 
 ```mermaid
 flowchart TD
-    A{In AssertionScope?} -- ja --> M1[Manual: assertion-scope]
-    A -- nee --> B{Resultaat gebruikt?}
-    B -- ja --> M2[Manual: result-used]
-    B -- nee --> C{Overload?}
+    A{In AssertionScope?} -- yes --> M1[Manual: assertion-scope]
+    A -- no --> B{Result used?}
+    B -- yes --> M2[Manual: result-used]
+    B -- no --> C{Overload?}
     C -- comparer / comparison --> M3[Manual: comparer, comparison, selector-comparer]
-    C -- selector geen lambda --> M4[Manual: expression-variable]
-    C -- geen argument --> K{Elementtype string?}
-    C -- selector-lambda --> K
-    K -- ja --> F1["ShouldBeInOrder(dir, StringComparer.Ordinal): string-key, string-elements, string-because"]
-    K -- nee --> F2["ShouldBeInOrder(dir): selector-ascending, selector-descending, no-selector, nullable"]
+    C -- selector not a lambda --> M4[Manual: expression-variable]
+    C -- no argument --> K{Element type string?}
+    C -- selector lambda --> K
+    K -- yes --> F1["ShouldBeInOrder(dir, StringComparer.Ordinal): string-key, string-elements, string-because"]
+    K -- no --> F2["ShouldBeInOrder(dir): selector-ascending, selector-descending, no-selector, nullable"]
     F2 --> BE{because?}
-    BE -- ja --> F3["ShouldBeInOrder(dir, null, because): because, because-args"]
+    BE -- yes --> F3["ShouldBeInOrder(dir, null, because): because, because-args"]
 ```
 
-| Vraag | Uitkomst | Proof |
+| Question | Outcome | Proof |
 | --- | --- | --- |
 | AssertionScope? | Manual | `assertion-scope` |
-| Resultaat gebruikt? | Manual | `result-used` |
-| Comparer of comparison? | Manual | `comparer`, `comparison`, `selector-comparer` |
-| Selector geen lambda? | Manual | `expression-variable` |
-| String-sleutel? | `StringComparer.Ordinal` | `string-key`, `string-elements`, `string-because` |
-| Overig | `ShouldBeInOrder(dir)` | `selector-ascending`, `selector-descending`, `no-selector`, `nullable`, `because`, `because-args` |
+| Result used? | Manual | `result-used` |
+| Comparer or comparison? | Manual | `comparer`, `comparison`, `selector-comparer` |
+| Selector not a lambda? | Manual | `expression-variable` |
+| String key? | `StringComparer.Ordinal` | `string-key`, `string-elements`, `string-because` |
+| Other | `ShouldBeInOrder(dir)` | `selector-ascending`, `selector-descending`, `no-selector`, `nullable`, `because`, `because-args` |
 
-## Zie ook
+## See also
 
 - [fa-order-plan.md](fa-order-plan.md)
 - [fa-order-verify.md](fa-order-verify.md)

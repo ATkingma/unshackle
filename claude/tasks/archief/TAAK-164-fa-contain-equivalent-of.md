@@ -1,49 +1,49 @@
-# TAAK-164 — Patroon fa.contain-equivalent-of
+# TAAK-164 — Pattern fa.contain-equivalent-of
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-12
-**Doel**: `x.Should().ContainEquivalentOf(item)` / `NotContainEquivalentOf` zo exact mogelijk automatisch naar `ShouldContain`/`ShouldNotContain`; anders Manual met een specifieke reden.
+**Status**: ✅ completed
+**Created**: 2026-10-12
+**Goal**: `x.Should().ContainEquivalentOf(item)` / `NotContainEquivalentOf` automatically to `ShouldContain`/`ShouldNotContain` as exactly as possible; otherwise Manual with a specific reason.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Rij 33 in `claude/tasks/patroon-queue.md`. Voorheen werd deze aanroep door geen enkel patroon gevonden.
-- FA 7.2.2: `ContainEquivalentOf<TExpectation>(TExpectation, because, args)` en een overload met `config`; Shouldly 4.3.0: `ShouldContain<T>(IEnumerable<T>, T, customMessage)`.
+- Row 33 in `claude/tasks/patroon-queue.md`. Previously this call was found by no pattern at all.
+- FA 7.2.2: `ContainEquivalentOf<TExpectation>(TExpectation, because, args)` and an overload with `config`; Shouldly 4.3.0: `ShouldContain<T>(IEnumerable<T>, T, customMessage)`.
 
-## Analyse
+## Analysis
 
-Probe (scratchpad `probe164`, ruim 40 gevallen): voor int, string, double (ook `0.1+0.2` vs `0.3`: beide falen), enum, int?, DateTime, DateTimeOffset (zelfde moment, andere offset: beide slagen), decimal (schaal), TimeSpan, Guid, NaN, records, record structs en structs geven FA en Shouldly dezelfde uitkomst; ook voor ontbrekend item, lege collectie, duplicaten, null-item en null-subject (beide falen, ook `NotContainEquivalentOf`).
+Probe (scratchpad `probe164`, over 40 cases): for int, string, double (also `0.1+0.2` vs `0.3`: both fail), enum, int?, DateTime, DateTimeOffset (same moment, another offset: both pass), decimal (scale), TimeSpan, Guid, NaN, records, record structs and structs FA and Shouldly give the same outcome; also for a missing item, an empty collection, duplicates, a null item and a null subject (both fail, also `NotContainEquivalentOf`).
 
-- Strings: FA vergelijkt in equivalency **hoofdlettergevoelig** (`"abc"` vs `"Abc"` faalt), net als `ShouldContain` op een collectie (anders dan `ShouldContain` op een string, waar `Case.Sensitive` nodig is).
-- Verschil 1: een class zonder `Equals` (`C { X = 1 }`): FA slaagt (leden), Shouldly faalt (referentie) → Manual.
-- Verschil 2: ander verwachtingstype dan elementtype: `List<object>` met `1L` (FA slaagt), `List<int>` met `2L` of `2.0` (FA slaagt; `ShouldContain(2L)` compileert niet) → Manual.
-- Null-subject: beide falen; `NotNull(subject)` zet `ShouldNotBeNull()` voor de aanroep bij een nullable subject, zoals `fa.contain`.
+- Strings: FA compares **case-sensitively** in equivalency (`"abc"` vs `"Abc"` fails), just like `ShouldContain` on a collection (unlike `ShouldContain` on a string, where `Case.Sensitive` is needed).
+- Difference 1: a class without `Equals` (`C { X = 1 }`): FA passes (members), Shouldly fails (reference) → Manual.
+- Difference 2: an expectation type other than the element type: `List<object>` with `1L` (FA passes), `List<int>` with `2L` or `2.0` (FA passes; `ShouldContain(2L)` does not compile) → Manual.
+- Null subject: both fail; `NotNull(subject)` puts `ShouldNotBeNull()` before the call for a nullable subject, like `fa.contain`.
 
-## Keuzes
+## Choices
 
-| #   | Keuze | Reden |
-| --- | ----- | ----- |
-| 1 | `ContainEquivalentOfPattern : BeEquivalentToObjectPattern`; `IsValueLike`/`IsLeafOrNullable` verhuisd van `EquivalentOptionsPattern` naar het basispatroon (protected) | Eén definitie van "Equals gelijk aan ledenvergelijking" (TAAK-163) |
-| 2 | Fixed alleen als verwachting en element hetzelfde type hebben én het element waarde-achtig is (leaf, sealed record, record struct, struct met leaf-leden) | Geprobeerd gelijk; anders compileert `ShouldContain` niet of verschilt het gedrag |
-| 3 | Uitkomst `x.ShouldContain(item, because)` / `ShouldNotContain`, met `ShouldNotBeNull()` bij nullable subject | Zelfde vorm als `fa.contain`; geen zwakkere test bij null |
-| 4 | `config`-overload: Manual ("equivalency options have no Shouldly equivalent") | Opties veranderen de vergelijking; `ShouldContain` heeft ze niet |
-| 5 | Class, niet-sealed record, record met collectie-lid, dictionary (`KeyValuePair`): Manual | Niet bewezen gelijk (reden: "is no leaf, record or struct of leaf members") |
-| 6 | Resultaat gebruikt (`.Which`) en AssertionScope: Manual via de template | Gedeelde regels |
+| #   | Choice | Reason |
+| --- | ------ | ------ |
+| 1 | `ContainEquivalentOfPattern : BeEquivalentToObjectPattern`; `IsValueLike`/`IsLeafOrNullable` moved from `EquivalentOptionsPattern` to the base pattern (protected) | One definition of "Equals equal to member comparison" (TAAK-163) |
+| 2 | Fixed only if expectation and element have the same type and the element is value-like (leaf, sealed record, record struct, struct with leaf members) | Tried as equal; otherwise `ShouldContain` does not compile or the behaviour differs |
+| 3 | Outcome `x.ShouldContain(item, because)` / `ShouldNotContain`, with `ShouldNotBeNull()` for a nullable subject | Same form as `fa.contain`; no weaker test on null |
+| 4 | `config` overload: Manual ("equivalency options have no Shouldly equivalent") | Options change the comparison; `ShouldContain` does not have them |
+| 5 | Class, non-sealed record, record with a collection member, dictionary (`KeyValuePair`): Manual | Not proven equal (reason: "is no leaf, record or struct of leaf members") |
+| 6 | Result used (`.Which`) and AssertionScope: Manual via the template | Shared rules |
 
-## Stappen
+## Steps
 
-- [x] 1. Onderzoek + probe
+- [x] 1. Research + probe
 - [x] 2. Plan
-- [x] 3. `ContainEquivalentOfPattern`, registratie, `IsValueLike` verplaatst
+- [x] 3. `ContainEquivalentOfPattern`, registration, `IsValueLike` moved
 - [x] 4. 21 proofs, `proofs-doc.py`
-- [x] 5. Build en tests groen (35 bekende CRLF-falers), modellen, verify, rij `klaar`
+- [x] 5. Build and tests green (35 known CRLF failures), models, verify, row `done`
 
-## Gewijzigde bestanden
+## Changed files
 
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainEquivalentOfPattern.cs` (nieuw), `BeEquivalentToObjectPattern.cs`, `EquivalentOptionsPattern.cs`, `FluentAssertionsFix.cs`
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainEquivalentOfPattern.cs` (new), `BeEquivalentToObjectPattern.cs`, `EquivalentOptionsPattern.cs`, `FluentAssertionsFix.cs`
 - `src/Unshackle.Tests/Proofs/FluentAssertions/ContainEquivalentOf/`
-- `docs/projectinfo/patterns/fa-contain-equivalent-of-{plan,modellen,verify}.md`, README-rij, `architectuur/proofs.md`
+- `docs/projectinfo/patterns/fa-contain-equivalent-of-{plan,modellen,verify}.md`, README row, `architectuur/proofs.md`
 
-## Zie ook
+## See also
 
 - `claude/tasks/archief/TAAK-163-fa-equivalent-options.md`
 - `docs/projectinfo/patterns/fa-contain-equivalent-of-plan.md`

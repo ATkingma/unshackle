@@ -1,72 +1,72 @@
-# Testen
+# Testing
 
-## Proofs: elk patroon testen zonder nieuwe testcode
+## Proofs: testing every pattern without new test code
 
 ```
 src/Unshackle.Tests/Proofs/<Fix>/<Pattern>/
    simple.before.cs      simple.after.cs
-   dictionary.before.cs  dictionary.manual.txt    ← verwacht: handwerk
+   dictionary.before.cs  dictionary.manual.txt    ← expected: manual work
 ```
 
-Eén test (`ProofTests`) vindt alle proofs zelf en draait de Fixer erop. Een nieuw patroon of
-afwijkend geval testen betekent twee bestanden toevoegen. De map `Proofs/` wordt niet
-meegecompileerd: het is testdata.
+One test (`ProofTests`) discovers all proofs itself and runs the Fixer on them. Testing a new pattern or
+unusual case means adding two files. The `Proofs/` folder is not
+compiled: it is test data.
 
-**Veiligheidscheck in elke proof:** de compilatie van `before` moet foutloos zijn met de oude
-bibliotheek, en die van `after` met de nieuwe. Zo vang je een vergeten referentie af (anders
-geeft het `SemanticModel` stilletjes error types terug) en een rewrite die niet compileert.
+**Safety check in every proof:** the compilation of `before` must be error-free against the old
+library, and that of `after` against the new one. This catches a forgotten reference (otherwise
+the `SemanticModel` silently returns error types) and a rewrite that does not compile.
 
-## Combined proofs: patronen samen
+## Combined proofs: patterns together
 
 ```
 src/Unshackle.Tests/Proofs/FluentAssertions/_Combined/<case>.before.cs + <case>.after.cs
 ```
 
-`ProofTests` draait één pattern per proof; dat laat samenwerking onbewezen (bv. `fa.all-satisfy` kopieert zijn
-lambda-body in een `foreach` en de latere patterns herschrijven die body; `.And`-splitsing naast andere patterns;
-usings). `CombinedProofTests` draait de **echte** `FluentAssertionsFix` (alle patterns, echte volgorde) en vergelijkt
-de eindtekst exact met `.after.cs`. Zelfde compileercheck: before tegen FluentAssertions, after tegen Shouldly (bevat
-de after nog `using FluentAssertions;` door een Manual-restant, dan Shouldly + FluentAssertions). `ProofTests` slaat
-de map `_Combined` over. Een aparte test legt vast dat `AllSatisfyPattern` eerst staat. Nieuw geval = twee bestanden.
+`ProofTests` runs one pattern per proof; that leaves cooperation unproven (e.g. `fa.all-satisfy` copies its
+lambda body into a `foreach` and the later patterns rewrite that body; `.And` splitting next to other patterns;
+usings). `CombinedProofTests` runs the **real** `FluentAssertionsFix` (all patterns, real order) and compares
+the final text exactly with `.after.cs`. Same compile check: before against FluentAssertions, after against Shouldly (if
+the after still contains `using FluentAssertions;` due to a Manual leftover, then Shouldly + FluentAssertions). `ProofTests` skips
+the `_Combined` folder. A separate test pins down that `AllSatisfyPattern` comes first. New case = two files.
 
-## Pending proofs: bekende fouten
+## Pending proofs: known bugs
 
-`src/Unshackle.Tests/Proofs/_Pending/<Fix>/<Pattern>/<case>.*` bevat proofs van bekende patroonbugs, met de gewenste
-`.after.cs`. `ProofTests` slaat de map over; elke pending proof hoort bij een taak. Fix klaar → map terugzetten.
-Herkomst van de edge cases: `architectuur/edge-cases.md`; frequenties en fix-runs: `architectuur/corpus.md`.
+`src/Unshackle.Tests/Proofs/_Pending/<Fix>/<Pattern>/<case>.*` contains proofs of known pattern bugs, with the desired
+`.after.cs`. `ProofTests` skips the folder; every pending proof belongs to a task. Fix done → move the folder back.
+Origin of the edge cases: `architectuur/edge-cases.md`; frequencies and fix runs: `architectuur/corpus.md`.
 
-## Types zonder te builden
+## Types without building
 
-Unittests gebruiken een `Solution` in het geheugen (`AdhocWorkspace`). De types komen uit:
+Unit tests use an in-memory `Solution` (`AdhocWorkspace`). The types come from:
 
-1. **Echte assemblies** (standaard). Het testproject verwijst naar de laatste vrije versies
-   (FluentAssertions 7.2.2, MediatR 12.5.0, AutoMapper 14.0.0, plus Shouldly en Mediator.Abstractions).
-   .NET zelf komt uit `Basic.Reference.Assemblies.Net100`. Een helper `TestReferences` geeft per
-   fix de juiste set `MetadataReference`s.
-2. **Stubs**: alleen voor uitzonderingen die je niet met het echte pakket kunt namaken.
-3. **Echte sample-projecten** in `samples/` (nu: `samples/SampleShop`, een webshop met FluentAssertions 7.2.2,
-   MediatR 12.5.0 en AutoMapper 14.0.0; elk FA-patroon heeft een commentaar met de verwachte rewrite). Samples
-   staan los van onze build: eigen `Directory.Build.props`, `Directory.Packages.props` en `.editorconfig` (root).
-   `Unshackle.Tests/Integration/` laadt ze met MSBuild, fixt, bouwt en test ze. Traag, dus weinig, en apart te draaien via een trait/filter.
+1. **Real assemblies** (default). The test project references the last free versions
+   (FluentAssertions 7.2.2, MediatR 12.5.0, AutoMapper 14.0.0, plus Shouldly and Mediator.Abstractions).
+   .NET itself comes from `Basic.Reference.Assemblies.Net100`. A helper `TestReferences` provides the right set of
+   `MetadataReference`s per fix.
+2. **Stubs**: only for exceptions you cannot reproduce with the real package.
+3. **Real sample projects** in `samples/` (currently: `samples/SampleShop`, a web shop with FluentAssertions 7.2.2,
+   MediatR 12.5.0 and AutoMapper 14.0.0; every FA pattern has a comment with the expected rewrite). Samples
+   are separate from our build: their own `Directory.Build.props`, `Directory.Packages.props` and `.editorconfig` (root).
+   `Unshackle.Tests/Integration/` loads them with MSBuild, fixes, builds and tests them. Slow, so few of them, and runnable separately via a trait/filter.
 
 ## Mocking (NSubstitute)
 
-Mock alleen je **eigen** interfaces, nooit Roslyn-typen. Voor Roslyn gebruik je een echte
+Only mock your **own** interfaces, never Roslyn types. For Roslyn, use a real
 in-memory solution.
 
-| Wat test je     | Hoe                                                             |
+| What you test   | How                                                             |
 | --------------- | --------------------------------------------------------------- |
-| Een pattern     | Proofs met echte assemblies                                     |
-| De Fixer-logica | Gemockte `IFix` en `IPattern`, kleine in-memory solution        |
-| Commands        | Gemockte `IFixer`, `IReportWriter` en `IConsoleView`            |
-| Report writers  | `MockFileSystem` (System.IO.Abstractions), geen echte bestanden |
-| End-to-end      | `samples/` in de integratietests                                |
+| A pattern       | Proofs with real assemblies                                     |
+| The Fixer logic | Mocked `IFix` and `IPattern`, small in-memory solution          |
+| Commands        | Mocked `IFixer`, `IReportWriter` and `IConsoleView`             |
+| Report writers  | `MockFileSystem` (System.IO.Abstractions), no real files        |
+| End-to-end      | `samples/` in the integration tests                             |
 
-Moq gebruiken we bewust niet (SponsorLink-ophef in 2023, en het is zelf een migratiekandidaat).
+We deliberately do not use Moq (SponsorLink controversy in 2023, and it is itself a migration candidate).
 
-## Zie ook
+## See also
 
-- `docs/projectinfo/architectuur/proofs.md` — overzicht van alle proofs (genereren: `python3 claude/tools/proofs-doc.py`)
-- `docs/projectinfo/README.md` — overzicht en C4-diagrammen
-- `src/Unshackle.Tests/ProofTests.cs` — proof-runner
-- `src/Unshackle.Tests/CombinedProofTests.cs` — runner voor samenwerking van patterns
+- `docs/projectinfo/architectuur/proofs.md` — overview of all proofs (generate: `python3 claude/tools/proofs-doc.py`)
+- `docs/projectinfo/README.md` — overview and C4 diagrams
+- `src/Unshackle.Tests/ProofTests.cs` — proof runner
+- `src/Unshackle.Tests/CombinedProofTests.cs` — runner for cooperation of patterns

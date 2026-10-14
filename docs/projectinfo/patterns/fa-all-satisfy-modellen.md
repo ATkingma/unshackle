@@ -1,57 +1,57 @@
-# Modellen: fa.all-satisfy
+# Models: fa.all-satisfy
 
-Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AllSatisfyPattern.cs`.
+Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AllSatisfyPattern.cs`.
 
-## Figuur 1: klassen
+## Figure 1: classes
 
-**Figure 1.** `AllSatisfyPattern`, zijn contract en de helpers; rechts de FluentAssertions-aanroep die hij herkent en de Shouldly-vorm die hij maakt.
+**Figure 1.** `AllSatisfyPattern`, its contract and the helpers; on the right the FluentAssertions call it recognizes and the Shouldly form it produces.
 
 <!-- kingmadoc:diagram img/fa-all-satisfy-modellen-1.d2 -->
-![Figuur 1: klassen](img/fa-all-satisfy-modellen-1.png)
+![Figure 1: classes](img/fa-all-satisfy-modellen-1.png)
 
-| Element | Rol |
-| ------- | --- |
-| `AllSatisfyPattern` | Erft van `FluentAssertionPattern`; vindt `AllSatisfy` (`Find`, geeft het hele statement terug) en bouwt twee of drie statements (`RewriteAssertion`) |
-| `FluentAssertionPattern` | Template Method: `Rewrite` doet scope-, subject-, resultaat- en argumentcontroles en roept dan `RewriteAssertion` aan |
-| `FluentAssertionsSyntax` | Gedeelde stappen: aanroepen vinden, onderwerp, `because`-argumenten, `TryGetSplittableStatement`, `Hoist` |
-| `Reindent` / `FluentAssertionsSyntax.IsSafeToEvaluateTwice` | Eigen helper voor de inspringing van de loop-body; anders wordt het subject gehoist naar `var subject = x;` |
-| `PatternResult` | `Fixed` met twee statements, of `Manual(reden)` |
-| FA / Shouldly | `AllSatisfy(Action<T>)` wordt `ShouldNotBeEmpty()` plus `foreach`, want `ShouldAllBe` verwacht een bool-predicate |
+| Element | Role |
+| ------- | ---- |
+| `AllSatisfyPattern` | Inherits from `FluentAssertionPattern`; finds `AllSatisfy` (`Find`, returns the whole statement) and builds two or three statements (`RewriteAssertion`) |
+| `FluentAssertionPattern` | Template Method: `Rewrite` does the scope, subject, result and argument checks and then calls `RewriteAssertion` |
+| `FluentAssertionsSyntax` | Shared steps: finding calls, subject, `because` arguments, `TryGetSplittableStatement`, `Hoist` |
+| `Reindent` / `FluentAssertionsSyntax.IsSafeToEvaluateTwice` | Own helper for the indentation of the loop body; otherwise the subject is hoisted to `var subject = x;` |
+| `PatternResult` | `Fixed` with two statements, or `Manual(reason)` |
+| FA / Shouldly | `AllSatisfy(Action<T>)` becomes `ShouldNotBeEmpty()` plus `foreach`, because `ShouldAllBe` expects a bool predicate |
 
-## Figuur 2: sequence
+## Figure 2: sequence
 
-**Figure 2.** `Find` verzamelt de statements, `FluentAssertionPattern.Rewrite` → `AllSatisfyPattern.RewriteAssertion` beslist per statement tussen `Fixed` en `Manual`.
+**Figure 2.** `Find` collects the statements, `FluentAssertionPattern.Rewrite` → `AllSatisfyPattern.RewriteAssertion` decides per statement between `Fixed` and `Manual`.
 
 <!-- kingmadoc:diagram img/fa-all-satisfy-modellen-2.d2 -->
-![Figuur 2: sequence](img/fa-all-satisfy-modellen-2.png)
+![Figure 2: sequence](img/fa-all-satisfy-modellen-2.png)
 
-| Stap | Methode in de code | Wat gebeurt er |
-| ---- | ------------------ | -------------- |
-| Vinden | `Find` | `FindInvocations` met `AllSatisfy`; bij een statement-ouder wordt het statement de node |
-| Gedeeld | `FluentAssertionPattern.Rewrite` | AssertionScope, `GetSubject` (`x.Should()`), resultaat weggegooid, `TryGetArguments` |
-| Argumenten | `RewriteAssertion` | Lambda en `because`; een `because` (ook met `becauseArgs`) geeft Manual |
-| Controles | `TryGetSplittableStatement`, `IsSafeToEvaluateTwice`, `Hoist`, `Reindent` | Lambda zonder `return`, statement direct in een blok; onveilig subject wordt gehoist; blok wordt opnieuw ingesprongen |
-| Resultaat | `PatternResult.Fixed` | Twee statements (drie met hoist); de Fixer geeft het tweede alleen de inspringing |
+| Step | Method in the code | What happens |
+| ---- | ------------------ | ------------ |
+| Find | `Find` | `FindInvocations` with `AllSatisfy`; with a statement parent the statement becomes the node |
+| Shared | `FluentAssertionPattern.Rewrite` | AssertionScope, `GetSubject` (`x.Should()`), result discarded, `TryGetArguments` |
+| Arguments | `RewriteAssertion` | Lambda and `because`; a `because` (also with `becauseArgs`) gives Manual |
+| Checks | `TryGetSplittableStatement`, `IsSafeToEvaluateTwice`, `Hoist`, `Reindent` | Lambda without `return`, statement directly in a block; unsafe subject is hoisted; block is re-indented |
+| Result | `PatternResult.Fixed` | Two statements (three with hoist); the Fixer only gives the second one the indentation |
 
-## Figuur 3: beslisboom
+## Figure 3: decision tree
 
-**Figure 3.** Elke vraag in `FluentAssertionPattern.Rewrite` en `RewriteAssertion`; de bladeren zijn de Shouldly-vorm of de Manual-reden.
+**Figure 3.** Every question in `FluentAssertionPattern.Rewrite` and `RewriteAssertion`; the leaves are the Shouldly form or the Manual reason.
 
 <!-- kingmadoc:diagram img/fa-all-satisfy-modellen-3.d2 -->
-![Figuur 3: beslisboom](img/fa-all-satisfy-modellen-3.png)
+![Figure 3: decision tree](img/fa-all-satisfy-modellen-3.png)
 
-| Blad | Voorwaarde | Proof (`Proofs/FluentAssertions/AllSatisfy/`) |
-| ---- | ---------- | --------------------------------------------- |
-| Fixed | expressie- of blok-lambda, getypeerde parameter, member-subject, nullable subject | `simple`, `edge-expression-lambda`, `block`, `typed-parameter`, `member-subject`, `nullable` |
-| Fixed met hoist | subject met bijwerkingen → `var subject = x;` | `subject-call` |
-| Manual "is not in the form" | na `.And` | `and-chain` |
-| Manual "is used" | `.And` erna of waarde gebruikt | `used` |
-| Manual "because message" | bericht (ook met `becauseArgs`) kan niet in de loop | `because`, `because-args` |
-| Manual "not an inline lambda" / "is async" | methodgroep, async lambda | `method-group`, `async` |
-| Manual "contains a return" | `return` zou de methode verlaten | `return` |
+| Leaf | Condition | Proof (`Proofs/FluentAssertions/AllSatisfy/`) |
+| ---- | --------- | --------------------------------------------- |
+| Fixed | expression or block lambda, typed parameter, member subject, nullable subject | `simple`, `edge-expression-lambda`, `block`, `typed-parameter`, `member-subject`, `nullable` |
+| Fixed with hoist | subject with side effects → `var subject = x;` | `subject-call` |
+| Manual "is not in the form" | after `.And` | `and-chain` |
+| Manual "is used" | `.And` afterwards or value used | `used` |
+| Manual "because message" | message (also with `becauseArgs`) cannot go into the loop | `because`, `because-args` |
+| Manual "not an inline lambda" / "is async" | method group, async lambda | `method-group`, `async` |
+| Manual "contains a return" | `return` would leave the method | `return` |
 | Manual "not directly in a block" | `if (...) x.Should()...;` | `not-in-block` |
 
-## Zie ook
+## See also
 
 - [fa-all-satisfy-plan.md](fa-all-satisfy-plan.md)
 - [fa-all-satisfy-verify.md](fa-all-satisfy-verify.md)

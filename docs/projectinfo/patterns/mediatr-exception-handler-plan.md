@@ -18,31 +18,31 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-061.
+> Drawn up from TAAK-061.
 
 ## One-sentence summary
 
-`IRequestExceptionHandler<TReq, TRes, TEx>` met `Task Handle(request, exception, state, ct)` wordt `MessageExceptionHandler<TReq, TRes, TEx>` met `protected override ValueTask<ExceptionHandlingResult<TRes>> Handle(request, exception, ct)`; `state.SetHandled(x); return Task.CompletedTask;` wordt `return new(Handled(x));`, elke andere return `return new(NotHandled);`.
+`IRequestExceptionHandler<TReq, TRes, TEx>` with `Task Handle(request, exception, state, ct)` becomes `MessageExceptionHandler<TReq, TRes, TEx>` with `protected override ValueTask<ExceptionHandlingResult<TRes>> Handle(request, exception, ct)`; `state.SetHandled(x); return Task.CompletedTask;` becomes `return new(Handled(x));`, every other return `return new(NotHandled);`.
 
 ## Scope (in / out)
 
-**Out of scope**: `async` handlers, expression bodies en `IRequestExceptionAction` (blijft `mediatr.unsupported`).
+**Out of scope**: `async` handlers, expression bodies and `IRequestExceptionAction` (stays `mediatr.unsupported`).
 
 ## Requirements
 
-- **REQ-1**: WHEN elk gebruik van `state` een `state.SetHandled(x);` direct gevolgd door `return Task.CompletedTask;` is THE SYSTEM SHALL `new(Handled(x))` en voor de overige returns `new(NotHandled)` schrijven (proof `set-handled`).
-- **REQ-2**: IF `state` anders gebruikt wordt (doorgegeven, opgeslagen) THEN THE SYSTEM SHALL Manual melden (proof `state-passed`).
+- **REQ-1**: WHEN every use of `state` is a `state.SetHandled(x);` directly followed by `return Task.CompletedTask;` THE SYSTEM SHALL write `new(Handled(x))` and `new(NotHandled)` for the other returns (proof `set-handled`).
+- **REQ-2**: IF `state` is used otherwise (passed on, stored) THEN THE SYSTEM SHALL report Manual (proof `state-passed`).
 
 ## Assumptions
 
-- Mediator 3.0.2: `abstract class MessageExceptionHandler<TMessage, TResponse, TException>` met `protected abstract ValueTask<ExceptionHandlingResult<TResponse>> Handle(TMessage, TException, CancellationToken)`, `protected static Handled(TResponse)` en `protected static readonly NotHandled`. Niet afgehandeld = opnieuw gooien, net als MediatR.
-- De registratie volgt in `mediatr.add-mediatr`; de fix is alles-of-niets (`IFix.AllOrNothing`), dus een Manual elders laat dit patroon niets schrijven.
+- Mediator 3.0.2: `abstract class MessageExceptionHandler<TMessage, TResponse, TException>` with `protected abstract ValueTask<ExceptionHandlingResult<TResponse>> Handle(TMessage, TException, CancellationToken)`, `protected static Handled(TResponse)` and `protected static readonly NotHandled`. Not handled = rethrow, just like MediatR.
+- The registration follows in `mediatr.add-mediatr`; the fix is all-or-nothing (`IFix.AllOrNothing`), so a Manual elsewhere makes this pattern write nothing.
 
-## Modellen
+## Models
 
-Klassen, sequence en beslisboom: [mediatr-exception-handler-modellen.md](mediatr-exception-handler-modellen.md).
+Classes, sequence and decision tree: [mediatr-exception-handler-modellen.md](mediatr-exception-handler-modellen.md).
 
-## Zie ook
+## See also
 
 - [mediatr-exception-handler-verify.md](mediatr-exception-handler-verify.md)
 - `claude/tasks/archief/TAAK-061-*.md`

@@ -1,44 +1,44 @@
-# TAAK-166 — Patroon fa.numeric-sign
+# TAAK-166 — Pattern fa.numeric-sign
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-12
-**Doel**: `BeNegative()`/`BePositive()` op alle numerieke typen; `BeNegative` op double/float (was Manual sinds TAAK-101) automatisch als er een exacte vertaling bestaat.
+**Status**: ✅ completed
+**Created**: 2026-10-12
+**Goal**: `BeNegative()`/`BePositive()` on all numeric types; `BeNegative` on double/float (Manual since TAAK-101) automatic when an exact translation exists.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Rij 27 in `claude/tasks/patroon-queue.md`. `BePositive`, `BeNegative` en `BeInRange` zaten al in `BeGreaterLessPattern` (`fa.be-greater-less`); er is geen apart patroon-ID bijgekomen. Plan, verify en modellen van `fa-be-greater-less` zijn bijgewerkt (REQ-16).
-- Reden van de Manual uit TAAK-101: NaN (zie hieronder).
+- Row 27 in `claude/tasks/patroon-queue.md`. `BePositive`, `BeNegative` and `BeInRange` were already in `BeGreaterLessPattern` (`fa.be-greater-less`); no separate pattern ID was added. Plan, verify and models of `fa-be-greater-less` are updated (REQ-16).
+- Reason for the Manual from TAAK-101: NaN (see below).
 
 ## Probe (FA 7.2.2 vs Shouldly 4.3.0; scratchpad `probe166/`)
 
-| Waarde | FA BeNegative | ShouldBeNegative | ShouldBeLessThan(0) | `x < 0` | BePositive FA = Shouldly |
+| Value | FA BeNegative | ShouldBeNegative | ShouldBeLessThan(0) | `x < 0` | BePositive FA = Shouldly |
 |---|---|---|---|---|---|
-| NaN (double en float) | faalt | **slaagt** | **slaagt** | onwaar | ja (beide falen) |
-| -0.0 / 0.0 | faalt | faalt | faalt | onwaar | ja |
-| ±Epsilon, ±Infinity, ±1 | gelijk | gelijk | gelijk | gelijk | ja |
+| NaN (double and float) | fails | **passes** | **passes** | false | yes (both fail) |
+| -0.0 / 0.0 | fails | fails | fails | false | yes |
+| ±Epsilon, ±Infinity, ±1 | equal | equal | equal | equal | yes |
 
-int, long, short en decimal (-1, 0, 1): alle gelijk. `byte` heeft geen Shouldly-overload (blijft Manual).
+int, long, short and decimal (-1, 0, 1): all equal. `byte` has no Shouldly overload (stays Manual).
 
-## Keuzes
+## Choices
 
-| # | Keuze | Reden |
+| # | Choice | Reason |
 |---|---|---|
-| 1 | `BeNegative` op double/float → `(x < 0).ShouldBeTrue([because])` | `ShouldBeNegative` en `ShouldBeLessThan(0)` slagen op NaN (CompareTo ordent NaN onder alles); `x < 0` is onwaar voor NaN en -0.0 en gelijk voor de rest: pass/fail exact gelijk |
-| 2 | Subject tussen haakjes als het geen naam/member/aanroep/index is | `(a - b) < 0` en voorrang |
-| 3 | Literal `0` (int) | Converteert impliciet; vergelijking blijft in het subjecttype |
-| 4 | `BePositive` blijft `ShouldBePositive()` | In beide bibliotheken identiek voor alle probe-waarden |
-| 5 | Nadeel gedocumenteerd | Foutmelding van `ShouldBeTrue` bevat de waarde niet |
-| 6 | `BeInRange` ongewijzigd | Al gedekt (proof `in-range`) |
+| 1 | `BeNegative` on double/float → `(x < 0).ShouldBeTrue([because])` | `ShouldBeNegative` and `ShouldBeLessThan(0)` pass on NaN (CompareTo orders NaN below everything); `x < 0` is false for NaN and -0.0 and equal for the rest: pass/fail exactly equal |
+| 2 | Subject in parentheses if it is not a name/member/call/index | `(a - b) < 0` and precedence |
+| 3 | Literal `0` (int) | Converts implicitly; the comparison stays in the subject type |
+| 4 | `BePositive` stays `ShouldBePositive()` | Identical in both libraries for all probe values |
+| 5 | Drawback documented | The error message of `ShouldBeTrue` does not contain the value |
+| 6 | `BeInRange` unchanged | Already covered (proof `in-range`) |
 
 ## Proofs
 
-`BeGreaterLess/negative-double` (was `.manual.txt`, nu before+after), nieuw `negative-float` (float met because, samengestelde subject), bestaand `sign`, `sign-byte`.
+`BeGreaterLess/negative-double` (was `.manual.txt`, now before+after), new `negative-float` (float with because, compound subject), existing `sign`, `sign-byte`.
 
-## Resultaat
+## Result
 
-`dotnet build` 0 warnings; ProofTests groen (653). Let op: `kingmadoc` ontbrak op deze machine, dus de PNG/SVG van figuur 3 zijn niet opnieuw gerenderd; alleen de `.d2` en de tabel in het modellen-document zijn bijgewerkt.
+`dotnet build` 0 warnings; ProofTests green (653). Note: `kingmadoc` was missing on this machine, so the PNG/SVG of figure 3 were not re-rendered; only the `.d2` and the table in the models document were updated.
 
-## Zie ook
+## See also
 
 - `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeGreaterLessPattern.cs`
 - `docs/projectinfo/patterns/fa-be-greater-less-plan.md`

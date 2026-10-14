@@ -8,7 +8,7 @@ files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
   - src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/
 ---
-# Feature: fa.should-be: x.Should().Be(y) wordt x.ShouldBe(y), met behoud van het because-argument.
+# Feature: fa.should-be: x.Should().Be(y) becomes x.ShouldBe(y), keeping the because argument.
 
 | | |
 |---|---|
@@ -16,78 +16,78 @@ files_expected:
 | **Status** | Approved |
 | **Generated** | 2026-10-10T23:33+02:00 by KingmaDoc 0.3.0.dev9 |
 
-> Achteraf opgesteld uit TAAK-001 na de bouw. Dit plan beschrijft wat is gebouwd en waarom; het is geen ontwerp vooraf.
-> Alles gemarkeerd als _(inferred)_ komt uit de codebase-analyse.
+> Drawn up afterwards from TAAK-001, after the build. This plan describes what was built and why; it is not an up-front design.
+> Everything marked _(inferred)_ comes from the codebase analysis.
 
 ## One-sentence summary
 
-fa.should-be: x.Should().Be(y) wordt x.ShouldBe(y), met behoud van het because-argument.
+fa.should-be: x.Should().Be(y) becomes x.ShouldBe(y), keeping the because argument.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `x.Should().Be(y[, because])` als losse assertion (statement of body van een void-lambda) naar `x.ShouldBe(y[, because])`.
-- Type-afhankelijke aanpassing van het verwachte argument: een cast als een constante alleen impliciet naar het subjecttype converteert (`byte`, enum).
-- `Manual(reden)` voor elk geval dat niet veilig te herschrijven is.
-- Alleen het patroon zelf; de `using`-wijzigingen (`FluentAssertions` eruit, `Shouldly` erin) doet de `Fixer`.
+- `x.Should().Be(y[, because])` as a standalone assertion (statement or body of a void lambda) to `x.ShouldBe(y[, because])`.
+- Type-dependent adjustment of the expected argument: a cast when a constant only converts implicitly to the subject type (`byte`, enum).
+- `Manual(reason)` for every case that cannot be rewritten safely.
+- Only the pattern itself; the `using` changes (`FluentAssertions` out, `Shouldly` in) are done by the `Fixer`.
 
 **Out of scope**
 
-- `NotBe` en andere `Be*`-methodes (eigen patronen).
-- `.And`/`.Which`-ketens splitsen.
-- Csproj-wijzigingen (package eruit, Shouldly erin).
-- `Be(expected, comparer)`: de comparer wordt niet doorgegeven aan `ShouldBe`.
+- `NotBe` and other `Be*` methods (own patterns).
+- Splitting `.And`/`.Which` chains.
+- Csproj changes (package out, Shouldly in).
+- `Be(expected, comparer)`: the comparer is not passed to `ShouldBe`.
 
 ## Requirements
 
-- **REQ-1**: WHEN `x.Should().Be(y)` een losse assertion is THE SYSTEM SHALL het herschrijven naar `x.ShouldBe(y)` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/simple.*.cs`, met `int` en `string`).
-- **REQ-2**: WHEN `Be` een `because`-string zonder `becauseArgs` krijgt THE SYSTEM SHALL die als tweede argument van `ShouldBe` overnemen (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/because.*.cs`).
-- **REQ-3**: WHEN `Be` de body is van een void-lambda (bijv. `Array.ForEach(totals, t => t.Should().Be(20m))`) THE SYSTEM SHALL ook die herschrijven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/lambda.*.cs`).
-- **REQ-4**: WHEN het verwachte argument een constante is die alleen impliciet naar het subjecttype converteert (`byte`, enum) THE SYSTEM SHALL een cast naar het subjecttype toevoegen, en bij `long` met `1` geen cast (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/constant-cast.*.cs`).
-- **REQ-5**: IF het resultaat van `Be` wordt gebruikt (`.And`, `.Which`, waarde) THEN THE SYSTEM SHALL een Manual-finding geven en de code ongewijzigd laten (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/chain.*`).
-- **REQ-6**: IF `Be` `becauseArgs` of benoemde argumenten heeft THEN THE SYSTEM SHALL Manual geven omdat Shouldly niet formatteert (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/because-args.*`).
-- **REQ-7**: IF `Be` een comparer meekrijgt THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/comparer.*`).
-- **REQ-8**: IF het verwachte type niet veilig naar het subjecttype te brengen is (bijv. `int` tegenover `int?`) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/nullable-expected.*`).
-- **REQ-9**: IF `Be` uit `FluentAssertions.Xml` of `FluentAssertions.Types` komt THEN THE SYSTEM SHALL Manual geven omdat de gelijkheid anders is (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/xml.*`).
-- **REQ-10**: IF het type van het subject onbekend is (error type) of `Be` niet in de vorm `x.Should().Be(...)` staat THEN THE SYSTEM SHALL Manual geven. _Geen proof: alleen via code bewaakt._
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `x.ShouldBe(y, string.Format(CultureInfo.InvariantCulture, because, args))` geven (proof `because-args.*`, nu `.after.cs`); benoemde argumenten, een niet-constante of niet-formatteerbare `because` blijven Manual (proofs `edge-named-because.*`, `because-args-variable.*`, `because-args-bad-format.*`). Vervangt REQ-6.
-- **Uitbreiding TAAK-100**: IF de assertie in een `AssertionScope` staat die niet door `fa.assertion-scope` wordt omgezet THEN THE SYSTEM SHALL Manual "Inside an AssertionScope" geven (proofs `assertion-scope-nested.*`, `assertion-scope-using-block.*`, `assertion-scope-using-var.*`).
-- **Uitbreiding TAAK-169**: WHEN het verwachte argument alleen via een door de gebruiker gedefinieerde impliciete conversie naar het subjecttype gaat (`BsonValue b; b.Should().Be(42)`) THE SYSTEM SHALL een cast naar het subjecttype toevoegen: `b.ShouldBe((BsonValue)42)`. Typeinferentie van `ShouldBe<T>` gebruikt zulke conversies niet (CS1929/CS0411). Gemeten (FA 7.2.2 vs Shouldly 4.3.0): met de cast vergelijken beide `Equals`, zelfde uitkomst bij gelijk, ongelijk en een klasse zonder `Equals`-override (referentiegelijkheid, faalt in beide) (proof `implicit-conversion.*`).
-- **Uitbreiding TAAK-199**: IF een herschreven `ShouldBe` (of ander Shouldly-extensie) na de rewrite niet aan Shouldly bindt maar aan een eigen methode (bijv. een eigen `ShouldBe<T>` in de omsluitende namespace, die zonder dubbelzinnigheid voor `using Shouldly;` gaat, zoals `Akka.TestKit.AkkaSpecExtensions.ShouldBe`) THEN THE SYSTEM SHALL het bestand ongewijzigd laten en Manual "binds to <type>.<methode> instead of Shouldly" geven (proof `own-shouldbe-in-namespace.*`; check `UsingDirectives.MisboundAddedCallAsync` in de `Fixer`, naast de CS0121-check van TAAK-174).
-- **Uitbreiding TAAK-198**: de terugval van TAAK-174/199 geldt niet meer per bestand maar per call: een `ShouldBe` die zou botsen of verkeerd binden blijft FA (Manual met dezelfde reden), de rest van het bestand wordt gemigreerd met gerichte `using static`-imports (zie `fa-be-true-false-plan.md` en `architectuur/core.md`). Alleen als die imports iets anders breken blijft het hele bestand staan.
+- **REQ-1**: WHEN `x.Should().Be(y)` is a standalone assertion THE SYSTEM SHALL rewrite it to `x.ShouldBe(y)` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/simple.*.cs`, with `int` and `string`).
+- **REQ-2**: WHEN `Be` gets a `because` string without `becauseArgs` THE SYSTEM SHALL take it over as the second argument of `ShouldBe` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/because.*.cs`).
+- **REQ-3**: WHEN `Be` is the body of a void lambda (e.g. `Array.ForEach(totals, t => t.Should().Be(20m))`) THE SYSTEM SHALL rewrite that too (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/lambda.*.cs`).
+- **REQ-4**: WHEN the expected argument is a constant that only converts implicitly to the subject type (`byte`, enum) THE SYSTEM SHALL add a cast to the subject type, and no cast for `long` with `1` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/constant-cast.*.cs`).
+- **REQ-5**: IF the result of `Be` is used (`.And`, `.Which`, value) THEN THE SYSTEM SHALL give a Manual finding and leave the code unchanged (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/chain.*`).
+- **REQ-6**: IF `Be` has `becauseArgs` or named arguments THEN THE SYSTEM SHALL give Manual because Shouldly does not format (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/because-args.*`).
+- **REQ-7**: IF `Be` is given a comparer THEN THE SYSTEM SHALL give Manual (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/comparer.*`).
+- **REQ-8**: IF the expected type cannot safely be brought to the subject type (e.g. `int` against `int?`) THEN THE SYSTEM SHALL give Manual (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/nullable-expected.*`).
+- **REQ-9**: IF `Be` comes from `FluentAssertions.Xml` or `FluentAssertions.Types` THEN THE SYSTEM SHALL give Manual because the equality is different (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/xml.*`).
+- **REQ-10**: IF the type of the subject is unknown (error type) or `Be` is not in the form `x.Should().Be(...)` THEN THE SYSTEM SHALL give Manual. _No proof: guarded by code only._
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL give `x.ShouldBe(y, string.Format(CultureInfo.InvariantCulture, because, args))` (proof `because-args.*`, now `.after.cs`); named arguments, a non-constant or non-formattable `because` stay Manual (proofs `edge-named-because.*`, `because-args-variable.*`, `because-args-bad-format.*`). Replaces REQ-6.
+- **Extension TAAK-100**: IF the assertion is inside an `AssertionScope` that is not converted by `fa.assertion-scope` THEN THE SYSTEM SHALL give Manual "Inside an AssertionScope" (proofs `assertion-scope-nested.*`, `assertion-scope-using-block.*`, `assertion-scope-using-var.*`).
+- **Extension TAAK-169**: WHEN the expected argument only reaches the subject type via a user-defined implicit conversion (`BsonValue b; b.Should().Be(42)`) THE SYSTEM SHALL add a cast to the subject type: `b.ShouldBe((BsonValue)42)`. Type inference of `ShouldBe<T>` does not use such conversions (CS1929/CS0411). Measured (FA 7.2.2 vs Shouldly 4.3.0): with the cast both compare with `Equals`, same outcome for equal, unequal and a class without an `Equals` override (reference equality, fails in both) (proof `implicit-conversion.*`).
+- **Extension TAAK-199**: IF a rewritten `ShouldBe` (or other Shouldly extension) after the rewrite does not bind to Shouldly but to an own method (e.g. an own `ShouldBe<T>` in the enclosing namespace, which without ambiguity wins over `using Shouldly;`, such as `Akka.TestKit.AkkaSpecExtensions.ShouldBe`) THEN THE SYSTEM SHALL leave the file unchanged and give Manual "binds to <type>.<method> instead of Shouldly" (proof `own-shouldbe-in-namespace.*`; check `UsingDirectives.MisboundAddedCallAsync` in the `Fixer`, next to the CS0121 check of TAAK-174).
+- **Extension TAAK-198**: the fallback of TAAK-174/199 no longer applies per file but per call: a `ShouldBe` that would clash or bind wrongly stays FA (Manual with the same reason), the rest of the file is migrated with targeted `using static` imports (see `fa-be-true-false-plan.md` and `architectuur/core.md`). Only if those imports break something else does the whole file stay as it is.
 
 ## Assumptions
 
-- _(inferred)_ Gebouwd op de bestaande stack: C#, Roslyn, Shouldly 4.3.0 als doel, FluentAssertions 7.2.2 als bron.
-- De foundation uit TAAK-001 (`IPattern`, `Fixer`, `ProofTests`) bestaat; dit patroon was het eerste en bewijst de hele keten.
-- `ShouldBe<T>(actual, expected)` leidt T af uit beide kanten en laat geen numerieke of nullable conversie toe op de receiver.
-- De `Fixer` regelt de usings en de trivia; het patroon bouwt kale nodes.
-- Gelijkheid van `Be` (`Equals`) komt overeen met `ShouldBe`, behalve in de Manual-gevallen hierboven.
+- _(inferred)_ Built on the existing stack: C#, Roslyn, Shouldly 4.3.0 as target, FluentAssertions 7.2.2 as source.
+- The foundation from TAAK-001 (`IPattern`, `Fixer`, `ProofTests`) exists; this pattern was the first and proves the whole chain.
+- `ShouldBe<T>(actual, expected)` infers T from both sides and allows no numeric or nullable conversion on the receiver.
+- The `Fixer` handles the usings and the trivia; the pattern builds bare nodes.
+- Equality of `Be` (`Equals`) matches `ShouldBe`, except in the Manual cases above.
 
 ## Risks
 
-- Een FA-conversie van het argument die niet met een cast te vangen is (bijv. `Guid` tegenover `string`): wordt Manual in plaats van een gok. Beperkt tot gevallen waar `ClassifyConversion` geen veilige vorm vindt.
-- Foutmelding van Shouldly verschilt van die van FA; geen Manual nodig, wel een gedocumenteerd verschil.
-- Alleen de `because`-tekst blijft behouden; format-args gaan niet verloren want die worden Manual.
-- Gedragsverschil (TAAK-200, gemeten op Akka DData): FA `Be`/`NotBe` roept `actual.Equals(expected)` aan, Shouldly `expected.Equals(actual)`. Bij een asymmetrische `Equals` (Akka `ORMultiValueDictionaryDelta`) kan de uitkomst omdraaien. Besluit gebruiker: **Fixed met waarschuwing** in het rapport ("Shouldly compares expected.Equals(actual), FluentAssertions actual.Equals(expected); check symmetry of X.Equals") als het subject- of expected-type (of een basistype) buiten de BCL zelf een `Equals(x)` declareert, of als beide kanten een onbekend runtime-type hebben (`object`, typeparameter, interface). Geen waarschuwing voor BCL-typen (assembly `System*`/`Microsoft*`/`mscorlib`/`netstandard`) en records zonder eigen `Equals` (gegenereerd, symmetrisch). Unittests `ShouldBeEqualsOrderTests`, proof `own-equals.*`.
+- An FA conversion of the argument that cannot be captured with a cast (e.g. `Guid` against `string`): becomes Manual instead of a guess. Limited to cases where `ClassifyConversion` finds no safe form.
+- Shouldly's error message differs from FA's; no Manual needed, but a documented difference.
+- Only the `because` text is kept; format args are not lost because those become Manual.
+- Behaviour difference (TAAK-200, measured on Akka DData): FA `Be`/`NotBe` calls `actual.Equals(expected)`, Shouldly `expected.Equals(actual)`. With an asymmetric `Equals` (Akka `ORMultiValueDictionaryDelta`) the outcome can flip. User decision: **Fixed with a warning** in the report ("Shouldly compares expected.Equals(actual), FluentAssertions actual.Equals(expected); check symmetry of X.Equals") when the subject or expected type (or a base type) declares an `Equals(x)` outside the BCL itself, or when both sides have an unknown runtime type (`object`, type parameter, interface). No warning for BCL types (assembly `System*`/`Microsoft*`/`mscorlib`/`netstandard`) and records without their own `Equals` (generated, symmetric). Unit tests `ShouldBeEqualsOrderTests`, proof `own-equals.*`.
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-should-be-modellen.md](fa-should-be-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-should-be-modellen.md](fa-should-be-modellen.md).
 
 ## Open questions
 
-- **Wat als `Be` een andere gelijkheid gebruikt dan `ShouldBe`?** Alleen bij XML en `MethodInfoSelector` (Types); die zijn Manual.
-- **Hoe komt de using erbij?** Via de `Fixer` (`IFix.AddedNamespaces`), niet via het patroon.
+- **What if `Be` uses a different equality than `ShouldBe`?** Only for XML and `MethodInfoSelector` (Types); those are Manual.
+- **How does the using get added?** Via the `Fixer` (`IFix.AddedNamespaces`), not via the pattern.
 
 **Answered while planning**
 
-- [x] Wat lost dit op en voor wie? Developers die van FluentAssertions af willen; `Be` is de meest gebruikte assertion (samples: `OrderTests.cs:24,61`, `OrderHandlerTests.cs:26,27,69`).
-- [x] Wie of wat triggert het? De `Fixer` draait het patroon per document.
-- [x] Externe systemen? Roslyn (SemanticModel); geen datastore.
-- [x] Welke modules veranderen? `Unshackle.Core` (patroon en registratie in `FluentAssertionsFix`) en `Unshackle.Tests` (proofs).
-- [x] Hoe weten we dat het werkt? `ProofTests` draait alle proofs: before compileert tegen FA, after is exact gelijk en compileert tegen Shouldly; manual.txt-reden komt voor in het rapport.
+- [x] What does this solve and for whom? Developers who want to get rid of FluentAssertions; `Be` is the most used assertion (samples: `OrderTests.cs:24,61`, `OrderHandlerTests.cs:26,27,69`).
+- [x] Who or what triggers it? The `Fixer` runs the pattern per document.
+- [x] External systems? Roslyn (SemanticModel); no data store.
+- [x] Which modules change? `Unshackle.Core` (pattern and registration in `FluentAssertionsFix`) and `Unshackle.Tests` (proofs).
+- [x] How do we know it works? `ProofTests` runs all proofs: before compiles against FA, after is exactly equal and compiles against Shouldly; the manual.txt reason appears in the report.
 
 ## Appendix: codebase context _(inferred)_
 

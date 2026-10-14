@@ -1,45 +1,45 @@
-# TAAK-163 — Patroon fa.equivalent-options
+# TAAK-163 — Pattern fa.equivalent-options
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-12
-**Doel**: `BeEquivalentTo(y, o => o.Option())` zo exact mogelijk automatisch; anders Manual met een reden per optie.
+**Status**: ✅ completed
+**Created**: 2026-10-12
+**Goal**: `BeEquivalentTo(y, o => o.Option())` automatic as exactly as possible; otherwise Manual with a reason per option.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Rij 32 in `claude/tasks/patroon-queue.md`. Voorheen gaf `fa.be-equivalent-to-object` voor elke options-aanroep dezelfde Manual ("options => ...").
+- Row 32 in `claude/tasks/patroon-queue.md`. Previously `fa.be-equivalent-to-object` gave the same Manual for every options call ("options => ...").
 
-## Analyse
+## Analysis
 
-Probe (scratchpad `probe163`, FA 7.2.2 vs Shouldly 4.3.0, 45 gevallen): `WithStrictOrdering` op `List<T>` vs `T[]` en `ShouldBe(y)` geven dezelfde uitkomst voor leaf-items (int, string met null-items, double met NaN, enum, int?, DateTime, decimal), sealed records, record structs en structs met leaf-leden: gelijk, omgekeerd, langer/korter, duplicaten, leeg, null-subject/-expectation/-beide, because. De laatste van `WithStrictOrdering`/`WithoutStrictOrdering` wint. `ExcludingMissingMembers`, `ThrowingOnMissingMembers` en `WithStrictOrdering` op een object gedragen zich gelijk aan "geen optie" bij hetzelfde compile-time type. Shouldly heeft voor `ShouldBe` met message alleen `(expected, ignoreOrder, customMessage)`.
+Probe (scratchpad `probe163`, FA 7.2.2 vs Shouldly 4.3.0, 45 cases): `WithStrictOrdering` on `List<T>` vs `T[]` and `ShouldBe(y)` give the same outcome for leaf items (int, string with null items, double with NaN, enum, int?, DateTime, decimal), sealed records, record structs and structs with leaf members: equal, reversed, longer/shorter, duplicates, empty, null subject/expectation/both, because. The last of `WithStrictOrdering`/`WithoutStrictOrdering` wins. `ExcludingMissingMembers`, `ThrowingOnMissingMembers` and `WithStrictOrdering` on an object behave the same as "no option" with the same compile-time type. Shouldly only has `(expected, ignoreOrder, customMessage)` for `ShouldBe` with a message.
 
-## Keuzes
+## Choices
 
-| #   | Keuze | Reden |
-| --- | ----- | ----- |
-| 1 | Eigen klasse `EquivalentOptionsPattern : BeEquivalentToObjectPattern`; basis-`Find` slaat `BeEquivalentTo` met options over | Eén bezitter per node; hergebruik van de object- en leaf-collectielogica |
-| 2 | Alleen een inline lambda `o => o.A().B()` wordt gelezen | Blok, variabele, method group: niet te controleren, Manual |
-| 3 | `WithoutStrictOrdering`, `ExcludingMissingMembers`, `ThrowingOnMissingMembers` vervallen; `WithStrictOrdering` op een niet-collectie ook | Geprobeerd: geen effect bij hetzelfde type |
-| 4 | Strikt op collectie met gelijk itemtype en waarde-items → `ShouldBe(y)` (met because: `ignoreOrder: false, because`) | Geprobeerd gelijk; bestaande vorm uit `fa.equal-sequence` |
-| 5 | Waarde-items: leaf, sealed record, record struct, struct met alleen leaf-velden (publiek of achter publieke auto-property), geen eigen `Equals`, geen berekende publieke property | Dan is `Equals` gelijk aan FA's ledenvergelijking; class, niet-sealed record, collectie-lid: Manual |
-| 6 | `ExcludingMissingMembers` + verschillende types → eigen Manual-reden | Dat is het gebruikelijke geval van die optie |
-| 7 | Overige opties: Manual, reden per categorie (selectie, vergelijking, runtime-types, cycli, tracing) met de optietekst erin | Gevraagd: specifieke reden per optie |
-| 8 | `options.*` proof uit `BeEquivalentToObject/` verhuisd naar `EquivalentOptions/excluding` | Het patroon vindt die aanroep niet meer |
+| #   | Choice | Reason |
+| --- | ------ | ------ |
+| 1 | Own class `EquivalentOptionsPattern : BeEquivalentToObjectPattern`; the base `Find` skips `BeEquivalentTo` with options | One owner per node; reuse of the object and leaf-collection logic |
+| 2 | Only an inline lambda `o => o.A().B()` is read | Block, variable, method group: cannot be checked, Manual |
+| 3 | `WithoutStrictOrdering`, `ExcludingMissingMembers`, `ThrowingOnMissingMembers` are dropped; `WithStrictOrdering` on a non-collection too | Tried: no effect with the same type |
+| 4 | Strict on a collection with an equal item type and value items → `ShouldBe(y)` (with because: `ignoreOrder: false, because`) | Tried as equal; existing form from `fa.equal-sequence` |
+| 5 | Value items: leaf, sealed record, record struct, struct with only leaf fields (public or behind a public auto-property), no own `Equals`, no computed public property | Then `Equals` equals FA's member comparison; class, non-sealed record, collection member: Manual |
+| 6 | `ExcludingMissingMembers` + different types → own Manual reason | That is the usual case of that option |
+| 7 | Other options: Manual, a reason per category (selection, comparison, runtime types, cycles, tracing) with the option text in it | Requested: a specific reason per option |
+| 8 | `options.*` proof moved from `BeEquivalentToObject/` to `EquivalentOptions/excluding` | The pattern no longer finds that call |
 
-## Stappen
+## Steps
 
-- [x] 1. Onderzoek + probe
+- [x] 1. Research + probe
 - [x] 2. Plan
-- [x] 3. `EquivalentOptionsPattern`, registratie, basispatroon aangepast
+- [x] 3. `EquivalentOptionsPattern`, registration, base pattern adjusted
 - [x] 4. 38 proofs, `proofs-doc.py`
-- [x] 5. Build en tests groen (35 bekende CRLF-falers), modellen, verify, rij `klaar`
+- [x] 5. Build and tests green (35 known CRLF failures), models, verify, row `done`
 
-## Gewijzigde bestanden
+## Changed files
 
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EquivalentOptionsPattern.cs` (nieuw), `BeEquivalentToObjectPattern.cs`, `FluentAssertionsFix.cs`
-- `src/Unshackle.Tests/Proofs/FluentAssertions/EquivalentOptions/`; `BeEquivalentToObject/options.*` verwijderd
-- `docs/projectinfo/patterns/fa-equivalent-options-{plan,modellen,verify}.md`, README-rij, `architectuur/proofs.md`
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EquivalentOptionsPattern.cs` (new), `BeEquivalentToObjectPattern.cs`, `FluentAssertionsFix.cs`
+- `src/Unshackle.Tests/Proofs/FluentAssertions/EquivalentOptions/`; `BeEquivalentToObject/options.*` removed
+- `docs/projectinfo/patterns/fa-equivalent-options-{plan,modellen,verify}.md`, README row, `architectuur/proofs.md`
 
-## Zie ook
+## See also
 
 - `claude/tasks/archief/TAAK-016-fa-be-equivalent-to-object.md`
 - `docs/projectinfo/patterns/fa-equivalent-options-plan.md`

@@ -12,46 +12,46 @@ files_expected:
     - src/Unshackle.Tests/Proofs/MediatR/_Combined/
 ---
 
-# Feature: mediatr.request-processor-caller: aanroepers van een herschreven request-processor
+# Feature: mediatr.request-processor-caller: callers of a rewritten request processor
 
 |               |                         |
 | ------------- | ----------------------- |
 | **Project**   | Unshackle               |
 | **Status**    | Approved                |
-| **Generated** | 2026-10-12 (met de hand, kingmadoc ontbreekt) |
+| **Generated** | 2026-10-12 (by hand, kingmadoc missing) |
 
-> Opgesteld uit TAAK-190 (corpusrun 2026-10-12, jason v8.0.0: 4x CS0305 in `RequestLoggerTests`).
+> Drafted from TAAK-190 (corpus run 2026-10-12, jason v8.0.0: 4x CS0305 in `RequestLoggerTests`).
 
 ## One-sentence summary
 
-Code die een door `mediatr.request-processor` herschreven processor aanmaakt of aanroept (`new P<Cmd>(...)`, `await p.Process(req, ct)`) wordt meeverhuisd naar Mediator's `P<Cmd, TRes>` en de publieke pipeline-`Handle`; alles wat niet exact vertaalbaar is wordt Manual met regelnummer, nooit een stille buildbreuk.
+Code that creates or calls a processor rewritten by `mediatr.request-processor` (`new P<Cmd>(...)`, `await p.Process(req, ct)`) is moved along to Mediator's `P<Cmd, TRes>` and the public pipeline `Handle`; anything that cannot be translated exactly becomes Manual with a line number, never a silent build break.
 
 ## Scope (in / out)
 
 **In scope**:
-- Elke verwijzing `P<TReq>` (typeargument, `new`, veld, lokale variabele, `Substitute.For<...>`) naar een pre-processorklasse met open berichttype: `TRes` volgt uit `TReq : IRequest<TRes>` (`IRequest` zonder resultaat geeft `Unit`).
-- `await p.Process(req, ct);` als losse statement, voor pre- (`Handle(req, static (_, _) => default, ct)`) en post-processors (`Handle(req, (_, _) => new ValueTask<TRes>(res), ct)`).
+- Every reference `P<TReq>` (type argument, `new`, field, local variable, `Substitute.For<...>`) to a pre-processor class with an open message type: `TRes` follows from `TReq : IRequest<TRes>` (`IRequest` without a result gives `Unit`).
+- `await p.Process(req, ct);` as a standalone statement, for pre-processors (`Handle(req, static (_, _) => default, ct)`) and post-processors (`Handle(req, (_, _) => new ValueTask<TRes>(res), ct)`).
 
-**Out of scope**: registraties in de `AddMediatR`-lambda (`mediatr.add-mediatr`); `Process`-aanroepen waarvan het resultaat gebruikt wordt (`Task t = ...`, `return ...`, `.Wait()`), mocks van `Process`, aanroepen via de MediatR-interface en open of onherleidbare typeargumenten: Manual.
+**Out of scope**: registrations in the `AddMediatR` lambda (`mediatr.add-mediatr`); `Process` calls whose result is used (`Task t = ...`, `return ...`, `.Wait()`), mocks of `Process`, calls via the MediatR interface and open or untraceable type arguments: Manual.
 
 ## Requirements
 
-- **REQ-1**: WHEN code `new P<Cmd>(...)` (of een andere typeverwijzing) schrijft voor een herschreven pre-processor over een open berichttype THE SYSTEM SHALL het response-argument toevoegen (`Cmd : IRequest<int>` geeft `P<Cmd, int>`, `IRequest` geeft `P<Ping, Unit>`) (proof `_Combined/request-processor-callers`).
-- **REQ-2**: WHEN een `await p.Process(...)`-statement een processor aanroept THE SYSTEM SHALL `Handle` met een `next`-delegate schrijven die de publieke pipeline-methode aanroept, bij een post-processor met de response als waarde (proof `_Combined/request-processor-callers`).
-- **REQ-3**: IF `Process` anders gebruikt wordt dan als losse `await`-statement, of via de MediatR-interface THEN THE SYSTEM SHALL Manual melden (proofs `RequestProcessorCaller/result-used`, `through-interface`).
-- **REQ-4**: IF het response-type van het typeargument niet volgt (type zonder `IRequest`, onbeperkte typeparameter) of het argument open is THEN THE SYSTEM SHALL Manual melden (proof `RequestProcessorCaller/unknown-response`).
+- **REQ-1**: WHEN code writes `new P<Cmd>(...)` (or another type reference) for a rewritten pre-processor over an open message type THE SYSTEM SHALL add the response argument (`Cmd : IRequest<int>` gives `P<Cmd, int>`, `IRequest` gives `P<Ping, Unit>`) (proof `_Combined/request-processor-callers`).
+- **REQ-2**: WHEN an `await p.Process(...)` statement calls a processor THE SYSTEM SHALL write `Handle` with a `next` delegate that calls the public pipeline method, for a post-processor with the response as the value (proof `_Combined/request-processor-callers`).
+- **REQ-3**: IF `Process` is used other than as a standalone `await` statement, or via the MediatR interface THEN THE SYSTEM SHALL report Manual (proofs `RequestProcessorCaller/result-used`, `through-interface`).
+- **REQ-4**: IF the response type of the type argument cannot be derived (type without `IRequest`, unconstrained type parameter) or the argument is open THEN THE SYSTEM SHALL report Manual (proof `RequestProcessorCaller/unknown-response`).
 
 ## Assumptions
 
-- Mediator 3.0.2: `MessagePreProcessor`/`MessagePostProcessor` hebben een publieke `Handle(message, MessageHandlerDelegate<TMessage, TResponse> next, CancellationToken)`; die roept bij een pre-processor eerst de eigen `Handle` en dan `next`, bij een post-processor eerst `next` en dan de eigen `Handle`. Het `default`-resultaat van `next` is voor de aanroeper onzichtbaar (`await` zonder waarde). Bewezen doordat de `after` van de proof compileert.
-- Het patroon staat in `MediatRFix.Patterns` vóór `mediatr.request-processor`: de aanroepers binden dan nog aan de MediatR-klasse. Het patroon zoekt per bestand in de hele solution, dus ook in een testproject.
-- De fix is alles-of-niets: een Manual hier laat de hele solution ongemoeid.
+- Mediator 3.0.2: `MessagePreProcessor`/`MessagePostProcessor` have a public `Handle(message, MessageHandlerDelegate<TMessage, TResponse> next, CancellationToken)`; for a pre-processor it first calls its own `Handle` and then `next`, for a post-processor first `next` and then its own `Handle`. The `default` result of `next` is invisible to the caller (`await` without a value). Proven by the `after` of the proof compiling.
+- The pattern comes before `mediatr.request-processor` in `MediatRFix.Patterns`: the callers then still bind to the MediatR class. The pattern searches per file across the whole solution, so also in a test project.
+- The fix is all-or-nothing: a Manual here leaves the whole solution untouched.
 
-## Modellen
+## Models
 
 [mediatr-request-processor-caller-modellen.md](mediatr-request-processor-caller-modellen.md).
 
-## Zie ook
+## See also
 
 - [mediatr-request-processor-caller-verify.md](mediatr-request-processor-caller-verify.md)
 - [mediatr-request-processor-plan.md](mediatr-request-processor-plan.md)

@@ -1,131 +1,131 @@
 ---
 name: taak-specifiek
-description: Maak een diepgaand taakbestand aan met expliciete redenering: wat wordt aangepast, waar, hoe, waarom, en wat de verbetering is ten opzichte van de huidige situatie. Gebruik wanneer een taak architectureel of risicovol is, of meerdere projecten raakt, en een koude agent direct moet kunnen begrijpen waarom elke keuze gemaakt is.
+description: Create an in-depth task file with explicit reasoning: what is changed, where, how, why, and what the improvement is over the current situation. Use when a task is architectural or risky, or touches multiple projects, and a cold agent must immediately understand why each choice was made.
 ---
 
-# Taak-Specifiek Skill
+# Task-Specific Skill
 
-Variant van `/taak-start` voor taken die redenering vereisen. Onderzoekt de codebase, vergelijkt oud vs. nieuw, en legt beslissingen beknopt vast zodat elke volgende agent ze niet opnieuw hoeft af te leiden.
+Variant of `/taak-start` for tasks that require reasoning. Investigates the codebase, compares old vs. new, and records decisions concisely so that no subsequent agent has to derive them again.
 
-Project-root: `/mnt/dikkeschijf/documenten/Git/unshackle`
+Project root: `/mnt/dikkeschijf/documenten/Git/unshackle`
 
-## Stap 1: Bepaal het volgende taaknummer
+## Step 1: Determine the next task number
 
 ```bash
 ls /mnt/dikkeschijf/documenten/Git/unshackle/claude/tasks/TAAK-*.md /mnt/dikkeschijf/documenten/Git/unshackle/claude/tasks/archief/TAAK-*.md 2>/dev/null \
   | grep -oP 'TAAK-\K\d+' | sort -n | tail -1
 ```
 
-Nieuw nummer = laatste + 1 (of 001). Altijd driecijferig.
+New number = last + 1 (or 001). Always three digits.
 
-## Stap 2: Onderzoek — lees alleen wat nodig is
+## Step 2: Investigate — read only what is needed
 
-Voer gericht onderzoek uit op de relevante bestanden. Doel: begrijp de **huidige situatie** volledig voordat je het plan schrijft.
+Do targeted research on the relevant files. Goal: fully understand the **current situation** before writing the plan.
 
-Richtlijnen:
+Guidelines:
 
-- Lees alleen bestanden die direct geraakt worden door de taak
-- Gebruik `grep` om patronen te vinden, lees geen volledige directories
-- Noteer: wat bestaat al, wat ontbreekt, waar zit de pijn
+- Read only files directly affected by the task
+- Use `grep` to find patterns; do not read entire directories
+- Note: what already exists, what is missing, where the pain is
 
-## Stap 3: Redeneer — bepaal de aanpak
+## Step 3: Reason — decide on the approach
 
-Beantwoord intern (niet in het taakbestand):
+Answer internally (not in the task file):
 
-- Zijn er meerdere oplossingsrichtingen? Welke is beter en waarom?
-- Wat zijn de risico's of afhankelijkheden?
-- Raken de wijzigingen andere projecten (Interface/Core/DataAccess) of conventies?
+- Are there several possible solutions? Which is better and why?
+- What are the risks or dependencies?
+- Do the changes touch other projects (Interface/Core/DataAccess) or conventions?
 
-## Stap 4: Schrijf het taakbestand
+## Step 4: Write the task file
 
-Bestandsnaam: `claude/tasks/TAAK-<NNN>-<slug>.md`
+File name: `claude/tasks/TAAK-<NNN>-<slug>.md`
 
-Schrijf beknopt. Elke sectie max 3-5 regels. Geen open deuren.
+Write concisely. Each section max 3-5 lines. No stating the obvious.
 
 ```markdown
-# TAAK-<NNN> — <Naam>
+# TAAK-<NNN> — <Name>
 
-**Status**: stap 1/<totaal> — nog te starten
-**Aangemaakt**: <datum>
-**Doel**: <één zin: wat is klaar aan het einde>
+**Status**: step 1/<total> — not started
+**Created**: <date>
+**Goal**: <one sentence: what is done at the end>
 
-## Context voor de volgende agent
+## Context for the next agent
 
-<Wat een koude agent moet weten om direct te beginnen — geen uitleg van bekende conventies, alleen het niet-voor-de-hand-liggende:>
+<What a cold agent needs to know to start right away — no explanation of known conventions, only the non-obvious:>
 
-- Welke bestanden al bestaan en relevant zijn
-- Welke beslissingen al genomen zijn
-- Blokkades of afhankelijkheden
+- Which files already exist and are relevant
+- Which decisions have already been made
+- Blockers or dependencies
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-<Wat is er nu — concreet, met bestandspad:regel als relevant>
+<What is there now — concrete, with file path:line where relevant>
 
-### Probleem
+### Problem
 
-<Waarom dit niet werkt of suboptimaal is — één zin per punt>
+<Why this does not work or is suboptimal — one sentence per point>
 
-### Nieuwe situatie
+### New situation
 
-<Wat er na de taak anders is — concreet>
+<What is different after the task — concrete>
 
-### Verbetering
+### Improvement
 
-<Meetbare of waarneembare verbetering: sneller / veiliger / minder foutgevoelig / consistenter>
+<Measurable or observable improvement: faster / safer / less error-prone / more consistent>
 
-## Aanpak
+## Approach
 
-### Wat
+### What
 
-<Exacte wijziging: welk bestand, welke functie, welk patroon>
+<Exact change: which file, which function, which pattern>
 
-### Waar
+### Where
 
-<Bestandspaden. Geen wildcards — exacte locaties op basis van onderzoek>
+<File paths. No wildcards — exact locations based on research>
 
-### Hoe
+### How
 
-<Implementatiestrategie in 2-4 stappen. Verwijs naar bestaande patronen in het project>
+<Implementation strategy in 2-4 steps. Refer to existing patterns in the project>
 
-### Waarom deze aanpak
+### Why this approach
 
-<Waarom niet de alternatieven — kort, alleen als niet voor de hand liggend>
+<Why not the alternatives — brief, only if not obvious>
 
-## Stappen
+## Steps
 
-- [ ] 1. <eerste stap — uitvoerbaar en afgebakend>
-- [ ] 2. <tweede stap>
+- [ ] 1. <first step — actionable and well-scoped>
+- [ ] 2. <second step>
 - [ ] 3. <...>
 
-## Risico's & randgevallen
+## Risks & edge cases
 
-| Risico   | Mitigatie         |
-| -------- | ----------------- |
-| <risico> | <hoe ondervangen> |
+| Risk   | Mitigation          |
+| ------ | ------------------- |
+| <risk> | <how it is handled> |
 
-## Gewijzigde bestanden
+## Changed files
 
-_(wordt aangevuld tijdens uitvoering)_
+_(filled in during execution)_
 
-## Zie ook
+## See also
 
 - `claude/docs/INDEX.md`
 - `docs/projectinfo/README.md`
 ```
 
-## Stap 5: Meld aan de gebruiker
+## Step 5: Report to the user
 
 ```
-Taak aangemaakt: claude/tasks/TAAK-<NNN>-<slug>.md
-Onderzocht: <N bestanden>
-Kernbeslissing: <één zin over de gekozen aanpak>
-Om op te pakken: /taak-oppakken TAAK-<NNN>
+Task created: claude/tasks/TAAK-<NNN>-<slug>.md
+Investigated: <N files>
+Key decision: <one sentence about the chosen approach>
+To pick up: /taak-oppakken TAAK-<NNN>
 ```
 
-## Zie ook
+## See also
 
-- `.claude/skills/taak-start/SKILL.md` — lichtere variant zonder redenering
-- `.claude/skills/taak-oppakken/SKILL.md` — taak hervatten na sessiewissel
-- `claude/docs/agent-werkwijze.md` — taakbeheer-regels
+- `.claude/skills/taak-start/SKILL.md` — lighter variant without reasoning
+- `.claude/skills/taak-oppakken/SKILL.md` — resume a task after a session switch
+- `claude/docs/agent-werkwijze.md` — task management rules

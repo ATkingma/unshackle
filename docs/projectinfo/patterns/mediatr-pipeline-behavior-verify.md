@@ -10,45 +10,45 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/PipelineBehaviorPattern.cs`, `MediatRSyntax.FindHandleMethods` (nu `DescendantNodesAndSelf`), `MediatRFix` (pattern + `IPipelineBehavior\`2`in`SwappedTypes`). Proofs: `src/Unshackle.Tests/Proofs/MediatR/PipelineBehavior/`.
+Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/PipelineBehaviorPattern.cs`, `MediatRSyntax.FindHandleMethods` (now `DescendantNodesAndSelf`), `MediatRFix` (pattern + `IPipelineBehavior\`2`in`SwappedTypes`). Proofs: `src/Unshackle.Tests/Proofs/MediatR/PipelineBehavior/`.
 
-| REQ   | Oordeel | Bewijs                                   |
+| REQ   | Verdict | Evidence                                 |
 | ----- | ------- | ---------------------------------------- |
-| REQ-1 | Gehaald | `open-async`                             |
-| REQ-2 | Gehaald | `no-constraint`, `new-constraint`        |
-| REQ-3 | Gehaald | `closed`                                 |
-| REQ-4 | Gehaald | `next-token`                             |
-| REQ-5 | Gehaald | `next-stored`, `next-passed`, `explicit` |
-| Uitbreiding TAAK-081 | Gehaald | `edge-request-constraint`, `edge-notnull-constraint` |
+| REQ-1 | Met     | `open-async`                             |
+| REQ-2 | Met     | `no-constraint`, `new-constraint`        |
+| REQ-3 | Met     | `closed`                                 |
+| REQ-4 | Met     | `next-token`                             |
+| REQ-5 | Met     | `next-stored`, `next-passed`, `explicit` |
+| Extension TAAK-081 | Met | `edge-request-constraint`, `edge-notnull-constraint` |
 
-Elke `after` compileert tegen Mediator 3.0.2 mét de Mediator-source-generator (zie TAAK-027, Keuzes).
+Every `after` compiles against Mediator 3.0.2 with the Mediator source generator (see TAAK-027, Choices).
 
-Scan op SampleShop (na `dotnet restore`): `mediatr.pipeline-behavior` 2 Fixed, 0 Manual (`LoggingBehavior`, `ValidationBehavior`).
+Scan on SampleShop (after `dotnet restore`): `mediatr.pipeline-behavior` 2 Fixed, 0 Manual (`LoggingBehavior`, `ValidationBehavior`).
 
 ## Deviations
 
-- `SwappedTypesTests.SwappedTypes_PipelineBehavior_IsNotSwappedBecauseItsSignatureDiffers` verwijderd: het pattern dekt het signatuurverschil, dus de naam mag nu swappen.
+- `SwappedTypesTests.SwappedTypes_PipelineBehavior_IsNotSwappedBecauseItsSignatureDiffers` removed: the pattern covers the signature difference, so the name may now swap.
 
 ## Validation results
 
 | Check   | Command                                                     | Result                                  |
 | ------- | ----------------------------------------------------------- | --------------------------------------- |
 | Build   | `dotnet build`                                              | passed (0 warnings)                     |
-| Tests   | `dotnet test`                                               | 400/400 groen                           |
-| Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 groen                             |
-| Lint    | _geen_                                                      | _not run_: geen lint-commando ingesteld |
+| Tests   | `dotnet test`                                               | 400/400 green                           |
+| Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 green                             |
+| Lint    | _none_                                                      | _not run_: no lint command configured   |
 
-## Vervolg (2026-10-11)
+## Follow-up (2026-10-11)
 
-TAAK-081: een constraint die na de swap al `IMessage` is (`IRequest<TResponse>`, `INotification`, of een eigen interface daarop; herkend via MediatR's `IBaseRequest`/`INotification` in `AllInterfaces`) krijgt geen extra `IMessage`. Proof `edge-request-constraint`. Let op: zo'n behavior geldt in Mediator alleen voor `IRequest`-berichten, niet voor `ICommand`/`IQuery` (geen rapportregel, niet gevraagd).
+TAAK-081: a constraint that is already `IMessage` after the swap (`IRequest<TResponse>`, `INotification`, or an own interface on top of it; recognized via MediatR's `IBaseRequest`/`INotification` in `AllInterfaces`) gets no extra `IMessage`. Proof `edge-request-constraint`. Note: in Mediator such a behavior only applies to `IRequest` messages, not to `ICommand`/`IQuery` (no report line, not requested).
 
-End-to-end (`fix --fix mediatr` op een kopie van SampleShop, na restore): 20 Fixed, 8 Manual; build zonder CS0436 (alleen MSG0003/MSG0005 van de generieke `CountQuery`). Manual: pre/post-processor, exception-handler, stream-behavior (TAAK-061/062), generieke `CountQuery`, en daardoor `AddMediatR` (`AddOpenStreamBehavior`). Omdat de registratie MediatR blijft, falen 28/38 sample-tests bij het opstarten (`LoggingBehavior`2 must implement MediatR.IPipelineBehavior`2`); dat lost zich op met TAAK-061/062.
+End-to-end (`fix --fix mediatr` on a copy of SampleShop, after restore): 20 Fixed, 8 Manual; build without CS0436 (only MSG0003/MSG0005 from the generic `CountQuery`). Manual: pre/post-processor, exception handler, stream behavior (TAAK-061/062), generic `CountQuery`, and as a result `AddMediatR` (`AddOpenStreamBehavior`). Because the registration stays MediatR, 28/38 sample tests fail at startup (`LoggingBehavior`2 must implement MediatR.IPipelineBehavior`2`); this resolves with TAAK-061/062.
 
-## Bijgewerkt (review B L3, 2026-10-11)
+## Updated (review B L3, 2026-10-11)
 
-- `CommaList`, de constraint-helper (`MediatRSyntax.WithConstraint`, ook voor `IStreamMessage`) en het expliciete-interface-Manual (`MediatRSyntax.RejectExplicit`) zijn gedeeld; gedrag ongewijzigd.
+- `CommaList`, the constraint helper (`MediatRSyntax.WithConstraint`, also for `IStreamMessage`) and the explicit-interface Manual (`MediatRSyntax.RejectExplicit`) are shared; behavior unchanged.
 
-## Zie ook
+## See also
 
 - [mediatr-pipeline-behavior-plan.md](mediatr-pipeline-behavior-plan.md)
 - [mediatr-pipeline-behavior-modellen.md](mediatr-pipeline-behavior-modellen.md)

@@ -23,7 +23,7 @@ files_expected:
     - src/Unshackle.Tests/Integration/SampleShopTests.cs
 ---
 
-# Feature: Projectbestanden migreren
+# Feature: Migrating project files
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -31,82 +31,82 @@ files_expected:
 | **Status**    | Approved                   |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-017. Alles gemarkeerd als _(inferred)_ komt uit de codebase-analyse.
+> Drawn up from TAAK-017. Everything marked _(inferred)_ comes from the codebase analysis.
 
 ## One-sentence summary
 
-`unshackle fix` past naast de code ook `.csproj`, `Directory.Build.props` en `Directory.Packages.props` aan (FluentAssertions eruit,
-Shouldly 4.3.0 erin, `<Using>` omgezet), zodat de gefixte solution zonder handwerk bouwt.
+Besides the code, `unshackle fix` also updates `.csproj`, `Directory.Build.props` and `Directory.Packages.props` (FluentAssertions out,
+Shouldly 4.3.0 in, `<Using>` converted), so the fixed solution builds without manual work.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Core: wat er moet wijzigen per fix (`IFix.Package`: pakket weg, pakket erbij met versie; `<Using>` volgt `RemovedNamespaces` → `AddedNamespaces`).
-- Core: per project beslissen of het oude pakket weg mag (geen `.cs` gebruikt het nog) of blijft (Manual op projectniveau).
-- DataAccess: `<PackageReference>` met en zonder `Version` (CPM), `<PackageVersion>` in `Directory.Packages.props`, `<Using Include>` en
-  `Directory.Build.props`; opmaak en commentaar zoveel mogelijk behouden.
-- `scan`/`fix`: rapportrijen voor projectbestanden (Line 0); `--dry-run` toont ook hun diff.
-- Integratietest: gefixte kopie van SampleShop bouwt en de tests slagen.
+- Core: what has to change per fix (`IFix.Package`: package out, package in with version; `<Using>` follows `RemovedNamespaces` → `AddedNamespaces`).
+- Core: decide per project whether the old package may go (no `.cs` uses it anymore) or stays (Manual at project level).
+- DataAccess: `<PackageReference>` with and without `Version` (CPM), `<PackageVersion>` in `Directory.Packages.props`, `<Using Include>` and
+  `Directory.Build.props`; preserve formatting and comments as much as possible.
+- `scan`/`fix`: report rows for project files (Line 0); `--dry-run` also shows their diff.
+- Integration test: a fixed copy of SampleShop builds and the tests pass.
 
 **Out of scope**
 
-- Geïmporteerde props/targets buiten de dichtstbijzijnde `Directory.Build.props` en `Directory.Packages.props`.
-- `<PackageReference Update=...>`, `<Using>` met `Alias`/`Static`, `packages.config`.
-- Projecten buiten de solution die dezelfde props delen.
+- Imported props/targets beyond the nearest `Directory.Build.props` and `Directory.Packages.props`.
+- `<PackageReference Update=...>`, `<Using>` with `Alias`/`Static`, `packages.config`.
+- Projects outside the solution that share the same props.
 
 ## Requirements
 
-- **REQ-1**: WHEN `fix` draait met een fix die een pakketmigratie beschrijft THE SYSTEM SHALL in elk project dat de oude assembly refereert het nieuwe pakket toevoegen als het er nog niet is.
-- **REQ-2**: WHEN geen `.cs`-bestand van zo'n project het oude pakket nog gebruikt THE SYSTEM SHALL de `<PackageReference>` van het oude pakket verwijderen of in place vervangen door het nieuwe, en `<Using Include>` van een verwijderde namespace omzetten naar de toegevoegde.
-- **REQ-3**: WHEN een `.cs`-bestand van het project het oude pakket nog gebruikt THE SYSTEM SHALL het oude pakket en zijn `<Using>` laten staan en een Manual-rij op projectniveau (Line 0) rapporteren.
-- **REQ-4**: WHEN de oude `<PackageReference>` een `Version` heeft THE SYSTEM SHALL de nieuwe met `Version` 4.3.0 (Shouldly) schrijven; WHEN hij geen versie heeft en er een `Directory.Packages.props` is THE SYSTEM SHALL daar een `<PackageVersion>` toevoegen of de oude vervangen.
-- **REQ-5**: WHEN de oude `<PackageReference>`, `<Using>` of `<PackageVersion>` in een gedeeld bestand (`Directory.Build.props`, `Directory.Packages.props`) staat THE SYSTEM SHALL hem alleen weghalen als geen project in de solution dat dat bestand deelt het oude pakket houdt.
-- **REQ-6**: WHEN een projectbestand wordt aangepast THE SYSTEM SHALL witruimte, commentaar, regeleinden (CRLF/LF), BOM en tekst buiten `<Project>` behouden.
-- **REQ-7**: WHEN `fix --dry-run` draait THE SYSTEM SHALL ook de diff van elk projectbestand tonen en niets schrijven.
-- **REQ-8**: WHEN `scan` of `fix` draait THE SYSTEM SHALL per gewijzigd projectbestand een Fixed-rij en per project dat het oude pakket houdt een Manual-rij in het rapport zetten, met Line 0.
-- **REQ-9**: WHEN een projectbestand niet te lezen of geen geldige XML is THE SYSTEM SHALL dat als Manual-rij rapporteren in plaats van te crashen.
-- **REQ-10**: WHEN de integratietest `fix` draait op een kopie van SampleShop (en de ene Manual met de hand oplost) THE SYSTEM SHALL een solution opleveren waarop `dotnet build` en `dotnet test` slagen en waar geen FluentAssertions meer in csproj/props staat, ook in CI (ubuntu).
+- **REQ-1**: WHEN `fix` runs with a fix that describes a package migration THE SYSTEM SHALL add the new package to every project that references the old assembly, if it is not there yet.
+- **REQ-2**: WHEN no `.cs` file of such a project still uses the old package THE SYSTEM SHALL remove the `<PackageReference>` of the old package or replace it in place with the new one, and convert `<Using Include>` of a removed namespace to the added one.
+- **REQ-3**: WHEN a `.cs` file of the project still uses the old package THE SYSTEM SHALL leave the old package and its `<Using>` in place and report a Manual row at project level (Line 0).
+- **REQ-4**: WHEN the old `<PackageReference>` has a `Version` THE SYSTEM SHALL write the new one with `Version` 4.3.0 (Shouldly); WHEN it has no version and there is a `Directory.Packages.props` THE SYSTEM SHALL add a `<PackageVersion>` there or replace the old one.
+- **REQ-5**: WHEN the old `<PackageReference>`, `<Using>` or `<PackageVersion>` is in a shared file (`Directory.Build.props`, `Directory.Packages.props`) THE SYSTEM SHALL only remove it if no project in the solution that shares that file keeps the old package.
+- **REQ-6**: WHEN a project file is edited THE SYSTEM SHALL preserve whitespace, comments, line endings (CRLF/LF), BOM and text outside `<Project>`.
+- **REQ-7**: WHEN `fix --dry-run` runs THE SYSTEM SHALL also show the diff of every project file and write nothing.
+- **REQ-8**: WHEN `scan` or `fix` runs THE SYSTEM SHALL put a Fixed row in the report per changed project file and a Manual row per project that keeps the old package, with Line 0.
+- **REQ-9**: WHEN a project file cannot be read or is not valid XML THE SYSTEM SHALL report it as a Manual row instead of crashing.
+- **REQ-10**: WHEN the integration test runs `fix` on a copy of SampleShop (and resolves the one Manual by hand) THE SYSTEM SHALL produce a solution on which `dotnet build` and `dotnet test` succeed and in which there is no FluentAssertions left in csproj/props, also in CI (ubuntu).
 
 ## Assumptions
 
 - _(inferred)_ Built on the existing stack: C#, .NET 10, Roslyn 5.9 `MSBuildWorkspace`, `System.IO.Abstractions`.
-- Pakket-id = assembly-naam (FluentAssertions, Shouldly); zo herkent Core welke projecten het oude pakket gebruiken.
-- CPM ⇔ de oude referentie heeft geen versie en er is een `Directory.Packages.props` boven het project.
+- Package id = assembly name (FluentAssertions, Shouldly); this is how Core recognizes which projects use the old package.
+- CPM ⇔ the old reference has no version and there is a `Directory.Packages.props` above the project.
 
 ## Risks
 
-- FA weghalen terwijl code het nog gebruikt → alleen weg als het SemanticModel geen FA-symbool meer vindt; anders Manual.
-- Opmaak gaat verloren → `XDocument` met `PreserveWhitespace`, tekst buiten de root letterlijk; tests vergelijken exacte tekst.
-- Bestand wijzigt tussen scan en schrijven → `SaveAsync` weigert als de tekst op schijf niet meer `OldText` is.
-- `dotnet build`/`test` in de integratietest is traag of SDK-afhankelijk → `global.json` mee kopiëren, trait `Category=Integration`.
+- Removing FA while code still uses it → only remove if the SemanticModel finds no FA symbol anymore; otherwise Manual.
+- Formatting gets lost → `XDocument` with `PreserveWhitespace`, text outside the root verbatim; tests compare exact text.
+- File changes between scan and write → `SaveAsync` refuses if the text on disk is no longer `OldText`.
+- `dotnet build`/`test` in the integration test is slow or SDK-dependent → copy `global.json` along, trait `Category=Integration`.
 
 ## C4 Context (Mermaid)
 
-Ongewijzigd ten opzichte van [end-to-end-keten](end-to-end-keten-plan.md): Unshackle leest en schrijft nu ook de projectbestanden van de solution.
+Unchanged compared to [end-to-end-keten](end-to-end-keten-plan.md): Unshackle now also reads and writes the project files of the solution.
 
 ## C4 Container (Mermaid)
 
 ```mermaid
 C4Container
-    title Containers: Unshackle (projectbestanden)
+    title Containers: Unshackle (project files)
 
-    Person(user, "Developer", "PowerShell of bash")
+    Person(user, "Developer", "PowerShell or bash")
     System_Boundary(unshackle_boundary, "Unshackle") {
-        Container(unshackle_interface, "Unshackle.Interface", "C#", "FixCommand: diff en schrijven van documenten en projectbestanden")
-        Container(unshackle_core, "Unshackle.Core", "C#, Roslyn", "Fixer: welke projecten, oud pakket houden of niet; IProjectFileStore")
-        Container(unshackle_dataaccess, "Unshackle.DataAccess", "C#, XDocument", "XmlProjectFileStore: csproj en Directory.*.props")
+        Container(unshackle_interface, "Unshackle.Interface", "C#", "FixCommand: diff and write documents and project files")
+        Container(unshackle_core, "Unshackle.Core", "C#, Roslyn", "Fixer: which projects, keep old package or not; IProjectFileStore")
+        Container(unshackle_dataaccess, "Unshackle.DataAccess", "C#, XDocument", "XmlProjectFileStore: csproj and Directory.*.props")
     }
-    System_Ext(files, "Projectbestanden", ".csproj, Directory.Build.props, Directory.Packages.props")
+    System_Ext(files, "Project files", ".csproj, Directory.Build.props, Directory.Packages.props")
 
     Rel(user, unshackle_interface, "unshackle fix")
     Rel(unshackle_interface, unshackle_core, "IFixer")
     Rel(unshackle_core, unshackle_dataaccess, "IProjectFileStore.EditAsync")
     Rel(unshackle_interface, unshackle_dataaccess, "IProjectFileStore.SaveAsync")
-    Rel(unshackle_dataaccess, files, "Leest en schrijft")
+    Rel(unshackle_dataaccess, files, "Reads and writes")
 ```
 
 ## Open questions
 
-- [x] Opmaak behouden: `XDocument` met `PreserveWhitespace` of tekstueel? → `XDocument`; zie Keuzes in TAAK-017.
-- [x] Manual in de sample: FA blijft na de eerste `fix`; de integratietest lost hem met de hand op en draait `fix` opnieuw.
+- [x] Preserve formatting: `XDocument` with `PreserveWhitespace` or textual? → `XDocument`; see Choices in TAAK-017.
+- [x] Manual in the sample: FA stays after the first `fix`; the integration test resolves it by hand and runs `fix` again.

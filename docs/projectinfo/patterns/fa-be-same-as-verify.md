@@ -10,16 +10,16 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeSameAsPattern.cs`; registratie in `FluentAssertionsFix.cs` (`s_assertions`, ook als schakel van `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/BeSameAs/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeSameAsPattern.cs`; registration in `FluentAssertionsFix.cs` (`s_assertions`, also as a link of `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/BeSameAs/`, run by `ProofTests`.
 
-| REQ | Oordeel | Bewijs |
+| REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Gehaald | `simple, nullable` |
-| REQ-2 | Gehaald | `not` |
-| REQ-3 | Gehaald | `because` |
-| REQ-4 | Deels vervangen | `result-used, assertion-scope` (Manual); `because-args` is nu Fixed (TAAK-097) |
-| REQ-5 | Gehaald | `AndChain/be-same-as` |
-| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` |
+| REQ-1 | Met | `simple, nullable` |
+| REQ-2 | Met | `not` |
+| REQ-3 | Met | `because` |
+| REQ-4 | Partly superseded | `result-used, assertion-scope` (Manual); `because-args` is now Fixed (TAAK-097) |
+| REQ-5 | Met | `AndChain/be-same-as` |
+| Extension TAAK-097 | Met | `because-args.after.cs` |
 
 ## Deviations
 
@@ -35,7 +35,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeSameAsPattern.cs`; r
 | Test | `dotnet test` | passed (579 tests) |
 | Sample | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | passed (38 tests) |
 
-## Zie ook
+## See also
 
 - [fa-be-same-as-plan.md](fa-be-same-as-plan.md)
 - [fa-be-same-as-modellen.md](fa-be-same-as-modellen.md)

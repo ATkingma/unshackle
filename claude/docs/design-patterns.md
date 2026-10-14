@@ -1,19 +1,19 @@
 # Design patterns
 
-Gebruik de namen en vormen uit het Gang of Four-boek (_Design Patterns_, Gamma, Helm, Johnson, Vlissides) met
-[refactoring.guru/design-patterns](https://refactoring.guru/design-patterns) als naslag. Noem het patroon bij naam in
-een `## Zie ook` of commentaar als het niet voor de hand ligt. Alleen toepassen als er een concrete behoefte is.
+Use the names and forms from the Gang of Four book (_Design Patterns_, Gamma, Helm, Johnson, Vlissides) with
+[refactoring.guru/design-patterns](https://refactoring.guru/design-patterns) as reference. Name the pattern in
+a `## See also` or a comment when it is not obvious. Only apply one when there is a concrete need.
 
-| Plek in Unshackle                               | GoF-patroon                                                               |
-| ----------------------------------------------- | ------------------------------------------------------------------------- |
-| `IPattern`, `IFix`, `IReportWriter`             | [Strategy](https://refactoring.guru/design-patterns/strategy)             |
-| `Fixer` als enige ingang voor Interface         | [Facade](https://refactoring.guru/design-patterns/facade)                 |
-| `CSharpSyntaxRewriter` / `CSharpSyntaxWalker`   | [Visitor](https://refactoring.guru/design-patterns/visitor)               |
-| Report writer kiezen op extensie van `--report` | [Factory Method](https://refactoring.guru/design-patterns/factory-method) |
-| `PatternResult.Fixed(...)` / `.Manual(...)`     | Static factory method (geen GoF, wel een gangbare variant)                |
+| Place in Unshackle                                 | GoF pattern                                                               |
+| -------------------------------------------------- | ------------------------------------------------------------------------- |
+| `IPattern`, `IFix`, `IReportWriter`                | [Strategy](https://refactoring.guru/design-patterns/strategy)             |
+| `Fixer` as the single entry point for Interface    | [Facade](https://refactoring.guru/design-patterns/facade)                 |
+| `CSharpSyntaxRewriter` / `CSharpSyntaxWalker`      | [Visitor](https://refactoring.guru/design-patterns/visitor)               |
+| Choosing the report writer by `--report` extension | [Factory Method](https://refactoring.guru/design-patterns/factory-method) |
+| `PatternResult.Fixed(...)` / `.Manual(...)`        | Static factory method (not GoF, but a common variant)                     |
 
-## Zie ook
+## See also
 
-- `claude/docs/code-standaarden.md` — overige codestijl
+- `claude/docs/code-standaarden.md` — other code style
 - `docs/projectinfo/architectuur/core.md` — Fixer → Fix → Pattern
-- `claude/docs/INDEX.md` — documentatie-index
+- `claude/docs/INDEX.md` — documentation index

@@ -187,7 +187,15 @@ public class AndChainPattern : IPattern
             {
                 // A link can become several statements itself (OnlyContain, AllSatisfy).
                 case FixedResult { NewNodes: var nodes } fixedResult when nodes.All(n => n is StatementSyntax):
-                    statements.AddRange(nodes.Select(n => n.WithoutTrivia()));
+                    // NotBeEmpty().And.OnlyContain(p) would assert ShouldNotBeEmpty twice: skip a repeat of the previous statement.
+                    foreach (SyntaxNode newStatement in nodes.Select(n => n.WithoutTrivia()))
+                    {
+                        if (statements.Count == 0 || !IsSameStatement(statements[^1], newStatement))
+                        {
+                            statements.Add(newStatement);
+                        }
+                    }
+
                     namespaces.AddRange(fixedResult.RequiredNamespaces);
                     if (fixedResult.Warning is not null)
                     {
@@ -207,6 +215,10 @@ public class AndChainPattern : IPattern
             Warning = warnings.Count == 0 ? null : string.Join(" ", warnings),
         };
     }
+
+    // Rewritten nodes from different link patterns differ in trivia and token details, so compare the normalized text.
+    private static bool IsSameStatement(SyntaxNode first, SyntaxNode second) =>
+        string.Equals(first.NormalizeWhitespace().ToFullString(), second.NormalizeWhitespace().ToFullString(), StringComparison.Ordinal);
 
     // The first link pattern that finds something in the statement rewrites it; the result replaces that node.
     // Find runs on the statement's parent, not the whole file: patterns that find the statement itself need it as a descendant.

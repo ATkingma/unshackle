@@ -10,14 +10,14 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/MatchPattern.cs`; registratie in `FluentAssertionsFix.cs` (`s_assertions`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/Match/`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/MatchPattern.cs`; registration in `FluentAssertionsFix.cs` (`s_assertions`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/Match/`.
 
-| REQ | Oordeel | Bewijs |
+| REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Gehaald | `regex, not-regex, because` |
-| REQ-2 | Gehaald | `wildcard, not-wildcard` |
-| REQ-3 | Gehaald | `nullable` |
-| REQ-4 | Gehaald | `regex-object, variable, empty, predicate` |
+| REQ-1 | Met | `regex, not-regex, because` |
+| REQ-2 | Met | `wildcard, not-wildcard` |
+| REQ-3 | Met | `nullable` |
+| REQ-4 | Met | `regex-object, variable, empty, predicate` |
 
 ## Validation results
 
@@ -27,7 +27,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/MatchPattern.cs`; regi
 | Test | `dotnet test` | passed (621 tests) |
 | Sample | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | passed (38 tests) |
 
-## Zie ook
+## See also
 
 - [fa-match-plan.md](fa-match-plan.md)
 - [fa-match-modellen.md](fa-match-modellen.md)

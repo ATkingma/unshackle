@@ -9,7 +9,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/FluentAssertions/StringStartEnd/
 ---
 
-# Feature: fa.string-start-end: StartWith/EndWith en NullOrEmpty worden ShouldStartWith/ShouldEndWith en ShouldBeNullOrEmpty
+# Feature: fa.string-start-end: StartWith/EndWith and NullOrEmpty become ShouldStartWith/ShouldEndWith and ShouldBeNullOrEmpty
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -17,42 +17,42 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-035.
+> Drawn up from TAAK-035.
 
 ## One-sentence summary
 
-`s.Should().StartWith(x)` en familie worden `s.ShouldStartWith(x, Shouldly.Case.Sensitive)`; `NotBeNullOrEmpty()` e.d. worden `ShouldNotBeNullOrEmpty()` e.d.
+`s.Should().StartWith(x)` and family become `s.ShouldStartWith(x, Shouldly.Case.Sensitive)`; `NotBeNullOrEmpty()` etc. become `ShouldNotBeNullOrEmpty()` etc.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `StartWith`, `EndWith`, `NotStartWith`, `NotEndWith` en hun `EquivalentOf`-varianten op `StringAssertions`, met optionele `because`.
+- `StartWith`, `EndWith`, `NotStartWith`, `NotEndWith` and their `EquivalentOf` variants on `StringAssertions`, with an optional `because`.
 - `BeNullOrEmpty`, `NotBeNullOrEmpty`, `BeNullOrWhiteSpace`, `NotBeNullOrWhiteSpace`.
 
 **Out of scope**
 
-- Collectie-`StartWith`/`EndWith` en collectie-`NotBeNullOrEmpty` (Manual).
-- `EquivalentOf` met equivalency-options (Manual).
+- Collection `StartWith`/`EndWith` and collection `NotBeNullOrEmpty` (Manual).
+- `EquivalentOf` with equivalency options (Manual).
 
 ## Requirements
 
-- **REQ-1**: WHEN `StartWith`/`EndWith`/`NotStartWith`/`NotEndWith` als statement staat THE SYSTEM SHALL de Shouldly-methode met `Shouldly.Case.Sensitive` geven (proof `simple`).
-- **REQ-2**: WHEN een `EquivalentOf`-variant staat THE SYSTEM SHALL de Shouldly-methode zonder `Case` (default `Insensitive`) geven (proof `equivalent-of`).
-- **REQ-3**: WHEN `because` zonder becauseArgs staat THE SYSTEM SHALL die als customMessage op de juiste plek zetten, ook bij de afwijkende `ShouldNotEndWith`-volgorde (proof `because`).
-- **REQ-4**: WHEN `(Not)BeNullOr(Empty|WhiteSpace)` staat THE SYSTEM SHALL `Should(Not)BeNullOr…` geven (proof `null-or`).
-- **REQ-5**: WHEN het subject nullable of een member/interpolatie is THE SYSTEM SHALL zonder extra null-check herschrijven (proofs `nullable`, `edge-member-subject`).
-- **REQ-6**: IF becauseArgs, een AssertionScope, `.And` of een niet-string subject THEN THE SYSTEM SHALL Manual geven (proofs `because-args`, `assertion-scope`, `and`, `collection`).
-- **Uitbreiding TAAK-097**: WHEN becauseArgs bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage zetten (proof `because-args`, nu `.after.cs`); named arguments of een niet-constante `because` blijven Manual. Vervangt het becauseArgs-deel van REQ-6.
+- **REQ-1**: WHEN `StartWith`/`EndWith`/`NotStartWith`/`NotEndWith` is a statement THE SYSTEM SHALL give the Shouldly method with `Shouldly.Case.Sensitive` (proof `simple`).
+- **REQ-2**: WHEN an `EquivalentOf` variant is used THE SYSTEM SHALL give the Shouldly method without `Case` (default `Insensitive`) (proof `equivalent-of`).
+- **REQ-3**: WHEN there is a `because` without becauseArgs THE SYSTEM SHALL put it as customMessage in the right place, also with the deviating `ShouldNotEndWith` order (proof `because`).
+- **REQ-4**: WHEN `(Not)BeNullOr(Empty|WhiteSpace)` is used THE SYSTEM SHALL give `Should(Not)BeNullOr…` (proof `null-or`).
+- **REQ-5**: WHEN the subject is nullable or a member/interpolation THE SYSTEM SHALL rewrite without an extra null check (proofs `nullable`, `edge-member-subject`).
+- **REQ-6**: IF becauseArgs, an AssertionScope, `.And` or a non-string subject THEN THE SYSTEM SHALL give Manual (proofs `because-args`, `assertion-scope`, `and`, `collection`).
+- **Extension TAAK-097**: WHEN becauseArgs accompany a constant, formattable `because` THE SYSTEM SHALL put `string.Format(CultureInfo.InvariantCulture, because, args)` as customMessage (proof `because-args`, now `.after.cs`); named arguments or a non-constant `because` stay Manual. Replaces the becauseArgs part of REQ-6.
 
 ## Assumptions
 
-- Shouldly 4.3.0 (gecontroleerd met reflectie): `ShouldStartWith/EndWith/NotStartWith(string? actual, string expected, Case caseSensitivity = Insensitive, string? customMessage)`; `ShouldNotEndWith` heeft `(expected, Case)` en `(expected, customMessage, Case = Insensitive)`; `Should(Not)BeNullOr(Empty|WhiteSpace)(string?, customMessage)`.
+- Shouldly 4.3.0 (checked with reflection): `ShouldStartWith/EndWith/NotStartWith(string? actual, string expected, Case caseSensitivity = Insensitive, string? customMessage)`; `ShouldNotEndWith` has `(expected, Case)` and `(expected, customMessage, Case = Insensitive)`; `Should(Not)BeNullOr(Empty|WhiteSpace)(string?, customMessage)`.
 
 ## Risks
 
-- Shouldly's default is case-insensitive; vergeten `Case.Sensitive` zou tests stil zwakker maken. Afgedekt door proof `simple`.
+- Shouldly's default is case-insensitive; a forgotten `Case.Sensitive` would silently make tests weaker. Covered by proof `simple`.
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-string-start-end-modellen.md](fa-string-start-end-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-string-start-end-modellen.md](fa-string-start-end-modellen.md).

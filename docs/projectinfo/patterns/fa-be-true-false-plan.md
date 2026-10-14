@@ -8,7 +8,7 @@ files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
   - src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/
 ---
-# Feature: fa.be-true-false: x.Should().BeTrue()/BeFalse() wordt x.ShouldBeTrue()/ShouldBeFalse() (bool) of…
+# Feature: fa.be-true-false: x.Should().BeTrue()/BeFalse() becomes x.ShouldBeTrue()/ShouldBeFalse() (bool) or…
 
 | | |
 |---|---|
@@ -16,72 +16,72 @@ files_expected:
 | **Status** | Approved |
 | **Generated** | 2026-10-10T23:36+02:00 by KingmaDoc 0.3.0.dev9 |
 
-> Opgesteld uit TAAK-003 (onderzoek vooraf, aangepast aan het echte contract bij realisatie).
-> Alles gemarkeerd als _(inferred)_ komt uit de codebase-analyse.
+> Drafted from TAAK-003 (prior research, adjusted to the real contract during implementation).
+> Everything marked _(inferred)_ comes from the codebase analysis.
 
 ## One-sentence summary
 
-fa.be-true-false: x.Should().BeTrue()/BeFalse() wordt x.ShouldBeTrue()/ShouldBeFalse() (bool) of…
+fa.be-true-false: x.Should().BeTrue()/BeFalse() becomes x.ShouldBeTrue()/ShouldBeFalse() (bool) or…
 
-**Full description:** fa.be-true-false: x.Should().BeTrue()/BeFalse() wordt x.ShouldBeTrue()/ShouldBeFalse() (bool) of x.ShouldBe(true/false) (bool?).
+**Full description:** fa.be-true-false: x.Should().BeTrue()/BeFalse() becomes x.ShouldBeTrue()/ShouldBeFalse() (bool) or x.ShouldBe(true/false) (bool?).
 
 ## Scope (in / out)
 
 **In scope**
 
-- `x.Should().BeTrue()` / `BeFalse()` (met optionele `because` zonder `becauseArgs`) als losse assertion op `bool` en `bool?`.
-- `bool` wordt `ShouldBeTrue`/`ShouldBeFalse`; `bool?` wordt `ShouldBe(true)`/`ShouldBe(false)`, want Shouldly heeft geen `bool?`-overload.
-- `Manual(reden)` voor `becauseArgs`, ketens, gebruikt resultaat en onbekende types.
+- `x.Should().BeTrue()` / `BeFalse()` (with an optional `because` without `becauseArgs`) as a standalone assertion on `bool` and `bool?`.
+- `bool` becomes `ShouldBeTrue`/`ShouldBeFalse`; `bool?` becomes `ShouldBe(true)`/`ShouldBe(false)`, because Shouldly has no `bool?` overload.
+- `Manual(reden)` for `becauseArgs`, chains, used results and unknown types.
 
 **Out of scope**
 
-- `NotBeTrue`/`NotBeFalse` (alleen `bool?`, andere semantiek bij `null`) en `Be(true)` (patroon `fa.should-be`).
-- Ketens met `.And`/`.Which` splitsen.
-- Beheer van `using`-directives: de `Fixer` doet dat via `IFix`.
+- `NotBeTrue`/`NotBeFalse` (only `bool?`, different semantics for `null`) and `Be(true)` (pattern `fa.should-be`).
+- Splitting chains with `.And`/`.Which`.
+- Managing `using` directives: the `Fixer` does that via `IFix`.
 
 ## Requirements
 
-- **REQ-1**: WHEN `x.Should().BeTrue()` op een `bool` staat THE SYSTEM SHALL het herschrijven naar `x.ShouldBeTrue()` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/be-true.*.cs`).
-- **REQ-2**: WHEN `x.Should().BeFalse()` op een `bool` staat, ook op een subject met haakjes zoals `(a == b)`, THE SYSTEM SHALL het herschrijven naar `x.ShouldBeFalse()` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/be-false.*.cs`).
-- **REQ-3**: WHEN `BeTrue`/`BeFalse` een `because` zonder `becauseArgs` heeft THE SYSTEM SHALL die als `customMessage` overnemen (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/because.*.cs`).
-- **REQ-4**: WHEN het subject een `bool?` is THE SYSTEM SHALL `x.ShouldBe(true)` resp. `x.ShouldBe(false)` bouwen, met `because` als tweede argument (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/nullable.*.cs`).
-- **REQ-5**: IF `becauseArgs` of benoemde argumenten gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/because-args.*`).
-- **REQ-6**: IF de assertion in een keten staat (`.BeTrue().And...`) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/chain.*`).
-- **REQ-7**: IF het resultaat van `BeTrue`/`BeFalse` als waarde wordt gebruikt (`var c = ...`) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/value-used.*`).
-- **REQ-8**: IF het type van het subject onbekend is of niet `bool`/`bool?` THEN THE SYSTEM SHALL Manual geven. _Geen proof: before compileert dan niet; alleen via code bewaakt._
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als `customMessage` geven (proof `.../BeTrueFalse/because-args.after.cs`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt REQ-5 voor dit geval.
-- **Uitbreiding TAAK-100**: IF de assertion in een `AssertionScope` staat die `fa.assertion-scope` niet omzet THEN THE SYSTEM SHALL Manual geven ("Inside an AssertionScope").
-- **Uitbreiding TAAK-198**: IF het bestand een eigen extensie met een Shouldly-naam in scope heeft (Akka.TestKit's `ShouldBe`/`ShouldBeTrue`) THEN THE SYSTEM SHALL in plaats van `using Shouldly;` alleen de niet-botsende Shouldly-klassen importeren (`using static Shouldly.ShouldBeBooleanExtensions;`, alias `using Should = Shouldly.Should;`) en alleen de calls die op een botsende naam uitkomen Manual laten (proof `.../BeTrueFalse/own-shouldbe-in-scope.*`; `Fixer.FixWithTargetedImportsAsync`). Geldt voor alle FA-patterns.
+- **REQ-1**: WHEN `x.Should().BeTrue()` is used on a `bool` THE SYSTEM SHALL rewrite it to `x.ShouldBeTrue()` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/be-true.*.cs`).
+- **REQ-2**: WHEN `x.Should().BeFalse()` is used on a `bool`, including on a parenthesized subject such as `(a == b)`, THE SYSTEM SHALL rewrite it to `x.ShouldBeFalse()` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/be-false.*.cs`).
+- **REQ-3**: WHEN `BeTrue`/`BeFalse` has a `because` without `becauseArgs` THE SYSTEM SHALL carry it over as `customMessage` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/because.*.cs`).
+- **REQ-4**: WHEN the subject is a `bool?` THE SYSTEM SHALL build `x.ShouldBe(true)` or `x.ShouldBe(false)` respectively, with `because` as the second argument (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/nullable.*.cs`).
+- **REQ-5**: IF `becauseArgs` or named arguments are used THEN THE SYSTEM SHALL produce Manual (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/because-args.*`).
+- **REQ-6**: IF the assertion is part of a chain (`.BeTrue().And...`) THEN THE SYSTEM SHALL produce Manual (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/chain.*`).
+- **REQ-7**: IF the result of `BeTrue`/`BeFalse` is used as a value (`var c = ...`) THEN THE SYSTEM SHALL produce Manual (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/value-used.*`).
+- **REQ-8**: IF the subject's type is unknown or not `bool`/`bool?` THEN THE SYSTEM SHALL produce Manual. _No proof: before would not compile; guarded in code only._
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL produce `string.Format(CultureInfo.InvariantCulture, because, args)` as `customMessage` (proof `.../BeTrueFalse/because-args.after.cs`); named arguments or a non-constant `because` remain Manual. Supersedes REQ-5 for this case.
+- **Extension TAAK-100**: IF the assertion is inside an `AssertionScope` that `fa.assertion-scope` does not convert THEN THE SYSTEM SHALL produce Manual ("Inside an AssertionScope").
+- **Extension TAAK-198**: IF the file has an own extension with a Shouldly name in scope (Akka.TestKit's `ShouldBe`/`ShouldBeTrue`) THEN THE SYSTEM SHALL, instead of `using Shouldly;`, import only the non-clashing Shouldly classes (`using static Shouldly.ShouldBeBooleanExtensions;`, alias `using Should = Shouldly.Should;`) and leave only the calls that resolve to a clashing name Manual (proof `.../BeTrueFalse/own-shouldbe-in-scope.*`; `Fixer.FixWithTargetedImportsAsync`). Applies to all FA patterns.
 
 ## Assumptions
 
 - _(inferred)_ Built on the existing stack: C#.
-- Shouldly 4.3.0 heeft `ShouldBeTrue(bool, string)`/`ShouldBeFalse(bool, string)` maar geen `bool?`-overload (via reflectie gecontroleerd).
-- `ShouldBe(true)` op `bool?` faalt ook bij `null`, gelijk aan FA `BeTrue()`.
-- `customMessage` is een kale string zonder `{0}`-formatting.
-- De `Fixer` zet `using Shouldly;` erbij en haalt `using FluentAssertions;` weg via `IFix`; het pattern beheert geen usings.
+- Shouldly 4.3.0 has `ShouldBeTrue(bool, string)`/`ShouldBeFalse(bool, string)` but no `bool?` overload (checked via reflection).
+- `ShouldBe(true)` on `bool?` also fails on `null`, same as FA `BeTrue()`.
+- `customMessage` is a plain string without `{0}` formatting.
+- The `Fixer` adds `using Shouldly;` and removes `using FluentAssertions;` via `IFix`; the pattern does not manage usings.
 
 ## Risks
 
-- Foutmelding krijgt "Additional Info:" in plaats van FA's "because"-voorvoegsel: gedocumenteerd verschil, geen Manual.
-- Een eigen `BeTrue` buiten FluentAssertions wordt niet herschreven: `FindInvocations` controleert de namespace van het symbool.
-- Subject-expressie wordt ongewijzigd overgenomen (haakjes staan al in de bron voor `.Should()`).
+- The failure message gets "Additional Info:" instead of FA's "because" prefix: documented difference, not Manual.
+- An own `BeTrue` outside FluentAssertions is not rewritten: `FindInvocations` checks the symbol's namespace.
+- The subject expression is taken over unchanged (the parentheses are already in the source before `.Should()`).
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-be-true-false-modellen.md](fa-be-true-false-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-be-true-false-modellen.md](fa-be-true-false-modellen.md).
 
 ## Open questions
 
-- Geen open vragen. `NotBeTrue`/`NotBeFalse` op `bool?` kunnen later een eigen patroon worden.
+- No open questions. `NotBeTrue`/`NotBeFalse` on `bool?` may become a pattern of their own later.
 
 **Answered while planning**
 
-- [x] Wat lost dit op en voor wie? Developers die van FluentAssertions af willen; sample: `OrderTests.cs:62`.
-- [x] Wie of wat triggert het? De `Fixer` draait het patroon per document.
-- [x] Externe systemen? Roslyn (SemanticModel); geen datastore.
-- [x] Welke modules veranderen? `Unshackle.Core` (patroon en registratie) en `Unshackle.Tests` (proofs).
-- [x] Hoe weten we dat het werkt? `ProofTests` draait alle 7 proofs.
+- [x] What does this solve and for whom? Developers who want to get rid of FluentAssertions; sample: `OrderTests.cs:62`.
+- [x] Who or what triggers it? The `Fixer` runs the pattern per document.
+- [x] External systems? Roslyn (SemanticModel); no data store.
+- [x] Which modules change? `Unshackle.Core` (pattern and registration) and `Unshackle.Tests` (proofs).
+- [x] How do we know it works? `ProofTests` runs all 7 proofs.
 
 ## Appendix: codebase context _(inferred)_
 

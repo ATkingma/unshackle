@@ -1,8 +1,8 @@
-# Modellen: fa.timespan-extensions
+# Models: fa.timespan-extensions
 
-Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/TimeSpanExtensionsPattern.cs`. Het patroon implementeert `IPattern` direct (geen `x.Should()`), staat als laatste in `FluentAssertionsFix.Patterns`.
+Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/TimeSpanExtensionsPattern.cs`. The pattern implements `IPattern` directly (no `x.Should()`), and is last in `FluentAssertionsFix.Patterns`.
 
-## Figuur 1 — Klassen
+## Figure 1 — Classes
 
 ```d2
 direction: right
@@ -11,20 +11,20 @@ TimeSpanExtensionsPattern: {shape: class; "-s_factories: Dictionary"; "-s_months
 PatternResult: {shape: class}
 FluentTimeSpanExtensions: "FA: FluentTimeSpanExtensions"
 FluentDateTimeExtensions: "FA: FluentDateTimeExtensions"
-TimeSpanExtensionsPattern -> IPattern: implementeert
+TimeSpanExtensionsPattern -> IPattern: implements
 TimeSpanExtensionsPattern -> PatternResult: Fixed / Manual
-TimeSpanExtensionsPattern -> FluentTimeSpanExtensions: herkent
-TimeSpanExtensionsPattern -> FluentDateTimeExtensions: herkent
+TimeSpanExtensionsPattern -> FluentTimeSpanExtensions: recognises
+TimeSpanExtensionsPattern -> FluentDateTimeExtensions: recognises
 ```
 
-| Element | Rol |
+| Element | Role |
 | --- | --- |
 | `TimeSpanExtensionsPattern` | Id `fa.timespan-extensions` |
 | `s_factories` | `Ticks`→`FromTicks`, `Milliseconds`→`FromMilliseconds`, … `Days`→`FromDays` |
-| `s_months` | `January` … `December` → maandnummer |
-| `TypeName` | `TimeSpan`/`DateTime` kaal, met `using System`, of `global::System.*` |
+| `s_months` | `January` … `December` → month number |
+| `TypeName` | `TimeSpan`/`DateTime` bare, with `using System`, or `global::System.*` |
 
-## Figuur 2 — Volgorde
+## Figure 2 — Order
 
 ```d2
 shape: sequence_diagram
@@ -32,45 +32,45 @@ Fixer; Pattern: TimeSpanExtensionsPattern; Model: SemanticModel
 Fixer -> Pattern: Find(root, model)
 Pattern -> Model: GetSymbolInfo(invocation)
 Fixer -> Pattern: Rewrite(node, model)
-Pattern -> Model: GetConstantValue (maand) / LookupNamespacesAndTypes (TypeName)
-Pattern -> Fixer: Fixed(nieuwe expressie, "System"?) of Manual(reden)
+Pattern -> Model: GetConstantValue (month) / LookupNamespacesAndTypes (TypeName)
+Pattern -> Fixer: Fixed(new expression, "System"?) or Manual(reason)
 ```
 
-| Stap | Wat |
+| Step | What |
 | --- | --- |
-| Find | Elke invocation die bindt aan `FluentAssertions.Extensions.FluentTimeSpanExtensions` of `FluentDateTimeExtensions` |
-| Rewrite | Argumenten op volgorde (ontvanger eerst), dan factory, maand of Manual |
+| Find | Every invocation that binds to `FluentAssertions.Extensions.FluentTimeSpanExtensions` or `FluentDateTimeExtensions` |
+| Rewrite | Arguments in order (receiver first), then factory, month or Manual |
 
-## Figuur 3 — Beslisboom van `Rewrite`
+## Figure 3 — Decision tree of `Rewrite`
 
 ```d2
-q1: "Naam in s_factories en één getal-parameter?"
-q2: "Maand met dag + jaar?"
-q3: "Dag of jaar constant?"
+q1: "Name in s_factories and one number parameter?"
+q2: "Month with day + year?"
+q3: "Day or year constant?"
 f1: "TimeSpan.FromX(n)"
 f2: "new DateTime(y, m, d)"
-m1: "Manual: berekende dag en jaar"
-m2: "Manual: geen directe vervanging"
-q1 -> f1: ja
-q1 -> q2: nee
-q2 -> q3: ja
-q2 -> m2: nee
-q3 -> f2: ja
-q3 -> m1: nee
+m1: "Manual: computed day and year"
+m2: "Manual: no direct replacement"
+q1 -> f1: yes
+q1 -> q2: no
+q2 -> q3: yes
+q2 -> m2: no
+q3 -> f2: yes
+q3 -> m1: no
 ```
 
-| Blad | Proof / test |
+| Leaf | Proof / test |
 | --- | --- |
 | `TimeSpan.FromX(n)` | `simple`, `static-call`, `no-using-system`, `Rewrite_OwnTimeSpanTypeInScope_QualifiesSystemTimeSpan` |
 | `new DateTime(y, m, d)` | `month` |
-| Manual: berekende dag en jaar | `month-computed` |
-| Manual: geen directe vervanging | `and`, `offset`, `Rewrite_DateTimeAt_Manual` |
+| Manual: computed day and year | `month-computed` |
+| Manual: no direct replacement | `and`, `offset`, `Rewrite_DateTimeAt_Manual` |
 
-De figuren zijn niet gerenderd (geen `kingmadoc`-CLI op deze machine).
+The figures are not rendered (no `kingmadoc` CLI on this machine).
 
-## Zie ook
+## See also
 
 - [fa-timespan-extensions-plan.md](fa-timespan-extensions-plan.md) - plan
-- [fa-timespan-extensions-verify.md](fa-timespan-extensions-verify.md) - verificatie
+- [fa-timespan-extensions-verify.md](fa-timespan-extensions-verify.md) - verification
 - `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/TimeSpanExtensionsPattern.cs`
 - `src/Unshackle.Tests/Proofs/FluentAssertions/TimeSpanExtensions/`

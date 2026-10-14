@@ -1,60 +1,60 @@
-# TAAK-007 — Patroon fa.contain
+# TAAK-007 — Pattern fa.contain
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-11
-**Doel**: `x.Should().Contain(item|predicate)` / `NotContain` wordt `ShouldContain` / `ShouldNotContain`, met proofs, groen in `dotnet test`.
+**Status**: ✅ done
+**Created**: 2026-10-11
+**Goal**: `x.Should().Contain(item|predicate)` / `NotContain` becomes `ShouldContain` / `ShouldNotContain`, with proofs, green in `dotnet test`.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Rij 5 in `claude/tasks/patroon-queue.md`. Voorbeeld: TAAK-006. Sample: `OrderTests.cs:81`, `OrderHandlerTests.cs:56-57`.
+- Row 5 in `claude/tasks/patroon-queue.md`. Example: TAAK-006. Sample: `OrderTests.cs:81`, `OrderHandlerTests.cs:56-57`.
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-FA 7.2.2: `Contain(T item | Expression<Func<T,bool>> | IEnumerable<T>, because, becauseArgs)` op `GenericCollectionAssertions`, `Contain(string, because, becauseArgs)` (+ occurrence-overload) op `StringAssertions`, `Contain(KeyValuePair/params)` en `Contain(key, value)` op dictionaries. Alle geven een `AndConstraint`.
+FA 7.2.2: `Contain(T item | Expression<Func<T,bool>> | IEnumerable<T>, because, becauseArgs)` on `GenericCollectionAssertions`, `Contain(string, because, becauseArgs)` (+ occurrence overload) on `StringAssertions`, `Contain(KeyValuePair/params)` and `Contain(key, value)` on dictionaries. All return an `AndConstraint`.
 
-### Probleem
+### Problem
 
-Shouldly kent geen `becauseArgs`. Belangrijker: `string.ShouldContain(x)` is standaard **hoofdletterongevoelig**, FA is hoofdlettergevoelig (ontdekt met een proefprogramma).
+Shouldly has no `becauseArgs`. More importantly: `string.ShouldContain(x)` is **case-insensitive** by default, while FA is case-sensitive (discovered with a test program).
 
-### Nieuwe situatie
+### New situation
 
-`ContainPattern` (ID `fa.contain`) herschrijft losse assertions; strings krijgen `Shouldly.Case.Sensitive`; de rest `Manual(reden)`.
+`ContainPattern` (ID `fa.contain`) rewrites standalone assertions; strings get `Shouldly.Case.Sensitive`; the rest `Manual(reason)`.
 
-### Verbetering
+### Improvement
 
-Eén patroon voor item, predicate en substring, `Contain` en `NotContain`, zonder stille semantiekwijziging.
+One pattern for item, predicate and substring, `Contain` and `NotContain`, without a silent change in semantics.
 
-## Keuzes
+## Choices
 
-| # | Keuze | Reden |
+| # | Choice | Reason |
 |---|---|---|
-| 1 | `NotContain` in hetzelfde pattern | Identieke logica op de naam na |
-| 2 | Overload bepalen via `method.OriginalDefinition.Parameters[0].Type` (type-parameter / string / Expression = Fixed; `IEnumerable<T>` = Manual) | Onderscheidt item van alle-items ook als T zelf een IEnumerable is |
-| 3 | String: `ShouldContain(x, Shouldly.Case.Sensitive[, because])` | Shouldly default is case-insensitive; geldt ook voor `ShouldNotContain`. Overload is `(string, Case, customMessage)`, dus `because` komt na `Case` |
-| 4 | Dictionary altijd Manual | Contain(KVP/params/key,value) heeft geen eenduidige Shouldly-vorm; `ContainKey` is rij 11 |
-| 5 | Occurrence-constraint (2 waarde-argumenten) Manual | Geen equivalent |
-| 6 | Niet-generieke `IEnumerable`-subject Manual | Shouldly heeft alleen `IEnumerable<T>` |
-| 7 | Manual-redenen: `chain`/`value-used` → "is used"; `and-chain` → "is not in the form"; `because-args` → "becauseArgs"; `dictionary` → "Dictionary:"; `items` → "several items"; `occurrence` → "occurrence constraint" | `ProofTests` eist één reden per proof |
+| 1 | `NotContain` in the same pattern | Identical logic apart from the name |
+| 2 | Determine the overload via `method.OriginalDefinition.Parameters[0].Type` (type parameter / string / Expression = Fixed; `IEnumerable<T>` = Manual) | Distinguishes item from all-items even when T itself is an IEnumerable |
+| 3 | String: `ShouldContain(x, Shouldly.Case.Sensitive[, because])` | Shouldly's default is case-insensitive; also applies to `ShouldNotContain`. The overload is `(string, Case, customMessage)`, so `because` comes after `Case` |
+| 4 | Dictionary always Manual | Contain(KVP/params/key,value) has no unambiguous Shouldly form; `ContainKey` is row 11 |
+| 5 | Occurrence constraint (2 value arguments) Manual | No equivalent |
+| 6 | Non-generic `IEnumerable` subject Manual | Shouldly only has `IEnumerable<T>` |
+| 7 | Manual reasons: `chain`/`value-used` → "is used"; `and-chain` → "is not in the form"; `because-args` → "becauseArgs"; `dictionary` → "Dictionary:"; `items` → "several items"; `occurrence` → "occurrence constraint" | `ProofTests` requires one reason per proof |
 
-## Stappen
+## Steps
 
-- [x] 1. Claimen en taak aanmaken
-- [x] 2. Onderzoek en keuzes
-- [x] 3. KingmaDoc-plan (11 REQ)
-- [x] 4. `ContainPattern` + registratie
-- [x] 5. Proofs (28 bestanden in `Contain/`)
-- [x] 6. Build/test groen (71 + 15 sample), verify, archiveren, rij `klaar`
+- [x] 1. Claim and create task
+- [x] 2. Research and choices
+- [x] 3. KingmaDoc plan (11 REQ)
+- [x] 4. `ContainPattern` + registration
+- [x] 5. Proofs (28 files in `Contain/`)
+- [x] 6. Build/test green (71 + 15 sample), verify, archive, row `klaar`
 
-## Gewijzigde bestanden
+## Changed files
 
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainPattern.cs` (nieuw)
-- `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` (1 regel)
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainPattern.cs` (new)
+- `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` (1 line)
 - `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/`
-- `docs/projectinfo/patterns/fa-contain-{plan,verify}.md`, `docs/projectinfo/README.md` (rij)
+- `docs/projectinfo/patterns/fa-contain-{plan,verify}.md`, `docs/projectinfo/README.md` (row)
 
-## Zie ook
+## See also
 
 - `claude/tasks/patroon-queue.md`
 - `claude/tasks/archief/TAAK-006-fa-be-empty.md`

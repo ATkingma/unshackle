@@ -9,7 +9,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/MediatR/BehaviorDiRegistration/
 ---
 
-# Feature: mediatr.behavior-di-registration: behavior-registratie in DI blijft staan
+# Feature: mediatr.behavior-di-registration: behavior registration in DI stays as it is
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -17,44 +17,44 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-145.
+> Drawn up from TAAK-145.
 
 ## One-sentence summary
 
-mediatr.behavior-di-registration: `services.AddTransient/AddScoped/AddSingleton(typeof(IPipelineBehavior<,>), typeof(X<,>))` blijft ongewijzigd, omdat Mediator 3 behaviors uit de container leest; de using-swap maakt er `Mediator.IPipelineBehavior` van.
+mediatr.behavior-di-registration: `services.AddTransient/AddScoped/AddSingleton(typeof(IPipelineBehavior<,>), typeof(X<,>))` stays unchanged, because Mediator 3 reads behaviors from the container; the using swap turns it into `Mediator.IPipelineBehavior`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `AddTransient`, `AddScoped`, `AddSingleton` uit `Microsoft.Extensions.DependencyInjection` met twee `typeof`-argumenten,
-  waarvan de eerste `MediatR.IPipelineBehavior<,>` is (open of gesloten generiek).
+- `AddTransient`, `AddScoped`, `AddSingleton` from `Microsoft.Extensions.DependencyInjection` with two `typeof` arguments,
+  of which the first is `MediatR.IPipelineBehavior<,>` (open or closed generic).
 
 **Out of scope**
 
-- `cfg.AddBehavior(...)`/`AddOpenBehavior(...)` binnen `AddMediatR`: dat doet `mediatr.add-mediatr`.
-- De generieke vorm `AddTransient<IPipelineBehavior<A,B>, X>()` en factory-overloads: werken via dezelfde swap, geen finding.
+- `cfg.AddBehavior(...)`/`AddOpenBehavior(...)` inside `AddMediatR`: that is done by `mediatr.add-mediatr`.
+- The generic form `AddTransient<IPipelineBehavior<A,B>, X>()` and factory overloads: work via the same swap, no finding.
 
 ## Requirements
 
-- **REQ-1**: WHEN een behavior met `AddTransient(typeof(IPipelineBehavior<,>), typeof(X<,>))` geregistreerd wordt THE SYSTEM SHALL de aanroep laten staan en alleen `using MediatR` → `using Mediator` swappen (proof `transient`).
-- **REQ-2**: WHEN dat met `AddScoped`, `AddSingleton` of een gesloten `IPipelineBehavior<A,B>` gebeurt THE SYSTEM SHALL hetzelfde doen (proof `lifetimes`).
-- **REQ-3**: THE SYSTEM SHALL nooit Manual melden: gemeten in TAAK-145 draait de gegenereerde Mediator 3.0.2 elke in DI geregistreerde behavior.
+- **REQ-1**: WHEN a behavior is registered with `AddTransient(typeof(IPipelineBehavior<,>), typeof(X<,>))` THE SYSTEM SHALL leave the call and only swap `using MediatR` → `using Mediator` (proof `transient`).
+- **REQ-2**: WHEN that happens with `AddScoped`, `AddSingleton` or a closed `IPipelineBehavior<A,B>` THE SYSTEM SHALL do the same (proof `lifetimes`).
+- **REQ-3**: THE SYSTEM SHALL never report Manual: measured in TAAK-145, the generated Mediator 3.0.2 runs every behavior registered in DI.
 
 ## Assumptions
 
-- Mediator 3.0.2 resolvet `IPipelineBehavior<TMessage,TResponse>` uit de `IServiceProvider` (gemeten met een echte test in `/mnt/dikkeschijf/unshackle-corpus/t145/`).
+- Mediator 3.0.2 resolves `IPipelineBehavior<TMessage,TResponse>` from the `IServiceProvider` (measured with a real test in `<corpus>/t145/`).
 
 ## Risks
 
-- Zette de gebruiker in `AddMediatR` `Lifetime = ServiceLifetime.Singleton`, dan cachet Mediator de behavior-instanties:
-  een transient behavior wordt dan per handler één instantie (gemeten). MediatR maakte er per `Send` een nieuwe. Geen
-  waarschuwing: dat vraagt analyse over bestanden heen; de standaard (`Transient`) heeft het verschil niet.
+- If the user set `Lifetime = ServiceLifetime.Singleton` in `AddMediatR`, Mediator caches the behavior instances:
+  a transient behavior then becomes one instance per handler (measured). MediatR created a new one per `Send`. No
+  warning: that requires analysis across files; the default (`Transient`) does not have the difference.
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [mediatr-behavior-di-registration-modellen.md](mediatr-behavior-di-registration-modellen.md).
+Class diagram, sequence and decision tree: [mediatr-behavior-di-registration-modellen.md](mediatr-behavior-di-registration-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

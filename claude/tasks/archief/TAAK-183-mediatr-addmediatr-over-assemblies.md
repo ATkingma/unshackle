@@ -1,51 +1,51 @@
-# TAAK-183 — MediatR: `AddMediatR` over projectgrenzen (Mediator 3 `Assemblies`-optie onderzoeken)
+# TAAK-183 — MediatR: `AddMediatR` across project boundaries (investigate the Mediator 3 `Assemblies` option)
 
-**Status**: klaar (2026-10-12)
-**Aangemaakt**: 2026-10-12 (`claude/tasks/CORPUSRUN-mediatr.md`)
-**Doel**: de `mediatr.add-mediatr`-Manuals uit het corpus migreren automatisch, of blijven bewust Manual met onderbouwing in de patroondoc.
+**Status**: done (2026-10-12)
+**Created**: 2026-10-12 (`claude/tasks/CORPUSRUN-mediatr.md`)
+**Goal**: the `mediatr.add-mediatr` Manuals from the corpus migrate automatically, or deliberately stay Manual with a justification in the pattern doc.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-Varianten, nu Manual in `AddMediatRPattern.cs`:
+Variants, currently Manual in `AddMediatRPattern.cs`:
 
-- ardalis v9.1.0 `src/Clean.Architecture.Web/Program.cs:109`: scant `Clean.Architecture.Core`, handler `ContributorDeletedHandler` is `internal` (CS0122 vanuit Web). ardalis blijft daarnaast terecht Manual door Ardalis.SharedKernel.
-- evo2 `Contracts/Fitnet.Contracts.Infrastructure/Mediation/MediationModule.cs:12`: scant `Contracts.Application`, handler `internal`; en `Common/Fitnet.Common.Infrastructure/Mediator/MediatorModule.cs:10`: `public` methode met `Assembly assembly`-parameter (handlers in de aanroeper).
-- evo1 `Fitnet/Common/Events/EventBus/InMemory/InMemoryEventBusModule.cs:10`: `internal` methode, ook aangeroepen door `Fitnet.IntegrationTests` (InternalsVisibleTo) met `Assembly.GetExecutingAssembly()` om nep-consumers te registreren.
+- ardalis v9.1.0 `src/Clean.Architecture.Web/Program.cs:109`: scans `Clean.Architecture.Core`, handler `ContributorDeletedHandler` is `internal` (CS0122 from Web). ardalis also rightly stays Manual because of Ardalis.SharedKernel.
+- evo2 `Contracts/Fitnet.Contracts.Infrastructure/Mediation/MediationModule.cs:12`: scans `Contracts.Application`, handler `internal`; and `Common/Fitnet.Common.Infrastructure/Mediator/MediatorModule.cs:10`: `public` method with an `Assembly assembly` parameter (handlers in the caller).
+- evo1 `Fitnet/Common/Events/EventBus/InMemory/InMemoryEventBusModule.cs:10`: `internal` method, also called by `Fitnet.IntegrationTests` (InternalsVisibleTo) with `Assembly.GetExecutingAssembly()` to register fake consumers.
 
-## Analyse
+## Analysis
 
-Mediator 3.x kan via `AddMediator(o => o.Assemblies = [...])` handlers uit gerefereerde assemblies genereren; internal handlers blijven onbereikbaar tenzij InternalsVisibleTo of generatie in het declarerende project. Eerst met een probe-project meten wat 3.0.2 kan (zoals bij TAAK-132), dan per variant kiezen.
+Mediator 3.x can generate handlers from referenced assemblies via `AddMediator(o => o.Assemblies = [...])`; internal handlers remain unreachable unless there is InternalsVisibleTo or generation in the declaring project. First measure with a probe project what 3.0.2 can do (as in TAAK-132), then choose per variant.
 
-## Resultaat (2026-10-12)
+## Result (2026-10-12)
 
 Probe (host + library, Mediator 3.0.2, net10.0):
 
-| Opzet | Resultaat |
+| Setup | Result |
 | --- | --- |
-| internal handler, geen InternalsVisibleTo, `o.Assemblies = [typeof(Marker)]` | CS0122 in `Mediator.g.cs` |
-| idem zonder `Assemblies` | CS0122 (de generator scant gerefereerde assemblies toch) |
-| `InternalsVisibleTo("Host")`, met of zonder `Assemblies` | bouwt, beide handlers draaien |
+| internal handler, no InternalsVisibleTo, `o.Assemblies = [typeof(Marker)]` | CS0122 in `Mediator.g.cs` |
+| same without `Assemblies` | CS0122 (the generator scans referenced assemblies anyway) |
+| `InternalsVisibleTo("Host")`, with or without `Assemblies` | builds, both handlers run |
 
-`Assemblies` beperkt alleen de scan; het helpt niet tegen internal handlers. Beslissing per variant:
+`Assemblies` only limits the scan; it does not help against internal handlers. Decision per variant:
 
-- Gescande assembly met internal handler die dit project als friend heeft → nu **Fixed** (`AddMediatRPattern.HiddenHandler` checkt `GivesAccessTo`).
-- ardalis (`ContributorDeletedHandler` internal, geen friend; plus Ardalis.SharedKernel) → blijft Manual; melding noemt nu ook InternalsVisibleTo als uitweg.
-- evo2 publieke methode met `Assembly`-parameter → blijft Manual (handlers bij de aanroeper; meerdere `AddMediator` geven één `IMediator`, TAAK-144).
-- evo2 `MediationModule` (internal handlers, geen friend) → blijft Manual.
-- evo1 internal methode die het testproject echt aanroept → blijft Manual (TAAK-148).
+- Scanned assembly with an internal handler that has this project as a friend → now **Fixed** (`AddMediatRPattern.HiddenHandler` checks `GivesAccessTo`).
+- ardalis (`ContributorDeletedHandler` internal, no friend; plus Ardalis.SharedKernel) → stays Manual; the message now also mentions InternalsVisibleTo as a way out.
+- evo2 public method with an `Assembly` parameter → stays Manual (handlers at the caller; multiple `AddMediator` calls give one `IMediator`, TAAK-144).
+- evo2 `MediationModule` (internal handlers, no friend) → stays Manual.
+- evo1 internal method that the test project actually calls → stays Manual (TAAK-148).
 
-Gewijzigd: `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`, `src/Unshackle.Tests/Core/AddMediatRPatternTests.cs`
+Changed: `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`, `src/Unshackle.Tests/Core/AddMediatRPatternTests.cs`
 (theory `..._ManualWhenHandlerNotPublicAndNoFriend`: friend `Host` → Fixed, `Other` → Manual), `docs/projectinfo/patterns/mediatr-add-mediatr-plan.md`, `-verify.md`.
-Geen proof: een proof is één bestand en kan geen tweede assembly met InternalsVisibleTo nabootsen; de unittest doet dat met twee compilaties.
+No proof: a proof is a single file and cannot mimic a second assembly with InternalsVisibleTo; the unit test does that with two compilations.
 
-## Stappen
+## Steps
 
-1. [x] Probe: Mediator 3.0.2 `Assemblies` met public en internal handlers, en met InternalsVisibleTo.
-2. [x] Beslissing per variant in `docs/projectinfo/patterns/` (add-mediatr).
-3. [x] Proofs + implementatie voor de varianten die kunnen.
-4. [x] Bewijs: Corpusrun 2026-10-12 op 5f9b366 (`CORPUSRUN-mediatr.md`, sectie Herhaling na TAAK-180..184): ardalis (1 add-mediatr + 11 SharedKernel), evo1 (1) en evo2 (2) houden precies de hierboven besloten Manuals; tests gelijk (9/9, 45/45, 26/52), 0 regressies.
+1. [x] Probe: Mediator 3.0.2 `Assemblies` with public and internal handlers, and with InternalsVisibleTo.
+2. [x] Decision per variant in `docs/projectinfo/patterns/` (add-mediatr).
+3. [x] Proofs + implementation for the variants that are possible.
+4. [x] Proof: corpus run 2026-10-12 on 5f9b366 (`CORPUSRUN-mediatr.md`, section Repetition after TAAK-180..184): ardalis (1 add-mediatr + 11 SharedKernel), evo1 (1) and evo2 (2) keep exactly the Manuals decided above; tests equal (9/9, 45/45, 26/52), 0 regressions.
 
-## Zie ook
+## See also
 
 - `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`
 - `claude/tasks/CORPUSRUN-mediatr.md`

@@ -17,40 +17,40 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-099 (actie uit `claude/tasks/ANALYSE-fa-100.md`).
+> Drafted from TAAK-099 (action from `claude/tasks/ANALYSE-fa-100.md`).
 
 ## One-sentence summary
 
-`s.Should().MatchRegex(r)` wordt `s.ShouldMatch(r)`, `NotMatchRegex` → `ShouldNotMatch`; wildcard-`Match`/`NotMatch` met een constante wordt de regex `(?s)\A…$`.
+`s.Should().MatchRegex(r)` becomes `s.ShouldMatch(r)`, `NotMatchRegex` → `ShouldNotMatch`; wildcard `Match`/`NotMatch` with a constant becomes the regex `(?s)\A…$`.
 
 ## Scope (in / out)
 
-**In scope**: de vormen uit de requirements; `because` (ook met becauseArgs, centraal) als customMessage; `.And`-schakel via `fa.and-chain`.
+**In scope**: the forms from the requirements; `because` (also with becauseArgs, centrally) as customMessage; `.And` link via `fa.and-chain`.
 
-**Out of scope**: alles wat de requirements als Manual noemen.
+**Out of scope**: everything the requirements list as Manual.
 
 ## Requirements
 
-- **REQ-1**: WHEN `MatchRegex`/`NotMatchRegex` een niet-lege stringconstante krijgt THE SYSTEM SHALL `ShouldMatch`/`ShouldNotMatch` met hetzelfde patroon geven (proof `regex, not-regex, because`).
-- **REQ-2**: WHEN `Match`/`NotMatch` een niet-lege wildcardconstante krijgt THE SYSTEM SHALL `(?s)\A` + `Regex.Escape` (`*`→`.*`, `?`→`.`) + `$` geven (proof `wildcard, not-wildcard`).
-- **REQ-3**: WHEN het subject nullable is THE SYSTEM SHALL `ShouldNotBeNull()` ervoor zetten (proof `nullable`).
-- **REQ-4**: IF het patroon een `Regex`, een variabele, leeg, of het subject geen string is THEN THE SYSTEM SHALL Manual geven (proof `regex-object, variable, empty, predicate`).
+- **REQ-1**: WHEN `MatchRegex`/`NotMatchRegex` receives a non-empty string constant THE SYSTEM SHALL produce `ShouldMatch`/`ShouldNotMatch` with the same pattern (proof `regex, not-regex, because`).
+- **REQ-2**: WHEN `Match`/`NotMatch` receives a non-empty wildcard constant THE SYSTEM SHALL produce `(?s)\A` + `Regex.Escape` (`*`→`.*`, `?`→`.`) + `$` (proof `wildcard, not-wildcard`).
+- **REQ-3**: WHEN the subject is nullable THE SYSTEM SHALL prepend `ShouldNotBeNull()` (proof `nullable`).
+- **REQ-4**: IF the pattern is a `Regex`, a variable, empty, or the subject is not a string THEN THE SYSTEM SHALL give Manual (proof `regex-object, variable, empty, predicate`).
 
 ## Assumptions
 
-- Probe: 22 wildcardgevallen (hoofdletters, regeleinden, `\r\n`, speciale tekens, trailing newline): 0 verschillen met `(?s)\A…$`. Met `\z` faalde `"SO-1\n" ~ "SO-1"`.
-- Probe: `MatchRegex("")` faalt in FA, `ShouldMatch("")` slaagt → alleen niet-lege constanten.
-- Reflectie Shouldly 4.3.0: `ShouldMatch(string, string, string?)`, `ShouldNotMatch(string, string, string?)`.
+- Probe: 22 wildcard cases (capitals, line endings, `\r\n`, special characters, trailing newline): 0 differences with `(?s)\A…$`. With `\z`, `"SO-1\n" ~ "SO-1"` failed.
+- Probe: `MatchRegex("")` fails in FA, `ShouldMatch("")` passes → only non-empty constants.
+- Reflection Shouldly 4.3.0: `ShouldMatch(string, string, string?)`, `ShouldNotMatch(string, string, string?)`.
 
 ## Risks
 
-- Alleen de foutmelding verschilt; waar het oordeel kon verschillen is het Manual.
+- Only the failure message differs; where the verdict could differ it is Manual.
 
-## Modellen
+## Models
 
-Klassen, volgorde en beslisboom: [fa-match-modellen.md](fa-match-modellen.md).
+Classes, order and decision tree: [fa-match-modellen.md](fa-match-modellen.md).
 
-## Zie ook
+## See also
 
 - [fa-match-verify.md](fa-match-verify.md)
 - `claude/tasks/archief/TAAK-099-fa-match.md`

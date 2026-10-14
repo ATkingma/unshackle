@@ -4,23 +4,23 @@
 | ------------- | ------------------------------------------------------------------ |
 | **Plan**      | [`docs/projectinfo/patterns/fa-order-plan.md`](fa-order-plan.md) |
 | **Status**    | Verified                                                           |
-| **Generated** | 2026-10-12 (met de hand, kingmadoc ontbreekt)                      |
+| **Generated** | 2026-10-12 (by hand, kingmadoc missing)                      |
 
 > Verified against uncommitted changes (basis 0cb4140).
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/OrderPattern.cs`; registratie in `FluentAssertionsFix.cs` (ook als schakel van `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/Order/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/OrderPattern.cs`; registration in `FluentAssertionsFix.cs` (also as a link of `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/Order/`, run by `ProofTests`.
 
-| REQ | Oordeel | Bewijs |
+| REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Gehaald | `selector-ascending`, `selector-descending` |
-| REQ-2 | Gehaald | `no-selector` |
-| REQ-3 | Gehaald | `because`, `because-args` |
-| REQ-4 | Gehaald | `string-key`, `string-elements`, `string-because` |
-| REQ-5 | Gehaald | `nullable` |
-| REQ-6 | Gehaald | `comparer`, `comparison`, `selector-comparer`, `expression-variable` |
-| REQ-7 | Gehaald | `assertion-scope`, `result-used` |
+| REQ-1 | Met | `selector-ascending`, `selector-descending` |
+| REQ-2 | Met | `no-selector` |
+| REQ-3 | Met | `because`, `because-args` |
+| REQ-4 | Met | `string-key`, `string-elements`, `string-because` |
+| REQ-5 | Met | `nullable` |
+| REQ-6 | Met | `comparer`, `comparison`, `selector-comparer`, `expression-variable` |
+| REQ-7 | Met | `assertion-scope`, `result-used` |
 
 ## Deviations
 
@@ -33,9 +33,9 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/OrderPattern.cs`; regi
 | Check | Command | Result |
 | --- | --- | --- |
 | Build | `dotnet build` | passed (0 warnings) |
-| Test | `dotnet test` | alle Order-proofs groen; 37 falen: bekende CRLF-tests (XmlProjectFileStore, FixerTests, CommandTests, 2 SampleShopTests) en 2 proofs van het lopende `fa.equivalent-options` van een andere agent |
+| Test | `dotnet test` | all Order proofs green; 37 fail: known CRLF tests (XmlProjectFileStore, FixerTests, CommandTests, 2 SampleShopTests) and 2 proofs of the ongoing `fa.equivalent-options` of another agent |
 
-## Zie ook
+## See also
 
 - [fa-order-modellen.md](fa-order-modellen.md)
 - `claude/docs/patroon-loop.md`

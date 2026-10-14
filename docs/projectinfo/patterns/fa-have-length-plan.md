@@ -9,7 +9,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/FluentAssertions/HaveLength/
 ---
 
-# Feature: fa.have-length: string HaveLength(n) wordt Length.ShouldBe(n)
+# Feature: fa.have-length: string HaveLength(n) becomes Length.ShouldBe(n)
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -17,41 +17,41 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-039.
+> Drafted from TAAK-039.
 
 ## One-sentence summary
 
-`s.Should().HaveLength(n)` wordt `s.Length.ShouldBe(n)`; nullable subject `s.ShouldNotBeNull().Length.ShouldBe(n)`.
+`s.Should().HaveLength(n)` becomes `s.Length.ShouldBe(n)`; nullable subject `s.ShouldNotBeNull().Length.ShouldBe(n)`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `HaveLength(int)` op `StringAssertions`, met optionele `because`.
+- `HaveLength(int)` on `StringAssertions`, with optional `because`.
 
 **Out of scope**
 
-- Stream-`HaveLength(long)` (Manual).
-- Subject met `?.` (Manual).
+- Stream `HaveLength(long)` (Manual).
+- Subject with `?.` (Manual).
 
 ## Requirements
 
-- **REQ-1**: WHEN `s.Should().HaveLength(n)` als statement staat THE SYSTEM SHALL `s.Length.ShouldBe(n)` geven (proof `simple`).
-- **REQ-2**: WHEN `because` zonder becauseArgs staat THE SYSTEM SHALL die als customMessage meegeven (proof `because`).
-- **REQ-3**: WHEN het subject in een nullable context MaybeNull is THE SYSTEM SHALL `ShouldNotBeNull()` ervoor zetten (proof `nullable`).
-- **REQ-4**: WHEN het subject een samengestelde expressie is THE SYSTEM SHALL het tussen haakjes zetten (proof `receiver-parens`).
-- **REQ-5**: IF een stream, becauseArgs, een AssertionScope of `.And` THEN THE SYSTEM SHALL Manual geven (proofs `stream`, `because-args`, `assertion-scope`).
-- **REQ-6**: WHEN `HaveLength` een schakel na `.And` is THE SYSTEM SHALL via `fa.and-chain` een los statement geven (proof `AndChain/equal-length-approximately`).
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (Fixed, proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. REQ-5 geldt daarmee niet meer voor becauseArgs.
+- **REQ-1**: WHEN `s.Should().HaveLength(n)` is a statement THE SYSTEM SHALL produce `s.Length.ShouldBe(n)` (proof `simple`).
+- **REQ-2**: WHEN `because` is present without becauseArgs THE SYSTEM SHALL pass it as customMessage (proof `because`).
+- **REQ-3**: WHEN the subject is MaybeNull in a nullable context THE SYSTEM SHALL prepend `ShouldNotBeNull()` (proof `nullable`).
+- **REQ-4**: WHEN the subject is a compound expression THE SYSTEM SHALL wrap it in parentheses (proof `receiver-parens`).
+- **REQ-5**: IF a stream, becauseArgs, an AssertionScope or `.And` THEN THE SYSTEM SHALL give Manual (proofs `stream`, `because-args`, `assertion-scope`).
+- **REQ-6**: WHEN `HaveLength` is a link after `.And` THE SYSTEM SHALL produce a separate statement via `fa.and-chain` (proof `AndChain/equal-length-approximately`).
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL pass `string.Format(CultureInfo.InvariantCulture, because, args)` as customMessage (Fixed, proof `because-args`); named arguments or a non-constant `because` remain Manual. REQ-5 therefore no longer applies to becauseArgs.
 
 ## Assumptions
 
-- Probe: null-string faalt bij FA en bij `ShouldNotBeNull()`; zonder nullable context geeft `s.Length` een NullReferenceException, de test faalt dus ook.
+- Probe: a null string fails in FA and with `ShouldNotBeNull()`; without a nullable context `s.Length` throws a NullReferenceException, so the test fails too.
 
 ## Risks
 
-- Melding bij null verschilt (NullReferenceException in plaats van assertion) als nullable uit staat.
+- The message on null differs (NullReferenceException instead of an assertion) when nullable is off.
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-have-length-modellen.md](fa-have-length-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-have-length-modellen.md](fa-have-length-modellen.md).

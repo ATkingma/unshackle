@@ -1,24 +1,24 @@
 # TAAK-094 — `await act.Should().NotThrowAsync()` → `await Should.NotThrowAsync(act)`
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-11
-**Bron**: `claude/tasks/ANALYSE-fa-100.md` (top-10 acties 1–4)
+**Status**: ✅ Done
+**Created**: 2026-10-11
+**Source**: `claude/tasks/ANALYSE-fa-100.md` (top-10 actions 1–4)
 
-## Keuzes
+## Choices
 
-Nieuw patroon `NotThrowAsyncPattern` (IPattern, zoals ThrowAsync: node = de await, `ConfigureAwait` blijft; `ThrowSyntax.Follow` publiek gemaakt). Geen aggregate-heuristiek: NotThrow faalt op elke exceptie, ook AggregateException (geprobed). Generiek, `NotThrowAfterAsync`, niet-awaited/gebruikt resultaat, `Func<Task<valuetype>>`, `FluentActions.Awaiting` en becauseArgs → Manual.
+New pattern `NotThrowAsyncPattern` (IPattern, like ThrowAsync: node = the await, `ConfigureAwait` stays; `ThrowSyntax.Follow` made public). No aggregate heuristic: NotThrow fails on any exception, including AggregateException (probed). Generic, `NotThrowAfterAsync`, non-awaited/used result, `Func<Task<valuetype>>`, `FluentActions.Awaiting` and becauseArgs → Manual.
 
-## Bewijs
+## Evidence
 
-Probe: ok, synchrone throw, async throw, AggregateException, `Func<Task<int>>`: gelijk oordeel (bij synchrone throw gooit Shouldly de originele exceptie; beide rood). Overloads: `Should.NotThrowAsync(Func<Task>, string)` en `(Task, string)`.
+Probe: ok, synchronous throw, async throw, AggregateException, `Func<Task<int>>`: same verdict (on a synchronous throw Shouldly throws the original exception; both red). Overloads: `Should.NotThrowAsync(Func<Task>, string)` and `(Task, string)`.
 
-Probe-code: scratchpad `p092/Program.cs` (FA 7.2.2 + Shouldly 4.3.0). Proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/` (zie `docs/projectinfo/architectuur/proofs.md`).
+Probe code: scratchpad `p092/Program.cs` (FA 7.2.2 + Shouldly 4.3.0). Proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/` (see `docs/projectinfo/architectuur/proofs.md`).
 
-## Resultaat
+## Result
 
-`dotnet build`, `dotnet test` (579) en de SampleShop-tests (38) groen. Scan: zie `ANALYSE-fa-100.md` sectie "Na acties 1–4".
+`dotnet build`, `dotnet test` (579) and the SampleShop tests (38) green. Scan: see `ANALYSE-fa-100.md` section "Na acties 1–4".
 
-## Zie ook
+## See also
 
 - `claude/tasks/ANALYSE-fa-100.md`
-- `docs/projectinfo/README.md` (patroontabel)
+- `docs/projectinfo/README.md` (pattern table)

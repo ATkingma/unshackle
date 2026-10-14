@@ -4,22 +4,22 @@
 | ------------- | -------------------------------------------- |
 | **Plan**      | [`mediatr-mediator-implementation-plan.md`](mediatr-mediator-implementation-plan.md) |
 | **Status**    | Verified (proofs, corpus ardalis v9.1.0)     |
-| **Generated** | 2026-10-13 (met de hand) |
+| **Generated** | 2026-10-13 (by hand) |
 
 ## Requirements
 
-| REQ   | Oordeel | Bewijs |
-| ----- | ------- | ------ |
-| REQ-1 | Gehaald | `Proofs/MediatR/MediatorImplementation/no-op` (after compileert tegen Mediator 3.0.2) |
-| REQ-2 | Gehaald | `MediatorImplementation/publisher` |
-| REQ-3 | Gehaald | `no-op` (nullable aan) en `publisher` |
-| REQ-4 | Gehaald | `MediatorImplementation/with-logic` (Manual) |
+| REQ   | Verdict | Evidence |
+| ----- | ------- | -------- |
+| REQ-1 | Met | `Proofs/MediatR/MediatorImplementation/no-op` (after compiles against Mediator 3.0.2) |
+| REQ-2 | Met | `MediatorImplementation/publisher` |
+| REQ-3 | Met | `no-op` (nullable on) and `publisher` |
+| REQ-4 | Met | `MediatorImplementation/with-logic` (Manual) |
 
 ## Deviations
 
-- Corpus: ardalis CleanArchitecture v9.1.0 (`<probe-dir>/probe-197`), `fix --fix mediatr --force` → 32 Fixed, 0 Manual; `dotnet test -p:NuGetAudit=false` 9/9 vóór en 9/9 na, `NoOpMediator` herschreven. De losse `sample/`-solution valt buiten de run.
+- Corpus: ardalis CleanArchitecture v9.1.0 (`<probe-dir>/probe-197`), `fix --fix mediatr --force` → 32 Fixed, 0 Manual; `dotnet test -p:NuGetAudit=false` 9/9 before and 9/9 after, `NoOpMediator` rewritten. The separate `sample/` solution is outside the run.
 
-## Zie ook
+## See also
 
 - [mediatr-mediator-implementation-plan.md](mediatr-mediator-implementation-plan.md)
 - `claude/tasks/archief/TAAK-197-mediatr-eigen-imediator-implementatie.md`

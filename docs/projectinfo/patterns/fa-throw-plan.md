@@ -8,7 +8,7 @@ files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
   - src/Unshackle.Tests/Proofs/FluentAssertions/Throw/
 ---
-# Feature: fa.throw: act.Should().Throw<T>() (+ WithMessage) wordt Should.Throw<T>(act) (+ Message-check)
+# Feature: fa.throw: act.Should().Throw<T>() (+ WithMessage) becomes Should.Throw<T>(act) (+ Message check)
 
 | | |
 |---|---|
@@ -16,67 +16,67 @@ files_expected:
 | **Status** | Approved |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-008. Alles gemarkeerd als _(inferred)_ komt uit de codebase-analyse.
+> Drawn up from TAAK-008. Everything marked _(inferred)_ comes from the codebase analysis.
 
 ## One-sentence summary
 
-fa.throw: `act.Should().Throw<T>()` wordt `Should.Throw<T>(act)`; een direct volgende `.WithMessage(patroon)` wordt een `.Message.ShouldContain/StartWith/EndWith/Be(...)` op hetzelfde statement.
+fa.throw: `act.Should().Throw<T>()` becomes `Should.Throw<T>(act)`; a directly following `.WithMessage(pattern)` becomes a `.Message.ShouldContain/StartWith/EndWith/Be(...)` on the same statement.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Losse `Throw<T>()` op een `Action` of `Func<T>` (T referentietype), met optionele `because` zonder `becauseArgs`.
-- Een direct volgende `.WithMessage(p[, because])` met een constante string `p` zonder andere wildcards dan een voorloop- en/of afsluitende `*`.
-- `Manual(reden)` voor `ThrowExactly`, ketens, gebruikt resultaat, `Invoking(...)`, andere subjecttypes en niet-vertaalbare patronen.
+- Standalone `Throw<T>()` on an `Action` or `Func<T>` (T a reference type), with optional `because` without `becauseArgs`.
+- A directly following `.WithMessage(p[, because])` with a constant string `p` without wildcards other than a leading and/or trailing `*`.
+- `Manual(reason)` for `ThrowExactly`, chains, used result, `Invoking(...)`, other subject types and untranslatable patterns.
 
 **Out of scope**
 
-- `ThrowAsync` (rij 7), `NotThrow` (rij 8), `.WithInnerException`, `.Where`, `.WithParameterName` (blijven Manual).
-- Beheer van `using`-directives: de `Fixer` doet dat via `IFix`.
+- `ThrowAsync` (row 7), `NotThrow` (row 8), `.WithInnerException`, `.Where`, `.WithParameterName` (stay Manual).
+- Management of `using` directives: the `Fixer` does that via `IFix`.
 
 ## Requirements
 
-- **REQ-1**: WHEN `act.Should().Throw<T>()` als statement op een `Action` staat THE SYSTEM SHALL het vervangen door `Should.Throw<T>(act)` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/Throw/simple.*.cs`).
-- **REQ-2**: WHEN het subject een `Func<T>` met T een referentietype is THE SYSTEM SHALL `Should.Throw<T>(func)` geven (proof `.../Throw/func.*.cs`).
-- **REQ-3**: WHEN een `because` zonder `becauseArgs` staat THE SYSTEM SHALL die als tweede argument (`customMessage`) van `Should.Throw` overnemen (proof `.../Throw/because.*.cs`).
-- **REQ-4**: WHEN de assertion de body van een void-lambda is THE SYSTEM SHALL het herschrijven (proof `.../Throw/lambda.*.cs`).
-- **REQ-5**: WHEN `.WithMessage("*x*")` direct op `Throw<T>()` volgt THE SYSTEM SHALL `Should.Throw<T>(act).Message.ShouldContain("x", Shouldly.Case.Insensitive)` geven (proof `.../Throw/message-contains.*.cs`).
-- **REQ-6**: WHEN het patroon `x*` of `*x` is THE SYSTEM SHALL `ShouldStartWith` resp. `ShouldEndWith` met `Case.Insensitive` gebruiken (proofs `message-starts.*`, `message-ends.*`).
-- **REQ-7**: WHEN het patroon geen wildcards bevat THE SYSTEM SHALL `ShouldBe(x, Shouldly.StringCompareShould.IgnoreCase)` geven (proof `message-exact.*`).
-- **REQ-8**: WHEN `WithMessage` een `because` heeft THE SYSTEM SHALL die als `customMessage` van de message-check overnemen; bij `ShouldBe` vóór de `StringCompareShould` (proofs `message-because.*`, `message-exact-because.*`).
-- **REQ-9**: IF `ThrowExactly<T>` wordt gebruikt THEN THE SYSTEM SHALL Manual geven, omdat Shouldly's `Throw<T>` ook afgeleide typen accepteert (proof `throw-exactly.*`).
-- **REQ-10**: IF `becauseArgs` worden gebruikt (op `Throw` of `WithMessage`) THEN THE SYSTEM SHALL Manual geven (proofs `because-args.*`, `message-because-args.*`).
-- **REQ-11**: IF het patroon een `*`/`?` midden in de tekst of een `?` bevat, of geen string-constante is, THEN THE SYSTEM SHALL Manual geven (proofs `message-wildcard.*`, `message-variable.*`).
-- **REQ-12**: IF het resultaat wordt gebruikt of verder geketend (`.Which`, `.WithInnerException`, variabele) THEN THE SYSTEM SHALL Manual geven (proofs `chain.*`, `value-used.*`); ook als de assertion zelf een vervolg is (`x.Should().A().And.Throw<T>()`, geen proof: dit compileert niet met FA 7.2.2).
-- **REQ-13**: IF het subject met `Invoking(...)` is gebouwd, of een `Func<ValueType>` is THEN THE SYSTEM SHALL Manual geven (proofs `invoking.*`, `value-func.*`).
-- **Uitbreiding ThrowExactly**: `ThrowExactly<T>` wordt niet meer Manual: `ThrowExactlyPattern` (`fa.throw-exactly`) vindt het en laat deze `Rewrite` `Should.Throw<T>(act).ShouldBeOfType<T>()` bouwen (proofs in `ThrowExactly/`). Vervangt REQ-9; er is geen `Throw/throw-exactly.*`-proof.
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan (op `Throw` of `WithMessage`) THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als `customMessage` geven (proofs `because-args.*`, `message-because-args.*`, nu `.after.cs`); named arguments of een niet-constante `because` blijven Manual. Vervangt REQ-10.
-- **Uitbreiding TAAK-096**: WHEN `.Which` direct op `Throw<T>()` volgt THE SYSTEM SHALL `.Which` laten vervallen, want `Should.Throw<T>` geeft de exception terug (proofs `value-used.*`, `edge-which-message.*`, nu Fixed); `.WithInnerException`, `.And`, `.Where` blijven Manual (proofs `chain.*`, `edge-inner-exception.*`). Vervangt het `.Which`-deel van REQ-12.
-- **Uitbreiding Invoking**: `x.Invoking(s => ...)`-subjects vindt `fa.invoking` (`InvokingPattern`), dat deze `Rewrite` aanroept: stabiele referentie-receiver plus lambda wordt `Should.Throw<T>(() => ...)` (proofs `Invoking/simple`, `func`, `throw-exactly`, ...); anders Manual (`Invoking/side-effect-receiver`, `value-type`, `method-group`). Een ander FA-gebouwd subject blijft Manual. Vervangt het Invoking-deel van REQ-13; er is geen `Throw/invoking.*`-proof.
-- **Uitbreiding AggregateException**: IF de actie zichtbaar blokkeert op een taak of `Parallel.*` gebruikt (`Wait`, `Result`, `WaitAll`, ...) en T geen `AggregateException` accepteert THEN THE SYSTEM SHALL Manual geven, omdat FA `AggregateException` uitpakt en Shouldly niet (proofs `aggregate-wait.*`, `aggregate-method-group.*`); `GetAwaiter().GetResult()` of een verwachte `AggregateException` blijft Fixed (proofs `aggregate-get-result.*`, `aggregate-expected.*`). Geldt niet voor ThrowExactly.
-- **Uitbreiding regeleinden**: WHEN het `WithMessage`-patroon zonder wildcards een regeleinde bevat THE SYSTEM SHALL `ShouldBe(lit, StringCompareShould.IgnoreCase | StringCompareShould.IgnoreLineEndings)` geven (proofs `message-line-break.*`, `edge-multiline-message.*`); met een `*` erbij Manual (proof `message-contains-line-break.*`).
-- **Uitbreiding TAAK-100**: IF de assertie in een niet omgezette `AssertionScope` staat THEN THE SYSTEM SHALL Manual "Inside an AssertionScope" geven (proofs `ThrowExactly/assertion-scope.*`, `Invoking/assertion-scope.*`).
-- **Uitbreiding TAAK-170**: de hele `Throw<T>()`-keten wordt omgezet via `ThrowChains`: `.And`/`.Which` → de teruggegeven exception, `.WithMessage`/`.WithParameterName` → checks op `Message`/`ParamName`, `.Where(x => p)` → `(p[x := e]).ShouldBeTrue()`, `.WithInnerException<TI>()` → `e.InnerException.ShouldNotBeNull().ShouldBeAssignableTo<TI>()`, `.WithInnerExceptionExactly<TI>()` → `ShouldBeOfType<TI>()`. Een check die niet de laatste stap is splitst het statement (`var exception = …;`); `var ex = <keten>;` blijft als elk gebruik van `ex` zelf een keten is. Proofs `Throw/result-*`, `chain`, `edge-inner-exception`; doorgegeven of geretourneerd resultaat blijft Manual (`result-passed`, `result-local-passed`). Vervangt REQ-12.
-- **Uitbreiding TAAK-220**: IF de actie blokkeert op een task (`Wait`/`.Result`/`WaitAll`/`Parallel.*`), ook in een methode uit de eigen solution die zij aanroept (twee niveaus diep), en `T` is geen `AggregateException` (of afgeleid) THEN THE SYSTEM SHALL Manual geven; is `T` een basis van `AggregateException` (`Exception`), dan alleen als de keten de exception gebruikt (`.And`/`.Which`/stap/lokale): FA geeft de uitgepakte inner exception, Shouldly de `AggregateException` (probe). Proofs `Throw/aggregate-helper-method`, `aggregate-exception-and` (Manual), `aggregate-exception-plain` (Fixed); `Invoking/aggregate-parameter-and`, `aggregate-parameter-message` (lambda-parameter als receiver).
-- **Uitbreiding TAAK-222**: IF `T` een assertion-exception is (`XunitException`, `AssertionFailedException`, `AssertionException`, `AssertFailedException` of afgeleid) en de actie een methode uit de eigen solution aanroept met een FA-assertion THEN THE SYSTEM SHALL de `Throw` Manual geven, en ook de FA-assertions in die helper (`IsInsideExpectedFailure`, alle patronen), zodat test en helper samen FA blijven. Proofs `Throw/assertion-helper`, `BeTrueFalse/assertion-helper`; unittests `FluentAssertionsSyntaxTests` (helper in een ander bestand).
+- **REQ-1**: WHEN `act.Should().Throw<T>()` is a statement on an `Action` THE SYSTEM SHALL replace it with `Should.Throw<T>(act)` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/Throw/simple.*.cs`).
+- **REQ-2**: WHEN the subject is a `Func<T>` with T a reference type THE SYSTEM SHALL produce `Should.Throw<T>(func)` (proof `.../Throw/func.*.cs`).
+- **REQ-3**: WHEN a `because` without `becauseArgs` is present THE SYSTEM SHALL carry it over as the second argument (`customMessage`) of `Should.Throw` (proof `.../Throw/because.*.cs`).
+- **REQ-4**: WHEN the assertion is the body of a void lambda THE SYSTEM SHALL rewrite it (proof `.../Throw/lambda.*.cs`).
+- **REQ-5**: WHEN `.WithMessage("*x*")` directly follows `Throw<T>()` THE SYSTEM SHALL produce `Should.Throw<T>(act).Message.ShouldContain("x", Shouldly.Case.Insensitive)` (proof `.../Throw/message-contains.*.cs`).
+- **REQ-6**: WHEN the pattern is `x*` or `*x` THE SYSTEM SHALL use `ShouldStartWith` or `ShouldEndWith` respectively with `Case.Insensitive` (proofs `message-starts.*`, `message-ends.*`).
+- **REQ-7**: WHEN the pattern contains no wildcards THE SYSTEM SHALL produce `ShouldBe(x, Shouldly.StringCompareShould.IgnoreCase)` (proof `message-exact.*`).
+- **REQ-8**: WHEN `WithMessage` has a `because` THE SYSTEM SHALL carry it over as the `customMessage` of the message check; for `ShouldBe` before the `StringCompareShould` (proofs `message-because.*`, `message-exact-because.*`).
+- **REQ-9**: IF `ThrowExactly<T>` is used THEN THE SYSTEM SHALL produce Manual, because Shouldly's `Throw<T>` also accepts derived types (proof `throw-exactly.*`).
+- **REQ-10**: IF `becauseArgs` are used (on `Throw` or `WithMessage`) THEN THE SYSTEM SHALL produce Manual (proofs `because-args.*`, `message-because-args.*`).
+- **REQ-11**: IF the pattern contains a `*`/`?` in the middle of the text or a `?`, or is not a string constant, THEN THE SYSTEM SHALL produce Manual (proofs `message-wildcard.*`, `message-variable.*`).
+- **REQ-12**: IF the result is used or chained further (`.Which`, `.WithInnerException`, variable) THEN THE SYSTEM SHALL produce Manual (proofs `chain.*`, `value-used.*`); also if the assertion itself is a continuation (`x.Should().A().And.Throw<T>()`, no proof: this does not compile with FA 7.2.2).
+- **REQ-13**: IF the subject is built with `Invoking(...)`, or is a `Func<ValueType>` THEN THE SYSTEM SHALL produce Manual (proofs `invoking.*`, `value-func.*`).
+- **Extension ThrowExactly**: `ThrowExactly<T>` no longer becomes Manual: `ThrowExactlyPattern` (`fa.throw-exactly`) finds it and has this `Rewrite` build `Should.Throw<T>(act).ShouldBeOfType<T>()` (proofs in `ThrowExactly/`). Replaces REQ-9; there is no `Throw/throw-exactly.*` proof.
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` (on `Throw` or `WithMessage`) THE SYSTEM SHALL produce `string.Format(CultureInfo.InvariantCulture, because, args)` as `customMessage` (proofs `because-args.*`, `message-because-args.*`, now `.after.cs`); named arguments or a non-constant `because` stay Manual. Replaces REQ-10.
+- **Extension TAAK-096**: WHEN `.Which` directly follows `Throw<T>()` THE SYSTEM SHALL drop `.Which`, since `Should.Throw<T>` returns the exception (proofs `value-used.*`, `edge-which-message.*`, now Fixed); `.WithInnerException`, `.And`, `.Where` stay Manual (proofs `chain.*`, `edge-inner-exception.*`). Replaces the `.Which` part of REQ-12.
+- **Extension Invoking**: `x.Invoking(s => ...)` subjects are found by `fa.invoking` (`InvokingPattern`), which calls this `Rewrite`: a stable reference receiver plus lambda becomes `Should.Throw<T>(() => ...)` (proofs `Invoking/simple`, `func`, `throw-exactly`, ...); otherwise Manual (`Invoking/side-effect-receiver`, `value-type`, `method-group`). Any other FA-built subject stays Manual. Replaces the Invoking part of REQ-13; there is no `Throw/invoking.*` proof.
+- **Extension AggregateException**: IF the action visibly blocks on a task or uses `Parallel.*` (`Wait`, `Result`, `WaitAll`, ...) and T does not accept an `AggregateException` THEN THE SYSTEM SHALL produce Manual, because FA unwraps `AggregateException` and Shouldly does not (proofs `aggregate-wait.*`, `aggregate-method-group.*`); `GetAwaiter().GetResult()` or an expected `AggregateException` stays Fixed (proofs `aggregate-get-result.*`, `aggregate-expected.*`). Does not apply to ThrowExactly.
+- **Extension line endings**: WHEN the `WithMessage` pattern without wildcards contains a line break THE SYSTEM SHALL produce `ShouldBe(lit, StringCompareShould.IgnoreCase | StringCompareShould.IgnoreLineEndings)` (proofs `message-line-break.*`, `edge-multiline-message.*`); with a `*` as well, Manual (proof `message-contains-line-break.*`).
+- **Extension TAAK-100**: IF the assertion is inside an unconverted `AssertionScope` THEN THE SYSTEM SHALL produce Manual "Inside an AssertionScope" (proofs `ThrowExactly/assertion-scope.*`, `Invoking/assertion-scope.*`).
+- **Extension TAAK-170**: the whole `Throw<T>()` chain is converted via `ThrowChains`: `.And`/`.Which` → the returned exception, `.WithMessage`/`.WithParameterName` → checks on `Message`/`ParamName`, `.Where(x => p)` → `(p[x := e]).ShouldBeTrue()`, `.WithInnerException<TI>()` → `e.InnerException.ShouldNotBeNull().ShouldBeAssignableTo<TI>()`, `.WithInnerExceptionExactly<TI>()` → `ShouldBeOfType<TI>()`. A check that is not the last step splits the statement (`var exception = …;`); `var ex = <keten>;` stays if every use of `ex` is itself a chain. Proofs `Throw/result-*`, `chain`, `edge-inner-exception`; a passed-on or returned result stays Manual (`result-passed`, `result-local-passed`). Replaces REQ-12.
+- **Extension TAAK-220**: IF the action blocks on a task (`Wait`/`.Result`/`WaitAll`/`Parallel.*`), also in a method from the own solution that it calls (two levels deep), and `T` is not an `AggregateException` (or derived) THEN THE SYSTEM SHALL produce Manual; if `T` is a base of `AggregateException` (`Exception`), only when the chain uses the exception (`.And`/`.Which`/step/local): FA gives the unwrapped inner exception, Shouldly the `AggregateException` (probe). Proofs `Throw/aggregate-helper-method`, `aggregate-exception-and` (Manual), `aggregate-exception-plain` (Fixed); `Invoking/aggregate-parameter-and`, `aggregate-parameter-message` (lambda parameter as receiver).
+- **Extension TAAK-222**: IF `T` is an assertion exception (`XunitException`, `AssertionFailedException`, `AssertionException`, `AssertFailedException` or derived) and the action calls a method from the own solution containing an FA assertion THEN THE SYSTEM SHALL make the `Throw` Manual, and also the FA assertions in that helper (`IsInsideExpectedFailure`, all patterns), so that test and helper stay FA together. Proofs `Throw/assertion-helper`, `BeTrueFalse/assertion-helper`; unit tests `FluentAssertionsSyntaxTests` (helper in another file).
 
 ## Assumptions
 
-- Shouldly 4.3.0 `Should.Throw<T>(Action|Func<object?>, string? customMessage)` accepteert afgeleide exceptions, net als FA's `Throw<T>` (vastgesteld met een proefprogramma).
-- FA's `WithMessage` vergelijkt het hele bericht met een hoofdletterongevoelig wildcardpatroon; de vertalingen met `Case.Insensitive` doen hetzelfde.
-- De `Fixer` beheert `using Shouldly;`/`using FluentAssertions;` via `IFix`.
+- Shouldly 4.3.0 `Should.Throw<T>(Action|Func<object?>, string? customMessage)` accepts derived exceptions, just like FA's `Throw<T>` (established with a test program).
+- FA's `WithMessage` compares the whole message against a case-insensitive wildcard pattern; the translations with `Case.Insensitive` do the same.
+- The `Fixer` manages `using Shouldly;`/`using FluentAssertions;` via `IFix`.
 
 ## Risks
 
-- Foutmelding krijgt "Additional Info:" in plaats van FA's "because"-voorvoegsel: gedocumenteerd verschil.
-- Dit pattern vervangt een heel statement-expressie (subject wordt argument); bij uitvoer met afwijkende opmaak (meerregelig) kan de spacing veranderen.
-- `Func<int>` valt onder Manual omdat Shouldly `Func<object?>` verwacht.
+- The error message gets "Additional Info:" instead of FA's "because" prefix: documented difference.
+- This pattern replaces a whole statement expression (the subject becomes an argument); with output in unusual formatting (multi-line) the spacing may change.
+- `Func<int>` falls under Manual because Shouldly expects `Func<object?>`.
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-throw-modellen.md](fa-throw-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-throw-modellen.md](fa-throw-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

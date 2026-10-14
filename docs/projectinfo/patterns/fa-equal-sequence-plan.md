@@ -9,7 +9,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/FluentAssertions/EqualSequence/
 ---
 
-# Feature: fa.equal-sequence: Equal(seq) en Equal(params) worden ShouldBe(seq), volgorde-gevoelig
+# Feature: fa.equal-sequence: Equal(seq) and Equal(params) become ShouldBe(seq), order-sensitive
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -17,44 +17,44 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-038.
+> Drawn up from TAAK-038.
 
 ## One-sentence summary
 
-`x.Should().Equal(y)` wordt `x.ShouldBe(y)`; `Equal(1, 2)` wordt `x.ShouldBe(new T[] { 1, 2 })`; met `because` `x.ShouldBe(y, ignoreOrder: false, because)`.
+`x.Should().Equal(y)` becomes `x.ShouldBe(y)`; `Equal(1, 2)` becomes `x.ShouldBe(new T[] { 1, 2 })`; with `because` `x.ShouldBe(y, ignoreOrder: false, because)`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `Equal(IEnumerable<T>)`, `Equal(params T[])` op `GenericCollectionAssertions` en `StringCollectionAssertions`, met optionele `because`.
+- `Equal(IEnumerable<T>)`, `Equal(params T[])` on `GenericCollectionAssertions` and `StringCollectionAssertions`, with an optional `because`.
 
 **Out of scope**
 
-- `NotEqual` (sinds TAAK-160 eigen patroon `fa.not-equal`).
-- Dictionary-`Equal` met sleutels/waarden die geen leaf, record of struct van leaves zijn, of met een verwachting die geen dictionary is (Manual).
+- `NotEqual` (own pattern `fa.not-equal` since TAAK-160).
+- Dictionary `Equal` with keys/values that are not a leaf, record or struct of leaves, or with an expectation that is not a dictionary (Manual).
 - `Equal(seq, predicate)` (Manual).
 
 ## Requirements
 
-- **REQ-1**: WHEN `x.Should().Equal(y)` als statement staat THE SYSTEM SHALL `x.ShouldBe(y)` geven (proofs `simple`, `params-array`).
-- **REQ-2**: WHEN `Equal(a, b, ...)` met losse params staat THE SYSTEM SHALL `x.ShouldBe(new T[] { a, b })` geven met T het element-type van FA (proof `params`).
-- **REQ-3**: WHEN `because` zonder becauseArgs staat THE SYSTEM SHALL `ShouldBe(y, ignoreOrder: false, because)` geven (proof `because`).
-- **REQ-4**: WHEN het subject nullable is THE SYSTEM SHALL zonder null-check herschrijven; Shouldly faalt zelf op null (proof `nullable`).
-- **REQ-5**: IF een dictionary, een predicate, becauseArgs, een AssertionScope of `.And` THEN THE SYSTEM SHALL Manual geven (proofs `dictionary`, `predicate`, `because-args`, `assertion-scope`, `and`).
-- **REQ-6**: WHEN `Equal` een schakel na `.And` is THE SYSTEM SHALL via `fa.and-chain` een los `ShouldBe`-statement geven (proof `AndChain/equal-length-approximately`).
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `ShouldBe(y, ignoreOrder: false, string.Format(CultureInfo.InvariantCulture, because, args))` geven (Fixed, proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. REQ-5 geldt daarmee niet meer voor becauseArgs.
-- **Uitbreiding TAAK-225**: WHEN `Equal(y)` op een dictionary staat, y ook een dictionary is met hetzelfde `KeyValuePair<K, V>` en K en V waarde-items zijn (`IsValueLike`: leaf, of record/struct van leaves) THE SYSTEM SHALL `x.ShouldBe(y, ignoreOrder: true)` geven (met `because`: als derde argument) (proofs `dictionary`, `dictionary-because`); andere sleutel/waarde-typen of een lijst van paren blijven Manual (proofs `dictionary-class-values`, `dictionary-pair-list`). Gedrag gesondeerd met FA 7.2.2 en Shouldly 4.3.0: volgorde, ontbrekende/extra sleutel, andere waarde, `null`-waarden, leeg, immutable/read-only subject gelijk; alleen `null` als subject én verwachting verschilt (FA gooit, Shouldly slaagt). REQ-5 geldt daarmee niet meer voor deze dictionaries.
+- **REQ-1**: WHEN `x.Should().Equal(y)` is a statement THE SYSTEM SHALL give `x.ShouldBe(y)` (proofs `simple`, `params-array`).
+- **REQ-2**: WHEN `Equal(a, b, ...)` with separate params is used THE SYSTEM SHALL give `x.ShouldBe(new T[] { a, b })` with T the element type of FA (proof `params`).
+- **REQ-3**: WHEN there is a `because` without becauseArgs THE SYSTEM SHALL give `ShouldBe(y, ignoreOrder: false, because)` (proof `because`).
+- **REQ-4**: WHEN the subject is nullable THE SYSTEM SHALL rewrite without a null check; Shouldly fails on null itself (proof `nullable`).
+- **REQ-5**: IF a dictionary, a predicate, becauseArgs, an AssertionScope or `.And` THEN THE SYSTEM SHALL give Manual (proofs `dictionary`, `predicate`, `because-args`, `assertion-scope`, `and`).
+- **REQ-6**: WHEN `Equal` is a link after `.And` THE SYSTEM SHALL give a separate `ShouldBe` statement via `fa.and-chain` (proof `AndChain/equal-length-approximately`).
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL give `ShouldBe(y, ignoreOrder: false, string.Format(CultureInfo.InvariantCulture, because, args))` (Fixed, proof `because-args`); named arguments or a non-constant `because` stay Manual. REQ-5 therefore no longer applies to becauseArgs.
+- **Extension TAAK-225**: WHEN `Equal(y)` is on a dictionary, y is also a dictionary with the same `KeyValuePair<K, V>` and K and V are value items (`IsValueLike`: leaf, or record/struct of leaves) THE SYSTEM SHALL give `x.ShouldBe(y, ignoreOrder: true)` (with `because`: as the third argument) (proofs `dictionary`, `dictionary-because`); other key/value types or a list of pairs stay Manual (proofs `dictionary-class-values`, `dictionary-pair-list`). Behaviour probed with FA 7.2.2 and Shouldly 4.3.0: order, missing/extra key, another value, `null` values, empty, immutable/read-only subject equal; only `null` as both subject and expectation differs (FA throws, Shouldly passes). REQ-5 therefore no longer applies to these dictionaries.
 
 ## Assumptions
 
-- Semantiek gecontroleerd met een probe (FA 7.2.2 + Shouldly 4.3.0): beide volgorde-gevoelig, element-voor-element, ongelijke lengte faalt, null-subject faalt bij beide.
-- Shouldly 4.3.0: `ShouldBe<T>(IEnumerable<T>, IEnumerable<T>, bool ignoreOrder = false)` en `(…, bool ignoreOrder, string? customMessage)`; geen `ShouldNotBe` voor sequences.
+- Semantics checked with a probe (FA 7.2.2 + Shouldly 4.3.0): both order-sensitive, element by element, unequal length fails, a null subject fails in both.
+- Shouldly 4.3.0: `ShouldBe<T>(IEnumerable<T>, IEnumerable<T>, bool ignoreOrder = false)` and `(…, bool ignoreOrder, string? customMessage)`; no `ShouldNotBe` for sequences.
 
 ## Risks
 
-- Strings in de collectie: FA en Shouldly vergelijken allebei hoofdlettergevoelig (probe `strs`).
+- Strings in the collection: FA and Shouldly both compare case-sensitively (probe `strs`).
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-equal-sequence-modellen.md](fa-equal-sequence-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-equal-sequence-modellen.md](fa-equal-sequence-modellen.md).

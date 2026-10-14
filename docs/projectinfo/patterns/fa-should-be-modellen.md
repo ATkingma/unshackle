@@ -1,61 +1,61 @@
-# Modellen: fa.should-be
+# Models: fa.should-be
 
-x.Should().Be(y) naar x.ShouldBe(y). Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs`.
+x.Should().Be(y) to x.ShouldBe(y). Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs`.
 
-**Figure 1.** Klassen rond `ShouldBePattern`: wat hij implementeert, gebruikt en aanmaakt. Weggelaten: `Fixer`, `IFix` en de usings-afhandeling (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes around `ShouldBePattern`: what it implements, uses and creates. Left out: `Fixer`, `IFix` and the usings handling (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-should-be-modellen-1.d2 -->
-![Modellen: fa.should-be](img/fa-should-be-modellen-1.png)
+![Models: fa.should-be](img/fa-should-be-modellen-1.png)
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
-| `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract: `Find` en `Rewrite` |
-| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Basisklasse (Template Method): `Rewrite` doet scope, vorm, resultaat en argumenten, dan `RewriteAssertion` |
-| `ShouldBePattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs` | Dit patroon, Id `fa.should-be`; ook basis van `NotBePattern` (`ShouldName`); gedeeld via `FluentAssertionsSyntax`: `ConvertExpected(expected, subjectType, model, position)` |
-| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde bouwstenen: `FindInvocations`, `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments` |
-| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst: `Fixed` met nieuwe node(s) en namespaces, of `Manual` met reden |
-| «FluentAssertions» herkend | - | `Be(expected[, because])`; `Be uit FluentAssertions.Xml / .Types` |
-| «Shouldly» aangemaakt | - | `ShouldBe(expected[, because])`; `cast naar het subjecttype` |
+| `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract: `Find` and `Rewrite` |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Base class (Template Method): `Rewrite` does scope, shape, result and arguments, then `RewriteAssertion` |
+| `ShouldBePattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs` | This pattern, Id `fa.should-be`; also the base of `NotBePattern` (`ShouldName`); shared via `FluentAssertionsSyntax`: `ConvertExpected(expected, subjectType, model, position)` |
+| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Shared building blocks: `FindInvocations`, `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments` |
+| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Outcome: `Fixed` with new node(s) and namespaces, or `Manual` with a reason |
+| «FluentAssertions» recognised | - | `Be(expected[, because])`; `Be uit FluentAssertions.Xml / .Types` |
+| «Shouldly» created | - | `ShouldBe(expected[, because])`; `cast naar het subjecttype` |
 
-**Figure 2.** `Fixer` roept `Find` en per node `Rewrite` aan; `Rewrite` doet de controles via `FluentAssertionsSyntax` en `SemanticModel` en levert `Fixed` of `Manual`. Weggelaten: het vervangen van de node en de usings door de `Fixer`.
+**Figure 2.** `Fixer` calls `Find` and `Rewrite` per node; `Rewrite` does the checks via `FluentAssertionsSyntax` and `SemanticModel` and returns `Fixed` or `Manual`. Left out: replacing the node and the usings by the `Fixer`.
 
 <!-- kingmadoc:diagram img/fa-should-be-modellen-2.d2 -->
-![Modellen: fa.should-be](img/fa-should-be-modellen-2.png)
+![Models: fa.should-be](img/fa-should-be-modellen-2.png)
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Place | What happens |
 | --- | --- | --- |
-| Find | `ShouldBePattern.Find` | `FluentAssertionsSyntax.FindInvocations` zoekt aanroepen `Be` waarvan het symbool in een FluentAssertions-namespace ligt |
-| Controles | `FluentAssertionPattern.Rewrite` → `ShouldBePattern.RewriteAssertion` | `IsInsideAssertionScope(node, model)`; `GetSubject(assertion)`; `IsResultDiscarded(assertion, model)`; `TryGetArguments(assertion, model)`; daarna `GetSymbolInfo(assertion)`; `GetTypeInfo(subject)`; `ConvertExpected(expected, subjectType, ...)`; `ClassifyConversion(expected, subjectType)` |
-| Manual | `PatternResult.Manual` | Eerste mislukte controle geeft `ManualResult` met reden (zie figuur 3) |
-| Fixed | `PatternResult.Fixed` | Nieuwe node; trivia en usings regelt de `Fixer` |
+| Find | `ShouldBePattern.Find` | `FluentAssertionsSyntax.FindInvocations` looks for calls `Be` whose symbol lies in a FluentAssertions namespace |
+| Checks | `FluentAssertionPattern.Rewrite` → `ShouldBePattern.RewriteAssertion` | `IsInsideAssertionScope(node, model)`; `GetSubject(assertion)`; `IsResultDiscarded(assertion, model)`; `TryGetArguments(assertion, model)`; then `GetSymbolInfo(assertion)`; `GetTypeInfo(subject)`; `ConvertExpected(expected, subjectType, ...)`; `ClassifyConversion(expected, subjectType)` |
+| Manual | `PatternResult.Manual` | The first failing check gives a `ManualResult` with a reason (see figure 3) |
+| Fixed | `PatternResult.Fixed` | New node; the `Fixer` handles trivia and usings |
 
-**Figure 3.** Beslisboom van `Rewrite`: 8 vragen in de volgorde van de code, elk blad noemt de proof in `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/` die het bewijst (`<naam>.before.cs` met `.after.cs` of `.manual.txt`).
+**Figure 3.** Decision tree of `Rewrite`: 8 questions in the order of the code, every leaf names the proof in `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/` that proves it (`<name>.before.cs` with `.after.cs` or `.manual.txt`).
 
 <!-- kingmadoc:diagram img/fa-should-be-modellen-3.d2 -->
-![Modellen: fa.should-be](img/fa-should-be-modellen-3.png)
+![Models: fa.should-be](img/fa-should-be-modellen-3.png)
 
-| Vraag of selector | Bij nee: Manual-reden | Proof |
+| Question or selector | If no: Manual reason | Proof |
 | --- | --- | --- |
-| Niet in een AssertionScope? | Inside an AssertionScope | `assertion-scope-nested`, `assertion-scope-using-block`, `assertion-scope-using-var` |
-| Vorm x.Should().Be(y)? | Be(...) is not in the form x.Should().Be(y) | geen proof, bewaakt in code |
-| Resultaat weggegooid? | The result of Be(...) is used | `chain` |
-| Geen benoemde argumenten; becauseArgs alleen bij constante, formatteerbare `because`? | named arguments, or becauseArgs whose because is no constant format string | `edge-named-because`, `because-args-variable`, `because-args-bad-format` |
-| Be niet uit FluentAssertions.Xml of .Types? | Be(...) from Xml/Types: andere gelijkheid | `xml` |
-| Precies één waarde-argument (geen comparer)? | Be(...) with a comparer | `comparer` |
-| Type van het subject bekend? | The type of the subject is unknown | geen proof, bewaakt in code |
-| ConvertExpected vindt een veilige vorm? | Expected type differs from subject type | `nullable-expected` |
+| Not inside an AssertionScope? | Inside an AssertionScope | `assertion-scope-nested`, `assertion-scope-using-block`, `assertion-scope-using-var` |
+| Shape x.Should().Be(y)? | Be(...) is not in the form x.Should().Be(y) | no proof, guarded in code |
+| Result discarded? | The result of Be(...) is used | `chain` |
+| No named arguments; becauseArgs only with a constant, formattable `because`? | named arguments, or becauseArgs whose because is no constant format string | `edge-named-because`, `because-args-variable`, `because-args-bad-format` |
+| Be not from FluentAssertions.Xml or .Types? | Be(...) from Xml/Types: different equality | `xml` |
+| Exactly one value argument (no comparer)? | Be(...) with a comparer | `comparer` |
+| Type of the subject known? | The type of the subject is unknown | no proof, guarded in code |
+| ConvertExpected finds a safe form? | Expected type differs from subject type | `nullable-expected` |
 
-| Voorwaarde | Fixed-vorm | Proofs |
+| Condition | Fixed form | Proofs |
 | --- | --- | --- |
-| nee | `x.ShouldBe(y[, because])`; `becauseArgs` worden `string.Format(CultureInfo.InvariantCulture, because, args)` | `simple`, `because`, `lambda`, `because-args` |
-| ja (constante alleen impliciet naar subjecttype) | `x.ShouldBe((byte)1)` | `constant-cast` |
-| ja (alleen via een eigen impliciete conversie, `Conversion.IsUserDefined`) | `x.ShouldBe((Doc)42)` | `implicit-conversion` |
+| no | `x.ShouldBe(y[, because])`; `becauseArgs` become `string.Format(CultureInfo.InvariantCulture, because, args)` | `simple`, `because`, `lambda`, `because-args` |
+| yes (constant only implicitly to the subject type) | `x.ShouldBe((byte)1)` | `constant-cast` |
+| yes (only via an own implicit conversion, `Conversion.IsUserDefined`) | `x.ShouldBe((Doc)42)` | `implicit-conversion` |
 
-## Zie ook
+## See also
 
 - [fa-should-be-plan.md](fa-should-be-plan.md) - plan
-- [fa-should-be-verify.md](fa-should-be-verify.md) - verificatie
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs` - het patroon
-- `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/` - de proofs
-- [../modellen/pattern-beslissing.md](../modellen/pattern-beslissing.md) - generieke beslissing van een pattern
+- [fa-should-be-verify.md](fa-should-be-verify.md) - verification
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs` - the pattern
+- `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/` - the proofs
+- [../modellen/pattern-beslissing.md](../modellen/pattern-beslissing.md) - generic decision of a pattern
 - [../README.md](../README.md)

@@ -1,28 +1,28 @@
-# TAAK-098 — Subject met bijwerkingen → `var subject = …;`
+# TAAK-098 — Subject with side effects → `var subject = …;`
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-11
-**Bron**: `claude/tasks/ANALYSE-fa-100.md` (acties 5–10)
+**Status**: ✅ Done
+**Created**: 2026-10-11
+**Source**: `claude/tasks/ANALYSE-fa-100.md` (actions 5–10)
 
-## Keuzes
+## Choices
 
-Nieuwe helper `FluentAssertionsSyntax.Hoist`: als `IsSafeToEvaluateTwice` weigert en het statement direct in een blok staat, komt er `var subject = <expr>;` vóór de statements (FA evalueert het subject ook één keer, vóór de assertions). Gebruikt in `fa.and-chain`, `fa.only-contain`, `fa.all-satisfy`. Naam is uniek in de member; meerdere hoists in één pass krijgen subject, subject2, … (k, k+n, …).
-Niet gedaan: de Invoking-receiver (`fa.invoking`, eigen ThrowSyntax-pad) blijft Manual.
+New helper `FluentAssertionsSyntax.Hoist`: if `IsSafeToEvaluateTwice` refuses and the statement sits directly in a block, `var subject = <expr>;` is inserted before the statements (FA also evaluates the subject once, before the assertions). Used in `fa.and-chain`, `fa.only-contain`, `fa.all-satisfy`. The name is unique within the member; multiple hoists in one pass get subject, subject2, … (k, k+n, …).
+Not done: the Invoking receiver (`fa.invoking`, its own ThrowSyntax path) stays Manual.
 
-## Bewijs
+## Evidence
 
-Geen semantiekverschil: één evaluatie, zelfde volgorde (subject vóór argumenten).
-Probe-code: scratchpad `p096/` (FA 7.2.2 + Shouldly 4.3.0, reflectie op `Shouldly.dll`).
+No semantic difference: one evaluation, same order (subject before arguments).
+Probe code: scratchpad `p096/` (FA 7.2.2 + Shouldly 4.3.0, reflection on `Shouldly.dll`).
 
 ## Proofs
 
-AndChain/subject-call, subject-indexer, nieuw subject-call-twice; AllSatisfy/subject-call; OnlyContain/subject-call (Manual → Fixed)
+AndChain/subject-call, subject-indexer, new subject-call-twice; AllSatisfy/subject-call; OnlyContain/subject-call (Manual → Fixed)
 
-## Resultaat
+## Result
 
-`dotnet build`, `dotnet test` (621) en de SampleShop-tests (38) groen. Scan: `ANALYSE-fa-100.md` sectie "Na acties 5–10".
+`dotnet build`, `dotnet test` (621) and the SampleShop tests (38) green. Scan: `ANALYSE-fa-100.md` section "Na acties 5–10".
 
-## Zie ook
+## See also
 
 - `claude/tasks/ANALYSE-fa-100.md`
 - `docs/projectinfo/architectuur/proofs.md`

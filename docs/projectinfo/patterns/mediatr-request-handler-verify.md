@@ -10,49 +10,49 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerPattern.cs`, registratie in `MediatRFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/MediatR/RequestHandler/`.
+Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerPattern.cs`, registration in `MediatRFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/MediatR/RequestHandler/`.
 
-| REQ   | Oordeel | Bewijs                                                |
+| REQ   | Verdict | Evidence                                              |
 | ----- | ------- | ----------------------------------------------------- |
-| REQ-1 | Gehaald | `async`                                               |
-| REQ-2 | Gehaald | `from-result-expression`                              |
-| REQ-3 | Gehaald | `from-result-block` (ook `Task.FromResult<int>(...)`) |
-| REQ-4 | Gehaald | `generic`                                             |
-| REQ-5 | Gehaald | `token-name`                                          |
-| REQ-6 | Gehaald | `other-return`, `explicit`                            |
-| REQ-7 | Gehaald | `decorator-inner-handle` (TAAK-212)                   |
-| Uitbreiding TAAK-080 | Gehaald | `edge-marker-interface` |
+| REQ-1 | Met     | `async`                                               |
+| REQ-2 | Met     | `from-result-expression`                              |
+| REQ-3 | Met     | `from-result-block` (also `Task.FromResult<int>(...)`) |
+| REQ-4 | Met     | `generic`                                             |
+| REQ-5 | Met     | `token-name`                                          |
+| REQ-6 | Met     | `other-return`, `explicit`                            |
+| REQ-7 | Met     | `decorator-inner-handle` (TAAK-212)                   |
+| Extension TAAK-080 | Met | `edge-marker-interface` |
 
-Regressie-edges: `edge-nested-generic` (geneste generieke response bij REQ-1), `edge-primary-ctor` (primary constructor bij REQ-2).
+Regression edges: `edge-nested-generic` (nested generic response for REQ-1), `edge-primary-ctor` (primary constructor for REQ-2).
 
-Scan op SampleShop (`scan samples/SampleShop/SampleShop.slnx --fix mediatr`, na `dotnet restore`): `mediatr.request-handler` 5 Fixed, 0 Manual (`CountQuery`, `RegisterCustomerCommand`, `GetOrderHandler`, `ListOrdersHandler`, `PlaceOrderHandler`); `project-file` Manual voor `SampleShop.csproj` omdat MediatR daar nog gebruikt wordt (notification-handler, `AddMediatR`: latere patronen).
+Scan on SampleShop (`scan samples/SampleShop/SampleShop.slnx --fix mediatr`, after `dotnet restore`): `mediatr.request-handler` 5 Fixed, 0 Manual (`CountQuery`, `RegisterCustomerCommand`, `GetOrderHandler`, `ListOrdersHandler`, `PlaceOrderHandler`); `project-file` Manual for `SampleShop.csproj` because MediatR is still used there (notification handler, `AddMediatR`: later patterns).
 
 ## Deviations
 
 | #   | Area  | Plan says | Code does                                                                                                                                                                         | Impact                                    |
 | --- | ----- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| 1   | Tests | —         | `ProofTests` geeft de fix-substitute nu ook `SwappedTypes` (nodig voor `using MediatR` → `using Mediator`); voor `*.manual.txt`-proofs leeg, zodat die alleen het pattern toetsen | None voor FA-proofs (`SwappedTypes` leeg) |
+| 1   | Tests | —         | `ProofTests` now also gives the fix substitute `SwappedTypes` (needed for `using MediatR` → `using Mediator`); empty for `*.manual.txt` proofs, so those only test the pattern | None for FA proofs (`SwappedTypes` empty) |
 
 ## Validation results
 
 | Check   | Command                                                     | Result                                  |
 | ------- | ----------------------------------------------------------- | --------------------------------------- |
 | Build   | `dotnet build`                                              | passed (0 warnings)                     |
-| Tests   | `dotnet test`                                               | 318/318 groen                           |
-| Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 groen                             |
-| Lint    | _geen_                                                      | _not run_: geen lint-commando ingesteld |
+| Tests   | `dotnet test`                                               | 318/318 green                           |
+| Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 green                             |
+| Lint    | _none_                                                      | _not run_: no lint command configured   |
 
-## Vervolg (2026-10-11)
+## Follow-up (2026-10-11)
 
-TAAK-080: handlers via een eigen marker-interface (`IAppQueryHandler<TQ, TR> : IRequestHandler<TQ, TR>`) worden gevonden: `MediatRSyntax.FindHandleMethods` kijkt naar `AllInterfaces`. Proof `edge-marker-interface`. `mediatr.unsupported` slaat interface-declaraties over (een generieke marker-interface is geen generieke handler).
+TAAK-080: handlers via an own marker interface (`IAppQueryHandler<TQ, TR> : IRequestHandler<TQ, TR>`) are found: `MediatRSyntax.FindHandleMethods` looks at `AllInterfaces`. Proof `edge-marker-interface`. `mediatr.unsupported` skips interface declarations (a generic marker interface is not a generic handler).
 
-End-to-end (`fix --fix mediatr` op een kopie van SampleShop, na restore): 20 Fixed, 8 Manual; build zonder CS0436 (alleen MSG0003/MSG0005 van de generieke `CountQuery`). Manual: pre/post-processor, exception-handler, stream-behavior (TAAK-061/062), generieke `CountQuery`, en daardoor `AddMediatR` (`AddOpenStreamBehavior`). Omdat de registratie MediatR blijft, falen 28/38 sample-tests bij het opstarten (`LoggingBehavior`2 must implement MediatR.IPipelineBehavior`2`); dat lost zich op met TAAK-061/062.
+End-to-end (`fix --fix mediatr` on a copy of SampleShop, after restore): 20 Fixed, 8 Manual; build without CS0436 (only MSG0003/MSG0005 from the generic `CountQuery`). Manual: pre/post-processor, exception handler, stream behavior (TAAK-061/062), generic `CountQuery`, and as a result `AddMediatR` (`AddOpenStreamBehavior`). Because the registration stays MediatR, 28/38 sample tests fail at startup (`LoggingBehavior`2 must implement MediatR.IPipelineBehavior`2`); this resolves with TAAK-061/062.
 
-## Vervolg TAAK-212 (2026-10-13)
+## Follow-up TAAK-212 (2026-10-13)
 
-REQ-7: `return _decorated.Handle(...)` blijft staan i.p.v. `new ValueTask<T>(...)` (CS1503 in kgrzybek). Build `dotnet build` ok; `dotnet test` 1062/1062 groen. Corpus kgrzybek: zie `claude/tasks/CORPUSRUN-mediatr.md` "Herhaling ronde 5".
+REQ-7: `return _decorated.Handle(...)` stays instead of `new ValueTask<T>(...)` (CS1503 in kgrzybek). Build `dotnet build` ok; `dotnet test` 1062/1062 green. Corpus kgrzybek: see `claude/tasks/CORPUSRUN-mediatr.md` "Herhaling ronde 5".
 
-## Zie ook
+## See also
 
 - [mediatr-request-handler-plan.md](mediatr-request-handler-plan.md)
 - [mediatr-request-handler-modellen.md](mediatr-request-handler-modellen.md)

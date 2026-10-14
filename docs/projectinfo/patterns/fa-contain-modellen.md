@@ -1,68 +1,68 @@
-# Modellen: fa.contain
+# Models: fa.contain
 
-x.Should().Contain(item) naar x.ShouldContain(item). Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainPattern.cs`.
+x.Should().Contain(item) to x.ShouldContain(item). Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainPattern.cs`.
 
-**Figure 1.** Klassen rond `ContainPattern`: wat hij implementeert, gebruikt en aanmaakt. Weggelaten: `Fixer`, `IFix` en de usings-afhandeling (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes around `ContainPattern`: what it implements, uses and creates. Left out: `Fixer`, `IFix` and the usings handling (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-contain-modellen-1.d2 -->
 
-![Modellen: fa.contain](img/fa-contain-modellen-1.png)
+![Models: fa.contain](img/fa-contain-modellen-1.png)
 
-| Element                                        | Pad                                                                    | Rol                                                                                                               |
+| Element                                        | Path                                                                   | Role                                                                                                              |
 | ---------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `IPattern`                                     | `src/Unshackle.Core/Abstractions/IPattern.cs`                          | Contract: `Find` en `Rewrite`                                                                                     |
-| `FluentAssertionPattern`                       | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs`  | Template Method: `Rewrite` doet de gedeelde controles en roept `RewriteBeforeArguments` en `RewriteAssertion` aan |
-| `ContainPattern`                               | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainPattern.cs` | Dit patroon, Id `fa.contain`; privé: `IsGenericEnumerable(type)`                                                  |
-| `FluentAssertionsSyntax`                       | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs`  | Gedeelde bouwstenen: `FindInvocations`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments`                      |
-| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/`                                           | Uitkomst: `Fixed` met nieuwe node(s) en namespaces, of `Manual` met reden                                         |
-| «FluentAssertions» herkend                     | -                                                                      | `Contain(T item                                                                                                   | Expression predicate                                                        | string)`; `NotContain(...)` |
-| «Shouldly» aangemaakt                          | -                                                                      | `ShouldContain(item                                                                                               | predicate)`; `ShouldNotContain(...)`; `ShouldContain(text, Case.Sensitive)` |
-| Herkende typen                                 | -                                                                      | `string`; `IEnumerable<T>`; `IDictionary / IReadOnlyDictionary (Manual)`                                          |
+| `IPattern`                                     | `src/Unshackle.Core/Abstractions/IPattern.cs`                          | Contract: `Find` and `Rewrite`                                                                                     |
+| `FluentAssertionPattern`                       | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs`  | Template Method: `Rewrite` does the shared checks and calls `RewriteBeforeArguments` and `RewriteAssertion` |
+| `ContainPattern`                               | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainPattern.cs` | This pattern, Id `fa.contain`; privé: `IsGenericEnumerable(type)`                                                  |
+| `FluentAssertionsSyntax`                       | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs`  | Shared building blocks: `FindInvocations`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments`                      |
+| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/`                                           | Outcome: `Fixed` with new node(s) and namespaces, or `Manual` with a reason                                         |
+| «FluentAssertions» recognised                     | -                                                                      | `Contain(T item                                                                                                   | Expression predicate                                                        | string)`; `NotContain(...)` |
+| «Shouldly» created                          | -                                                                      | `ShouldContain(item                                                                                               | predicate)`; `ShouldNotContain(...)`; `ShouldContain(text, Case.Sensitive)` |
+| Recognised types                               | -                                                                      | `string`; `IEnumerable<T>`; `IDictionary / IReadOnlyDictionary (Manual)`                                          |
 
-**Figure 2.** `Fixer` roept `Find` en per node `Rewrite` aan; `FluentAssertionPattern.Rewrite` doet de gedeelde controles en roept `ContainPattern.RewriteBeforeArguments` (dictionary) en `ContainPattern.RewriteAssertion` aan, die `Fixed` of `Manual` leveren. Weggelaten: het vervangen van de node en de usings door de `Fixer`.
+**Figure 2.** `Fixer` calls `Find` and `Rewrite` per node; `FluentAssertionPattern.Rewrite` does the shared checks and calls `ContainPattern.RewriteBeforeArguments` (dictionary) and `ContainPattern.RewriteAssertion`, which return `Fixed` or `Manual`. Left out: replacing the node and the usings by the `Fixer`.
 
 <!-- kingmadoc:diagram img/fa-contain-modellen-2.d2 -->
 
-![Modellen: fa.contain](img/fa-contain-modellen-2.png)
+![Models: fa.contain](img/fa-contain-modellen-2.png)
 
-| Stap         | Plek                                    | Wat gebeurt er                                                                                                                                    |
+| Step         | Place                                   | What happens                                                                                                                                      |
 | ------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Find         | `ContainPattern.Find`                   | `FluentAssertionsSyntax.FindInvocations` zoekt aanroepen `Contain`, `NotContain` waarvan het symbool in een FluentAssertions-namespace ligt       |
-| Controles    | `FluentAssertionPattern.Rewrite`        | `IsInsideAssertionScope(node, model)`; `GetSubject(assertion)`; `IsResultDiscarded(assertion, model)`; daarna `TryGetArguments(assertion, model)` |
-| Dictionary   | `ContainPattern.RewriteBeforeArguments` | `GetTypeInfo(subject)`: dictionary geeft Manual vóór de argumentsplitsing                                                                         |
-| Herschrijven | `ContainPattern.RewriteAssertion`       | `GetSymbolInfo(assertion)`; `Parameters[0].Type`; `GetTypeInfo(subject)`; `NotNull(subject)`                                                      |
-| Manual       | `PatternResult.Manual`                  | Eerste mislukte controle geeft `ManualResult` met reden (zie figuur 3)                                                                            |
-| Fixed        | `PatternResult.Fixed`                   | Nieuwe node; trivia en usings regelt de `Fixer`                                                                                                   |
+| Find         | `ContainPattern.Find`                   | `FluentAssertionsSyntax.FindInvocations` looks for calls `Contain`, `NotContain` whose symbol lies in a FluentAssertions namespace       |
+| Checks       | `FluentAssertionPattern.Rewrite`        | `IsInsideAssertionScope(node, model)`; `GetSubject(assertion)`; `IsResultDiscarded(assertion, model)`; then `TryGetArguments(assertion, model)`    |
+| Dictionary   | `ContainPattern.RewriteBeforeArguments` | `GetTypeInfo(subject)`: a dictionary gives Manual before the argument split                                                                       |
+| Rewrite      | `ContainPattern.RewriteAssertion`       | `GetSymbolInfo(assertion)`; `Parameters[0].Type`; `GetTypeInfo(subject)`; `NotNull(subject)`                                                      |
+| Manual       | `PatternResult.Manual`                  | The first failing check gives a `ManualResult` with a reason (see figure 3)                                                                            |
+| Fixed        | `PatternResult.Fixed`                   | New node; the `Fixer` handles trivia and usings                                                                                                   |
 
-**Figure 3.** Beslisboom van `FluentAssertionPattern.Rewrite` en de hooks: 8 vragen in de volgorde van de code, elk blad noemt de proof in `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/` die het bewijst (`<naam>.before.cs` met `.after.cs` of `.manual.txt`).
+**Figure 3.** Decision tree of `FluentAssertionPattern.Rewrite` and the hooks: 8 questions in the order of the code, every leaf names the proof in `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/` that proves it (`<name>.before.cs` with `.after.cs` or `.manual.txt`).
 
 <!-- kingmadoc:diagram img/fa-contain-modellen-3.d2 -->
 
-![Modellen: fa.contain](img/fa-contain-modellen-3.png)
+![Models: fa.contain](img/fa-contain-modellen-3.png)
 
-| Vraag of selector                                                     | Bij nee: Manual-reden                                                                                 | Proof                                                                   |
+| Question or selector                                                  | If no: Manual reason                                                                                  | Proof                                                                   |
 | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Buiten een AssertionScope?                                            | Inside an AssertionScope (scope die `fa.assertion-scope` niet omzet)                                  | -                                                                       |
-| Vorm x.Should().Contain(...)?                                         | Contain(...) is not in the form x.Should()...                                                         | `and-chain`                                                             |
-| Resultaat weggegooid?                                                 | The result of Contain(...) is used                                                                    | `chain`, `value-used`                                                   |
-| Subject is geen dictionary?                                           | Dictionary: Contain(...) takes key/value pairs; use ShouldContainKey/ShouldContainKeyAndValue by hand | `dictionary`                                                            |
-| Geen benoemde argumenten; becauseArgs alleen met constante `because`? | named arguments, or becauseArgs whose because is no constant format string                            | `named-because`, `because-variable` (`because-args` is Fixed, TAAK-097) |
-| Eén waarde-argument (geen occurrence-constraint)?                     | an occurrence constraint: no Shouldly equivalent                                                      | `occurrence`                                                            |
-| Parameter is item of predicaat (niet meerdere items)?                 | checks several items at once                                                                          | `items`                                                                 |
-| Subject is string of IEnumerable<T>?                                  | The subject is not a string or a generic IEnumerable<T>                                               | geen proof, bewaakt in code                                             |
+| Outside an AssertionScope?                                            | Inside an AssertionScope (a scope that `fa.assertion-scope` does not convert)                         | -                                                                       |
+| Shape x.Should().Contain(...)?                                         | Contain(...) is not in the form x.Should()...                                                         | `and-chain`                                                             |
+| Result discarded?                                                 | The result of Contain(...) is used                                                                    | `chain`, `value-used`                                                   |
+| Subject is not a dictionary?                                          | Dictionary: Contain(...) takes key/value pairs; use ShouldContainKey/ShouldContainKeyAndValue by hand | `dictionary`                                                            |
+| No named arguments; becauseArgs only with a constant `because`?       | named arguments, or becauseArgs whose because is no constant format string                            | `named-because`, `because-variable` (`because-args` is Fixed, TAAK-097) |
+| One value argument (no occurrence constraint)?                        | an occurrence constraint: no Shouldly equivalent                                                      | `occurrence`                                                            |
+| Parameter is an item or predicate (not several items)?                | checks several items at once                                                                          | `items`                                                                 |
+| Subject is string of IEnumerable<T>?                                  | The subject is not a string or a generic IEnumerable<T>                                               | no proof, guarded in code                                             |
 
-| Voorwaarde                | Fixed-vorm                                               | Proofs                                                                                                |
+| Condition                 | Fixed form                                               | Proofs                                                                                                |
 | ------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | string                    | `x.ShouldContain(v, Shouldly.Case.Sensitive[, because])` | `string`, `edge-interpolated`, `nullable-string` (`x.ShouldNotBeNull().ShouldContain(...)`)           |
 | IEnumerable<T>, item      | `x.ShouldContain(item[, because])`                       | `list`, `enumerable`, `lambda`, `because`, `because-args` (`string.Format(...)`), `edge-generic-list` |
 | IEnumerable<T>, predicaat | `x.ShouldContain(predicate)`                             | `predicate`                                                                                           |
 | NotContain                | `x.ShouldNotContain(...)`                                | `not-contain`                                                                                         |
 
-## Zie ook
+## See also
 
 - [fa-contain-plan.md](fa-contain-plan.md) - plan
-- [fa-contain-verify.md](fa-contain-verify.md) - verificatie
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainPattern.cs` - het patroon
-- `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/` - de proofs
-- [../modellen/pattern-beslissing.md](../modellen/pattern-beslissing.md) - generieke beslissing van een pattern
+- [fa-contain-verify.md](fa-contain-verify.md) - verification
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainPattern.cs` - the pattern
+- `src/Unshackle.Tests/Proofs/FluentAssertions/Contain/` - the proofs
+- [../modellen/pattern-beslissing.md](../modellen/pattern-beslissing.md) - generic decision of a pattern
 - [../README.md](../README.md)

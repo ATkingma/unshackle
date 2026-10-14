@@ -9,56 +9,56 @@ files_expected:
     - src/Unshackle.Tests/Proofs/AutoMapper/AddAutoMapper/
 ---
 
-# Feature: automapper.add-automapper: services.AddAutoMapper(...) → regel weg
+# Feature: automapper.add-automapper: services.AddAutoMapper(...) → line removed
 
 |               |                                                                   |
 | ------------- | ----------------------------------------------------------------- |
 | **Project**   | Unshackle                                                         |
 | **Status**    | Approved                                                          |
-| **Generated** | 2026-10-12 by KingmaDoc (handmatig, `kingmadoc` niet beschikbaar) |
+| **Generated** | 2026-10-12 by KingmaDoc (by hand, `kingmadoc` not available)      |
 
-> Opgesteld uit TAAK-159.
+> Drawn up from TAAK-159.
 
 ## One-sentence summary
 
-automapper.add-automapper: de statement `services.AddAutoMapper(...);` verdwijnt, maar alleen als niets in de solution nog `IMapper`, `IMapperBase`, `IRuntimeMapper` of `IConfigurationProvider` noemt.
+automapper.add-automapper: the statement `services.AddAutoMapper(...);` disappears, but only if nothing in the solution still names `IMapper`, `IMapperBase`, `IRuntimeMapper` or `IConfigurationProvider`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Elke `AddAutoMapper`-overload uit de AutoMapper-assembly als losse statement.
-- Een parameter die alleen aan `AddAutoMapper` werd doorgegeven krijgt `_ = p;` (signatuur en aanroepers blijven, geen IDE0060).
+- Every `AddAutoMapper` overload from the AutoMapper assembly as a standalone statement.
+- A parameter that was only passed to `AddAutoMapper` gets `_ = p;` (signature and callers stay, no IDE0060).
 
 **Out of scope (Manual)**
 
-- Een AutoMapper-service wordt nog gebruikt (veld, constructorparameter, `GetRequiredService<IMapper>()`), ook in een ander project (bv. tests).
-- Het resultaat van `AddAutoMapper` wordt gebruikt (expression body, keten, return).
+- An AutoMapper service is still used (field, constructor parameter, `GetRequiredService<IMapper>()`), also in another project (e.g. tests).
+- The result of `AddAutoMapper` is used (expression body, chain, return).
 
-## Ontwerp
+## Design
 
-`AddAutoMapperPattern` is een `ISolutionPattern`, net als `AddMediatRPattern`. `RewriteAsync` zoekt met `SymbolFinder.FindReferencesAsync` verwijzingen naar de vier service-typen in de hele solution; de sync `Rewrite` kijkt alleen in de eigen compilatie. Anders dan AddMediatR (dat naar `AddMediator` wordt omgezet) is er geen vervanger: Unshackle genereert gewone extensiemethoden, dus de registratie is overbodig zodra niemand een mapper uit DI vraagt.
+`AddAutoMapperPattern` is an `ISolutionPattern`, just like `AddMediatRPattern`. `RewriteAsync` looks for references to the four service types in the whole solution with `SymbolFinder.FindReferencesAsync`; the sync `Rewrite` only looks in its own compilation. Unlike AddMediatR (which is converted to `AddMediator`) there is no replacement: Unshackle generates ordinary extension methods, so the registration is superfluous as soon as nobody asks DI for a mapper.
 
 ## Requirements
 
-- **REQ-1**: WHEN `AddAutoMapper(...)` een losse statement is en geen mapper-service meer gebruikt wordt THE SYSTEM SHALL de statement verwijderen (proof `simple`).
-- **REQ-2**: WHEN een parameter alleen aan `AddAutoMapper` werd doorgegeven THE SYSTEM SHALL `_ = p;` laten staan (proof `parameter`).
-- **REQ-3**: IF `IMapper` (of een andere AutoMapper-service) nog ergens in de solution gebruikt wordt THEN THE SYSTEM SHALL Manual melden met de plek (proof `mapper-injected`).
-- **REQ-4**: IF het resultaat van `AddAutoMapper` gebruikt wordt THEN THE SYSTEM SHALL Manual melden (proof `result-used`).
+- **REQ-1**: WHEN `AddAutoMapper(...)` is a standalone statement and no mapper service is used any more THE SYSTEM SHALL remove the statement (proof `simple`).
+- **REQ-2**: WHEN a parameter was only passed to `AddAutoMapper` THE SYSTEM SHALL leave `_ = p;` (proof `parameter`).
+- **REQ-3**: IF `IMapper` (or another AutoMapper service) is still used anywhere in the solution THEN THE SYSTEM SHALL report Manual with the place (proof `mapper-injected`).
+- **REQ-4**: IF the result of `AddAutoMapper` is used THEN THE SYSTEM SHALL report Manual (proof `result-used`).
 
 ## Assumptions
 
-- `MapCallPattern` laat `IMapper`-injectie staan (TAAK-157); na handmatig opruimen verdwijnt de registratie bij een volgende run.
-- De lege Profiles blijven en houden het AutoMapper-pakket nodig; het pakket gaat pas in een latere rij weg.
+- `MapCallPattern` leaves the `IMapper` injection in place (TAAK-157); after cleaning up by hand the registration disappears in a next run.
+- The empty Profiles stay and keep the AutoMapper package needed; the package only goes in a later row.
 
 ## Risks
 
-- `FindReferencesAsync` per service per aanroep; bij grote solutions trager, maar `AddAutoMapper` komt zelden voor.
+- `FindReferencesAsync` per service per call; slower for large solutions, but `AddAutoMapper` is rare.
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [automapper-add-automapper-modellen.md](automapper-add-automapper-modellen.md).
+Class diagram, sequence and decision tree: [automapper-add-automapper-modellen.md](automapper-add-automapper-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

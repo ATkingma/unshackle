@@ -12,36 +12,36 @@
 
 Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/NotificationHandlerPattern.cs`, helper `MediatRSyntax.cs`, registratie in `MediatRFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/MediatR/NotificationHandler/`.
 
-| REQ   | Oordeel | Bewijs                                                       |
+| REQ   | Verdict | Evidence                                                       |
 | ----- | ------- | ------------------------------------------------------------ |
-| REQ-1 | Gehaald | `async`, `two-handlers` (async expression body)              |
-| REQ-2 | Gehaald | `completed-task` (twee returns), `completed-task-expression` |
-| REQ-3 | Gehaald | `two-handlers`                                               |
-| REQ-4 | Gehaald | `other-return`, `explicit`                                   |
-| Uitbreiding TAAK-080 | Gehaald | `edge-marker-interface` |
+| REQ-1 | Met | `async`, `two-handlers` (async expression body)              |
+| REQ-2 | Met | `completed-task` (twee returns), `completed-task-expression` |
+| REQ-3 | Met | `two-handlers`                                               |
+| REQ-4 | Met | `other-return`, `explicit`                                   |
+| Extension TAAK-080 | Met | `edge-marker-interface` |
 
-Scan op SampleShop (na `dotnet restore`): `mediatr.notification-handler` 3 Fixed, 0 Manual (`OrderCancelledAuditHandler`, `OrderCancelledMailHandler`, `OrderPlacedHandler`).
+Scan on SampleShop (after `dotnet restore`): `mediatr.notification-handler` 3 Fixed, 0 Manual (`OrderCancelledAuditHandler`, `OrderCancelledMailHandler`, `OrderPlacedHandler`).
 
 ## Deviations
 
-Geen.
+None.
 
 ## Validation results
 
 | Check   | Command                                                     | Result                                  |
 | ------- | ----------------------------------------------------------- | --------------------------------------- |
 | Build   | `dotnet build`                                              | passed (0 warnings)                     |
-| Tests   | `dotnet test`                                               | 381/381 groen |
-| Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 groen |
-| Lint    | _geen_                                                      | _not run_: geen lint-commando ingesteld |
+| Tests   | `dotnet test`                                               | 381/381 green |
+| Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 green |
+| Lint    | _none_                                                      | _not run_: no lint command configured   |
 
-## Vervolg (2026-10-11)
+## Follow-up (2026-10-11)
 
-TAAK-080: `IAppEventHandler<T> : INotificationHandler<T>` wordt gevonden (`AllInterfaces`). Proof `edge-marker-interface`.
+TAAK-080: `IAppEventHandler<T> : INotificationHandler<T>` is found (`AllInterfaces`). Proof `edge-marker-interface`.
 
-End-to-end (`fix --fix mediatr` op een kopie van SampleShop, na restore): 20 Fixed, 8 Manual; build zonder CS0436 (alleen MSG0003/MSG0005 van de generieke `CountQuery`). Manual: pre/post-processor, exception-handler, stream-behavior (TAAK-061/062), generieke `CountQuery`, en daardoor `AddMediatR` (`AddOpenStreamBehavior`). Omdat de registratie MediatR blijft, falen 28/38 sample-tests bij het opstarten (`LoggingBehavior`2 must implement MediatR.IPipelineBehavior`2`); dat lost zich op met TAAK-061/062.
+End-to-end (`fix --fix mediatr` on a copy of SampleShop, after restore): 20 Fixed, 8 Manual; build without CS0436 (only MSG0003/MSG0005 of the generic `CountQuery`). Manual: pre/post processor, exception handler, stream behavior (TAAK-061/062), generic `CountQuery`, and because of that `AddMediatR` (`AddOpenStreamBehavior`). Because the registration stays MediatR, 28/38 sample tests fail at startup (`LoggingBehavior`2 must implement MediatR.IPipelineBehavior`2`); that resolves itself with TAAK-061/062.
 
-## Zie ook
+## See also
 
 - [mediatr-notification-handler-plan.md](mediatr-notification-handler-plan.md)
 - [mediatr-notification-handler-modellen.md](mediatr-notification-handler-modellen.md)

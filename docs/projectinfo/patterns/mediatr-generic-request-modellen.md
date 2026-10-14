@@ -1,42 +1,42 @@
-# Modellen: mediatr.generic-request
+# Models: mediatr.generic-request
 
-Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/GenericRequestPattern.cs`. Diagrammen ontbreken (d2/kingmadoc niet beschikbaar); tabellen vervangen ze.
+Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/GenericRequestPattern.cs`. Diagrams are missing (d2/kingmadoc not available); tables replace them.
 
-## Klassen
+## Classes
 
-| Element | Rol |
-| ------- | --- |
-| `GenericRequestPattern` | `ISolutionPattern` + `ISolutionFinder`: vinden en de declaratie herschrijven met de compilaties van alle C#-projecten |
-| `IsCandidate` (statisch) | Generiek request, geen stream-request; gebruikt door `UnsupportedPattern` |
-| `Uses` (genest) | Uitkomst van `Scan`: gesloten typeargumenten, bestaande subklassen, eerste `typeof(G<>)`, eerste open creatie |
-| `GenericNotificationPattern` | Doet generieke notifications met gesloten gebruik; dit patroon alleen de notification die enkel basis is |
-| `FixedResult` (met `Warning`) / `ManualResult` | Uitkomst |
+| Element | Role |
+| ------- | ---- |
+| `GenericRequestPattern` | `ISolutionPattern` + `ISolutionFinder`: find and rewrite the declaration with the compilations of all C# projects |
+| `IsCandidate` (static) | Generic request, not a stream request; used by `UnsupportedPattern` |
+| `Uses` (nested) | Outcome of `Scan`: closed type arguments, existing subclasses, the first `typeof(G<>)`, the first open creation |
+| `GenericNotificationPattern` | Handles generic notifications with closed usage; this pattern only the notification that is only a base |
+| `FixedResult` (with `Warning`) / `ManualResult` | Outcome |
 
 ## Sequence
 
-| Stap | Methode | Wat gebeurt er |
-| ---- | ------- | -------------- |
-| Vinden | `FindNodes` | Kandidaat-declaratie, alleen-gesubklasseerde notification, concrete handler met geërfde `IRequestHandler<G<X, Y>, Y>` (`InheritedHandlers`), gesloten `G<X, Y>` (`Use`) |
-| Solution | `FindAsync` / `RewriteAsync` | Compilaties van alle C#-projecten; gebruiksplekken alleen met het eigen model |
-| Scannen | `Scan` | Elke `G<...>` in elke boom: gesloten, subklasse, unbound, open creatie |
-| Declaratie | `RewriteNode` | Manual-checks, typen mappen naar het project van `G`, `MakeAbstract`, subklassen met doorgegeven constructors |
-| Handler | `RewriteNode` (handler-tak) | `IRequestHandler<GOfXAndY, Y>` in de basislijst + brug-`Handle` naar `base.Handle` |
-| Gebruik | `RewriteUse` | `G<X, Y>` → `GOfXAndY`, qualifier blijft |
+| Step | Method | What happens |
+| ---- | ------ | ------------ |
+| Find | `FindNodes` | Candidate declaration, only-subclassed notification, concrete handler with an inherited `IRequestHandler<G<X, Y>, Y>` (`InheritedHandlers`), closed `G<X, Y>` (`Use`) |
+| Solution | `FindAsync` / `RewriteAsync` | Compilations of all C# projects; usage sites only with the own model |
+| Scan | `Scan` | Every `G<...>` in every tree: closed, subclass, unbound, open creation |
+| Declaration | `RewriteNode` | Manual checks, map types to `G`'s project, `MakeAbstract`, subclasses with passed-through constructors |
+| Handler | `RewriteNode` (handler branch) | `IRequestHandler<GOfXAndY, Y>` in the base list + a bridge `Handle` to `base.Handle` |
+| Usage | `RewriteUse` | `G<X, Y>` → `GOfXAndY`, the qualifier stays |
 
-## Beslisboom
+## Decision tree
 
-| Blad | Voorwaarde | Bewijs |
-| ---- | ---------- | ------ |
-| Fixed: alleen `abstract` | geen gesloten gebruik, wel concrete subklassen | `Find_OnlyBaseOfConcreteSubclass_FindsTheDeclaration`, `_Combined/generic-decorators-kgrzybek` |
-| Manual "not a plain" | typeargument geen gewoon benoemd type | `not-plain-argument` |
-| Manual "record, partial or file-local" | zo gedeclareerd | `derived-generic-record` |
+| Leaf | Condition | Evidence |
+| ---- | --------- | -------- |
+| Fixed: only `abstract` | no closed usage, but concrete subclasses | `Find_OnlyBaseOfConcreteSubclass_FindsTheDeclaration`, `_Combined/generic-decorators-kgrzybek` |
+| Manual "not a plain" | type argument not a plain named type | `not-plain-argument` |
+| Manual "record, partial or file-local" | declared that way | `derived-generic-record` |
 | Manual "becomes abstract" (typeof) | `typeof(G<>)` | `unbound-typeof` |
-| Manual "open type arguments" | `new G<TParam>` in generieke code | `open-creation` |
-| Manual "not visible from" | gesloten type in project buiten bereik van `G` | `RewriteAsync_ClosedTypeDeclaredInOtherProject_Manual` |
-| Fixed: abstract + subklassen + hernoemen | gesloten gebruik (ook in andere projecten) | `closed-uses`, `RewriteAsync_ClosedTypeOnlyUsedInOtherProject_WritesItsSubclass` |
-| Fixed: brug-`Handle` | concrete handler erft van abstracte generieke basis | `_Combined/identified-command-eshop` |
+| Manual "open type arguments" | `new G<TParam>` in generic code | `open-creation` |
+| Manual "not visible from" | a closed type in a project out of `G`'s reach | `RewriteAsync_ClosedTypeDeclaredInOtherProject_Manual` |
+| Fixed: abstract + subclasses + renaming | closed usage (also in other projects) | `closed-uses`, `RewriteAsync_ClosedTypeOnlyUsedInOtherProject_WritesItsSubclass` |
+| Fixed: bridge `Handle` | a concrete handler inherits from an abstract generic base | `_Combined/identified-command-eshop` |
 
-## Zie ook
+## See also
 
 - [mediatr-generic-request-plan.md](mediatr-generic-request-plan.md)
 - [mediatr-generic-request-verify.md](mediatr-generic-request-verify.md)

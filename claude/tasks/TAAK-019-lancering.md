@@ -1,101 +1,100 @@
-# TAAK-019 — Lancering FluentAssertions → Shouldly (roadmap stap 4)
+# TAAK-019 — Launch FluentAssertions → Shouldly (roadmap step 4)
 
-**Status**: casus gedaan (stap 2+3); lancering wacht op TAAK-021 (casus bouwt nog niet)
-**Aangemaakt**: 2026-10-11
-**Doel**: Unshackle 0.1 staat publiek op GitHub en NuGet, bewezen op een echt open-source project, met een README die in 30 seconden laat zien wat het doet.
+**Status**: case done (steps 2+3); launch was waiting on TAAK-021 (case did not build yet)
+**Created**: 2026-10-11
+**Goal**: Unshackle 0.1 is public on GitHub and NuGet, proven on a real open-source project, with a README that shows in 30 seconds what it does.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Roadmap-stand 2026-10-11: stap 1 klaar, stap 2 ~90% (TAAK-017 projectbestanden, TAAK-018 samenwerkingstest), stap 3/5/6 nog niet begonnen. Besluit gebruiker: **eerst lanceren, dan MediatR** (PROJECT.md: "Snelheid telt").
-- Tool werkt: `unshackle list|scan|fix` (`--dry-run`, `--force`, `--report`), `dotnet pack` + `dotnet tool install` getest (TAAK-005, `0.1.0-preview` in `src/Unshackle.Interface/Unshackle.Interface.csproj`). README heeft al een sectie Usage (PowerShell + bash).
-- Repo `ATkingma/unshackle` is **privé**: branch protection en issues voor buitenstaanders werken pas als hij publiek is.
-- `.vibe-wise/` (persoonlijke leernotities) staat in de repo; vóór publiek maken met de gebruiker afstemmen (waarschijnlijk naar `.gitignore` + uit de historie of gewoon weg).
+- Roadmap state 2026-10-11: step 1 done, step 2 ~90% (TAAK-017 project files, TAAK-018 collaboration test), steps 3/5/6 not started yet. User decision: **launch first, then MediatR** (PROJECT.md: "Speed matters").
+- The tool works: `unshackle list|scan|fix` (`--dry-run`, `--force`, `--report`), `dotnet pack` + `dotnet tool install` tested (TAAK-005, `0.1.0-preview` in `src/Unshackle.Interface/Unshackle.Interface.csproj`). The README already has a Usage section (PowerShell + bash).
+- Repo `ATkingma/unshackle` is **private**: branch protection and issues for outsiders only work once it is public.
+- `.vibe-wise/` (personal learning notes) is in the repo; agree with the user before making it public (probably to `.gitignore` + out of the history, or simply removed).
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-Werkende tool, 15 patronen, docs in `docs/projectinfo/`, CI groen, issue-formulieren (`.github/ISSUE_TEMPLATE/`, `docs/issues.md`). Niet gepubliceerd, niet getest op andermans code.
+Working tool, 15 patterns, docs in `docs/projectinfo/`, CI green, issue forms (`.github/ISSUE_TEMPLATE/`, `docs/issues.md`). Not published, not tested on other people's code.
 
-### Probleem
+### Problem
 
-- Niemand weet dat het bestaat; anderen kunnen intussen losse converters uitbrengen.
-- Gedrag op grote, echte codebases (honderden bestanden, multi-target, analyzers) is onbewezen.
+- Nobody knows it exists; others may release separate converters in the meantime.
+- Behaviour on large, real codebases (hundreds of files, multi-target, analyzers) is unproven.
 
-### Nieuwe situatie
+### New situation
 
-Publieke repo met branch protection, NuGet-pakket `Unshackle`, README met GIF en een echte-wereld-casus, post op r/dotnet.
+Public repo with branch protection, NuGet package `Unshackle`, README with a GIF and a real-world case, a post on r/dotnet.
 
-### Verbetering
+### Improvement
 
-Eerste gebruikers en feedback via issues; bewijs dat de tool op echte code werkt.
+First users and feedback via issues; proof that the tool works on real code.
 
-## Aanpak
+## Approach
 
-### Wat / Waar / Hoe
+### What / Where / How
 
-1. **Echte casus**: kies een open-source project met veel FluentAssertions 7.x (kandidaten: zie PROJECT.md "Bewijs", bv. RoseMCP; of zoek op GitHub naar `FluentAssertions` 7.x + veel `.Should()`). Clone in een scratchmap, `unshackle scan` → `fix` → `dotnet build` + `dotnet test`. Leg aantallen Fixed/Manual, bouwfouten en testfouten vast in deze taak; elke fout in een pattern = nieuw issue/taak, niet hier oplossen.
-2. **Publiek maken**: alleen met akkoord van de gebruiker (`.vibe-wise/` eerst regelen). Daarna branch protection op `main` (PR + groene check "Build and test"), zie `claude/docs/agent-werkwijze.md` §6.
-3. **NuGet**: versie `0.1.0`, `PackageReadmeFile`, `RepositoryUrl`, `PackageLicenseExpression` (MIT, zie LICENSE), `PackageTags`. Publiceren via een release-workflow (`.github/workflows/release.yml` op tag `v*`, `NUGET_API_KEY` als secret: de gebruiker zet de secret zelf).
-4. **README**: GIF of asciinema van `scan` + `fix --dry-run` op SampleShop, de casus uit stap 1 met cijfers, lijst van ondersteunde patronen (link naar `docs/projectinfo/modellen/patronen.md`), bekende beperkingen (Manual-gevallen).
-5. **r/dotnet-post**: concept in `docs/projectinfo/lancering/reddit-post.md`; de gebruiker plaatst hem zelf.
+1. **Real case**: pick an open-source project with a lot of FluentAssertions 7.x (candidates: see PROJECT.md "Proof", e.g. RoseMCP; or search GitHub for `FluentAssertions` 7.x + many `.Should()`). Clone into a scratch folder, `unshackle scan` → `fix` → `dotnet build` + `dotnet test`. Record numbers of Fixed/Manual, build errors and test failures in this task; every error in a pattern = a new issue/task, not solved here.
+2. **Make public**: only with the user's approval (sort out `.vibe-wise/` first). Then branch protection on `main` (PR + green check "Build and test"), see `claude/docs/agent-werkwijze.md` §6.
+3. **NuGet**: version `0.1.0`, `PackageReadmeFile`, `RepositoryUrl`, `PackageLicenseExpression` (MIT, see LICENSE), `PackageTags`. Publish via a release workflow (`.github/workflows/release.yml` on tag `v*`, `NUGET_API_KEY` as a secret: the user sets the secret themselves).
+4. **README**: GIF or asciinema of `scan` + `fix --dry-run` on SampleShop, the case from step 1 with numbers, list of supported patterns (link to `docs/projectinfo/modellen/patronen.md`), known limitations (Manual cases).
+5. **r/dotnet post**: draft in `docs/projectinfo/lancering/reddit-post.md`; the user posts it themselves.
 
-### Waarom deze aanpak
+### Why this approach
 
-Eerst de echte casus: als die faalt, wil je dat weten vóór de publieke lancering.
+The real case first: if it fails, you want to know before the public launch.
 
-## Resultaat echte casus (2026-10-11)
+## Result of the real case (2026-10-11)
 
-- **Project**: `microsoft/PowerApps-Tooling` @ `630e6973e5c81ddc196283cde26dd696d619d6c7`, `src/PASopa.sln`, FluentAssertions 7.2.0, MSTest, ~403 `.Should()`, TFM's `net48;net8.0;net10.0`.
-- Lokaal aangepast voor de baseline: `global.json` SDK 10.0.401 → 10.0.100 (alleen 10.0.112 geïnstalleerd). net48-tests draaien niet op Linux (geen mono), in beide runs.
-- **Baseline**: build groen (0 warnings). Test: 1178 totaal, 1172 geslaagd, 6 gefaald (`StressTestApps` x3 apps x2 TFM's in PAModelTests, ook vóór de fix; omgeving).
-- **Scan/fix**: tool meldt 778 Fixed / 162 Manual, maar telt elke bevinding per TFM (3x). Uniek: **262 Fixed, 53 Manual** in 25 gewijzigde .cs-bestanden + `Directory.Packages.props` + Testing-csproj. Zie TAAK-022.
-- Grootste Manual-redenen: `Contain(IEnumerable)` (6), `Be(...)` met becauseArgs (6), onbekend type/null-literal (5), resultaat van `Throw<T>()` gebruikt (5), `ThrowExactly` (3), `.And/.Which` na NotBeNull/Be (3+3), BeEquivalentTo verschillende typen (3). Project-file: Persistence.Tests en PAModelTests houden FA (er blijven Manual-gevallen).
-- **Build na fix**: 8 unieke fouten (x3 TFM = 21+), allemaal in `Persistence.Tests`: CS8602 na fa.have-count (`x.Count` op nullable) en CS8604 na fa.contain op `string?`. Zie TAAK-021.
-- **Tests na fix**: PAModelTests 530 totaal, 524 geslaagd, dezelfde 6 `StressTestApps` gefaald → geen regressie. Persistence.Tests (648 in baseline) niet te draaien: bouwt niet.
-- Conclusie: nog niet lanceerbaar met deze casus; eerst TAAK-021, dan casus opnieuw.
+- **Project**: `microsoft/PowerApps-Tooling` @ `630e6973e5c81ddc196283cde26dd696d619d6c7`, `src/PASopa.sln`, FluentAssertions 7.2.0, MSTest, ~403 `.Should()`, TFMs `net48;net8.0;net10.0`.
+- Adjusted locally for the baseline: `global.json` SDK 10.0.401 → 10.0.100 (only 10.0.112 installed). net48 tests do not run on Linux (no mono), in both runs.
+- **Baseline**: build green (0 warnings). Test: 1178 total, 1172 passed, 6 failed (`StressTestApps` x3 apps x2 TFMs in PAModelTests, also before the fix; environment).
+- **Scan/fix**: the tool reports 778 Fixed / 162 Manual, but counts every finding per TFM (3x). Unique: **262 Fixed, 53 Manual** in 25 changed .cs files + `Directory.Packages.props` + Testing csproj. See TAAK-022.
+- Biggest Manual reasons: `Contain(IEnumerable)` (6), `Be(...)` with becauseArgs (6), unknown type/null literal (5), result of `Throw<T>()` used (5), `ThrowExactly` (3), `.And/.Which` after NotBeNull/Be (3+3), BeEquivalentTo different types (3). Project file: Persistence.Tests and PAModelTests keep FA (Manual cases remain).
+- **Build after fix**: 8 unique errors (x3 TFM = 21+), all in `Persistence.Tests`: CS8602 after fa.have-count (`x.Count` on nullable) and CS8604 after fa.contain on `string?`. See TAAK-021.
+- **Tests after fix**: PAModelTests 530 total, 524 passed, the same 6 `StressTestApps` failed → no regression. Persistence.Tests (648 in the baseline) cannot run: does not build.
+- Conclusion: not launchable yet with this case; first TAAK-021, then the case again.
 
-### Herhaling op main `b53e3cc` (2026-10-11)
+### Repeat on main `b53e3cc` (2026-10-11)
 
-- Clone gereset naar `630e697` (`git checkout -- . && git clean -fdx`), `global.json` weer naar 10.0.100. Na `git clean` laadt de solution pas na `dotnet restore` (net48-referentieassemblies komen uit NuGet); `fix` vraagt `--force` omdat `global.json` gewijzigd is.
-- **Fix**: tool meldt **239 Fixed / 92 Manual** (331 rijen, 326 unieke file+regel+patroon). TAAK-022 werkt: geen x3 meer per TFM. 24 bestanden geschreven.
-    - Minder Fixed en meer Manual dan de vorige unieke telling (262/53), vooral door de nieuwe AssertionScope-regel: 14x `fa.assertion-scope` + 24x `fa.be-true-false` binnen een scope (bewust Manual).
-    - Dubbele rijen: de 3 csproj's staan zowel als Fixed (Shouldly erbij) als Manual (FA blijft); `PaArchiveTests.cs:400` (contain) en `MsappPackingServiceTests.cs:335` (all-satisfy) geven twee Manual-rijen op één regel (twee aanroepen). Geen fout.
-- **Top Manual-redenen**: AssertionScope (38), `Contain(IEnumerable)`/niet-standaardvorm/resultaat gebruikt (8), `Throw` resultaat gebruikt/ThrowExactly/Invoking (10, + 1 ThrowAsync), BeEquivalentTo onbekend type/verschillende typen/becauseArgs/ImmutableDictionary (10), `Be(...)` becauseArgs of resultaat gebruikt (9), `.And/.Which` na NotBeNull/NotBeEmpty/HaveCount/NotThrow (7), AllSatisfy niet-standaardvorm (4), project-file FA blijft (3).
-- **Build na fix**: groen, 0 fouten, 0 warnings (TAAK-021 opgelost).
-- **Tests na fix**: 1178 totaal, 6 gefaald (dezelfde `StressTestApps` x3 x2 TFM's als baseline), Persistence.Tests nu groen → **geen regressie**.
-- Geen nieuwe patroonfouten gevonden, dus geen nieuwe taken. Casus is lanceerbaar; de cijfers voor de README zijn deze.
+- Clone reset to `630e697` (`git checkout -- . && git clean -fdx`), `global.json` back to 10.0.100. After `git clean` the solution only loads after `dotnet restore` (net48 reference assemblies come from NuGet); `fix` asks for `--force` because `global.json` changed.
+- **Fix**: the tool reports **239 Fixed / 92 Manual** (331 rows, 326 unique file+line+pattern). TAAK-022 works: no more x3 per TFM. 24 files written.
+    - Fewer Fixed and more Manual than the previous unique count (262/53), mainly due to the new AssertionScope rule: 14x `fa.assertion-scope` + 24x `fa.be-true-false` inside a scope (deliberately Manual).
+    - Duplicate rows: the 3 csproj files appear both as Fixed (Shouldly added) and as Manual (FA stays); `PaArchiveTests.cs:400` (contain) and `MsappPackingServiceTests.cs:335` (all-satisfy) give two Manual rows on one line (two calls). Not an error.
+- **Top Manual reasons**: AssertionScope (38), `Contain(IEnumerable)`/non-standard form/result used (8), `Throw` result used/ThrowExactly/Invoking (10, + 1 ThrowAsync), BeEquivalentTo unknown type/different types/becauseArgs/ImmutableDictionary (10), `Be(...)` becauseArgs or result used (9), `.And/.Which` after NotBeNull/NotBeEmpty/HaveCount/NotThrow (7), AllSatisfy non-standard form (4), project-file FA stays (3).
+- **Build after fix**: green, 0 errors, 0 warnings (TAAK-021 solved).
+- **Tests after fix**: 1178 total, 6 failed (the same `StressTestApps` x3 x2 TFMs as the baseline), Persistence.Tests now green → **no regression**.
+- No new pattern errors found, so no new tasks. The case is launchable; these are the numbers for the README.
 
-## Stappen
+## Steps
 
-- [ ] 1. Wachten tot TAAK-017 + TAAK-018 gepusht zijn (checks groen)
-- [x] 2. Echte casus: scan/fix/build/test op een open-source project, resultaten hier vastleggen
-- [x] 3. Gevonden pattern-fouten als issues/taken vastleggen (niet in deze taak fixen)
-- [ ] 4. NuGet-metadata + release-workflow (`v*`-tag), lokaal `dotnet pack` controleren
-- [ ] 5. README: GIF, casus-cijfers, ondersteunde patronen, beperkingen
-- [ ] 6. Met gebruiker: `.vibe-wise/` regelen, repo publiek, branch protection aan
-- [ ] 7. Release `v0.1.0` taggen (gebruiker zet `NUGET_API_KEY`), installatie vanaf nuget.org testen
-- [ ] 8. Concept r/dotnet-post; gebruiker plaatst
+- [ ] 1. Wait until TAAK-017 + TAAK-018 are pushed (checks green)
+- [x] 2. Real case: scan/fix/build/test on an open-source project, record the results here
+- [x] 3. Record pattern errors found as issues/tasks (do not fix them in this task)
+- [ ] 4. NuGet metadata + release workflow (`v*` tag), check `dotnet pack` locally
+- [ ] 5. README: GIF, case numbers, supported patterns, limitations
+- [ ] 6. With the user: sort out `.vibe-wise/`, make the repo public, enable branch protection
+- [ ] 7. Tag release `v0.1.0` (the user sets `NUGET_API_KEY`), test installation from nuget.org
+- [ ] 8. Draft r/dotnet post; the user posts it
 
-## Risico's & randgevallen
+## Risks & edge cases
 
-| Risico                                                        | Mitigatie                                                                             |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Echte casus levert veel Manual of bouwfouten                  | Eerlijk in README; fouten worden issues; lancering pas als `fix` de casus laat bouwen |
-| Persoonlijke notities publiek                                 | Stap 6 met de gebruiker, vóór publiek maken                                           |
-| NuGet-key in repo                                             | Alleen als GitHub-secret, nooit in bestanden                                          |
-| Publiek maken / posten / publiceren is extern en onomkeerbaar | Elke stap expliciet laten bevestigen door de gebruiker                                |
+| Risk | Mitigation |
+| ---- | ---------- |
+| The real case yields many Manuals or build errors | Honest in the README; errors become issues; launch only when `fix` leaves the case building |
+| Personal notes made public | Step 6 with the user, before making it public |
+| NuGet key in the repo | Only as a GitHub secret, never in files |
+| Making public / posting / publishing is external and irreversible | Have every step explicitly confirmed by the user |
 
-## Gewijzigde bestanden
+## Changed files
 
-_(wordt aangevuld tijdens uitvoering)_
+_(filled in during execution)_
 
-## Zie ook
+## See also
 
-- `claude/tasks/archief/TAAK-021-fa-nullable-subject.md` — patroonfout uit de casus
-- `claude/tasks/archief/TAAK-022-scan-telt-per-target-framework.md` — telling per TFM
-
+- `claude/tasks/archief/TAAK-021-fa-nullable-subject.md` — pattern error from the case
+- `claude/tasks/archief/TAAK-022-scan-telt-per-target-framework.md` — count per TFM
 - `claude/docs/INDEX.md`
 - `docs/projectinfo/README.md`
-- `docs/projectinfo/project.md` — roadmap, risico's, bewijs van vraag
-- `claude/docs/overdracht.md` — stand bij accountwissel
+- `docs/projectinfo/project.md` — roadmap, risks, proof of demand
+- `claude/docs/overdracht.md` — state at an account switch

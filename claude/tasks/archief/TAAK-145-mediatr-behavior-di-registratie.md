@@ -11,15 +11,15 @@
 
 ## Meting
 
-Testproject `/mnt/dikkeschijf/unshackle-corpus/t145/` (MediatR 12.5.0, xUnit): `AddMediatR` met alleen assembly-registratie
+Testproject `<corpus>/t145/` (MediatR 12.5.0, xUnit): `AddMediatR` met alleen assembly-registratie
 plus `services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>))`; een test stuurt `Ping` en eist dat de
 behavior `before`/`after` logt. Kopie `t145-run/` door `unshackle fix --fix mediatr` gehaald (zonder én met dit patroon):
 
 | Variant (na migratie naar Mediator 3.0.2)                | Resultaat                                                |
 | -------------------------------------------------------- | -------------------------------------------------------- |
 | `AddTransient`, `ServiceLifetime.Transient`              | groen: behavior draait                                   |
-| `AddScoped` (uit een scope), `ServiceLifetime.Transient` | groen                                                    |
-| `AddSingleton`, `ServiceLifetime.Transient`              | groen                                                    |
+| `AddScoped` (uit een scope), `ServiceLifetime.Transient` | green                                                    |
+| `AddSingleton`, `ServiceLifetime.Transient`              | green                                                    |
 | `AddTransient`, `ServiceLifetime.Singleton` (2× Send)    | behavior draait, maar **één instantie** voor beide calls |
 
 Conclusie: de gegenereerde Mediator haalt elke `IPipelineBehavior<,>` uit de container. Er is niets te herschrijven;

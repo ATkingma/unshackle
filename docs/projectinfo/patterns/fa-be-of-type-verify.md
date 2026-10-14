@@ -10,19 +10,19 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeOfTypePattern.cs`; registratie in `FluentAssertionsFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/BeOfType/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeOfTypePattern.cs`; registration in `FluentAssertionsFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/BeOfType/`, run by `ProofTests`.
 
-| REQ | Oordeel | Bewijs |
+| REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Gehaald | `simple` |
-| REQ-2 | Gehaald | `because` |
-| REQ-3 | Gehaald | `type-argument` |
-| REQ-4 | Gehaald | `which` |
-| REQ-5 | Gehaald | `nullable` |
-| REQ-6 | Deels vervangen | `and` (Manual); `which-chain`, `which-multiple` zijn nu Fixed (TAAK-096) |
-| REQ-7 | Deels vervangen | `assertion-scope`, `type-subject` (Manual); `because-args` is nu Fixed (TAAK-097) |
-| Uitbreiding TAAK-096 | Gehaald | `which-chain.after.cs`, `which-multiple.after.cs` |
-| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` |
+| REQ-1 | Met | `simple` |
+| REQ-2 | Met | `because` |
+| REQ-3 | Met | `type-argument` |
+| REQ-4 | Met | `which` |
+| REQ-5 | Met | `nullable` |
+| REQ-6 | Partly superseded | `and` (Manual); `which-chain`, `which-multiple` are now Fixed (TAAK-096) |
+| REQ-7 | Partly superseded | `assertion-scope`, `type-subject` (Manual); `because-args` is now Fixed (TAAK-097) |
+| Extension TAAK-096 | Met | `which-chain.after.cs`, `which-multiple.after.cs` |
+| Extension TAAK-097 | Met | `because-args.after.cs` |
 
 ## Deviations
 
@@ -38,7 +38,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeOfTypePattern.cs`; r
 | Test | `dotnet test` | passed (412 tests) |
 | Sample | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | passed (38 tests) |
 
-## Zie ook
+## See also
 
 - [fa-be-of-type-modellen.md](fa-be-of-type-modellen.md)
 - `claude/docs/patroon-loop.md`

@@ -3,27 +3,27 @@
 |               |                                              |
 | ------------- | -------------------------------------------- |
 | **Plan**      | [`mediatr-generic-decorator-plan.md`](mediatr-generic-decorator-plan.md) |
-| **Status**    | Verified (proofs, unittests); corpusrun kgrzybek nog niet herhaald |
-| **Generated** | 2026-10-13 (met de hand) |
+| **Status**    | Verified (proofs, unit tests); kgrzybek corpus run not yet repeated |
+| **Generated** | 2026-10-13 (by hand) |
 
 ## Requirements
 
-| REQ   | Oordeel | Bewijs |
-| ----- | ------- | ------ |
-| REQ-1 | Gehaald | `Proofs/MediatR/_Combined/generic-decorators-kgrzybek` (after compileert tegen Mediator 3.0.2 + Autofac) |
-| REQ-2 | Gehaald | `GenericDecoratorPatternTests.Find_DecoratorWithResponse_LeavesItToTheHandlerPatterns` |
-| REQ-3 | Gehaald | `MediatRFix`: `WarningsNotAsErrors = ["MSG0001", "MSG0003", "MSG0005"]` (MSG0001 sinds TAAK-212: valse melding van Mediator 3.0.2 voor een void-handler achter een eigen marker in een ander project; `MediatRFixPackageTests`) |
-| REQ-4 | Gehaald | `GenericDecorator/used-elsewhere` |
-| REQ-5 | Gehaald | `GenericDecorator/decorated-members`, `decorated-other-use` |
-| REQ-6 | Gehaald | `GenericDecorator/notification-without-autofac`; Fixed-tak in `_Combined/generic-decorators-kgrzybek` |
-| REQ-7 | Gehaald | `_Combined/generic-decorator-marker-without-using` (twee projecten, decorator-bestand zonder `using MediatR`; zonder de fix: `mediatr.unsupported` → alles Manual); `GenericDecoratorPatternTests.IsDecorator_RewrittenVoidDecoratorInFileWithoutUsingMediatR_True`, `..._UnboundHandlerWithOtherResponse_False`; corpus kgrzybek ronde 4 |
+| REQ   | Verdict | Evidence |
+| ----- | ------- | -------- |
+| REQ-1 | Met | `Proofs/MediatR/_Combined/generic-decorators-kgrzybek` (after compiles against Mediator 3.0.2 + Autofac) |
+| REQ-2 | Met | `GenericDecoratorPatternTests.Find_DecoratorWithResponse_LeavesItToTheHandlerPatterns` |
+| REQ-3 | Met | `MediatRFix`: `WarningsNotAsErrors = ["MSG0001", "MSG0003", "MSG0005"]` (MSG0001 since TAAK-212: a false report from Mediator 3.0.2 for a void handler behind an own marker in another project; `MediatRFixPackageTests`) |
+| REQ-4 | Met | `GenericDecorator/used-elsewhere` |
+| REQ-5 | Met | `GenericDecorator/decorated-members`, `decorated-other-use` |
+| REQ-6 | Met | `GenericDecorator/notification-without-autofac`; Fixed-tak in `_Combined/generic-decorators-kgrzybek` |
+| REQ-7 | Met | `_Combined/generic-decorator-marker-without-using` (two projects, decorator file without `using MediatR`; without the fix: `mediatr.unsupported` → everything Manual); `GenericDecoratorPatternTests.IsDecorator_RewrittenVoidDecoratorInFileWithoutUsingMediatR_True`, `..._UnboundHandlerWithOtherResponse_False`; corpus kgrzybek round 4 |
 
 ## Deviations
 
-- Geen eigen `after`-proof in `GenericDecorator/`: de Fixed-takken hebben de hele solution nodig (registratie, Autofac-module) en staan in `_Combined`.
-- Corpusbewijs (kgrzybek `91c8ef2` bouwt en test na de fix) staat nog open; zie `claude/tasks/CORPUSRUN-mediatr.md`.
+- No own `after` proof in `GenericDecorator/`: the Fixed branches need the whole solution (registration, Autofac module) and are in `_Combined`.
+- Corpus proof (kgrzybek `91c8ef2` builds and tests after the fix) is still open; see `claude/tasks/CORPUSRUN-mediatr.md`.
 
-## Zie ook
+## See also
 
 - [mediatr-generic-decorator-plan.md](mediatr-generic-decorator-plan.md)
 - `claude/tasks/CORPUSRUN-mediatr.md`

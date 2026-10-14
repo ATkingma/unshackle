@@ -1,35 +1,35 @@
-# Modellen: mediatr.internal-handler-access
+# Models: mediatr.internal-handler-access
 
-Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/InternalHandlerAccessPattern.cs`. Diagrammen ontbreken (d2/kingmadoc niet beschikbaar); tabellen vervangen ze.
+Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/InternalHandlerAccessPattern.cs`. Diagrams are missing (d2/kingmadoc not available); tables replace them.
 
-## Klassen
+## Classes
 
-| Element | Rol |
-| ------- | --- |
-| `InternalHandlerAccessPattern` | `ISolutionPattern` + `ISolutionFinder`; zoekt en schrijft alleen met de solution |
-| `ISolutionFinder` | `FindAsync(root, model, solution, ct)`; de `Fixer` roept die aan in plaats van `Find` |
-| `AddMediatRPattern` | `Find` (de `AddMediatR`-aanroepen), `ScannedAssemblies`, `IsHiddenHandler`, `Types`, `CanGrantAccess` (gedeeld) |
-| `PatternResult.Fixed` | de hele `CompilationUnitSyntax` met de extra attribuutlijsten |
+| Element | Role |
+| ------- | ---- |
+| `InternalHandlerAccessPattern` | `ISolutionPattern` + `ISolutionFinder`; finds and writes only with the solution |
+| `ISolutionFinder` | `FindAsync(root, model, solution, ct)`; the `Fixer` calls it instead of `Find` |
+| `AddMediatRPattern` | `Find` (the `AddMediatR` calls), `ScannedAssemblies`, `IsHiddenHandler`, `Types`, `CanGrantAccess` (shared) |
+| `PatternResult.Fixed` | the whole `CompilationUnitSyntax` with the extra attribute lists |
 
 ## Sequence
 
-| Stap | Methode | Wat gebeurt er |
-| ---- | ------- | -------------- |
-| Vinden | `FindAsync` → `IsChosenFile` | Is dit bestand het eerste (pad, positie) met een niet-publieke handler van deze assembly? |
-| Hosts | `HostsAsync` | Per ander C#-project: documenten met de tekst `AddMediatR`, `AddMediatRPattern.Find`, `ScannedAssemblies` bevat deze assembly, en `GivesAccessTo` nog niet |
-| Schrijven | `RewriteAsync` | Per host `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Host")]` vóór het eerste member (neemt diens leading trivia over) of na bestaande attributen |
-| Host-kant | `AddMediatRPattern.RewriteAsync` → `HiddenHandler(..., CanGrantAccess)` | Assembly is een project van de solution zonder strong name: geen Manual |
+| Step | Method | What happens |
+| ---- | ------ | ------------ |
+| Find | `FindAsync` → `IsChosenFile` | Is this file the first (path, position) with a non-public handler of this assembly? |
+| Hosts | `HostsAsync` | Per other C# project: documents with the text `AddMediatR`, `AddMediatRPattern.Find`, `ScannedAssemblies` contains this assembly, and `GivesAccessTo` not yet |
+| Write | `RewriteAsync` | Per host `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Host")]` before the first member (takes over its leading trivia) or after existing attributes |
+| Host side | `AddMediatRPattern.RewriteAsync` → `HiddenHandler(..., CanGrantAccess)` | The assembly is a project of the solution without a strong name: no Manual |
 
-## Beslisboom
+## Decision tree
 
-| Blad | Voorwaarde | Bewijs |
-| ---- | ---------- | ------ |
-| Geen bevinding | strong-named, geen host, host heeft al toegang, of niet het gekozen bestand | `InternalHandlerAccessPatternTests` (`AlreadyGrants`, `NoOtherProjectScans`) |
-| Fixed, één attribuut | één host scant | `_Combined/add-mediatr-internal-handlers-other-project` |
-| Fixed, meerdere attributen | twee hosts | `..._TwoHostsScanInternalHandlers_...` |
-| Manual (`Rewrite` zonder solution) | alleen buiten de Fixer | geen proof |
+| Leaf | Condition | Evidence |
+| ---- | --------- | -------- |
+| No finding | strong-named, no host, the host already has access, or not the chosen file | `InternalHandlerAccessPatternTests` (`AlreadyGrants`, `NoOtherProjectScans`) |
+| Fixed, one attribute | one host scans | `_Combined/add-mediatr-internal-handlers-other-project` |
+| Fixed, several attributes | two hosts | `..._TwoHostsScanInternalHandlers_...` |
+| Manual (`Rewrite` without a solution) | only outside the Fixer | no proof |
 
-## Zie ook
+## See also
 
 - [mediatr-internal-handler-access-plan.md](mediatr-internal-handler-access-plan.md)
 - [mediatr-internal-handler-access-verify.md](mediatr-internal-handler-access-verify.md)

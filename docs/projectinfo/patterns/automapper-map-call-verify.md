@@ -4,42 +4,42 @@
 | ------------- | -------------------------------------------------------------------------------------- |
 | **Plan**      | [`docs/projectinfo/patterns/automapper-map-call-plan.md`](automapper-map-call-plan.md) |
 | **Status**    | Verified                                                                               |
-| **Generated** | 2026-10-12 by KingmaDoc skill (handmatig, `kingmadoc` niet beschikbaar)                |
+| **Generated** | 2026-10-12 by KingmaDoc skill (by hand, `kingmadoc` not available)                |
 
 > Verified by an AI agent against the code at uncommitted changes.
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapCallPattern.cs`, `CreateMapPattern.cs`, `AutoMapperFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/AutoMapper/MapCall/` en `src/Unshackle.Tests/Proofs/AutoMapper/_Combined/` (die draait `CombinedProofTests.CombinedAutoMapper_Before_BecomesAfter` met de echte `AutoMapperFix`). Unittests: `src/Unshackle.Tests/Core/MapCallPatternTests.cs`.
+Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapCallPattern.cs`, `CreateMapPattern.cs`, `AutoMapperFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/AutoMapper/MapCall/` and `src/Unshackle.Tests/Proofs/AutoMapper/_Combined/` (run by `CombinedProofTests.CombinedAutoMapper_Before_BecomesAfter` with the real `AutoMapperFix`). Unit tests: `src/Unshackle.Tests/Core/MapCallPatternTests.cs`.
 
-| REQ   | Oordeel | Bewijs                                                                                                                                       |
+| REQ   | Verdict | Evidence                                                                                                                                       |
 | ----- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| REQ-1 | Gehaald | `existing-method` (`Map<B>`, `Map<A, B>` via `this._mapper`, haakjes om `new Order { .. }`)                                                  |
-| REQ-2 | Gehaald | `_Combined/map-call-profile` (using toegevoegd), `_Combined/map-call-global` (met MapFrom), unittest `FixAsync_ProfileInOtherFile_CallsGeneratedMethodWithUsing` |
-| REQ-3 | Gehaald | unittest `FixAsync_ProfileInReferencedProject_FollowsAccessibility` (public: Fixed; internal: Manual)                                        |
-| REQ-4 | Gehaald | `collection`                                                                                                                                 |
-| REQ-5 | Gehaald | `unknown-map`, `manual-profile`                                                                                                              |
-| REQ-6 | Gehaald | `maybe-null`                                                                                                                                 |
-| REQ-7 | Gehaald | `object-source`, `receiver-call`                                                                                                             |
-| REQ-8 | Gehaald | `CreateMap/map-into` (voorheen `map-call`)                                                                                                   |
+| REQ-1 | Met | `existing-method` (`Map<B>`, `Map<A, B>` via `this._mapper`, parentheses around `new Order { .. }`)                                           |
+| REQ-2 | Met | `_Combined/map-call-profile` (using added), `_Combined/map-call-global` (with MapFrom), unit test `FixAsync_ProfileInOtherFile_CallsGeneratedMethodWithUsing` |
+| REQ-3 | Met | unittest `FixAsync_ProfileInReferencedProject_FollowsAccessibility` (public: Fixed; internal: Manual)                                        |
+| REQ-4 | Met | `collection`                                                                                                                                 |
+| REQ-5 | Met | `unknown-map`, `manual-profile`                                                                                                              |
+| REQ-6 | Met | `maybe-null`                                                                                                                                 |
+| REQ-7 | Met | `object-source`, `receiver-call`                                                                                                             |
+| REQ-8 | Met | `CreateMap/map-into` (voorheen `map-call`)                                                                                                   |
 
 ## Deviations
 
-- `IMapper`-injectie blijft staan (de rij noemde "weg als ongebruikt"): weghalen raakt alle aanroepers; verschoven naar rij 6.
-- "Several profiles" heeft geen proof of test; alleen code-review.
-- `CombinedProofTests` kreeg een AutoMapper-theorie: een Fixed-proof met alleen `MapCallPattern` compileert niet zonder de profile-rewrite.
-- PNG/SVG van de modellen niet gerenderd (geen `kingmadoc`/`d2`); de D2-bronnen staan er.
+- The `IMapper` injection stays (the row said "removed when unused"): removing it touches all callers; moved to row 6.
+- "Several profiles" has no proof or test; only code review.
+- `CombinedProofTests` got an AutoMapper theory: a Fixed proof with only `MapCallPattern` does not compile without the profile rewrite.
+- PNG/SVG of the models not rendered (no `kingmadoc`/`d2`); the D2 sources are there.
 
 ## Validation results
 
 | Check   | Command                                                     | Result                                                                                                                                                                                  |
 | ------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Build   | `dotnet build`                                              | passed (0 warnings)                                                                                                                                                                     |
-| Tests   | `dotnet test`                                               | 748/783 groen; de 35 falers (`XmlProjectFileStoreTests`, `FixerTests`, `CommandTests.FixExecuteAsync_DirtyTree…`, 2 SampleShop-integratietests) zijn de bekende CRLF-falers van schone main |
+| Tests   | `dotnet test`                                               | 748/783 green; the 35 failures (`XmlProjectFileStoreTests`, `FixerTests`, `CommandTests.FixExecuteAsync_DirtyTree…`, 2 SampleShop integration tests) are the known CRLF failures of a clean main |
 | Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | passed (38/38)                                                                                                                                                                          |
-| Lint    | _geen_                                                      | _not run_: geen lint-commando ingesteld                                                                                                                                                 |
+| Lint    | _none_                                                      | _not run_: no lint command configured                                                                                                                                                 |
 
-## Zie ook
+## See also
 
 - [automapper-map-call-plan.md](automapper-map-call-plan.md)
 - [automapper-map-call-modellen.md](automapper-map-call-modellen.md)

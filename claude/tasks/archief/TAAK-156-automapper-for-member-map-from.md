@@ -1,39 +1,39 @@
 # TAAK-156 — automapper.for-member-map-from
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-12
-**Doel**: rij 3 van `claude/tasks/automapper-queue.md`: `.ForMember(d => d.X, o => o.MapFrom(s => expr))` → `X = expr` in de `ToB`-methode, samen met Ignore in hetzelfde profiel.
+**Status**: ✅ completed
+**Created**: 2026-10-12
+**Goal**: row 3 of `claude/tasks/automapper-queue.md`: `.ForMember(d => d.X, o => o.MapFrom(s => expr))` → `X = expr` in the `ToB` method, together with Ignore in the same profile.
 
-## Onderzoek
+## Research
 
-- AutoMapper 14: `MapFrom(Expression<Func<TSource, TMember>>)` is de enige overload met een lambda van één parameter; overloads met `(s, d)`, resolvers en een stringnaam bestaan ook.
-- AutoMapper voert MapFrom-expressies null-veilig uit (een NullReferenceException geeft de standaardwaarde) en converteert typen. Een gewone toekenning doet geen van beide: dat bepaalt wat Manual wordt.
-- Expression trees staan geen `?.` toe; een expressie met `x != null ? x.Y : ...` kan wel.
+- AutoMapper 14: `MapFrom(Expression<Func<TSource, TMember>>)` is the only overload with a lambda of one parameter; overloads with `(s, d)`, resolvers and a string name exist as well.
+- AutoMapper executes MapFrom expressions null-safely (a NullReferenceException gives the default value) and converts types. A plain assignment does neither: that decides what becomes Manual.
+- Expression trees do not allow `?.`; an expression with `x != null ? x.Y : ...` is possible.
 
-## Keuzes
+## Choices
 
-- **Subklasse `ForMemberMapFromPattern : CreateMapPattern`** met gedeelde `Rewrite`, zoals bij TAAK-155 (een profile wordt als geheel vervangen). `Find` verdeelt exclusief: MapFrom-aanroep (welke vorm ook) → MapFrom, anders Ignore → Ignore, anders CreateMap. Zo vindt precies één pattern een profile, ook bij Ignore + MapFrom.
-- **Ledenlijst `(Name, Value)`**: `source.X` of de herschreven expressie, in de volgorde van B.
-- **Alleen `s => expr`** (expressie-body, één parameter, AutoMapper-symbool); `s` wordt via het symbool vervangen door `source`. Overige vormen: Manual met de bestaande "not a CreateMap<A, B>() without options".
-- **Null-veiligheid via nullable-flow**: een ontvanger van `.lid`/`[ ]` mag `s`, een type of een expressie met `NullableFlowState.NotNull` zijn; anders Manual ("may be null"). Zonder nullable-context dus bijna altijd Manual; bewust, een stille gedragswijziging is erger.
-- **Type**: gelijk aan het type van X, of impliciet numeriek/nullable; anders Manual (AutoMapper converteert). Collectie-X: Manual.
-- **Buiten het profiel**: `this`, instantievelden, statics van het profiel, en een naam `source` die al iets anders is: Manual. Lokale parameters van geneste lambda's mogen.
-- X moet publiek schrijfbaar zijn en maar één keer geconfigureerd.
-- De Ignore-proof `map-from` (Manual) is vervallen.
+- **Subclass `ForMemberMapFromPattern : CreateMapPattern`** with a shared `Rewrite`, as with TAAK-155 (a profile is replaced as a whole). `Find` splits exclusively: a MapFrom call (of any form) → MapFrom, otherwise Ignore → Ignore, otherwise CreateMap. That way exactly one pattern finds a profile, also with Ignore + MapFrom.
+- **Member list `(Name, Value)`**: `source.X` or the rewritten expression, in the order of B.
+- **Only `s => expr`** (expression body, one parameter, AutoMapper symbol); `s` is replaced by `source` via the symbol. Other forms: Manual with the existing "not a CreateMap<A, B>() without options".
+- **Null safety via the nullable flow**: a receiver of `.member`/`[ ]` may be `s`, a type or an expression with `NullableFlowState.NotNull`; otherwise Manual ("may be null"). Without a nullable context therefore almost always Manual; deliberately, a silent behaviour change is worse.
+- **Type**: equal to the type of X, or implicitly numeric/nullable; otherwise Manual (AutoMapper converts). Collection X: Manual.
+- **Outside the profile**: `this`, instance fields, statics of the profile, and a name `source` that is already something else: Manual. Local parameters of nested lambdas are allowed.
+- X must be publicly writable and configured only once.
+- The Ignore proof `map-from` (Manual) was dropped.
 
-## Stappen
+## Steps
 
-- [x] 1. Onderzoek en keuzes.
-- [x] 2. Plan `docs/projectinfo/patterns/automapper-for-member-map-from-plan.md` (handmatig).
-- [x] 3. `ForMemberMapFromPattern`, `CreateMapPattern` uitgebreid, registratie in `AutoMapperFix`.
+- [x] 1. Research and choices.
+- [x] 2. Plan `docs/projectinfo/patterns/automapper-for-member-map-from-plan.md` (by hand).
+- [x] 3. `ForMemberMapFromPattern`, `CreateMapPattern` extended, registration in `AutoMapperFix`.
 - [x] 4. Proofs (`simple`, `ignore-and-nullable`, 5x Manual), `ForMemberMapFromPatternTests`, `proofs-doc.py`.
-- [x] 5. Modellen (D2-bronnen), verify, README-rij, queue.
+- [x] 5. Models (D2 sources), verify, README row, queue.
 
-## Resultaat
+## Result
 
-- `dotnet build` 0 warnings (met `-p:WarningsNotAsErrors=NU1507 -p:NoWarn=NU1507`); 736/771 tests groen, ProofTests en pattern-tests 568/568. De 35 falers (XmlProjectFileStoreTests, FixerTests, CommandTests, 2 SampleShop-integratietests) zijn de bekende CRLF-falers.
+- `dotnet build` 0 warnings (with `-p:WarningsNotAsErrors=NU1507 -p:NoWarn=NU1507`); 736/771 tests green, ProofTests and pattern tests 568/568. The 35 failures (XmlProjectFileStoreTests, FixerTests, CommandTests, 2 SampleShop integration tests) are the known CRLF failures.
 
-## Zie ook
+## See also
 
 - `claude/tasks/automapper-queue.md`
 - `claude/tasks/archief/TAAK-155-automapper-for-member-ignore.md`

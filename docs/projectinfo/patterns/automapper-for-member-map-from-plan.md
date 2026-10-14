@@ -11,7 +11,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/AutoMapper/ForMemberMapFrom/
 ---
 
-# Feature: automapper.for-member-map-from: ForMember(d => d.X, o => o.MapFrom(s => expr)) → X = expr in de ToB-methode
+# Feature: automapper.for-member-map-from: ForMember(d => d.X, o => o.MapFrom(s => expr)) → X = expr in the ToB method
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -19,58 +19,58 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-12 by KingmaDoc |
 
-> Opgesteld uit TAAK-156.
+> Drawn up from TAAK-156.
 
 ## One-sentence summary
 
-automapper.for-member-map-from: een `CreateMap<A, B>().ForMember(d => d.X, o => o.MapFrom(s => expr))` in een `Profile` wordt, net als `automapper.create-map`, een `ToB(this A source)`-extensiemethode met `X = expr`, waarin de lambda-parameter `s` is vervangen door `source`.
+automapper.for-member-map-from: a `CreateMap<A, B>().ForMember(d => d.X, o => o.MapFrom(s => expr))` in a `Profile` becomes, just like `automapper.create-map`, a `ToB(this A source)` extension method with `X = expr`, in which the lambda parameter `s` is replaced by `source`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `.ForMember(d => d.X, o => o.MapFrom(s => expr))` direct op `CreateMap<A, B>()`, ook samen met `Ignore()` en andere MapFrom-schakels in dezelfde keten of hetzelfde profiel.
-- `expr` zonder conversie: type gelijk aan het type van X, of impliciet numeriek/nullable.
-- `expr` die niet kan gooien: ontvangers van `.lid` of `[ ]` zijn `s`, een type, of volgens de nullable-flow niet null.
+- `.ForMember(d => d.X, o => o.MapFrom(s => expr))` directly on `CreateMap<A, B>()`, also together with `Ignore()` and other MapFrom links in the same chain or the same profile.
+- `expr` without conversion: type equal to the type of X, or implicitly numeric/nullable.
+- `expr` that cannot throw: receivers of `.member` or `[ ]` are `s`, a type, or not null according to the nullable flow.
 
 **Out of scope (Manual)**
 
-- `MapFrom` met een resolver-lambda van twee of drie parameters, een stringnaam, een blok-lambda of een generieke `MapFrom<T>`.
-- Expressies die iets uit het profiel gebruiken (`this`, instantievelden, statics van het profiel) of een naam `source` die al iets anders is.
-- Expressies die een mogelijk-null-ontvanger dereferencen, of waar AutoMapper converteert (type verschilt), of een collectie (AutoMapper kopieert).
-- X dat B niet publiek schrijfbaar heeft; X twee keer geconfigureerd.
+- `MapFrom` with a resolver lambda of two or three parameters, a string name, a block lambda or a generic `MapFrom<T>`.
+- Expressions that use something from the profile (`this`, instance fields, statics of the profile) or a name `source` that is already something else.
+- Expressions that dereference a possibly-null receiver, or where AutoMapper converts (the type differs), or a collection (AutoMapper copies).
+- X that B does not have as publicly writable; X configured twice.
 
-## Ontwerp
+## Design
 
-`ForMemberMapFromPattern` erft van `CreateMapPattern` (zoals `ForMemberIgnorePattern`) en deelt `Rewrite`: een profile wordt als geheel vervangen door `[profile, <Profile>Extensions]`, dus Ignore en MapFrom in één profile moeten één rewrite delen. De `Find`-verdeling is exclusief: een profile met een MapFrom-aanroep (welke vorm ook) gaat naar dit pattern, anders met `Ignore()` naar `ForMemberIgnorePattern`, anders naar `CreateMapPattern`. De ledenlijst van de rewrite bevat nu `(naam, waarde)`: `source.X` of de herschreven expressie, in de volgorde van de leden van B.
+`ForMemberMapFromPattern` inherits from `CreateMapPattern` (like `ForMemberIgnorePattern`) and shares `Rewrite`: a profile is replaced as a whole by `[profile, <Profile>Extensions]`, so Ignore and MapFrom in one profile must share one rewrite. The `Find` split is exclusive: a profile with a MapFrom call (of any form) goes to this pattern, otherwise with `Ignore()` to `ForMemberIgnorePattern`, otherwise to `CreateMapPattern`. The member list of the rewrite now holds `(name, value)`: `source.X` or the rewritten expression, in the order of B's members.
 
-AutoMapper voert een `MapFrom`-expressie null-veilig uit (een `NullReferenceException` geeft de standaardwaarde) en converteert typen; een gewone toekenning doet geen van beide. Daarom wordt alleen een expressie verplaatst die niet kan gooien en geen conversie nodig heeft; de nullable-flow van Roslyn (`TypeInfo.Nullability`) bepaalt of een ontvanger niet-null is. In code zonder nullable-context is elke dereferentie dus Manual.
+AutoMapper executes a `MapFrom` expression null-safely (a `NullReferenceException` gives the default value) and converts types; a plain assignment does neither. Therefore only an expression that cannot throw and needs no conversion is moved; Roslyn's nullable flow (`TypeInfo.Nullability`) decides whether a receiver is non-null. In code without a nullable context every dereference is therefore Manual.
 
 ## Requirements
 
-- **REQ-1**: WHEN een `CreateMap<A, B>()` een `ForMember(d => d.X, o => o.MapFrom(s => expr))` heeft THE SYSTEM SHALL de ToB-methode `X = expr` laten toekennen met `s` vervangen door `source` (proofs `simple`, `ignore-and-nullable`, unittest `Rewrite_MapFromWithRenamedParameter_UsesSourceInTheExpression`).
-- **REQ-2**: WHEN een profile Ignore en MapFrom combineert THE SYSTEM SHALL beide in dezelfde ToB-methode verwerken en het profile door precies één pattern laten vinden (proof `ignore-and-nullable`, unittest `Find_ProfileWithOrWithoutOptions_IsClaimedByOneOfThePatterns`).
-- **REQ-3**: IF de expressie een ontvanger dereferenceert die null kan zijn THEN THE SYSTEM SHALL Manual melden (proof `null-deref`, unittest `Rewrite_NullableAnnotatedReceiver_ReportsManual`).
-- **REQ-4**: WHEN een ontvanger volgens de nullable-flow niet null is (non-nullable lid, of eerst op null getest) THE SYSTEM SHALL de expressie verplaatsen (proof `ignore-and-nullable`, unittest `Rewrite_ReceiverCheckedForNull_IsMoved`).
-- **REQ-5**: IF het type van de expressie niet gelijk is aan dat van X (buiten impliciet numeriek of nullable) THEN THE SYSTEM SHALL Manual melden (proof `conversion`).
-- **REQ-6**: IF X een collectie is THEN THE SYSTEM SHALL Manual melden (proof `collection`).
-- **REQ-7**: IF de expressie iets gebruikt dat buiten het profiel niet bestaat (instantieveld, `this`) THEN THE SYSTEM SHALL Manual melden (proof `outside-profile`).
-- **REQ-8**: IF de MapFrom-vorm niet ondersteund is (resolver-lambda, X twee keer, X zonder publieke setter) THEN THE SYSTEM SHALL Manual melden (proof `resolver-form`, unittests `Rewrite_MapFromConfiguredTwice_ReportsManual`, `Rewrite_MapFromOnReadOnlyMember_ReportsManual`).
+- **REQ-1**: WHEN a `CreateMap<A, B>()` has a `ForMember(d => d.X, o => o.MapFrom(s => expr))` THE SYSTEM SHALL have the ToB method assign `X = expr` with `s` replaced by `source` (proofs `simple`, `ignore-and-nullable`, unit test `Rewrite_MapFromWithRenamedParameter_UsesSourceInTheExpression`).
+- **REQ-2**: WHEN a profile combines Ignore and MapFrom THE SYSTEM SHALL process both in the same ToB method and have the profile found by exactly one pattern (proof `ignore-and-nullable`, unit test `Find_ProfileWithOrWithoutOptions_IsClaimedByOneOfThePatterns`).
+- **REQ-3**: IF the expression dereferences a receiver that can be null THEN THE SYSTEM SHALL report Manual (proof `null-deref`, unit test `Rewrite_NullableAnnotatedReceiver_ReportsManual`).
+- **REQ-4**: WHEN a receiver is not null according to the nullable flow (non-nullable member, or tested for null first) THE SYSTEM SHALL move the expression (proof `ignore-and-nullable`, unit test `Rewrite_ReceiverCheckedForNull_IsMoved`).
+- **REQ-5**: IF the type of the expression is not equal to that of X (apart from implicitly numeric or nullable) THEN THE SYSTEM SHALL report Manual (proof `conversion`).
+- **REQ-6**: IF X is a collection THEN THE SYSTEM SHALL report Manual (proof `collection`).
+- **REQ-7**: IF the expression uses something that does not exist outside the profile (instance field, `this`) THEN THE SYSTEM SHALL report Manual (proof `outside-profile`).
+- **REQ-8**: IF the MapFrom form is not supported (resolver lambda, X twice, X without a public setter) THEN THE SYSTEM SHALL report Manual (proof `resolver-form`, unit tests `Rewrite_MapFromConfiguredTwice_ReportsManual`, `Rewrite_MapFromOnReadOnlyMember_ReportsManual`).
 
 ## Assumptions
 
-- `MapFrom(s => expr)` met één parameter is de `Expression<Func<TSource, TMember>>`-overload van AutoMapper; expression trees staan geen `?.` toe, dus die komt niet voor.
-- Een niet-nullable referentie is volgens het nullable-contract niet null; wie dat contract niet bewaakt, krijgt hier een te optimistische herschrijving.
+- `MapFrom(s => expr)` with one parameter is AutoMapper's `Expression<Func<TSource, TMember>>` overload; expression trees do not allow `?.`, so it does not occur.
+- A non-nullable reference is not null according to the nullable contract; whoever does not guard that contract gets a too optimistic rewrite here.
 
 ## Risks
 
-- Corpuscode zonder nullable-context krijgt vaker Manual (elke dereferentie van een referentietype), bewust: een stille gedragswijziging is erger.
-- Een lege bron (`s` zelf null) geeft in `ToB` een NullReferenceException; vgl. rij 1.
+- Corpus code without a nullable context gets Manual more often (every dereference of a reference type), deliberately: a silent behaviour change is worse.
+- An empty source (`s` itself null) gives a NullReferenceException in `ToB`; cf. row 1.
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [automapper-for-member-map-from-modellen.md](automapper-for-member-map-from-modellen.md).
+Class diagram, sequence and decision tree: [automapper-for-member-map-from-modellen.md](automapper-for-member-map-from-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

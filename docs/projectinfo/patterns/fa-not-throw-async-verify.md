@@ -10,15 +10,15 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotThrowAsyncPattern.cs`; registratie in `FluentAssertionsFix.cs` (`s_assertions`, ook als schakel van `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/NotThrowAsync/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotThrowAsyncPattern.cs`; registration in `FluentAssertionsFix.cs` (`s_assertions`, also as a link of `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/NotThrowAsync/`, run by `ProofTests`.
 
-| REQ | Oordeel | Bewijs |
+| REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Gehaald | `simple, lambda, reference-result` |
-| REQ-2 | Gehaald | `because` |
-| REQ-3 | Gehaald | `configure-await` |
-| REQ-4 | Gehaald | `generic, not-awaited, result-used, value-result, awaiting, assertion-scope` |
-| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` (`string.Format(CultureInfo.InvariantCulture, ...)`) |
+| REQ-1 | Met | `simple, lambda, reference-result` |
+| REQ-2 | Met | `because` |
+| REQ-3 | Met | `configure-await` |
+| REQ-4 | Met | `generic, not-awaited, result-used, value-result, awaiting, assertion-scope` |
+| Extension TAAK-097 | Met | `because-args.after.cs` (`string.Format(CultureInfo.InvariantCulture, ...)`) |
 
 ## Deviations
 
@@ -36,9 +36,9 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotThrowAsyncPattern.c
 
 ## Corpus (TAAK-170, TAAK-173)
 
-- Polly 7.2.4 (`b1a5a17`, 2026-10-13, harnas zonder kloon-wijzigingen): Fixed 4449 → 5255, Manual 964 → 171, build 0 fouten, tests 5685/5685 → 5685/5685, 0 regressies.
+- Polly 7.2.4 (`b1a5a17`, 2026-10-13, harness without clone changes): Fixed 4449 → 5255, Manual 964 → 171, build 0 errors, tests 5685/5685 → 5685/5685, 0 regressions.
 
-## Zie ook
+## See also
 
 - [fa-not-throw-async-plan.md](fa-not-throw-async-plan.md)
 - [fa-not-throw-async-modellen.md](fa-not-throw-async-modellen.md)

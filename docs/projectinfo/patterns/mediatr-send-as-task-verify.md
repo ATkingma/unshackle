@@ -10,42 +10,42 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/SendAsTaskPattern.cs`, registratie in `MediatRFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/MediatR/SendAsTask/`.
+Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/SendAsTaskPattern.cs`, registration in `MediatRFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/MediatR/SendAsTask/`.
 
-| REQ   | Oordeel | Bewijs                                          |
+| REQ   | Verdict | Evidence                                        |
 | ----- | ------- | ----------------------------------------------- |
-| REQ-1 | Gehaald | `task-uses`                                     |
-| REQ-2 | Gehaald | `task-uses` (await en `.ConfigureAwait(false)`) |
-| REQ-3 | Gehaald | `send-object`                                   |
-| REQ-4 | Gehaald | `Rewrite` geeft `Fixed`, behalve bij `?.` (uitbreiding) en onbekende NSubstitute-setupwaarden (REQ-5) |
-| REQ-5 | Gehaald | `nsubstitute-returns` (after compileert tegen Mediator + NSubstitute), `nsubstitute-returns-lambda` (Manual), `SendAsTaskPatternTests`; corpus dotnet/eShop ronde 4 |
-| REQ-6 | Gehaald | `nsubstitute-returns` (`Throws`, `Received().Send`), `SendAsTaskPatternTests.Find_NSubstituteThrowsSetupAndReceivedCheck_FindsNothing` |
-| Uitbreiding review B L4 | Gehaald | `null-conditional` |
+| REQ-1 | Met     | `task-uses`                                     |
+| REQ-2 | Met     | `task-uses` (await and `.ConfigureAwait(false)`) |
+| REQ-3 | Met     | `send-object`                                   |
+| REQ-4 | Met     | `Rewrite` returns `Fixed`, except for `?.` (extension) and unknown NSubstitute setup values (REQ-5) |
+| REQ-5 | Met     | `nsubstitute-returns` (after compiles against Mediator + NSubstitute), `nsubstitute-returns-lambda` (Manual), `SendAsTaskPatternTests`; corpus dotnet/eShop round 4 |
+| REQ-6 | Met     | `nsubstitute-returns` (`Throws`, `Received().Send`), `SendAsTaskPatternTests.Find_NSubstituteThrowsSetupAndReceivedCheck_FindsNothing` |
+| Extension review B L4 | Met | `null-conditional` |
 
-Scan op SampleShop: 5 Fixed (`OrderFacade` 2×, `Func<Task> act = () => Sender.Send(...)` 3× in de testprojecten).
+Scan on SampleShop: 5 Fixed (`OrderFacade` 2×, `Func<Task> act = () => Sender.Send(...)` 3× in the test projects).
 
 ## Deviations
 
-Geen.
+None.
 
 ## Validation results
 
 | Check   | Command                                                     | Result                                  |
 | ------- | ----------------------------------------------------------- | --------------------------------------- |
 | Build   | `dotnet build`                                              | passed (0 warnings)                     |
-| Tests   | `dotnet test`                                               | 458/458 groen                           |
-| Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 groen                             |
-| Lint    | _geen_                                                      | _not run_: geen lint-commando ingesteld |
+| Tests   | `dotnet test`                                               | 458/458 green                           |
+| Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 green                             |
+| Lint    | _none_                                                      | _not run_: no lint command configured   |
 
-## Bijgewerkt (review B L4, 2026-10-11)
+## Updated (review B L4, 2026-10-11)
 
 - `_sender?.Send(x)` (MemberBinding) → Manual (proof `null-conditional`).
 
-## Bijgewerkt (TAAK-211, 2026-10-13)
+## Updated (TAAK-211, 2026-10-13)
 
-- NSubstitute-setups: `Returns`-waarden naar `ValueTask`, `Throws*`/`Received()` ongemoeid, rest Manual.
+- NSubstitute setups: `Returns` values to `ValueTask`, `Throws*`/`Received()` untouched, the rest Manual.
 
-## Zie ook
+## See also
 
 - [mediatr-send-as-task-plan.md](mediatr-send-as-task-plan.md)
 - [mediatr-send-as-task-modellen.md](mediatr-send-as-task-modellen.md)

@@ -1,0 +1,1 @@
+rewrite the assertion and its Throw together by hand

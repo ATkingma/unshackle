@@ -1,52 +1,52 @@
-# Modellen: fa.equal-sequence
+# Models: fa.equal-sequence
 
-`x.Should().Equal(y)` wordt `x.ShouldBe(y)`; `Equal(1, 2)` wordt `x.ShouldBe(new T[] { 1, 2 })`; met `because` `x.ShouldBe(y, ignoreOrder: false, because)`. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EqualSequencePattern.cs`.
+`x.Should().Equal(y)` becomes `x.ShouldBe(y)`; `Equal(1, 2)` becomes `x.ShouldBe(new T[] { 1, 2 })`; with `because` `x.ShouldBe(y, ignoreOrder: false, because)`. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EqualSequencePattern.cs`.
 
-**Figure 1.** Klassen rond `EqualSequencePattern`. Weggelaten: `Fixer`, `IFix` en de usings (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes around `EqualSequencePattern`. Left out: `Fixer`, `IFix` and the usings (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-equal-sequence-modellen-1.d2 -->
-![Modellen: fa.equal-sequence](img/fa-equal-sequence-modellen-1.png)
+![Models: fa.equal-sequence](img/fa-equal-sequence-modellen-1.png)
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
 | `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract |
-| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` doet scope, vorm, resultaat en because(-args), dan `RewriteAssertion` |
-| `EqualSequencePattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EqualSequencePattern.cs` | Dit patroon, Id `fa.equal-sequence` |
-| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde controles |
-| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` does scope, shape, result and because(-args), then `RewriteAssertion` |
+| `EqualSequencePattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EqualSequencePattern.cs` | This pattern, Id `fa.equal-sequence` |
+| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Shared checks |
+| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Outcome |
 
-**Figure 2.** Volgorde van `Find` en `Rewrite`.
+**Figure 2.** Sequence of `Find` and `Rewrite`.
 
 <!-- kingmadoc:diagram img/fa-equal-sequence-modellen-2.d2 -->
-![Modellen: fa.equal-sequence](img/fa-equal-sequence-modellen-2.png)
+![Models: fa.equal-sequence](img/fa-equal-sequence-modellen-2.png)
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Place | What happens |
 | --- | --- | --- |
-| Find | `EqualSequencePattern.Find` | `FindInvocations` op de FA-namen |
-| Controles | `FluentAssertionPattern.Rewrite` → `EqualSequencePattern.RewriteBeforeArguments` / `RewriteAssertion` | scope, vorm, resultaat; vóór de argumentsplitsing type, NotEqual, losse params, predicate; dan `TryGetArguments` |
-| Uitkomst | `PatternResult.Fixed` / `Manual` | Shouldly-aanroep of reden |
+| Find | `EqualSequencePattern.Find` | `FindInvocations` on the FA names |
+| Checks | `FluentAssertionPattern.Rewrite` → `EqualSequencePattern.RewriteBeforeArguments` / `RewriteAssertion` | scope, shape, result; before the argument split type, NotEqual, separate params, predicate; then `TryGetArguments` |
+| Outcome | `PatternResult.Fixed` / `Manual` | Shouldly call or reason |
 
-**Figure 3.** Beslisboom van `FluentAssertionPattern.Rewrite` + `EqualSequencePattern`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/EqualSequence/`.
+**Figure 3.** Decision tree of `FluentAssertionPattern.Rewrite` + `EqualSequencePattern`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/EqualSequence/`.
 
 <!-- kingmadoc:diagram img/fa-equal-sequence-modellen-3.d2 -->
-![Modellen: fa.equal-sequence](img/fa-equal-sequence-modellen-3.png)
+![Models: fa.equal-sequence](img/fa-equal-sequence-modellen-3.png)
 
-| Vraag | Bij nee: Manual-reden | Proof |
+| Question | If no: Manual reason | Proof |
 | --- | --- | --- |
-| Buiten een AssertionScope? | Inside an AssertionScope | `assertion-scope` |
-| Vorm x.Should().Equal(..)? | is not in the form x.Should() | `geen proof; .And via fa.and-chain` |
-| Resultaat weggegooid? | is used | `and` |
-| Op Generic/StringCollectionAssertions? | dictionary compares without order | `dictionary` |
-| Equal (niet NotEqual)? | Shouldly has no ShouldNotBe for sequences | `not-equal` |
-| Geen predicate? | with a predicate | `predicate` |
-| Geen benoemde argumenten; because constant formatteerbaar? | named arguments, or becauseArgs whose because is no constant format string | `geen proof` |
-| Fixed (vóór predicate-controle) | `x.ShouldBe(new T[] { a, b })` (losse params) | params |
+| Outside an AssertionScope? | Inside an AssertionScope | `assertion-scope` |
+| Shape x.Should().Equal(..)? | is not in the form x.Should() | `no proof; .And via fa.and-chain` |
+| Result discarded? | is used | `and` |
+| On Generic/StringCollectionAssertions? | dictionary compares without order | `dictionary` |
+| Equal (not NotEqual)? | Shouldly has no ShouldNotBe for sequences | `not-equal` |
+| No predicate? | with a predicate | `predicate` |
+| No named arguments; because constant and formattable? | named arguments, or becauseArgs whose because is no constant format string | `no proof` |
+| Fixed (before the predicate check) | `x.ShouldBe(new T[] { a, b })` (separate params) | params |
 | Fixed | `x.ShouldBe(y[, ignoreOrder: false, because])`; becauseArgs via `string.Format(CultureInfo.InvariantCulture, ...)` | simple, params-array, because, because-args, nullable |
 
-## Zie ook
+## See also
 
 - [fa-equal-sequence-plan.md](fa-equal-sequence-plan.md) - plan
-- [fa-equal-sequence-verify.md](fa-equal-sequence-verify.md) - verificatie
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EqualSequencePattern.cs` - het patroon
-- `src/Unshackle.Tests/Proofs/FluentAssertions/EqualSequence/` - de proofs
+- [fa-equal-sequence-verify.md](fa-equal-sequence-verify.md) - verification
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EqualSequencePattern.cs` - the pattern
+- `src/Unshackle.Tests/Proofs/FluentAssertions/EqualSequence/` - the proofs
 - [../README.md](../README.md)

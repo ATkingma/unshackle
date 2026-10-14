@@ -9,46 +9,46 @@ files_expected:
     - src/Unshackle.Tests/Proofs/MediatR/MediatorImplementation/
 ---
 
-# Feature: mediatr.mediator-implementation: eigen no-op `IMediator` → Mediator's interface
+# Feature: mediatr.mediator-implementation: own no-op `IMediator` → Mediator's interface
 
 |               |                         |
 | ------------- | ----------------------- |
 | **Project**   | Unshackle               |
 | **Status**    | Approved                |
-| **Generated** | 2026-10-13 (met de hand) |
+| **Generated** | 2026-10-13 (by hand) |
 
-> Opgesteld uit TAAK-197 (ardalis v9.1.0, `tests/Clean.Architecture.UnitTests/NoOpMediator.cs` brak de build met CS0535/CS0738).
+> Drawn up from TAAK-197 (ardalis v9.1.0, `tests/Clean.Architecture.UnitTests/NoOpMediator.cs` broke the build with CS0535/CS0738).
 
 ## One-sentence summary
 
-Een eigen klasse die MediatR's `IMediator`, `ISender` of `IPublisher` implementeert en alleen no-ops bevat, krijgt de members van Mediator 3.0.2
-(`ValueTask`, `Send` voor `IRequest`/`ICommand`/`IQuery`/`object`, vier `CreateStream`-overloads, twee `Publish`), elk weer als no-op.
+An own class that implements MediatR's `IMediator`, `ISender` or `IPublisher` and contains only no-ops gets the members of Mediator 3.0.2
+(`ValueTask`, `Send` for `IRequest`/`ICommand`/`IQuery`/`object`, four `CreateStream` overloads, two `Publish`), each again as a no-op.
 
 ## Scope (in / out)
 
-**In**: klasse met `IMediator`/`ISender`/`IPublisher` van MediatR in de eigen basislijst, waarvan elke implementerende methode in die declaratie staat en alleen
-voltooit: `return Task.CompletedTask;`, `return Task.FromResult(default | default! | null | default(T));`, `await Task.CompletedTask;`, `yield break;`, of leeg.
+**In**: a class with MediatR's `IMediator`/`ISender`/`IPublisher` in its own base list, of which every implementing method is in that declaration and only
+completes: `return Task.CompletedTask;`, `return Task.FromResult(default | default! | null | default(T));`, `await Task.CompletedTask;`, `yield break;`, or empty.
 
-**Out (Manual)**: een member met logica, een expliciete interface-implementatie, een member uit een basisklasse of ander `partial`-deel.
+**Out (Manual)**: a member with logic, an explicit interface implementation, a member from a base class or another `partial` part.
 
 ## Requirements
 
-- **REQ-1**: WHEN een no-op `IMediator` gevonden wordt THE SYSTEM SHALL de oude members vervangen door Mediator's `ISender`- en `IPublisher`-members als no-op (`=> default`, lege async iterator) op de plek van de eerste oude member; andere members blijven (proof `no-op`).
-- **REQ-2**: WHEN alleen `IPublisher` (of `ISender`) geïmplementeerd wordt THE SYSTEM SHALL alleen die members schrijven en alleen de nodige usings toevoegen (proof `publisher`).
-- **REQ-3**: THE SYSTEM SHALL `object?` schrijven waar nullable annotations aan staan, anders `object`.
-- **REQ-4**: IF een member meer doet dan voltooien THEN Manual (proof `with-logic`).
+- **REQ-1**: WHEN a no-op `IMediator` is found THE SYSTEM SHALL replace the old members with Mediator's `ISender` and `IPublisher` members as no-ops (`=> default`, an empty async iterator) at the place of the first old member; other members stay (proof `no-op`).
+- **REQ-2**: WHEN only `IPublisher` (or `ISender`) is implemented THE SYSTEM SHALL write only those members and add only the needed usings (proof `publisher`).
+- **REQ-3**: THE SYSTEM SHALL write `object?` where nullable annotations are on, otherwise `object`.
+- **REQ-4**: IF a member does more than complete THEN Manual (proof `with-logic`).
 
 ## Assumptions
 
-- Mediator 3.0.2: `IMediator : ISender, IPublisher` zonder eigen members; namen en defaults van parameters gemeten met reflectie (TAAK-197).
-- `default` voor `ValueTask<TResponse>` is een voltooide taak met `default(TResponse)`, gelijk aan `Task.FromResult<TResponse>(default!)`.
-- MediatR's `Send<TRequest>(TRequest) where TRequest : IRequest` heeft geen tegenhanger: Mediator's void-request is `IRequest<Unit>`.
+- Mediator 3.0.2: `IMediator : ISender, IPublisher` without members of its own; names and defaults of parameters measured with reflection (TAAK-197).
+- `default` for `ValueTask<TResponse>` is a completed task with `default(TResponse)`, equal to `Task.FromResult<TResponse>(default!)`.
+- MediatR's `Send<TRequest>(TRequest) where TRequest : IRequest` has no counterpart: Mediator's void request is `IRequest<Unit>`.
 
-## Modellen
+## Models
 
 [mediatr-mediator-implementation-modellen.md](mediatr-mediator-implementation-modellen.md).
 
-## Zie ook
+## See also
 
 - [mediatr-mediator-implementation-verify.md](mediatr-mediator-implementation-verify.md)
 - `claude/tasks/archief/TAAK-197-mediatr-eigen-imediator-implementatie.md`

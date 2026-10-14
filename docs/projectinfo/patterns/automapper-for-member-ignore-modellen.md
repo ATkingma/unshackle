@@ -1,53 +1,53 @@
-# Modellen: automapper.for-member-ignore
+# Models: automapper.for-member-ignore
 
-Feiten uit `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberIgnorePattern.cs` en `CreateMapPattern.cs`.
+Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberIgnorePattern.cs` and `CreateMapPattern.cs`.
 
-> De figuren zijn als D2-bron aangemaakt in `img/`; `kingmadoc`/`d2` waren in deze omgeving niet beschikbaar, dus de PNG/SVG volgen bij de eerstvolgende `kingmadoc render`.
+> The figures were created as D2 sources in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
 
-## Figuur 1: klassen
+## Figure 1: classes
 
-**Figure 1.** `ForMemberIgnorePattern` als subklasse van `CreateMapPattern`.
+**Figure 1.** `ForMemberIgnorePattern` as a subclass of `CreateMapPattern`.
 
 <!-- kingmadoc:diagram img/automapper-for-member-ignore-modellen-1.d2 -->
-![Figuur 1: klassen](img/automapper-for-member-ignore-modellen-1.png)
+![Figure 1: classes](img/automapper-for-member-ignore-modellen-1.png)
 
-| Element                  | Rol                                                                                           |
+| Element                  | Role                                                                                          |
 | ------------------------ | --------------------------------------------------------------------------------------------- |
-| `ForMemberIgnorePattern` | Id `automapper.for-member-ignore`; `Find` claimt profiles met `ForMember(.., o => o.Ignore())` |
-| `CreateMapPattern`       | Basis: `Rewrite` (gedeeld), `Find` voor profiles zonder Ignore en voor `Map`/`ProjectTo`      |
-| `TryParseMap`            | Pelt `.ForMember(...)`-schakels van `CreateMap<A, B>()`; verzamelt de genegeerde ledennamen   |
-| `IgnoredMember`          | Herkent `d => d.X` + `o => o.Ignore()`, geeft `X`, anders null                                |
-| `Problem`                | Slaat genegeerde leden over, controleert de rest                                              |
+| `ForMemberIgnorePattern` | Id `automapper.for-member-ignore`; `Find` claims profiles with `ForMember(.., o => o.Ignore())` |
+| `CreateMapPattern`       | Base: `Rewrite` (shared), `Find` for profiles without Ignore and for `Map`/`ProjectTo`        |
+| `TryParseMap`            | Peels `.ForMember(...)` links off `CreateMap<A, B>()`; collects the ignored member names      |
+| `IgnoredMember`          | Recognises `d => d.X` + `o => o.Ignore()`, returns `X`, otherwise null                        |
+| `Problem`                | Skips ignored members, checks the rest                                                        |
 
-## Figuur 2: sequence
+## Figure 2: sequence
 
-**Figure 2.** Van `Fixer` via `Find` en `Rewrite` naar `Fixed` of `Manual`.
+**Figure 2.** From `Fixer` via `Find` and `Rewrite` to `Fixed` or `Manual`.
 
 <!-- kingmadoc:diagram img/automapper-for-member-ignore-modellen-2.d2 -->
-![Figuur 2: sequence](img/automapper-for-member-ignore-modellen-2.png)
+![Figure 2: sequence](img/automapper-for-member-ignore-modellen-2.png)
 
-| Stap      | Methode in de code                                 | Wat gebeurt er                                                  |
+| Step      | Method in the code                                 | What happens                                                    |
 | --------- | -------------------------------------------------- | --------------------------------------------------------------- |
-| Vinden    | `Find`, `IsProfileWithMaps`, `UsesForMemberIgnore` | Profiles met minstens één `ForMember(.., o => o.Ignore())`      |
-| Parsen    | `TryParseMap`, `IgnoredMember`, `GetSymbolInfo`    | `CreateMap<A, B>()` plus de genegeerde ledennamen               |
-| Toetsen   | `Problem`, `Effective`, `GetSymbolsWithName`       | Genegeerd lid bestaat; overige leden, typen, toegankelijkheid   |
-| Schrijven | `Extensions`, `ReplaceNode`                        | Constructor leeg, `<Profile>Extensions` zonder genegeerde leden |
+| Find      | `Find`, `IsProfileWithMaps`, `UsesForMemberIgnore` | Profiles with at least one `ForMember(.., o => o.Ignore())`     |
+| Parse     | `TryParseMap`, `IgnoredMember`, `GetSymbolInfo`    | `CreateMap<A, B>()` plus the ignored member names               |
+| Check     | `Problem`, `Effective`, `GetSymbolsWithName`       | The ignored member exists; other members, types, accessibility  |
+| Write     | `Extensions`, `ReplaceNode`                        | Constructor empty, `<Profile>Extensions` without ignored members |
 
-## Figuur 3: beslisboom
+## Figure 3: decision tree
 
-**Figure 3.** Vragen van `Rewrite` die bij Ignore horen (de overige staan in het create-map-model).
+**Figure 3.** Questions of `Rewrite` that belong to Ignore (the others are in the create-map model).
 
 <!-- kingmadoc:diagram img/automapper-for-member-ignore-modellen-3.d2 -->
-![Figuur 3: beslisboom](img/automapper-for-member-ignore-modellen-3.png)
+![Figure 3: decision tree](img/automapper-for-member-ignore-modellen-3.png)
 
-| Blad                                        | Voorwaarde                                                  | Bewijs                                   |
+| Leaf                                        | Condition                                                   | Evidence                                 |
 | ------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------- |
-| Manual "not a CreateMap without options"    | `MapFrom`, stringnaam, geneste lid of `ReverseMap` in keten | `string-name`, `reverse-map` |
-| Manual "does not have as a public property" | genegeerd lid bestaat niet publiek op B                     | unittest                                 |
-| Manual "no member with the same name"       | niet-genegeerd lid zonder bronlid                           | `unmatched`                              |
-| Fixed (lid weggelaten)                      | genegeerd lid, met of zonder bronlid                        | `simple`, `mixed`, unittest              |
+| Manual "not a CreateMap without options"    | `MapFrom`, string name, nested member or `ReverseMap` in the chain | `string-name`, `reverse-map`      |
+| Manual "does not have as a public property" | the ignored member does not exist publicly on B             | unit test                                |
+| Manual "no member with the same name"       | a non-ignored member without a source member                | `unmatched`                              |
+| Fixed (member left out)                     | an ignored member, with or without a source member          | `simple`, `mixed`, unit test             |
 
-## Zie ook
+## See also
 
 - [automapper-for-member-ignore-plan.md](automapper-for-member-ignore-plan.md)
 - [automapper-for-member-ignore-verify.md](automapper-for-member-ignore-verify.md)

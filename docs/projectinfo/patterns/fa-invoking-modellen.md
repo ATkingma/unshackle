@@ -1,49 +1,49 @@
-# Modellen: fa.invoking
+# Models: fa.invoking
 
-`x.Invoking(s => s.M()).Should().Throw<T>()` wordt `Should.Throw<T>(() => x.M())`; ook `Awaiting`/`ThrowAsync`, `ThrowExactly(Async)` en `NotThrow`. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs`, `InvokingPattern.cs`, `ThrowPattern.cs`, `ThrowAsyncPattern.cs`, `NotThrowPattern.cs` en `ThrowMessage.cs`.
+`x.Invoking(s => s.M()).Should().Throw<T>()` becomes `Should.Throw<T>(() => x.M())`; also `Awaiting`/`ThrowAsync`, `ThrowExactly(Async)` and `NotThrow`. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs`, `InvokingPattern.cs`, `ThrowPattern.cs`, `ThrowAsyncPattern.cs`, `NotThrowPattern.cs` and `ThrowMessage.cs`.
 
-**Figure 1.** Klassen rond `InvokingPattern`. Weggelaten: `Fixer`, `IFix` en de usings (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes around `InvokingPattern`. Omitted: `Fixer`, `IFix` and the usings (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-invoking-modellen-1.d2 -->
-![Modellen: fa.invoking](img/fa-invoking-modellen-1.png)
+![Models: fa.invoking](img/fa-invoking-modellen-1.png)
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
-| `InvokingPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` | Dit patroon, Id `fa.invoking`: claimt de nodes |
-| `ThrowSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowSyntax.cs` | `FindThrow`/`FindThrowAsync`/`FindNotThrow` met filter `IsInvoking`; `Rewrite` kiest het herschrijvende patroon; `TryGetAction` maakt `() => ...` |
-| `ThrowPattern`, `ThrowAsyncPattern`, `NotThrowPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/` | Herschrijven (ook ThrowExactly en Invoking) |
-| `ThrowMessage` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowMessage.cs` | `OfType`, message-check, AggregateException-heuristiek |
+| `InvokingPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` | This pattern, Id `fa.invoking`: claims the nodes |
+| `ThrowSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowSyntax.cs` | `FindThrow`/`FindThrowAsync`/`FindNotThrow` with filter `IsInvoking`; `Rewrite` picks the rewriting pattern; `TryGetAction` builds `() => ...` |
+| `ThrowPattern`, `ThrowAsyncPattern`, `NotThrowPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/` | Rewrite (also ThrowExactly and Invoking) |
+| `ThrowMessage` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowMessage.cs` | `OfType`, message check, AggregateException heuristic |
 
-**Figure 2.** Volgorde van `Find` en `Rewrite`.
+**Figure 2.** Order of `Find` and `Rewrite`.
 
 <!-- kingmadoc:diagram img/fa-invoking-modellen-2.d2 -->
-![Modellen: fa.invoking](img/fa-invoking-modellen-2.png)
+![Models: fa.invoking](img/fa-invoking-modellen-2.png)
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Location | What happens |
 | --- | --- | --- |
-| Find | `InvokingPattern.Find` | `ThrowSyntax.FindThrow`/`FindThrowAsync`/`FindNotThrow` met filter `ThrowSyntax.IsInvoking` |
-| Rewrite | `InvokingPattern.Rewrite` → `ThrowSyntax.Rewrite` | Kiest Throw/ThrowAsync/NotThrow op de naam van de assertion |
-| Uitkomst | `PatternResult.Fixed` / `Manual` | Shouldly-aanroep of reden |
+| Find | `InvokingPattern.Find` | `ThrowSyntax.FindThrow`/`FindThrowAsync`/`FindNotThrow` with filter `ThrowSyntax.IsInvoking` |
+| Rewrite | `InvokingPattern.Rewrite` → `ThrowSyntax.Rewrite` | Picks Throw/ThrowAsync/NotThrow by the name of the assertion |
+| Outcome | `PatternResult.Fixed` / `Manual` | Shouldly call or reason |
 
-**Figure 3.** Beslisboom; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/Invoking/`.
+**Figure 3.** Decision tree; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/Invoking/`.
 
 <!-- kingmadoc:diagram img/fa-invoking-modellen-3.d2 -->
-![Modellen: fa.invoking](img/fa-invoking-modellen-3.png)
+![Models: fa.invoking](img/fa-invoking-modellen-3.png)
 
-| Vraag | Bij nee: Manual-reden | Proof |
+| Question | If no: Manual reason | Proof |
 | --- | --- | --- |
-| Buiten een AssertionScope? | Inside an AssertionScope | `assertion-scope` |
-| Resultaat weggegooid? | is used | `geen proof (sample: .And)` |
+| Outside an AssertionScope? | Inside an AssertionScope | `assertion-scope` |
+| Result discarded? | is used | `no proof (sample: .And)` |
 | Receiver local/parameter/field/this? | may have side effects | `side-effect-receiver` |
 | Receiver reference type? | is a value type | `value-type` |
-| Lambda met één parameter? | one-parameter lambda | `method-group` |
-| Geen Wait/Result in de lambda (alleen Throw<T>)? | AggregateException | `aggregate` |
-| Geen benoemde argumenten; because constant formatteerbaar? | becauseArgs whose because is no constant format string | geen proof (becauseArgs met constante because is Fixed: `because-args`) |
+| Lambda with one parameter? | one-parameter lambda | `method-group` |
+| No Wait/Result in the lambda (only Throw<T>)? | AggregateException | `aggregate` |
+| No named arguments; because constant and formattable? | becauseArgs whose because is no constant format string | no proof (becauseArgs with constant because is Fixed: `because-args`) |
 
-## Zie ook
+## See also
 
 - [fa-invoking-plan.md](fa-invoking-plan.md) - plan
-- [fa-invoking-verify.md](fa-invoking-verify.md) - verificatie
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` - het patroon
-- `src/Unshackle.Tests/Proofs/FluentAssertions/Invoking/` - de proofs
+- [fa-invoking-verify.md](fa-invoking-verify.md) - verification
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` - the pattern
+- `src/Unshackle.Tests/Proofs/FluentAssertions/Invoking/` - the proofs
 - [../README.md](../README.md)

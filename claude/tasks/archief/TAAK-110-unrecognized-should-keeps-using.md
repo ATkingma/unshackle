@@ -1,33 +1,33 @@
-# TAAK-110 — Niet-herkende `.Should()` mag `using FluentAssertions` niet laten verwijderen
+# TAAK-110 — An unrecognized `.Should()` must not get `using FluentAssertions` removed
 
-**Status**: klaar (2026-10-11)
-**Aangemaakt**: 2026-10-11 (corpus-run, `claude/tasks/CORPUSRUN-fa.md` volgt)
+**Status**: done (2026-10-11)
+**Created**: 2026-10-11 (corpus run, `claude/tasks/CORPUSRUN-fa.md` follows)
 
 ## Context
 
-CSharpFunctionalExtensions (corpus-run 2026-10-11): `maybe2.HasValue.Should().BeTrue()` (MaybeTests/Extensions/BindTests.cs r54) krijgt **geen** finding, maar na `fix` staat alleen nog `using Xunit;` in het bestand → 42× CS1061 (`'bool'`/`'TestBase.T'` heeft geen `Should`). 4481 Fixed / 49 Manual; build na fix faalt.
-Vermoeden: subject/aanroep bindt niet (type via lambda-inferentie van `maybe2`), dus `UsedRemovedNamespaces` ziet FluentAssertions niet als gebruikt en de using gaat weg.
+CSharpFunctionalExtensions (corpus run 2026-10-11): `maybe2.HasValue.Should().BeTrue()` (MaybeTests/Extensions/BindTests.cs line 54) gets **no** finding, but after `fix` only `using Xunit;` is left in the file → 42× CS1061 (`'bool'`/`'TestBase.T'` has no `Should`). 4481 Fixed / 49 Manual; build after fix fails.
+Suspicion: the subject/call does not bind (type via lambda inference of `maybe2`), so `UsedRemovedNamespaces` does not see FluentAssertions as used and the using is removed.
 
-## Stappen
+## Steps
 
-1. Minimale proof/unittest: `.Should()` op een member van een local waarvan het type uit een lambda volgt (ook: niet-gebonden `Should`-aanroep, error-type subject).
-2. Root cause in `UsingDirectives`/`Fixer`: een overgebleven `Should()`-aanroep (syntactisch, naam `Should` op member-access) of een niet-gebonden symbool in een bestand met een verwijderde using → using **houden** + Manual-finding ("assertion not recognised; using kept").
-3. Waarom het patroon de regel niet herkende: aparte bevinding (kan een `fa.be-true-false`-gat zijn).
-4. Bewijs: corpus-kopie CSFE opnieuw `fix` + build groen.
+1. Minimal proof/unit test: `.Should()` on a member of a local whose type follows from a lambda (also: unbound `Should` call, error-type subject).
+2. Root cause in `UsingDirectives`/`Fixer`: a remaining `Should()` call (syntactic, name `Should` on member access) or an unbound symbol in a file with a removed using → **keep** the using + Manual finding ("assertion not recognised; using kept").
+3. Why the pattern did not recognize the line: separate finding (may be a `fa.be-true-false` gap).
+4. Evidence: corpus copy of CSFE `fix` again + build green.
 
-## Resultaat
+## Result
 
-- Oorzaak r54 (BindTests.cs): `fa.should-be` herschrijft eerst `ctx.Should().Be(context)` in het lambda-argument van `maybe.Bind(...)`.
-  In het geladen model is Shouldly nog niet gerefereerd, dus `ctx.ShouldBe` bindt niet; daardoor kiest de overload-resolutie van
-  `Bind` (Maybe/Task/ValueTask-varianten) niets en is `maybe2` een fouttype. `fa.be-true-false` ziet `maybe2.HasValue.Should()` dan
-  niet meer. Geen gat in het patroon; de opeenvolgende patronen op het tussenresultaat zijn de oorzaak.
-- Fix: `IFix.RemovedExtensionMethods` (FA: `Should`). `UsingDirectives.UnboundCalls` vindt `x.Should()` die nergens aan bindt;
-  dan blijft de oude using (`UpdateAsync`), blijft het pakket (`ProjectPackages`) en komt er een Manual-finding `usings`
-  ("Run the fix again once the project builds"). Een tweede run herschrijft de rest.
-- Proof: `src/Unshackle.Tests/Proofs/FluentAssertions/_Combined/unbound-should.*` (Maybe/Bind-nabootsing; sinds TAAK-116 `lambda-overload-one-run.*`, in één run Fixed).
-- Corpus: verse kopie CSFE (`scratchpad/v110/work/csfe`): fix 4481 Fixed / 70 Manual (21 `usings`), **build groen** (was 42x CS1061).
+- Cause of line 54 (BindTests.cs): `fa.should-be` first rewrites `ctx.Should().Be(context)` in the lambda argument of `maybe.Bind(...)`.
+  In the loaded model Shouldly is not yet referenced, so `ctx.ShouldBe` does not bind; as a result the overload resolution of
+  `Bind` (Maybe/Task/ValueTask variants) picks nothing and `maybe2` is an error type. `fa.be-true-false` then no longer sees
+  `maybe2.HasValue.Should()`. No gap in the pattern; the successive patterns on the intermediate result are the cause.
+- Fix: `IFix.RemovedExtensionMethods` (FA: `Should`). `UsingDirectives.UnboundCalls` finds `x.Should()` that binds to nothing;
+  then the old using stays (`UpdateAsync`), the package stays (`ProjectPackages`) and a Manual finding `usings` is added
+  ("Run the fix again once the project builds"). A second run rewrites the rest.
+- Proof: `src/Unshackle.Tests/Proofs/FluentAssertions/_Combined/unbound-should.*` (Maybe/Bind imitation; since TAAK-116 `lambda-overload-one-run.*`, Fixed in one run).
+- Corpus: fresh copy of CSFE (`scratchpad/v110/work/csfe`): fix 4481 Fixed / 70 Manual (21 `usings`), **build green** (was 42x CS1061).
 
-## Zie ook
+## See also
 
 - `claude/tasks/ANALYSE-fa-100.md`
 - `docs/projectinfo/architectuur/corpus.md`

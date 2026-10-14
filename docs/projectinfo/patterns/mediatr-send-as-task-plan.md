@@ -9,7 +9,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/MediatR/SendAsTask/
 ---
 
-# Feature: mediatr.send-as-task: Send/Publish als Task → .AsTask()
+# Feature: mediatr.send-as-task: Send/Publish as Task → .AsTask()
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -17,46 +17,46 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-029.
+> Drafted from TAAK-029.
 
 ## One-sentence summary
 
-mediatr.send-as-task: een `Send`/`Publish` van MediatR waarvan het resultaat niet direct ge-`await` wordt, krijgt `.AsTask()`, omdat Mediator `ValueTask` teruggeeft.
+mediatr.send-as-task: a MediatR `Send`/`Publish` whose result is not directly `await`ed gets `.AsTask()`, because Mediator returns `ValueTask`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `ISender`/`IPublisher`/`IMediator` `.Send(...)` en `.Publish(...)`, ook `Send(object)`/`Publish(object)`, als het symbool uit assembly `MediatR` komt.
-- Elk gebruik dat geen directe `await` is: return in een Task-methode, `Func<Task>`-lambda, argument van `Task.WhenAll`, `.ContinueWith`, toekenning.
+- `ISender`/`IPublisher`/`IMediator` `.Send(...)` and `.Publish(...)`, also `Send(object)`/`Publish(object)`, if the symbol comes from assembly `MediatR`.
+- Every use that is not a direct `await`: return in a Task method, `Func<Task>` lambda, argument of `Task.WhenAll`, `.ContinueWith`, assignment.
 
 **Out of scope**
 
-- `await x.Send(...)` en `await x.Send(...).ConfigureAwait(...)`: werken ongewijzigd op `ValueTask`.
-- `CreateStream`: geeft in beide bibliotheken `IAsyncEnumerable<T>`.
+- `await x.Send(...)` and `await x.Send(...).ConfigureAwait(...)`: work unchanged on `ValueTask`.
+- `CreateStream`: returns `IAsyncEnumerable<T>` in both libraries.
 
 ## Requirements
 
-- **REQ-1**: WHEN `Send`/`Publish` als Task gebruikt wordt (return, lambda, `Task.WhenAll`, `.ContinueWith`) THE SYSTEM SHALL `.AsTask()` toevoegen (proof `task-uses`).
-- **REQ-2**: WHEN het resultaat direct ge-`await` wordt, ook met `.ConfigureAwait(...)` THE SYSTEM SHALL het laten staan (proof `task-uses`, laatste regel).
-- **REQ-3**: WHEN `Send(object)` als Task teruggegeven wordt THE SYSTEM SHALL `.AsTask()` toevoegen (proof `send-object`).
-- **REQ-4**: THE SYSTEM SHALL nooit Manual melden: `.AsTask()` behoudt elke Task-semantiek.
-- **Uitbreiding review B L4**: IF `Send`/`Publish` met `?.` aangeroepen wordt (`_sender?.Send(x)`) THEN THE SYSTEM SHALL Manual melden: de null-case moet met de hand (proof `null-conditional`). Dit is de enige uitzondering op REQ-4.
-- **REQ-5** (TAAK-211): WHEN `Send`/`Publish` de ontvanger is van NSubstitute `Returns`/`ReturnsForAnyArgs` THE SYSTEM SHALL geen `.AsTask()` toevoegen (dat configureert niets, NS1000) maar de waarden meeverhuizen: `Task.FromResult(x)` → `ValueTask.FromResult(x)` (ook met typeargument of gekwalificeerd), `Task.CompletedTask` → `ValueTask.CompletedTask` (alleen `Publish`/niet-generiek); elke andere waarde (lambda, variabele, `Task.CompletedTask` op een void-`Send`, dat in Mediator `ValueTask<Unit>` geeft) → Manual (proofs `nsubstitute-returns`, `nsubstitute-returns-lambda`). Tweede uitzondering op REQ-4.
-- **REQ-6** (TAAK-211): WHEN `Send`/`Publish` de ontvanger is van NSubstitute `Throws*`, of als losse statement achter `Received()`/`DidNotReceive()` staat THE SYSTEM SHALL hem ongemoeid laten (proof `nsubstitute-returns`, unittest `Find_NSubstituteThrowsSetupAndReceivedCheck_FindsNothing`). Moq-`Setup`-lambda's vallen buiten scope.
+- **REQ-1**: WHEN `Send`/`Publish` is used as a Task (return, lambda, `Task.WhenAll`, `.ContinueWith`) THE SYSTEM SHALL add `.AsTask()` (proof `task-uses`).
+- **REQ-2**: WHEN the result is directly `await`ed, also with `.ConfigureAwait(...)` THE SYSTEM SHALL leave it in place (proof `task-uses`, last line).
+- **REQ-3**: WHEN `Send(object)` is returned as a Task THE SYSTEM SHALL add `.AsTask()` (proof `send-object`).
+- **REQ-4**: THE SYSTEM SHALL never report Manual: `.AsTask()` preserves all Task semantics.
+- **Extension review B L4**: IF `Send`/`Publish` is called with `?.` (`_sender?.Send(x)`) THEN THE SYSTEM SHALL report Manual: the null case must be handled by hand (proof `null-conditional`). This is the only exception to REQ-4.
+- **REQ-5** (TAAK-211): WHEN `Send`/`Publish` is the receiver of NSubstitute `Returns`/`ReturnsForAnyArgs` THE SYSTEM SHALL not add `.AsTask()` (that configures nothing, NS1000) but move the values along: `Task.FromResult(x)` → `ValueTask.FromResult(x)` (also with type argument or qualified), `Task.CompletedTask` → `ValueTask.CompletedTask` (only `Publish`/non-generic); any other value (lambda, variable, `Task.CompletedTask` on a void `Send`, which yields `ValueTask<Unit>` in Mediator) → Manual (proofs `nsubstitute-returns`, `nsubstitute-returns-lambda`). Second exception to REQ-4.
+- **REQ-6** (TAAK-211): WHEN `Send`/`Publish` is the receiver of NSubstitute `Throws*`, or stands as a standalone statement after `Received()`/`DidNotReceive()` THE SYSTEM SHALL leave it untouched (proof `nsubstitute-returns`, unit test `Find_NSubstituteThrowsSetupAndReceivedCheck_FindsNothing`). Moq `Setup` lambdas are out of scope.
 
 ## Assumptions
 
-- Mediator 3.0.2 `ISender.Send` geeft `ValueTask<T>` (ook `Send(object)` → `ValueTask<object?>`), `IPublisher.Publish` geeft `ValueTask`. Gecontroleerd in `Mediator.xml`.
+- Mediator 3.0.2 `ISender.Send` returns `ValueTask<T>` (also `Send(object)` → `ValueTask<object?>`), `IPublisher.Publish` returns `ValueTask`. Checked in `Mediator.xml`.
 
 ## Risks
 
-- Ook `var t = sender.Send(...)` krijgt `.AsTask()` (kleine allocatie); dat is veilig, want `t` blijft een Task.
+- `var t = sender.Send(...)` also gets `.AsTask()` (small allocation); that is safe, because `t` remains a Task.
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [mediatr-send-as-task-modellen.md](mediatr-send-as-task-modellen.md).
+Class diagram, sequence and decision tree: [mediatr-send-as-task-modellen.md](mediatr-send-as-task-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

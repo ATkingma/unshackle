@@ -1,31 +1,31 @@
-# TAAK-117 — MediatR: ongebruikte assembly-parameter na AddMediatR → AddMediator (IDE0060)
+# TAAK-117 — MediatR: unused assembly parameter after AddMediatR → AddMediator (IDE0060)
 
-**Status**: klaar (2026-10-11)
-**Aangemaakt**: 2026-10-11
-**Gevonden in**: `claude/tasks/archief/TAAK-115-usings-stijl-en-overbodig.md` (evo1)
+**Status**: done (2026-10-11)
+**Created**: 2026-10-11
+**Found in**: `claude/tasks/archief/TAAK-115-usings-stijl-en-overbodig.md` (evo1)
 
-## Probleem
+## Problem
 
-`mediatr.add-mediatr` laat `cfg.RegisterServicesFromAssembly(assembly)` weg. Ging de parameter `assembly` alleen
-daarheen, dan meldt IDE0060 "unused parameter"; met `TreatWarningsAsErrors` + `EnforceCodeStyleInBuild` breekt de build.
+`mediatr.add-mediatr` drops `cfg.RegisterServicesFromAssembly(assembly)`. If the parameter `assembly` only went
+there, IDE0060 reports "unused parameter"; with `TreatWarningsAsErrors` + `EnforceCodeStyleInBuild` the build breaks.
 
-## Afweging
+## Trade-off
 
-- `_ = assembly;` toevoegen: het pattern herschrijft een expressie, geen statement; een extra statement in de
-  methode is ingrijpender en lelijk. In de lambda zetten kan de Mediator-generator (leest de lambda uit source) storen.
-- Parameter verwijderen: wijzigt de signatuur en alle aanroepers (andere bestanden, mogelijk publieke API).
-- Manual: gooit een verder correcte migratie weg.
-- **Gekozen**: `Fixed` met een waarschuwing in het rapport die de parameter noemt en adviseert hem (en het argument
-  bij de aanroepers) te verwijderen. De code compileert gewoon; alleen projecten die IDE0060 als fout afdwingen
-  moeten die ene parameter met de hand weghalen, en het rapport zegt welke.
+- Adding `_ = assembly;`: the pattern rewrites an expression, not a statement; an extra statement in the
+  method is more invasive and ugly. Putting it in the lambda may disturb the Mediator generator (which reads the lambda from source).
+- Removing the parameter: changes the signature and all callers (other files, possibly public API).
+- Manual: throws away an otherwise correct migration.
+- **Chosen**: `Fixed` with a warning in the report that names the parameter and advises removing it (and the argument
+  at the callers). The code compiles fine; only projects that enforce IDE0060 as an error
+  have to remove that one parameter by hand, and the report says which.
 
-## Stappen
+## Steps
 
-- [x] Test eerst: `src/Unshackle.Tests/Core/AddMediatRPatternTests.cs` (warning bij alleen-doorgegeven parameter, geen bij ander gebruik)
+- [x] Test first: `src/Unshackle.Tests/Core/AddMediatRPatternTests.cs` (warning for a parameter that is only passed on, none for other use)
 - [x] `AddMediatRPattern.UnusedParameters`
-- [x] Proof: `Proofs/MediatR/AddMediatR/edge-assemblies` (parameter blijft, after compileert)
+- [x] Proof: `Proofs/MediatR/AddMediatR/edge-assemblies` (parameter stays, after compiles)
 
-## Zie ook
+## See also
 
 - `docs/projectinfo/patterns/mediatr-add-mediatr-verify.md`
 - `claude/tasks/archief/TAAK-115-usings-stijl-en-overbodig.md`

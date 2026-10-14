@@ -1,26 +1,26 @@
-# TAAK-184 — MediatR: request-processor die een andere Task teruggeeft (`return Task.Run(...)`)
+# TAAK-184 — MediatR: request processor that returns another Task (`return Task.Run(...)`)
 
-**Status**: ✅ voltooid — 2026-10-12
-**Aangemaakt**: 2026-10-12 (`claude/tasks/CORPUSRUN-mediatr.md`; actie 7 uit de run van 2026-10-11)
-**Doel**: nadirbad VerticalSlice komt voorbij deze Manual (daarna blijft hij terecht Manual op de generieke `DomainEventNotification<T>`).
+**Status**: ✅ Done — 2026-10-12
+**Created**: 2026-10-12 (`claude/tasks/CORPUSRUN-mediatr.md`; action 7 from the run of 2026-10-11)
+**Goal**: nadirbad VerticalSlice gets past this Manual (after that it rightly stays Manual on the generic `DomainEventNotification<T>`).
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- nadir (`feb3a15e7ba03dc12404127e0a1f8f33b214783d`, MediatR 12.4.1): `src/Application/Common/Behaviours/LoggingBehaviour.cs:21 public Task Process(TRequest request, CancellationToken ct)` met `return Task.Run(...)`. `RequestProcessorPattern` eist `Task.CompletedTask` of `async`.
-- Zelfde vorm als TAAK-154 (handlers): `return Expr;` → `return new ValueTask(Expr);` (synchrone exception-timing blijft gelijk).
+- nadir (`feb3a15e7ba03dc12404127e0a1f8f33b214783d`, MediatR 12.4.1): `src/Application/Common/Behaviours/LoggingBehaviour.cs:21 public Task Process(TRequest request, CancellationToken ct)` with `return Task.Run(...)`. `RequestProcessorPattern` requires `Task.CompletedTask` or `async`.
+- Same shape as TAAK-154 (handlers): `return Expr;` → `return new ValueTask(Expr);` (synchronous exception timing stays the same).
 
-## Stappen
+## Steps
 
-1. [x] Proof `Proofs/MediatR/RequestProcessor/` met `return Task.Run(...)` en expression body.
-2. [x] Rewrite in `RequestProcessorPattern.cs` naar `new ValueTask(Expr)`.
-3. [x] (Corpusrun 2026-10-12 op 5f9b366 (`CORPUSRUN-mediatr.md`, sectie Herhaling na TAAK-180..184): bevestigd, enige root-Manual op nadir is de generieke notification; 30/30, 0 regressies) Bewijs: harnas op nadir → enige root-Manual is `mediatr.unsupported` (generieke notification).
+1. [x] Proof `Proofs/MediatR/RequestProcessor/` with `return Task.Run(...)` and an expression body.
+2. [x] Rewrite in `RequestProcessorPattern.cs` to `new ValueTask(Expr)`.
+3. [x] (Corpus run 2026-10-12 on 5f9b366 (`CORPUSRUN-mediatr.md`, section Repetition after TAAK-180..184): confirmed, the only root Manual on nadir is the generic notification; 30/30, 0 regressions) Proof: harness on nadir → the only root Manual is `mediatr.unsupported` (generic notification).
 
-## Resultaat
+## Result
 
-- `MediatRSyntax.WithCompletedValueTask`: elke andere teruggegeven `Task` wordt `new ValueTask(expr)` (alleen gebruikt door `RequestProcessorPattern`); Manual blijft voor niet-`Task`-types (ook `Task<T>`).
-- Proofs: `RequestProcessor/other-return` (nu Fixed, was Manual), `RequestProcessor/task-run`. Patroon-docs (plan REQ-4, verify, modellen) en `proofs.md` bijgewerkt.
+- `MediatRSyntax.WithCompletedValueTask`: any other returned `Task` becomes `new ValueTask(expr)` (only used by `RequestProcessorPattern`); Manual remains for non-`Task` types (including `Task<T>`).
+- Proofs: `RequestProcessor/other-return` (now Fixed, was Manual), `RequestProcessor/task-run`. Pattern docs (plan REQ-4, verify, models) and `proofs.md` updated.
 
-## Zie ook
+## See also
 
 - `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestProcessorPattern.cs`
 - `claude/tasks/archief/TAAK-154-mediatr-handler-expression-body-task.md`

@@ -8,7 +8,7 @@ files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
   - src/Unshackle.Tests/Proofs/FluentAssertions/NotThrow/
 ---
-# Feature: fa.not-throw: act.Should().NotThrow() wordt Should.NotThrow(act)
+# Feature: fa.not-throw: act.Should().NotThrow() becomes Should.NotThrow(act)
 
 | | |
 |---|---|
@@ -16,51 +16,51 @@ files_expected:
 | **Status** | Approved |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-011. Bouwt voort op `fa.throw` (TAAK-008): zelfde subject-regels.
+> Drawn up from TAAK-011. Builds on `fa.throw` (TAAK-008): same subject rules.
 
 ## One-sentence summary
 
-fa.not-throw: `act.Should().NotThrow()` op een `Action` of `Func<T>` wordt `Should.NotThrow(act)`.
+fa.not-throw: `act.Should().NotThrow()` on an `Action` or `Func<T>` becomes `Should.NotThrow(act)`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Losse `NotThrow()` op een parameterloze `Action` of `Func<T>` (ook waardetypen), met optionele `because` zonder `becauseArgs`.
-- `Manual(reden)` voor `NotThrow<T>`, `NotThrowAfter`, gebruikt resultaat, `Invoking(...)`, `becauseArgs`.
+- Standalone `NotThrow()` on a parameterless `Action` or `Func<T>` (also value types), with an optional `because` without `becauseArgs`.
+- `Manual(reason)` for `NotThrow<T>`, `NotThrowAfter`, a used result, `Invoking(...)`, `becauseArgs`.
 
 **Out of scope**
 
-- `NotThrowAsync`/`NotThrowAfterAsync` (async, hoort bij de async-patronen).
-- Gebruik van `.Which` (de waarde van `Func<T>`): Shouldly geeft die terug, maar de vorm verschilt; blijft Manual.
+- `NotThrowAsync`/`NotThrowAfterAsync` (async, belongs to the async patterns).
+- Use of `.Which` (the value of `Func<T>`): Shouldly returns it, but the shape differs; stays Manual.
 
 ## Requirements
 
-- **REQ-1**: WHEN `act.Should().NotThrow()` als statement op een `Action` staat THE SYSTEM SHALL het vervangen door `Should.NotThrow(act)` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/NotThrow/simple.*.cs`).
-- **REQ-2**: WHEN het subject een `Func<T>` met T een referentietype is THE SYSTEM SHALL `Should.NotThrow(func)` geven (proof `.../NotThrow/func.*.cs`).
-- **REQ-3**: WHEN het subject een `Func<T>` met T een waardetype is THE SYSTEM SHALL `Should.NotThrow(func)` geven, want `NotThrow<T>(Func<T>)` is generiek (proof `.../NotThrow/value-func.*.cs`).
-- **REQ-4**: WHEN een `because` zonder `becauseArgs` staat THE SYSTEM SHALL die als tweede argument (`customMessage`) overnemen (proof `.../NotThrow/because.*.cs`).
-- **REQ-5**: IF `becauseArgs` worden gebruikt THEN THE SYSTEM SHALL Manual geven (proof `because-args.*`).
-- **REQ-6**: IF `NotThrow<T>()` of `NotThrowAfter(...)` wordt gebruikt THEN THE SYSTEM SHALL Manual geven, omdat Shouldly geen equivalent heeft (proofs `generic.*`, `after.*`).
-- **REQ-7**: IF het resultaat wordt gebruikt of geketend (`.Which`, `.And`, variabele) THEN THE SYSTEM SHALL Manual geven (proofs `value-used.*`, `result-used.*`).
-- **REQ-8**: IF het subject met `Invoking(...)` is gebouwd THEN THE SYSTEM SHALL Manual geven (proof `invoking.*`).
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `Should.NotThrow(act, string.Format(CultureInfo.InvariantCulture, because, args))` geven (proof `because-args.*`, nu `.after.cs`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt REQ-5.
-- **Uitbreiding Invoking**: `x.Invoking(s => ...)`-subjects worden niet door `Find` van dit patroon gevonden maar door `fa.invoking` (`InvokingPattern`), dat `NotThrowPattern.Rewrite` aanroept: met stabiele referentie-receiver en een lambda wordt het `Should.NotThrow(() => ...)` (proof `Invoking/not-throw.*`); anders Manual (`Invoking/side-effect-receiver`, `value-type`, `method-group`). Een ander met FluentAssertions gebouwd subject (bv. `FluentActions.Invoking`) blijft Manual. Vervangt REQ-8; er is geen `NotThrow/invoking.*`-proof.
-- **Uitbreiding TAAK-100**: IF de assertie in een `AssertionScope` staat die niet door `fa.assertion-scope` wordt omgezet THEN THE SYSTEM SHALL Manual "Inside an AssertionScope" geven (geen eigen proof; `Invoking/assertion-scope.*` toont dezelfde controle voor Throw).
+- **REQ-1**: WHEN `act.Should().NotThrow()` is a statement on an `Action` THE SYSTEM SHALL replace it with `Should.NotThrow(act)` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/NotThrow/simple.*.cs`).
+- **REQ-2**: WHEN the subject is a `Func<T>` with T a reference type THE SYSTEM SHALL give `Should.NotThrow(func)` (proof `.../NotThrow/func.*.cs`).
+- **REQ-3**: WHEN the subject is a `Func<T>` with T a value type THE SYSTEM SHALL give `Should.NotThrow(func)`, because `NotThrow<T>(Func<T>)` is generic (proof `.../NotThrow/value-func.*.cs`).
+- **REQ-4**: WHEN there is a `because` without `becauseArgs` THE SYSTEM SHALL take it over as the second argument (`customMessage`) (proof `.../NotThrow/because.*.cs`).
+- **REQ-5**: IF `becauseArgs` are used THEN THE SYSTEM SHALL give Manual (proof `because-args.*`).
+- **REQ-6**: IF `NotThrow<T>()` or `NotThrowAfter(...)` is used THEN THE SYSTEM SHALL give Manual, because Shouldly has no equivalent (proofs `generic.*`, `after.*`).
+- **REQ-7**: IF the result is used or chained (`.Which`, `.And`, variable) THEN THE SYSTEM SHALL give Manual (proofs `value-used.*`, `result-used.*`).
+- **REQ-8**: IF the subject is built with `Invoking(...)` THEN THE SYSTEM SHALL give Manual (proof `invoking.*`).
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL give `Should.NotThrow(act, string.Format(CultureInfo.InvariantCulture, because, args))` (proof `because-args.*`, now `.after.cs`); named arguments or a non-constant `because` stay Manual. Replaces REQ-5.
+- **Extension Invoking**: `x.Invoking(s => ...)` subjects are not found by this pattern's `Find` but by `fa.invoking` (`InvokingPattern`), which calls `NotThrowPattern.Rewrite`: with a stable reference receiver and a lambda it becomes `Should.NotThrow(() => ...)` (proof `Invoking/not-throw.*`); otherwise Manual (`Invoking/side-effect-receiver`, `value-type`, `method-group`). Another subject built with FluentAssertions (e.g. `FluentActions.Invoking`) stays Manual. Replaces REQ-8; there is no `NotThrow/invoking.*` proof.
+- **Extension TAAK-100**: IF the assertion is inside an `AssertionScope` that is not converted by `fa.assertion-scope` THEN THE SYSTEM SHALL give Manual "Inside an AssertionScope" (no own proof; `Invoking/assertion-scope.*` shows the same check for Throw).
 
 ## Assumptions
 
-- Shouldly 4.3.0 heeft `Should.NotThrow(Action[, string])` en `Should.NotThrow<T>(Func<T>[, string])`.
-- `Func<Task>.Should()` heeft in FA 7.2.2 geen synchrone `NotThrow` (compileerfout), dus daar hoeft geen guard voor.
+- Shouldly 4.3.0 has `Should.NotThrow(Action[, string])` and `Should.NotThrow<T>(Func<T>[, string])`.
+- `Func<Task>.Should()` has no synchronous `NotThrow` in FA 7.2.2 (compile error), so no guard is needed for it.
 
 ## Risks
 
-- Foutmelding krijgt "Additional Info:" in plaats van FA's voorvoegsel: gedocumenteerd verschil.
-- `NotThrowAsync` blijft onaangeroerd.
+- The error message gets "Additional Info:" instead of FA's prefix: a documented difference.
+- `NotThrowAsync` stays untouched.
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-not-throw-modellen.md](fa-not-throw-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-not-throw-modellen.md](fa-not-throw-modellen.md).
 
 ## Open questions
 
@@ -70,7 +70,6 @@ Klassendiagram, sequencediagram en beslisboom: [fa-not-throw-modellen.md](fa-not
 - [ ] Which existing modules will change? (detected modules: `samples`, `src/Unshackle.Core`, `src/Unshackle.Interface`, `src/Unshackle.Tests`)
 - [ ] How will you know it works? List the acceptance criteria.
 - [ ] _TODO: anything else that must be decided before implementation._
-
 ## Appendix: codebase context _(inferred)_
 
 - **Tech stack:** C#

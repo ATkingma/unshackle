@@ -1,70 +1,75 @@
-# TAAK-167 — Niet-UTF-8-bestand breekt de hele fix af
+# TAAK-167 — A non-UTF-8 file breaks off the whole fix
 
-**Status**: ✅ voltooid — 2026-10-12
-**Aangemaakt**: 2026-10-12 (corpus-run, `claude/tasks/CORPUSRUN-fa.md`)
-**Doel**: één Latin-1-bestand levert een Manual op voor dat bestand, en de rest van de solution wordt wel gemigreerd.
+**Status**: ✅ completed — 2026-10-12 (Linux follow-up 2026-10-14, `91f85de`)
+**Created**: 2026-10-12 (corpus run, `claude/tasks/CORPUSRUN-fa.md`)
+**Goal**: one Latin-1 file yields a Manual for that file, and the rest of the solution is migrated.
 
-## Context voor de volgende agent
+## Context for the next agent
 
 - EventFlow `v0.83.4713` (`e544b76`): `Source/EventFlow.EntityFramework.Tests/MsSql/EfMsSqlReadStoreIncludeTests.cs` is ISO-8859-1.
-- `fix` meldde 483 Fixed / 59 Manual en eindigde daarna met `Unhandled exception: InvalidDataException: … is not UTF-8` (exit 1). Er werd niets geschreven.
-- Na het bestand met de hand naar UTF-8 om te zetten: fix en build groen, 970 tests, 0 regressies.
+- `fix` reported 483 Fixed / 59 Manual and then ended with `Unhandled exception: InvalidDataException: … is not UTF-8` (exit 1). Nothing was written.
+- After converting the file to UTF-8 by hand: fix and build green, 970 tests, 0 regressions.
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-`XmlProjectFileStore.Decode` (`src/Unshackle.DataAccess/Projects/XmlProjectFileStore.cs:396-405`) gooit `InvalidDataException`. `SaveAsync` (:143) controleert alle bestanden vóór het schrijven, en `FixCommand.ExecuteAsync` (:93) vangt de exception niet af.
+`XmlProjectFileStore.Decode` (`src/Unshackle.DataAccess/Projects/XmlProjectFileStore.cs:396-405`) throws `InvalidDataException`. `SaveAsync` (:143) checks all files before writing, and `FixCommand.ExecuteAsync` (:93) does not catch the exception.
 
-### Probleem
+### Problem
 
-Een fout in één bestand blokkeert de hele migratie, en de gebruiker krijgt een stacktrace in plaats van een regel in het rapport.
+An error in one file blocks the whole migration, and the user gets a stack trace instead of a line in the report.
 
-### Nieuwe situatie
+### New situation
 
-Het bestand wordt overgeslagen met een Manual ("not UTF-8; convert it or migrate it by hand"). Het FA-pakket blijft in dat project staan (project-file-cascade); de rest van de solution wordt geschreven.
+The file is skipped with a Manual ("not UTF-8; convert it or migrate it by hand"). The FA package stays in that project (project-file cascade); the rest of the solution is written.
 
-### Verbetering
+### Improvement
 
-De run gaat niet meer stuk, en de gebruiker ziet één regel in het rapport.
+The run no longer breaks, and the user sees one line in the report.
 
-## Aanpak
+## Approach
 
-- De encoding vóór de rewrite controleren (bij het laden in DataAccess) en het resultaat als "bestand niet bewerkbaar" teruggeven aan Core → Manual-finding.
-- Alternatief: terugvallen op Latin-1 en die codering bij het schrijven behouden. Afgewezen: de echte codepagina is niet bekend.
+- Check the encoding before the rewrite (when loading in DataAccess) and return the result to Core as "file not editable" → Manual finding.
+- Alternative: fall back to Latin-1 and keep that encoding when writing. Rejected: the real code page is not known.
 
-## Stappen
+## Steps
 
-- [x] 1. DataAccess-test: een Latin-1-bestand in een solution geeft geen exception, wel een Manual.
-- [x] 2. Implementatie in `XmlProjectFileStore`/`FixCommand`, zonder algemene `catch (Exception)`.
-- [x] 3. Bewijs: het EventFlow-harnas zonder handmatige conversie geeft `ok`.
+- [x] 1. DataAccess test: a Latin-1 file in a solution gives no exception, but a Manual.
+- [x] 2. Implementation in `XmlProjectFileStore`/`FixCommand`, without a general `catch (Exception)`.
+- [x] 3. Proof: the EventFlow harness without manual conversion gives `ok`.
 
-## Keuzes en uitkomst
+## Choices and outcome
 
-- De crash zat niet in `Decode` voor projectbestanden maar in `SaveAsync` voor het gewijzigde `.cs`-document; `FixCommand` ving `InvalidDataException` niet af.
-- Detectie in Core (`Fixer.NotUtf8FilesAsync`), zonder I/O: Roslyn leest UTF-8 en BOM-bestanden met `UTF8Encoding` en alles anders met
-  de eigen codering. Zo blijft Core vrij van DataAccess en is er geen contractwijziging.
-- Het bestand wordt vóór alle patterns, global-using-swap en using-update overgeslagen, dus nooit gewijzigd en nooit naar `SaveAsync` gestuurd.
-  Het noemt nog de oude bibliotheek, dus de bestaande cascade houdt het pakket in dat project.
-- Alleen een bestand dat de oude bibliotheek noemt krijgt een Manual (`encoding`); anders ruis.
-- Latin-1 als terugval met behoud van de codering: afgewezen (codepagina onbekend).
-- `FixCommand` vangt nu ook `InvalidDataException` uit `SaveAsync` (race: bestand veranderd na laden) als nette foutmelding, geen algemene `catch`.
-- Geen proofs-map: een proof is een `.cs` in UTF-8; de codering zit in de tests (Fixer-unit met `SourceText.From(code, Encoding.Latin1)` en een
-  integratietest op schijf met een echt Latin-1-bestand).
+- The crash was not in `Decode` for project files but in `SaveAsync` for the changed `.cs` document; `FixCommand` did not catch `InvalidDataException`.
+- Detection in Core (`Fixer.NotUtf8FilesAsync`), without I/O: Roslyn reads UTF-8 and BOM files with `UTF8Encoding` and everything else with
+  its own encoding. That keeps Core free of DataAccess and there is no contract change.
+- The file is skipped before all patterns, the global-using swap and the using update, so it is never changed and never sent to `SaveAsync`.
+  It still names the old library, so the existing cascade keeps the package in that project.
+- Only a file that names the old library gets a Manual (`encoding`); otherwise noise.
+- Latin-1 as a fallback while keeping the encoding: rejected (code page unknown).
+- `FixCommand` now also catches `InvalidDataException` from `SaveAsync` (race: file changed after loading) as a clean error message, no general `catch`.
+- No proofs folder: a proof is a `.cs` in UTF-8; the encoding lives in the tests (Fixer unit test with `SourceText.From(code, Encoding.Latin1)` and an
+  integration test on disk with a real Latin-1 file).
+- **Follow-up 2026-10-14 (`91f85de`)**: the integration test failed only in CI (Linux). Roslyn decodes a non-UTF-8 file with the system ANSI
+  code page, which on Linux/macOS is UTF-8 itself (replacement characters), so `Encoding` was a `UTF8Encoding` and the file was not detected;
+  the strict `SaveAsync` check then refused (exit 1). `MsBuildSolutionStore` now gives such a file (text contains U+FFFD and the bytes are not
+  valid UTF-8) its text as Latin-1, so every platform reports it as not UTF-8.
 
-## Gewijzigde bestanden
+## Changed files
 
 - `src/Unshackle.Core/Fixer.cs`, `src/Unshackle.Interface/Commands/FixCommand.cs`
+- `src/Unshackle.DataAccess/Solutions/MsBuildSolutionStore.cs` (follow-up)
 - `src/Unshackle.Tests/Core/FixerProjectFileTests.cs`, `src/Unshackle.Tests/Integration/SampleShopTests.cs`
 - `docs/projectinfo/architectuur/rapportage.md`
 
-## Risico's & randgevallen
+## Risks & edge cases
 
-| Risico | Mitigatie |
+| Risk | Mitigation |
 | --- | --- |
-| Het project verliest het FA-pakket terwijl één bestand nog FA gebruikt | De Manual telt mee voor de project-file-cascade |
+| The project loses the FA package while one file still uses FA | The Manual counts for the project-file cascade |
 
-## Zie ook
+## See also
 
 - `claude/tasks/CORPUSRUN-fa.md`
 - `claude/docs/INDEX.md`

@@ -1,59 +1,59 @@
-# Modellen: automapper.map-into
+# Models: automapper.map-into
 
-Feiten uit `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapIntoPattern.cs`, `CreateMapPattern.cs` en `MapCallPattern.cs`.
+Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapIntoPattern.cs`, `CreateMapPattern.cs` and `MapCallPattern.cs`.
 
-> De figuren zijn als D2-bron aangemaakt in `img/`; `kingmadoc`/`d2` waren in deze omgeving niet beschikbaar, dus de PNG/SVG volgen bij de eerstvolgende `kingmadoc render`.
+> The figures were created as D2 sources in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
 
-## Figuur 1: klassen
+## Figure 1: classes
 
-**Figure 1.** `MapIntoPattern` en `CreateMapPattern` als `ISolutionPattern`; `MapCallPattern` levert de profile-zoektocht.
+**Figure 1.** `MapIntoPattern` and `CreateMapPattern` as `ISolutionPattern`; `MapCallPattern` provides the profile search.
 
 <!-- kingmadoc:diagram img/automapper-map-into-modellen-1.d2 -->
-![Figuur 1: klassen](img/automapper-map-into-modellen-1.png)
+![Figure 1: classes](img/automapper-map-into-modellen-1.png)
 
-| Element            | Rol                                                                                            |
+| Element            | Role                                                                                           |
 | ------------------ | ---------------------------------------------------------------------------------------------- |
-| `MapIntoPattern`   | Id `automapper.map-into`; `Find` via `IsMapIntoCall`; `Rewrite` alleen met bestaande `MapInto` |
-| `IsMapIntoCall`    | `Map<A, B>` van AutoMapper met twee argumenten, tweede parameter van type `B`                  |
-| `TargetsAsync`     | Alle paren `A|B` (`Key`) die een `Map(a, b)` in de solution gebruikt                           |
-| `CreateMapPattern` | `RewriteAsync` schrijft `MapInto` voor die paren, na de `ToB`-methoden                         |
-| `GeneratedAsync`   | Uit `MapCallPattern`: profile met `CreateMap<A, B>`, namespace, internal, project              |
+| `MapIntoPattern`   | Id `automapper.map-into`; `Find` via `IsMapIntoCall`; `Rewrite` only with an existing `MapInto` |
+| `IsMapIntoCall`    | AutoMapper's `Map<A, B>` with two arguments, the second parameter of type `B`                  |
+| `TargetsAsync`     | All pairs `A|B` (`Key`) that a `Map(a, b)` in the solution uses                                |
+| `CreateMapPattern` | `RewriteAsync` writes `MapInto` for those pairs, after the `ToB` methods                       |
+| `GeneratedAsync`   | From `MapCallPattern`: profile with `CreateMap<A, B>`, namespace, internal, project            |
 
-## Figuur 2: sequence
+## Figure 2: sequence
 
-**Figure 2.** Profile-rewrite en aanroep-rewrite in de Fixer.
+**Figure 2.** Profile rewrite and call rewrite in the Fixer.
 
 <!-- kingmadoc:diagram img/automapper-map-into-modellen-2.d2 -->
-![Figuur 2: sequence](img/automapper-map-into-modellen-2.png)
+![Figure 2: sequence](img/automapper-map-into-modellen-2.png)
 
-| Stap      | Methode in de code                              | Wat gebeurt er                                            |
+| Step      | Method in the code                              | What happens                                              |
 | --------- | ----------------------------------------------- | --------------------------------------------------------- |
-| Profile   | `CreateMapPattern.RewriteAsync`, `TargetsAsync` | `MapInto` erbij voor maps die `Map(a, b)` gebruikt        |
-| Vinden    | `Find`, `IsMapIntoCall`                         | `Map(a, b)` van AutoMapper                                |
-| Toetsen   | `Check`                                         | Ontvanger, typen, collectie, null van bron en doel        |
-| Bestaand  | `Existing`                                      | `MapInto` die al bestaat (ook net gegenereerd hier)       |
-| Profiles  | `MapCallPattern.GeneratedAsync`                 | Welke profile de map heeft, namespace, toegankelijkheid   |
-| Schrijven | `Fixed`                                         | `a.MapInto(b)`, haakjes waar nodig, `using` indien nodig  |
+| Profile   | `CreateMapPattern.RewriteAsync`, `TargetsAsync` | `MapInto` added for maps that `Map(a, b)` uses            |
+| Find      | `Find`, `IsMapIntoCall`                         | AutoMapper's `Map(a, b)`                                  |
+| Check     | `Check`                                         | Receiver, types, collection, null of source and destination |
+| Existing  | `Existing`                                      | A `MapInto` that already exists (also just generated here) |
+| Profiles  | `MapCallPattern.GeneratedAsync`                 | Which profile has the map, namespace, accessibility       |
+| Write     | `Fixed`                                         | `a.MapInto(b)`, parentheses where needed, `using` if needed |
 
-## Figuur 3: beslisboom
+## Figure 3: decision tree
 
-**Figure 3.** De vragen van `RewriteAsync`.
+**Figure 3.** The questions of `RewriteAsync`.
 
 <!-- kingmadoc:diagram img/automapper-map-into-modellen-3.d2 -->
-![Figuur 3: beslisboom](img/automapper-map-into-modellen-3.png)
+![Figure 3: decision tree](img/automapper-map-into-modellen-3.png)
 
-| Blad                              | Voorwaarde                                | Bewijs                                          |
+| Leaf                              | Condition                                 | Evidence                                        |
 | --------------------------------- | ----------------------------------------- | ----------------------------------------------- |
-| Manual "not called as mapper.Map" | ontvanger is een aanroep                  | `receiver-call`                                 |
-| Manual "no type of its own"       | bron of doel `object`/`dynamic`           | `object-source`                                 |
-| Manual "maps a collection"        | bron of doel collectie                    | `collection`                                    |
-| Manual "source may be null"       | flow-state bron MaybeNull                 | `maybe-null-source`                             |
-| Manual "destination may be null"  | flow-state doel MaybeNull                 | `maybe-null-destination`                        |
-| Manual "No CreateMap"             | geen `MapInto`, geen herschreven profile  | `unknown-map`                                   |
-| Manual "Several profiles" e.a.    | meerdere profiles, internal, eigen member | —                                               |
-| Fixed (`a.MapInto(b)`)            | alles hierboven gehaald                   | `existing-method`, `map-into-profile`, unittest |
+| Manual "not called as mapper.Map" | the receiver is a call                    | `receiver-call`                                 |
+| Manual "no type of its own"       | source or destination `object`/`dynamic` | `object-source`                                 |
+| Manual "maps a collection"        | source or destination is a collection     | `collection`                                    |
+| Manual "source may be null"       | flow state of the source is MaybeNull     | `maybe-null-source`                             |
+| Manual "destination may be null"  | flow state of the destination is MaybeNull | `maybe-null-destination`                        |
+| Manual "No CreateMap"             | no `MapInto`, no rewritten profile        | `unknown-map`                                   |
+| Manual "Several profiles" etc.    | several profiles, internal, own member    | —                                               |
+| Fixed (`a.MapInto(b)`)            | everything above passed                   | `existing-method`, `map-into-profile`, unit test |
 
-## Zie ook
+## See also
 
 - [automapper-map-into-plan.md](automapper-map-into-plan.md)
 - [automapper-map-into-verify.md](automapper-map-into-verify.md)

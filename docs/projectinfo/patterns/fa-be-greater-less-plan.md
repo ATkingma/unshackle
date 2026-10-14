@@ -8,7 +8,7 @@ files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
   - src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/
 ---
-# Feature: fa.be-greater-less: BeGreaterThan/BeLessThan (+ .And-ketens) worden ShouldBeGreaterThan/ShouldBeLessThan, ketens gesplitst
+# Feature: fa.be-greater-less: BeGreaterThan/BeLessThan (+ .And chains) become ShouldBeGreaterThan/ShouldBeLessThan, chains split
 
 | | |
 |---|---|
@@ -16,63 +16,63 @@ files_expected:
 | **Status** | Approved |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-010. Alles gemarkeerd als _(inferred)_ komt uit de codebase-analyse.
+> Drawn up from TAAK-010. Everything marked _(inferred)_ comes from the codebase analysis.
 
 ## One-sentence summary
 
-fa.be-greater-less: vergelijkingen (`BeGreaterThan`, `BeLessThan`, `...OrEqualTo`, `BeInRange`, `BePositive`, `BeNegative`) worden `ShouldBe...`; `.And`-ketens worden gesplitst in losse statements.
+fa.be-greater-less: comparisons (`BeGreaterThan`, `BeLessThan`, `...OrEqualTo`, `BeInRange`, `BePositive`, `BeNegative`) become `ShouldBe...`; `.And` chains are split into separate statements.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `BeGreaterThan`, `BeGreaterThanOrEqualTo` (+ alias `BeGreaterOrEqualTo`), `BeLessThan`, `BeLessThanOrEqualTo` (+ alias `BeLessOrEqualTo`), `BeInRange`, `NotBeInRange`, `BePositive`, `BeNegative`, op niet-nullable numerieke types en andere `IComparable<T>`-types, met optionele `because`.
-- `.And`-ketens: sinds REVIEW-A gesplitst door `fa.and-chain`, dat elke schakel aan dit patroon geeft.
-- `Manual(reden)` voor nullable subjects, `becauseArgs`, gebruikt resultaat, ketens met andere assertions, subjects met aanroepen en ketens buiten een blok.
+- `BeGreaterThan`, `BeGreaterThanOrEqualTo` (+ alias `BeGreaterOrEqualTo`), `BeLessThan`, `BeLessThanOrEqualTo` (+ alias `BeLessOrEqualTo`), `BeInRange`, `NotBeInRange`, `BePositive`, `BeNegative`, on non-nullable numeric types and other `IComparable<T>` types, with an optional `because`.
+- `.And` chains: since REVIEW-A split by `fa.and-chain`, which hands every link to this pattern.
+- `Manual(reason)` for nullable subjects, `becauseArgs`, a used result, chains with other assertions, subjects with calls and chains outside a block.
 
 **Out of scope**
 
-- `BeCloseTo`, `BeApproximately` (`fa.be-approximately`). `BeAfter`/`BeBefore`/… zijn sinds TAAK-095 in scope.
-- Beheer van `using`-directives: de `Fixer` doet dat via `IFix`.
+- `BeCloseTo`, `BeApproximately` (`fa.be-approximately`). `BeAfter`/`BeBefore`/… are in scope since TAAK-095.
+- Management of `using` directives: the `Fixer` does that via `IFix`.
 
 ## Requirements
 
-- **REQ-1**: WHEN `x.Should().BeGreaterThan(n)`, `BeGreaterThanOrEqualTo`/`BeGreaterOrEqualTo`, `BeLessThan` of `BeLessThanOrEqualTo`/`BeLessOrEqualTo` als losse assertion op een niet-nullable numeriek type staat THE SYSTEM SHALL `x.ShouldBeGreaterThan(n)` resp. `ShouldBeGreaterThanOrEqualTo`, `ShouldBeLessThan`, `ShouldBeLessThanOrEqualTo` geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/simple.*.cs`).
-- **REQ-2**: WHEN het subject een niet-numeriek type is dat `IComparable<T>` van zichzelf implementeert (TimeSpan, Version) THE SYSTEM SHALL dezelfde herschrijving geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/comparable.*.cs`).
-- **REQ-3**: WHEN `BeInRange(min, max)` of `NotBeInRange(min, max)` staat THE SYSTEM SHALL `ShouldBeInRange` resp. `ShouldNotBeInRange` geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/in-range.*.cs`).
-- **REQ-4**: WHEN `BePositive()` of `BeNegative()` op int, long, short, decimal, double of float staat THE SYSTEM SHALL `ShouldBePositive()` resp. `ShouldBeNegative()` geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/sign.*.cs`).
-- **REQ-5**: WHEN een `because` zonder `becauseArgs` staat THE SYSTEM SHALL die als laatste argument (`customMessage`) overnemen (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/because.*.cs`).
-- **REQ-6**: WHEN de assertion de body van een void-lambda is THE SYSTEM SHALL het herschrijven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/lambda.*.cs`).
-- **REQ-7**: WHEN een `.And`-keten uitsluitend uit vergelijkingen bestaat, als statement in een blok staat en het subject een naam of member-access op namen is THE SYSTEM SHALL de keten splitsen in één statement per schakel, elk met eigen `because` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/and-chain.*.cs`).
-- **REQ-8**: IF het subject een nullable (`int?`) of onbekend type is THEN THE SYSTEM SHALL Manual geven, omdat `ShouldBeGreaterThan<T>` `IComparable<T>` van een non-nullable T eist (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/nullable.*`).
-- **REQ-9**: IF `BePositive`/`BeNegative` op een ander type dan int, long, short, decimal, double of float staat THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/sign-byte.*`).
-- **REQ-10** (vervangen door REQ-17): IF `becauseArgs` gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/because-args.*`).
-- **REQ-11**: IF het resultaat wordt gebruikt (variabele of lambda met waarde, of keten in een lambda) THEN THE SYSTEM SHALL Manual geven (proofs `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/value-used.*`, `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-used.*`, `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-lambda.*`).
-- **REQ-12** (vervallen, REVIEW-A): IF een `.And`-keten een andere assertion bevat THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-other.*`).
-- **REQ-13** (vervangen: `fa.and-chain` hoist het subject, TAAK-098): IF het subject van een keten een aanroep of ander expressie met mogelijke bijwerkingen is THEN THE SYSTEM SHALL Manual geven, omdat splitsen het twee keer evalueert (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-subject-call.*`).
-- **REQ-14**: IF een gesplitste keten niet direct in een blok staat (bijv. `if` zonder accolades) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-no-block.*`).
-- **Uitbreiding TAAK-095**: WHEN `BeAfter`/`BeOnOrAfter`/`BeBefore`/`BeOnOrBefore` staat THE SYSTEM SHALL `ShouldBeGreaterThan`/`…OrEqualTo`/`ShouldBeLessThan`/`…OrEqualTo` geven (proofs `dates`, `dates-nullable`, `AndChain/dates`). Probe: gelijk, ±1 tick, andere Kind, zelfde instant met andere offset, DateOnly: gelijk oordeel.
-- **REQ-15** (Uitbreiding REVIEW-A): WHEN de waarde een ander type heeft dan het subject (`byte`/`short`) THE SYSTEM SHALL de waarde naar het subjecttype casten (`ConvertExpected`), anders Manual (proof `byte-short`).
-- **REQ-16**: IF `BeNegative()` op double/float staat THEN THE SYSTEM SHALL `(x < 0).ShouldBeTrue([because])` geven (subject tussen haakjes als het geen eenvoudige expressie is), omdat FA faalt op NaN en `ShouldBeNegative`/`ShouldBeLessThan(0)` slagen (CompareTo ordent NaN onder alles); `x < 0` is onwaar voor NaN en -0.0, net als FA (proofs `negative-double`, `negative-float`). `BePositive` is in beide bibliotheken gelijk en blijft `ShouldBePositive()`. Zie TAAK-166.
-- **Uitbreiding TAAK-169**: WHEN de waarde alleen via een eigen impliciete conversie naar het subjecttype gaat (`BsonValue b; b.Should().BeGreaterThan(0)`) THE SYSTEM SHALL een cast naar het subjecttype toevoegen (`b.ShouldBeGreaterThan((BsonValue)0)`), via `ConvertExpected` (proof `implicit-conversion.*`).
-- **REQ-17** (Uitbreiding TAAK-097): WHEN `becauseArgs` met een constante, formatteerbare `because` staat THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (proof `because-args`); named arguments of een niet-constante `because` blijven Manual.
+- **REQ-1**: WHEN `x.Should().BeGreaterThan(n)`, `BeGreaterThanOrEqualTo`/`BeGreaterOrEqualTo`, `BeLessThan` or `BeLessThanOrEqualTo`/`BeLessOrEqualTo` is a standalone assertion on a non-nullable numeric type THE SYSTEM SHALL give `x.ShouldBeGreaterThan(n)` or respectively `ShouldBeGreaterThanOrEqualTo`, `ShouldBeLessThan`, `ShouldBeLessThanOrEqualTo` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/simple.*.cs`).
+- **REQ-2**: WHEN the subject is a non-numeric type that implements `IComparable<T>` of itself (TimeSpan, Version) THE SYSTEM SHALL give the same rewrite (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/comparable.*.cs`).
+- **REQ-3**: WHEN `BeInRange(min, max)` or `NotBeInRange(min, max)` is used THE SYSTEM SHALL give `ShouldBeInRange` or `ShouldNotBeInRange` respectively (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/in-range.*.cs`).
+- **REQ-4**: WHEN `BePositive()` or `BeNegative()` is used on int, long, short, decimal, double or float THE SYSTEM SHALL give `ShouldBePositive()` or `ShouldBeNegative()` respectively (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/sign.*.cs`).
+- **REQ-5**: WHEN there is a `because` without `becauseArgs` THE SYSTEM SHALL take it over as the last argument (`customMessage`) (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/because.*.cs`).
+- **REQ-6**: WHEN the assertion is the body of a void lambda THE SYSTEM SHALL rewrite it (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/lambda.*.cs`).
+- **REQ-7**: WHEN an `.And` chain consists only of comparisons, is a statement in a block and the subject is a name or member access on names THE SYSTEM SHALL split the chain into one statement per link, each with its own `because` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/and-chain.*.cs`).
+- **REQ-8**: IF the subject is a nullable (`int?`) or unknown type THEN THE SYSTEM SHALL give Manual, because `ShouldBeGreaterThan<T>` requires `IComparable<T>` of a non-nullable T (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/nullable.*`).
+- **REQ-9**: IF `BePositive`/`BeNegative` is used on a type other than int, long, short, decimal, double or float THEN THE SYSTEM SHALL give Manual (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/sign-byte.*`).
+- **REQ-10** (replaced by REQ-17): IF `becauseArgs` are used THEN THE SYSTEM SHALL give Manual (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/because-args.*`).
+- **REQ-11**: IF the result is used (variable or lambda with a value, or a chain in a lambda) THEN THE SYSTEM SHALL give Manual (proofs `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/value-used.*`, `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-used.*`, `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-lambda.*`).
+- **REQ-12** (dropped, REVIEW-A): IF an `.And` chain contains another assertion THEN THE SYSTEM SHALL give Manual (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-other.*`).
+- **REQ-13** (replaced: `fa.and-chain` hoists the subject, TAAK-098): IF the subject of a chain is a call or another expression with possible side effects THEN THE SYSTEM SHALL give Manual, because splitting evaluates it twice (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-subject-call.*`).
+- **REQ-14**: IF a split chain is not directly in a block (e.g. `if` without braces) THEN THE SYSTEM SHALL give Manual (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeGreaterLess/chain-no-block.*`).
+- **Extension TAAK-095**: WHEN `BeAfter`/`BeOnOrAfter`/`BeBefore`/`BeOnOrBefore` is used THE SYSTEM SHALL give `ShouldBeGreaterThan`/`…OrEqualTo`/`ShouldBeLessThan`/`…OrEqualTo` (proofs `dates`, `dates-nullable`, `AndChain/dates`). Probe: equal, ±1 tick, other Kind, same instant with another offset, DateOnly: same verdict.
+- **REQ-15** (Extension REVIEW-A): WHEN the value has a different type than the subject (`byte`/`short`) THE SYSTEM SHALL cast the value to the subject type (`ConvertExpected`), otherwise Manual (proof `byte-short`).
+- **REQ-16**: IF `BeNegative()` is used on double/float THEN THE SYSTEM SHALL give `(x < 0).ShouldBeTrue([because])` (subject in parentheses if it is not a simple expression), because FA fails on NaN while `ShouldBeNegative`/`ShouldBeLessThan(0)` pass (CompareTo orders NaN below everything); `x < 0` is false for NaN and -0.0, just as in FA (proofs `negative-double`, `negative-float`). `BePositive` is the same in both libraries and stays `ShouldBePositive()`. See TAAK-166.
+- **Extension TAAK-169**: WHEN the value only reaches the subject type via an own implicit conversion (`BsonValue b; b.Should().BeGreaterThan(0)`) THE SYSTEM SHALL add a cast to the subject type (`b.ShouldBeGreaterThan((BsonValue)0)`), via `ConvertExpected` (proof `implicit-conversion.*`).
+- **REQ-17** (Extension TAAK-097): WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL give `string.Format(CultureInfo.InvariantCulture, because, args)` as customMessage (proof `because-args`); named arguments or a non-constant `because` stay Manual.
 
 ## Assumptions
 
-- Shouldly 4.3.0 heeft `ShouldBeGreaterThan<T>(T, string? customMessage)` (idem voor `LessThan`, `...OrEqualTo`, `InRange`, `NotInRange` met `where T : IComparable<T>`) en `ShouldBePositive`/`ShouldBeNegative` voor int, long, short, decimal, double, float; bewezen door de compileercheck van de after-proofs.
-- Property-getters in een ketensubject (`order.Total`) zijn zonder bijwerkingen (shortcut, in code gedocumenteerd).
-- De `Fixer` zet de trivia en inspringing van de extra statements en beheert de usings.
+- Shouldly 4.3.0 has `ShouldBeGreaterThan<T>(T, string? customMessage)` (likewise for `LessThan`, `...OrEqualTo`, `InRange`, `NotInRange` with `where T : IComparable<T>`) and `ShouldBePositive`/`ShouldBeNegative` for int, long, short, decimal, double, float; proven by the compile check of the after proofs.
+- Property getters in a chain subject (`order.Total`) have no side effects (shortcut, documented in code).
+- The `Fixer` sets the trivia and indentation of the extra statements and manages the usings.
 
 ## Risks
 
-- Een property met bijwerkingen als subject van een keten wordt twee keer gelezen; beperkt door alleen namen en member-accesses toe te staan.
-- Foutmeldingen verschillen van FluentAssertions (Shouldly zet "Additional Info:" voor de `because`).
-- Geprobed (TAAK-166, FA 7.2.2 vs Shouldly 4.3.0, double en float): NaN, -0.0, 0.0, ±Epsilon, ±Infinity, ±1 geven bij `BePositive` identiek resultaat; bij `BeNegative` verschilt alleen NaN. int/long/short/decimal zijn gelijk. De foutmelding van `ShouldBeTrue` is minder informatief (geen waarde).
+- A property with side effects as the subject of a chain is read twice; limited by only allowing names and member accesses.
+- Error messages differ from FluentAssertions (Shouldly puts "Additional Info:" before the `because`).
+- Probed (TAAK-166, FA 7.2.2 vs Shouldly 4.3.0, double and float): NaN, -0.0, 0.0, ±Epsilon, ±Infinity, ±1 give identical results for `BePositive`; for `BeNegative` only NaN differs. int/long/short/decimal are equal. The error message of `ShouldBeTrue` is less informative (no value).
 
-## Modellen
+## Models
 
-Klassen-, sequence- en beslismodel van dit patroon: [fa-be-greater-less-modellen.md](fa-be-greater-less-modellen.md).
+Class, sequence and decision model of this pattern: [fa-be-greater-less-modellen.md](fa-be-greater-less-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

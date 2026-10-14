@@ -9,53 +9,53 @@ files_expected:
     - src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToObject/
 ---
 
-# Feature: fa.be-equivalent-to-object: BeEquivalentTo op een collectie wordt ShouldBe(ignoreOrder: true)
+# Feature: fa.be-equivalent-to-object: BeEquivalentTo on a collection becomes ShouldBe(ignoreOrder: true)
 
 |               |                         |
 | ------------- | ----------------------- |
 | **Project**   | Unshackle               |
 | **Status**    | Approved                |
-| **Generated** | 2026-10-12 met de hand (kingmadoc ontbreekt) |
+| **Generated** | 2026-10-12 by hand (kingmadoc missing) |
 
-> Opgesteld uit TAAK-172 (corpus-run ronde 3: 207 Manuals "FluentAssertions ignores the item order by default").
+> Drawn up from TAAK-172 (corpus run round 3: 207 Manuals "FluentAssertions ignores the item order by default").
 
 ## One-sentence summary
 
-`x.Should().BeEquivalentTo(expected)` en `x.Should().BeEquivalentTo("a", "b")` op een collectie van waarde-items (leaf, sealed record, struct) worden `x.ShouldBe(expected, ignoreOrder: true)`; andere collecties blijven Manual.
+`x.Should().BeEquivalentTo(expected)` and `x.Should().BeEquivalentTo("a", "b")` on a collection of value items (leaf, sealed record, struct) become `x.ShouldBe(expected, ignoreOrder: true)`; other collections stay Manual.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Uitbreiding van het collectiegeval van `BeEquivalentToObjectPattern` (TAAK-092, alleen leaf-items) naar `IsValueLike`-items, dezelfde check als `fa.contain-equivalent-of`.
-- De params-vorm `BeEquivalentTo("a", "b")` (alleen `StringCollectionAssertions` heeft die) wordt `ShouldBe(new string[] { "a", "b" }, ignoreOrder: true)`, met de opmaak van `ParamsArraySyntax` (gedeeld met `fa.equal-sequence`, TAAK-153).
+- Extension of the collection case of `BeEquivalentToObjectPattern` (TAAK-092, only leaf items) to `IsValueLike` items, the same check as `fa.contain-equivalent-of`.
+- The params form `BeEquivalentTo("a", "b")` (only `StringCollectionAssertions` has it) becomes `ShouldBe(new string[] { "a", "b" }, ignoreOrder: true)`, with the formatting of `ParamsArraySyntax` (shared with `fa.equal-sequence`, TAAK-153).
 
 **Out of scope**
 
-- Classes zonder waarde-gelijkheid, niet-sealed records, records met geneste leden, ander verwachtings- dan elementtype, options-lambda's: Manual.
+- Classes without value equality, non-sealed records, records with nested members, an expectation type other than the element type, options lambdas: Manual.
 
 ## Requirements
 
-- **REQ-1**: WHEN subject en verwachting collecties van hetzelfde leaf-elementtype zijn THE SYSTEM SHALL `ShouldBe(expected, ignoreOrder: true[, because])` geven (bestaande proofs `collection-ints`, `collection-strings-because`, `collection-nullable-enum`, `edge-array-literal`).
-- **REQ-2**: WHEN het element een sealed record, record struct of struct met leaf-leden is THE SYSTEM SHALL dezelfde herschrijving geven (proofs `collection-record`, `collection-struct`).
-- **REQ-3**: WHEN de params-vorm `BeEquivalentTo("a", "b")` op `IEnumerable<string>` staat THE SYSTEM SHALL `ShouldBe(new string[] { ... }, ignoreOrder: true)` geven, ook leeg, met `null`-items en over meerdere regels met behoud van commentaar (proofs `params-strings`, `edge-collection-params`, `params-multi-line`).
-- **REQ-4**: WHEN een array als argument wordt doorgegeven THE SYSTEM SHALL die als gewone verwachting behandelen (proof `params-array`).
-- **REQ-5**: IF het element een class, niet-sealed record of record met geneste leden is, of het verwachtingselement verschilt van dat van het subject THEN THE SYSTEM SHALL Manual geven met een specifieke reden (proofs `collection`, `collection-record-unsealed`, `collection-record-nested`, `collection-element-types`).
+- **REQ-1**: WHEN subject and expectation are collections of the same leaf element type THE SYSTEM SHALL give `ShouldBe(expected, ignoreOrder: true[, because])` (existing proofs `collection-ints`, `collection-strings-because`, `collection-nullable-enum`, `edge-array-literal`).
+- **REQ-2**: WHEN the element is a sealed record, record struct or struct with leaf members THE SYSTEM SHALL give the same rewrite (proofs `collection-record`, `collection-struct`).
+- **REQ-3**: WHEN the params form `BeEquivalentTo("a", "b")` is on `IEnumerable<string>` THE SYSTEM SHALL give `ShouldBe(new string[] { ... }, ignoreOrder: true)`, also empty, with `null` items and over several lines keeping comments (proofs `params-strings`, `edge-collection-params`, `params-multi-line`).
+- **REQ-4**: WHEN an array is passed as the argument THE SYSTEM SHALL treat it as an ordinary expectation (proof `params-array`).
+- **REQ-5**: IF the element is a class, a non-sealed record or a record with nested members, or the expectation's element differs from the subject's THEN THE SYSTEM SHALL give Manual with a specific reason (proofs `collection`, `collection-record-unsealed`, `collection-record-nested`, `collection-element-types`).
 
 ## Assumptions
 
-- Geprobeerd tegen FluentAssertions 7.2.2 en Shouldly 4.3.0: herordenen, dubbele items (aantal telt mee), ander aantal, hoofdlettergevoelige strings, `null`-items, lege collecties, null-subject, structs en record structs geven aan beide kanten dezelfde uitkomst.
-- Alleen `StringCollectionAssertions` heeft een `params`-overload; voor `IEnumerable<int>` of records compileert `BeEquivalentTo(1, 2)` niet.
+- Tried against FluentAssertions 7.2.2 and Shouldly 4.3.0: reordering, duplicate items (the count matters), another count, case-sensitive strings, `null` items, empty collections, a null subject, structs and record structs give the same outcome on both sides.
+- Only `StringCollectionAssertions` has a `params` overload; for `IEnumerable<int>` or records `BeEquivalentTo(1, 2)` does not compile.
 
 ## Risks
 
-- `BeEquivalentTo("ab")` op een `IEnumerable<char>`-subject bindt aan de `IEnumerable<char>`-overload (string is `IEnumerable<char>`); de bestaande collectiecheck behandelt dat als een gewone verwachting.
+- `BeEquivalentTo("ab")` on an `IEnumerable<char>` subject binds to the `IEnumerable<char>` overload (string is `IEnumerable<char>`); the existing collection check treats that as an ordinary expectation.
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-be-equivalent-to-collection-modellen.md](fa-be-equivalent-to-collection-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-be-equivalent-to-collection-modellen.md](fa-be-equivalent-to-collection-modellen.md).
 
-## Zie ook
+## See also
 
 - [fa-be-equivalent-to-collection-verify.md](fa-be-equivalent-to-collection-verify.md)
 - [fa-be-equivalent-to-object-plan.md](fa-be-equivalent-to-object-plan.md)

@@ -9,7 +9,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/FluentAssertions/BeOfType/
 ---
 
-# Feature: fa.be-of-type: BeOfType/BeAssignableTo wordt ShouldBeOfType/ShouldBeAssignableTo
+# Feature: fa.be-of-type: BeOfType/BeAssignableTo becomes ShouldBeOfType/ShouldBeAssignableTo
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -17,44 +17,44 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-034.
+> Drawn up from TAAK-034.
 
 ## One-sentence summary
 
-fa.be-of-type: `BeOfType<T>()`, `BeAssignableTo<T>()`, `NotBeOfType<T>()`, `NotBeAssignableTo<T>()` (ook met `Type`) worden de Shouldly-tegenhangers; `var v = ….Which` wordt `var v = x.ShouldBeOfType<T>()`.
+fa.be-of-type: `BeOfType<T>()`, `BeAssignableTo<T>()`, `NotBeOfType<T>()`, `NotBeAssignableTo<T>()` (also with `Type`) become the Shouldly counterparts; `var v = ….Which` becomes `var v = x.ShouldBeOfType<T>()`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- De vier methodes, generiek of met `Type`-argument, met optionele `because`.
-- `.Which`/`.Subject` als enige initializer van een declaratie.
+- The four methods, generic or with a `Type` argument, with an optional `because`.
+- `.Which`/`.Subject` as the only initializer of a declaration.
 
 **Out of scope**
 
-- `.Which.P.Should()...`-ketens (rij `fa.which-chain`).
+- `.Which.P.Should()...` chains (row `fa.which-chain`).
 - `TypeAssertions` (`typeof(T).Should()`).
 
 ## Requirements
 
-- **REQ-1**: WHEN `x.Should().BeOfType<T>()` (of een van de andere drie) als statement staat THE SYSTEM SHALL `x.ShouldBeOfType<T>()` enz. geven (proof `simple`).
-- **REQ-2**: WHEN `because` zonder becauseArgs staat THE SYSTEM SHALL die als customMessage meegeven (proof `because`).
-- **REQ-3**: WHEN een `Type`-argument wordt gebruikt THE SYSTEM SHALL de niet-generieke Shouldly-overload geven (proof `type-argument`).
-- **REQ-4**: WHEN `var v = x.Should().BeOfType<T>().Which` (of `.Subject`) staat THE SYSTEM SHALL `var v = x.ShouldBeOfType<T>()` geven (proof `which`).
-- **REQ-5**: WHEN het subject nullable is THE SYSTEM SHALL zonder extra null-check herschrijven (proof `nullable`).
-- **REQ-6**: IF het resultaat anders wordt gebruikt (`.And`, `.Which.P`, meerdere declarators) THEN THE SYSTEM SHALL Manual geven (proofs `and`, `which-chain`, `which-multiple`).
-- **REQ-7**: IF becauseArgs, een AssertionScope of een `Type`-subject THEN THE SYSTEM SHALL Manual geven (proofs `because-args`, `assertion-scope`, `type-subject`).
-- **Uitbreiding TAAK-096**: WHEN `.Which`/`.Subject` verder gebruikt wordt (`….Which.Name`, meerdere declarators) THE SYSTEM SHALL `.Which` vervangen door de Shouldly-aanroep, die de cast-waarde teruggeeft (proofs `which-chain`, `which-multiple`); alleen `.And` en ander gebruik blijven Manual (`and`). Vervangt dat deel van REQ-6.
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt dat deel van REQ-7.
+- **REQ-1**: WHEN `x.Should().BeOfType<T>()` (or one of the other three) is a statement THE SYSTEM SHALL give `x.ShouldBeOfType<T>()` etc. (proof `simple`).
+- **REQ-2**: WHEN there is a `because` without becauseArgs THE SYSTEM SHALL pass it as customMessage (proof `because`).
+- **REQ-3**: WHEN a `Type` argument is used THE SYSTEM SHALL give the non-generic Shouldly overload (proof `type-argument`).
+- **REQ-4**: WHEN `var v = x.Should().BeOfType<T>().Which` (or `.Subject`) is used THE SYSTEM SHALL give `var v = x.ShouldBeOfType<T>()` (proof `which`).
+- **REQ-5**: WHEN the subject is nullable THE SYSTEM SHALL rewrite without an extra null check (proof `nullable`).
+- **REQ-6**: IF the result is used otherwise (`.And`, `.Which.P`, several declarators) THEN THE SYSTEM SHALL give Manual (proofs `and`, `which-chain`, `which-multiple`).
+- **REQ-7**: IF becauseArgs, an AssertionScope or a `Type` subject THEN THE SYSTEM SHALL give Manual (proofs `because-args`, `assertion-scope`, `type-subject`).
+- **Extension TAAK-096**: WHEN `.Which`/`.Subject` is used further (`….Which.Name`, several declarators) THE SYSTEM SHALL replace `.Which` with the Shouldly call, which returns the cast value (proofs `which-chain`, `which-multiple`); only `.And` and other usage stay Manual (`and`). Replaces that part of REQ-6.
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL give `string.Format(CultureInfo.InvariantCulture, because, args)` as customMessage (proof `because-args`); named arguments or a non-constant `because` stay Manual. Replaces that part of REQ-7.
 
 ## Assumptions
 
-- Shouldly 4.3.0 heeft `ShouldBeOfType<T>(this object? actual, string? customMessage)` en de `Type`-overloads, die de cast-waarde teruggeven.
+- Shouldly 4.3.0 has `ShouldBeOfType<T>(this object? actual, string? customMessage)` and the `Type` overloads, which return the cast value.
 
 ## Risks
 
-- Meldingstekst verschilt van FA; gedrag (exact type vs. toewijsbaar) is gelijk.
+- The message text differs from FA; the behaviour (exact type vs. assignable) is the same.
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-be-of-type-modellen.md](fa-be-of-type-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-be-of-type-modellen.md](fa-be-of-type-modellen.md).

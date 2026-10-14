@@ -1,48 +1,48 @@
-# TAAK-016 — Patroon fa.be-equivalent-to-object
+# TAAK-016 — Pattern fa.be-equivalent-to-object
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-11
-**Doel**: `a.Should().BeEquivalentTo(b)` op objecten wordt `a.ShouldBeEquivalentTo(b)` alleen waar FluentAssertions en Shouldly aantoonbaar gelijk beslissen; de rest is Manual.
+**Status**: ✅ done
+**Created**: 2026-10-11
+**Goal**: `a.Should().BeEquivalentTo(b)` on objects becomes `a.ShouldBeEquivalentTo(b)` only where FluentAssertions and Shouldly demonstrably decide the same; the rest is Manual.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Rij 14 in `claude/tasks/patroon-queue.md`. Strings zijn rij 9 (TAAK-009); Find sluit `StringAssertions` uit. Sample: `OrderHandlerTests.cs:30` (`OrderDto`, alleen primitieven) wordt Fixed.
+- Row 14 in `claude/tasks/patroon-queue.md`. Strings are row 9 (TAAK-009); Find excludes `StringAssertions`. Sample: `OrderHandlerTests.cs:30` (`OrderDto`, primitives only) becomes Fixed.
 
-## Analyse (proefprogramma FA 7.2.2 tegen Shouldly 4.3.0, ~70 gevallen)
+## Analysis (test program FA 7.2.2 against Shouldly 4.3.0, ~70 cases)
 
-- Shouldly is strenger: collecties op volgorde (FA niet), runtime-typen/leden (FA gebruikt de leden van de verwachting; anonieme typen, basis- vs afgeleide klasse, subset-verwachting falen in Shouldly), `int` vs `long`, interface-typen, `Equals`-override waar FA `Equals` gebruikt maar leden verschillen. Dat zijn hoorbare extra fouten.
-- Gevaarlijk (FA faalt, Shouldly slaagt): type met `Equals`-override dat false geeft (ook als lid), cyclische graaf, type zonder publieke leden (FA gooit `InvalidOperationException`).
-- Gelijk: zelfde type, primitieven, string (hoofdlettergevoelig, null vs leeg faalt), decimal, enum, DateTime/Guid, records, structs, privé genegeerd, publieke velden meegenomen, null/null.
-- `ShouldBeEquivalentTo(expected, customMessage)` bestaat; `ShouldNotBeEquivalentTo` niet.
+- Shouldly is stricter: collections in order (FA is not), runtime types/members (FA uses the members of the expectation; anonymous types, base vs derived class, subset expectation fail in Shouldly), `int` vs `long`, interface types, `Equals` override where FA uses `Equals` but members differ. These are audible extra failures.
+- Dangerous (FA fails, Shouldly passes): type with an `Equals` override that returns false (also as a member), cyclic graph, type without public members (FA throws `InvalidOperationException`).
+- Equal: same type, primitives, string (case-sensitive, null vs empty fails), decimal, enum, DateTime/Guid, records, structs, private ignored, public fields included, null/null.
+- `ShouldBeEquivalentTo(expected, customMessage)` exists; `ShouldNotBeEquivalentTo` does not.
 
-## Keuzes
+## Choices
 
-| # | Keuze | Reden |
+| # | Choice | Reason |
 |---|---|---|
-| 1 | Fixed alleen bij gelijk compile-time type op beide zijden (zonder nullability) | Anders vergelijkt FA alleen de leden van de verwachting |
-| 2 | Type en bereikbare leden: alleen gewone class/struct/record + leaf-leden (primitieven, string, decimal, enum, DateTime(Offset), Guid, TimeSpan, DateOnly, TimeOnly, Nullable daarvan) | Alleen die zijn geprobeerd en gelijk |
-| 3 | Collectie (subject of lid) Manual | FA negeert volgorde |
-| 4 | `Equals`-override, cyclus, geen publieke leden Manual | Gevaarlijke richting: Shouldly slaagt waar FA faalt |
-| 5 | Niet-afgeschermde klasse toegestaan | Afgeleid runtime-type geeft hoorbaar een extra fout, nooit een stil verschil |
-| 6 | `options =>`, becauseArgs, NotBeEquivalentTo, ketens, gebruikt resultaat Manual | Geen equivalent |
+| 1 | Fixed only when both sides have the same compile-time type (ignoring nullability) | Otherwise FA only compares the members of the expectation |
+| 2 | Type and reachable members: only plain class/struct/record + leaf members (primitives, string, decimal, enum, DateTime(Offset), Guid, TimeSpan, DateOnly, TimeOnly, Nullable of those) | Only those were tried and behave the same |
+| 3 | Collection (subject or member) Manual | FA ignores order |
+| 4 | `Equals` override, cycle, no public members Manual | Dangerous direction: Shouldly passes where FA fails |
+| 5 | Non-sealed class allowed | A derived runtime type gives an audible extra failure, never a silent difference |
+| 6 | `options =>`, becauseArgs, NotBeEquivalentTo, chains, used result Manual | No equivalent |
 
-## Stappen
+## Steps
 
-- [x] 1. Claimen, onderzoek, keuzes
-- [x] 2. KingmaDoc-plan (13 REQ, approved)
-- [x] 3. `BeEquivalentToObjectPattern` + registratie
+- [x] 1. Claim, research, choices
+- [x] 2. KingmaDoc plan (13 REQ, approved)
+- [x] 3. `BeEquivalentToObjectPattern` + registration
 - [x] 4. Proofs (6 Fixed, 14 Manual) in `BeEquivalentToObject/`
-- [x] 5. Modellen (3 figuren), verify, README-rij
-- [x] 6. Build/test groen (236 + 15 sample), archiveren, rij `klaar`
+- [x] 5. Models (3 figures), verify, README row
+- [x] 6. Build/test green (236 + 15 sample), archive, row `klaar`
 
-## Gewijzigde bestanden
+## Changed files
 
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPattern.cs` (nieuw)
-- `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` (1 regel)
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPattern.cs` (new)
+- `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` (1 line)
 - `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToObject/`
-- `docs/projectinfo/patterns/fa-be-equivalent-to-object-{plan,modellen,verify}.md` (+ `img/`), `docs/projectinfo/README.md` (rij)
+- `docs/projectinfo/patterns/fa-be-equivalent-to-object-{plan,modellen,verify}.md` (+ `img/`), `docs/projectinfo/README.md` (row)
 
-## Zie ook
+## See also
 
 - `claude/tasks/patroon-queue.md`
 - `claude/tasks/archief/TAAK-009-fa-be-equivalent-to-string.md`

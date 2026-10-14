@@ -1,58 +1,58 @@
-# Modellen: fa.be-null
+# Models: fa.be-null
 
-x.Should().BeNull() naar x.ShouldBeNull(). Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeNullPattern.cs`.
+x.Should().BeNull() to x.ShouldBeNull(). Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeNullPattern.cs`.
 
-**Figure 1.** Klassen rond `BeNullPattern`: wat hij implementeert, gebruikt en aanmaakt. Weggelaten: `Fixer`, `IFix` en de usings-afhandeling (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes around `BeNullPattern`: what it implements, uses and creates. Left out: `Fixer`, `IFix` and the usings handling (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-be-null-modellen-1.d2 -->
-![Modellen: fa.be-null](img/fa-be-null-modellen-1.png)
+![Models: fa.be-null](img/fa-be-null-modellen-1.png)
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
-| `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract: `Find` en `Rewrite` |
-| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` doet de gedeelde controles en roept `RewriteAssertion(AssertionContext)` aan |
-| `BeNullPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeNullPattern.cs` | Dit patroon, Id `fa.be-null`; alleen `Find` en `RewriteAssertion` |
-| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde bouwstenen: `FindInvocations`, `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments`, `Invoke` |
-| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst: `Fixed` met nieuwe node(s) en namespaces, of `Manual` met reden |
-| «FluentAssertions» herkend | - | `BeNull([because])`; `NotBeNull([because])` |
-| «Shouldly» aangemaakt | - | `ShouldBeNull([because])`; `ShouldNotBeNull([because])` |
+| `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract: `Find` and `Rewrite` |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` does the shared checks and calls `RewriteAssertion(AssertionContext)` |
+| `BeNullPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeNullPattern.cs` | This pattern, Id `fa.be-null`; only `Find` and `RewriteAssertion` |
+| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Shared building blocks: `FindInvocations`, `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments`, `Invoke` |
+| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Outcome: `Fixed` with new node(s) and namespaces, or `Manual` with a reason |
+| «FluentAssertions» recognised | - | `BeNull([because])`; `NotBeNull([because])` |
+| «Shouldly» created | - | `ShouldBeNull([because])`; `ShouldNotBeNull([because])` |
 
-**Figure 2.** `Fixer` roept `Find` en per node `Rewrite` aan; `FluentAssertionPattern.Rewrite` doet de controles via `FluentAssertionsSyntax` en roept daarna `BeNullPattern.RewriteAssertion` aan, dat `Fixed` levert. Weggelaten: het vervangen van de node en de usings door de `Fixer`.
+**Figure 2.** `Fixer` calls `Find` and `Rewrite` per node; `FluentAssertionPattern.Rewrite` does the checks via `FluentAssertionsSyntax` and then calls `BeNullPattern.RewriteAssertion`, which returns `Fixed`. Left out: replacing the node and the usings by the `Fixer`.
 
 <!-- kingmadoc:diagram img/fa-be-null-modellen-2.d2 -->
-![Modellen: fa.be-null](img/fa-be-null-modellen-2.png)
+![Models: fa.be-null](img/fa-be-null-modellen-2.png)
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Place | What happens |
 | --- | --- | --- |
-| Find | `BeNullPattern.Find` | `FluentAssertionsSyntax.FindInvocations` zoekt aanroepen `BeNull`, `NotBeNull` waarvan het symbool in een FluentAssertions-namespace ligt |
-| Controles | `FluentAssertionPattern.Rewrite` | `IsInsideAssertionScope(node, model)`; `GetSubject(assertion)`; `IsResultDiscarded(assertion, model)`; `TryGetArguments(assertion, model)` |
-| Herschrijven | `BeNullPattern.RewriteAssertion` | `Invoke(subject, ShouldBeNull/ShouldNotBeNull, because)` |
-| Manual | `PatternResult.Manual` | Eerste mislukte controle geeft `ManualResult` met reden (zie figuur 3) |
-| Fixed | `PatternResult.Fixed` | Nieuwe node; trivia en usings regelt de `Fixer` |
+| Find | `BeNullPattern.Find` | `FluentAssertionsSyntax.FindInvocations` looks for calls `BeNull`, `NotBeNull` whose symbol lies in a FluentAssertions namespace |
+| Checks | `FluentAssertionPattern.Rewrite` | `IsInsideAssertionScope(node, model)`; `GetSubject(assertion)`; `IsResultDiscarded(assertion, model)`; `TryGetArguments(assertion, model)` |
+| Rewrite | `BeNullPattern.RewriteAssertion` | `Invoke(subject, ShouldBeNull/ShouldNotBeNull, because)` |
+| Manual | `PatternResult.Manual` | The first failing check gives a `ManualResult` with a reason (see figure 3) |
+| Fixed | `PatternResult.Fixed` | New node; the `Fixer` handles trivia and usings |
 
-**Figure 3.** Beslisboom van `FluentAssertionPattern.Rewrite` en `RewriteAssertion`: 4 vragen in de volgorde van de code, elk blad noemt de proof in `src/Unshackle.Tests/Proofs/FluentAssertions/BeNull/` die het bewijst (`<naam>.before.cs` met `.after.cs` of `.manual.txt`).
+**Figure 3.** Decision tree of `FluentAssertionPattern.Rewrite` and `RewriteAssertion`: 4 questions in the order of the code, every leaf names the proof in `src/Unshackle.Tests/Proofs/FluentAssertions/BeNull/` that proves it (`<name>.before.cs` with `.after.cs` or `.manual.txt`).
 
 <!-- kingmadoc:diagram img/fa-be-null-modellen-3.d2 -->
-![Modellen: fa.be-null](img/fa-be-null-modellen-3.png)
+![Models: fa.be-null](img/fa-be-null-modellen-3.png)
 
-| Vraag of selector | Bij nee: Manual-reden | Proof |
+| Question or selector | If no: Manual reason | Proof |
 | --- | --- | --- |
-| Buiten een AssertionScope? | Inside an AssertionScope (scope die `fa.assertion-scope` niet omzet) | - |
-| Vorm x.Should().BeNull()? | BeNull()/NotBeNull() is not in the form x.Should()... | `and-chain` |
-| Resultaat weggegooid? | The result of BeNull()/NotBeNull() is used | `chain`, `value-used`, `edge-not-null-and` |
-| Geen benoemde argumenten; becauseArgs alleen met constante `because`? | named arguments, or becauseArgs whose because is no constant format string | - (`because-args` is Fixed, TAAK-097) |
+| Outside an AssertionScope? | Inside an AssertionScope (a scope that `fa.assertion-scope` does not convert) | - |
+| Shape x.Should().BeNull()? | BeNull()/NotBeNull() is not in the form x.Should()... | `and-chain` |
+| Result discarded? | The result of BeNull()/NotBeNull() is used | `chain`, `value-used`, `edge-not-null-and` |
+| No named arguments; becauseArgs only with a constant `because`? | named arguments, or becauseArgs whose because is no constant format string | - (`because-args` is Fixed, TAAK-097) |
 
-| Voorwaarde | Fixed-vorm | Proofs |
+| Condition | Fixed form | Proofs |
 | --- | --- | --- |
 | BeNull | `x.ShouldBeNull([because])` | `be-null`, `lambda`, `collection`, `nullable-value`, `because`, `edge-expression-bodied`, `edge-null-conditional` |
 | NotBeNull | `x.ShouldNotBeNull([because])` | `not-be-null`, `edge-null-forgiving` |
-| becauseArgs met constante `because` | `because` wordt `string.Format(CultureInfo.InvariantCulture, because, args)` | `because-args` |
+| becauseArgs with a constant `because` | `because` becomes `string.Format(CultureInfo.InvariantCulture, because, args)` | `because-args` |
 
-## Zie ook
+## See also
 
 - [fa-be-null-plan.md](fa-be-null-plan.md) - plan
-- [fa-be-null-verify.md](fa-be-null-verify.md) - verificatie
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeNullPattern.cs` - het patroon
-- `src/Unshackle.Tests/Proofs/FluentAssertions/BeNull/` - de proofs
-- [../modellen/pattern-beslissing.md](../modellen/pattern-beslissing.md) - generieke beslissing van een pattern
+- [fa-be-null-verify.md](fa-be-null-verify.md) - verification
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeNullPattern.cs` - the pattern
+- `src/Unshackle.Tests/Proofs/FluentAssertions/BeNull/` - the proofs
+- [../modellen/pattern-beslissing.md](../modellen/pattern-beslissing.md) - generic decision of a pattern
 - [../README.md](../README.md)

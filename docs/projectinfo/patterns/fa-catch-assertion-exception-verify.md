@@ -8,17 +8,17 @@
 
 > Verified by an AI agent against uncommitted changes (basis 3bb7dcf).
 
-| REQ   | Oordeel | Bewijs                                                                            |
+| REQ   | Verdict | Evidence                                                                          |
 | ----- | ------- | --------------------------------------------------------------------------------- |
-| REQ-1 | Gehaald | proofs `CatchAssertionException/retry-filter`, `when-filter`                      |
-| REQ-2 | Gehaald | proof `CatchAssertionException/catch-clause`                                      |
-| REQ-3 | Gehaald | proof `catch-uses-exception`; unittest `Rewrite_IsPatternWithDesignation_Manual`  |
-| REQ-4 | Gehaald | unittest `Rewrite_FilterOnFluentAssertionsAndXunit_AddsShouldlyOnce` (Polly-vorm) |
-| REQ-5 | Gehaald | unittest `Find_SiteAlreadyCatchesShouldly_FindsNothing`                           |
+| REQ-1 | Met     | proofs `CatchAssertionException/retry-filter`, `when-filter`                      |
+| REQ-2 | Met     | proof `CatchAssertionException/catch-clause`                                      |
+| REQ-3 | Met     | proof `catch-uses-exception`; unit test `Rewrite_IsPatternWithDesignation_Manual` |
+| REQ-4 | Met     | unit test `Rewrite_FilterOnFluentAssertionsAndXunit_AddsShouldlyOnce` (Polly form) |
+| REQ-5 | Met     | unit test `Find_SiteAlreadyCatchesShouldly_FindsNothing`                          |
 
 ## Deviations
 
 | #   | Area       | Plan says       | Code does                                                                                                                 | Impact                                      |
 | --- | ---------- | --------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| 1   | ProofTests | —               | Een `after` die een verwijderde namespace nog importeert compileert tegen oude + nieuwe bibliotheek (zoals al bij Manual) | None                                        |
-| 2   | Corpus     | Harnas op Polly | Niet gedraaid: geen ongewijzigde Polly-bron in het corpus (alleen de omgezette `out/polly/work`)                          | Bewijs via unittest op exact de Polly-regel |
+| 1   | ProofTests | —               | An `after` that still imports a removed namespace compiles against old + new library (as already with Manual)            | None                                        |
+| 2   | Corpus     | Harness on Polly | Not run: no unchanged Polly source in the corpus (only the converted `out/polly/work`)                                   | Evidence via a unit test on exactly the Polly line |

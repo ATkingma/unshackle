@@ -1,226 +1,216 @@
-# Documentatie-index
+# Documentation index
 
-Snelle opzoekgids voor agents. Lees dit i.p.v. zelf zoeken.
+Quick lookup guide for agents. Read this instead of searching yourself.
+
+File names are historical and partly Dutch (`archief/` = archive, `modellen` = models, `overdracht` = handover, `TAAK` = task); they are kept so links keep working.
 
 ## Project
 
-| Document                                                   | Inhoud                                                                                                                                                                                                                                                                                                               |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CLAUDE.md`                                                | Commando's, architectuur in het kort, pakketregels                                                                                                                                                                                                                                                                   |
-| `docs/projectinfo/README.md`                               | Hoofddocument: C4 (context, container, component), links naar alles, patroontabel                                                                                                                                                                                                                                    |
-| `docs/projectinfo/project.md`                              | Idee, probleem, bestaande tools, CLI, voorbeelden van herschrijvingen, roadmap                                                                                                                                                                                                                                       |
-| `docs/projectinfo/architectuur/projecten.md`               | Projecten, afhankelijkheden, build-instellingen                                                                                                                                                                                                                                                                      |
-| `docs/projectinfo/architectuur/core.md`                    | Fixer → Fix → Pattern (ontwerp + zoals gebouwd), SOLID                                                                                                                                                                                                                                                               |
-| `docs/projectinfo/architectuur/testen.md`                  | Proofs, types, mocking, samples                                                                                                                                                                                                                                                                                      |
-| `docs/projectinfo/architectuur/corpus.md`                  | Testcorpus: FA-API-frequentie in 14 projecten, dekking, fix-runs (FluentResults, Ardalis.Result)                                                                                                                                                                                                                     |
-| `docs/projectinfo/architectuur/edge-cases.md`              | Edge cases uit open-source projecten → `edge-*` proofs, pending bugs                                                                                                                                                                                                                                                 |
-| `docs/projectinfo/architectuur/proofs.md`                  | Alle proof-tests per patroon met uitkomst en korte uitleg (gegenereerd: `python3 claude/tools/proofs-doc.py`)                                                                                                                                                                                                        |
-| `docs/projectinfo/architectuur/rapportage.md`              | Rapportformaten                                                                                                                                                                                                                                                                                                      |
-| `docs/projectinfo/beslissingen.md`                         | Codestijl-verwijzing, nog te beslissen                                                                                                                                                                                                                                                                               |
-| `docs/projectinfo/modellen/klassen.md`                     | UML-klassendiagram: contracten en modellen van Core                                                                                                                                                                                                                                                                  |
-| `docs/projectinfo/modellen/fix-flow.md`                    | UML-sequence van `Fixer.FixAsync`                                                                                                                                                                                                                                                                                    |
-| `docs/projectinfo/modellen/pattern-beslissing.md`          | UML-activity: Fixed of Manual                                                                                                                                                                                                                                                                                        |
-| `docs/projectinfo/modellen/patronen.md`                    | Overzicht alle patterns: FA-vorm, Shouldly-vorm, Manual                                                                                                                                                                                                                                                              |
-| `docs/projectinfo/patterns/fa-be-greater-less-modellen.md` | Klassen-, sequence- en beslismodel van `fa.be-greater-less`                                                                                                                                                                                                                                                          |
-| `docs/projectinfo/patterns/`                               | KingmaDoc plan + verify per patroon (`<id>-plan.md`, `<id>-verify.md`)                                                                                                                                                                                                                                               |
-| `docs/projectinfo/features/`                               | KingmaDoc plan + verify per feature (geen patroon), bv. `end-to-end-keten-plan.md`, `projectbestanden-migreren-plan.md`/`-verify.md`, `mediatr-fix-plan.md`/`-verify.md`, `gelijknamige-typen-swap-plan.md`/`-verify.md`; config: `output_dir` op deze map zetten (`kingmadoc check -c <kopie van .featuredoc.yml>`) |
-| `docs/issues.md`                                           | Publieke uitleg: issues aanmaken (missend patroon, nieuwe library, foute rewrite)                                                                                                                                                                                                                                    |
-| `.github/ISSUE_TEMPLATE/`                                  | Issue-formulieren: missing-pattern, new-library, wrong-rewrite                                                                                                                                                                                                                                                       |
-| `README.md`                                                | Publieke korte uitleg + projecttabel                                                                                                                                                                                                                                                                                 |
+| Document | Contents |
+| -------- | -------- |
+| `CLAUDE.md` | Commands, architecture in brief, package rules |
+| `docs/projectinfo/README.md` | Main document: C4 (context, container, component), links to everything, pattern table |
+| `docs/projectinfo/project.md` | Idea, problem, existing tools, CLI, examples of rewrites, roadmap |
+| `docs/projectinfo/architectuur/projecten.md` | Projects, dependencies, build settings |
+| `docs/projectinfo/architectuur/core.md` | Fixer → Fix → Pattern (design + as built), SOLID |
+| `docs/projectinfo/architectuur/testen.md` | Proofs, types, mocking, samples |
+| `docs/projectinfo/architectuur/corpus.md` | Test corpus: FA API frequency in 14 projects, coverage, fix runs (FluentResults, Ardalis.Result) |
+| `docs/projectinfo/architectuur/edge-cases.md` | Edge cases from open-source projects → `edge-*` proofs, pending bugs |
+| `docs/projectinfo/architectuur/proofs.md` | All proof tests per pattern with outcome and short explanation (generated: `python3 claude/tools/proofs-doc.py`) |
+| `docs/projectinfo/architectuur/rapportage.md` | Report formats |
+| `docs/projectinfo/beslissingen.md` | Code style reference, still to decide |
+| `docs/projectinfo/modellen/klassen.md` | UML class diagram: contracts and models of Core |
+| `docs/projectinfo/modellen/fix-flow.md` | UML sequence of `Fixer.FixAsync` |
+| `docs/projectinfo/modellen/pattern-beslissing.md` | UML activity: Fixed or Manual |
+| `docs/projectinfo/modellen/patronen.md` | Overview of all patterns: FA form, Shouldly form, Manual |
+| `docs/projectinfo/patterns/fa-be-greater-less-modellen.md` | Class, sequence and decision model of `fa.be-greater-less` |
+| `docs/projectinfo/patterns/` | KingmaDoc plan + verify per pattern (`<id>-plan.md`, `<id>-verify.md`) |
+| `docs/projectinfo/features/` | KingmaDoc plan + verify per feature (not a pattern), e.g. `end-to-end-keten-plan.md`, `projectbestanden-migreren-plan.md`/`-verify.md`, `mediatr-fix-plan.md`/`-verify.md`, `gelijknamige-typen-swap-plan.md`/`-verify.md`; config: set `output_dir` to this folder (`kingmadoc check -c <copy of .featuredoc.yml>`) |
+| `docs/issues.md` | Public explanation: creating issues (missing pattern, new library, wrong rewrite) |
+| `.github/ISSUE_TEMPLATE/` | Issue forms: missing-pattern, new-library, wrong-rewrite |
+| `README.md` | Public short explanation + project table |
 
-## Werkwijze voor agents
+## Way of working for agents
 
-| Document                          | Inhoud                                                                |
-| --------------------------------- | --------------------------------------------------------------------- |
-| `claude/docs/overdracht.md`       | Stand bij accountwissel: lopend werk, openstaande opdracht, afspraken |
-| `claude/docs/agent-werkwijze.md`  | Taakbeheer, cross-referenties, documentsplitsing, gedragsregels       |
-| `claude/docs/code-standaarden.md` | Codestijl (16 keuzes)                                                 |
-| `claude/docs/patroon-loop.md`     | Loop die elke 15 min een agent per patroon start (tick + agent-brief) |
-| `claude/docs/design-patterns.md`  | GoF / refactoring.guru: welk patroon waar in Unshackle                |
+| Document | Contents |
+| -------- | -------- |
+| `claude/docs/overdracht.md` | State at an account switch: ongoing work, open assignment, agreements |
+| `claude/docs/agent-werkwijze.md` | Task management, cross-references, document splitting, rules of conduct |
+| `claude/docs/code-standaarden.md` | Code style (16 choices) |
+| `claude/docs/patroon-loop.md` | Loop that starts an agent per pattern every 15 min (tick + agent brief) |
+| `claude/docs/design-patterns.md` | GoF / refactoring.guru: which pattern where in Unshackle |
 
-## Taken
+## Tasks
 
-| Locatie | Inhoud |
-| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `claude/tasks/` | Actieve taken: `TAAK-NNN-<slug>.md` |
-| `claude/tasks/TAAK-019-lancering.md` | Volgende stap: lancering (echte casus, NuGet, publiek, README-GIF) |
-| `claude/tasks/archief/TAAK-220-throw-aggregateexception-uitpakken.md` | ✅ `Throw<T>()` op blokkerende delegate, FA pakt `AggregateException` uit (Akka.Streams, 9 regressies) |
-| `claude/tasks/archief/TAAK-221-throwasync-geannuleerde-task.md` | ✅ `ThrowAsync` op geannuleerde task verliest echte exception (Steeltoe, 18 regressies) |
-| `claude/tasks/archief/TAAK-222-meta-test-op-eigen-assertion-helper.md` | ✅ `Throw<XunitException>()` op gemigreerde eigen assertion-helper (LiteDB, 26 regressies) |
-| `claude/tasks/archief/TAAK-224-timespan-extensies-seconds-milliseconds.md` | ✅ Nieuw patroon `fa.timespan-extensions`: `5.Seconds()` → `TimeSpan.FromSeconds(5)`, `1.March(y)` → `new DateTime(..)` |
-| `claude/tasks/archief/TAAK-225-equal-op-dictionary.md` | ✅ `Equal` op dictionary met waarde-items → `ShouldBe(.., ignoreOrder: true)` |
-| `claude/tasks/archief/TAAK-223-multitarget-eerste-tfm-inactieve-code.md` | ✅ Multi-target: extra pass per TFM met andere actieve `#if`-code (LiteDB) |
-| `claude/tasks/archief/TAAK-031-fa-assertion-scope.md` | ✅ Assertions in `AssertionScope` → Manual; patroon `fa.assertion-scope` |
-| `claude/tasks/archief/TAAK-040-fa-expression-bodied-void.md` | ✅ `void M() => x.Should()...` wordt herschreven |
-| `claude/tasks/archief/TAAK-041-fa-null-conditional-subject.md` | ✅ `a?.B.Should()...` → `a?.B.ShouldX()` (zelfde semantiek) |
-| `claude/tasks/archief/TAAK-042-fa-throwasync-configure-await.md` | ✅ `ThrowAsync<T>().ConfigureAwait(x)` blijft behouden |
-| `claude/tasks/archief/TAAK-032-fa-not-be.md` | ✅ `x.Should().NotBe(y)` → `x.ShouldNotBe(y)`; patroon `fa.not-be` |
-| `claude/tasks/archief/TAAK-033-fa-and-chain.md` | ✅ `x.Should().A().And.B()` → losse Shouldly-statements via de schakel-patronen; patroon `fa.and-chain` |
-| `claude/tasks/archief/TAAK-034-fa-be-of-type.md` | ✅ `BeOfType<T>()`/`BeAssignableTo<T>()` (+ `Not`, `.Which`) → `ShouldBeOfType<T>()` e.d.; patroon `fa.be-of-type` |
-| `claude/tasks/archief/TAAK-035-fa-string-start-end.md` | ✅ `StartWith`/`EndWith` (+ `Not`, `EquivalentOf`) en `(Not)BeNullOr(Empty | WhiteSpace)`→ Shouldly met`Case.Sensitive`; patroon `fa.string-start-end` |
-| `claude/tasks/archief/TAAK-036-fa-contain-single-which.md` | ✅ `ContainSingle()`/`ContainSingle(pred)` (+ `var y = ….Which`) → `ShouldHaveSingleItem()`/`ShouldContain(pred, 1)`; patroon `fa.contain-single-which` |
-| `claude/tasks/archief/TAAK-038-fa-equal-sequence.md` | ✅ `Equal(seq)`/`Equal(params)` → `ShouldBe(seq)` (volgorde-gevoelig), `NotEqual` sinds TAAK-160 eigen patroon; patroon `fa.equal-sequence` |
-| `claude/tasks/archief/TAAK-159-automapper-add-automapper.md` | ✅ `AddAutoMapper(...)` → patroon `automapper.add-automapper` |
-| `claude/tasks/archief/TAAK-160-fa-not-equal.md` | ✅ `NotEqual(seq)` → `ShouldNotBe(seq)` (met `ShouldNotBeNull()`-guard); patroon `fa.not-equal` |
-| `claude/tasks/archief/TAAK-164-fa-contain-equivalent-of.md` | ✅ `ContainEquivalentOf`/`NotContainEquivalentOf` → `ShouldContain`/`ShouldNotContain` voor waarde-items (leaf, sealed record, struct); class/ander type/options Manual; patroon `fa.contain-equivalent-of` |
-| `claude/tasks/archief/TAAK-162-fa-order.md` | ✅ `BeInAscendingOrder`/`BeInDescendingOrder` → `Select(..).ShouldBeInOrder(dir)` (string-sleutel met Ordinal-comparer); patroon `fa.order` |
-| `claude/tasks/archief/TAAK-039-fa-have-length.md` | ✅ string `HaveLength(n)` → `Length.ShouldBe(n)`; patroon `fa.have-length` |
-| `claude/tasks/archief/TAAK-050-fa-be-approximately.md` | ✅ `(Not)BeApproximately`/`(Not)BeCloseTo` → `ShouldBe(x, tol)`/`ShouldNotBe`/`Math.Abs(..).ShouldBeGreaterThan`; patroon `fa.be-approximately` |
-| `claude/tasks/archief/TAAK-051-fa-throw-exactly.md` | ✅ `ThrowExactly(Async)<T>` → `Should.Throw(Async)<T>(..).ShouldBeOfType<T>()`; patroon `fa.throw-exactly` |
-| `claude/tasks/archief/TAAK-052-fa-invoking.md` | ✅ `x.Invoking/Awaiting(s => ..)` → `Should.Throw/ThrowAsync/NotThrow(() => ..)`; patroon `fa.invoking` |
-| `claude/tasks/archief/TAAK-023-mediatr-request-handler.md` | ✅ `Task<T> Handle` → `ValueTask<T> Handle`; patroon `mediatr.request-handler` |
-| `claude/tasks/archief/TAAK-043-fa-inactive-preprocessor-branch.md` | ✅ Inactieve `#if`-code: oude using blijft + Manual (`usings`) |
-| `claude/tasks/archief/TAAK-044-fa-global-using.md` | ✅ `global using` projectbreed geswapt, of blijft naast de nieuwe + Manual |
-| `claude/tasks/archief/TAAK-025-mediatr-void-request-handler.md` | ✅ `Task Handle` → `ValueTask<Unit> Handle` + `Unit.Value`; patroon `mediatr.void-request-handler`, helper `MediatRSyntax` |
-| `claude/tasks/archief/TAAK-026-mediatr-notification-handler.md` | ✅ notification-handler `Task Handle` → `ValueTask Handle`; patroon `mediatr.notification-handler` |
-| `claude/tasks/archief/TAAK-027-mediatr-pipeline-behavior.md` | ✅ `IPipelineBehavior` → Mediator (`ValueTask`, `MessageHandlerDelegate`, `next(request, ct)`, `IMessage`); proof-runner draait de Mediator-source-generator |
-| `claude/tasks/archief/TAAK-028-mediatr-add-mediatr.md` | ✅ `AddMediatR(cfg => ...)` → `AddMediator(cfg => ...)`; patroon `mediatr.add-mediatr` |
-| `claude/tasks/archief/TAAK-045-flaky-integratietest.md` | ✅ Integratietest: kind-`dotnet` geïsoleerd (geen node reuse, geen gelekte MSBuild-env) |
-| `claude/tasks/archief/TAAK-047-fa-withmessage-line-endings.md` | ✅ `WithMessage` met regeleinde: `IgnoreLineEndings` of Manual |
-| `claude/tasks/archief/TAAK-048-fa-throw-aggregate-exception.md` | ✅ `Throw`/`ThrowAsync`: actie met `Wait`/`.Result`/`Parallel.*` → Manual (AggregateException) |
-| `claude/tasks/archief/TAAK-049-fa-equivalent-runtime-type.md` | ✅ `BeEquivalentTo` object: waarschuwing bij niet-sealed types (runtime-type) |
-| `claude/tasks/archief/TAAK-080-mediatr-marker-interface-handler.md` | ✅ Bug: handler via eigen marker-interface (`ICommandHandler<T> : IRequestHandler<T>`) niet gevonden |
-| `claude/tasks/archief/TAAK-081-mediatr-behavior-request-constraint.md` | ✅ Bug: behavior met `IRequest<TResponse>`-constraint krijgt overbodig `IMessage` |
-| `claude/tasks/archief/TAAK-092-fa-be-equivalent-to-collection.md` | ✅ `BeEquivalentTo` op een collectie zonder options → `ShouldBe(expected, ignoreOrder: true)` |
+| Location | Contents |
+| -------- | -------- |
+| `claude/tasks/` | Active tasks: `TAAK-NNN-<slug>.md` |
+| `claude/tasks/TAAK-019-lancering.md` | Next step: launch (real case, NuGet, public, README GIF) |
+| `claude/tasks/archief/TAAK-220-throw-aggregateexception-uitpakken.md` | ✅ `Throw<T>()` on a blocking delegate, FA unwraps `AggregateException` (Akka.Streams, 9 regressions) |
+| `claude/tasks/archief/TAAK-221-throwasync-geannuleerde-task.md` | ✅ `ThrowAsync` on a cancelled task loses the real exception (Steeltoe, 18 regressions) |
+| `claude/tasks/archief/TAAK-222-meta-test-op-eigen-assertion-helper.md` | ✅ `Throw<XunitException>()` on a migrated own assertion helper (LiteDB, 26 regressions) |
+| `claude/tasks/archief/TAAK-224-timespan-extensies-seconds-milliseconds.md` | ✅ New pattern `fa.timespan-extensions`: `5.Seconds()` → `TimeSpan.FromSeconds(5)`, `1.March(y)` → `new DateTime(..)` |
+| `claude/tasks/archief/TAAK-225-equal-op-dictionary.md` | ✅ `Equal` on a dictionary with value items → `ShouldBe(.., ignoreOrder: true)` |
+| `claude/tasks/archief/TAAK-223-multitarget-eerste-tfm-inactieve-code.md` | ✅ Multi-target: extra pass per TFM with other active `#if` code (LiteDB) |
+| `claude/tasks/archief/TAAK-031-fa-assertion-scope.md` | ✅ Assertions in `AssertionScope` → Manual; pattern `fa.assertion-scope` |
+| `claude/tasks/archief/TAAK-040-fa-expression-bodied-void.md` | ✅ `void M() => x.Should()...` is rewritten |
+| `claude/tasks/archief/TAAK-041-fa-null-conditional-subject.md` | ✅ `a?.B.Should()...` → `a?.B.ShouldX()` (same semantics) |
+| `claude/tasks/archief/TAAK-042-fa-throwasync-configure-await.md` | ✅ `ThrowAsync<T>().ConfigureAwait(x)` is kept |
+| `claude/tasks/archief/TAAK-032-fa-not-be.md` | ✅ `x.Should().NotBe(y)` → `x.ShouldNotBe(y)`; pattern `fa.not-be` |
+| `claude/tasks/archief/TAAK-033-fa-and-chain.md` | ✅ `x.Should().A().And.B()` → separate Shouldly statements via the link patterns; pattern `fa.and-chain` |
+| `claude/tasks/archief/TAAK-034-fa-be-of-type.md` | ✅ `BeOfType<T>()`/`BeAssignableTo<T>()` (+ `Not`, `.Which`) → `ShouldBeOfType<T>()` etc.; pattern `fa.be-of-type` |
+| `claude/tasks/archief/TAAK-035-fa-string-start-end.md` | ✅ `StartWith`/`EndWith` (+ `Not`, `EquivalentOf`) and `(Not)BeNullOr(Empty \| WhiteSpace)` → Shouldly with `Case.Sensitive`; pattern `fa.string-start-end` |
+| `claude/tasks/archief/TAAK-036-fa-contain-single-which.md` | ✅ `ContainSingle()`/`ContainSingle(pred)` (+ `var y = ….Which`) → `ShouldHaveSingleItem()`/`ShouldContain(pred, 1)`; pattern `fa.contain-single-which` |
+| `claude/tasks/archief/TAAK-038-fa-equal-sequence.md` | ✅ `Equal(seq)`/`Equal(params)` → `ShouldBe(seq)` (order-sensitive), `NotEqual` has its own pattern since TAAK-160; pattern `fa.equal-sequence` |
+| `claude/tasks/archief/TAAK-159-automapper-add-automapper.md` | ✅ `AddAutoMapper(...)` → pattern `automapper.add-automapper` |
+| `claude/tasks/archief/TAAK-160-fa-not-equal.md` | ✅ `NotEqual(seq)` → `ShouldNotBe(seq)` (with a `ShouldNotBeNull()` guard); pattern `fa.not-equal` |
+| `claude/tasks/archief/TAAK-164-fa-contain-equivalent-of.md` | ✅ `ContainEquivalentOf`/`NotContainEquivalentOf` → `ShouldContain`/`ShouldNotContain` for value items (leaf, sealed record, struct); class/other type/options Manual; pattern `fa.contain-equivalent-of` |
+| `claude/tasks/archief/TAAK-162-fa-order.md` | ✅ `BeInAscendingOrder`/`BeInDescendingOrder` → `Select(..).ShouldBeInOrder(dir)` (string key with Ordinal comparer); pattern `fa.order` |
+| `claude/tasks/archief/TAAK-039-fa-have-length.md` | ✅ string `HaveLength(n)` → `Length.ShouldBe(n)`; pattern `fa.have-length` |
+| `claude/tasks/archief/TAAK-050-fa-be-approximately.md` | ✅ `(Not)BeApproximately`/`(Not)BeCloseTo` → `ShouldBe(x, tol)`/`ShouldNotBe`/`Math.Abs(..).ShouldBeGreaterThan`; pattern `fa.be-approximately` |
+| `claude/tasks/archief/TAAK-051-fa-throw-exactly.md` | ✅ `ThrowExactly(Async)<T>` → `Should.Throw(Async)<T>(..).ShouldBeOfType<T>()`; pattern `fa.throw-exactly` |
+| `claude/tasks/archief/TAAK-052-fa-invoking.md` | ✅ `x.Invoking/Awaiting(s => ..)` → `Should.Throw/ThrowAsync/NotThrow(() => ..)`; pattern `fa.invoking` |
+| `claude/tasks/archief/TAAK-023-mediatr-request-handler.md` | ✅ `Task<T> Handle` → `ValueTask<T> Handle`; pattern `mediatr.request-handler` |
+| `claude/tasks/archief/TAAK-043-fa-inactive-preprocessor-branch.md` | ✅ Inactive `#if` code: old using stays + Manual (`usings`) |
+| `claude/tasks/archief/TAAK-044-fa-global-using.md` | ✅ `global using` swapped project-wide, or stays next to the new one + Manual |
+| `claude/tasks/archief/TAAK-025-mediatr-void-request-handler.md` | ✅ `Task Handle` → `ValueTask<Unit> Handle` + `Unit.Value`; pattern `mediatr.void-request-handler`, helper `MediatRSyntax` |
+| `claude/tasks/archief/TAAK-026-mediatr-notification-handler.md` | ✅ notification handler `Task Handle` → `ValueTask Handle`; pattern `mediatr.notification-handler` |
+| `claude/tasks/archief/TAAK-027-mediatr-pipeline-behavior.md` | ✅ `IPipelineBehavior` → Mediator (`ValueTask`, `MessageHandlerDelegate`, `next(request, ct)`, `IMessage`); the proof runner runs the Mediator source generator |
+| `claude/tasks/archief/TAAK-028-mediatr-add-mediatr.md` | ✅ `AddMediatR(cfg => ...)` → `AddMediator(cfg => ...)`; pattern `mediatr.add-mediatr` |
+| `claude/tasks/archief/TAAK-045-flaky-integratietest.md` | ✅ Integration test: child `dotnet` isolated (no node reuse, no leaked MSBuild env) |
+| `claude/tasks/archief/TAAK-047-fa-withmessage-line-endings.md` | ✅ `WithMessage` with a line break: `IgnoreLineEndings` or Manual |
+| `claude/tasks/archief/TAAK-048-fa-throw-aggregate-exception.md` | ✅ `Throw`/`ThrowAsync`: action with `Wait`/`.Result`/`Parallel.*` → Manual (AggregateException) |
+| `claude/tasks/archief/TAAK-049-fa-equivalent-runtime-type.md` | ✅ `BeEquivalentTo` object: warning on non-sealed types (runtime type) |
+| `claude/tasks/archief/TAAK-080-mediatr-marker-interface-handler.md` | ✅ Bug: handler via own marker interface (`ICommandHandler<T> : IRequestHandler<T>`) not found |
+| `claude/tasks/archief/TAAK-081-mediatr-behavior-request-constraint.md` | ✅ Bug: behavior with an `IRequest<TResponse>` constraint gets a superfluous `IMessage` |
+| `claude/tasks/archief/TAAK-092-fa-be-equivalent-to-collection.md` | ✅ `BeEquivalentTo` on a collection without options → `ShouldBe(expected, ignoreOrder: true)` |
 | `claude/tasks/archief/TAAK-093-fa-be-same-as.md` | ✅ `BeSameAs`/`NotBeSameAs` → `ShouldBeSameAs`/`ShouldNotBeSameAs` |
 | `claude/tasks/archief/TAAK-094-fa-not-throw-async.md` | ✅ `await act.Should().NotThrowAsync()` → `await Should.NotThrowAsync(act)` |
-| `claude/tasks/archief/TAAK-095-fa-date-count-comparisons.md` | ✅ `BeAfter`/`BeOnOrAfter`/`BeBefore`/`BeOnOrBefore` en `HaveCountGreaterThan…`/`HaveCountLessThan…` |
-| `claude/tasks/archief/TAAK-096-fa-which-chain.md` | ✅ `.Which`/`.Subject` na waarde-teruggevende assertions |
-| `claude/tasks/archief/TAAK-097-fa-because-args.md` | ✅ becauseArgs centraal → `string.Format` |
-| `claude/tasks/archief/TAAK-098-fa-hoist-subject.md` | ✅ Subject met bijwerkingen → `var subject = …;` |
-| `claude/tasks/archief/TAAK-099-fa-match.md` | ✅ `fa.match`: MatchRegex/NotMatchRegex en wildcard-Match |
+| `claude/tasks/archief/TAAK-095-fa-date-count-comparisons.md` | ✅ `BeAfter`/`BeOnOrAfter`/`BeBefore`/`BeOnOrBefore` and `HaveCountGreaterThan…`/`HaveCountLessThan…` |
+| `claude/tasks/archief/TAAK-096-fa-which-chain.md` | ✅ `.Which`/`.Subject` after value-returning assertions |
+| `claude/tasks/archief/TAAK-097-fa-because-args.md` | ✅ becauseArgs centrally → `string.Format` |
+| `claude/tasks/archief/TAAK-098-fa-hoist-subject.md` | ✅ Subject with side effects → `var subject = …;` |
+| `claude/tasks/archief/TAAK-099-fa-match.md` | ✅ `fa.match`: MatchRegex/NotMatchRegex and wildcard Match |
 | `claude/tasks/archief/TAAK-100-fa-assertion-scope-satisfy.md` | ✅ AssertionScope → `ShouldSatisfyAllConditions` |
-| `claude/tasks/archief/TAAK-101-fa-direct-mappings.md` | ✅ Kleine mappings |
-| `claude/tasks/archief/TAAK-166-fa-numeric-sign.md` | ✅ `BeNegative` op double/float: exacte vertaling `(x < 0).ShouldBeTrue()`, probe NaN/-0.0/±∞ |
-| `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` | Frequentietabel MediatR/AutoMapper-API's uit 9 open-source projecten, dekking door patronen |
-| `claude/tasks/archief/TAAK-110-unrecognized-should-keeps-using.md` | ✅ Bug (corpus): niet-herkende `.Should()` → using toch weg (CSFE, CS1061) |
-| `claude/tasks/archief/TAAK-116-one-run-lambda-overload.md` | ✅ Eén fix-run volstaat: Shouldly als referentie in het model (CSFE 21 `usings`-Manuals → 0) |
-| `claude/tasks/archief/TAAK-111-project-file-not-editable-blocks-rewrite.md` | ✅ Bug (corpus): csproj niet aanpasbaar (BOM?) → code wel herschreven, Shouldly ontbreekt (Polly, Ardalis.Result) |
-| `claude/tasks/archief/TAAK-112-bogus-load-builder-project.md` | ✅ Bug (corpus): Bogus laadt niet (Builder 'System') |
+| `claude/tasks/archief/TAAK-101-fa-direct-mappings.md` | ✅ Small mappings |
+| `claude/tasks/archief/TAAK-166-fa-numeric-sign.md` | ✅ `BeNegative` on double/float: exact translation `(x < 0).ShouldBeTrue()`, probe NaN/-0.0/±∞ |
+| `docs/projectinfo/architectuur/corpus-mediatr-automapper.md` | Frequency table of MediatR/AutoMapper APIs from 9 open-source projects, coverage by patterns |
+| `claude/tasks/archief/TAAK-110-unrecognized-should-keeps-using.md` | ✅ Bug (corpus): unrecognised `.Should()` → using removed anyway (CSFE, CS1061) |
+| `claude/tasks/archief/TAAK-116-one-run-lambda-overload.md` | ✅ One fix run is enough: Shouldly as a reference in the model (CSFE 21 `usings` Manuals → 0) |
+| `claude/tasks/archief/TAAK-111-project-file-not-editable-blocks-rewrite.md` | ✅ Bug (corpus): csproj not editable (BOM?) → code rewritten anyway, Shouldly missing (Polly, Ardalis.Result) |
+| `claude/tasks/archief/TAAK-112-bogus-load-builder-project.md` | ✅ Bug (corpus): Bogus does not load (Builder 'System') |
 | `claude/tasks/archief/TAAK-113-equal-sequence-collection-expression.md` | ✅ Bug (corpus): `Equal([..])` → `new T[] { [..] }` (PowerApps, CS0029) |
 | `claude/tasks/archief/TAAK-114-be-empty-guid.md` | ✅ Bug (corpus): `Guid` `NotBeEmpty()` → `ShouldNotBe(Guid.Empty)` (Polly, CS1061) |
-| `claude/tasks/archief/TAAK-115-usings-stijl-en-overbodig.md` | ✅ Bug (corpus): toegevoegde usings buiten namespace of overbodig (evo1, IDE0065/IDE0005) |
-| `claude/tasks/archief/TAAK-130-mediatr-cross-file-marker-volgorde.md` | ✅ TAAK-130 — MediatR: handler via marker-interface in ander bestand wordt gemist (bestandsvolgorde) |
-| `claude/tasks/TAAK-131-mediatr-namespace-schaduw.md` | TAAK-131 — MediatR: `using Mediator;` binnen een namespace wordt overschaduwd door eigen `*.Mediator`-namespace |
-| `claude/tasks/archief/TAAK-132-mediatr-abstracte-generieke-basis.md` | ✅ TAAK-132 — MediatR: abstracte generieke basisklasse onterecht Manual ("generic messages") |
-| `claude/tasks/archief/TAAK-133-mediatr-extern-pakket-op-mediatr.md` | ✅ TAAK-133 — MediatR: pakketten die zelf op MediatR bouwen (Ardalis.SharedKernel) worden niet gezien |
-| `claude/tasks/archief/TAAK-134-projectbestand-roundtrip.md` | ✅ TAAK-134 — Projectbestanden: "cannot be edited without changing unrelated text" bij gewone opmaak |
-| `claude/tasks/TAAK-135-loader-razor-en-vreemde-projecten.md` | TAAK-135 — Laden: Razor-componenten, `.dcproj` en niet-ladende bijprojecten blokkeren de hele solution |
-| `claude/tasks/archief/TAAK-136-mediatr-msg0005-zonder-handler.md` | ✅ TAAK-136 — MediatR: Mediator-generator MSG0005 breekt build met TreatWarningsAsErrors |
-| `claude/tasks/archief/TAAK-131-mediatr-namespace-schaduw.md` | ✅ TAAK-131 — MediatR: `using Mediator;` binnen een namespace wordt overschaduwd door eigen `*.Mediator`-namespace |
-| `claude/tasks/TAAK-132-mediatr-abstracte-generieke-basis.md` | TAAK-132 — MediatR: abstracte generieke basisklasse onterecht Manual ("generic messages") |
-| `claude/tasks/TAAK-133-mediatr-extern-pakket-op-mediatr.md` | TAAK-133 — MediatR: pakketten die zelf op MediatR bouwen (Ardalis.SharedKernel) worden niet gezien |
-| `claude/tasks/archief/TAAK-135-loader-razor-en-vreemde-projecten.md` | ✅ TAAK-135 — Laden: Razor-componenten, `.dcproj` en niet-ladende bijprojecten blokkeren de hele solution |
-| `claude/tasks/TAAK-136-mediatr-msg0005-zonder-handler.md` | TAAK-136 — MediatR: Mediator-generator MSG0005 breekt build met TreatWarningsAsErrors |
-| `claude/tasks/archief/TAAK-118-gedeeld-pakketbestand-niet-geladen-projecten.md` | ✅ TAAK-118 — Gedeeld `Directory.*.props` houdt het oude pakket als een niet-gemigreerd project op schijf het nog gebruikt |
-| `claude/tasks/CORPUSRUN-fa.md` | Corpus-runs FA; ronde 4: 16/16 bouwen, 13/16 groen, regressies → TAAK-220..222; ronde 5: Akka/Steeltoe/LiteDB 0 nieuwe regressies |
-| `claude/tasks/CORPUSRUN-mediatr.md` | Corpus-run MediatR: 0/9 volledig gemigreerd, blokkades en top-10 acties |
-| `claude/tasks/REGRESSIE-corpus.md` | Regressie-run per test: 8/10 identiek; Polly → TAAK-140 |
-| `claude/tasks/REGRESSIE-corpus-2.md` | Regressie-run ronde 2 (Facility, MODiX): 0 regressies; foutklassen → TAAK-152..154 |
-| `claude/tasks/archief/TAAK-152-using-volgorde-na-hernoemen.md` | TAAK-152 — Hernoemde using niet gesorteerd → SA1210 (Facility) |
-| `claude/tasks/archief/TAAK-153-equal-sequence-opmaak-meerdere-regels.md` | TAAK-153 — `Equal(` over meerdere regels wordt één regel |
-| `claude/tasks/archief/TAAK-154-mediatr-handler-expression-body-task.md` | TAAK-154 — MediatR: `Task Handle(…) => X(…)` → Manual blokkeert hele migratie (MODiX) |
-| `claude/tasks/archief/TAAK-140-catch-filter-op-fa-exception.md` | Bug: eigen code vangt FA-exception → Shouldly-exception niet gevangen (Polly) |
-| `claude/tasks/archief/TAAK-143-harnas-mtp.md` | Harnas ondersteunt MTP (PowerApps: 1178 tests, 0 regressies) |
-| `claude/tasks/archief/TAAK-144-mediatr-evo2-naamconflict-generator.md` | evo2: eigen `ICommand` vs `Mediator.ICommand` (volledige naam), gedeelde/internal registratie → Manual |
-| `claude/tasks/archief/TAAK-147-mediatr-restpunten-144.md` | Generator alleen bij echte `AddMediatR`, global using op naamconflict, `InternalsVisibleTo` → Manual |
-| `claude/tasks/archief/TAAK-148-mediatr-friend-echte-aanroep.md` | `InternalsVisibleTo` alleen Manual bij echte aanroep uit ander project (`ISolutionPattern`) |
-| `claude/tasks/patroon-queue.md` | Wachtrij FA → Shouldly-patronen: welk patroon, welke taak, status (ronde 2: rijen 15-34) |
-| `claude/tasks/mediatr-queue.md` | Wachtrij MediatR → Mediator-patronen; infrastructuur in TAAK-020 |
-| `claude/tasks/automapper-queue.md` | Wachtrij AutoMapper → handgeschreven mapping (voorstel, op frequentie) |
-| `claude/tasks/archief/` | Voltooide taken |
-| `claude/tasks/archief/TAAK-029-mediatr-send-as-task.md` | ✅ niet-ge-awaite `Send`/`Publish` → `.AsTask()`; patroon `mediatr.send-as-task` |
-| `claude/tasks/archief/TAAK-037-mediatr-unsupported.md` | ✅ pre/post/exception/publisher/stream-behavior/generieke berichten → Manual met advies; stream-request-swap; `RegisterGenericHandlers` valt weg; end-to-end SampleShop |
-| `claude/tasks/archief/TAAK-060-mediatr-notification-publisher-config.md` | ✅ `NotificationPublisher = new TaskWhenAllPublisher()` → `NotificationPublisherType`; CS0104 na swap |
-| `claude/tasks/archief/TAAK-061-mediatr-processors-exception-handlers.md` | Pre/post-processors en exception-handlers herschrijven (klaar; ook alles-of-niets) |
-| `claude/tasks/archief/TAAK-062-mediatr-stream-pipeline-behavior.md` | (klaar) `IStreamPipelineBehavior` herschrijven, `AddOpenStreamBehavior` → `StreamPipelineBehaviors` |
-| `claude/tasks/archief/TAAK-063-mediatr-source-generator-alleen-host.md` | ✅ Source generator alleen in host-project (CS0436 in testprojecten) |
-| `claude/tasks/TAAK-040-fa-expression-bodied-void.md` | Bug: `void M() => x.Should()...` wordt Manual |
-| `claude/tasks/TAAK-041-fa-null-conditional-subject.md` | Bug: `a?.B.Should()...` wordt Manual "result is used" |
-| `claude/tasks/TAAK-042-fa-throwasync-configure-await.md` | Bug: `ThrowAsync<T>().ConfigureAwait(false)` wordt Manual |
-| `claude/tasks/TAAK-043-fa-inactive-preprocessor-branch.md` | Bug: inactieve `#if`-tak blijft FA, using verdwijnt |
-| `claude/tasks/TAAK-044-fa-global-using.md` | Bug: `global using FluentAssertions;` wordt niet vervangen |
-| `claude/tasks/TAAK-070-fa-assertion-in-throw-lambda.md` | Bug: assertion in lambda met `Throw<XunitException>` → regressie na fix |
-| `claude/tasks/archief/TAAK-071-fa-equivalent-collection-params.md` | ✅ `BeEquivalentTo(params)` op collectie → Manual met collectie-reden |
-| `claude/tasks/archief/TAAK-072-fa-contain-single-subject.md` | ✅ `ContainSingle().Subject` als `.Which` |
-| `claude/tasks/archief/TAAK-073-unused-fa-using-after-package-removal.md` | ✅ Ongebruikte oude using ook verwijderd in bestanden zonder findings |
-| `claude/tasks/TAAK-061-mediatr-processors-exception-handlers.md` | Pre/post-processors en exception-handlers herschrijven i.p.v. Manual |
-| `claude/tasks/TAAK-062-mediatr-stream-pipeline-behavior.md` | `IStreamPipelineBehavior` herschrijven, `AddOpenStreamBehavior` → `StreamPipelineBehaviors` |
-| `claude/tasks/archief/TAAK-090-loader-nuget-warnings.md` | ✅ Loader: NuGet-audit/NU1701 en ontbrekend projectbestand zijn waarschuwingen, geen laadfout |
-| `claude/tasks/archief/TAAK-165-custom-assertions-should-extensie.md` | ✅ queue #34: al gedekt door `fa.custom-assertion`; extra proof voor eigen `Should()` + `ObjectAssertions`-subklasse |
-| `claude/tasks/archief/TAAK-091-custom-assertions-gegroepeerd.md` | ✅ `fa.custom-assertion`: eigen FA-extensies Manual, gegroepeerd per extensie in rapport en console |
-| `claude/tasks/archief/TAAK-167-niet-utf8-bestand-breekt-fix.md` | ✅ Niet-UTF-8-bestand: overgeslagen met Manual `encoding`, rest gemigreerd (EventFlow) (corpus 2026-10-12) |
-| `claude/tasks/archief/TAAK-168-should-contain-key-readonly-dictionary.md` | klaar: `ContainKey` op `IReadOnlyDictionary`/headers geeft `ContainsKey(..).ShouldBeTrue()`/`Contains(..)`, anders Manual (CS0411 Steeltoe) |
-| `claude/tasks/archief/TAAK-169-should-be-impliciete-conversie.md` | ✅ `Be`/`BeGreaterThan` met eigen impliciete conversie → cast naar subjecttype (LiteDB, corpus 2026-10-12) |
-| `claude/tasks/archief/TAAK-170-throw-resultaat-gebruikt.md` | ✅ `Throw<T>()`-keten (`.And/.Which/.Where/.WithInnerException`) via `ThrowChains` op de teruggegeven exception (Polly) |
-| `claude/tasks/archief/TAAK-171-contain-key-whose-value.md` | klaar: `ContainKey(..).WhoseValue`, `ContainKeys`/`ContainValues`/`ContainValue` worden via `fa.and-chain` losse Shouldly-statements (corpus 2026-10-12) |
-| `claude/tasks/archief/TAAK-172-be-equivalent-to-collectie-ignore-order.md` | ✅ `BeEquivalentTo` op collectie van waarde-items (sealed record, struct) en de params-vorm `BeEquivalentTo("a", "b")` → `ShouldBe(…, ignoreOrder: true)`; `ParamsArraySyntax` gedeeld met `fa.equal-sequence` |
-| `docs/projectinfo/patterns/fa-be-equivalent-to-collection-plan.md` | KingmaDoc-plan van `BeEquivalentTo` op een collectie (TAAK-172) |
-| `docs/projectinfo/patterns/fa-be-equivalent-to-collection-modellen.md` | Klassen-, sequence- en beslismodel van `BeEquivalentTo` op een collectie |
-| `docs/projectinfo/patterns/fa-be-equivalent-to-collection-verify.md` | Verificatie van `BeEquivalentTo` op een collectie |
-| `claude/tasks/archief/TAAK-173-awaiting-subject-not-throw-async.md` | ✅ `Awaiting(..).Should().NotThrowAsync()`, `FluentActions.Invoking/Awaiting`, waardetype-resultaten bij Invoking (Polly 964 → 171 Manual) |
-| `claude/tasks/archief/TAAK-174-shouldly-dubbelzinnig-met-eigen-shouldbe.md` | ✅ `using Shouldly` dat botst met eigen `ShouldBe` (CS0121) → bestand Manual; Akka bouwt groen na de fix |
-| `claude/tasks/archief/TAAK-198-shouldly-conflict-manual-verkleinen.md` | ✅ conflict met eigen `Should*`: per call Manual, rest via gerichte `using static`-imports; Akka Fixed 5 463 → 6 016, build groen |
-| `claude/tasks/archief/TAAK-199-eigen-shouldbe-in-omsluitende-namespace.md` | ✅ herschreven call die niet aan Shouldly bindt (eigen `ShouldBe` in omsluitende namespace) → bestand Manual; Akka.Tests groen |
-| `claude/tasks/archief/TAAK-200-shouldbe-object-gelijkheid-ddata.md` | ✅ oorzaak: Shouldly doet `expected.Equals(actual)`, FA `actual.Equals(expected)`; asymmetrische `Equals` in Akka; nu Fixed met waarschuwing in het rapport |
-| `claude/tasks/archief/TAAK-180-mediatr-test-request-handler-delegate.md` | ✅ `mediatr.request-handler-delegate` (gemockte `next` in testcode) + vangnet `unmatched-use` voor MediatR-gebruik zonder finding |
-| `claude/tasks/archief/TAAK-190-mediatr-request-processor-aanroepers.md` | ✅ `mediatr.request-processor-caller`: `new P<Cmd>()` en `await p.Process(...)` van een herschreven processor meeverhuisd, rest Manual |
-| `docs/projectinfo/patterns/mediatr-request-processor-caller-plan.md` | Plan (+ modellen, verify) van `mediatr.request-processor-caller` |
-| `claude/tasks/archief/TAAK-191-mediatr-request-handler-delegate-gedeeld-veld.md` | ✅ één `RequestHandlerDelegate`-mock gedeeld door meerdere requesttypen → `MessageHandlerDelegate<IMessage, TRes>` + adapter-lambda (amantin) |
-| `claude/tasks/archief/TAAK-195-mediatr-addmediatr-projectgrenzen.md` | ◐ `AddMediatR` over projectgrenzen: internal handlers → `InternalsVisibleTo` (`mediatr.internal-handler-access`, ardalis); evo1-testproject en evo2-`Assembly`-parameter gemeten onvertaalbaar |
-| `docs/projectinfo/patterns/mediatr-internal-handler-access-plan.md` | Plan (+ modellen, verify) van `mediatr.internal-handler-access` |
-| `src/Unshackle.Tests/Helpers/TestProjects.cs` | Meerprojectproofs in `_Combined/` (`// @project Naam -> Referenties`) |
-| `claude/tasks/archief/TAAK-192-mediatr-generieke-notification.md` | ✅ `mediatr.generic-notification`: `G<T> : INotification` → abstract + `GOfX : G<X>` per gesloten type, `MakeGenericType` → `GTypes.Close` (nadirbad) |
-| `docs/projectinfo/patterns/mediatr-generic-notification-plan.md` | Plan (+ modellen, verify) van `mediatr.generic-notification` |
-| `claude/tasks/archief/TAAK-193-mediatr-generieke-decorators-messages.md` | ✅ `mediatr.generic-decorator` (open generieke Autofac-decorators blijven, void → `IRequestHandler<T, Unit>`) en `mediatr.generic-request` (`G<T, R>` → abstract + `GOfXAndY` per gesloten type) (kgrzybek, eShop) |
-| `docs/projectinfo/patterns/mediatr-generic-decorator-plan.md` | Plan (+ modellen, verify) van `mediatr.generic-decorator` |
-| `docs/projectinfo/patterns/mediatr-generic-request-plan.md` | Plan (+ modellen, verify) van `mediatr.generic-request` |
-| `claude/tasks/archief/TAAK-194-mediatr-vendored-shared-kernel.md` | ✅ Ardalis.SharedKernel 1.4.0–3.0.1 vendored met Mediator i.p.v. MediatR; pakket vervangen door zijn afhankelijkheden |
-| `docs/projectinfo/patterns/mediatr-vendored-package-plan.md` | Plan (+ modellen, verify) van het vendoren van een pakket op MediatR |
-| `claude/tasks/archief/TAAK-196-mediatr-autofac-mediator-module.md` | ✅ `mediatr.autofac-mediator-module`: MediatR met de hand in Autofac → `AddMediator` + `Populate` zonder handler-registraties (kgrzybek) |
-| `docs/projectinfo/patterns/mediatr-autofac-mediator-module-plan.md` | Plan (+ modellen, verify) van `mediatr.autofac-mediator-module` |
-| `claude/tasks/archief/TAAK-197-mediatr-eigen-imediator-implementatie.md` | voltooid: eigen no-op `IMediator` → Mediator-interface (`mediatr.mediator-implementation`) |
-| `claude/tasks/archief/TAAK-210-mediatr-generieke-decorator-zonder-using.md` | ✅ decorator via eigen marker zonder `using MediatR` niet meer `mediatr.unsupported`; niet-CPM `Directory.Packages.props`; kgrzybek 0 Manual |
-| `claude/tasks/archief/TAAK-211-mediatr-send-as-task-nsubstitute-setup.md` | ✅ NSubstitute-setup `Send(...).Returns(Task.FromResult(x))` → `ValueTask.FromResult(x)`; dotnet/eShop bouwt |
-| `claude/tasks/archief/TAAK-212-mediatr-kgrzybek-build-na-fix.md` | ✅ TAAK-212 — kgrzybek: MSG0001, SA1210, CS1503, CS0122 na de fix opgelost |
-| `claude/tasks/archief/TAAK-213-mediatr-host-verwijst-naar-host.md` | ✅ TAAK-213 — host verwijst naar host: GenerateTypesAsInternal + Assemblies (kgrzybek bouwt) |
-| `claude/tasks/archief/TAAK-214-mediatr-archtests-gegenereerde-mediator.md` | ✅ TAAK-214 — kgrzybek-archtests: gegenereerde dispatcher, legitiem verschil |
-| `claude/tasks/archief/TAAK-240-mediatr-archtest-waarschuwing.md` | ✅ TAAK-240 — rapportwaarschuwing bij archtest-bibliotheek: namespace `Mediator` uitzonderen |
-| `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: ongebruikte assembly-parameter na AddMediator (IDE0060) → waarschuwing in rapport |
-| `claude/tasks/archief/TAAK-070-fa-assertion-in-throw-lambda.md` | ✅ Assertion in lambda met `Throw<XunitException>` erop → assertion en Throw Manual |
+| `claude/tasks/archief/TAAK-115-usings-stijl-en-overbodig.md` | ✅ Bug (corpus): added usings outside the namespace or superfluous (evo1, IDE0065/IDE0005) |
+| `claude/tasks/archief/TAAK-130-mediatr-cross-file-marker-volgorde.md` | ✅ TAAK-130 — MediatR: handler via marker interface in another file is missed (file order) |
+| `claude/tasks/archief/TAAK-131-mediatr-namespace-schaduw.md` | ✅ TAAK-131 — MediatR: `using Mediator;` inside a namespace is shadowed by an own `*.Mediator` namespace |
+| `claude/tasks/archief/TAAK-132-mediatr-abstracte-generieke-basis.md` | ✅ TAAK-132 — MediatR: abstract generic base class wrongly Manual ("generic messages") |
+| `claude/tasks/archief/TAAK-133-mediatr-extern-pakket-op-mediatr.md` | ✅ TAAK-133 — MediatR: packages that themselves build on MediatR (Ardalis.SharedKernel) are not seen |
+| `claude/tasks/archief/TAAK-134-projectbestand-roundtrip.md` | ✅ TAAK-134 — Project files: "cannot be edited without changing unrelated text" on ordinary formatting |
+| `claude/tasks/archief/TAAK-135-loader-razor-en-vreemde-projecten.md` | ✅ TAAK-135 — Loading: Razor components, `.dcproj` and non-loading side projects block the whole solution |
+| `claude/tasks/archief/TAAK-136-mediatr-msg0005-zonder-handler.md` | ✅ TAAK-136 — MediatR: Mediator generator MSG0005 breaks the build with TreatWarningsAsErrors |
+| `claude/tasks/archief/TAAK-118-gedeeld-pakketbestand-niet-geladen-projecten.md` | ✅ TAAK-118 — A shared `Directory.*.props` keeps the old package if a non-migrated project on disk still uses it |
+| `claude/tasks/CORPUSRUN-fa.md` | FA corpus runs; round 4: 16/16 build, 13/16 green, regressions → TAAK-220..222; round 5: Akka/Steeltoe/LiteDB 0 new regressions |
+| `claude/tasks/CORPUSRUN-mediatr.md` | MediatR corpus runs: from 0/9 to 7/9 fully migrated (rounds 1–6), blockers and actions |
+| `claude/tasks/REGRESSIE-corpus.md` | Regression run per test: 8/10 identical; Polly → TAAK-140 |
+| `claude/tasks/REGRESSIE-corpus-2.md` | Regression run round 2 (Facility, MODiX): 0 regressions; error classes → TAAK-152..154 |
+| `claude/tasks/archief/TAAK-152-using-volgorde-na-hernoemen.md` | ✅ TAAK-152 — Renamed using not sorted → SA1210 (Facility) |
+| `claude/tasks/archief/TAAK-153-equal-sequence-opmaak-meerdere-regels.md` | ✅ TAAK-153 — `Equal(` over several lines becomes one line |
+| `claude/tasks/archief/TAAK-154-mediatr-handler-expression-body-task.md` | ✅ TAAK-154 — MediatR: `Task Handle(…) => X(…)` → Manual blocks the whole migration (MODiX) |
+| `claude/tasks/archief/TAAK-140-catch-filter-op-fa-exception.md` | ✅ Bug: own code catches the FA exception → Shouldly exception not caught (Polly) |
+| `claude/tasks/archief/TAAK-143-harnas-mtp.md` | ✅ Harness supports MTP (PowerApps: 1178 tests, 0 regressions) |
+| `claude/tasks/archief/TAAK-144-mediatr-evo2-naamconflict-generator.md` | ✅ evo2: own `ICommand` vs `Mediator.ICommand` (full name), shared/internal registration → Manual |
+| `claude/tasks/archief/TAAK-147-mediatr-restpunten-144.md` | ✅ Generator only with a real `AddMediatR`, global using on name conflict, `InternalsVisibleTo` → Manual |
+| `claude/tasks/archief/TAAK-148-mediatr-friend-echte-aanroep.md` | ✅ `InternalsVisibleTo` only Manual on a real call from another project (`ISolutionPattern`) |
+| `claude/tasks/patroon-queue.md` | Queue of FA → Shouldly patterns: which pattern, which task, status (round 2: rows 15-34) |
+| `claude/tasks/mediatr-queue.md` | Queue of MediatR → Mediator patterns; infrastructure in TAAK-020 |
+| `claude/tasks/automapper-queue.md` | Queue of AutoMapper → hand-written mapping (proposal, by frequency) |
+| `claude/tasks/archief/` | Completed tasks |
+| `claude/tasks/archief/TAAK-029-mediatr-send-as-task.md` | ✅ non-awaited `Send`/`Publish` → `.AsTask()`; pattern `mediatr.send-as-task` |
+| `claude/tasks/archief/TAAK-037-mediatr-unsupported.md` | ✅ pre/post/exception/publisher/stream behavior/generic messages → Manual with advice; stream request swap; `RegisterGenericHandlers` is dropped; end-to-end SampleShop |
+| `claude/tasks/archief/TAAK-060-mediatr-notification-publisher-config.md` | ✅ `NotificationPublisher = new TaskWhenAllPublisher()` → `NotificationPublisherType`; CS0104 after swap |
+| `claude/tasks/archief/TAAK-061-mediatr-processors-exception-handlers.md` | ✅ Rewrite pre/post processors and exception handlers (also all-or-nothing) |
+| `claude/tasks/archief/TAAK-062-mediatr-stream-pipeline-behavior.md` | ✅ Rewrite `IStreamPipelineBehavior`, `AddOpenStreamBehavior` → `StreamPipelineBehaviors` |
+| `claude/tasks/archief/TAAK-063-mediatr-source-generator-alleen-host.md` | ✅ Source generator only in the host project (CS0436 in test projects) |
+| `claude/tasks/archief/TAAK-070-fa-assertion-in-throw-lambda.md` | ✅ Assertion in a lambda with `Throw<XunitException>` on it → assertion and Throw Manual |
+| `claude/tasks/archief/TAAK-071-fa-equivalent-collection-params.md` | ✅ `BeEquivalentTo(params)` on a collection → Manual with the collection reason |
+| `claude/tasks/archief/TAAK-072-fa-contain-single-subject.md` | ✅ `ContainSingle().Subject` as `.Which` |
+| `claude/tasks/archief/TAAK-073-unused-fa-using-after-package-removal.md` | ✅ Unused old using also removed in files without findings |
+| `claude/tasks/archief/TAAK-090-loader-nuget-warnings.md` | ✅ Loader: NuGet audit/NU1701 and a missing project file are warnings, not a load error |
+| `claude/tasks/archief/TAAK-165-custom-assertions-should-extensie.md` | ✅ queue #34: already covered by `fa.custom-assertion`; extra proof for an own `Should()` + `ObjectAssertions` subclass |
+| `claude/tasks/archief/TAAK-091-custom-assertions-gegroepeerd.md` | ✅ `fa.custom-assertion`: own FA extensions Manual, grouped per extension in report and console |
+| `claude/tasks/archief/TAAK-167-niet-utf8-bestand-breekt-fix.md` | ✅ Non-UTF-8 file: skipped with Manual `encoding`, rest migrated (EventFlow) (corpus 2026-10-12); Latin-1 on Linux fixed in `91f85de` |
+| `claude/tasks/archief/TAAK-168-should-contain-key-readonly-dictionary.md` | ✅ `ContainKey` on `IReadOnlyDictionary`/headers gives `ContainsKey(..).ShouldBeTrue()`/`Contains(..)`, otherwise Manual (CS0411 Steeltoe) |
+| `claude/tasks/archief/TAAK-169-should-be-impliciete-conversie.md` | ✅ `Be`/`BeGreaterThan` with an own implicit conversion → cast to the subject type (LiteDB, corpus 2026-10-12) |
+| `claude/tasks/archief/TAAK-170-throw-resultaat-gebruikt.md` | ✅ `Throw<T>()` chain (`.And/.Which/.Where/.WithInnerException`) via `ThrowChains` on the returned exception (Polly) |
+| `claude/tasks/archief/TAAK-171-contain-key-whose-value.md` | ✅ `ContainKey(..).WhoseValue`, `ContainKeys`/`ContainValues`/`ContainValue` become separate Shouldly statements via `fa.and-chain` (corpus 2026-10-12) |
+| `claude/tasks/archief/TAAK-172-be-equivalent-to-collectie-ignore-order.md` | ✅ `BeEquivalentTo` on a collection of value items (sealed record, struct) and the params form `BeEquivalentTo("a", "b")` → `ShouldBe(…, ignoreOrder: true)`; `ParamsArraySyntax` shared with `fa.equal-sequence` |
+| `docs/projectinfo/patterns/fa-be-equivalent-to-collection-plan.md` | KingmaDoc plan of `BeEquivalentTo` on a collection (TAAK-172) |
+| `docs/projectinfo/patterns/fa-be-equivalent-to-collection-modellen.md` | Class, sequence and decision model of `BeEquivalentTo` on a collection |
+| `docs/projectinfo/patterns/fa-be-equivalent-to-collection-verify.md` | Verification of `BeEquivalentTo` on a collection |
+| `claude/tasks/archief/TAAK-173-awaiting-subject-not-throw-async.md` | ✅ `Awaiting(..).Should().NotThrowAsync()`, `FluentActions.Invoking/Awaiting`, value-type results with Invoking (Polly 964 → 171 Manual) |
+| `claude/tasks/archief/TAAK-174-shouldly-dubbelzinnig-met-eigen-shouldbe.md` | ✅ `using Shouldly` clashing with an own `ShouldBe` (CS0121) → file Manual; Akka builds green after the fix |
+| `claude/tasks/archief/TAAK-198-shouldly-conflict-manual-verkleinen.md` | ✅ conflict with own `Should*`: Manual per call, the rest via targeted `using static` imports; Akka Fixed 5 463 → 6 016, build green |
+| `claude/tasks/archief/TAAK-199-eigen-shouldbe-in-omsluitende-namespace.md` | ✅ rewritten call that does not bind to Shouldly (own `ShouldBe` in the enclosing namespace) → file Manual; Akka.Tests green |
+| `claude/tasks/archief/TAAK-200-shouldbe-object-gelijkheid-ddata.md` | ✅ cause: Shouldly does `expected.Equals(actual)`, FA `actual.Equals(expected)`; asymmetric `Equals` in Akka; now Fixed with a warning in the report |
+| `claude/tasks/archief/TAAK-180-mediatr-test-request-handler-delegate.md` | ✅ `mediatr.request-handler-delegate` (mocked `next` in test code) + safety net `unmatched-use` for MediatR usage without a finding |
+| `claude/tasks/archief/TAAK-190-mediatr-request-processor-aanroepers.md` | ✅ `mediatr.request-processor-caller`: `new P<Cmd>()` and `await p.Process(...)` of a rewritten processor moved along, rest Manual |
+| `docs/projectinfo/patterns/mediatr-request-processor-caller-plan.md` | Plan (+ models, verify) of `mediatr.request-processor-caller` |
+| `claude/tasks/archief/TAAK-191-mediatr-request-handler-delegate-gedeeld-veld.md` | ✅ one `RequestHandlerDelegate` mock shared by several request types → `MessageHandlerDelegate<IMessage, TRes>` + adapter lambda (amantin) |
+| `claude/tasks/archief/TAAK-195-mediatr-addmediatr-projectgrenzen.md` | ◐ `AddMediatR` across project boundaries: internal handlers → `InternalsVisibleTo` (`mediatr.internal-handler-access`, ardalis); evo1 test project and evo2 `Assembly` parameter measured untranslatable |
+| `docs/projectinfo/patterns/mediatr-internal-handler-access-plan.md` | Plan (+ models, verify) of `mediatr.internal-handler-access` |
+| `src/Unshackle.Tests/Helpers/TestProjects.cs` | Multi-project proofs in `_Combined/` (`// @project Name -> References`) |
+| `claude/tasks/archief/TAAK-192-mediatr-generieke-notification.md` | ✅ `mediatr.generic-notification`: `G<T> : INotification` → abstract + `GOfX : G<X>` per closed type, `MakeGenericType` → `GTypes.Close` (nadirbad) |
+| `docs/projectinfo/patterns/mediatr-generic-notification-plan.md` | Plan (+ models, verify) of `mediatr.generic-notification` |
+| `claude/tasks/archief/TAAK-193-mediatr-generieke-decorators-messages.md` | ✅ `mediatr.generic-decorator` (open generic Autofac decorators stay, void → `IRequestHandler<T, Unit>`) and `mediatr.generic-request` (`G<T, R>` → abstract + `GOfXAndY` per closed type) (kgrzybek, eShop) |
+| `docs/projectinfo/patterns/mediatr-generic-decorator-plan.md` | Plan (+ models, verify) of `mediatr.generic-decorator` |
+| `docs/projectinfo/patterns/mediatr-generic-request-plan.md` | Plan (+ models, verify) of `mediatr.generic-request` |
+| `claude/tasks/archief/TAAK-194-mediatr-vendored-shared-kernel.md` | ✅ Ardalis.SharedKernel 1.4.0–3.0.1 vendored with Mediator instead of MediatR; package replaced by its dependencies |
+| `docs/projectinfo/patterns/mediatr-vendored-package-plan.md` | Plan (+ models, verify) of vendoring a package built on MediatR |
+| `claude/tasks/archief/TAAK-196-mediatr-autofac-mediator-module.md` | ✅ `mediatr.autofac-mediator-module`: MediatR by hand in Autofac → `AddMediator` + `Populate` without handler registrations (kgrzybek) |
+| `docs/projectinfo/patterns/mediatr-autofac-mediator-module-plan.md` | Plan (+ models, verify) of `mediatr.autofac-mediator-module` |
+| `claude/tasks/archief/TAAK-197-mediatr-eigen-imediator-implementatie.md` | ✅ own no-op `IMediator` → Mediator interface (`mediatr.mediator-implementation`) |
+| `claude/tasks/archief/TAAK-210-mediatr-generieke-decorator-zonder-using.md` | ✅ decorator via own marker without `using MediatR` no longer `mediatr.unsupported`; non-CPM `Directory.Packages.props`; kgrzybek 0 Manual |
+| `claude/tasks/archief/TAAK-211-mediatr-send-as-task-nsubstitute-setup.md` | ✅ NSubstitute setup `Send(...).Returns(Task.FromResult(x))` → `ValueTask.FromResult(x)`; dotnet/eShop builds |
+| `claude/tasks/archief/TAAK-212-mediatr-kgrzybek-build-na-fix.md` | ✅ TAAK-212 — kgrzybek: MSG0001, SA1210, CS1503, CS0122 after the fix solved |
+| `claude/tasks/archief/TAAK-213-mediatr-host-verwijst-naar-host.md` | ✅ TAAK-213 — host refers to host: GenerateTypesAsInternal + Assemblies (kgrzybek builds) |
+| `claude/tasks/archief/TAAK-214-mediatr-archtests-gegenereerde-mediator.md` | ✅ TAAK-214 — kgrzybek archtests: generated dispatcher, legitimate difference |
+| `claude/tasks/archief/TAAK-240-mediatr-archtest-waarschuwing.md` | ✅ TAAK-240 — report warning with an archtest library: exclude namespace `Mediator` |
+| `claude/tasks/archief/TAAK-241-and-chain-repeated-statement.md` | ✅ TAAK-241 — `.And` chain: a repeated statement (`NotBeEmpty().And.OnlyContain`) is written once |
+| `claude/tasks/archief/TAAK-117-mediatr-ongebruikte-assembly-parameter.md` | ✅ TAAK-117 — MediatR: unused assembly parameter after AddMediator (IDE0060) → warning in the report |
 
 ## Skills
 
-| Skill                                    | Gebruik                                                    |
-| ---------------------------------------- | ---------------------------------------------------------- |
-| `.claude/skills/taak-start/SKILL.md`     | Nieuwe taak aanmaken                                       |
-| `.claude/skills/taak-specifiek/SKILL.md` | Taak met analyse en redenering (architectureel of riskant) |
-| `.claude/skills/taak-oppakken/SKILL.md`  | Taak hervatten na sessie- of accountwissel                 |
+| Skill | Use |
+| ----- | --- |
+| `.claude/skills/taak-start/SKILL.md` | Create a new task |
+| `.claude/skills/taak-specifiek/SKILL.md` | Task with analysis and reasoning (architectural or risky) |
+| `.claude/skills/taak-oppakken/SKILL.md` | Resume a task after a session or account switch |
 
 ## Hooks
 
-| Hook                                  | Wanneer                         | Wat                                                                  |
-| ------------------------------------- | ------------------------------- | -------------------------------------------------------------------- |
-| `.claude/hooks/check-pattern-docs.sh` | Na Write/Edit van `*Pattern.cs` | Herinnert aan KingmaDoc plan/verify + README-rij                     |
-|                                       | SubagentStop                    | Blokkeert (één keer) als een patroon plan, verify of README-rij mist |
-|                                       | Stop (hoofdsessie)              | Waarschuwt alleen                                                    |
+| Hook | When | What |
+| ---- | ---- | ---- |
+| `.claude/hooks/check-pattern-docs.sh` | After Write/Edit of `*Pattern.cs` | Reminds of KingmaDoc plan/verify + README row |
+| | SubagentStop | Blocks (once) if a pattern lacks a plan, verify or README row |
+| | Stop (main session) | Only warns |
 
-Config: `.claude/settings.json`; KingmaDoc-config: `.featuredoc.yml` (output `docs/projectinfo/patterns/`).
+Config: `.claude/settings.json`; KingmaDoc config: `.featuredoc.yml` (output `docs/projectinfo/patterns/`).
 
-## Code (waar staat wat)
+## Code (where is what)
 
-| Onderwerp                            | Pad                                                                             |
-| ------------------------------------ | ------------------------------------------------------------------------------- |
-| CLI, composition root                | `src/Unshackle.Interface/Cli.cs` (`Program.cs` roept alleen `Cli.RunAsync` aan) |
-| Commands, console, diff              | `src/Unshackle.Interface/Commands/`, `Output/`                                  |
-| Fixer, fixes, patterns               | `src/Unshackle.Core/`                                                           |
-| Solutions laden, rapport, git-status | `src/Unshackle.DataAccess/{Solutions,Reports,SourceControl}/`                   |
-| Proofs per patroon                   | `src/Unshackle.Tests/Proofs/<Fix>/<Pattern>/`                                   |
-| Integratietests                      | `src/Unshackle.Tests/Integration/` (draait op `samples/`)                       |
-| Sample-codebase (doelcode)           | `samples/SampleShop/` (FA + MediatR + AutoMapper, los van onze build)           |
-| Pakketversies                        | `Directory.Packages.props`                                                      |
-| Build-instellingen                   | `Directory.Build.props`, `global.json`, `.editorconfig`                         |
+| Subject | Path |
+| ------- | ---- |
+| CLI, composition root | `src/Unshackle.Interface/Cli.cs` (`Program.cs` only calls `Cli.RunAsync`) |
+| Commands, console, diff | `src/Unshackle.Interface/Commands/`, `Output/` |
+| Fixer, fixes, patterns | `src/Unshackle.Core/` |
+| Loading solutions, report, git status | `src/Unshackle.DataAccess/{Solutions,Reports,SourceControl}/` |
+| Proofs per pattern | `src/Unshackle.Tests/Proofs/<Fix>/<Pattern>/` |
+| Integration tests | `src/Unshackle.Tests/Integration/` (runs on `samples/`) |
+| Sample codebase (target code) | `samples/SampleShop/` (FA + MediatR + AutoMapper, separate from our build) |
+| Package versions | `Directory.Packages.props` |
+| Build settings | `Directory.Build.props`, `global.json`, `.editorconfig` |
 
-## Zie ook
+## See also
 
-- `claude/docs/agent-werkwijze.md` — regels voor documentatie en taakbeheer
+- `claude/docs/agent-werkwijze.md` — rules for documentation and task management

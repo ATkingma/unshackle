@@ -1,53 +1,53 @@
-# Modellen: fa.be-approximately
+# Models: fa.be-approximately
 
-`x.Should().BeApproximately(y, tol)` en `t.Should().BeCloseTo(u, span)` worden `x.ShouldBe(y, tol)`; `NotBeCloseTo` wordt `ShouldNotBe(u, span)`; `NotBeApproximately` wordt `System.Math.Abs(x - y).ShouldBeGreaterThan(tol)`. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeApproximatelyPattern.cs`.
+`x.Should().BeApproximately(y, tol)` and `t.Should().BeCloseTo(u, span)` become `x.ShouldBe(y, tol)`; `NotBeCloseTo` becomes `ShouldNotBe(u, span)`; `NotBeApproximately` becomes `System.Math.Abs(x - y).ShouldBeGreaterThan(tol)`. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeApproximatelyPattern.cs`.
 
-**Figure 1.** Klassen rond `BeApproximatelyPattern`. Weggelaten: `Fixer`, `IFix` en de usings (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes around `BeApproximatelyPattern`. Omitted: `Fixer`, `IFix` and the usings (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-be-approximately-modellen-1.d2 -->
-![Modellen: fa.be-approximately](img/fa-be-approximately-modellen-1.png)
+![Models: fa.be-approximately](img/fa-be-approximately-modellen-1.png)
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
 | `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract |
-| `BeApproximatelyPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeApproximatelyPattern.cs` | Dit patroon, Id `fa.be-approximately` |
-| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde controles en helpers (`TryGetArguments`, `IsSafeReceiver`, `Invoke`) |
-| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` doet de gedeelde controles en roept `RewriteAssertion` aan |
-| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst |
+| `BeApproximatelyPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeApproximatelyPattern.cs` | This pattern, Id `fa.be-approximately` |
+| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Shared checks and helpers (`TryGetArguments`, `IsSafeReceiver`, `Invoke`) |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` does the shared checks and calls `RewriteAssertion` |
+| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Outcome |
 
-**Figure 2.** Volgorde van `Find` en `FluentAssertionPattern.Rewrite` → `BeApproximatelyPattern.RewriteAssertion`.
+**Figure 2.** Order of `Find` and `FluentAssertionPattern.Rewrite` → `BeApproximatelyPattern.RewriteAssertion`.
 
 <!-- kingmadoc:diagram img/fa-be-approximately-modellen-2.d2 -->
-![Modellen: fa.be-approximately](img/fa-be-approximately-modellen-2.png)
+![Models: fa.be-approximately](img/fa-be-approximately-modellen-2.png)
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Location | What happens |
 | --- | --- | --- |
-| Find | `BeApproximatelyPattern.Find` | `FindInvocations` op de FA-namen |
-| Controles | `FluentAssertionPattern.Rewrite` | scope, vorm, gebruik van het resultaat, argumenten (becauseArgs → `string.Format`) |
-| Herschrijven | `BeApproximatelyPattern.RewriteAssertion` | type subject en expected, `Not…` op nullable |
-| Uitkomst | `PatternResult.Fixed` / `Manual` | Shouldly-aanroep of reden |
+| Find | `BeApproximatelyPattern.Find` | `FindInvocations` on the FA names |
+| Checks | `FluentAssertionPattern.Rewrite` | scope, form, use of the result, arguments (becauseArgs → `string.Format`) |
+| Rewrite | `BeApproximatelyPattern.RewriteAssertion` | type of subject and expected, `Not…` on nullable |
+| Outcome | `PatternResult.Fixed` / `Manual` | Shouldly call or reason |
 
-**Figure 3.** Beslisboom van `FluentAssertionPattern.Rewrite` → `RewriteAssertion`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/BeApproximately/`.
+**Figure 3.** Decision tree of `FluentAssertionPattern.Rewrite` → `RewriteAssertion`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/BeApproximately/`.
 
 <!-- kingmadoc:diagram img/fa-be-approximately-modellen-3.d2 -->
-![Modellen: fa.be-approximately](img/fa-be-approximately-modellen-3.png)
+![Models: fa.be-approximately](img/fa-be-approximately-modellen-3.png)
 
-| Vraag | Bij nee: Manual-reden | Proof |
+| Question | If no: Manual reason | Proof |
 | --- | --- | --- |
-| Buiten een AssertionScope? | Inside an AssertionScope | `assertion-scope` |
-| Vorm x.Should().M(..)? | is not in the form x.Should() | `geen proof; .And via fa.and-chain` |
-| Resultaat weggegooid? | is used | `geen proof` |
-| Argumenten splitsbaar (geen named args; becauseArgs met constante because)? | named arguments, or becauseArgs whose because is no constant format string | geen proof (`because-args` is sinds TAAK-097 Fixed) |
+| Outside an AssertionScope? | Inside an AssertionScope | `assertion-scope` |
+| Form x.Should().M(..)? | is not in the form x.Should() | `no proof; .And via fa.and-chain` |
+| Result discarded? | is used | `no proof` |
+| Arguments splittable (no named args; becauseArgs with constant because)? | named arguments, or becauseArgs whose because is no constant format string | no proof (`because-args` has been Fixed since TAAK-097) |
 | Subject double/float/decimal/DateTime(Offset)/TimeSpan? | tolerance only for ... | `int-close-to` |
-| Expected heeft hetzelfde type? | nullable or differently typed expected | `geen proof` |
-| Niet Not… op nullable? | nullable subject | `nullable-not` |
+| Expected has the same type? | nullable or differently typed expected | `no proof` |
+| Not Not… on nullable? | nullable subject | `nullable-not` |
 | Fixed | `System.Math.Abs(x - y).ShouldBeGreaterThan(tol) (NotBeApproximately)` | not |
 | Fixed | `x[.ShouldNotBeNull()].ShouldBe / ShouldNotBe(y, tol|span[, because])`; becauseArgs → `string.Format(CultureInfo.InvariantCulture, because, args)` | simple, because, because-args, close-to, nullable |
 
-## Zie ook
+## See also
 
 - [fa-be-approximately-plan.md](fa-be-approximately-plan.md) - plan
-- [fa-be-approximately-verify.md](fa-be-approximately-verify.md) - verificatie
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeApproximatelyPattern.cs` - het patroon
-- `src/Unshackle.Tests/Proofs/FluentAssertions/BeApproximately/` - de proofs
+- [fa-be-approximately-verify.md](fa-be-approximately-verify.md) - verification
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeApproximatelyPattern.cs` - the pattern
+- `src/Unshackle.Tests/Proofs/FluentAssertions/BeApproximately/` - the proofs
 - [../README.md](../README.md)

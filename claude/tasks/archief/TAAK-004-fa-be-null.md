@@ -1,66 +1,66 @@
-# TAAK-004 — Patroon fa.be-null
+# TAAK-004 — Pattern fa.be-null
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-10
-**Doel**: `x.Should().BeNull()` / `NotBeNull()` wordt herschreven naar `ShouldBeNull()` / `ShouldNotBeNull()`, met proofs, groen in `dotnet test`.
+**Status**: ✅ Done
+**Created**: 2026-10-10
+**Goal**: `x.Should().BeNull()` / `NotBeNull()` is rewritten to `ShouldBeNull()` / `ShouldNotBeNull()`, with proofs, green in `dotnet test`.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Rij 3 in `claude/tasks/patroon-queue.md`. Fundament en voorbeelden: TAAK-001..003.
-- Sample-voorkomens: `RepositoryTests.cs:18,26` (`Find(id).Should().NotBeNull()` / `BeNull()` op een referentietype) en `OrderHandlerTests.cs:25` (`dto.Should().NotBeNull(); dto!.LineCount...`).
+- Row 3 in `claude/tasks/patroon-queue.md`. Foundation and examples: TAAK-001..003.
+- Sample occurrences: `RepositoryTests.cs:18,26` (`Find(id).Should().NotBeNull()` / `BeNull()` on a reference type) and `OrderHandlerTests.cs:25` (`dto.Should().NotBeNull(); dto!.LineCount...`).
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-FA 7.2.2: `BeNull(string because = "", params object[] becauseArgs)` en `NotBeNull(...)` bestaan op `ReferenceTypeAssertions` (object, string, collecties) en op de nullable-assertionklassen (`NullableNumericAssertions<T>`, `NullableBooleanAssertions`, ...). Ze geven een `AndConstraint` terug; `NotBeNull` op sommige types een `AndWhichConstraint` (`.Which`).
+FA 7.2.2: `BeNull(string because = "", params object[] becauseArgs)` and `NotBeNull(...)` exist on `ReferenceTypeAssertions` (object, string, collections) and on the nullable assertion classes (`NullableNumericAssertions<T>`, `NullableBooleanAssertions`, ...). They return an `AndConstraint`; `NotBeNull` returns an `AndWhichConstraint` (`.Which`) on some types.
 
-### Probleem
+### Problem
 
-- Shouldly kent geen `because`-format-args.
-- FA geeft een constraint terug (`.And`/`.Which`); `ShouldBeNull` geeft niets, `ShouldNotBeNull` geeft de waarde zelf terug.
+- Shouldly has no `because` format args.
+- FA returns a constraint (`.And`/`.Which`); `ShouldBeNull` returns nothing, `ShouldNotBeNull` returns the value itself.
 
-### Nieuwe situatie
+### New situation
 
-`BeNullPattern` (ID `fa.be-null`) herschrijft losse assertions; anders `Manual(reden)`.
+`BeNullPattern` (ID `fa.be-null`) rewrites standalone assertions; otherwise `Manual(reason)`.
 
-### Verbetering
+### Improvement
 
-Eén patroon voor alle subjecttypes; geen type-switch nodig.
+One pattern for all subject types; no type switch needed.
 
-## Keuzes
+## Choices
 
-| # | Keuze | Reden |
+| # | Choice | Reason |
 |---|---|---|
-| 1 | Eén pattern, `Find` op `BeNull` en `NotBeNull` | Identieke logica op de naam na (zoals `BeTrueFalsePattern`) |
-| 2 | Geen type-switch: reference types én `Nullable<T>` → dezelfde `ShouldBeNull`/`ShouldNotBeNull` | Shouldly 4.3.0 heeft `ShouldBeNull<T>(this T? actual, string? customMessage)`; bewezen door de compileercheck met `int?`/`bool?` (anders dan `bool?` bij `ShouldBeTrue`) |
-| 3 | `because` zonder args → `customMessage`; met `becauseArgs` of benoemde args → Manual | Shouldly formatteert niet; zelfde regel als andere patronen |
-| 4 | Alleen herschrijven als het resultaat wordt genegeerd en de vorm `x.Should().…` is | `.And`/`.Which`/waarde vereisen ketens splitsen of `var v = x.ShouldNotBeNull()`; bewust buiten scope |
-| 5 | `x!` in code na `NotBeNull()` blijft ongemoeid | Onschadelijk; Shouldly's `[NotNull]` maakt het alleen overbodig |
-| 6 | Manual-proofs hebben elk één reden: `chain` (`.NotBeNull().And.NotBeEmpty()`) en `value-used` → "is used"; `and-chain` (`.NotBeEmpty().And.NotBeNull()`) → "is not in the form"; `because-args` → "becauseArgs" | `ProofTests` eist dezelfde reden voor alle findings in één proof (TAAK-003) |
+| 1 | One pattern, `Find` on `BeNull` and `NotBeNull` | Identical logic apart from the name (like `BeTrueFalsePattern`) |
+| 2 | No type switch: reference types and `Nullable<T>` → the same `ShouldBeNull`/`ShouldNotBeNull` | Shouldly 4.3.0 has `ShouldBeNull<T>(this T? actual, string? customMessage)`; proven by the compile check with `int?`/`bool?` (unlike `bool?` with `ShouldBeTrue`) |
+| 3 | `because` without args → `customMessage`; with `becauseArgs` or named args → Manual | Shouldly does not format; same rule as other patterns |
+| 4 | Only rewrite if the result is discarded and the form is `x.Should().…` | `.And`/`.Which`/value require splitting chains or `var v = x.ShouldNotBeNull()`; deliberately out of scope |
+| 5 | `x!` in code after `NotBeNull()` is left alone | Harmless; Shouldly's `[NotNull]` merely makes it redundant |
+| 6 | Manual proofs each have one reason: `chain` (`.NotBeNull().And.NotBeEmpty()`) and `value-used` → "is used"; `and-chain` (`.NotBeEmpty().And.NotBeNull()`) → "is not in the form"; `because-args` → "becauseArgs" | `ProofTests` requires the same reason for all findings in one proof (TAAK-003) |
 
-## Stappen
+## Steps
 
-- [x] 1. Claimen en taak aanmaken
-- [x] 2. Onderzoek en keuzes
-- [x] 3. KingmaDoc-plan
-- [x] 4. `BeNullPattern` + registratie
+- [x] 1. Claim and create task
+- [x] 2. Research and choices
+- [x] 3. KingmaDoc plan
+- [x] 4. `BeNullPattern` + registration
 - [x] 5. Proofs (10 proofs in `BeNull/`)
-- [x] 6. Build/test groen, verify, archiveren, rij `klaar`
+- [x] 6. Build/test green, verify, archive, row `klaar`
 
-## Aanpassingen bij realisatie
+## Adjustments during implementation
 
-- Proof `which` vervallen: `NotBeNull().Which` bestaat niet op string/object-assertions; vervangen door `value-used`.
-- Proofs missen implicit usings: `lambda` en `collection` hebben expliciete `using System;` / `System.Collections.Generic`.
+- Proof `which` dropped: `NotBeNull().Which` does not exist on string/object assertions; replaced by `value-used`.
+- Proofs lack implicit usings: `lambda` and `collection` have explicit `using System;` / `System.Collections.Generic`.
 
-## Gewijzigde bestanden
+## Changed files
 
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeNullPattern.cs` (nieuw)
-- `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` (1 regel)
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeNullPattern.cs` (new)
+- `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` (1 line)
 - `src/Unshackle.Tests/Proofs/FluentAssertions/BeNull/`
-- `docs/projectinfo/patterns/fa-be-null-{plan,verify}.md`, `docs/projectinfo/README.md` (rij)
+- `docs/projectinfo/patterns/fa-be-null-{plan,verify}.md`, `docs/projectinfo/README.md` (row)
 
-## Zie ook
+## See also
 
 - `claude/tasks/patroon-queue.md`
 - `claude/tasks/archief/TAAK-003-fa-be-true-false.md`

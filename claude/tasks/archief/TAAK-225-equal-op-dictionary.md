@@ -1,30 +1,30 @@
-# TAAK-225 — `Equal(..)` op een dictionary → `ShouldBe(.., ignoreOrder: true)`
+# TAAK-225 — `Equal(..)` on a dictionary → `ShouldBe(.., ignoreOrder: true)`
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-13 (FA-corpusrun ronde 4)
-**Doel**: de grootste Manual-groep omzetten die nog niet gerechtvaardigd is (buiten de Akka-conflicten).
+**Status**: ✅ completed
+**Created**: 2026-10-13 (FA corpus run round 4)
+**Goal**: convert the largest Manual group that is not yet justified (apart from the Akka conflicts).
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Ronde 4: 344× `fa.equal-sequence` "Equal(...) on a dictionary compares without order; check ShouldBe or ShouldBeEquivalentTo by hand" (Akka 337, LiteDB 5, NUKE 1, Polly 1).
-- FA `GenericDictionaryAssertions.Equal` eist dezelfde sleutels en per sleutel een gelijke waarde (`Equals`); de volgorde telt niet. Shouldly `dict.ShouldBe(expected, ignoreOrder: true)` vergelijkt de `KeyValuePair`s met `Equals` en is dus gelijkwaardig voor waarde-items.
-- Alleen omzetten als sleutel- en waardetype een betrouwbare `Equals` hebben (leaf/record/struct, dezelfde regel als TAAK-172); anders Manual laten. Let op het type van `expected` (dictionary of lijst van paren).
+- Round 4: 344× `fa.equal-sequence` "Equal(...) on a dictionary compares without order; check ShouldBe or ShouldBeEquivalentTo by hand" (Akka 337, LiteDB 5, NUKE 1, Polly 1).
+- FA `GenericDictionaryAssertions.Equal` requires the same keys and an equal value per key (`Equals`); the order does not count. Shouldly `dict.ShouldBe(expected, ignoreOrder: true)` compares the `KeyValuePair`s with `Equals` and is therefore equivalent for value items.
+- Only convert if the key and value types have a reliable `Equals` (leaf/record/struct, the same rule as TAAK-172); otherwise leave Manual. Mind the type of `expected` (dictionary or list of pairs).
 
-## Stappen
+## Steps
 
-- [x] 1. Uitzoeken hoe Shouldly `ShouldBe(IEnumerable<KVP>, ignoreOrder)` zich gedraagt bij dubbele sleutels en `null`-waarden, vergeleken met FA.
-- [x] 2. Rewrite in `fa.equal-sequence` + unittests + proofs; plan/verify bijwerken.
-- [x] 3. Akka-herhaling: build groen, geen extra regressies.
+- [x] 1. Find out how Shouldly `ShouldBe(IEnumerable<KVP>, ignoreOrder)` behaves with duplicate keys and `null` values, compared with FA.
+- [x] 2. Rewrite in `fa.equal-sequence` + unit tests + proofs; update plan/verify.
+- [x] 3. Akka repeat: build green, no extra regressions.
 
-## Keuzes
+## Choices
 
-- Gesondeerd (FA 7.2.2 vs Shouldly 4.3.0, console-probe): volgorde, ontbrekende/extra sleutel, andere waarde, `null`-waarden, leeg, immutable/read-only subject, `double`, lijst-waarden: zelfde uitkomst. Enige verschil: subject én verwachting `null` (FA gooit, Shouldly slaagt). Custom key-comparer (OrdinalIgnoreCase): beide falen.
-- Omzetting in `EqualSequencePattern` alleen als: methode op `GenericDictionaryAssertions`, verwachting is zelf een dictionary (`IDictionary<,>`/`IReadOnlyDictionary<,>`) met hetzelfde `KeyValuePair<K,V>`, en K en V `IsValueLike` (TAAK-172-regel; daarvoor `protected internal` gemaakt). Anders Manual met specifieke reden.
-- `because` → derde argument (`ShouldBe(y, ignoreOrder: true, because)`).
-- Noot: de probe laat zien dat FA hier ook voor klasse-waarden gewoon `Equals` gebruikt; verbreden naar alle niet-object/interface-typen is mogelijk maar bewust niet gedaan (opdracht: alleen waarde-items).
+- Probed (FA 7.2.2 vs Shouldly 4.3.0, console probe): order, missing/extra key, another value, `null` values, empty, immutable/read-only subject, `double`, list values: the same outcome. The only difference: subject and expectation both `null` (FA throws, Shouldly passes). Custom key comparer (OrdinalIgnoreCase): both fail.
+- Conversion in `EqualSequencePattern` only if: the method is on `GenericDictionaryAssertions`, the expectation is itself a dictionary (`IDictionary<,>`/`IReadOnlyDictionary<,>`) with the same `KeyValuePair<K,V>`, and K and V are `IsValueLike` (TAAK-172 rule; made `protected internal` for this). Otherwise Manual with a specific reason.
+- `because` → third argument (`ShouldBe(y, ignoreOrder: true, because)`).
+- Note: the probe shows that FA also simply uses `Equals` here for class values; widening to all non-object/interface types is possible but deliberately not done (assignment: value items only).
 
-## Zie ook
+## See also
 
 - `claude/tasks/archief/TAAK-172-be-equivalent-to-collectie-ignore-order.md`
-- `claude/tasks/CORPUSRUN-fa.md` (ronde 4)
+- `claude/tasks/CORPUSRUN-fa.md` (round 4)
 - `claude/tasks/patroon-queue.md`

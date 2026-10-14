@@ -1,52 +1,52 @@
-# Modellen: mediatr.request-handler
+# Models: mediatr.request-handler
 
-Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerPattern.cs` en `MediatRFix.SwappedTypes`.
+Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerPattern.cs` and `MediatRFix.SwappedTypes`.
 
-## Figuur 1: klassen
+## Figure 1: classes
 
-**Figure 1.** `RequestHandlerPattern`, zijn contract en de MediatR- en Mediator-typen.
+**Figure 1.** `RequestHandlerPattern`, its contract and the MediatR and Mediator types.
 
 <!-- kingmadoc:diagram img/mediatr-request-handler-modellen-1.d2 -->
-![Figuur 1: klassen](img/mediatr-request-handler-modellen-1.png)
+![Figure 1: classes](img/mediatr-request-handler-modellen-1.png)
 
-| Element                 | Rol                                                                                                                                |
+| Element                 | Role                                                                                                                               |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `RequestHandlerPattern` | Vindt `Handle` van elke klasse die `MediatR.IRequestHandler<,>` implementeert en herschrijft returntype en returns                 |
-| `MediatRFix`            | Registreert het pattern; `SwappedTypes` laat `using MediatR` → `using Mediator` wisselen terwijl `IRequestHandler<,>` blijft staan |
-| `PatternResult`         | `Fixed(method, "System.Threading.Tasks")` of `Manual(reden)`                                                                       |
+| `RequestHandlerPattern` | Finds `Handle` of every class that implements `MediatR.IRequestHandler<,>` and rewrites return type and returns                     |
+| `MediatRFix`            | Registers the pattern; `SwappedTypes` lets `using MediatR` → `using Mediator` swap while `IRequestHandler<,>` stays in place        |
+| `PatternResult`         | `Fixed(method, "System.Threading.Tasks")` or `Manual(reden)`                                                                       |
 | MediatR 12.5.0          | `Task<TRes> Handle(TReq, CancellationToken)`                                                                                       |
 | Mediator 3.0.2          | `ValueTask<TRes> Handle(TReq, CancellationToken)`                                                                                  |
 
-## Figuur 2: sequence
+## Figure 2: sequence
 
-**Figure 2.** Van `Find` tot de using-swap door de `Fixer`.
+**Figure 2.** From `Find` to the using swap by the `Fixer`.
 
 <!-- kingmadoc:diagram img/mediatr-request-handler-modellen-2.d2 -->
-![Figuur 2: sequence](img/mediatr-request-handler-modellen-2.png)
+![Figure 2: sequence](img/mediatr-request-handler-modellen-2.png)
 
-| Stap       | Methode in de code                                                                       | Wat gebeurt er                                                                                  |
-| ---------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Vinden     | `MediatRSyntax.FindHandleMethods` (`IRequestHandler<,>`) | Semantisch: de `Handle`-methode die het interface-lid implementeert, in dezelfde klasse         |
-| Returntype | `MediatRSyntax.ToValueTask`                                                                          | `Task<T>` of `System.Threading.Tasks.Task<T>` → `ValueTask<T>`                                  |
-| Returns    | `MediatRSyntax.ReturnedExpressions`, `IsTaskMember(..., "FromResult")`                                                | Expression body of elke `return` (niet in lambda's/lokale functies) moet `Task.FromResult` zijn |
-| Usings     | `UsingDirectives.UpdateAsync` in `Fixer`                                                 | `using MediatR` → `using Mediator` dankzij `SwappedTypes`                                       |
+| Step        | Method in the code                                                                       | What happens                                                                                    |
+| ----------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Find        | `MediatRSyntax.FindHandleMethods` (`IRequestHandler<,>`) | Semantic: the `Handle` method that implements the interface member, in the same class           |
+| Return type | `MediatRSyntax.ToValueTask`                                                                          | `Task<T>` or `System.Threading.Tasks.Task<T>` → `ValueTask<T>`                                  |
+| Returns     | `MediatRSyntax.ReturnedExpressions`, `IsTaskMember(..., "FromResult")`                                                | Expression body or every `return` (not in lambdas/local functions) must be `Task.FromResult` |
+| Usings      | `UsingDirectives.UpdateAsync` in `Fixer`                                                 | `using MediatR` → `using Mediator` thanks to `SwappedTypes`                                     |
 
-## Figuur 3: beslisboom
+## Figure 3: decision tree
 
-**Figure 3.** Vragen van `Rewrite`.
+**Figure 3.** Questions asked by `Rewrite`.
 
 <!-- kingmadoc:diagram img/mediatr-request-handler-modellen-3.d2 -->
-![Figuur 3: beslisboom](img/mediatr-request-handler-modellen-3.png)
+![Figure 3: decision tree](img/mediatr-request-handler-modellen-3.png)
 
-| Blad                                       | Voorwaarde                                       | Bewijs                                                                  |
+| Leaf                                       | Condition                                        | Proof                                                                   |
 | ------------------------------------------ | ------------------------------------------------ | ----------------------------------------------------------------------- |
 | Manual "explicit interface implementation" | `Task<T> IRequestHandler<A,B>.Handle`            | `RequestHandler/explicit`                                               |
-| Manual "does not return Task<T>"           | returntype niet in de vorm `Task<T>` (bv. alias) | geen proof (kan niet compileren met MediatR zonder alias)               |
-| `ValueTask<T>`, body ongewijzigd           | `async`                                          | `RequestHandler/async`, `RequestHandler/token-name`                     |
-| `ValueTask<T>` + `ValueTask.FromResult`    | niet-async, alle returns `Task.FromResult`       | `RequestHandler/from-result-expression`, `from-result-block`, `generic` |
-| Manual "not Task.FromResult"               | andere return, bv. `Task.Run`                    | `RequestHandler/other-return`                                           |
+| Manual "does not return Task<T>"           | return type not in the form `Task<T>` (e.g. alias) | no proof (cannot compile with MediatR without alias)                  |
+| `ValueTask<T>`, body unchanged             | `async`                                          | `RequestHandler/async`, `RequestHandler/token-name`                     |
+| `ValueTask<T>` + `ValueTask.FromResult`    | non-async, all returns `Task.FromResult`         | `RequestHandler/from-result-expression`, `from-result-block`, `generic` |
+| Manual "not Task.FromResult"               | other return, e.g. `Task.Run`                    | `RequestHandler/other-return`                                           |
 
-## Zie ook
+## See also
 
 - [mediatr-request-handler-plan.md](mediatr-request-handler-plan.md)
 - [mediatr-request-handler-verify.md](mediatr-request-handler-verify.md)

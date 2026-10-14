@@ -10,25 +10,25 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotBePattern.cs`; registratie in `FluentAssertionsFix.cs`; `ConvertExpected` (nu publiek in `FluentAssertionsSyntax`) gedeeld. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/NotBe/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotBePattern.cs`; registration in `FluentAssertionsFix.cs`; `ConvertExpected` (now public in `FluentAssertionsSyntax`) shared. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/NotBe/`, run by `ProofTests`.
 
-| REQ   | Oordeel | Bewijs                         |
+| REQ   | Verdict | Evidence                       |
 | ----- | ------- | ------------------------------ |
-| REQ-1 | Gehaald | `simple.*.cs`                  |
-| REQ-2 | Gehaald | `because.*.cs`                 |
-| REQ-3 | Gehaald | `nullable.*.cs`                |
-| REQ-4 | Gehaald | `record.*.cs`                  |
-| REQ-5 | Gehaald | `constant-cast.*.cs`           |
-| REQ-6 | Gehaald | `assertion-scope.*`            |
-| REQ-7 | Gehaald (becauseArgs vervangen) | `comparer.*` |
-| REQ-8 | Gehaald | `chain.*`                      |
-| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` (`string.Format(CultureInfo.InvariantCulture, ...)`) |
+| REQ-1 | Met | `simple.*.cs`                  |
+| REQ-2 | Met | `because.*.cs`                 |
+| REQ-3 | Met | `nullable.*.cs`                |
+| REQ-4 | Met | `record.*.cs`                  |
+| REQ-5 | Met | `constant-cast.*.cs`           |
+| REQ-6 | Met | `assertion-scope.*`            |
+| REQ-7 | Met (becauseArgs replaced) | `comparer.*` |
+| REQ-8 | Met | `chain.*`                      |
+| Extension TAAK-097 | Met | `because-args.after.cs` (`string.Format(CultureInfo.InvariantCulture, ...)`) |
 
 ## Deviations
 
 | #   | Area | Plan says              | Code does                                                                  | Impact |
 | --- | ---- | ---------------------- | -------------------------------------------------------------------------- | ------ |
-| 1   | Code | Alleen eigen bestanden | `FluentAssertionsSyntax.ConvertExpected` werd `internal` om de conversie te delen | Low    |
+| 1   | Code | Only its own files     | `FluentAssertionsSyntax.ConvertExpected` became `internal` to share the conversion | Low    |
 
 ## Validation results
 
@@ -38,7 +38,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotBePattern.cs`; regi
 | Test   | `dotnet test`                                               | passed (320 tests)  |
 | Sample | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | passed (38 tests)   |
 
-## Zie ook
+## See also
 
 - [fa-not-be-modellen.md](fa-not-be-modellen.md)
 - `claude/docs/patroon-loop.md`

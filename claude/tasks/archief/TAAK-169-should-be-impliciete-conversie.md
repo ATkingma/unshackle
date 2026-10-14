@@ -1,51 +1,51 @@
-# TAAK-169 — `Be(x)` met een eigen impliciete conversie bouwt niet
+# TAAK-169 — `Be(x)` with an own implicit conversion does not build
 
-**Status**: ✅ voltooid — 2026-10-12 (stap 3 niet uitgevoerd: LiteDB-corpus niet herdraaid, zie Keuzes)
-**Aangemaakt**: 2026-10-12 (corpus-run, `claude/tasks/CORPUSRUN-fa.md`)
-**Doel**: `bsonValue.Should().Be(42)` wordt `bsonValue.ShouldBe((BsonValue)42)` (of Manual), niet een `ShouldBe(42)` die niet compileert.
+**Status**: ✅ completed — 2026-10-12 (step 3 not executed: LiteDB corpus not rerun, see Choices)
+**Created**: 2026-10-12 (corpus run, `claude/tasks/CORPUSRUN-fa.md`)
+**Goal**: `bsonValue.Should().Be(42)` becomes `bsonValue.ShouldBe((BsonValue)42)` (or Manual), not a `ShouldBe(42)` that does not compile.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- LiteDB (`7b71bc4`): 11 regels breken de build (80× CS1929, 8× CS0411). Voorbeelden: `LiteDB.Tests/Document/Json_Tests.cs:71` (`JsonSerializer.Deserialize(..).ShouldBe(positiveInt32)`), `Database/Document_Size_Tests.cs:39` (`d0["name"].ShouldBe("John")`) en `Issues/Issue2471_Test.cs:27` (`ShouldBeGreaterThan(0)`). Het subject `BsonValue` heeft `implicit operator BsonValue(int/string)`.
-- Baseline: 4 925 tests groen per TFM. Dit is de enige reden dat LiteDB na de fix niet bouwt.
+- LiteDB (`7b71bc4`): 11 lines break the build (80× CS1929, 8× CS0411). Examples: `LiteDB.Tests/Document/Json_Tests.cs:71` (`JsonSerializer.Deserialize(..).ShouldBe(positiveInt32)`), `Database/Document_Size_Tests.cs:39` (`d0["name"].ShouldBe("John")`) and `Issues/Issue2471_Test.cs:27` (`ShouldBeGreaterThan(0)`). The subject `BsonValue` has `implicit operator BsonValue(int/string)`.
+- Baseline: 4,925 tests green per TFM. This is the only reason LiteDB does not build after the fix.
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-`FluentAssertionsSyntax.ConvertExpected` (gebruikt in `ShouldBePattern.cs:46` en `BeGreaterLessPattern`) accepteert een impliciete conversie. Typeinferentie van `ShouldBe<T>` gebruikt echter geen conversies die de gebruiker zelf definieert.
+`FluentAssertionsSyntax.ConvertExpected` (used in `ShouldBePattern.cs:46` and `BeGreaterLessPattern`) accepts an implicit conversion. Type inference of `ShouldBe<T>`, however, does not use conversions the user defines.
 
-### Probleem
+### Problem
 
-Inferentie vindt geen `T`, dus CS1929/CS0411.
+Inference finds no `T`, so CS1929/CS0411.
 
-### Nieuwe situatie
+### New situation
 
-Bij een eigen impliciete conversie (`Conversion.IsUserDefined`) zet de fix een expliciete cast naar het subjecttype. FA `ObjectAssertions.Be` gebruikt `subject.Equals(expected)`; met de cast vergelijkt Shouldly `BsonValue` met `BsonValue`. Overschrijft het type `Equals(object)` niet, dan Manual.
+With an own implicit conversion (`Conversion.IsUserDefined`) the fix puts an explicit cast to the subject type. FA `ObjectAssertions.Be` uses `subject.Equals(expected)`; with the cast Shouldly compares `BsonValue` with `BsonValue`. If the type does not override `Equals(object)`, Manual.
 
-### Verbetering
+### Improvement
 
-LiteDB bouwt na de fix, en de 6 874 Fixed-findings komen echt in de code terecht.
+LiteDB builds after the fix, and the 6,874 Fixed findings really end up in the code.
 
-## Stappen
+## Steps
 
-- [x] 1. Proof met een eigen type met `implicit operator` (`Be` + `BeGreaterThan`).
-- [x] 2. Cast toevoegen in `ConvertExpected`.
-- [ ] 3. Bewijs: LiteDB-harnas met `EXTRA=-m:1` (parallel bouwen geeft een file-lock in LiteDB.Fuzz), 0 regressies.
+- [x] 1. Proof with an own type with an `implicit operator` (`Be` + `BeGreaterThan`).
+- [x] 2. Add the cast in `ConvertExpected`.
+- [ ] 3. Proof: LiteDB harness with `EXTRA=-m:1` (parallel building gives a file lock in LiteDB.Fuzz), 0 regressions.
 
-## Keuzes
+## Choices
 
-- Probe (<probe-dir>/probe-169, FA 7.2.2 vs Shouldly 4.3.0, type met `implicit operator`, `Equals`, `IComparable<T>`): `Should().Be(5)` en `ShouldBe((T)5)` geven bij gelijk, ongelijk en `BeGreaterThan` dezelfde uitkomst. Bij een klasse zonder `Equals`-override falen beide (referentiegelijkheid), dus de migratie wordt niet zwakker; daarom **geen** Manual voor dat geval (afwijking van de analyse hierboven).
-- `ConvertExpected`: een impliciete conversie die `IsUserDefined` is, telt niet meer als "past al"; het valt door naar de bestaande cast naar het subjecttype. Geldt voor `ShouldBe`, `BeGreaterLess` en `DirectMapping`.
-- Proofs: `ShouldBe/implicit-conversion.*` en `BeGreaterLess/implicit-conversion.*`. Patroondocs bijgewerkt (plan, verify, modellen).
-- Stap 3 (LiteDB-harnas) niet gedraaid in deze run; de corpus-fix moet nog herbewezen worden.
+- Probe (<probe-dir>/probe-169, FA 7.2.2 vs Shouldly 4.3.0, a type with `implicit operator`, `Equals`, `IComparable<T>`): `Should().Be(5)` and `ShouldBe((T)5)` give the same outcome for equal, unequal and `BeGreaterThan`. For a class without an `Equals` override both fail (reference equality), so the migration does not become weaker; therefore **no** Manual for that case (deviation from the analysis above).
+- `ConvertExpected`: an implicit conversion that `IsUserDefined` no longer counts as "already fits"; it falls through to the existing cast to the subject type. Applies to `ShouldBe`, `BeGreaterLess` and `DirectMapping`.
+- Proofs: `ShouldBe/implicit-conversion.*` and `BeGreaterLess/implicit-conversion.*`. Pattern docs updated (plan, verify, models).
+- Step 3 (LiteDB harness) not run in this run; the corpus fix still has to be proven again.
 
-## Gewijzigde bestanden
+## Changed files
 
 - `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs`
 - `src/Unshackle.Tests/Proofs/FluentAssertions/{ShouldBe,BeGreaterLess}/implicit-conversion.*`
 - `docs/projectinfo/patterns/fa-should-be-*.md`, `fa-be-greater-less-*.md`
 
-## Zie ook
+## See also
 
 - `claude/tasks/CORPUSRUN-fa.md`

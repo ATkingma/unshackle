@@ -1,33 +1,33 @@
-# TAAK-115 — Toegevoegde usings buiten de namespace of overbodig
+# TAAK-115 — Added usings outside the namespace or redundant
 
-**Status**: klaar (2026-10-11)
-**Aangemaakt**: 2026-10-11 (corpus-run MediatR evo1, `claude/tasks/CORPUSRUN-mediatr.md`)
+**Status**: done (2026-10-11)
+**Created**: 2026-10-11 (corpus run MediatR evo1, `claude/tasks/CORPUSRUN-mediatr.md`)
 
 ## Context
 
-evo1 (evolutionary-architecture hfst. 1) zet usings binnen een file-scoped namespace en bouwt met TreatWarningsAsErrors. Na de
-MediatR-fix: IDE0065 (`using Mediator;` bovenaan, buiten de namespace) en IDE0005 (overbodig) in o.a.
-`PassExpiredEventHandler.cs` (handler via eigen `IIntegrationEventHandler<T>`, noemt MediatR niet), `RegisterEndpoint.cs` en
-`InMemoryEventBusModule.cs` (`AddMediator` staat in `Microsoft.Extensions.DependencyInjection`).
+evo1 (evolutionary-architecture ch. 1) puts usings inside a file-scoped namespace and builds with TreatWarningsAsErrors. After the
+MediatR fix: IDE0065 (`using Mediator;` at the top, outside the namespace) and IDE0005 (redundant) in e.g.
+`PassExpiredEventHandler.cs` (handler via its own `IIntegrationEventHandler<T>`, does not name MediatR), `RegisterEndpoint.cs` and
+`InMemoryEventBusModule.cs` (`AddMediator` lives in `Microsoft.Extensions.DependencyInjection`).
 
-## Stappen
+## Steps
 
-- [x] `Fixer`: `AddedNamespaces` alleen voor een bestand dat de oude bibliotheek bij naam noemt (originele semantiek,
-  `UsingDirectives.NamesRemovedNamespaceAsync`; inactieve `#if`-code telt mee). Een bestand dat alleen via eigen basistypen
-  MediatR gebruikt of een ongebruikte oude using had, krijgt geen nieuwe.
-- [x] `UsingDirectives.UpdateAsync`: geen top-level usings maar wel usings in de namespace → nieuwe usings daar, met dezelfde
-  inspringing. Niet als een naam binnen de namespace de nieuwe overschaduwt (eigen `*.Mediator`, zie TAAK-131): dan bovenaan.
+- [x] `Fixer`: `AddedNamespaces` only for a file that names the old library by name (original semantics,
+  `UsingDirectives.NamesRemovedNamespaceAsync`; inactive `#if` code counts). A file that only uses MediatR via its own base types
+  or had an unused old using gets no new one.
+- [x] `UsingDirectives.UpdateAsync`: no top-level usings but usings in the namespace → new usings go there, with the same
+  indentation. Not if a name inside the namespace shadows the new one (own `*.Mediator`, see TAAK-131): then at the top.
 - [x] Tests: `FixerTests.FixAsync_FileNamesNothingOfRemovedNamespace_AddsNoNamespace`, `…_UsingsInsideNamespace_AddsNewOneThere`,
-  `…_UsingsInsideNamespaceThatShadowsAddedOne_AddsNewOneOnTop`. AddMediatR-proofs zonder overbodige `using Mediator;`.
-- [x] Corpus: verse kopie evo1 (`scratchpad/v110/work/evo1`): geen IDE0005/IDE0065 meer. Build nog rood op IDE0060
-  (`assembly` ongebruikt na `AddMediatR(... RegisterServicesFromAssembly(assembly))` → `AddMediator(...)`) en 2x MSG0005 (TAAK-136).
+  `…_UsingsInsideNamespaceThatShadowsAddedOne_AddsNewOneOnTop`. AddMediatR proofs without redundant `using Mediator;`.
+- [x] Corpus: fresh copy of evo1 (`scratchpad/v110/work/evo1`): no more IDE0005/IDE0065. Build still red on IDE0060
+  (`assembly` unused after `AddMediatR(... RegisterServicesFromAssembly(assembly))` → `AddMediator(...)`) and 2x MSG0005 (TAAK-136).
 
 ## Open
 
-- IDE0060 na `mediatr.add-mediatr`: parameter die alleen naar `RegisterServicesFromAssembly` ging wordt ongebruikt. Nieuwe taak
-  waard (Manual-melding of `_ = assembly;`?), niet in deze taak.
+- IDE0060 after `mediatr.add-mediatr`: a parameter that only went to `RegisterServicesFromAssembly` becomes unused. Worth a new
+  task (Manual message or `_ = assembly;`?), not in this task.
 
-## Zie ook
+## See also
 
 - `src/Unshackle.Core/UsingDirectives.cs`, `src/Unshackle.Core/Fixer.cs`
 - `claude/tasks/TAAK-131-mediatr-namespace-schaduw.md`

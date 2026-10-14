@@ -1,33 +1,33 @@
-# TAAK-073 — ongebruikte `using FluentAssertions;` blijft staan als het pakket weggaat
+# TAAK-073 — An unused `using FluentAssertions;` stays when the package goes
 
-**Status**: voltooid
-**Aangemaakt**: 2026-10-11
-**Gevonden in**: corpus-run Ardalis.Result (`docs/projectinfo/architectuur/corpus.md`)
+**Status**: completed
+**Created**: 2026-10-11
+**Found in**: corpus run Ardalis.Result (`docs/projectinfo/architectuur/corpus.md`)
 
-## Probleem
+## Problem
 
-In `Ardalis.Result.AspNetCore.UnitTests` hebben 2 bestanden `using FluentAssertions;` zonder één assertion. Die bestanden
-geven geen findings, dus de using-swap draait er niet. Het project heeft verder geen Manual, dus `project-file`
-verwijdert de FluentAssertions-referentie → CS0246, het project bouwt niet meer.
+In `Ardalis.Result.AspNetCore.UnitTests` 2 files have `using FluentAssertions;` without a single assertion. Those files
+give no findings, so the using swap does not run on them. The project has no other Manual, so `project-file`
+removes the FluentAssertions reference → CS0246, the project no longer builds.
 
-## Wat, waar, hoe
+## What, where, how
 
-- **Waar**: de usings-stap in de `Fixer` / project-file-stap (geen pattern-code).
-- **Hoe**: verwijdert de fix het pakket uit een project, dan ook ongebruikte `using FluentAssertions*;` (en
-  `global using`) uit alle bestanden van dat project halen, ook zonder findings.
-- Geen proof mogelijk (proofs eisen ≥1 finding); test in `src/Unshackle.Tests/Core/` met een in-memory solution.
+- **Where**: the usings step in the `Fixer` / project-file step (no pattern code).
+- **How**: if the fix removes the package from a project, also remove unused `using FluentAssertions*;` (and
+  `global using`) from all files of that project, also without findings.
+- No proof possible (proofs require ≥1 finding); a test in `src/Unshackle.Tests/Core/` with an in-memory solution.
 
-## Stappen
+## Steps
 
-- [x] Usings opruimen in bestanden zonder findings bij pakketverwijdering
-- [x] Unittest
-- [x] `dotnet build` + `dotnet test` groen
+- [x] Clean up usings in files without findings on package removal
+- [x] Unit test
+- [x] `dotnet build` + `dotnet test` green
 
-## Resultaat
+## Result
 
-`Fixer` draait de using-stap ook voor bestanden zonder findings met een ongebruikte oude using; zonder wijziging of swapped types wordt die alleen verwijderd (geen Shouldly-using). Test: `FixerTests.FixAsync_FileWithoutFindingsHasUnusedRemovedUsing_RemovesItWithoutAddingNamespaces`.
+The `Fixer` also runs the using step for files without findings with an unused old using; without a change or swapped types it is only removed (no Shouldly using). Test: `FixerTests.FixAsync_FileWithoutFindingsHasUnusedRemovedUsing_RemovesItWithoutAddingNamespaces`.
 
-## Zie ook
+## See also
 
 - `docs/projectinfo/architectuur/corpus.md`
 - `claude/tasks/archief/TAAK-044-fa-global-using.md`

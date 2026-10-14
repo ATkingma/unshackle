@@ -1,35 +1,35 @@
-# TAAK-118 — Gedeeld pakketbestand verliest pakket dat een niet-gemigreerd project nog nodig heeft
+# TAAK-118 — Shared package file loses a package that a non-migrated project still needs
 
-**Status**: klaar (2026-10-11)
-**Aangemaakt**: 2026-10-11
+**Status**: done (2026-10-11)
+**Created**: 2026-10-11
 
-## Probleem
+## Problem
 
-Een project dat bij het laden wordt overgeslagen (TAAK-090/112/135) staat niet in de migraties. Krijgt het
-FluentAssertions/MediatR via een gedeeld `Directory.Packages.props` (CPM) of `Directory.Build.props`, dan haalde
-`XmlProjectFileStore` daar de `PackageVersion`/`PackageReference` weg → dat project bouwt niet meer.
+A project that is skipped during loading (TAAK-090/112/135) is not in the migrations. If it gets
+FluentAssertions/MediatR via a shared `Directory.Packages.props` (CPM) or `Directory.Build.props`, then
+`XmlProjectFileStore` removed the `PackageVersion`/`PackageReference` there → that project no longer builds.
 
-## Regel
+## Rule
 
-Een gedeeld bestand verliest het oude pakket alleen als geen enkel `.csproj` op schijf eronder het nog gebruikt.
-Anders blijft de regel staan, komt het nieuwe pakket ernaast en meldt de Fixer Manual op dat bestand.
+A shared file only loses the old package if no `.csproj` on disk below it still uses it.
+Otherwise the line stays, the new package is added next to it and the Fixer reports Manual on that file.
 
-## Wat, waar, hoe
+## What, where, how
 
-- `XmlProjectFileStore.UnloadedUsers` (DataAccess, `IFileSystem`): per gedeeld bestand alle `*.csproj` onder zijn map
-  die niet gemigreerd worden en dit bestand als dichtstbijzijnde `Directory.*.props` hebben; gebruik = `PackageReference`
-  van een verwijderd pakket in de eigen `.csproj` of in zijn `Directory.Build.props`. Onleesbaar = gebruiker.
-- `ProjectFileChange.KeptRemovedPackageFor`: het project waarvoor het gedeelde bestand het pakket houdt.
-- `Fixer.MigrateProjectFilesAsync`: zo'n change → Manual i.p.v. Fixed.
-- Projecten waarvan de code Manual blijft: al gedekt door `KeepRemovedPackage` (TAAK-017).
+- `XmlProjectFileStore.UnloadedUsers` (DataAccess, `IFileSystem`): per shared file all `*.csproj` below its folder
+  that are not migrated and have this file as their nearest `Directory.*.props`; use = `PackageReference`
+  of a removed package in its own `.csproj` or in its `Directory.Build.props`. Unreadable = user.
+- `ProjectFileChange.KeptRemovedPackageFor`: the project for which the shared file keeps the package.
+- `Fixer.MigrateProjectFilesAsync`: such a change → Manual instead of Fixed.
+- Projects whose code stays Manual: already covered by `KeepRemovedPackage` (TAAK-017).
 
 ## Tests
 
-- `XmlProjectFileStoreTests`: CPM met niet-geladen FA-project, zonder FA, via gedeelde Build.props, nabijere Build.props.
+- `XmlProjectFileStoreTests`: CPM with an unloaded FA project, without FA, via shared Build.props, closer Build.props.
 - `FixerProjectFileTests.FixAsync_SharedFileKeptForUnloadedProject_ReportsManual` (NSubstitute).
-- `Integration/SharedPackageFileTests`: echte tijdelijke map, CPM, één overgeslagen project dat FA gebruikt.
+- `Integration/SharedPackageFileTests`: real temporary folder, CPM, one skipped project that uses FA.
 
-## Zie ook
+## See also
 
 - `docs/projectinfo/architectuur/core.md` § Projectbestanden
 - `claude/tasks/archief/TAAK-135-loader-razor-en-vreemde-projecten.md`

@@ -1,32 +1,32 @@
-# TAAK-112 — Bogus laadt niet in Unshackle terwijl `dotnet build` slaagt
+# TAAK-112 — Bogus does not load in Unshackle while `dotnet build` succeeds
 
-**Status**: klaar (2026-10-11)
-**Aangemaakt**: 2026-10-11 (corpus-run, `claude/tasks/CORPUSRUN-fa.md` volgt)
+**Status**: done (2026-10-11)
+**Created**: 2026-10-11 (corpus run, `claude/tasks/CORPUSRUN-fa.md` follows)
 
 ## Context
 
-Bogus: `fix` stopt met "The solution could not be loaded (6 errors)": 3× "Builder: The type or namespace name 'System' could not be found" en NU1701 (Rant 3.0.530, Z.ExtensionMethods.WithTwoNamespace, net4x-pakketten in net9.0-project) in Bogus.Tests.csproj. TAAK-090 vangt NU1701 als warning, maar deze meldingen komen als MSBuild-failure met een andere tekst/vorm binnen.
+Bogus: `fix` stops with "The solution could not be loaded (6 errors)": 3× "Builder: The type or namespace name 'System' could not be found" and NU1701 (Rant 3.0.530, Z.ExtensionMethods.WithTwoNamespace, net4x packages in a net9.0 project) in Bogus.Tests.csproj. TAAK-090 catches NU1701 as a warning, but these messages come in as an MSBuild failure with a different text/shape.
 
-## Stappen
+## Steps
 
-1. Reproduceer op de Bogus-kopie (scratchpad/run-fa/src/bchavez_Bogus).
-2. NU1701 in deze vorm ('Msbuild failed when processing … Package … was restored using …') als waarschuwing behandelen.
-3. 'Builder': waarschijnlijk een build-project (NUKE e.d.) dat niet gerestored is of geen test/FA bevat — onderzoeken; projecten zonder FA-referentie die niet laden mogen een waarschuwing geven i.p.v. fataal (motiveren, zie TAAK-090-regels).
-4. Bewijs: Bogus laadt, fix + build groen.
+1. Reproduce on the Bogus copy (scratchpad/run-fa/src/bchavez_Bogus).
+2. Treat NU1701 in this form ('Msbuild failed when processing … Package … was restored using …') as a warning.
+3. 'Builder': probably a build project (NUKE etc.) that was not restored or contains no tests/FA — investigate; projects without an FA reference that do not load may give a warning instead of being fatal (justify, see TAAK-090 rules).
+4. Evidence: Bogus loads, fix + build green.
 
-## Resultaat
+## Result
 
-- NU1701 in de vorm "Msbuild failed when processing … was restored using …" was al een waarschuwing (`IsTolerable`: project geladen).
-  Fataal was alleen de CS0246-check: 'Builder' (NUKE) wordt bij `dotnet restore Bogus.sln` niet gerestored (geen
-  `project.assets.json`) en de design-time build vindt niet eens `System`.
-- Fix (`src/Unshackle.DataAccess/Solutions/MsBuildSolutionStore.cs`): een project waarin `System.Object` niet resolvet, terwijl
-  andere projecten wel resolven, en waar geen project van afhangt, wordt uit de solution gelaten met een waarschuwing. Een enkel
-  ongerestored project of een project waar anderen van afhangen blijft fataal (de bestaande CS0246-check).
-- Test: `SampleShopTests.Load_LeafProjectWithoutSystemNextToRestoredOne_LeavesItOutWithWarning` (nagebootst met
-  `DisableImplicitFrameworkReferences`; een ongerestored project met packages vindt in de test wel System).
-- Corpus: verse kopie Bogus (`scratchpad/v110/work/bogus`): laadt, 865 Fixed / 113 Manual, **build groen**.
+- NU1701 in the form "Msbuild failed when processing … was restored using …" was already a warning (`IsTolerable`: project loaded).
+  Only the CS0246 check was fatal: 'Builder' (NUKE) is not restored by `dotnet restore Bogus.sln` (no
+  `project.assets.json`) and the design-time build cannot even find `System`.
+- Fix (`src/Unshackle.DataAccess/Solutions/MsBuildSolutionStore.cs`): a project in which `System.Object` does not resolve, while
+  other projects do resolve, and on which no project depends, is left out of the solution with a warning. A single
+  unrestored project or a project that others depend on stays fatal (the existing CS0246 check).
+- Test: `SampleShopTests.Load_LeafProjectWithoutSystemNextToRestoredOne_LeavesItOutWithWarning` (simulated with
+  `DisableImplicitFrameworkReferences`; an unrestored project with packages does find System in the test).
+- Corpus: fresh copy of Bogus (`scratchpad/v110/work/bogus`): loads, 865 Fixed / 113 Manual, **build green**.
 
-## Zie ook
+## See also
 
 - `claude/tasks/ANALYSE-fa-100.md`
 - `docs/projectinfo/architectuur/corpus.md`

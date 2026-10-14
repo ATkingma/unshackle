@@ -36,7 +36,7 @@ files_expected:
     - README.md
 ---
 
-# Feature: End-to-end keten: unshackle scan, fix en list als dotnet tool
+# Feature: End-to-end chain: unshackle scan, fix and list as a dotnet tool
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -44,57 +44,57 @@ files_expected:
 | **Status**    | Implemented               |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-005. Alles gemarkeerd als _(inferred)_ komt uit de codebase-analyse.
+> Drawn up from TAAK-005. Everything marked _(inferred)_ comes from the codebase analysis.
 
 ## One-sentence summary
 
-`unshackle scan|fix|list` werkt als `dotnet tool` vanuit elke shell (PowerShell, bash) op een echte `.sln`/`.slnx`,
-met rapport (CSV/JSON/Markdown), `--dry-run`-diff en vaste exitcodes.
+`unshackle scan|fix|list` works as a `dotnet tool` from any shell (PowerShell, bash) on a real `.sln`/`.slnx`,
+with a report (CSV/JSON/Markdown), `--dry-run` diff and fixed exit codes.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Solution laden en wegschrijven via één `MSBuildWorkspace` (`ISolutionStore` → `MsBuildSolutionStore`).
-- Rapport-writers CSV, JSON en Markdown (`IReportWriter`), gekozen op de extensie van `--report`.
-- Commands `list`, `scan`, `fix` (`--dry-run`, `--force`), console-uitvoer via Spectre.
-- Veiligheidscheck: `fix` weigert op een git-werkmap met niet-gecommitte wijzigingen (`ISourceControl` → git).
-- Installeerbaar als `dotnet tool` (`dotnet pack` + `dotnet tool install`), README "Usage" voor PowerShell en bash.
-- Integratietest op een kopie van `samples/` in een tempmap (trait `Category=Integration`).
+- Loading and saving the solution through a single `MSBuildWorkspace` (`ISolutionStore` → `MsBuildSolutionStore`).
+- Report writers CSV, JSON and Markdown (`IReportWriter`), chosen by the extension of `--report`.
+- Commands `list`, `scan`, `fix` (`--dry-run`, `--force`), console output via Spectre.
+- Safety check: `fix` refuses on a git working tree with uncommitted changes (`ISourceControl` → git).
+- Installable as a `dotnet tool` (`dotnet pack` + `dotnet tool install`), README "Usage" for PowerShell and bash.
+- Integration test on a copy of `samples/` in a temp folder (trait `Category=Integration`).
 
 **Out of scope**
 
-- Projectbestanden migreren (FA-pakket eruit, Shouldly erin, `<Using Include>` aanpassen): vervolgtaak.
-- De gefixte sample bouwen en testen (kan pas na projectbestand-migratie).
-- Een diff-pakket (DiffPlex): eerst eigen regel-diff.
+- Migrating project files (FA package out, Shouldly in, adjusting `<Using Include>`): follow-up task.
+- Building and testing the fixed sample (only possible after project file migration).
+- A diff package (DiffPlex): own line diff first.
 
 ## Requirements
 
-- **REQ-1**: WHEN de gebruiker `unshackle list` draait THE SYSTEM SHALL elke fix tonen met per pattern het `Id` en de `Description`, en exitcode 0 geven.
-- **REQ-2**: WHEN de gebruiker `unshackle scan <sln> --fix <id>` draait THE SYSTEM SHALL de solution laden, de fix draaien zonder iets te schrijven en per pattern het aantal Fixed en Manual tonen.
-- **REQ-3**: WHEN `--report <pad>` met extensie `.csv`, `.json` of `.md` is meegegeven THE SYSTEM SHALL het rapport met kolommen `File,Line,Fix,Pattern,Status,Reason` naar dat pad schrijven, met paden relatief aan de map van de solution.
-- **REQ-4**: WHEN de gebruiker `unshackle fix <sln> --fix <id>` draait op een schone werkmap THE SYSTEM SHALL de gewijzigde documenten wegschrijven.
-- **REQ-5**: WHEN `fix` draait zonder `--dry-run` en zonder `--force` en de map van de solution in een git-werkmap met niet-gecommitte wijzigingen ligt THE SYSTEM SHALL weigeren, niets schrijven en exitcode 1 geven.
-- **REQ-6**: WHEN `fix --dry-run` draait THE SYSTEM SHALL per gewijzigd document een regel-diff tonen en niets schrijven, ook op een vuile werkmap.
-- **REQ-7**: WHEN de solution niet bestaat of MSBuild laadfouten meldt THE SYSTEM SHALL de fouten op stderr tonen en exitcode 1 geven.
-- **REQ-8**: WHEN argumenten ongeldig zijn (onbekend command, ontbrekende `--fix`, onbekende fix-id, onbekende rapportextensie) THE SYSTEM SHALL een melding geven en exitcode 2 geven.
-- **REQ-9**: WHEN scan of fix Manual-findings oplevert THE SYSTEM SHALL toch exitcode 0 geven (Manual is een uitkomst, geen fout).
-- **REQ-10**: WHEN een pad spaties bevat THE SYSTEM SHALL het gewoon laden en schrijven.
-- **REQ-11**: WHEN `dotnet pack src/Unshackle.Interface` en `dotnet tool install` zijn gedraaid THE SYSTEM SHALL als commando `unshackle` beschikbaar zijn.
-- **REQ-12**: WHEN de integratietest draait THE SYSTEM SHALL op een kopie van `samples/` scan en fix doen en het rapport en een paar herschreven regels controleren, ook in CI (ubuntu).
+- **REQ-1**: WHEN the user runs `unshackle list` THE SYSTEM SHALL show every fix with the `Id` and `Description` per pattern, and return exit code 0.
+- **REQ-2**: WHEN the user runs `unshackle scan <sln> --fix <id>` THE SYSTEM SHALL load the solution, run the fix without writing anything and show the number of Fixed and Manual per pattern.
+- **REQ-3**: WHEN `--report <path>` with extension `.csv`, `.json` or `.md` is given THE SYSTEM SHALL write the report with columns `File,Line,Fix,Pattern,Status,Reason` to that path, with paths relative to the solution folder.
+- **REQ-4**: WHEN the user runs `unshackle fix <sln> --fix <id>` on a clean working tree THE SYSTEM SHALL save the changed documents.
+- **REQ-5**: WHEN `fix` runs without `--dry-run` and without `--force` and the solution folder is in a git working tree with uncommitted changes THE SYSTEM SHALL refuse, write nothing and return exit code 1.
+- **REQ-6**: WHEN `fix --dry-run` runs THE SYSTEM SHALL show a line diff per changed document and write nothing, also on a dirty working tree.
+- **REQ-7**: WHEN the solution does not exist or MSBuild reports load errors THE SYSTEM SHALL show the errors on stderr and return exit code 1.
+- **REQ-8**: WHEN arguments are invalid (unknown command, missing `--fix`, unknown fix id, unknown report extension) THE SYSTEM SHALL show a message and return exit code 2.
+- **REQ-9**: WHEN scan or fix produces Manual findings THE SYSTEM SHALL still return exit code 0 (Manual is an outcome, not an error).
+- **REQ-10**: WHEN a path contains spaces THE SYSTEM SHALL load and write it normally.
+- **REQ-11**: WHEN `dotnet pack src/Unshackle.Interface` and `dotnet tool install` have been run THE SYSTEM SHALL be available as the command `unshackle`.
+- **REQ-12**: WHEN the integration test runs THE SYSTEM SHALL scan and fix a copy of `samples/` and check the report and a few rewritten lines, also in CI (ubuntu).
 
 ## Assumptions
 
-- _(inferred)_ Built on the existing stack: C#, .NET 10, Roslyn 5.9 `MSBuildWorkspace` met eigen BuildHost.
-- De gebruiker heeft de solution gerestored (`obj/project.assets.json`), anders kent het SemanticModel de bibliotheek niet.
-- `git` staat op het PATH; zonder git (of buiten een git-werkmap) geldt de map als schoon.
+- _(inferred)_ Built on the existing stack: C#, .NET 10, Roslyn 5.9 `MSBuildWorkspace` with its own BuildHost.
+- The user has restored the solution (`obj/project.assets.json`), otherwise the SemanticModel does not know the library.
+- `git` is on the PATH; without git (or outside a git working tree) the folder counts as clean.
 
 ## Risks
 
-- MSBuildWorkspace laadt niet (SDK, BuildHost) lokaal, in CI of vanuit de tool-installatie → laadfouten worden exitcode 1; integratietest en een echte `dotnet tool install` maken het zichtbaar.
-- `fix` overschrijft gebruikerscode → standaard weigeren op een vuile werkmap, `--dry-run` eerst.
-- System.CommandLine geeft standaard exitcode 1 bij parsefouten → zelf afvangen en 2 teruggeven.
-- Integratietest wijzigt `samples/` → altijd op een kopie (zonder `bin/`/`obj/`) in een tempmap, met restore.
+- MSBuildWorkspace does not load (SDK, BuildHost) locally, in CI or from the tool installation → load errors become exit code 1; the integration test and a real `dotnet tool install` make it visible.
+- `fix` overwrites user code → refuse by default on a dirty working tree, `--dry-run` first.
+- System.CommandLine returns exit code 1 on parse errors by default → catch it ourselves and return 2.
+- Integration test changes `samples/` → always on a copy (without `bin/`/`obj/`) in a temp folder, with restore.
 
 ## C4 Context (Mermaid)
 
@@ -104,16 +104,16 @@ Who uses the system and which external systems it depends on.
 C4Context
     title System Context: Unshackle
 
-    Person(user, "Developer", "Draait unshackle vanuit PowerShell of bash")
+    Person(user, "Developer", "Runs unshackle from PowerShell or bash")
     System(unshackle, "Unshackle", "dotnet tool: scan, fix, list")
-    System_Ext(solution, "Solution van de gebruiker", ".sln/.slnx op schijf")
-    System_Ext(msbuild, "MSBuild / .NET SDK", "Laadt projecten en referenties")
-    System_Ext(git, "git", "Is de werkmap schoon?")
+    System_Ext(solution, "User's solution", ".sln/.slnx on disk")
+    System_Ext(msbuild, "MSBuild / .NET SDK", "Loads projects and references")
+    System_Ext(git, "git", "Is the working tree clean?")
 
-    Rel(user, unshackle, "Draait")
-    Rel(unshackle, solution, "Leest en schrijft")
-    Rel(unshackle, msbuild, "Laadt via")
-    Rel(unshackle, git, "Vraagt status")
+    Rel(user, unshackle, "Runs")
+    Rel(unshackle, solution, "Reads and writes")
+    Rel(unshackle, msbuild, "Loads via")
+    Rel(unshackle, git, "Asks status")
 ```
 
 ## C4 Container (Mermaid)
@@ -122,20 +122,20 @@ C4Context
 C4Container
     title Containers: Unshackle
 
-    Person(user, "Developer", "PowerShell of bash")
+    Person(user, "Developer", "PowerShell or bash")
     System_Boundary(unshackle_boundary, "Unshackle") {
         Container(unshackle_interface, "Unshackle.Interface", "C#, System.CommandLine, Spectre", "Commands scan/fix/list, console, composition root")
-        Container(unshackle_core, "Unshackle.Core", "C#, Roslyn", "Fixer, fixes, patterns, contracten")
-        Container(unshackle_dataaccess, "Unshackle.DataAccess", "C#, MSBuildWorkspace", "Solutions laden/opslaan, rapporten, git-status")
+        Container(unshackle_core, "Unshackle.Core", "C#, Roslyn", "Fixer, fixes, patterns, contracts")
+        Container(unshackle_dataaccess, "Unshackle.DataAccess", "C#, MSBuildWorkspace", "Load/save solutions, reports, git status")
     }
 
     Rel(user, unshackle_interface, "unshackle ...")
     Rel(unshackle_interface, unshackle_core, "IFixer")
-    Rel(unshackle_interface, unshackle_dataaccess, "Maakt aan")
-    Rel(unshackle_dataaccess, unshackle_core, "Implementeert ISolutionStore, IReportWriter, ISourceControl")
+    Rel(unshackle_interface, unshackle_dataaccess, "Creates")
+    Rel(unshackle_dataaccess, unshackle_core, "Implements ISolutionStore, IReportWriter, ISourceControl")
 ```
 
 ## Open questions
 
-- [x] `fix` op een vuile werkmap? Voorlopige keuze: weigeren tenzij `--force`; `--dry-run` mag altijd.
-- [ ] Projectbestanden migreren (pakket en global usings): vervolgtaak.
+- [x] `fix` on a dirty working tree? Provisional choice: refuse unless `--force`; `--dry-run` is always allowed.
+- [ ] Migrating project files (package and global usings): follow-up task.

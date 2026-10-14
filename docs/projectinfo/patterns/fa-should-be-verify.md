@@ -11,47 +11,47 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs`; registratie in `FluentAssertionsFix.cs` (`Patterns`-lijst). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs`; registration in `FluentAssertionsFix.cs` (`Patterns`-lijst). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/ShouldBe/`, run by `ProofTests`.
 
-| REQ    | Oordeel                     | Bewijs                                                                                                               |
+| REQ    | Verdict                     | Evidence                                                                                                               |
 | ------ | --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| REQ-1  | Gehaald                     | `simple.before.cs` / `simple.after.cs` (int, string)                                                                 |
-| REQ-2  | Gehaald                     | `because.before.cs` / `because.after.cs`; `because` gaat mee in de originele argumentlijst                           |
-| REQ-3  | Gehaald                     | `lambda.before.cs` / `lambda.after.cs` (`IsResultDiscarded` accepteert void-lambda)                                  |
-| REQ-4  | Gehaald                     | `constant-cast.before.cs` / `constant-cast.after.cs`: `(byte)1`, `(Status)0`, `long` zonder cast (`ConvertExpected`) |
-| REQ-5  | Gehaald                     | `chain.before.cs` / `chain.manual.txt` (reden "is used")                                                             |
-| REQ-6  | Vervangen                   | door Uitbreiding TAAK-097                                                                                            |
-| REQ-7  | Gehaald                     | `comparer.before.cs` / `comparer.manual.txt` (`values.Count != 1`)                                                   |
-| REQ-8  | Gehaald                     | `nullable-expected.before.cs` / `nullable-expected.manual.txt` (`ConvertExpected` geeft null)                        |
-| REQ-9  | Gehaald                     | `xml.before.cs` / `xml.manual.txt` (namespace `FluentAssertions.Xml`/`.Types`)                                       |
-| REQ-10 | Gehaald in code, geen proof | `subject is null` (`FluentAssertionPattern.Rewrite`) en `IErrorTypeSymbol` (`RewriteAssertion`) geven Manual; geen proof-bestand |
-| TAAK-097 | Gehaald | `because-args.after.cs` (`string.Format`); Manual: `edge-named-because`, `because-args-variable`, `because-args-bad-format` |
-| TAAK-100 | Gehaald | `assertion-scope-nested`, `assertion-scope-using-block`, `assertion-scope-using-var` (`.manual.txt`) |
-| TAAK-070 | Gehaald | `edge-assertion-in-throw-lambda` (`.manual.txt`): assertion in een lambda waarvan `Throw<T>` met T ≠ `Exception`/`ShouldAssertException` gecontroleerd wordt; gedeelde check `IsInsideExpectedFailure` in alle FA-patterns, unittest `IsInsideExpectedFailure_DependsOnExpectedExceptionType` |
-| TAAK-169 | Gehaald | `implicit-conversion.before.cs` / `implicit-conversion.after.cs`: `ShouldBe((Doc)42)` voor een eigen type met `implicit operator` (int en string); `ConvertExpected` herkent `Conversion.IsUserDefined`. Gedrag gemeten met een probe, FA en Shouldly gelijk. |
-| TAAK-199 | Gehaald | `own-shouldbe-in-namespace.before.cs` / `.manual.txt`: eigen `ShouldBe<T>` in de omsluitende namespace; unittests `AmbiguousAddedNamespaceTests.FixAsync_FileInNamespaceOfOwnShouldBe_*`. Akka: `MixedBindingPair.cs` (namespace `Akka.TestKit`) blijft FA + Manual. |
-| TAAK-200 | Gehaald (waarschuwing) | `EqualsOrderWarning` in `ShouldBePattern` (ook `NotBePattern`): Fixed met `Warning` bij eigen `Equals` of twee onbekende runtime-typen; unittests `ShouldBeEqualsOrderTests` (5 met, 5 zonder waarschuwing), proof `own-equals.*`. Probe Akka DData: `a.Equals(e)=True`, `e.Equals(a)=False`. |
-| TAAK-198 | Gehaald | Terugval per call: `own-shouldbe-in-namespace.manual.txt` blijft Manual (de enige call is `ShouldBe`); gemengde bestanden in `AmbiguousAddedNamespaceTests` (`ShouldBe` blijft FA, de rest via `using static`). |
+| REQ-1  | Met                         | `simple.before.cs` / `simple.after.cs` (int, string)                                                                 |
+| REQ-2  | Met                         | `because.before.cs` / `because.after.cs`; `because` comes along in the original argument list                         |
+| REQ-3  | Met                         | `lambda.before.cs` / `lambda.after.cs` (`IsResultDiscarded` accepteert void-lambda)                                  |
+| REQ-4  | Met                         | `constant-cast.before.cs` / `constant-cast.after.cs`: `(byte)1`, `(Status)0`, `long` without a cast (`ConvertExpected`) |
+| REQ-5  | Met                         | `chain.before.cs` / `chain.manual.txt` (reason "is used")                                                            |
+| REQ-6  | Replaced                    | by Extension TAAK-097                                                                                            |
+| REQ-7  | Met                         | `comparer.before.cs` / `comparer.manual.txt` (`values.Count != 1`)                                                   |
+| REQ-8  | Met                         | `nullable-expected.before.cs` / `nullable-expected.manual.txt` (`ConvertExpected` returns null)                      |
+| REQ-9  | Met                         | `xml.before.cs` / `xml.manual.txt` (namespace `FluentAssertions.Xml`/`.Types`)                                       |
+| REQ-10 | Met in code, no proof | `subject is null` (`FluentAssertionPattern.Rewrite`) and `IErrorTypeSymbol` (`RewriteAssertion`) give Manual; no proof file |
+| TAAK-097 | Met | `because-args.after.cs` (`string.Format`); Manual: `edge-named-because`, `because-args-variable`, `because-args-bad-format` |
+| TAAK-100 | Met | `assertion-scope-nested`, `assertion-scope-using-block`, `assertion-scope-using-var` (`.manual.txt`) |
+| TAAK-070 | Met | `edge-assertion-in-throw-lambda` (`.manual.txt`): an assertion in a lambda that is checked with `Throw<T>` where T ≠ `Exception`/`ShouldAssertException`; shared check `IsInsideExpectedFailure` in all FA patterns, unit test `IsInsideExpectedFailure_DependsOnExpectedExceptionType` |
+| TAAK-169 | Met | `implicit-conversion.before.cs` / `implicit-conversion.after.cs`: `ShouldBe((Doc)42)` for an own type with `implicit operator` (int and string); `ConvertExpected` recognises `Conversion.IsUserDefined`. Behaviour measured with a probe, FA and Shouldly equal. |
+| TAAK-199 | Met | `own-shouldbe-in-namespace.before.cs` / `.manual.txt`: an own `ShouldBe<T>` in the enclosing namespace; unit tests `AmbiguousAddedNamespaceTests.FixAsync_FileInNamespaceOfOwnShouldBe_*`. Akka: `MixedBindingPair.cs` (namespace `Akka.TestKit`) stays FA + Manual. |
+| TAAK-200 | Met (warning) | `EqualsOrderWarning` in `ShouldBePattern` (also `NotBePattern`): Fixed with `Warning` for an own `Equals` or two unknown runtime types; unit tests `ShouldBeEqualsOrderTests` (5 with, 5 without a warning), proof `own-equals.*`. Probe Akka DData: `a.Equals(e)=True`, `e.Equals(a)=False`. |
+| TAAK-198 | Met | Fallback per call: `own-shouldbe-in-namespace.manual.txt` stays Manual (the only call is `ShouldBe`); mixed files in `AmbiguousAddedNamespaceTests` (`ShouldBe` stays FA, the rest via `using static`). |
 
 ## Deviations
 
 | #   | Area         | Plan says                                              | Code does                                                                                       | Impact |
 | --- | ------------ | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------- | ------ |
-| 1   | Requirements | REQ-10: onbekend type en afwijkende vorm worden Manual | Code doet dit (`ShouldBePattern.cs`, begin van `Rewrite`), maar geen proof dekt het        | Low    |
-| 2   | Risk         | TAAK-001 noemt `Guid` tegenover `string` als Manual  | Valt onder dezelfde tak als `nullable-expected` (`ConvertExpected` null); alleen `int?` bewezen | Low    |
-| 3 | Scope | _(edge case)_ | Expression-bodied void-methode/local function/accessor (`void M() => x.Should().Be(1);`) telt als discarded resultaat (TAAK-040, `edge-expression-bodied.*`); `a?.B.Should()` idem (TAAK-041) | Low |
+| 1   | Requirements | REQ-10: unknown type and deviating shape become Manual | The code does this (`ShouldBePattern.cs`, start of `Rewrite`), but no proof covers it  | Low    |
+| 2   | Risk         | TAAK-001 names `Guid` against `string` as Manual     | Falls under the same branch as `nullable-expected` (`ConvertExpected` null); only `int?` proven | Low    |
+| 3 | Scope | _(edge case)_ | An expression-bodied void method/local function/accessor (`void M() => x.Should().Be(1);`) counts as a discarded result (TAAK-040, `edge-expression-bodied.*`); `a?.B.Should()` likewise (TAAK-041) | Low |
 
-Edge cases buiten het patroon zelf (in `Fixer`/`UsingDirectives`, zie `docs/projectinfo/architectuur/core.md`):
-`edge-ifdef` (inactieve `#if`-tak blijft FA; `using FluentAssertions;` blijft naast `using Shouldly;` + Manual `usings`,
-TAAK-043) en `edge-global-using` (`global using FluentAssertions;` → `global using Shouldly;`, TAAK-044). De proof-runner
-compileert `after` tegen beide bibliotheken als er een Manual-finding is.
+Edge cases outside the pattern itself (in `Fixer`/`UsingDirectives`, see `docs/projectinfo/architectuur/core.md`):
+`edge-ifdef` (an inactive `#if` branch stays FA; `using FluentAssertions;` stays next to `using Shouldly;` + Manual `usings`,
+TAAK-043) and `edge-global-using` (`global using FluentAssertions;` → `global using Shouldly;`, TAAK-044). The proof runner
+compiles `after` against both libraries if there is a Manual finding.
 
-Verder geen afwijkingen: alle `files_expected` bestaan en zijn aangeraakt, geen nieuwe containers of externe systemen, scope niet overschreden (geen `NotBe`, geen ketensplitsing).
+No further deviations: all `files_expected` exist and were touched, no new containers or external systems, scope not exceeded (no `NotBe`, no chain splitting).
 
 ## Validation results
 
 | Check | Command        | Result                                                       |
 | ----- | -------------- | ------------------------------------------------------------ |
 | Build | `dotnet build` | passed: 0 warnings, 0 errors                                 |
-| Tests | `dotnet test`  | passed: 29 of 29 (hele solution, inclusief alle ProofTests)  |
-| Lint  | _geen_         | _not run_: geen lint-commando ingesteld in `.featuredoc.yml` |
+| Tests | `dotnet test`  | passed: 29 of 29 (whole solution, including all ProofTests)  |
+| Lint  | _none_         | _not run_: no lint command configured in `.featuredoc.yml`   |

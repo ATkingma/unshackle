@@ -1,54 +1,54 @@
-# Modellen: mediatr.add-mediatr
+# Models: mediatr.add-mediatr
 
-Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`.
+Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`.
 
-## Figuur 1: klassen
+## Figure 1: classes
 
-**Figure 1.** `AddMediatRPattern` en de MediatR- en Mediator-registratie.
+**Figure 1.** `AddMediatRPattern` and the MediatR and Mediator registration.
 
 <!-- kingmadoc:diagram img/mediatr-add-mediatr-modellen-1.d2 -->
-![Figuur 1: klassen](img/mediatr-add-mediatr-modellen-1.png)
+![Figure 1: classes](img/mediatr-add-mediatr-modellen-1.png)
 
-| Element             | Rol                                                                           |
+| Element             | Role                                                                          |
 | ------------------- | ----------------------------------------------------------------------------- |
-| `AddMediatRPattern` | Vindt `AddMediatR` (symbool uit assembly `MediatR`) en schrijft `AddMediator` |
-| `s_dropped`         | `RegisterServicesFrom*`: vervallen, de source generator vindt handlers        |
-| `Registered`        | `Add(Open)Behavior`, `Add(Open)StreamBehavior`, `Add(Open)RequestPre/PostProcessor` → `typeof(...)` van de implementatie |
-| `Scanned`           | Gesloten exception handlers en processors uit het eigen project (MediatR-assembly-scan) |
+| `AddMediatRPattern` | Finds `AddMediatR` (symbol from assembly `MediatR`) and writes `AddMediator`  |
+| `s_dropped`         | `RegisterServicesFrom*`: dropped, the source generator finds handlers         |
+| `Registered`        | `Add(Open)Behavior`, `Add(Open)StreamBehavior`, `Add(Open)RequestPre/PostProcessor` → `typeof(...)` of the implementation |
+| `Scanned`           | Closed exception handlers and processors from the own project (MediatR assembly scan) |
 | `IsBuiltInPublisher` | `TaskWhenAllPublisher`/`ForeachAwaitPublisher` → `NotificationPublisherType` |
-| `MediatorOptions`   | Door de generator geschreven; `ServiceLifetime`, `PipelineBehaviors`, `StreamPipelineBehaviors`, `NotificationPublisherType` |
+| `MediatorOptions`   | Written by the generator; `ServiceLifetime`, `PipelineBehaviors`, `StreamPipelineBehaviors`, `NotificationPublisherType` |
 
-## Figuur 2: sequence
+## Figure 2: sequence
 
-**Figure 2.** Van `Fixer` via `Find` en `Rewrite` naar `Fixed` of `Manual`.
+**Figure 2.** From `Fixer` via `Find` and `Rewrite` to `Fixed` or `Manual`.
 
 <!-- kingmadoc:diagram img/mediatr-add-mediatr-modellen-2.d2 -->
-![Figuur 2: sequence](img/mediatr-add-mediatr-modellen-2.png)
+![Figure 2: sequence](img/mediatr-add-mediatr-modellen-2.png)
 
-| Stap         | Methode in de code                       | Wat gebeurt er                                          |
+| Step         | Method in the code                       | What happens                                            |
 | ------------ | ---------------------------------------- | ------------------------------------------------------- |
-| Vinden       | `Find` met `GetSymbolInfo`               | Alleen de echte `AddMediatR` van MediatR (ook als candidate-symbool) |
-| Instellingen | `ParameterName`, `Registered`, `s_dropped`, `IsBuiltInPublisher` | Elke instelling: vervalt, behavior/processor/stream behavior, lifetime, publisher of Manual |
-| Scan         | `Scanned`, `IsScanned`                   | Volgorde: exception handlers, pre-processors, behaviors, post-processors |
-| Schrijven    | `BlockStatements`, `SyntaxFactory.ParseStatement` | Letterlijke toewijzingen, alleen de inspringing; comments vóór de eerste |
+| Find         | `Find` with `GetSymbolInfo`              | Only the real `AddMediatR` of MediatR (also as candidate symbol) |
+| Settings     | `ParameterName`, `Registered`, `s_dropped`, `IsBuiltInPublisher` | Each setting: dropped, behavior/processor/stream behavior, lifetime, publisher or Manual |
+| Scan         | `Scanned`, `IsScanned`                   | Order: exception handlers, pre-processors, behaviors, post-processors |
+| Write        | `BlockStatements`, `SyntaxFactory.ParseStatement` | Literal assignments, only the indentation; comments before the first |
 
-## Figuur 3: beslisboom
+## Figure 3: decision tree
 
-**Figure 3.** Vragen van `Rewrite`.
+**Figure 3.** Questions of `Rewrite`.
 
 <!-- kingmadoc:diagram img/mediatr-add-mediatr-modellen-3.d2 -->
-![Figuur 3: beslisboom](img/mediatr-add-mediatr-modellen-3.png)
+![Figure 3: decision tree](img/mediatr-add-mediatr-modellen-3.png)
 
-| Blad                                          | Voorwaarde                             | Bewijs                              |
+| Leaf                                          | Condition                              | Evidence                            |
 | --------------------------------------------- | -------------------------------------- | ----------------------------------- |
-| Manual "not called as AddMediatR(cfg => ...)" | geen lambda                            | `AddMediatR/no-lambda`              |
-| Manual "not a list of cfg calls"              | blok met andere statements             | geen proof                          |
-| Manual "cfg.X(...) has no direct equivalent"  | onbekende aanroep of lifetime-argument | `unknown-call`, `behavior-lifetime` |
-| Manual "'...' has no direct equivalent"       | andere toewijzing/expressie (eigen publisher) | geen proof                   |
-| Manual "several settings in an expression lambda" | expression body met meer dan één toewijzing | geen proof                   |
-| `AddMediator(cfg => ...)`                     | alles bekend                           | `behaviors`, `expression`, `empty`, `processors`, `publisher`, `edge-publisher-qualified`, `edge-assemblies`, `edge-service-type-behavior`, `generic-handlers` |
+| Manual "not called as AddMediatR(cfg => ...)" | no lambda                              | `AddMediatR/no-lambda`              |
+| Manual "not a list of cfg calls"              | block with other statements            | no proof                            |
+| Manual "cfg.X(...) has no direct equivalent"  | unknown call or lifetime argument      | `unknown-call`, `behavior-lifetime` |
+| Manual "'...' has no direct equivalent"       | other assignment/expression (own publisher) | no proof                       |
+| Manual "several settings in an expression lambda" | expression body with more than one assignment | no proof                 |
+| `AddMediator(cfg => ...)`                     | everything known                       | `behaviors`, `expression`, `empty`, `processors`, `publisher`, `edge-publisher-qualified`, `edge-assemblies`, `edge-service-type-behavior`, `generic-handlers` |
 
-## Zie ook
+## See also
 
 - [mediatr-add-mediatr-plan.md](mediatr-add-mediatr-plan.md)
 - [mediatr-add-mediatr-verify.md](mediatr-add-mediatr-verify.md)

@@ -1,34 +1,34 @@
-# TAAK-022 — Scan/fix telt bevindingen per target framework
+# TAAK-022 — Scan/fix counts findings per target framework
 
-**Status**: voltooid
-**Aangemaakt**: 2026-10-11
-**Gevonden in**: TAAK-019 stap 1, casus microsoft/PowerApps-Tooling @ 630e6973
+**Status**: done
+**Created**: 2026-10-11
+**Found in**: TAAK-019 step 1, case microsoft/PowerApps-Tooling @ 630e6973
 
-## Probleem
+## Problem
 
-Bij multi-target projecten (`net48;net8.0;net10.0`) laadt MSBuildWorkspace elk project per TFM. Scan rapporteert daardoor elke bevinding 3x: tabel "778 fixed, 162 manual", werkelijk 262 Fixed / 53 Manual unieke regels. `fix` meldt "64 file(s) written" terwijl 27 bestanden wijzigen. Het rapport (`--report`) bevat dezelfde regel 3x.
+For multi-target projects (`net48;net8.0;net10.0`) MSBuildWorkspace loads each project per TFM. As a result scan reports every finding 3x: table "778 fixed, 162 manual", in reality 262 Fixed / 53 Manual unique lines. `fix` reports "64 file(s) written" while 27 files change. The report (`--report`) contains the same line 3x.
 
-Geen fout in een pattern, wel misleidende cijfers (README/lancering!) en mogelijk dubbel schrijven.
+Not a bug in a pattern, but misleading numbers (README/launch!) and possibly duplicate writes.
 
-## Aanpak (voorstel)
+## Approach (proposal)
 
-Dedupliceer documenten op bestandspad (één TFM per bestand verwerken, of bevindingen op (pad, regel, pattern) dedupliceren) in de Fixer/workspace-laag. Test met een multi-target sample.
+Deduplicate documents by file path (process one TFM per file, or deduplicate findings on (path, line, pattern)) in the Fixer/workspace layer. Test with a multi-target sample.
 
-## Stappen
+## Steps
 
-- [x] Test: multi-target project geeft elke bevinding één keer
-- [x] Dedupliceren + bestanden één keer schrijven
-- [ ] Casus opnieuw: cijfers kloppen met het rapport (niet gedraaid; integratietest `ScanFix_MultiTargetProject_ReportsAndWritesEachFileOnce` dekt het)
+- [x] Test: multi-target project reports each finding once
+- [x] Deduplicate + write files once
+- [ ] Case again: numbers match the report (not run; integration test `ScanFix_MultiTargetProject_ReportsAndWritesEachFileOnce` covers it)
 
-## Resultaat
+## Result
 
-- `Fixer` groepeert documenten op bestandspad: patterns draaien op de eerste kopie, de andere TFM-kopieën krijgen de gefixte tekst (`WithDocumentText`). Bevindingen dus één keer, en alle kopieën blijven gelijk zodat `ProjectPackages` correct beslist.
-- `ProjectPackages.PlanAsync` dedupliceert op projectpad; `KeepRemovedPackage` als één TFM het pakket nog gebruikt.
-- `FixCommand` telt/diff't gewijzigde documenten uniek per pad.
-- Tests: `FixerTests.FixAsync_SameFileInTwoTargetFrameworks_ReportsOnceAndFixesBothCopies`, `SampleShopTests.ScanFix_MultiTargetProject_ReportsAndWritesEachFileOnce` (net8.0;net10.0, project inline in temp-map).
-- Shortcut: `#if`-code die per TFM verschilt wordt alleen met de eerste TFM bekeken.
+- `Fixer` groups documents by file path: patterns run on the first copy, the other TFM copies get the fixed text (`WithDocumentText`). So findings appear once, and all copies stay equal so that `ProjectPackages` decides correctly.
+- `ProjectPackages.PlanAsync` deduplicates by project path; `KeepRemovedPackage` if one TFM still uses the package.
+- `FixCommand` counts/diffs changed documents uniquely per path.
+- Tests: `FixerTests.FixAsync_SameFileInTwoTargetFrameworks_ReportsOnceAndFixesBothCopies`, `SampleShopTests.ScanFix_MultiTargetProject_ReportsAndWritesEachFileOnce` (net8.0;net10.0, project inline in a temp folder).
+- Shortcut: `#if` code that differs per TFM is only examined with the first TFM.
 
-## Zie ook
+## See also
 
 - `claude/tasks/TAAK-019-lancering.md`
 - `claude/tasks/TAAK-021-fa-nullable-subject.md`

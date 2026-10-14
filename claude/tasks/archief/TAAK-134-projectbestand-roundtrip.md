@@ -1,54 +1,54 @@
-# TAAK-134 — Projectbestanden: "cannot be edited without changing unrelated text" bij gewone opmaak
+# TAAK-134 — Project files: "cannot be edited without changing unrelated text" on ordinary formatting
 
-**Status**: klaar
-**Aangemaakt**: 2026-10-11
-**Gevonden in**: `claude/tasks/CORPUSRUN-mediatr.md` — grootste blokkade: 6 van 9 solutions
+**Status**: done
+**Created**: 2026-10-11
+**Found in**: `claude/tasks/CORPUSRUN-mediatr.md` — biggest blocker: 6 of 9 solutions
 
-## Probleem
+## Problem
 
-`ProjectFile` (DataAccess) weigert elk bestand waarvan de `XDocument`-roundtrip niet byte-gelijk is. In het corpus
-faalde dat op heel normale opmaak:
+`ProjectFile` (DataAccess) rejects every file whose `XDocument` round trip is not byte-identical. In the corpus
+this failed on perfectly normal formatting:
 
-| Opmaak | Voorbeeld | Projecten |
+| Formatting | Example | Projects |
 | --- | --- | --- |
-| `/>` zonder spatie | `<InternalsVisibleTo Include="X"/>` | evo2, kgrzybek |
-| spatie vóór `>` | `<PackageReference Include="StyleCop.Analyzers" >` | amantin, nadirbad |
-| `>` in attribuut | `Include="@(DistFiles->'%(FullPath)')"` | jason (`Web.csproj`) |
-| attributen over meerdere regels | `<PackageReference`⏎`Include=...` | evo1 |
-| gemengde CRLF/LF | test-csproj met twee LF-regels | amantin |
+| `/>` without a space | `<InternalsVisibleTo Include="X"/>` | evo2, kgrzybek |
+| space before `>` | `<PackageReference Include="StyleCop.Analyzers" >` | amantin, nadirbad |
+| `>` in an attribute | `Include="@(DistFiles->'%(FullPath)')"` | jason (`Web.csproj`) |
+| attributes over multiple lines | `<PackageReference`⏎`Include=...` | evo1 |
+| mixed CRLF/LF | test csproj with two LF lines | amantin |
 
-Bovendien wordt de dichtstbijzijnde `Directory.Build.props` altijd geladen, ook als er niets in hoeft te
-veranderen (geen MediatR erin): de weigering raakt dan alle projecten eronder. Elke weigering is een Manual,
-dus via alles-of-niets 0 wijzigingen.
+Moreover, the nearest `Directory.Build.props` is always loaded, even if nothing in it needs to
+change (no MediatR in it): the rejection then affects all projects below it. Every rejection is a Manual,
+so via all-or-nothing 0 changes.
 
-Gemeten: met deze bestanden semantisch gelijk genormaliseerd (`scratchpad/scripts/norm.py`) verdwijnt deze
-Manual overal; evo1 en evo2 worden dan volledig herschreven (en lopen tegen TAAK-130/131/135 aan).
+Measured: with these files normalized to be semantically equal (`scratchpad/scripts/norm.py`) this
+Manual disappears everywhere; evo1 and evo2 are then fully rewritten (and run into TAAK-130/131/135).
 
-## Wat, waar, hoe
+## What, where, how
 
-- **Waar**: `src/Unshackle.DataAccess/Projects/ProjectFile.cs`, `XmlProjectFileStore.cs`.
-- **Hoe** (kleinste eerst): (1) een bestand pas laden/valideren als er echt iets in verandert;
-  (2) tekstuele splice: alleen de gewijzigde elementen opnieuw schrijven (posities via `IXmlLineInfo`), de rest
-  van de tekst ongemoeid. Dan zijn `/>`, `->`, meerregelige attributen en gemengde regeleinden irrelevant.
-- Geen proof (DataAccess): unittests in `src/Unshackle.Tests/DataAccess/` per rij uit de tabel.
+- **Where**: `src/Unshackle.DataAccess/Projects/ProjectFile.cs`, `XmlProjectFileStore.cs`.
+- **How** (smallest first): (1) only load/validate a file when something in it actually changes;
+  (2) textual splice: only rewrite the changed elements (positions via `IXmlLineInfo`), leave the rest
+  of the text untouched. Then `/>`, `->`, multi-line attributes and mixed line endings are irrelevant.
+- No proof (DataAccess): unit tests in `src/Unshackle.Tests/DataAccess/` per row of the table.
 
-## Stappen
+## Steps
 
-- [ ] Rode tests per opmaakvorm + "Directory.Build.props zonder MediatR blijft onaangeraakt"
-- [ ] Lazy laden
-- [ ] Splice-schrijven
-- [ ] `dotnet build` + `dotnet test` groen
+- [ ] Red tests per formatting form + "Directory.Build.props without MediatR stays untouched"
+- [ ] Lazy loading
+- [ ] Splice writing
+- [ ] `dotnet build` + `dotnet test` green
 
-## Uitkomst (2026-10-11)
+## Outcome (2026-10-11)
 
-**Status**: klaar. `ProjectFile` loopt de originele tekst naast het `XDocument` af en schrijft alleen gewijzigde nodes
-(attribuutwaarden in place, nieuwe elementen ingevoegd, verwijderde weggeknipt); de reader normaliseert geen regeleinden.
-Lazy laden bleek overbodig: een ongewijzigd bestand levert geen change op. Tests per opmaakvorm (BOM, `/>`, `" >`,
-`->`, meerregelige attributen, gemengde CRLF/LF, comments, `'`-quotes) + ongewijzigde `Directory.Build.props`.
-De oude test "closing tag in trailing comment gooit" is nu "blijft correct" (de scanner snijdt niet meer op `</Project>`).
+**Status**: done. `ProjectFile` walks the original text alongside the `XDocument` and only writes changed nodes
+(attribute values in place, new elements inserted, removed ones cut out); the reader does not normalize line endings.
+Lazy loading turned out to be unnecessary: an unchanged file produces no change. Tests per formatting form (BOM, `/>`, `" >`,
+`->`, multi-line attributes, mixed CRLF/LF, comments, `'` quotes) + unchanged `Directory.Build.props`.
+The old test "closing tag in trailing comment throws" is now "stays correct" (the scanner no longer cuts at `</Project>`).
 
-Bewijs: evo1 (8 Fixed / 0 Manual) en evo2 (25 / 0) komen door alles-of-niets heen; Polly en Ardalis.Result zie TAAK-111.
+Evidence: evo1 (8 Fixed / 0 Manual) and evo2 (25 / 0) get through all-or-nothing; for Polly and Ardalis.Result see TAAK-111.
 
-## Zie ook
+## See also
 
 - `claude/tasks/CORPUSRUN-mediatr.md`

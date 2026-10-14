@@ -1,44 +1,44 @@
-# TAAK-033 — Patroon fa.and-chain
+# TAAK-033 — Pattern fa.and-chain
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-11
-**Doel**: `x.Should().A().And.B();` wordt `x.ShouldA(); x.ShouldB();`, waarbij elke schakel door zijn eigen patroon wordt herschreven.
+**Status**: ✅ completed
+**Created**: 2026-10-11
+**Goal**: `x.Should().A().And.B();` becomes `x.ShouldA(); x.ShouldB();`, with every link rewritten by its own pattern.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Rij 16 in `claude/tasks/patroon-queue.md` (ronde 2). Voorbeeld van splitsen: `BeGreaterLessPattern` (TAAK-010).
+- Row 16 in `claude/tasks/patroon-queue.md` (round 2). Example of splitting: `BeGreaterLessPattern` (TAAK-010).
 
-## Analyse
+## Analysis
 
-FA 7.2.2: bijna elke assertion geeft `AndConstraint<TAssertions>` of `AndWhichConstraint<TAssertions, T>`; `.And` is dezelfde assertions-instantie op hetzelfde subject. Uitzondering: `Throw<T>().And` is de exception zelf (geen FA-methodes). Shouldly heeft geen ketens: elke `ShouldX` is een losse call. Splitsen evalueert het subject per schakel opnieuw.
+FA 7.2.2: almost every assertion returns `AndConstraint<TAssertions>` or `AndWhichConstraint<TAssertions, T>`; `.And` is the same assertions instance on the same subject. Exception: `Throw<T>().And` is the exception itself (no FA methods). Shouldly has no chains: every `ShouldX` is a separate call. Splitting evaluates the subject again per link.
 
-## Keuzes
+## Choices
 
-| #   | Keuze                                                                                                                     | Reden                                                                                                                                                    |
+| #   | Choice                                                                                                                    | Reason                                                                                                                                                   |
 | --- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `AndChainPattern` is een Composite over de assertion-patronen (`FluentAssertionsFix.s_assertions`)                        | Geen gedupliceerde schakel-logica; nieuwe patronen werken vanzelf in ketens                                                                              |
-| 2   | Splitsen naar `x.Should().M(args);` en speculatief compileren (`Compilation.ReplaceSyntaxTree`)                           | De schakel-patronen hebben een semantisch model nodig; dit levert het echte model voor de gesplitste code                                                |
-| 3   | Eén niet-gevonden of Manual-schakel → hele keten Manual                                                                   | Half herschreven ketens zijn verwarrend; reden noemt de schakel                                                                                          |
-| 4   | Bijwerkingen-vrij = `this`, local, parameter, field, property zonder argumenten (en member access daarop, of op een type) | Conservatief, zoals gevraagd; aanroepen en indexers → Manual                                                                                             |
-| 5   | `.And`-ontvanger moet hetzelfde type hebben als `x.Should()`                                                              | Een gelijknamige methode op een ander subject zou na splitsen stil iets anders controleren. Geen compileerbaar FA 7-voorbeeld gevonden, dus zonder proof |
-| 6   | Patroon staat direct na `AllSatisfyPattern`, vóór de assertion-patronen                                                   | Die melden `.And`-schakels anders als Manual; AllSatisfy-lussen eerst openvouwen                                                                         |
-| 7   | `BeGreaterLessPattern` behoudt eigen ketenlogica                                                                          | Raakt zijn proofs niet; in de volledige fix pakt `fa.and-chain` de keten eerst                                                                           |
+| 1   | `AndChainPattern` is a Composite over the assertion patterns (`FluentAssertionsFix.s_assertions`)                         | No duplicated link logic; new patterns work in chains automatically                                                                                      |
+| 2   | Split into `x.Should().M(args);` and compile speculatively (`Compilation.ReplaceSyntaxTree`)                              | The link patterns need a semantic model; this provides the real model for the split code                                                                 |
+| 3   | One link not found or Manual → the whole chain Manual                                                                     | Half-rewritten chains are confusing; the reason names the link                                                                                           |
+| 4   | Side-effect free = `this`, local, parameter, field, property without arguments (and member access on those, or on a type) | Conservative, as requested; calls and indexers → Manual                                                                                                  |
+| 5   | The `.And` receiver must have the same type as `x.Should()`                                                               | A same-named method on another subject would silently check something else after splitting. No compilable FA 7 example found, so without a proof        |
+| 6   | The pattern sits directly after `AllSatisfyPattern`, before the assertion patterns                                        | Those would otherwise report `.And` links as Manual; unfold AllSatisfy loops first                                                                       |
+| 7   | `BeGreaterLessPattern` keeps its own chain logic                                                                          | Does not touch its proofs; in the full fix `fa.and-chain` takes the chain first                                                                          |
 
-## Stappen
+## Steps
 
-- [x] 1. Taak, onderzoek, keuzes
-- [x] 2. KingmaDoc-plan (7 REQ)
-- [x] 3. `AndChainPattern` + registratie
+- [x] 1. Task, research, choices
+- [x] 2. KingmaDoc plan (7 REQ)
+- [x] 3. `AndChainPattern` + registration
 - [x] 4. Proofs (15 cases in `AndChain/`)
-- [x] 5. Build/test groen (412 + 38 sample), modellen, verify, archiveren, rij `klaar`
+- [x] 5. Build/test green (412 + 38 sample), models, verify, archive, row `done`
 
-## Gewijzigde bestanden
+## Changed files
 
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AndChainPattern.cs` (nieuw), `FluentAssertionsFix.cs`
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AndChainPattern.cs` (new), `FluentAssertionsFix.cs`
 - `src/Unshackle.Tests/Proofs/FluentAssertions/AndChain/`
-- `docs/projectinfo/patterns/fa-and-chain-{plan,modellen,verify}.md`, `docs/projectinfo/README.md` (rij), `edge-cases.md`
+- `docs/projectinfo/patterns/fa-and-chain-{plan,modellen,verify}.md`, `docs/projectinfo/README.md` (row), `edge-cases.md`
 
-## Zie ook
+## See also
 
 - `claude/tasks/archief/TAAK-010-fa-be-greater-less.md`
 - `docs/projectinfo/patterns/fa-and-chain-plan.md`

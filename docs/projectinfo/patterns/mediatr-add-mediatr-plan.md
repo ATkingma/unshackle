@@ -17,55 +17,55 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-028.
+> Drawn up from TAAK-028.
 
 ## One-sentence summary
 
-mediatr.add-mediatr: `services.AddMediatR(cfg => { ... })` wordt `services.AddMediator(cfg => { cfg.ServiceLifetime = ...; cfg.PipelineBehaviors = [...]; })`; wat geen directe tegenhanger heeft wordt Manual.
+mediatr.add-mediatr: `services.AddMediatR(cfg => { ... })` becomes `services.AddMediator(cfg => { cfg.ServiceLifetime = ...; cfg.PipelineBehaviors = [...]; })`; anything without a direct counterpart becomes Manual.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `RegisterServicesFromAssembly`, `...Assemblies`, `...AssemblyContaining` vervallen: de source generator vindt handlers zelf.
+- `RegisterServicesFromAssembly`, `...Assemblies`, `...AssemblyContaining` are dropped: the source generator finds handlers itself.
 - `AddOpenBehavior(typeof(X<,>))`, `AddBehavior(typeof(X))`, `AddBehavior(typeof(I), typeof(X))`, `AddBehavior<X>()`, `AddBehavior<I, X>()` → `PipelineBehaviors`.
-- `cfg.Lifetime = ServiceLifetime.X` → `ServiceLifetime = ServiceLifetime.X`; zonder: `ServiceLifetime.Transient` (MediatR-standaard; Mediator's is Singleton).
+- `cfg.Lifetime = ServiceLifetime.X` → `ServiceLifetime = ServiceLifetime.X`; without it: `ServiceLifetime.Transient` (MediatR default; Mediator's is Singleton).
 
 **Out of scope (Manual)**
 
-- Behaviors met lifetime-argument, `NotificationPublisher`, stream-behaviors, pre/post-processors, exception-handlers en alles wat geen `cfg.X(...)` of `cfg.Lifetime = ...` is.
-- `AddMediatR` zonder lambda (bv. met een `MediatRServiceConfiguration`-variabele).
+- Behaviors with a lifetime argument, `NotificationPublisher`, stream behaviors, pre/post-processors, exception handlers and anything that is not `cfg.X(...)` or `cfg.Lifetime = ...`.
+- `AddMediatR` without a lambda (e.g. with a `MediatRServiceConfiguration` variable).
 
 ## Requirements
 
-- **REQ-1**: WHEN `AddMediatR` een blok-lambda krijgt met registratie, lifetime en behaviors THE SYSTEM SHALL `AddMediator` met `ServiceLifetime` en `PipelineBehaviors` schrijven (proof `behaviors`).
-- **REQ-2**: WHEN de lambda alleen registratie bevat (expression body) THE SYSTEM SHALL `cfg => cfg.ServiceLifetime = ServiceLifetime.Transient` schrijven (proof `expression`).
-- **REQ-3**: IF een `cfg`-aanroep geen directe tegenhanger heeft (ook een behavior met lifetime) THEN THE SYSTEM SHALL Manual melden met de naam van de aanroep (proofs `unknown-call`, `behavior-lifetime`).
-- **REQ-4**: IF een toewijzing anders is dan `cfg.Lifetime = ServiceLifetime.X` THEN THE SYSTEM SHALL Manual melden (proof `publisher`).
-- **REQ-5**: IF `AddMediatR` geen lambda krijgt THEN THE SYSTEM SHALL Manual melden (proof `no-lambda`).
-- **REQ-6**: WHEN de lambda `cfg.RegisterGenericHandlers = ...` bevat THE SYSTEM SHALL die regel laten vallen (proof `generic-handlers`; TAAK-037). Mediator registreert open generieke notification-handlers zelf en kent geen generieke request-handlers; die meldt `mediatr.unsupported`.
-- **REQ-7**: WHEN de host naar een andere host verwijst, of een andere host naar hem THE SYSTEM SHALL `cfg.Assemblies = [...]` resp. `cfg.GenerateTypesAsInternal = true` toevoegen (`MediatorHosts`); IF `AddMediatR` een andere host scant THEN Manual (`MediatorHostsTests.FixAsync_AddMediatRHostReferencesHost_InternalTypesAndAssemblies`, `..._AddMediatRScansOtherHost_IsManual`; TAAK-213).
-- **Uitbreiding TAAK-060**: WHEN `cfg.NotificationPublisher = new TaskWhenAllPublisher()` of `new ForeachAwaitPublisher()` (ook MediatR-gekwalificeerd) THE SYSTEM SHALL `cfg.NotificationPublisherType = typeof(global::Mediator.X)` schrijven (proofs `publisher`, `edge-publisher-qualified`); REQ-4 geldt nog voor een eigen publisher.
-- **Uitbreiding TAAK-061/062**: WHEN `Add(Open)RequestPreProcessor`/`Add(Open)RequestPostProcessor` of `Add(Open)StreamBehavior` aangeroepen wordt THE SYSTEM SHALL ze in `PipelineBehaviors` (open pre-processor `X<>` → `X<,>`) resp. `StreamPipelineBehaviors` zetten, met gesloten exception handlers en processors uit het eigen project vooraan (proof `processors`); een leeg blok wordt `cfg => cfg.ServiceLifetime = ServiceLifetime.Transient` (proof `empty`).
-- **Uitbreiding TAAK-144**: IF een weggevallen `RegisterServicesFrom...` een parameter krijgt van een buiten de assembly zichtbare methode, of een ander project scant met een niet-publieke handler, THEN THE SYSTEM SHALL Manual melden (Mediator's generator ziet de handlers van de aanroeper niet en kan internal handlers in een ander project niet aanroepen; proof `edge-assemblies-public`, `AddMediatRPatternTests`).
-- **Uitbreiding TAAK-183**: IF de gescande assembly met een niet-publieke handler dit project `InternalsVisibleTo` geeft, THEN THE SYSTEM SHALL de aanroep gewoon herschrijven (Mediator 3.0.2 bereikt de internal handlers dan; gemeten met een probe). Een publieke methode met `Assembly`-parameter (evo2) en een internal methode die een friend-project echt aanroept (evo1) blijven Manual: `MediatorOptions.Assemblies` beperkt alleen welke gerefereerde assemblies de generator scant, en meerdere `AddMediator`-aanroepen geven één `IMediator` (TAAK-144). `AddMediatRPatternTests`.
-- **Uitbreiding TAAK-195**: WHEN de gescande assembly met een niet-publieke handler een C#-project van de solution is zonder strong name THE SYSTEM SHALL de aanroep herschrijven; `mediatr.internal-handler-access` geeft dat project `InternalsVisibleTo` voor dit project (proof `_Combined/add-mediatr-internal-handlers-other-project`, ardalis). Zonder solution (`Rewrite`) blijft het Manual. De publieke methode met `Assembly`-parameter (evo2) en de internal methode die een testproject aanroept (evo1) blijven Manual: geen exacte vertaling (zie TAAK-195).
-- **Uitbreiding TAAK-147**: IF die methode `internal` is en de assembly `InternalsVisibleTo` een andere assembly (niet `DynamicProxyGenAssembly2`), THEN THE SYSTEM SHALL ook Manual melden (proof `edge-assemblies-friend`).
-- **Uitbreiding TAAK-240**: WHEN een project van de solution NetArchTest of ArchUnitNET refereert THE SYSTEM SHALL de Fixed-herschrijving een waarschuwing geven: archtests moeten namespace `Mediator` uitzonderen (`.And().DoNotResideInNamespace("Mediator")`), want de gegenereerde `Mediator.Mediator`/`Mediator.Internals.ContainerMetadata` noemen messages van andere modules (TAAK-214; `MediatorHosts.WithArchitectureTestWarning`).
-- **Uitbreiding TAAK-148**: alleen Manual WHEN een ander project de methode echt aanroept (`SymbolFinder.FindReferencesAsync` via `ISolutionPattern`); de melding noemt dat project en bestand:regel. Zonder aanroep: Fixed (proof `edge-assemblies-friend`).
+- **REQ-1**: WHEN `AddMediatR` gets a block lambda with registration, lifetime and behaviors THE SYSTEM SHALL write `AddMediator` with `ServiceLifetime` and `PipelineBehaviors` (proof `behaviors`).
+- **REQ-2**: WHEN the lambda contains only registration (expression body) THE SYSTEM SHALL write `cfg => cfg.ServiceLifetime = ServiceLifetime.Transient` (proof `expression`).
+- **REQ-3**: IF a `cfg` call has no direct counterpart (including a behavior with a lifetime) THEN THE SYSTEM SHALL report Manual with the name of the call (proofs `unknown-call`, `behavior-lifetime`).
+- **REQ-4**: IF an assignment is anything other than `cfg.Lifetime = ServiceLifetime.X` THEN THE SYSTEM SHALL report Manual (proof `publisher`).
+- **REQ-5**: IF `AddMediatR` gets no lambda THEN THE SYSTEM SHALL report Manual (proof `no-lambda`).
+- **REQ-6**: WHEN the lambda contains `cfg.RegisterGenericHandlers = ...` THE SYSTEM SHALL drop that line (proof `generic-handlers`; TAAK-037). Mediator registers open generic notification handlers itself and has no generic request handlers; those are reported by `mediatr.unsupported`.
+- **REQ-7**: WHEN the host references another host, or another host references it THE SYSTEM SHALL add `cfg.Assemblies = [...]` or `cfg.GenerateTypesAsInternal = true` respectively (`MediatorHosts`); IF `AddMediatR` scans another host THEN Manual (`MediatorHostsTests.FixAsync_AddMediatRHostReferencesHost_InternalTypesAndAssemblies`, `..._AddMediatRScansOtherHost_IsManual`; TAAK-213).
+- **Extension TAAK-060**: WHEN `cfg.NotificationPublisher = new TaskWhenAllPublisher()` or `new ForeachAwaitPublisher()` (also MediatR-qualified) THE SYSTEM SHALL write `cfg.NotificationPublisherType = typeof(global::Mediator.X)` (proofs `publisher`, `edge-publisher-qualified`); REQ-4 still applies to an own publisher.
+- **Extension TAAK-061/062**: WHEN `Add(Open)RequestPreProcessor`/`Add(Open)RequestPostProcessor` or `Add(Open)StreamBehavior` is called THE SYSTEM SHALL put them in `PipelineBehaviors` (open pre-processor `X<>` → `X<,>`) or `StreamPipelineBehaviors` respectively, with closed exception handlers and processors from the own project first (proof `processors`); an empty block becomes `cfg => cfg.ServiceLifetime = ServiceLifetime.Transient` (proof `empty`).
+- **Extension TAAK-144**: IF a dropped `RegisterServicesFrom...` gets a parameter of a method visible outside the assembly, or scans another project with a non-public handler, THEN THE SYSTEM SHALL report Manual (Mediator's generator does not see the caller's handlers and cannot call internal handlers in another project; proof `edge-assemblies-public`, `AddMediatRPatternTests`).
+- **Extension TAAK-183**: IF the scanned assembly with a non-public handler grants this project `InternalsVisibleTo`, THEN THE SYSTEM SHALL simply rewrite the call (Mediator 3.0.2 then reaches the internal handlers; measured with a probe). A public method with an `Assembly` parameter (evo2) and an internal method that a friend project actually calls (evo1) stay Manual: `MediatorOptions.Assemblies` only limits which referenced assemblies the generator scans, and multiple `AddMediator` calls give one `IMediator` (TAAK-144). `AddMediatRPatternTests`.
+- **Extension TAAK-195**: WHEN the scanned assembly with a non-public handler is a C# project of the solution without a strong name THE SYSTEM SHALL rewrite the call; `mediatr.internal-handler-access` gives that project `InternalsVisibleTo` for this project (proof `_Combined/add-mediatr-internal-handlers-other-project`, ardalis). Without a solution (`Rewrite`) it stays Manual. The public method with an `Assembly` parameter (evo2) and the internal method called by a test project (evo1) stay Manual: no exact translation (see TAAK-195).
+- **Extension TAAK-147**: IF that method is `internal` and the assembly has `InternalsVisibleTo` for another assembly (not `DynamicProxyGenAssembly2`), THEN THE SYSTEM SHALL also report Manual (proof `edge-assemblies-friend`).
+- **Extension TAAK-240**: WHEN a project of the solution references NetArchTest or ArchUnitNET THE SYSTEM SHALL give the Fixed rewrite a warning: arch tests must exclude namespace `Mediator` (`.And().DoNotResideInNamespace("Mediator")`), because the generated `Mediator.Mediator`/`Mediator.Internals.ContainerMetadata` mention messages of other modules (TAAK-214; `MediatorHosts.WithArchitectureTestWarning`).
+- **Extension TAAK-148**: only Manual WHEN another project actually calls the method (`SymbolFinder.FindReferencesAsync` via `ISolutionPattern`); the message names that project and file:line. Without a call: Fixed (proof `edge-assemblies-friend`).
 
 ## Assumptions
 
-- Mediator 3.0.2: `AddMediator(Action<MediatorOptions>)` en `MediatorOptions` (`ServiceLifetime`, `PipelineBehaviors`, `NotificationPublisherType`, ...) schrijft de source generator; hij leest de toewijzingen uit de broncode, dus die blijven letterlijke waarden.
+- Mediator 3.0.2: `AddMediator(Action<MediatorOptions>)` and `MediatorOptions` (`ServiceLifetime`, `PipelineBehaviors`, `NotificationPublisherType`, ...) are written by the source generator; it reads the assignments from the source code, so they stay literal values.
 
 ## Risks
 
-- `NotificationPublisher = new TaskWhenAllPublisher()` zou `NotificationPublisherType = typeof(TaskWhenAllPublisher)` kunnen worden, maar dan blijft de using `MediatR.NotificationPublishers` achter. Nu Manual.
+- `NotificationPublisher = new TaskWhenAllPublisher()` could become `NotificationPublisherType = typeof(TaskWhenAllPublisher)`, but then the using `MediatR.NotificationPublishers` is left behind. Manual for now.
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [mediatr-add-mediatr-modellen.md](mediatr-add-mediatr-modellen.md).
+Class diagram, sequence and decision tree: [mediatr-add-mediatr-modellen.md](mediatr-add-mediatr-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

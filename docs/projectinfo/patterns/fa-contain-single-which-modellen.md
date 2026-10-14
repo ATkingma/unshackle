@@ -1,51 +1,51 @@
-# Modellen: fa.contain-single-which
+# Models: fa.contain-single-which
 
-`x.Should().ContainSingle()` wordt `x.ShouldHaveSingleItem()`, `ContainSingle(pred)` wordt `x.ShouldContain(pred, 1)` en `var y = ….ContainSingle(pred).Which` wordt `var y = x.Where(pred).ShouldHaveSingleItem()`. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainSinglePattern.cs`.
+`x.Should().ContainSingle()` becomes `x.ShouldHaveSingleItem()`, `ContainSingle(pred)` becomes `x.ShouldContain(pred, 1)` and `var y = ….ContainSingle(pred).Which` becomes `var y = x.Where(pred).ShouldHaveSingleItem()`. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainSinglePattern.cs`.
 
-**Figure 1.** Klassen rond `ContainSinglePattern`. Weggelaten: `Fixer`, `IFix` en de usings (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes around `ContainSinglePattern`. Left out: `Fixer`, `IFix` and the usings (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-contain-single-which-modellen-1.d2 -->
-![Modellen: fa.contain-single-which](img/fa-contain-single-which-modellen-1.png)
+![Models: fa.contain-single-which](img/fa-contain-single-which-modellen-1.png)
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
 | `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract |
-| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` doet scope, vorm, resultaat en argumenten en roept `RewriteAssertion` aan |
-| `ContainSinglePattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainSinglePattern.cs` | Dit patroon, Id `fa.contain-single-which` |
-| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde controles |
-| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` does scope, shape, result and arguments and calls `RewriteAssertion` |
+| `ContainSinglePattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainSinglePattern.cs` | This pattern, Id `fa.contain-single-which` |
+| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Shared checks |
+| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Outcome |
 
-**Figure 2.** Volgorde van `Find` en `Rewrite`.
+**Figure 2.** Sequence of `Find` and `Rewrite`.
 
 <!-- kingmadoc:diagram img/fa-contain-single-which-modellen-2.d2 -->
-![Modellen: fa.contain-single-which](img/fa-contain-single-which-modellen-2.png)
+![Models: fa.contain-single-which](img/fa-contain-single-which-modellen-2.png)
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Place | What happens |
 | --- | --- | --- |
-| Find | `ContainSinglePattern.Find` | `FindInvocations` op `ContainSingle`, via `WithWhich` de `.Which`/`.Subject`-node als die erop volgt |
-| Controles | `FluentAssertionPattern.Rewrite` | scope, vorm, gebruik van het resultaat (`IsResultDiscardedOrWhich`), argumenten |
-| Herschrijven | `ContainSinglePattern.RewriteAssertion` | type `IEnumerable<T>`, `NotNull(subject)`, predicate en `.Which` |
-| Uitkomst | `PatternResult.Fixed` / `Manual` | Shouldly-aanroep of reden |
+| Find | `ContainSinglePattern.Find` | `FindInvocations` on `ContainSingle`, via `WithWhich` the `.Which`/`.Subject` node if it follows |
+| Checks | `FluentAssertionPattern.Rewrite` | scope, shape, use of the result (`IsResultDiscardedOrWhich`), arguments |
+| Rewrite | `ContainSinglePattern.RewriteAssertion` | type `IEnumerable<T>`, `NotNull(subject)`, predicate and `.Which` |
+| Outcome | `PatternResult.Fixed` / `Manual` | Shouldly call or reason |
 
-**Figure 3.** Beslisboom van `FluentAssertionPattern.Rewrite` en `ContainSinglePattern.RewriteAssertion`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/ContainSingle/`.
+**Figure 3.** Decision tree of `FluentAssertionPattern.Rewrite` and `ContainSinglePattern.RewriteAssertion`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/ContainSingle/`.
 
 <!-- kingmadoc:diagram img/fa-contain-single-which-modellen-3.d2 -->
-![Modellen: fa.contain-single-which](img/fa-contain-single-which-modellen-3.png)
+![Models: fa.contain-single-which](img/fa-contain-single-which-modellen-3.png)
 
-| Vraag | Bij nee: Manual-reden | Proof |
+| Question | If no: Manual reason | Proof |
 | --- | --- | --- |
-| Buiten een AssertionScope? | Inside an AssertionScope | `assertion-scope` |
-| Vorm x.Should().ContainSingle(..)? | is not in the form x.Should() | `geen proof; .And via fa.and-chain` |
-| Resultaat weggegooid of via `.Which`/`.Subject`? | is used other than through .Which/.Subject | geen proof (`which-chain` is Fixed, TAAK-096) |
-| Geen benoemde argumenten; becauseArgs alleen met constante `because`? | named arguments, or becauseArgs whose because is no constant format string | geen proof (`because-args` is Fixed, TAAK-097) |
-| Subject is IEnumerable<T>? | non-generic collection | `geen proof` |
-| Geen predicate, geen .Which, of lambda-predicate? | Expression variable | `expression-variable` |
+| Outside an AssertionScope? | Inside an AssertionScope | `assertion-scope` |
+| Shape x.Should().ContainSingle(..)? | is not in the form x.Should() | `no proof; .And via fa.and-chain` |
+| Result discarded or via `.Which`/`.Subject`? | is used other than through .Which/.Subject | no proof (`which-chain` is Fixed, TAAK-096) |
+| No named arguments; becauseArgs only with a constant `because`? | named arguments, or becauseArgs whose because is no constant format string | no proof (`because-args` is Fixed, TAAK-097) |
+| Subject is IEnumerable<T>? | non-generic collection | `no proof` |
+| No predicate, no .Which, or a lambda predicate? | Expression variable | `expression-variable` |
 | Fixed | `x.ShouldHaveSingleItem() / x.ShouldContain(pred, 1) / x.Where(pred).ShouldHaveSingleItem()` | simple, predicate, enumerable, because, because-args, which, which-chain (`x.ShouldHaveSingleItem().Price`), edge-subject, nullable |
 
-## Zie ook
+## See also
 
 - [fa-contain-single-which-plan.md](fa-contain-single-which-plan.md) - plan
-- [fa-contain-single-which-verify.md](fa-contain-single-which-verify.md) - verificatie
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainSinglePattern.cs` - het patroon
-- `src/Unshackle.Tests/Proofs/FluentAssertions/ContainSingle/` - de proofs
+- [fa-contain-single-which-verify.md](fa-contain-single-which-verify.md) - verification
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainSinglePattern.cs` - the pattern
+- `src/Unshackle.Tests/Proofs/FluentAssertions/ContainSingle/` - the proofs
 - [../README.md](../README.md)

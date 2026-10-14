@@ -18,57 +18,57 @@ files_expected:
 | ------------- | ----------------------------------------------------------------- |
 | **Project**   | Unshackle                                                         |
 | **Status**    | Approved                                                          |
-| **Generated** | 2026-10-12 by KingmaDoc (handmatig, `kingmadoc` niet beschikbaar) |
+| **Generated** | 2026-10-12 by KingmaDoc (manually, `kingmadoc` not available)     |
 
-> Opgesteld uit TAAK-158.
+> Drafted from TAAK-158.
 
 ## One-sentence summary
 
-automapper.map-into: `mapper.Map(a, b)` (`Map<A, B>(A, B)`) wordt `a.MapInto(b)`, een extensiemethode die de profile-rewrite naast `ToB` schrijft voor elke map die zo'n aanroep in de solution gebruikt.
+automapper.map-into: `mapper.Map(a, b)` (`Map<A, B>(A, B)`) becomes `a.MapInto(b)`, an extension method that the profile rewrite writes next to `ToB` for every map used by such a call in the solution.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `Map(a, b)` en `Map<A, B>(a, b)` van AutoMapper (tweede parameter van type `B`, geen opties-lambda), op een naam of keten van namen.
-- `MapInto(this A, B)` die al bestaat (in scope of in de broncode van het project).
-- `CreateMap<A, B>` in een profile dat de profile-patronen herschrijven: `CreateMapPattern.RewriteAsync` voegt dan `B MapInto(this A source, B destination)` toe met dezelfde toewijzingen als `ToB` (Ignore weggelaten, MapFrom-expressies) en `return destination;`.
+- `Map(a, b)` and `Map<A, B>(a, b)` from AutoMapper (second parameter of type `B`, no options lambda), on a name or a chain of names.
+- A `MapInto(this A, B)` that already exists (in scope or in the project's source code).
+- `CreateMap<A, B>` in a profile that the profile patterns rewrite: `CreateMapPattern.RewriteAsync` then adds `B MapInto(this A source, B destination)` with the same assignments as `ToB` (Ignore omitted, MapFrom expressions) and `return destination;`.
 
 **Out of scope (Manual)**
 
-- Collecties, bron of doel `object`/`dynamic`, bron of doel MaybeNull, ontvanger met bijwerkingen.
-- Geen of een Manual-profile, meerdere profiles, internal `MapInto` in een ander project, een bestaand member `MapInto` op `A`.
-- `Map` met opties en `ProjectTo`: blijven Manual in `CreateMapPattern` (rij 7).
+- Collections, source or destination `object`/`dynamic`, source or destination MaybeNull, receiver with side effects.
+- No profile or a Manual profile, several profiles, internal `MapInto` in another project, an existing member `MapInto` on `A`.
+- `Map` with options and `ProjectTo`: remain Manual in `CreateMapPattern` (row 7).
 
-## Ontwerp
+## Design
 
-`MapIntoPattern` is een `ISolutionPattern` en volgt `MapCallPattern`: eerst een bestaande `MapInto`, anders `MapCallPattern.GeneratedAsync` (zelfde profile-zoektocht; namespace en internal uit de gegenereerde klasse). `CreateMapPattern` werd ook een `ISolutionPattern`: `RewriteAsync` haalt via `MapIntoPattern.TargetsAsync` de paren (A, B) op die een `Map(a, b)` in de solution gebruikt en schrijft alleen daarvoor `MapInto`, zodat bestaande uitvoer gelijk blijft. De `MapInto`-methoden komen na alle `ToB`-methoden (`GeneratedAsync` koppelt methode i aan CreateMap i). `MapInto` geeft `destination` terug, zodat een gebruikt resultaat (`x = mapper.Map(a, b)`) blijft werken.
+`MapIntoPattern` is an `ISolutionPattern` and follows `MapCallPattern`: first an existing `MapInto`, otherwise `MapCallPattern.GeneratedAsync` (same profile search; namespace and internal taken from the generated class). `CreateMapPattern` also became an `ISolutionPattern`: `RewriteAsync` uses `MapIntoPattern.TargetsAsync` to get the pairs (A, B) that a `Map(a, b)` in the solution uses and writes `MapInto` only for those, so existing output stays the same. The `MapInto` methods come after all `ToB` methods (`GeneratedAsync` links method i to CreateMap i). `MapInto` returns `destination`, so a used result (`x = mapper.Map(a, b)`) keeps working.
 
 ## Requirements
 
-- **REQ-1**: WHEN `Map(a, b)` een zichtbare `MapInto(this A, B)` heeft THE SYSTEM SHALL de aanroep vervangen door `a.MapInto(b)` (proof `MapInto/existing-method`).
-- **REQ-2**: WHEN het profile met `CreateMap<A, B>` herschreven wordt en de solution `Map(a, b)` bevat THE SYSTEM SHALL naast `ToB` een `MapInto` schrijven en de aanroep `a.MapInto(b)` maken, met `using` waar nodig (combined proof `map-into-profile`, unittest `FixAsync_ProfileInOtherFile_WritesMapIntoAndCallsItWithUsing`).
-- **REQ-3**: IF bron of doel een collectie is THEN THE SYSTEM SHALL Manual melden (proof `collection`).
-- **REQ-4**: IF er geen herschreven `CreateMap<A, B>` en geen `MapInto` is THEN THE SYSTEM SHALL Manual melden (proof `unknown-map`).
-- **REQ-5**: IF de bron volgens de nullable-flow null kan zijn THEN THE SYSTEM SHALL Manual melden (proof `maybe-null-source`).
-- **REQ-6**: IF het doel null kan zijn THEN THE SYSTEM SHALL Manual melden; AutoMapper maakt dan een nieuw object (proof `maybe-null-destination`).
-- **REQ-7**: IF bron of doel `object`/`dynamic` is, of de ontvanger bijwerkingen kan hebben THEN THE SYSTEM SHALL Manual melden (proofs `object-source`, `receiver-call`).
-- **REQ-8**: WHEN geen `Map(a, b)` de map gebruikt THE SYSTEM SHALL geen `MapInto` schrijven (bestaande CreateMap-, ForMember- en MapCall-proofs ongewijzigd).
+- **REQ-1**: WHEN `Map(a, b)` has a visible `MapInto(this A, B)` THE SYSTEM SHALL replace the call with `a.MapInto(b)` (proof `MapInto/existing-method`).
+- **REQ-2**: WHEN the profile with `CreateMap<A, B>` is rewritten and the solution contains `Map(a, b)` THE SYSTEM SHALL write a `MapInto` next to `ToB` and make the call `a.MapInto(b)`, with a `using` where needed (combined proof `map-into-profile`, unit test `FixAsync_ProfileInOtherFile_WritesMapIntoAndCallsItWithUsing`).
+- **REQ-3**: IF source or destination is a collection THEN THE SYSTEM SHALL report Manual (proof `collection`).
+- **REQ-4**: IF there is no rewritten `CreateMap<A, B>` and no `MapInto` THEN THE SYSTEM SHALL report Manual (proof `unknown-map`).
+- **REQ-5**: IF the source can be null according to the nullable flow THEN THE SYSTEM SHALL report Manual (proof `maybe-null-source`).
+- **REQ-6**: IF the destination can be null THEN THE SYSTEM SHALL report Manual; AutoMapper then creates a new object (proof `maybe-null-destination`).
+- **REQ-7**: IF source or destination is `object`/`dynamic`, or the receiver can have side effects THEN THE SYSTEM SHALL report Manual (proofs `object-source`, `receiver-call`).
+- **REQ-8**: WHEN no `Map(a, b)` uses the map THE SYSTEM SHALL not write a `MapInto` (existing CreateMap, ForMember and MapCall proofs unchanged).
 
 ## Assumptions
 
-- AutoMapper kiest de map op het runtime-type; hier op de statische typen.
-- `MapInto` kopieert dezelfde members als `ToB`; get-only members die de bron heeft zijn al Manual in `CreateMapPattern`.
+- AutoMapper picks the map by runtime type; here by static types.
+- `MapInto` copies the same members as `ToB`; get-only members that the source has are already Manual in `CreateMapPattern`.
 
 ## Risks
 
-- Elke profile-rewrite met solution doorzoekt alle bestanden met de tekst `Map` naar `Map(a, b)`; bij grote solutions traag.
-- Een struct als doel: AutoMapper en `MapInto` geven beide een kopie terug; gedrag gelijk, maar ongebruikelijk.
+- Every profile rewrite with a solution searches all files containing the text `Map` for `Map(a, b)`; slow for large solutions.
+- A struct as destination: AutoMapper and `MapInto` both return a copy; same behaviour, but unusual.
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [automapper-map-into-modellen.md](automapper-map-into-modellen.md).
+Class diagram, sequence and decision tree: [automapper-map-into-modellen.md](automapper-map-into-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

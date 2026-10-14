@@ -17,7 +17,7 @@ files_expected:
     - Directory.Packages.props
 ---
 
-# Feature: MediatR-fix (infrastructuur)
+# Feature: MediatR fix (infrastructure)
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -25,48 +25,48 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-020. Alles gemarkeerd als _(inferred)_ komt uit de codebase-analyse.
+> Drawn up from TAAK-020. Everything marked _(inferred)_ comes from the codebase analysis.
 
 ## One-sentence summary
 
-Een tweede fix `mediatr` (MediatR 12.5.0 → Mediator 3.0.2) zonder patronen, aan CLI en proof-runner gekoppeld, met een
-`PackageMigration` die meerdere toe te voegen pakketten kent (`Mediator.Abstractions` + `Mediator.SourceGenerator`).
+A second fix `mediatr` (MediatR 12.5.0 → Mediator 3.0.2) without patterns, wired to the CLI and proof runner, with a
+`PackageMigration` that supports multiple packages to add (`Mediator.Abstractions` + `Mediator.SourceGenerator`).
 
 ## Scope (in / out)
 
 **In scope**
 
-- `PackageMigration.AddedPackages` (lijst van naam + versie); het eerste pakket vervangt het oude in place, de rest komt ernaast.
-- `MediatRFix` (`Id = "mediatr"`, namespaces `MediatR` → `Mediator`), registratie in `Cli.cs`.
-- Proof-runner kiest fix en referenties op `Proofs/<Fix>/`; `TestReferences.MediatR` / `.Mediator`.
+- `PackageMigration.AddedPackages` (list of name + version); the first package replaces the old one in place, the rest goes next to it.
+- `MediatRFix` (`Id = "mediatr"`, namespaces `MediatR` → `Mediator`), registration in `Cli.cs`.
+- Proof runner picks fix and references by `Proofs/<Fix>/`; `TestReferences.MediatR` / `.Mediator`.
 - `Mediator.SourceGenerator` 3.0.2 in `Directory.Packages.props`.
 
 **Out of scope**
 
-- Patronen (zie `claude/tasks/mediatr-queue.md`), `MediatRSyntax`, wijzigingen in `samples/`.
+- Patterns (see `claude/tasks/mediatr-queue.md`), `MediatRSyntax`, changes in `samples/`.
 
 ## Requirements
 
-- **REQ-1**: WHEN een fix meerdere toe te voegen pakketten heeft THE SYSTEM SHALL het eerste in place op de plek van het oude pakket zetten en de andere direct erna, in `<PackageReference>` én `<PackageVersion>`.
-- **REQ-2**: WHEN de FluentAssertions-fix draait THE SYSTEM SHALL dezelfde projectbestanden opleveren als vóór deze wijziging.
-- **REQ-3**: WHEN de gebruiker `--fix mediatr` meegeeft THE SYSTEM SHALL de fix accepteren.
-- **REQ-4**: WHEN een proof onder `Proofs/MediatR/` staat THE SYSTEM SHALL hem met `MediatRFix` draaien, `before` tegen MediatR 12.5.0 en `after` tegen Mediator.Abstractions 3.0.2 compileren.
-- **REQ-5**: WHEN `MediatRFix` pakketten toevoegt THE SYSTEM SHALL `Mediator.Abstractions` en `Mediator.SourceGenerator` met dezelfde versie (3.0.2) gebruiken.
+- **REQ-1**: WHEN a fix has multiple packages to add THE SYSTEM SHALL put the first in place where the old package was and the others directly after it, in both `<PackageReference>` and `<PackageVersion>`.
+- **REQ-2**: WHEN the FluentAssertions fix runs THE SYSTEM SHALL produce the same project files as before this change.
+- **REQ-3**: WHEN the user passes `--fix mediatr` THE SYSTEM SHALL accept the fix.
+- **REQ-4**: WHEN a proof is under `Proofs/MediatR/` THE SYSTEM SHALL run it with `MediatRFix`, compiling `before` against MediatR 12.5.0 and `after` against Mediator.Abstractions 3.0.2.
+- **REQ-5**: WHEN `MediatRFix` adds packages THE SYSTEM SHALL use `Mediator.Abstractions` and `Mediator.SourceGenerator` with the same version (3.0.2).
 
 ## Assumptions
 
-- Mediator 3.0.2 is de laatste stabiele versie (NuGet-index, 2026-10-11); de assembly heet `Mediator`, namespace `Mediator` (xml-docs van het pakket).
-- _(inferred)_ MediatR 12 zet `IRequest`/`INotification`/`Unit` in `MediatR.Contracts`; de proof-referenties nemen die assembly mee.
+- Mediator 3.0.2 is the latest stable version (NuGet index, 2026-10-11); the assembly is called `Mediator`, namespace `Mediator` (xml docs of the package).
+- _(inferred)_ MediatR 12 puts `IRequest`/`INotification`/`Unit` in `MediatR.Contracts`; the proof references include that assembly.
 
 ## Risks
 
-- Extra pakket op de verkeerde plek → extra's eerst toevoegen "alsof het oude blijft" (naast het oude element), daarna het eerste in place.
-- FA-gedrag wijzigt → bestaande `XmlProjectFileStoreTests` en `FixerProjectFileTests` ongewijzigd groen.
+- Extra package in the wrong place → add the extras first "as if the old one stays" (next to the old element), then the first one in place.
+- FA behavior changes → existing `XmlProjectFileStoreTests` and `FixerProjectFileTests` stay green unchanged.
 
 ## C4 Container (Mermaid)
 
-Ongewijzigd ten opzichte van [projectbestanden-migreren](projectbestanden-migreren-plan.md); Core heeft een tweede `IFix`.
+Unchanged compared to [projectbestanden-migreren](projectbestanden-migreren-plan.md); Core has a second `IFix`.
 
 ## Open questions
 
-- [x] Smoke-proof `MediatR/Usings`? → kan pas met een patroon: de Fixer wisselt usings alleen in documenten die een patroon wijzigde, en de proof-runner draait per patroon. Het eerste MediatR-patroon levert de eerste proof.
+- [x] Smoke proof `MediatR/Usings`? → only possible with a pattern: the Fixer only swaps usings in documents a pattern changed, and the proof runner runs per pattern. The first MediatR pattern delivers the first proof.

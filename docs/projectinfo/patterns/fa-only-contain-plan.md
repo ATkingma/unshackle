@@ -8,7 +8,7 @@ files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
   - src/Unshackle.Tests/Proofs/FluentAssertions/OnlyContain/
 ---
-# Feature: fa.only-contain: x.Should().OnlyContain(pred) wordt x.ShouldNotBeEmpty(); x.ShouldAllBe(pred);
+# Feature: fa.only-contain: x.Should().OnlyContain(pred) becomes x.ShouldNotBeEmpty(); x.ShouldAllBe(pred);
 
 | | |
 |---|---|
@@ -16,54 +16,54 @@ files_expected:
 | **Status** | Approved |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-015.
+> Drawn up from TAAK-015.
 
 ## One-sentence summary
 
-fa.only-contain: `x.Should().OnlyContain(pred)` wordt twee statements, `x.ShouldNotBeEmpty(); x.ShouldAllBe(pred);`, omdat FluentAssertions op een lege collectie faalt en Shouldly niet.
+fa.only-contain: `x.Should().OnlyContain(pred)` becomes two statements, `x.ShouldNotBeEmpty(); x.ShouldAllBe(pred);`, because FluentAssertions fails on an empty collection and Shouldly does not.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `OnlyContain(predicate)` (optioneel met `because` zonder `becauseArgs`) op een statement in een blok, met een eenvoudig subject (naam, `this`, ledenpad), op elke generieke `IEnumerable<T>` (lijst, array, dictionary).
-- `Manual(reden)` voor gebruikt resultaat, ketens, `becauseArgs`, een subject met aanroep, en een assertion buiten een blok (lambda, `if` zonder accolades).
+- `OnlyContain(predicate)` (optionally with a `because` without `becauseArgs`) on a statement in a block, with a simple subject (name, `this`, member path), on any generic `IEnumerable<T>` (list, array, dictionary).
+- `Manual(reason)` for a used result, chains, `becauseArgs`, a subject with a call, and an assertion outside a block (lambda, `if` without braces).
 
 **Out of scope**
 
-- `AllSatisfy` (eigen patroon `fa.all-satisfy`), `OnlyHaveUniqueItems`.
-- Beheer van `using`-directives: de `Fixer` doet dat via `IFix`.
+- `AllSatisfy` (own pattern `fa.all-satisfy`), `OnlyHaveUniqueItems`.
+- Management of `using` directives: the `Fixer` does that via `IFix`.
 
 ## Requirements
 
-- **REQ-1**: WHEN `x.Should().OnlyContain(pred)` als statement in een blok staat THE SYSTEM SHALL het vervangen door `x.ShouldNotBeEmpty();` en `x.ShouldAllBe(pred);` (proof `OnlyContain/simple.*.cs`).
-- **REQ-2**: WHEN het subject een `IEnumerable<T>`, array of dictionary is THE SYSTEM SHALL dezelfde herschrijving geven (proofs `enumerable.*`, `array.*`, `dictionary.*`).
-- **REQ-3**: WHEN het subject een ledenpad is (`other.Items`, `this.Items`) THE SYSTEM SHALL het herschrijven (proof `member-subject.*`).
-- **REQ-4**: WHEN een `because` zonder `becauseArgs` staat THE SYSTEM SHALL die als `customMessage` op beide statements zetten (proof `because.*`).
-- **REQ-5**: IF `becauseArgs` of named arguments gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `because-args.*`).
-- **REQ-6**: IF het resultaat wordt gebruikt (`.And`, variabele) THEN THE SYSTEM SHALL Manual geven (proofs `chain.*`, `used.*`).
-- **REQ-7**: IF de assertion na `.And` staat THEN THE SYSTEM SHALL Manual geven (proof `and-chain.*`).
-- **REQ-8**: IF het subject een aanroep is THEN THE SYSTEM SHALL Manual geven, omdat splitsen het subject twee keer evalueert (proof `subject-call.*`).
-- **REQ-9**: IF de assertion geen statement direct in een blok is (lambda-body, `if` zonder accolades) THEN THE SYSTEM SHALL Manual geven, omdat er geen twee statements kunnen staan (proofs `lambda.*`, `no-block.*`).
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als `customMessage` op beide statements zetten (proof `because-args.*`, nu `.after.cs`); named arguments of een niet-constante `because` blijven Manual. Vervangt REQ-5.
-- **Uitbreiding TAAK-098**: WHEN het subject niet veilig twee keer te evalueren is (bv. een aanroep) THE SYSTEM SHALL het hoisten naar `var subject = x;` en daarna `subject.ShouldNotBeEmpty(); subject.ShouldAllBe(pred);` geven (proof `subject-call.*`, nu `.after.cs`). Vervangt REQ-8.
-- **Uitbreiding TAAK-100**: IF de assertie in een `AssertionScope` staat die niet wordt omgezet THEN THE SYSTEM SHALL Manual "Inside an AssertionScope" geven (gedeelde controle in `FluentAssertionPattern.Rewrite`).
+- **REQ-1**: WHEN `x.Should().OnlyContain(pred)` is a statement in a block THE SYSTEM SHALL replace it with `x.ShouldNotBeEmpty();` and `x.ShouldAllBe(pred);` (proof `OnlyContain/simple.*.cs`).
+- **REQ-2**: WHEN the subject is an `IEnumerable<T>`, array or dictionary THE SYSTEM SHALL give the same rewrite (proofs `enumerable.*`, `array.*`, `dictionary.*`).
+- **REQ-3**: WHEN the subject is a member path (`other.Items`, `this.Items`) THE SYSTEM SHALL rewrite it (proof `member-subject.*`).
+- **REQ-4**: WHEN there is a `because` without `becauseArgs` THE SYSTEM SHALL put it as `customMessage` on both statements (proof `because.*`).
+- **REQ-5**: IF `becauseArgs` or named arguments are used THEN THE SYSTEM SHALL give Manual (proof `because-args.*`).
+- **REQ-6**: IF the result is used (`.And`, variable) THEN THE SYSTEM SHALL give Manual (proofs `chain.*`, `used.*`).
+- **REQ-7**: IF the assertion comes after `.And` THEN THE SYSTEM SHALL give Manual (proof `and-chain.*`).
+- **REQ-8**: IF the subject is a call THEN THE SYSTEM SHALL give Manual, because splitting evaluates the subject twice (proof `subject-call.*`).
+- **REQ-9**: IF the assertion is not a statement directly in a block (lambda body, `if` without braces) THEN THE SYSTEM SHALL give Manual, because two statements cannot go there (proofs `lambda.*`, `no-block.*`).
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL put `string.Format(CultureInfo.InvariantCulture, because, args)` as `customMessage` on both statements (proof `because-args.*`, now `.after.cs`); named arguments or a non-constant `because` stay Manual. Replaces REQ-5.
+- **Extension TAAK-098**: WHEN the subject cannot safely be evaluated twice (e.g. a call) THE SYSTEM SHALL hoist it to `var subject = x;` and then give `subject.ShouldNotBeEmpty(); subject.ShouldAllBe(pred);` (proof `subject-call.*`, now `.after.cs`). Replaces REQ-8.
+- **Extension TAAK-100**: IF the assertion is inside an `AssertionScope` that is not converted THEN THE SYSTEM SHALL give Manual "Inside an AssertionScope" (shared check in `FluentAssertionPattern.Rewrite`).
 
 ## Assumptions
 
-- Gedrag vastgelegd met een proefprogramma (FA 7.2.2, Shouldly 4.3.0): `OnlyContain` faalt op een lege collectie ("but the collection is empty"), `ShouldAllBe` slaagt; daarom de extra `ShouldNotBeEmpty()`.
-- Het predicaat is bij FA altijd een `Expression<Func<T,bool>>`, net als bij Shouldly's `ShouldAllBe`; geen delegate-variant, geen conversie nodig.
-- Getters in het subject zijn zuiver (twee keer evalueren is veilig).
+- Behaviour established with a test program (FA 7.2.2, Shouldly 4.3.0): `OnlyContain` fails on an empty collection ("but the collection is empty"), `ShouldAllBe` passes; hence the extra `ShouldNotBeEmpty()`.
+- In FA the predicate is always an `Expression<Func<T,bool>>`, just like in Shouldly's `ShouldAllBe`; no delegate variant, no conversion needed.
+- Getters in the subject are pure (evaluating twice is safe).
 
 ## Risks
 
-- Een `null`-collectie geeft bij FA een assertion-fout en bij Shouldly een `ArgumentNullException`/assertion-fout van `ShouldNotBeEmpty`: andere uitzondering, zelfde falen.
-- Foutmelding verandert ("Additional Info:" i.p.v. FA's because-voorvoegsel).
+- A `null` collection gives an assertion failure in FA and an `ArgumentNullException`/assertion failure of `ShouldNotBeEmpty` in Shouldly: a different exception, same failure.
+- The error message changes ("Additional Info:" instead of FA's because prefix).
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [fa-only-contain-modellen.md](fa-only-contain-modellen.md).
+Class diagram, sequence and decision tree: [fa-only-contain-modellen.md](fa-only-contain-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

@@ -1,71 +1,71 @@
-# Modellen: fa.throw
+# Models: fa.throw
 
-act.Should().Throw<T>() naar Should.Throw<T>(act). Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowPattern.cs`.
+act.Should().Throw<T>() to Should.Throw<T>(act). Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowPattern.cs`.
 
-**Figure 1.** Klassen rond `ThrowPattern`: wat hij implementeert, gebruikt en aanmaakt. Weggelaten: `Fixer`, `IFix` en de usings-afhandeling (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes around `ThrowPattern`: what it implements, uses and creates. Omitted: `Fixer`, `IFix` and the usings handling (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-throw-modellen-1.d2 -->
-![Modellen: fa.throw](img/fa-throw-modellen-1.png)
+![Models: fa.throw](img/fa-throw-modellen-1.png)
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
-| `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract: `Find` en `Rewrite` |
-| `ThrowPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowPattern.cs` | Dit patroon, Id `fa.throw` |
-| `ThrowSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowSyntax.cs` | `FindThrow` (node: Throw-aanroep, `WithMessage`-aanroep of `.Which`), `IsExactly`, `IsInvoking`, `TryGetAction` |
-| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde bouwstenen: `FindInvocations`, `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `IsFluentAssertions`, `TryGetArguments` |
-| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst: `Fixed` met nieuwe node(s) en namespaces, of `Manual` met reden |
-| «FluentAssertions» herkend | - | `Throw<T>()`; `ThrowExactly<T>()` (via `ThrowExactlyPattern`); `WithMessage(pattern)`; `.Which` |
-| «Shouldly» aangemaakt | - | `Should.Throw<T>(act[, because])`; `.ShouldBeOfType<T>()` bij ThrowExactly; `thrown.Message.ShouldContain / ShouldStartWith / ShouldEndWith / ShouldBe` |
-| Herkende typen | - | `Action`; `Func<T> met referentietype`; `Invoking(...)` (via `InvokingPattern`) |
-| `ThrowMessage` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowMessage.cs` | Gedeeld met `ThrowAsyncPattern`: `Check` vertaalt de `WithMessage`-wildcard naar `Message.ShouldX(...)`; `MayThrowAggregate`; `OfType` |
+| `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract: `Find` and `Rewrite` |
+| `ThrowPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowPattern.cs` | This pattern, Id `fa.throw` |
+| `ThrowSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowSyntax.cs` | `FindThrow` (node: Throw call, `WithMessage` call or `.Which`), `IsExactly`, `IsInvoking`, `TryGetAction` |
+| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Shared building blocks: `FindInvocations`, `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `IsFluentAssertions`, `TryGetArguments` |
+| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Outcome: `Fixed` with new node(s) and namespaces, or `Manual` with a reason |
+| «FluentAssertions» recognised | - | `Throw<T>()`; `ThrowExactly<T>()` (via `ThrowExactlyPattern`); `WithMessage(pattern)`; `.Which` |
+| «Shouldly» created | - | `Should.Throw<T>(act[, because])`; `.ShouldBeOfType<T>()` for ThrowExactly; `thrown.Message.ShouldContain / ShouldStartWith / ShouldEndWith / ShouldBe` |
+| Recognised types | - | `Action`; `Func<T> met referentietype`; `Invoking(...)` (via `InvokingPattern`) |
+| `ThrowMessage` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowMessage.cs` | Shared with `ThrowAsyncPattern`: `Check` translates the `WithMessage` wildcard to `Message.ShouldX(...)`; `MayThrowAggregate`; `OfType` |
 
-**Figure 2.** `Fixer` roept `Find` en per node `Rewrite` aan; `Rewrite` doet de controles via `FluentAssertionsSyntax` en `SemanticModel` en levert `Fixed` of `Manual`. Weggelaten: het vervangen van de node en de usings door de `Fixer`.
+**Figure 2.** `Fixer` calls `Find` and `Rewrite` per node; `Rewrite` performs the checks via `FluentAssertionsSyntax` and `SemanticModel` and returns `Fixed` or `Manual`. Omitted: the replacement of the node and the usings by the `Fixer`.
 
 <!-- kingmadoc:diagram img/fa-throw-modellen-2.d2 -->
-![Modellen: fa.throw](img/fa-throw-modellen-2.png)
+![Models: fa.throw](img/fa-throw-modellen-2.png)
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Place | What happens |
 | --- | --- | --- |
-| Find | `ThrowPattern.Find` | `ThrowSyntax.FindThrow` zoekt FA-aanroepen `Throw` (ThrowExactly- en Invoking-subjects horen bij `ThrowExactlyPattern`/`InvokingPattern`, die deze `Rewrite` aanroepen); een direct volgende `WithMessage` of `.Which` wordt de node |
-| Controles | `ThrowPattern.Rewrite` | `IsInsideAssertionScope`; `GetSubject(throwCall)`; `IsResultDiscarded(outer, model)` (niet bij `.Which`); `IsInvoking`/`TryGetAction` of `IsFluentAssertions(GetSymbolInfo(subject))`; `GetTypeInfo(subject)`; `MayThrowAggregate`; `TryGetArguments(throwCall, model)`; `Arguments([action], because)`; `OfType`; `GetConstantValue(pattern)`; `Check(result, pattern, because)` |
-| Manual | `PatternResult.Manual` | Eerste mislukte controle geeft `ManualResult` met reden (zie figuur 3) |
-| Fixed | `PatternResult.Fixed` | Nieuwe node; trivia en usings regelt de `Fixer` |
+| Find | `ThrowPattern.Find` | `ThrowSyntax.FindThrow` looks for FA calls `Throw` (ThrowExactly and Invoking subjects belong to `ThrowExactlyPattern`/`InvokingPattern`, which call this `Rewrite`); a directly following `WithMessage` or `.Which` becomes the node |
+| Checks | `ThrowPattern.Rewrite` | `IsInsideAssertionScope`; `GetSubject(throwCall)`; `IsResultDiscarded(outer, model)` (not for `.Which`); `IsInvoking`/`TryGetAction` or `IsFluentAssertions(GetSymbolInfo(subject))`; `GetTypeInfo(subject)`; `MayThrowAggregate`; `TryGetArguments(throwCall, model)`; `Arguments([action], because)`; `OfType`; `GetConstantValue(pattern)`; `Check(result, pattern, because)` |
+| Manual | `PatternResult.Manual` | The first failed check gives `ManualResult` with a reason (see figure 3) |
+| Fixed | `PatternResult.Fixed` | New node; the `Fixer` takes care of trivia and usings |
 
-**Figure 3.** Beslisboom van `Rewrite`: 13 vragen in de volgorde van de code, elk blad noemt de proof in `src/Unshackle.Tests/Proofs/FluentAssertions/Throw/` die het bewijst (`<naam>.before.cs` met `.after.cs` of `.manual.txt`).
+**Figure 3.** Decision tree of `Rewrite`: 13 questions in code order, each leaf names the proof in `src/Unshackle.Tests/Proofs/FluentAssertions/Throw/` that proves it (`<naam>.before.cs` with `.after.cs` or `.manual.txt`).
 
 <!-- kingmadoc:diagram img/fa-throw-modellen-3.d2 -->
-![Modellen: fa.throw](img/fa-throw-modellen-3.png)
+![Models: fa.throw](img/fa-throw-modellen-3.png)
 
-| Vraag of selector | Bij nee: Manual-reden | Proof |
+| Question or selector | If no: Manual reason | Proof |
 | --- | --- | --- |
-| Buiten een AssertionScope? | Inside an AssertionScope | `ThrowExactly/assertion-scope`, `Invoking/assertion-scope` |
-| Precies één typeargument? | Throw without exactly one type argument | geen proof, bewaakt in code |
-| Vorm x.Should().Throw<T>()? | Throw<T>(...) is not in the form x.Should().Throw<T>() | geen proof, bewaakt in code |
-| Node is `.Which`, of resultaat weggegooid? | The result of Throw<T>() is used (.Which/.And/.WithInnerException/.Where or a value) | `chain`, `edge-inner-exception` |
-| `Invoking`: `TryGetAction` lukt; anders subject niet met FluentAssertions gebouwd? | Invoking-receiver niet stabiel, waardetype of geen lambda; The subject is built with FluentAssertions | `Invoking/side-effect-receiver`, `value-type`, `method-group` |
-| Subject is Action of Func naar referentietype? | The subject is not an Action or a Func returning a reference type | `value-func` |
-| ThrowExactly, of geen AggregateException-risico (`MayThrowAggregate`)? | FluentAssertions unwraps AggregateException; Shouldly does not | `aggregate-wait`, `aggregate-method-group` |
-| Geen named args op Throw; becauseArgs alleen bij constante `because`? | named arguments, or becauseArgs whose because is no constant format string | geen proof, bewaakt in code |
-| Geen named args, één waarde op WithMessage? | WithMessage(...) with named arguments or becauseArgs | geen proof, bewaakt in code |
-| Patroon is een constante string? | pattern is not a string constant | `message-variable` |
-| Alleen een * vooraan of achteraan? | wildcards other than a leading or trailing * | `message-wildcard` |
-| Geen regeleinde naast een `*`? | pattern contains a line break | `message-contains-line-break` |
+| Outside an AssertionScope? | Inside an AssertionScope | `ThrowExactly/assertion-scope`, `Invoking/assertion-scope` |
+| Exactly one type argument? | Throw without exactly one type argument | no proof, guarded in code |
+| Form x.Should().Throw<T>()? | Throw<T>(...) is not in the form x.Should().Throw<T>() | no proof, guarded in code |
+| Node is `.Which`, or result discarded? | The result of Throw<T>() is used (.Which/.And/.WithInnerException/.Where or a value) | `chain`, `edge-inner-exception` |
+| `Invoking`: `TryGetAction` succeeds; otherwise subject not built with FluentAssertions? | Invoking receiver not stable, value type or no lambda; The subject is built with FluentAssertions | `Invoking/side-effect-receiver`, `value-type`, `method-group` |
+| Subject is an Action or a Func returning a reference type? | The subject is not an Action or a Func returning a reference type | `value-func` |
+| ThrowExactly, or no AggregateException risk (`MayThrowAggregate`)? | FluentAssertions unwraps AggregateException; Shouldly does not | `aggregate-wait`, `aggregate-method-group` |
+| No named args on Throw; becauseArgs only with constant `because`? | named arguments, or becauseArgs whose because is no constant format string | no proof, guarded in code |
+| No named args, one value on WithMessage? | WithMessage(...) with named arguments or becauseArgs | no proof, guarded in code |
+| Pattern is a constant string? | pattern is not a string constant | `message-variable` |
+| Only a * at the start or end? | wildcards other than a leading or trailing * | `message-wildcard` |
+| No line break next to a `*`? | pattern contains a line break | `message-contains-line-break` |
 
-| Voorwaarde | Fixed-vorm | Proofs |
+| Condition | Fixed form | Proofs |
 | --- | --- | --- |
-| geen WithMessage | `Should.Throw<T>(act[, because])`; `becauseArgs` als `string.Format(CultureInfo.InvariantCulture, because, args)` | `simple`, `because`, `because-args`, `func`, `lambda`, `aggregate-expected`, `aggregate-get-result` |
-| `.Which` | `Should.Throw<T>(act)` (geeft de exception terug) | `value-used`, `edge-which-message` |
+| no WithMessage | `Should.Throw<T>(act[, because])`; `becauseArgs` as `string.Format(CultureInfo.InvariantCulture, because, args)` | `simple`, `because`, `because-args`, `func`, `lambda`, `aggregate-expected`, `aggregate-get-result` |
+| `.Which` | `Should.Throw<T>(act)` (returns the exception) | `value-used`, `edge-which-message` |
 | ThrowExactly | `Should.Throw<T>(act).ShouldBeOfType<T>()` | `ThrowExactly/*` |
 | WithMessage *lit* | `Should.Throw<T>(act).Message.ShouldContain(lit, Case.Insensitive)` | `message-contains` |
 | WithMessage lit* | `...Message.ShouldStartWith(lit, Case.Insensitive)` | `message-starts` |
 | WithMessage *lit | `...Message.ShouldEndWith(lit, Case.Insensitive)` | `message-ends` |
-| WithMessage lit | `...Message.ShouldBe(lit[, because], StringCompareShould.IgnoreCase)`; met regeleinde ook `IgnoreLineEndings` | `message-exact`, `message-exact-because`, `message-because`, `message-because-args`, `message-line-break`, `edge-multiline-message` |
+| WithMessage lit | `...Message.ShouldBe(lit[, because], StringCompareShould.IgnoreCase)`; with a line break also `IgnoreLineEndings` | `message-exact`, `message-exact-because`, `message-because`, `message-because-args`, `message-line-break`, `edge-multiline-message` |
 
-## Zie ook
+## See also
 
 - [fa-throw-plan.md](fa-throw-plan.md) - plan
-- [fa-throw-verify.md](fa-throw-verify.md) - verificatie
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowPattern.cs` - het patroon
-- `src/Unshackle.Tests/Proofs/FluentAssertions/Throw/` - de proofs
-- [../modellen/pattern-beslissing.md](../modellen/pattern-beslissing.md) - generieke beslissing van een pattern
+- [fa-throw-verify.md](fa-throw-verify.md) - verification
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowPattern.cs` - the pattern
+- `src/Unshackle.Tests/Proofs/FluentAssertions/Throw/` - the proofs
+- [../modellen/pattern-beslissing.md](../modellen/pattern-beslissing.md) - generic decision of a pattern
 - [../README.md](../README.md)

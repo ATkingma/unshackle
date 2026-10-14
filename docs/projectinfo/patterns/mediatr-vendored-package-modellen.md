@@ -1,41 +1,41 @@
-# Modellen: mediatr.vendored-package
+# Models: mediatr.vendored-package
 
-Feiten uit `src/Unshackle.Core/VendoredPackages.cs`, `VendoredPlan.cs` en `Fixes/MediatR/ArdalisSharedKernel.cs`. Diagrammen ontbreken (d2/kingmadoc niet beschikbaar); tabellen vervangen ze.
+Facts from `src/Unshackle.Core/VendoredPackages.cs`, `VendoredPlan.cs` and `Fixes/MediatR/ArdalisSharedKernel.cs`. Diagrams are missing (d2/kingmadoc not available); tables replace them.
 
-## Klassen
+## Classes
 
-| Element | Rol |
-| ------- | --- |
-| `IFix.VendoredPackages` | Pakketten die de fix vendort; default leeg, `MediatRFix` geeft `[ArdalisSharedKernel.Package]` |
-| `VendoredPackage` / `VendoredVersion` / `VendoredFile` | Naam, map, header, extra bestanden (licentie); per versie de bestanden en afhankelijkheden |
-| `ArdalisSharedKernel` | Leest de embedded broncode (`Vendored/ArdalisSharedKernel/common` + familie `1.4.0`, `1.5.0`, `2.1.0`) en de nuspec-afhankelijkheden |
-| `VendoredPackages` | Kiest versie en root-project, maakt documenten, nieuwe bestanden, migraties en rijen (`vendored-package`) |
-| `VendoredPlan` | Uitkomst; `AddTo` zet de documenten in de opgeloste solution |
-| `ProjectFileChange.Creates` | Nieuw bestand; `XmlProjectFileStore.SaveAsync` controleert dat het niet bestaat en draait terug |
-| `UnsupportedPattern.IsVendored` | Geen Manual voor een ondersteunde versie |
+| Element | Role |
+| ------- | ---- |
+| `IFix.VendoredPackages` | Packages the fix vendors; empty by default, `MediatRFix` gives `[ArdalisSharedKernel.Package]` |
+| `VendoredPackage` / `VendoredVersion` / `VendoredFile` | Name, folder, header, extra files (licence); per version the files and dependencies |
+| `ArdalisSharedKernel` | Reads the embedded source code (`Vendored/ArdalisSharedKernel/common` + family `1.4.0`, `1.5.0`, `2.1.0`) and the nuspec dependencies |
+| `VendoredPackages` | Chooses version and root project, creates documents, new files, migrations and rows (`vendored-package`) |
+| `VendoredPlan` | Outcome; `AddTo` puts the documents into the resolved solution |
+| `ProjectFileChange.Creates` | New file; `XmlProjectFileStore.SaveAsync` checks that it does not exist and rolls back |
+| `UnsupportedPattern.IsVendored` | No Manual for a supported version |
 
 ## Sequence
 
-| Stap | Methode | Wat gebeurt er |
-| ---- | ------- | -------------- |
-| Patronen | `Fixer.FixAsync` | Gebruikerscode wordt gemigreerd; `UnsupportedPattern` slaat Ardalis.SharedKernel over |
-| Plan | `VendoredPackages.PlanAsync` | Gebruikers = projecten met de assembly; versie uit `AssemblyIdentity`; root via `ProjectDependencyGraph` |
-| Bron | `PlanAsync` | Header + resource, regeleinde van het project; document per target van het root-project |
-| Afhankelijkheden | `Resolved` | Versie uit het NuGet-pad van de referentie, anders nuspec |
-| Projectbestanden | `Fixer.MigrateProjectFilesAsync` | MediatR-migraties en vendor-migraties in één `IProjectFileStore.EditAsync` |
-| Schrijven | `FixCommand` → `SaveAsync` | Nieuwe bestanden met de rest, in één controle vooraf |
+| Step | Method | What happens |
+| ---- | ------ | ------------ |
+| Patterns | `Fixer.FixAsync` | User code is migrated; `UnsupportedPattern` skips Ardalis.SharedKernel |
+| Plan | `VendoredPackages.PlanAsync` | Users = projects with the assembly; version from `AssemblyIdentity`; root via `ProjectDependencyGraph` |
+| Source | `PlanAsync` | Header + resource, line ending of the project; a document per target of the root project |
+| Dependencies | `Resolved` | Version from the NuGet path of the reference, otherwise the nuspec |
+| Project files | `Fixer.MigrateProjectFilesAsync` | MediatR migrations and vendor migrations in one `IProjectFileStore.EditAsync` |
+| Write | `FixCommand` → `SaveAsync` | New files with the rest, in one check up front |
 
-## Beslisboom
+## Decision tree
 
-| Blad | Voorwaarde | Bewijs |
-| ---- | ---------- | ------ |
-| Fixed (bron + swap) | ondersteunde versie, één root, map vrij | `_Combined/Vendored/shared-kernel`, `FixAsync_UsersShareOneProject_*` |
-| Manual "no single project for its source" | gebruikers zonder gemeenschappelijk project | `FixAsync_UsersShareNoProject_ReportsManual` |
-| Manual "no source of this version" | 1.0.0–1.3.0 (ook `UnsupportedPattern`) | code-review (`PlanAsync`) |
-| Manual "already has source files" | map bestaat in de solution | code-review (`PlanAsync`) |
-| Fout bij schrijven "already exists" | bestand staat al op schijf | `SaveAsync_NewFileAlreadyThere_*` |
+| Leaf | Condition | Evidence |
+| ---- | --------- | -------- |
+| Fixed (source + swap) | supported version, one root, folder free | `_Combined/Vendored/shared-kernel`, `FixAsync_UsersShareOneProject_*` |
+| Manual "no single project for its source" | users without a common project | `FixAsync_UsersShareNoProject_ReportsManual` |
+| Manual "no source of this version" | 1.0.0–1.3.0 (also `UnsupportedPattern`) | code review (`PlanAsync`) |
+| Manual "already has source files" | the folder exists in the solution | code review (`PlanAsync`) |
+| Write error "already exists" | the file is already on disk | `SaveAsync_NewFileAlreadyThere_*` |
 
-## Zie ook
+## See also
 
 - [mediatr-vendored-package-plan.md](mediatr-vendored-package-plan.md)
 - [mediatr-vendored-package-verify.md](mediatr-vendored-package-verify.md)

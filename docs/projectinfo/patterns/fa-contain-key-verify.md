@@ -10,40 +10,40 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainKeyPattern.cs`; registratie in `FluentAssertionsFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/ContainKey/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainKeyPattern.cs`; registration in `FluentAssertionsFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/ContainKey/`, run by `ProofTests`.
 
-| REQ   | Oordeel | Bewijs |
-| ----- | ------- | ------ |
-| REQ-1 | Gehaald | `dictionary.*.cs` |
-| REQ-2 | Gehaald | `idictionary.*.cs` (after compileert tegen Shouldly) |
-| REQ-3 | Gehaald | `not-contain-key.*.cs` |
-| REQ-4 | Gehaald | `because.*.cs` |
-| REQ-5 | Gehaald | `lambda.*.cs` |
-| REQ-6 | Vervangen | Door Uitbreiding TAAK-097: `because-args` is nu Fixed |
-| REQ-7 | Gehaald | `chain.*`, `which.*`, `and-chain.*` |
-| REQ-8 | Gehaald | `keys.*`, `not-contain-keys.*` |
-| REQ-9 | Gehaald | `contain-value.*`, `contain-values.*`, `not-contain-value.*` |
-| REQ-10 | Gehaald | `nullable.*` |
-| REQ-11 | Gehaald | `read-only.*`, `read-only-not-contain.*` (after compileert; `ContainsKey(..).ShouldBeTrue/False`) |
-| REQ-12 | Gehaald | `headers.*` |
-| REQ-13 | Gehaald | `enumerable-pairs.manual.txt` |
-| Uitbreiding TAAK-097 | Gehaald | `because-args.before.cs` / `because-args.after.cs` |
+| REQ   | Verdict | Evidence |
+| ----- | ------- | -------- |
+| REQ-1 | Met | `dictionary.*.cs` |
+| REQ-2 | Met | `idictionary.*.cs` (after compiles against Shouldly) |
+| REQ-3 | Met | `not-contain-key.*.cs` |
+| REQ-4 | Met | `because.*.cs` |
+| REQ-5 | Met | `lambda.*.cs` |
+| REQ-6 | Replaced | By Extension TAAK-097: `because-args` is now Fixed |
+| REQ-7 | Met | `chain.*`, `which.*`, `and-chain.*` |
+| REQ-8 | Met | `keys.*`, `not-contain-keys.*` |
+| REQ-9 | Met | `contain-value.*`, `contain-values.*`, `not-contain-value.*` |
+| REQ-10 | Met | `nullable.*` |
+| REQ-11 | Met | `read-only.*`, `read-only-not-contain.*` (after compileert; `ContainsKey(..).ShouldBeTrue/False`) |
+| REQ-12 | Met | `headers.*` |
+| REQ-13 | Met | `enumerable-pairs.manual.txt` |
+| Extension TAAK-097 | Met | `because-args.before.cs` / `because-args.after.cs` |
 
 ## Deviations
 
 | # | Area | Plan says | Code does | Impact |
 | - | ---- | --------- | --------- | ------ |
-| 2 | Behaviour | Gelijk aan FA | `HttpHeaders.Contains` is hoofdletterongevoelig; FA vergelijkt exact | Low (positieve assertie iets soepeler, alleen bij headers) |
-| 1 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because`; gedocumenteerd verschil | Low |
+| 2 | Behaviour | Equal to FA | `HttpHeaders.Contains` is case-insensitive; FA compares exactly | Low (positive assertion slightly looser, only for headers) |
+| 1 | Behaviour | Error message equal to FA | Shouldly puts "Additional Info:" before the `because`; a documented difference | Low |
 
 ## Validation results
 
 | Check | Command        | Result |
 | ----- | -------------- | ------ |
 | Build | `dotnet build` | passed (0 warnings) |
-| Tests | `dotnet test`  | `ProofTests` 685/685 groen (TAAK-168); volledige run: alleen de bekende CRLF-falers |
-| Lint  | _geen_         | _not run_: geen lint-commando ingesteld |
+| Tests | `dotnet test`  | `ProofTests` 685/685 green (TAAK-168); full run: only the known CRLF failures |
+| Lint  | _none_         | _not run_: no lint command configured   |
 
-## Zie ook
+## See also
 
 - [fa-contain-key-modellen.md](fa-contain-key-modellen.md)

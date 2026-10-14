@@ -1,50 +1,50 @@
-# Modellen: fa.have-length
+# Models: fa.have-length
 
-`s.Should().HaveLength(n)` wordt `s.Length.ShouldBe(n)`; nullable subject `s.ShouldNotBeNull().Length.ShouldBe(n)`. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveLengthPattern.cs`.
+`s.Should().HaveLength(n)` becomes `s.Length.ShouldBe(n)`; nullable subject `s.ShouldNotBeNull().Length.ShouldBe(n)`. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveLengthPattern.cs`.
 
-**Figure 1.** Klassen rond `HaveLengthPattern`. Weggelaten: `Fixer`, `IFix` en de usings (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes around `HaveLengthPattern`. Omitted: `Fixer`, `IFix` and the usings (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-have-length-modellen-1.d2 -->
-![Modellen: fa.have-length](img/fa-have-length-modellen-1.png)
+![Models: fa.have-length](img/fa-have-length-modellen-1.png)
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
 | `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract |
-| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` doet scope, vorm, resultaat en because(-args), dan `RewriteAssertion` |
-| `HaveLengthPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveLengthPattern.cs` | Dit patroon, Id `fa.have-length` |
-| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde controles |
-| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` handles scope, form, result and because(-args), then `RewriteAssertion` |
+| `HaveLengthPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveLengthPattern.cs` | This pattern, Id `fa.have-length` |
+| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Shared checks |
+| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Outcome |
 
-**Figure 2.** Volgorde van `Find` en `Rewrite`.
+**Figure 2.** Order of `Find` and `Rewrite`.
 
 <!-- kingmadoc:diagram img/fa-have-length-modellen-2.d2 -->
-![Modellen: fa.have-length](img/fa-have-length-modellen-2.png)
+![Models: fa.have-length](img/fa-have-length-modellen-2.png)
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Location | What happens |
 | --- | --- | --- |
-| Find | `HaveLengthPattern.Find` | `FindInvocations` op de FA-namen |
-| Controles | `FluentAssertionPattern.Rewrite` → `HaveLengthPattern.RewriteAssertion` | scope, vorm, gebruik van het resultaat, argumenten (`TryGetArguments`); dan `?.`, type, `NotNullReceiver` |
-| Uitkomst | `PatternResult.Fixed` / `Manual` | Shouldly-aanroep of reden |
+| Find | `HaveLengthPattern.Find` | `FindInvocations` on the FA names |
+| Checks | `FluentAssertionPattern.Rewrite` → `HaveLengthPattern.RewriteAssertion` | scope, form, use of the result, arguments (`TryGetArguments`); then `?.`, type, `NotNullReceiver` |
+| Outcome | `PatternResult.Fixed` / `Manual` | Shouldly call or reason |
 
-**Figure 3.** Beslisboom van `FluentAssertionPattern.Rewrite` + `RewriteAssertion`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/HaveLength/`.
+**Figure 3.** Decision tree of `FluentAssertionPattern.Rewrite` + `RewriteAssertion`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/HaveLength/`.
 
 <!-- kingmadoc:diagram img/fa-have-length-modellen-3.d2 -->
-![Modellen: fa.have-length](img/fa-have-length-modellen-3.png)
+![Models: fa.have-length](img/fa-have-length-modellen-3.png)
 
-| Vraag | Bij nee: Manual-reden | Proof |
+| Question | If no: Manual reason | Proof |
 | --- | --- | --- |
-| Buiten een AssertionScope? | Inside an AssertionScope | `assertion-scope` |
-| Vorm s.Should().HaveLength(..)? | is not in the form s.Should() | `geen proof; .And via fa.and-chain` |
-| Resultaat weggegooid? | is used | `geen proof` |
-| Geen benoemde argumenten; because constant formatteerbaar? | named arguments, or becauseArgs whose because is no constant format string | `geen proof` |
-| Geen ?. in het subject? | uses ?. | `geen proof` |
-| Op StringAssertions? | on a stream | `stream` |
+| Outside an AssertionScope? | Inside an AssertionScope | `assertion-scope` |
+| Form s.Should().HaveLength(..)? | is not in the form s.Should() | `no proof; .And via fa.and-chain` |
+| Result discarded? | is used | `no proof` |
+| No named arguments; because constant and formattable? | named arguments, or becauseArgs whose because is no constant format string | `no proof` |
+| No ?. in the subject? | uses ?. | `no proof` |
+| On StringAssertions? | on a stream | `stream` |
 | Fixed | `s[.ShouldNotBeNull()].Length.ShouldBe(n[, because])` | simple, because, because-args, nullable, receiver-parens |
 
-## Zie ook
+## See also
 
 - [fa-have-length-plan.md](fa-have-length-plan.md) - plan
-- [fa-have-length-verify.md](fa-have-length-verify.md) - verificatie
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveLengthPattern.cs` - het patroon
-- `src/Unshackle.Tests/Proofs/FluentAssertions/HaveLength/` - de proofs
+- [fa-have-length-verify.md](fa-have-length-verify.md) - verification
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveLengthPattern.cs` - the pattern
+- `src/Unshackle.Tests/Proofs/FluentAssertions/HaveLength/` - the proofs
 - [../README.md](../README.md)

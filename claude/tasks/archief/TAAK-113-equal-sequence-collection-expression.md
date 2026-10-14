@@ -1,27 +1,27 @@
-# TAAK-113 — `fa.equal-sequence` wikkelt collection expression in een array
+# TAAK-113 — `fa.equal-sequence` wraps a collection expression in an array
 
-**Status**: klaar (2026-10-11)
-**Aangemaakt**: 2026-10-11 (corpus-run, `claude/tasks/CORPUSRUN-fa.md` volgt)
+**Status**: done (2026-10-11)
+**Created**: 2026-10-11 (corpus run, `claude/tasks/CORPUSRUN-fa.md` follows)
 
 ## Context
 
-PowerApps-Tooling (42× CS0029, 12× CS1729, 12× CS1061 na fix): `x.Should().Equal([ "a", "b" ])` (collection expression als enig argument) wordt `x.ShouldBe(new string[] { [ "a", "b" ] })` — het patroon behandelt de collection expression als params-element.
+PowerApps-Tooling (42× CS0029, 12× CS1729, 12× CS1061 after fix): `x.Should().Equal([ "a", "b" ])` (collection expression as the only argument) becomes `x.ShouldBe(new string[] { [ "a", "b" ] })` — the pattern treats the collection expression as a params element.
 
-## Stappen
+## Steps
 
-1. Proof `EqualSequence/collection-expression` (before compileert tegen FA 7.2.2).
-2. Eén argument dat zelf een collectie is (collection expression, array, IEnumerable) → doorgeven; alleen echte params-losse elementen in `new T[] { … }` wikkelen. Collection expression heeft een target type nodig: `ShouldBe((string[])[...])` of `new string[] { "a", "b" }` — kies wat compileert en bewijs.
-3. Bewijs: PowerApps-kopie opnieuw `fix` + build groen.
+1. Proof `EqualSequence/collection-expression` (before compiles against FA 7.2.2).
+2. One argument that is itself a collection (collection expression, array, IEnumerable) → pass it through; only wrap real separate params elements in `new T[] { … }`. A collection expression needs a target type: `ShouldBe((string[])[...])` or `new string[] { "a", "b" }` — choose what compiles and prove it.
+3. Evidence: PowerApps copy `fix` again + build green.
 
-## Resultaat
+## Result
 
-- `EqualSequencePattern`: een collection expression als enig argument levert de elementen: `Equal(["a", "b"])` →
-  `ShouldBe(new string[] { "a", "b" })`. Met een spread (`[.. t, "b"]`) → Manual.
+- `EqualSequencePattern`: a collection expression as the only argument supplies the elements: `Equal(["a", "b"])` →
+  `ShouldBe(new string[] { "a", "b" })`. With a spread (`[.. t, "b"]`) → Manual.
 - Proofs: `EqualSequence/collection-expression.*`, `EqualSequence/collection-expression-spread.*`.
-- Corpus: **niet herbewezen**. Er is geen schone PowerApps-kopie (`run-fa/src` en `casus/` zijn al gefixt; terugzetten vraagt
-  versiebeheer, dat in deze sessie buiten de worktree geweigerd wordt). Opnieuw draaien op een verse clone.
+- Corpus: **not re-proven**. There is no clean PowerApps copy (`run-fa/src` and `casus/` have already been fixed; reverting requires
+  version control, which is refused outside the worktree in this session). Rerun on a fresh clone.
 
-## Zie ook
+## See also
 
 - `claude/tasks/ANALYSE-fa-100.md`
 - `docs/projectinfo/architectuur/corpus.md`

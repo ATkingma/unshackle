@@ -1,84 +1,84 @@
-# TAAK-194 — Ardalis.SharedKernel (pakket op MediatR) automatisch migreren
+# TAAK-194 — Migrate Ardalis.SharedKernel (a package on MediatR) automatically
 
-**Status**: klaar
-**Aangemaakt**: 2026-10-12
-**Doel**: een solution die Ardalis.SharedKernel 1.4.0–3.0.1 gebruikt, migreert volledig automatisch naar Mediator 3.0.2: de broncode van het pakket komt (gemigreerd) in de solution, het pakket gaat eruit.
+**Status**: done
+**Created**: 2026-10-12
+**Goal**: a solution that uses Ardalis.SharedKernel 1.4.0–3.0.1 migrates fully automatically to Mediator 3.0.2: the package's source code comes (migrated) into the solution, the package goes out.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Corpus: `claude/tasks/CORPUSRUN-mediatr.md` (ardalis, 11× "Ardalis.SharedKernel builds on MediatR", terechte Manual uit TAAK-133).
-- Detectie stond al in `UnsupportedPattern` (TAAK-133); deze taak vervangt die Manual door een echte migratie.
-- Andere agents werken tegelijk in `Fixer.cs`, `MediatRFix.cs` en `UnsupportedPattern.cs`; mijn wijzigingen daar zijn een paar regels.
-- `add-mediatr`-Manual van ardalis (internal handler) is TAAK-195, niet deze taak.
+- Corpus: `claude/tasks/CORPUSRUN-mediatr.md` (ardalis, 11× "Ardalis.SharedKernel builds on MediatR", rightful Manual from TAAK-133).
+- Detection was already in `UnsupportedPattern` (TAAK-133); this task replaces that Manual with a real migration.
+- Other agents work in `Fixer.cs`, `MediatRFix.cs` and `UnsupportedPattern.cs` at the same time; my changes there are a few lines.
+- The `add-mediatr` Manual of ardalis (internal handler) is TAAK-195, not this task.
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-`UnsupportedPattern` meldt elk type dat via een metadata-type uit een ander pakket MediatR-interfaces erft als Manual; AllOrNothing laat ardalis dan ongemoeid.
+`UnsupportedPattern` reports every type that inherits MediatR interfaces via a metadata type from another package as Manual; AllOrNothing then leaves ardalis untouched.
 
-### Probleem
+### Problem
 
-- Er is geen Mediator-versie van Ardalis.SharedKernel met dezelfde API: 4.0.0+ bouwt op `Mediator.Abstractions` 3.0.1, maar heeft `ICommand`, `IQuery`, `ICommandHandler`, `IQueryHandler` verwijderd, `ClearDomainEvents` public gemaakt, `LoggingBehavior` een andere constructor gegeven, en vraagt net9.0 (ardalis v9.1.0 is net8.0). Upgraden breekt de build of verandert gedrag.
+- There is no Mediator version of Ardalis.SharedKernel with the same API: 4.0.0+ builds on `Mediator.Abstractions` 3.0.1, but removed `ICommand`, `IQuery`, `ICommandHandler`, `IQueryHandler`, made `ClearDomainEvents` public, gave `LoggingBehavior` another constructor, and requires net9.0 (ardalis v9.1.0 is net8.0). Upgrading breaks the build or changes behaviour.
 
-### Nieuwe situatie
+### New situation
 
-De fix zet de broncode van de gebruikte versie (MIT) met Mediator in plaats van MediatR in `<root-project>/Ardalis.SharedKernel/` (zelfde namespace, typen en gedrag), plus `LICENSE.txt`. Het pakket gaat uit alle projecten; het root-project krijgt de afhankelijkheden van het pakket (GuardClauses, Specification, Logging.Abstractions) als directe referentie.
+The fix puts the source code of the version in use (MIT) with Mediator instead of MediatR in `<root-project>/Ardalis.SharedKernel/` (same namespace, types and behaviour), plus `LICENSE.txt`. The package goes out of all projects; the root project gets the package's dependencies (GuardClauses, Specification, Logging.Abstractions) as direct references.
 
-### Verbetering
+### Improvement
 
-ardalis: 11 Manual minder; de solution is niet meer door het pakket geblokkeerd (resteert TAAK-195).
+ardalis: 11 Manuals fewer; the solution is no longer blocked by the package (TAAK-195 remains).
 
-## Aanpak
+## Approach
 
-### Wat / Waar
+### What / Where
 
-- `src/Unshackle.Core/Fixes/MediatR/Vendored/ArdalisSharedKernel/` — broncode als embedded resource (`common/` + families `1.4.0`, `1.5.0` (1.5.0, 1.6.0), `2.1.0` (2.1.0, 2.1.1, 3.0.1)), `LICENSE.txt`.
-- `src/Unshackle.Core/Fixes/MediatR/ArdalisSharedKernel.cs` — versies, afhankelijkheden (nuspec), header.
-- `src/Unshackle.Core/VendoredPackages.cs`, `VendoredPlan.cs` — root-project kiezen, documenten, nieuwe bestanden, pakket-swap.
-- Contracten (minimaal, met reden): `IFix.VendoredPackages` (default `[]`), modellen `VendoredPackage`/`VendoredVersion`/`VendoredFile`, `ProjectFileChange.Creates` (nieuw bestand). `Fixer`: één aanroep + migraties in dezelfde `EditAsync` (de store leest elk bestand één keer; twee aanroepen zouden elkaar overschrijven).
-- `XmlProjectFileStore.SaveAsync`: `Creates` (mag niet bestaan; terugdraaien verwijdert het bestand en de nieuwe map).
-- `UnsupportedPattern`: geen Manual meer voor een ondersteunde versie van Ardalis.SharedKernel.
+- `src/Unshackle.Core/Fixes/MediatR/Vendored/ArdalisSharedKernel/` — source code as an embedded resource (`common/` + families `1.4.0`, `1.5.0` (1.5.0, 1.6.0), `2.1.0` (2.1.0, 2.1.1, 3.0.1)), `LICENSE.txt`.
+- `src/Unshackle.Core/Fixes/MediatR/ArdalisSharedKernel.cs` — versions, dependencies (nuspec), header.
+- `src/Unshackle.Core/VendoredPackages.cs`, `VendoredPlan.cs` — choosing the root project, documents, new files, package swap.
+- Contracts (minimal, with a reason): `IFix.VendoredPackages` (default `[]`), models `VendoredPackage`/`VendoredVersion`/`VendoredFile`, `ProjectFileChange.Creates` (new file). `Fixer`: one call + migrations in the same `EditAsync` (the store reads every file once; two calls would overwrite each other).
+- `XmlProjectFileStore.SaveAsync`: `Creates` (must not exist; rolling back deletes the file and the new folder).
+- `UnsupportedPattern`: no more Manual for a supported version of Ardalis.SharedKernel.
 
-### Keuzes
+### Choices
 
-1. **Vendoren, niet upgraden**: zie Probleem; 4.x is een andere API en TFM.
-2. **Zelfde namespace `Ardalis.SharedKernel` en typenamen** (ook `MediatRDomainEventDispatcher`): geen enkele using of registratie bij de gebruiker hoeft te veranderen.
-3. **Gedrag exact**: `LoggingBehavior` logde onder categorie `MediatR.Mediator` (`ILogger<MediatR.Mediator>`); die klasse bestaat niet meer, dus `ILoggerFactory.CreateLogger("MediatR.Mediator")` — zelfde categorie, door DI op te lossen. `ClearDomainEvents` blijft `internal`. Probe: identieke uitvoer (events, handlers, logs, ValueObject, exception) voor 1.4.0, 1.5.0 en 2.1.0 tegen het origineel met MediatR 12.2.
-4. **Root-project**: het project met het pakket dat alle andere gebruikers (transitief) refereren; geen → Manual. Map bestaat al met bronbestanden → Manual.
-5. **`// <auto-generated>` + `#nullable enable` + expliciete usings + block-namespace + `global::Mediator.`**: compileert zonder warnings onder `latest-all`, `EnforceCodeStyleInBuild`, TWAE, met en zonder ImplicitUsings/Nullable, C# 11 (probe).
-6. **Afhankelijkheidsversie**: de versie die het project al had (pad in de NuGet-cache `<id>/<versie>/lib`), anders die uit de nuspec; een lagere directe referentie zou NU1605 geven. Met CPM pakt de store een bestaande `PackageVersion`.
-7. **Versies 1.0.0–1.3.0 blijven Manual** (andere API, in het corpus niet gebruikt); de rij noemt de ondersteunde versies.
-8. Gelijknamige `ICommand`/`IQuery` naast `using Mediator;` krijgen al de volle naam via `AddedTypes` (TAAK-144).
+1. **Vendor, not upgrade**: see Problem; 4.x is a different API and TFM.
+2. **Same namespace `Ardalis.SharedKernel` and type names** (also `MediatRDomainEventDispatcher`): not a single using or registration of the user needs to change.
+3. **Exact behaviour**: `LoggingBehavior` logged under category `MediatR.Mediator` (`ILogger<MediatR.Mediator>`); that class no longer exists, so `ILoggerFactory.CreateLogger("MediatR.Mediator")` — same category, resolvable by DI. `ClearDomainEvents` stays `internal`. Probe: identical output (events, handlers, logs, ValueObject, exception) for 1.4.0, 1.5.0 and 2.1.0 against the original with MediatR 12.2.
+4. **Root project**: the project with the package that all other users reference (transitively); none → Manual. Folder already exists with source files → Manual.
+5. **`// <auto-generated>` + `#nullable enable` + explicit usings + block namespace + `global::Mediator.`**: compiles without warnings under `latest-all`, `EnforceCodeStyleInBuild`, TWAE, with and without ImplicitUsings/Nullable, C# 11 (probe).
+6. **Dependency version**: the version the project already had (path in the NuGet cache `<id>/<version>/lib`), otherwise the one from the nuspec; a lower direct reference would give NU1605. With CPM the store takes an existing `PackageVersion`.
+7. **Versions 1.0.0–1.3.0 stay Manual** (different API, not used in the corpus); the row names the supported versions.
+8. Same-named `ICommand`/`IQuery` next to `using Mediator;` already get the full name via `AddedTypes` (TAAK-144).
 
-## Stappen
+## Steps
 
-- [x] 1. Onderzoek: NuGet-versies en afhankelijkheden, broncode per tag, ardalis-gebruik.
-- [x] 2. Probe `<probe-dir>/probe-194` (opgeruimd): origineel vs vendored, runtime-uitvoer gelijk.
-- [x] 3. Broncode + `ArdalisSharedKernel` + `VendoredPackages` + contracten.
-- [x] 4. `XmlProjectFileStore` nieuwe bestanden.
-- [x] 5. Proof `Proofs/MediatR/_Combined/Vendored/shared-kernel` + `VendoredProofTests`, unittests.
-- [x] 6. Docs (plan/modellen/verify, README, INDEX), proofs-doc.
+- [x] 1. Research: NuGet versions and dependencies, source code per tag, ardalis usage.
+- [x] 2. Probe `<probe-dir>/probe-194` (cleaned up): original vs vendored, runtime output equal.
+- [x] 3. Source code + `ArdalisSharedKernel` + `VendoredPackages` + contracts.
+- [x] 4. `XmlProjectFileStore` new files.
+- [x] 5. Proof `Proofs/MediatR/_Combined/Vendored/shared-kernel` + `VendoredProofTests`, unit tests.
+- [x] 6. Docs (plan/models/verify, README, INDEX), proofs-doc.
 - [x] 7. Build + tests.
-- [x] 8. Archief, queue.
+- [x] 8. Archive, queue.
 
-## Risico's & randgevallen
+## Risks & edge cases
 
-| Risico | Mitigatie |
-| ------ | --------- |
-| Gebruiker heeft eigen `ClearDomainEvents()` in een entity van het root-project (nu zichtbaar, CS0108) | Zeldzaam; build meldt het. Niet afgevangen. |
-| Project met `EnableDefaultCompileItems=false` compileert de nieuwe map niet | Niet afgevangen; build faalt dan zichtbaar. |
-| Gebruikers op verschillende versies van het pakket | Eerste versie telt; met CPM is het één versie. |
+| Risk | Mitigation |
+| ---- | ---------- |
+| User has their own `ClearDomainEvents()` in an entity of the root project (now visible, CS0108) | Rare; the build reports it. Not handled. |
+| Project with `EnableDefaultCompileItems=false` does not compile the new folder | Not handled; the build then fails visibly. |
+| Users on different versions of the package | The first version counts; with CPM it is one version. |
 
-## Gewijzigde bestanden
+## Changed files
 
 - `src/Unshackle.Core/Abstractions/IFix.cs`, `Models/ProjectFileChange.cs`, `Models/VendoredPackage.cs`, `Models/VendoredVersion.cs`, `Models/VendoredFile.cs`
 - `src/Unshackle.Core/Fixer.cs`, `VendoredPackages.cs`, `VendoredPlan.cs`, `Unshackle.Core.csproj`
 - `src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs`, `ArdalisSharedKernel.cs`, `Patterns/UnsupportedPattern.cs`, `Vendored/ArdalisSharedKernel/**`
 - `src/Unshackle.DataAccess/Projects/XmlProjectFileStore.cs`
-- `Directory.Packages.props`, `src/Unshackle.Tests/Unshackle.Tests.csproj`, `Helpers/TestReferences.cs`, `VendoredProofTests.cs`, `Proofs/MediatR/_Combined/Vendored/*`, unittests
+- `Directory.Packages.props`, `src/Unshackle.Tests/Unshackle.Tests.csproj`, `Helpers/TestReferences.cs`, `VendoredProofTests.cs`, `Proofs/MediatR/_Combined/Vendored/*`, unit tests
 
-## Zie ook
+## See also
 
 - `claude/docs/INDEX.md`
 - `docs/projectinfo/README.md`

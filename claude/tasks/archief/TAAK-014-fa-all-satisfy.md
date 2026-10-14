@@ -1,56 +1,56 @@
-# TAAK-014 — Patroon fa.all-satisfy
+# TAAK-014 — Pattern fa.all-satisfy
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-11
-**Doel**: `x.Should().AllSatisfy(a => ...)` wordt `x.ShouldNotBeEmpty(); foreach (...)`, met proofs, groen in `dotnet test`.
+**Status**: ✅ done
+**Created**: 2026-10-11
+**Goal**: `x.Should().AllSatisfy(a => ...)` becomes `x.ShouldNotBeEmpty(); foreach (...)`, with proofs, green in `dotnet test`.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Rij 13 in `claude/tasks/patroon-queue.md`. Sample: `OrderHandlerTests.cs` (`orders.Should().AllSatisfy(o => o.Total.Should().Be(20m))`).
+- Row 13 in `claude/tasks/patroon-queue.md`. Sample: `OrderHandlerTests.cs` (`orders.Should().AllSatisfy(o => o.Total.Should().Be(20m))`).
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-FA 7.2.2 `AllSatisfy(Action<T> expected, because, becauseArgs)`: voert per element een inspector met assertions uit en verzamelt alle fouten per index.
+FA 7.2.2 `AllSatisfy(Action<T> expected, because, becauseArgs)`: runs an inspector with assertions for each element and collects all failures per index.
 
-### Probleem
+### Problem
 
-Shouldly's `ShouldAllBe` neemt een `Expression<Func<T,bool>>`: een lambda met assertions (void) past er niet in. Gemeten gedrag FA: faalt op een lege collectie en op `null`; `ShouldAllBe` slaagt op leeg.
+Shouldly's `ShouldAllBe` takes an `Expression<Func<T,bool>>`: a lambda with assertions (void) does not fit. Measured FA behaviour: fails on an empty collection and on `null`; `ShouldAllBe` passes on empty.
 
-### Nieuwe situatie
+### New situation
 
-`AllSatisfyPattern` (ID `fa.all-satisfy`): statement `x.Should().AllSatisfy(lambda)` wordt `x.ShouldNotBeEmpty();` + `foreach (var a in x) { body }`.
+`AllSatisfyPattern` (ID `fa.all-satisfy`): the statement `x.Should().AllSatisfy(lambda)` becomes `x.ShouldNotBeEmpty();` + `foreach (var a in x) { body }`.
 
-### Verbetering
+### Improvement
 
-Sample wordt automatisch gemigreerd; de body-assertions worden door de andere patterns herschreven.
+The sample is migrated automatically; the body assertions are rewritten by the other patterns.
 
-## Keuzes
+## Choices
 
-| # | Keuze | Reden |
+| # | Choice | Reason |
 |---|---|---|
-| 1 | `foreach` i.p.v. `ShouldAllBe` of `ShouldSatisfyAllConditions` | De body bevat assertions (void), geen bool-expressie; een bool-omzetting per assertion is onbetrouwbaar (`Be` is Equals, `BeEquivalentTo`, ...) |
-| 2 | `x.ShouldNotBeEmpty();` ervoor | FA faalt op leeg/null (getest), foreach slaagt; zo blijft de semantiek gelijk |
-| 3 | Subject moet naam of member access zijn (anders Manual "evaluate it twice") | Subject komt twee keer voor |
-| 4 | Pattern staat **eerst** in `FluentAssertionsFix` | De `using Shouldly` komt pas na alle patterns; staat dit pattern achteraan, dan is de semantic model van de al herschreven body onbindbaar en vindt `Find` niets. Vooraan blijft de body FA en pakken ShouldBe e.a. hem als losse statements |
-| 5 | `because` en `becauseArgs` Manual | Bericht kan niet in de loop; alleen de check zou het krijgen |
-| 6 | Manual voor methodgroep, async lambda, `return` in body, parameter met modifier, niet in blok, resultaat gebruikt, `.And` | `return` zou de methode verlaten; de rest is niet als twee statements te schrijven |
-| 7 | Getypeerde parameter behoudt zijn type, anders `var` | Zelfde types als de lambda |
-| 8 | Blok-body wordt opnieuw laten inspringen via tekst (`Reindent`) en `ParseStatement` | Geen Formatter in Core; proofs vergelijken exacte tekst |
-| 9 | Eigen `IsSimple` (kopie uit `BeGreaterLessPattern`) | Niet in andermans bestanden/helper-API ingrijpen |
-| 10 | Foutmelding verschilt (eerste fout i.p.v. alle per index) | Gedocumenteerd in plan |
+| 1 | `foreach` instead of `ShouldAllBe` or `ShouldSatisfyAllConditions` | The body contains assertions (void), not a bool expression; converting each assertion to a bool is unreliable (`Be` is Equals, `BeEquivalentTo`, ...) |
+| 2 | `x.ShouldNotBeEmpty();` before it | FA fails on empty/null (tested), foreach passes; this keeps the semantics the same |
+| 3 | Subject must be a name or member access (otherwise Manual "evaluate it twice") | The subject appears twice |
+| 4 | Pattern comes **first** in `FluentAssertionsFix` | The `using Shouldly` is only added after all patterns; if this pattern came last, the semantic model of the already rewritten body could not be bound and `Find` would find nothing. Placed first, the body is still FA and ShouldBe and others pick it up as standalone statements |
+| 5 | `because` and `becauseArgs` Manual | The message cannot go into the loop; only the check would get it |
+| 6 | Manual for method group, async lambda, `return` in body, parameter with modifier, not in a block, result used, `.And` | `return` would exit the method; the rest cannot be written as two statements |
+| 7 | A typed parameter keeps its type, otherwise `var` | Same types as the lambda |
+| 8 | Block body is re-indented via text (`Reindent`) and `ParseStatement` | No Formatter in Core; proofs compare exact text |
+| 9 | Own `IsSimple` (copy from `BeGreaterLessPattern`) | Do not interfere with other people's files/helper API |
+| 10 | The failure message differs (first failure instead of all per index) | Documented in the plan |
 
-## Stappen
+## Steps
 
-- [x] 1. Claimen en taak aanmaken
-- [x] 2. Onderzoek (gedrag FA op leeg/null/meerdere fouten gemeten)
-- [x] 3. KingmaDoc-plan (12 REQ)
-- [x] 4. `AllSatisfyPattern` + registratie
+- [x] 1. Claim and create task
+- [x] 2. Research (FA behaviour on empty/null/multiple failures measured)
+- [x] 3. KingmaDoc plan (12 REQ)
+- [x] 4. `AllSatisfyPattern` + registration
 - [x] 5. Proofs (`AllSatisfy/`, 13)
-- [x] 6. Modellen, verify, archiveren, rij `klaar`
+- [x] 6. Models, verify, archive, row `klaar`
 
-## Zie ook
+## See also
 
 - `claude/tasks/patroon-queue.md`
 - `docs/projectinfo/patterns/fa-all-satisfy-plan.md`

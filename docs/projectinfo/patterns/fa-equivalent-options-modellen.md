@@ -1,8 +1,8 @@
-# Modellen: fa.equivalent-options
+# Models: fa.equivalent-options
 
-`BeEquivalentTo(y, o => ...)`: opties vervallen, worden `ShouldBe` of Manual. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EquivalentOptionsPattern.cs`. Diagrammen met de hand in Mermaid (kingmadoc/d2 ontbreken).
+`BeEquivalentTo(y, o => ...)`: options are dropped, become `ShouldBe`, or Manual. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/EquivalentOptionsPattern.cs`. Diagrams by hand in Mermaid (kingmadoc/d2 missing).
 
-**Figure 1.** Klassen rond `EquivalentOptionsPattern`.
+**Figure 1.** Classes around `EquivalentOptionsPattern`.
 
 ```mermaid
 classDiagram
@@ -15,14 +15,14 @@ classDiagram
     PatternResult <|-- ManualResult
 ```
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
-| `BeEquivalentToObjectPattern` | `.../Patterns/BeEquivalentToObjectPattern.cs` | Basis: object- en leaf-collectievorm; `HasOptions`, `ElementType`, `IsLeaf` zijn protected; zijn `Find` slaat `BeEquivalentTo` met options over |
-| `EquivalentOptionsPattern` | `.../Patterns/EquivalentOptionsPattern.cs` | Dit patroon, Id `fa.equivalent-options` |
+| `BeEquivalentToObjectPattern` | `.../Patterns/BeEquivalentToObjectPattern.cs` | Base: object and leaf-collection form; `HasOptions`, `ElementType`, `IsLeaf` are protected; its `Find` skips `BeEquivalentTo` with options |
+| `EquivalentOptionsPattern` | `.../Patterns/EquivalentOptionsPattern.cs` | This pattern, Id `fa.equivalent-options` |
 | `FluentAssertionsSyntax` | `.../FluentAssertionsSyntax.cs` | `FindInvocations`, `Invoke` |
-| `PatternResult` e.a. | `src/Unshackle.Core/Models/` | Uitkomst |
+| `PatternResult` etc. | `src/Unshackle.Core/Models/` | Outcome |
 
-**Figure 2.** Volgorde.
+**Figure 2.** Sequence.
 
 ```mermaid
 sequenceDiagram
@@ -31,49 +31,49 @@ sequenceDiagram
     Fixer->>EquivalentOptionsPattern: Rewrite (FluentAssertionPattern)
     EquivalentOptionsPattern->>EquivalentOptionsPattern: RewriteAssertion
     EquivalentOptionsPattern->>EquivalentOptionsPattern: TryGetOptionCalls, OptionReason
-    alt strikte volgorde op collectie
+    alt strict order on a collection
         EquivalentOptionsPattern->>EquivalentOptionsPattern: IsValueLike, StrictOrdering
         EquivalentOptionsPattern->>FluentAssertionsSyntax: Invoke("ShouldBe")
-    else opties vervallen
-        EquivalentOptionsPattern->>BeEquivalentToObjectPattern: RewriteAssertion (zonder lambda)
+    else options dropped
+        EquivalentOptionsPattern->>BeEquivalentToObjectPattern: RewriteAssertion (without lambda)
     end
     EquivalentOptionsPattern-->>Fixer: Fixed / Manual
 ```
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Place | What happens |
 | --- | --- | --- |
-| Find | `Find` | Alleen `BeEquivalentTo` met een `EquivalencyAssertionOptions`-parameter |
-| Lambda lezen | `TryGetOptionCalls` | De ketenaanroepen van `o => o.A().B()` in volgorde |
-| Opties | `RewriteAssertion` | Strikt-vlag, no-ops, anders een reden per optie |
-| Waarde-items | `IsValueLike` | Leaf, sealed record, record struct of struct met alleen leaf-velden |
+| Find | `Find` | Only `BeEquivalentTo` with an `EquivalencyAssertionOptions` parameter |
+| Read the lambda | `TryGetOptionCalls` | The chain calls of `o => o.A().B()` in order |
+| Options | `RewriteAssertion` | Strict flag, no-ops, otherwise a reason per option |
+| Value items | `IsValueLike` | Leaf, sealed record, record struct or struct with only leaf fields |
 
-**Figure 3.** Beslisboom.
+**Figure 3.** Decision tree.
 
 ```mermaid
 flowchart TD
-    A{Inline lambda o => o.Optie?} -- nee --> M0[Manual: no inline lambda: block-body, options-variable]
-    A -- ja --> B{Optie buiten WithStrictOrdering, WithoutStrictOrdering, ExcludingMissingMembers, ThrowingOnMissingMembers?}
-    B -- ja --> M1[Manual: reden per optie: excluding, including, using-comparer, comparing-by-value, respecting-runtime-types, with-tracing]
-    B -- nee --> C{Laatste strikt-vlag aan en subject is collectie?}
-    C -- ja --> D{Itemtypes gelijk?}
-    D -- nee --> M2[Manual: strict-ordering-item-types]
-    D -- ja --> E{Items waarde-vergelijkbaar?}
-    E -- nee --> M3[Manual: strict-ordering-class, -record-unsealed, -record-computed, -record-list-member]
-    E -- ja --> F1["x.ShouldBe(y) of ShouldBe(y, ignoreOrder: false, because): strict-ordering, -record, -record-struct, -struct, -because"]
-    C -- nee --> G[BeEquivalentToObjectPattern zonder opties]
-    G --> H{Basis Fixed?}
-    H -- ja --> F2["ShouldBeEquivalentTo(y) of ShouldBe(y, ignoreOrder: true): excluding-missing-members, without-strict-ordering, strict-ordering-object"]
-    H -- nee --> M4[Manual uit basis; bij ExcludingMissingMembers en andere types eigen reden: excluding-missing-members-other-type]
+    A{Inline lambda o => o.Option?} -- no --> M0[Manual: no inline lambda: block-body, options-variable]
+    A -- yes --> B{Option other than WithStrictOrdering, WithoutStrictOrdering, ExcludingMissingMembers, ThrowingOnMissingMembers?}
+    B -- yes --> M1[Manual: reason per option: excluding, including, using-comparer, comparing-by-value, respecting-runtime-types, with-tracing]
+    B -- no --> C{Last strict flag on and subject is a collection?}
+    C -- yes --> D{Item types equal?}
+    D -- no --> M2[Manual: strict-ordering-item-types]
+    D -- yes --> E{Items value-comparable?}
+    E -- no --> M3[Manual: strict-ordering-class, -record-unsealed, -record-computed, -record-list-member]
+    E -- yes --> F1["x.ShouldBe(y) or ShouldBe(y, ignoreOrder: false, because): strict-ordering, -record, -record-struct, -struct, -because"]
+    C -- no --> G[BeEquivalentToObjectPattern without options]
+    G --> H{Base Fixed?}
+    H -- yes --> F2["ShouldBeEquivalentTo(y) or ShouldBe(y, ignoreOrder: true): excluding-missing-members, without-strict-ordering, strict-ordering-object"]
+    H -- no --> M4[Manual from the base; with ExcludingMissingMembers and other types an own reason: excluding-missing-members-other-type]
 ```
 
-| Vraag | Uitkomst | Proof |
+| Question | Outcome | Proof |
 | --- | --- | --- |
-| Inline lambda? | Anders Manual | `block-body`, `options-variable` |
-| Onbekende of veranderende optie? | Manual per optie | `excluding`, `excluding-two`, `including`, `using-comparer`, ... |
-| Strikt op collectie, waarde-items? | `ShouldBe(y)` | `strict-ordering`, `strict-ordering-record` |
-| Anders | Basispatroon zonder lambda | `without-strict-ordering`, `strict-ordering-object` |
+| Inline lambda? | Otherwise Manual | `block-body`, `options-variable` |
+| Unknown or changing option? | Manual per option | `excluding`, `excluding-two`, `including`, `using-comparer`, ... |
+| Strict on a collection, value items? | `ShouldBe(y)` | `strict-ordering`, `strict-ordering-record` |
+| Otherwise | Base pattern without the lambda | `without-strict-ordering`, `strict-ordering-object` |
 
-## Zie ook
+## See also
 
 - [fa-equivalent-options-plan.md](fa-equivalent-options-plan.md)
 - [fa-equivalent-options-verify.md](fa-equivalent-options-verify.md)

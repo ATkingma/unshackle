@@ -1,39 +1,39 @@
-# Klassen: contracten en modellen van Unshackle.Core
+# Classes: contracts and models of Unshackle.Core
 
-**Figure 1.** Contracten (`Abstractions/`) en modellen (`Models/`) rond `Fixer`. Weggelaten: `FluentAssertionsFix` en de patterns (zie [patronen.md](patronen.md)) en `UsingDirectives`.
+**Figure 1.** Contracts (`Abstractions/`) and models (`Models/`) around `Fixer`. Omitted: `FluentAssertionsFix` and the patterns (see [patronen.md](patronen.md)) and `UsingDirectives`.
 
 <!-- kingmadoc:diagram img/klassen-1.d2 -->
-![Klassen: contracten en modellen van Unshackle.Core](img/klassen-1.png)
+![Classes: contracts and models of Unshackle.Core](img/klassen-1.png)
 
-| Element | Pad | Rol |
-| ------- | --- | --- |
-| `IFixer` / `Fixer` | `Abstractions/IFixer.cs`, `Fixer.cs` | Enige ingang (Facade): draait één fix op een `Solution` |
-| `IFix` | `Abstractions/IFix.cs` | Eén migratie (Strategy): patterns plus toe te voegen en te verwijderen usings |
-| `IPattern` | `Abstractions/IPattern.cs` | Eén soort code vinden (`Find`) en herschrijven (`Rewrite`); gooit nooit |
-| `FixRequest` | `Models/FixRequest.cs` | Welke fix (`FixId`) |
-| `FixReport` | `Models/FixReport.cs` | Nieuwe `Solution` en alle bevindingen |
-| `Finding` | `Models/Finding.cs` | Eén gevonden node: bestand, regel (0 = heel bestand), fix, pattern, resultaat |
-| `PatternResult` | `Models/PatternResult.cs` | Fabrieksmethoden `Fixed` (één of meer nodes) en `Manual` |
-| `FixedResult` | `Models/FixedResult.cs` | Vervangende nodes en benodigde namespaces |
-| `ManualResult` | `Models/ManualResult.cs` | Reden waarom handwerk nodig is |
+| Element | Path | Role |
+| ------- | ---- | ---- |
+| `IFixer` / `Fixer` | `Abstractions/IFixer.cs`, `Fixer.cs` | Single entry point (Facade): runs one fix on a `Solution` |
+| `IFix` | `Abstractions/IFix.cs` | One migration (Strategy): patterns plus usings to add and remove |
+| `IPattern` | `Abstractions/IPattern.cs` | Finds (`Find`) and rewrites (`Rewrite`) one kind of code; never throws |
+| `FixRequest` | `Models/FixRequest.cs` | Which fix (`FixId`) |
+| `FixReport` | `Models/FixReport.cs` | New `Solution` and all findings |
+| `Finding` | `Models/Finding.cs` | One found node: file, line (0 = whole file), fix, pattern, result |
+| `PatternResult` | `Models/PatternResult.cs` | Factory methods `Fixed` (one or more nodes) and `Manual` |
+| `FixedResult` | `Models/FixedResult.cs` | Replacement nodes and required namespaces |
+| `ManualResult` | `Models/ManualResult.cs` | Reason why manual work is needed |
 
-**Figure 2.** Contracten die Core vastlegt voor I/O (`Abstractions/`) en hun implementaties in `Unshackle.DataAccess`.
+**Figure 2.** Contracts that Core defines for I/O (`Abstractions/`) and their implementations in `Unshackle.DataAccess`.
 
 <!-- kingmadoc:diagram img/klassen-2.d2 -->
-![Klassen: contracten en modellen van Unshackle.Core](img/klassen-2.png)
+![Classes: contracts and models of Unshackle.Core](img/klassen-2.png)
 
-| Element | Pad | Rol |
-| ------- | --- | --- |
-| `ISolutionStore` / `MsBuildSolutionStore` | `Abstractions/ISolutionStore.cs`, `DataAccess/Solutions/` | Solution laden en wijzigingen wegschrijven via één `MSBuildWorkspace` |
-| `SolutionLoadException` | `Abstractions/SolutionLoadException.cs` | MSBuild meldde laadfouten (`Errors`); de CLI maakt er exitcode 1 van |
-| `IReportWriter` / `Csv`-, `Json`-, `MarkdownReportWriter` | `Abstractions/IReportWriter.cs`, `DataAccess/Reports/` | Eén rapportformaat per extensie (Strategy) |
-| `ReportRow` | `DataAccess/Reports/ReportRow.cs` | `Finding` → kolommen `File,Line,Fix,Pattern,Status,Reason` |
-| `IProjectFileStore` / `XmlProjectFileStore` | `Abstractions/IProjectFileStore.cs`, `DataAccess/Projects/` | Projectbestanden aanpassen (`EditAsync` → `ProjectFileChange`, zonder schrijven) en wegschrijven (`SaveAsync`) |
-| `ProjectMigration` / `PackageMigration` / `ProjectFileChange` | `Models/` | Per project: welk pakket weg/erbij, houdt het project het oude pakket; resultaat: oude en nieuwe tekst per bestand |
-| `ISourceControl` / `GitSourceControl` | `Abstractions/ISourceControl.cs`, `DataAccess/SourceControl/` | Heeft de werkmap niet-gecommitte wijzigingen? (`fix` weigert dan zonder `--force`) |
+| Element | Path | Role |
+| ------- | ---- | ---- |
+| `ISolutionStore` / `MsBuildSolutionStore` | `Abstractions/ISolutionStore.cs`, `DataAccess/Solutions/` | Load the solution and save changes through a single `MSBuildWorkspace` |
+| `SolutionLoadException` | `Abstractions/SolutionLoadException.cs` | MSBuild reported load errors (`Errors`); the CLI turns it into exit code 1 |
+| `IReportWriter` / `Csv`-, `Json`-, `MarkdownReportWriter` | `Abstractions/IReportWriter.cs`, `DataAccess/Reports/` | One report format per extension (Strategy) |
+| `ReportRow` | `DataAccess/Reports/ReportRow.cs` | `Finding` → columns `File,Line,Fix,Pattern,Status,Reason` |
+| `IProjectFileStore` / `XmlProjectFileStore` | `Abstractions/IProjectFileStore.cs`, `DataAccess/Projects/` | Edit project files (`EditAsync` → `ProjectFileChange`, without writing) and save them (`SaveAsync`) |
+| `ProjectMigration` / `PackageMigration` / `ProjectFileChange` | `Models/` | Per project: which package goes/comes, does the project keep the old package; result: old and new text per file |
+| `ISourceControl` / `GitSourceControl` | `Abstractions/ISourceControl.cs`, `DataAccess/SourceControl/` | Does the working tree have uncommitted changes? (`fix` then refuses without `--force`) |
 
-## Zie ook
+## See also
 
-- [fix-flow.md](fix-flow.md) — hoe `FixAsync` deze klassen gebruikt
-- [../architectuur/core.md](../architectuur/core.md) — ontwerp en keuzes
-- [../README.md](../README.md) — C4-overzicht
+- [fix-flow.md](fix-flow.md) — how `FixAsync` uses these classes
+- [../architectuur/core.md](../architectuur/core.md) — design and choices
+- [../README.md](../README.md) — C4 overview

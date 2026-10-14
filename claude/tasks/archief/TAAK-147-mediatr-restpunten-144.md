@@ -1,31 +1,31 @@
-# TAAK-147 — MediatR: restpunten TAAK-144 (generator op naam, global using, InternalsVisibleTo)
+# TAAK-147 — MediatR: remaining points of TAAK-144 (generator by name, global using, InternalsVisibleTo)
 
-**Status**: klaar (2026-10-11)
-**Aangemaakt**: 2026-10-11
-**Gevonden in**: `claude/tasks/archief/TAAK-144-mediatr-evo2-naamconflict-generator.md` (Niet gedaan, `shortcut:`-commentaar)
+**Status**: done (2026-10-11)
+**Created**: 2026-10-11
+**Found in**: `claude/tasks/archief/TAAK-144-mediatr-evo2-naamconflict-generator.md` (Not done, `shortcut:` comments)
 
-## Opdracht en keuze per punt
+## Assignment and choice per point
 
-1. **Generator op naam.** `OnlyWithCallTo = ["AddMediator", "AddMediatR"]` matchte syntactisch op de gefixte code, dus ook een eigen `AddMediator` (evo2's `MediatorModule`). Nu: `ProjectPackages.ForProjectAsync` kijkt naar de **originele** code en telt alleen aanroepen die semantisch binden aan de verwijderde package (MediatR's `AddMediatR`). `OnlyWithCallTo = ["AddMediatR"]`; `PlanAsync` krijgt de originele solution mee. Test `SwappedTypesTests.FixAsync_ProjectCallingOwnAddMediator_AddsNoSourceGenerator`.
-2. **Global using.** Een geswapte `global using MediatR;` → `global using Mediator;` bereikt elk bestand van het project, maar `UsingDirectives.Clashing` liep alleen voor lokaal toegevoegde usings. Nu: `Fixer.SwapGlobalUsingsAsync` roept `UsingDirectives.QualifyClashingAsync` aan op elk document van het project (zelfde volledige-naam-kwalificatie). Proof `RequestHandler/edge-own-command-name-global`, test `SwappedTypesTests.FixAsync_GlobalUsingSwappedWithOwnTypeOfSameName_QualifiesOwnTypeInEveryFile`.
-3. **InternalsVisibleTo.** Een `internal` registratiemethode met een gescande assembly-parameter in een assembly met `InternalsVisibleTo` (behalve `DynamicProxyGenAssembly2`, de mocking-proxy) → Manual. Een pattern ziet de solution niet, dus elke friend telt (shortcut in code). Proof `AddMediatR/edge-assemblies-friend`, test `AddMediatRPatternTests.Rewrite_AssemblyParameterOfInternalMethodWithFriend_ManualUnlessMockingProxy`.
+1. **Generator by name.** `OnlyWithCallTo = ["AddMediator", "AddMediatR"]` matched syntactically on the fixed code, so also an own `AddMediator` (evo2's `MediatorModule`). Now: `ProjectPackages.ForProjectAsync` looks at the **original** code and only counts calls that bind semantically to the removed package (MediatR's `AddMediatR`). `OnlyWithCallTo = ["AddMediatR"]`; `PlanAsync` gets the original solution. Test `SwappedTypesTests.FixAsync_ProjectCallingOwnAddMediator_AddsNoSourceGenerator`.
+2. **Global using.** A swapped `global using MediatR;` → `global using Mediator;` reaches every file of the project, but `UsingDirectives.Clashing` only ran for locally added usings. Now: `Fixer.SwapGlobalUsingsAsync` calls `UsingDirectives.QualifyClashingAsync` on every document of the project (the same full-name qualification). Proof `RequestHandler/edge-own-command-name-global`, test `SwappedTypesTests.FixAsync_GlobalUsingSwappedWithOwnTypeOfSameName_QualifiesOwnTypeInEveryFile`.
+3. **InternalsVisibleTo.** An `internal` registration method with a scanned assembly parameter in an assembly with `InternalsVisibleTo` (except `DynamicProxyGenAssembly2`, the mocking proxy) → Manual. A pattern does not see the solution, so every friend counts (shortcut in code). Proof `AddMediatR/edge-assemblies-friend`, test `AddMediatRPatternTests.Rewrite_AssemblyParameterOfInternalMethodWithFriend_ManualUnlessMockingProxy`.
 
-## Stappen
+## Steps
 
 - [x] Code (Core: `ProjectPackages`, `Fixer`, `UsingDirectives`, `AddMediatRPattern`, `MediatRFix`)
-- [x] Proofs + unittests (zie boven)
-- [x] Pattern-docs `mediatr-add-mediatr-plan.md` / `-verify.md`
+- [x] Proofs + unit tests (see above)
+- [x] Pattern docs `mediatr-add-mediatr-plan.md` / `-verify.md`
 - [x] `dotnet build`, `dotnet test` (724/724), samples 38/38
-- [x] Harnas `claude/tools/corpus-regression.sh` op verse bron `/mnt/dikkeschijf/unshackle-corpus/src/evo`, uitvoer `/mnt/dikkeschijf/unshackle-corpus/t147/out/`:
-      evo1 `ok` 45/45 → 45/45, 0 regressies. **Nu Manual** (punt 3): `Fitnet.IntegrationTests` roept de internal `AddInMemoryEventBus(Assembly.GetExecutingAssembly())` echt aan via `InternalsVisibleTo`; solution ongewijzigd.
-      evo2 `ok` 39/39 → 39/39, 0 regressies, 2 Manual zoals in TAAK-144, solution ongewijzigd.
+- [x] Harness `claude/tools/corpus-regression.sh` on the fresh source `<corpus>/src/evo`, output `<corpus>/t147/out/`:
+      evo1 `ok` 45/45 → 45/45, 0 regressions. **Now Manual** (point 3): `Fitnet.IntegrationTests` really calls the internal `AddInMemoryEventBus(Assembly.GetExecutingAssembly())` via `InternalsVisibleTo`; solution unchanged.
+      evo2 `ok` 39/39 → 39/39, 0 regressions, 2 Manual as in TAAK-144, solution unchanged.
 
-## Niet gedaan
+## Not done
 
-- Punt 1 en 2 worden door evo1/evo2 niet geraakt (beide solutions blijven door `AllOrNothing` onaangeroerd); alleen door unittests/proofs gedekt.
-- Punt 3 controleert niet of de friend de methode echt aanroept (vals-positief geeft Manual, nooit kapotte code).
+- Points 1 and 2 are not hit by evo1/evo2 (both solutions stay untouched through `AllOrNothing`); only covered by unit tests/proofs.
+- Point 3 does not check whether the friend really calls the method (a false positive gives Manual, never broken code).
 
-## Zie ook
+## See also
 
 - `claude/tasks/archief/TAAK-144-mediatr-evo2-naamconflict-generator.md`
 - `claude/tasks/archief/TAAK-141-mediatr-assembly-parameter-discard.md`

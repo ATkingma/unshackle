@@ -13,49 +13,49 @@ files_expected:
     - src/Unshackle.Tests/Proofs/MediatR/_Combined/Vendored/
 ---
 
-# Feature: mediatr.vendored-package: pakket dat op MediatR bouwt (Ardalis.SharedKernel)
+# Feature: mediatr.vendored-package: a package that builds on MediatR (Ardalis.SharedKernel)
 
 |               |                         |
 | ------------- | ----------------------- |
 | **Project**   | Unshackle               |
 | **Status**    | Approved                |
-| **Generated** | 2026-10-12 (met de hand, kingmadoc ontbreekt) |
+| **Generated** | 2026-10-12 (by hand, kingmadoc missing) |
 
-> Opgesteld uit TAAK-194 (corpusrun 2026-10-12, ardalis v9.1.0: 11× "Ardalis.SharedKernel builds on MediatR").
+> Drawn up from TAAK-194 (corpus run 2026-10-12, ardalis v9.1.0: 11× "Ardalis.SharedKernel builds on MediatR").
 
 ## One-sentence summary
 
-Gebruikt een solution Ardalis.SharedKernel 1.4.0–3.0.1 (bouwt op MediatR), dan zet de fix de broncode van die versie, met Mediator in plaats van MediatR, in het project dat alle gebruikers refereren, en vervangt het pakket door zijn eigen afhankelijkheden; namespace, typen en gedrag blijven gelijk.
+If a solution uses Ardalis.SharedKernel 1.4.0–3.0.1 (builds on MediatR), the fix puts the source code of that version, with Mediator instead of MediatR, in the project that all users reference, and replaces the package with its own dependencies; namespace, types and behaviour stay the same.
 
 ## Scope (in / out)
 
 **In scope**:
-- Ardalis.SharedKernel 1.4.0, 1.5.0, 1.6.0, 2.1.0, 2.1.1 en 3.0.1 (alle typen: `DomainEventBase`, `EntityBase`(`<TId>`, `<T, TId>`), `HasDomainEventsBase`, `IHasDomainEvents`, `IAggregateRoot`, `ICommand`, `ICommandHandler`, `IQuery`, `IQueryHandler`, `IRepository`, `IReadRepository`, `IDomainEventDispatcher`, `MediatRDomainEventDispatcher`, `LoggingBehavior`, `ValueObject`).
-- Projectbestanden: pakket weg uit elk project, het root-project krijgt Ardalis.GuardClauses, Ardalis.Specification en Microsoft.Extensions.Logging.Abstractions (CPM: bestaande `PackageVersion` blijft).
+- Ardalis.SharedKernel 1.4.0, 1.5.0, 1.6.0, 2.1.0, 2.1.1 and 3.0.1 (all types: `DomainEventBase`, `EntityBase`(`<TId>`, `<T, TId>`), `HasDomainEventsBase`, `IHasDomainEvents`, `IAggregateRoot`, `ICommand`, `ICommandHandler`, `IQuery`, `IQueryHandler`, `IRepository`, `IReadRepository`, `IDomainEventDispatcher`, `MediatRDomainEventDispatcher`, `LoggingBehavior`, `ValueObject`).
+- Project files: the package removed from every project, the root project gets Ardalis.GuardClauses, Ardalis.Specification and Microsoft.Extensions.Logging.Abstractions (CPM: an existing `PackageVersion` stays).
 
-**Out of scope**: Ardalis.SharedKernel 1.0.0–1.3.0 (andere API, niet in het corpus) en andere pakketten op MediatR: Manual zoals voorheen (TAAK-133). Een upgrade naar 4.x is bewust geen optie (zie Assumptions).
+**Out of scope**: Ardalis.SharedKernel 1.0.0–1.3.0 (different API, not in the corpus) and other packages on MediatR: Manual as before (TAAK-133). An upgrade to 4.x is deliberately not an option (see Assumptions).
 
 ## Requirements
 
-- **REQ-1**: WHEN een project een ondersteunde versie van Ardalis.SharedKernel refereert THE SYSTEM SHALL geen Manual "builds on MediatR" meer melden en de gebruikerscode migreren zoals andere MediatR-code (proof `_Combined/Vendored/shared-kernel`).
-- **REQ-2**: WHEN alle gebruikers van het pakket (transitief) één ervan refereren THE SYSTEM SHALL de broncode van die versie in `<dat project>/Ardalis.SharedKernel/` zetten, met `LICENSE.txt`, als nieuwe bestanden (proof `_Combined/Vendored/shared-kernel`, test `VendoredPackagesTests.FixAsync_UsersShareOneProject_*`).
-- **REQ-3**: THE SYSTEM SHALL in die broncode dezelfde namespace, typenamen, signaturen en het runtimegedrag van de versie houden, op `global::Mediator` (probe: identieke uitvoer; proof compileert zonder warnings).
-- **REQ-4**: WHEN het pakket vendored wordt THE SYSTEM SHALL het uit alle projectbestanden halen en het root-project zijn afhankelijkheden geven, in dezelfde bewerking als de MediatR-swap (tests `EditAsync_VendoredPackage_*`, `FixAsync_UsersShareOneProject_*`).
-- **REQ-5**: IF de gebruikers geen gemeenschappelijk project hebben, de versie niet ondersteund is, of de map al bronbestanden heeft THEN THE SYSTEM SHALL Manual melden met de reden (test `FixAsync_UsersShareNoProject_ReportsManual`).
-- **REQ-6**: WHEN een nieuw bestand al op schijf staat THE SYSTEM SHALL niets schrijven en melden (test `SaveAsync_NewFileAlreadyThere_*`).
+- **REQ-1**: WHEN a project references a supported version of Ardalis.SharedKernel THE SYSTEM SHALL no longer report the Manual "builds on MediatR" and migrate the user code like other MediatR code (proof `_Combined/Vendored/shared-kernel`).
+- **REQ-2**: WHEN all users of the package (transitively) reference one of them THE SYSTEM SHALL put the source code of that version in `<that project>/Ardalis.SharedKernel/`, with `LICENSE.txt`, as new files (proof `_Combined/Vendored/shared-kernel`, test `VendoredPackagesTests.FixAsync_UsersShareOneProject_*`).
+- **REQ-3**: THE SYSTEM SHALL keep the same namespace, type names, signatures and the runtime behaviour of the version in that source code, on `global::Mediator` (probe: identical output; the proof compiles without warnings).
+- **REQ-4**: WHEN the package is vendored THE SYSTEM SHALL remove it from all project files and give the root project its dependencies, in the same operation as the MediatR swap (tests `EditAsync_VendoredPackage_*`, `FixAsync_UsersShareOneProject_*`).
+- **REQ-5**: IF the users have no common project, the version is not supported, or the folder already has source files THEN THE SYSTEM SHALL report Manual with the reason (test `FixAsync_UsersShareNoProject_ReportsManual`).
+- **REQ-6**: WHEN a new file already exists on disk THE SYSTEM SHALL write nothing and report it (test `SaveAsync_NewFileAlreadyThere_*`).
 
 ## Assumptions
 
-- Ardalis.SharedKernel 4.0.0+ bouwt op Mediator.Abstractions maar heeft `ICommand`/`IQuery`/handlers verwijderd, `ClearDomainEvents` public gemaakt en vraagt net9.0: geen drop-in. Broncode is MIT (Copyright (c) 2022 Steve Smith); de licentie gaat mee.
-- `LoggingBehavior` logde onder `ILogger<MediatR.Mediator>` (categorie `MediatR.Mediator`); de vendored versie neemt `ILoggerFactory` en maakt dezelfde categorie.
-- Gelijknamige `ICommand<T>`, `IQuery<T>` en handlers naast `using Mediator;` krijgen de volle naam via `AddedTypes` (TAAK-144).
-- De fix is alles-of-niets: een Manual hier laat de hele solution ongemoeid.
+- Ardalis.SharedKernel 4.0.0+ builds on Mediator.Abstractions but removed `ICommand`/`IQuery`/handlers, made `ClearDomainEvents` public and requires net9.0: not a drop-in. The source code is MIT (Copyright (c) 2022 Steve Smith); the licence comes along.
+- `LoggingBehavior` logged under `ILogger<MediatR.Mediator>` (category `MediatR.Mediator`); the vendored version takes `ILoggerFactory` and creates the same category.
+- Same-named `ICommand<T>`, `IQuery<T>` and handlers next to `using Mediator;` get the full name via `AddedTypes` (TAAK-144).
+- The fix is all-or-nothing: a Manual here leaves the whole solution untouched.
 
-## Modellen
+## Models
 
 [mediatr-vendored-package-modellen.md](mediatr-vendored-package-modellen.md).
 
-## Zie ook
+## See also
 
 - [mediatr-vendored-package-verify.md](mediatr-vendored-package-verify.md)
 - [mediatr-unsupported-plan.md](mediatr-unsupported-plan.md)

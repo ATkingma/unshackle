@@ -8,14 +8,14 @@
 
 > Verified by an AI agent against uncommitted changes (basis bcf1156).
 
-| REQ   | Oordeel | Bewijs                                                                                |
+| REQ   | Verdict | Evidence                                                                                |
 | ----- | ------- | ------------------------------------------------------------------------------------- |
-| REQ-1 | Gehaald | proof `CustomAssertion/extension`                                                     |
-| REQ-2 | Gehaald | proof `CustomAssertion/subclass`                                                      |
-| REQ-3 | Gehaald | `IsFluentAssertions(method)` als eerste check; alle bestaande FA-proofs blijven groen |
-| REQ-4 | Gehaald | unittest `ReportWriterTests.FromAll_CustomAssertionCalls_OneRowPerAssertionWithCount` |
-| REQ-5 | Gehaald | handmatig op corpus FluentResults: 7 extensies (`BeFailure` 31x, `HaveReason` 25x, …) |
-| Uitbreiding | Gehaald | proof `CustomAssertion/in-assertion-scope` (reden: Custom assertion `ScopedResultAssertions.BeFailure`) |
+| REQ-1 | Met | proof `CustomAssertion/extension`                                                     |
+| REQ-2 | Met | proof `CustomAssertion/subclass`                                                      |
+| REQ-3 | Met | `IsFluentAssertions(method)` as the first check; all existing FA proofs stay green |
+| REQ-4 | Met | unittest `ReportWriterTests.FromAll_CustomAssertionCalls_OneRowPerAssertionWithCount` |
+| REQ-5 | Met | by hand on corpus FluentResults: 7 extensions (`BeFailure` 31x, `HaveReason` 25x, …) |
+| Extension | Met | proof `CustomAssertion/in-assertion-scope` (reason: Custom assertion `ScopedResultAssertions.BeFailure`) |
 
 ## Deviations
 

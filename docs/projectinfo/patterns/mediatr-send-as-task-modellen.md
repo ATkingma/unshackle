@@ -1,49 +1,49 @@
-# Modellen: mediatr.send-as-task
+# Models: mediatr.send-as-task
 
-Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/SendAsTaskPattern.cs`.
+Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/SendAsTaskPattern.cs`.
 
-## Figuur 1: klassen
+## Figure 1: classes
 
-**Figure 1.** `SendAsTaskPattern` en de MediatR- en Mediator-returntypen.
+**Figure 1.** `SendAsTaskPattern` and the MediatR and Mediator return types.
 
 <!-- kingmadoc:diagram img/mediatr-send-as-task-modellen-1.d2 -->
-![Figuur 1: klassen](img/mediatr-send-as-task-modellen-1.png)
+![Figure 1: classes](img/mediatr-send-as-task-modellen-1.png)
 
-| Element             | Rol                                                               |
+| Element             | Role                                                              |
 | ------------------- | ----------------------------------------------------------------- |
-| `SendAsTaskPattern` | Vindt niet-ge-awaite `Send`/`Publish` uit assembly `MediatR`      |
-| `IsAwaited`         | `await x`, `await (x)`, `await x.ConfigureAwait(...)` → overslaan |
+| `SendAsTaskPattern` | Finds non-awaited `Send`/`Publish` from assembly `MediatR`        |
+| `IsAwaited`         | `await x`, `await (x)`, `await x.ConfigureAwait(...)` → skip      |
 | MediatR             | `Task<T> Send(...)`, `Task Publish(...)`                          |
 | Mediator            | `ValueTask<T> Send(...)`, `ValueTask Publish(...)`, `.AsTask()`   |
 
-## Figuur 2: sequence
+## Figure 2: sequence
 
-**Figure 2.** Van `Fixer` via `Find` en `Rewrite` naar `Fixed`.
+**Figure 2.** From `Fixer` via `Find` and `Rewrite` to `Fixed`.
 
 <!-- kingmadoc:diagram img/mediatr-send-as-task-modellen-2.d2 -->
-![Figuur 2: sequence](img/mediatr-send-as-task-modellen-2.png)
+![Figure 2: sequence](img/mediatr-send-as-task-modellen-2.png)
 
-| Stap      | Methode in de code                   | Wat gebeurt er                          |
+| Step      | Method in the code                   | What happens                            |
 | --------- | ------------------------------------ | --------------------------------------- |
-| Vinden    | `Find` met `GetSymbolInfo`           | `Send`/`Publish` uit assembly `MediatR` |
-| Filteren  | `IsAwaited`                          | Directe await blijft staan              |
-| Schrijven | `SyntaxFactory.InvocationExpression` | `x.Send(...).AsTask()`, trivia behouden |
+| Find      | `Find` with `GetSymbolInfo`          | `Send`/`Publish` from assembly `MediatR` |
+| Filter    | `IsAwaited`                          | A direct await stays in place           |
+| Write     | `SyntaxFactory.InvocationExpression` | `x.Send(...).AsTask()`, trivia preserved |
 
-## Figuur 3: beslisboom
+## Figure 3: decision tree
 
-**Figure 3.** Vragen van `Find`/`Rewrite`.
+**Figure 3.** Questions asked by `Find`/`Rewrite`.
 
 <!-- kingmadoc:diagram img/mediatr-send-as-task-modellen-3.d2 -->
-![Figuur 3: beslisboom](img/mediatr-send-as-task-modellen-3.png)
+![Figure 3: decision tree](img/mediatr-send-as-task-modellen-3.png)
 
-| Blad                   | Voorwaarde                        | Bewijs                     |
+| Leaf                   | Condition                         | Proof                      |
 | ---------------------- | --------------------------------- | -------------------------- |
-| niet gevonden          | geen `Send`/`Publish` van MediatR | n.v.t.                     |
+| not found              | no `Send`/`Publish` from MediatR  | n/a                        |
 | Manual "called with ?." | `x?.Send(...)` (MemberBinding)  | `null-conditional`         |
-| blijft staan           | direct ge-await                   | `task-uses`                |
-| `.AsTask()` toegevoegd | elk ander gebruik                 | `task-uses`, `send-object` |
+| stays in place         | directly awaited                  | `task-uses`                |
+| `.AsTask()` added      | every other use                   | `task-uses`, `send-object` |
 
-## Zie ook
+## See also
 
 - [mediatr-send-as-task-plan.md](mediatr-send-as-task-plan.md)
 - [mediatr-send-as-task-verify.md](mediatr-send-as-task-verify.md)

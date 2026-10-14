@@ -10,19 +10,19 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` (claimt de nodes), herschrijving via `ThrowSyntax.Rewrite` in `ThrowPattern`, `ThrowAsyncPattern`, `NotThrowPattern` en `ThrowMessage`; registratie in `FluentAssertionsFix.cs` (`s_assertions`, dus ook schakel van `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/Invoking/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` (claims the nodes), rewriting via `ThrowSyntax.Rewrite` in `ThrowPattern`, `ThrowAsyncPattern`, `NotThrowPattern` and `ThrowMessage`; registration in `FluentAssertionsFix.cs` (`s_assertions`, so also a link of `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/Invoking/`, run by `ProofTests`.
 
-| REQ | Oordeel | Bewijs |
+| REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Gehaald | `simple, func` |
-| REQ-2 | Gehaald | `because-message` |
-| REQ-3 | Gehaald | `throw-exactly, awaiting-exactly` |
-| REQ-4 | Gehaald | `not-throw` |
-| REQ-5 | Gehaald | `awaiting` |
-| REQ-6 | Gehaald | `side-effect-receiver, value-type, method-group` |
-| REQ-7 | Gehaald (becauseArgs vervangen) | `assertion-scope, aggregate` |
-| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` |
-| Uitbreiding TAAK-220 | Gehaald | `aggregate-parameter-and`, `aggregate-parameter-message`, `awaiting-wait-async` (Manual): lambda-parameter als receiver (`_ => _.Wait(..)`) met `Throw<Exception>` en gebruikte exception, en `t => t.WaitAsync(..)` |
+| REQ-1 | Met | `simple, func` |
+| REQ-2 | Met | `because-message` |
+| REQ-3 | Met | `throw-exactly, awaiting-exactly` |
+| REQ-4 | Met | `not-throw` |
+| REQ-5 | Met | `awaiting` |
+| REQ-6 | Met | `side-effect-receiver, value-type, method-group` |
+| REQ-7 | Met (becauseArgs replaced) | `assertion-scope, aggregate` |
+| Extension TAAK-097 | Met | `because-args.after.cs` |
+| Extension TAAK-220 | Met | `aggregate-parameter-and`, `aggregate-parameter-message`, `awaiting-wait-async` (Manual): lambda parameter as receiver (`_ => _.Wait(..)`) with `Throw<Exception>` and a used exception, and `t => t.WaitAsync(..)` |
 
 ## Deviations
 
@@ -40,14 +40,14 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/InvokingPattern.cs` (c
 
 ## Corpus (TAAK-170, TAAK-173)
 
-- Polly 7.2.4 (`b1a5a17`, 2026-10-13, harnas zonder kloon-wijzigingen): Fixed 4449 → 5255, Manual 964 → 171, build 0 fouten, tests 5685/5685 → 5685/5685, 0 regressies.
+- Polly 7.2.4 (`b1a5a17`, 2026-10-13, harness without clone changes): Fixed 4449 → 5255, Manual 964 → 171, build 0 errors, tests 5685/5685 → 5685/5685, 0 regressions.
 
 ## TAAK-220..222 (2026-10-13)
 
 - `dotnet build` 0 warnings; `dotnet test` 1093/1093; sample 38/38.
-- Corpus ronde 5: Akka 1 regressie (bekend, TAAK-200), Steeltoe 0, LiteDB 0 (was 10/18/26).
+- Corpus round 5: Akka 1 regression (known, TAAK-200), Steeltoe 0, LiteDB 0 (was 10/18/26).
 
-## Zie ook
+## See also
 
 - [fa-invoking-modellen.md](fa-invoking-modellen.md)
 - `claude/docs/patroon-loop.md`

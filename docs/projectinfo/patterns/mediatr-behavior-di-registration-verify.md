@@ -13,30 +13,30 @@
 Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/BehaviorDiRegistrationPattern.cs`, registratie in `MediatRFix.cs`.
 Proofs: `src/Unshackle.Tests/Proofs/MediatR/BehaviorDiRegistration/`. Unittests: `src/Unshackle.Tests/Core/BehaviorDiRegistrationPatternTests.cs`.
 
-| REQ   | Oordeel | Bewijs                                                                                               |
+| REQ   | Verdict | Evidence                                                                                               |
 | ----- | ------- | ---------------------------------------------------------------------------------------------------- |
-| REQ-1 | Gehaald | `transient`                                                                                          |
-| REQ-2 | Gehaald | `lifetimes` (`AddScoped`, `AddSingleton`, gesloten `IPipelineBehavior<Ping, int>`)                   |
-| REQ-3 | Gehaald | `Rewrite` geeft altijd `Fixed(node)`; meting t145 (behavior draait na migratie, alle drie lifetimes) |
+| REQ-1 | Met | `transient`                                                                                          |
+| REQ-2 | Met | `lifetimes` (`AddScoped`, `AddSingleton`, gesloten `IPipelineBehavior<Ping, int>`)                   |
+| REQ-3 | Met | `Rewrite` always returns `Fixed(node)`; measurement t145 (the behavior runs after the migration, all three lifetimes) |
 
-End-to-end (`/mnt/dikkeschijf/unshackle-corpus/t145-run/`): `unshackle fix --fix mediatr` → 5 Fixed, 0 Manual
-(waaronder `mediatr.behavior-di-registration`); daarna bouwt het project tegen Mediator 3.0.2 en de test die eist dat de
-DI-geregistreerde behavior `before`/`after` logt is groen.
+End-to-end (`<corpus>/t145-run/`): `unshackle fix --fix mediatr` → 5 Fixed, 0 Manual
+(including `mediatr.behavior-di-registration`); afterwards the project builds against Mediator 3.0.2 and the test that requires the
+DI-registered behavior to log `before`/`after` is green.
 
 ## Deviations
 
-Geen.
+None.
 
 ## Validation results
 
 | Check   | Command                                                     | Result                                  |
 | ------- | ----------------------------------------------------------- | --------------------------------------- |
 | Build   | `dotnet build`                                              | passed (0 warnings)                     |
-| Tests   | `dotnet test`                                               | 712/712 groen                           |
-| Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 groen                             |
-| Lint    | _geen_                                                      | _not run_: geen lint-commando ingesteld |
+| Tests   | `dotnet test`                                               | 712/712 green                           |
+| Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 green                             |
+| Lint    | _none_                                                      | _not run_: no lint command configured   |
 
-## Zie ook
+## See also
 
 - [mediatr-behavior-di-registration-plan.md](mediatr-behavior-di-registration-plan.md)
 - [mediatr-behavior-di-registration-modellen.md](mediatr-behavior-di-registration-modellen.md)

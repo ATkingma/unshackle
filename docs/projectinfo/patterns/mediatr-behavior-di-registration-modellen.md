@@ -1,48 +1,48 @@
-# Modellen: mediatr.behavior-di-registration
+# Models: mediatr.behavior-di-registration
 
-Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/BehaviorDiRegistrationPattern.cs`.
+Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/BehaviorDiRegistrationPattern.cs`.
 
-## Figuur 1: klassen
+## Figure 1: classes
 
-**Figure 1.** `BehaviorDiRegistrationPattern` en de typen die hij herkent.
+**Figure 1.** `BehaviorDiRegistrationPattern` and the types it recognises.
 
 <!-- kingmadoc:diagram img/mediatr-behavior-di-registration-modellen-1.d2 -->
-![Figuur 1: klassen](img/mediatr-behavior-di-registration-modellen-1.png)
+![Figure 1: classes](img/mediatr-behavior-di-registration-modellen-1.png)
 
-| Element                              | Rol                                                                                  |
+| Element                              | Role                                                                                 |
 | ------------------------------------ | ------------------------------------------------------------------------------------ |
-| `BehaviorDiRegistrationPattern`      | Vindt de DI-registratie, geeft de node ongewijzigd `Fixed` terug                     |
+| `BehaviorDiRegistrationPattern`      | Finds the DI registration, returns the node unchanged as `Fixed`                     |
 | `IPattern`                           | `Find` + `Rewrite`                                                                   |
-| `FixedResult`                        | `NewNodes` = de originele aanroep, geen `Warning`                                    |
+| `FixedResult`                        | `NewNodes` = the original call, no `Warning`                                         |
 | `ServiceCollectionServiceExtensions` | `AddTransient`/`AddScoped`/`AddSingleton(Type, Type)`                                |
-| `MediatR.IPipelineBehavior<,>`       | Herkend type; `MediatRFix.SwappedTypes` maakt er `Mediator.IPipelineBehavior<,>` van |
+| `MediatR.IPipelineBehavior<,>`       | Recognised type; `MediatRFix.SwappedTypes` turns it into `Mediator.IPipelineBehavior<,>` |
 
-## Figuur 2: sequence
+## Figure 2: sequence
 
-**Figure 2.** Van `Fixer` via `Find` en `Rewrite` naar `Fixed`.
+**Figure 2.** From `Fixer` via `Find` and `Rewrite` to `Fixed`.
 
 <!-- kingmadoc:diagram img/mediatr-behavior-di-registration-modellen-2.d2 -->
-![Figuur 2: sequence](img/mediatr-behavior-di-registration-modellen-2.png)
+![Figure 2: sequence](img/mediatr-behavior-di-registration-modellen-2.png)
 
-| Stap      | Methode in de code              | Wat gebeurt er                                        |
+| Step      | Method in the code              | What happens                                          |
 | --------- | ------------------------------- | ----------------------------------------------------- |
-| Vinden    | `Find`, `GetSymbolInfo`         | `Add*` uit `Microsoft.Extensions.DependencyInjection` |
-| Type      | `GetTypeInfo(serviceType.Type)` | eerste `typeof` is `IPipelineBehavior\`2`uit`MediatR` |
-| Schrijven | `PatternResult.Fixed(node)`     | node blijft; de Fixer swapt daarna de using           |
+| Find      | `Find`, `GetSymbolInfo`         | `Add*` from `Microsoft.Extensions.DependencyInjection` |
+| Type      | `GetTypeInfo(serviceType.Type)` | the first `typeof` is `IPipelineBehavior\`2` from `MediatR` |
+| Write     | `PatternResult.Fixed(node)`     | the node stays; the Fixer then swaps the using        |
 
-## Figuur 3: beslisboom
+## Figure 3: decision tree
 
-**Figure 3.** Vragen van `Find`/`Rewrite`.
+**Figure 3.** Questions of `Find`/`Rewrite`.
 
 <!-- kingmadoc:diagram img/mediatr-behavior-di-registration-modellen-3.d2 -->
-![Figuur 3: beslisboom](img/mediatr-behavior-di-registration-modellen-3.png)
+![Figure 3: decision tree](img/mediatr-behavior-di-registration-modellen-3.png)
 
-| Blad          | Voorwaarde                                                                      | Bewijs                         |
-| ------------- | ------------------------------------------------------------------------------- | ------------------------------ |
-| niet gevonden | geen twee `typeof`-argumenten, ander `Add*` of ander type                       | unittest `Find_Registration_…` |
-| blijft staan  | `AddTransient/AddScoped/AddSingleton(typeof(IPipelineBehavior<..>), typeof(X))` | `transient`, `lifetimes`       |
+| Leaf          | Condition                                                                       | Evidence                        |
+| ------------- | ------------------------------------------------------------------------------- | ------------------------------- |
+| not found     | not two `typeof` arguments, another `Add*` or another type                      | unit test `Find_Registration_…` |
+| stays         | `AddTransient/AddScoped/AddSingleton(typeof(IPipelineBehavior<..>), typeof(X))` | `transient`, `lifetimes`        |
 
-## Zie ook
+## See also
 
 - [mediatr-behavior-di-registration-plan.md](mediatr-behavior-di-registration-plan.md)
 - [mediatr-behavior-di-registration-verify.md](mediatr-behavior-di-registration-verify.md)

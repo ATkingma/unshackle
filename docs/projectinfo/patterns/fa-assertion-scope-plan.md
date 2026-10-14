@@ -9,7 +9,7 @@ files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
   - src/Unshackle.Tests/Proofs/FluentAssertions/AssertionScope/
 ---
-# Feature: fa.assertion-scope: AssertionScope als Manual melden, assertions erbinnen nooit stil herschrijven
+# Feature: fa.assertion-scope: report AssertionScope as Manual, never silently rewrite assertions inside it
 
 | | |
 |---|---|
@@ -17,49 +17,49 @@ files_expected:
 | **Status** | Approved |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-031.
+> Drafted from TAAK-031.
 
 ## One-sentence summary
 
-fa.assertion-scope: `new AssertionScope(...)` wordt `Manual` met advies `ShouldSatisfyAllConditions` (sinds TAAK-100: een gewone scope met alleen assertions wordt `ShouldSatisfyAllConditions`, zie REQ-7), en elke FA-assertion binnen zo'n scope wordt `Manual` in plaats van `Fixed`, omdat Shouldly bij de eerste fout stopt.
+fa.assertion-scope: `new AssertionScope(...)` becomes `Manual` with the advice `ShouldSatisfyAllConditions` (since TAAK-100: a plain scope with only assertions becomes `ShouldSatisfyAllConditions`, see REQ-7), and every FA assertion inside such a scope becomes `Manual` instead of `Fixed`, because Shouldly stops at the first failure.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Gedeelde check `FluentAssertionsSyntax.IsInsideAssertionScope`: body van `using (new AssertionScope(...))` en statements ná `using var scope = new AssertionScope();` in hetzelfde blok of dieper; ook geneste scopes en `new()` met doeltype.
-- Alle FA-patronen vragen de check als eerste stap in `Rewrite`.
-- Patroon `fa.assertion-scope`: elke `new AssertionScope(...)` (ook met context-string) → `Manual`.
+- Shared check `FluentAssertionsSyntax.IsInsideAssertionScope`: body of `using (new AssertionScope(...))` and statements after `using var scope = new AssertionScope();` in the same block or deeper; also nested scopes and target-typed `new()`.
+- All FA patterns ask for the check as the first step in `Rewrite`.
+- Pattern `fa.assertion-scope`: every `new AssertionScope(...)` (also with a context string) → `Manual`.
 
 **Out of scope**
 
-- ~~Automatisch herschrijven naar `ShouldSatisfyAllConditions`~~: sinds TAAK-100 wel voor een gewone scope met alleen FA-assertion-statements; scopes met andere statements, `Discard()` of `AddReportable` blijven Manual.
-- Subklassen: `AssertionScope` is `sealed` in FA 7.2.2 (CS0509), dus niet mogelijk.
+- ~~Automatically rewriting to `ShouldSatisfyAllConditions`~~: done since TAAK-100 for a plain scope with only FA assertion statements; scopes with other statements, `Discard()` or `AddReportable` stay Manual.
+- Subclasses: `AssertionScope` is `sealed` in FA 7.2.2 (CS0509), so not possible.
 
 ## Requirements
 
-- **REQ-1** (vervangen door REQ-7/REQ-8): WHEN `using (new AssertionScope())` gebruikt wordt THE SYSTEM SHALL de scope als Manual melden (proof `AssertionScope/using-block`).
-- **REQ-2** (vervangen door REQ-7/REQ-8): WHEN `using var scope = new AssertionScope()` of `using AssertionScope scope = new()` gebruikt wordt THE SYSTEM SHALL de scope als Manual melden (proofs `AssertionScope/using-var`, `AssertionScope/target-typed`).
-- **REQ-3**: WHEN de scope een context-string krijgt THE SYSTEM SHALL de scope als Manual melden (proof `AssertionScope/context`).
-- **REQ-4**: IF een FA-assertion in de body van een scope-`using` staat (ook genest dieper) THEN THE SYSTEM SHALL Manual geven met "Inside an AssertionScope" (proofs `ShouldBe/assertion-scope-using-block`, `ShouldBe/assertion-scope-nested`; unittest `IsInsideAssertionScope_DependsOnEnclosingScope`).
-- **REQ-5**: IF een FA-assertion na `using var` met een scope in hetzelfde blok of dieper staat THEN THE SYSTEM SHALL Manual geven (proof `ShouldBe/assertion-scope-using-var`; unittest).
-- **REQ-6**: WHEN een assertion vóór de `using var`, na het scope-blok, of in een andere `using` staat THE SYSTEM SHALL het patroon gewoon laten herschrijven (unittest `IsInsideAssertionScope_DependsOnEnclosingScope`, `false`-gevallen).
-- **REQ-7** (Uitbreiding TAAK-100): WHEN `using (new AssertionScope()) { ... }` of één `using var s = new AssertionScope();` (variabele verder ongebruikt) zonder argumenten alleen FA-assertion-statements bevat, zonder `await` en ref-locals, THE SYSTEM SHALL de scope vervangen door `x.ShouldSatisfyAllConditions(() => { a; }, () => { b; });` (`x` = eerste subject dat veilig twee keer te evalueren is), waarna de assertion-patronen de lambda's herschrijven (proofs `_Combined/scope-using-block`, `_Combined/scope-using-var`). Probe: beide verzamelen alle fouten.
-- **REQ-8** (Uitbreiding TAAK-100): IF de scope een context-string heeft, de scope-variabele gebruikt wordt (`Discard()`), er een ander statement in staat of een `await` THEN THE SYSTEM SHALL Manual geven met advies `ShouldSatisfyAllConditions`, en de assertions erin blijven Manual "Inside an AssertionScope" (proofs `AssertionScope/context`, `discard`, `other-statement`, `await`).
+- **REQ-1** (replaced by REQ-7/REQ-8): WHEN `using (new AssertionScope())` is used THE SYSTEM SHALL report the scope as Manual (proof `AssertionScope/using-block`).
+- **REQ-2** (replaced by REQ-7/REQ-8): WHEN `using var scope = new AssertionScope()` or `using AssertionScope scope = new()` is used THE SYSTEM SHALL report the scope as Manual (proofs `AssertionScope/using-var`, `AssertionScope/target-typed`).
+- **REQ-3**: WHEN the scope gets a context string THE SYSTEM SHALL report the scope as Manual (proof `AssertionScope/context`).
+- **REQ-4**: IF an FA assertion is in the body of a scope `using` (also nested deeper) THEN THE SYSTEM SHALL give Manual with "Inside an AssertionScope" (proofs `ShouldBe/assertion-scope-using-block`, `ShouldBe/assertion-scope-nested`; unit test `IsInsideAssertionScope_DependsOnEnclosingScope`).
+- **REQ-5**: IF an FA assertion follows a `using var` with a scope in the same block or deeper THEN THE SYSTEM SHALL give Manual (proof `ShouldBe/assertion-scope-using-var`; unit test).
+- **REQ-6**: WHEN an assertion is before the `using var`, after the scope block, or in another `using` THE SYSTEM SHALL let the pattern rewrite it as usual (unit test `IsInsideAssertionScope_DependsOnEnclosingScope`, `false` cases).
+- **REQ-7** (Extension TAAK-100): WHEN `using (new AssertionScope()) { ... }` or a single `using var s = new AssertionScope();` (variable otherwise unused) without arguments contains only FA assertion statements, without `await` and ref locals, THE SYSTEM SHALL replace the scope with `x.ShouldSatisfyAllConditions(() => { a; }, () => { b; });` (`x` = first subject that is safe to evaluate twice), after which the assertion patterns rewrite the lambdas (proofs `_Combined/scope-using-block`, `_Combined/scope-using-var`). Probe: both collect all failures.
+- **REQ-8** (Extension TAAK-100): IF the scope has a context string, the scope variable is used (`Discard()`), it contains another statement or an `await` THEN THE SYSTEM SHALL give Manual with the advice `ShouldSatisfyAllConditions`, and the assertions inside stay Manual "Inside an AssertionScope" (proofs `AssertionScope/context`, `discard`, `other-statement`, `await`).
 
 ## Assumptions
 
-- Type wordt via het semantisch model herkend (`FluentAssertions.Execution.AssertionScope`), niet op naam.
-- Een lambda binnen de scope die later draait valt syntactisch binnen de scope: Manual is dan te voorzichtig, maar veilig.
+- The type is recognized via the semantic model (`FluentAssertions.Execution.AssertionScope`), not by name.
+- A lambda inside the scope that runs later is syntactically inside the scope: Manual is then too cautious, but safe.
 
 ## Risks
 
-- Meer Manual-meldingen in projecten die veel scopes gebruiken; dat is bewust (geen stille gedragswijziging).
+- More Manual reports in projects that use many scopes; that is deliberate (no silent behaviour change).
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [fa-assertion-scope-modellen.md](fa-assertion-scope-modellen.md).
+Class diagram, sequence and decision tree: [fa-assertion-scope-modellen.md](fa-assertion-scope-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

@@ -1,55 +1,55 @@
-# TAAK-135 — Laden: Razor-componenten, `.dcproj` en niet-ladende bijprojecten blokkeren de hele solution
+# TAAK-135 — Loading: Razor components, `.dcproj` and non-loading bystander projects block the whole solution
 
-**Status**: klaar (2026-10-11)
-**Aangemaakt**: 2026-10-11
-**Gevonden in**: `claude/tasks/CORPUSRUN-mediatr.md` (eShopOnWeb, dotnet/eShop, kgrzybek)
+**Status**: done (2026-10-11)
+**Created**: 2026-10-11
+**Found in**: `claude/tasks/CORPUSRUN-mediatr.md` (eShopOnWeb, dotnet/eShop, kgrzybek)
 
-## Probleem
+## Problem
 
-`MsBuildSolutionStore.LoadAsync` weigert de solution bij:
+`MsBuildSolutionStore.LoadAsync` rejects the solution on:
 
-1. **CS0246/CS0234 op Razor-gegenereerde typen**: eShopOnWeb `BlazorAdmin` (`Edit`, `Delete`, `Details` zijn
-   `.razor`-componenten), dotnet/eShop `WebApp` (`eShop.WebApp.Components`). Bouwt prima met `dotnet build`;
-   in de workspace draait de Razor-generator kennelijk niet. Zelfs na restore: "Types do not resolve".
-2. **Niet-C#-projecten**: `docker-compose.dcproj` ("extension not associated with a language").
-3. **Eén bijproject dat niet laadt**: kgrzybek `_build` (Nuke) en `Database.Build` (MSBuild.Sdk.SqlProj) — ze
-   gebruiken geen MediatR maar houden de hele migratie tegen.
+1. **CS0246/CS0234 on Razor-generated types**: eShopOnWeb `BlazorAdmin` (`Edit`, `Delete`, `Details` are
+   `.razor` components), dotnet/eShop `WebApp` (`eShop.WebApp.Components`). Builds fine with `dotnet build`;
+   in the workspace the Razor generator apparently does not run. Even after restore: "Types do not resolve".
+2. **Non-C# projects**: `docker-compose.dcproj` ("extension not associated with a language").
+3. **One bystander project that does not load**: kgrzybek `_build` (Nuke) and `Database.Build` (MSBuild.Sdk.SqlProj) — they
+   do not use MediatR but hold up the whole migration.
 
-Twee van de bekendste MediatR-voorbeelden (eShopOnWeb, eShop) laden daardoor nooit.
+As a result, two of the best-known MediatR samples (eShopOnWeb, eShop) never load.
 
-## Wat, waar, hoe
+## What, where, how
 
-- **Waar**: `src/Unshackle.DataAccess/Solutions/MsBuildSolutionStore.cs` (`IsTolerable`, de CS0246-check).
-- **Hoe**: (1) CS0246-check alleen op projecten die het pakket van de fix refereren, of diagnostics in
-  `*.razor`/gegenereerde bestanden en onbekende namen die als `.razor`-bestand in het project bestaan negeren;
-  (2) projecten zonder taal (`.dcproj`, `.sqlproj`) tolereren als waarschuwing; (3) een niet-ladend project dat
-  het te verwijderen pakket niet refereert tolereren. Waarschuwing in het rapport houden.
-- Geen proof: unittests in `src/Unshackle.Tests/DataAccess/`.
+- **Where**: `src/Unshackle.DataAccess/Solutions/MsBuildSolutionStore.cs` (`IsTolerable`, the CS0246 check).
+- **How**: (1) CS0246 check only on projects that reference the fix's package, or ignore diagnostics in
+  `*.razor`/generated files and unknown names that exist as a `.razor` file in the project;
+  (2) tolerate projects without a language (`.dcproj`, `.sqlproj`) as a warning; (3) tolerate a non-loading project that
+  does not reference the package to be removed. Keep a warning in the report.
+- No proof: unit tests in `src/Unshackle.Tests/DataAccess/`.
 
-## Stappen
+## Steps
 
-- [x] Rode tests (razor-component, dcproj, project zonder pakket dat faalt)
-- [x] Tolerantie
-- [x] `dotnet build` + `dotnet test` groen
+- [x] Red tests (razor component, dcproj, failing project without the package)
+- [x] Tolerance
+- [x] `dotnet build` + `dotnet test` green
 
-## Resultaat
+## Result
 
 `src/Unshackle.DataAccess/Solutions/MsBuildSolutionStore.cs`:
 
-- `RazorNames`: CS0246/CS0234 op een naam die een `.razor`-bestand of een map met `.razor`-bestanden in de projectmap is,
-  telt niet als "niet gerestored" (de workspace draait de Razor-generator niet).
-- `IsTolerable` + `SharesNoPackage`: een bestaand projectbestand dat niet laadt (`.dcproj`, `.sqlproj`, ontbrekende SDK) wordt
-  overgeslagen met waarschuwing als het geen `PackageReference` deelt met de geladen projecten; deelt het er één, dan blijft het
-  fataal (TAAK-090: een gedeeld pakketbestand kan dan veranderen). Alleen paden die rooted zijn tellen; voorheen werd `.dcproj`
-  per ongeluk getolereerd omdat het fragment `'.dcproj'` "niet bestond".
-- Niet-gerestorede bijprojecten zonder afhankelijken: al opgelost in TAAK-112 (hergebruikt, kgrzybek `_build`).
+- `RazorNames`: CS0246/CS0234 on a name that is a `.razor` file or a folder with `.razor` files in the project folder
+  does not count as "not restored" (the workspace does not run the Razor generator).
+- `IsTolerable` + `SharesNoPackage`: an existing project file that does not load (`.dcproj`, `.sqlproj`, missing SDK) is
+  skipped with a warning if it shares no `PackageReference` with the loaded projects; if it shares one, it stays
+  fatal (TAAK-090: a shared package file may then change). Only rooted paths count; previously `.dcproj` was
+  accidentally tolerated because the fragment `'.dcproj'` "did not exist".
+- Unrestored bystander projects without dependents: already solved in TAAK-112 (reused, kgrzybek `_build`).
 - Tests: `SampleShopTests.Load_RazorComponentNames_DoNotFailTheLoad`,
-  `Load_UnloadableBystanderProject_IsSkippedUnlessItSharesAPackage` (2 gevallen).
-- Corpus (verse kopieën `scratchpad/v131/`): eShopOnWeb laadt, 9 Fixed / 0 Manual, **build groen**. dotnet/eShop (MAUI-projecten
-  uit de kopie-solution, zoals de corpus-run): laadt, 36 Manual (alles-of-niets), build faalt alleen op ASPIRE009 zoals de baseline.
-  kgrzybek laadt (258 Manual), build faalt alleen op MSBuild.Sdk.SqlProj (omgeving).
+  `Load_UnloadableBystanderProject_IsSkippedUnlessItSharesAPackage` (2 cases).
+- Corpus (fresh copies `scratchpad/v131/`): eShopOnWeb loads, 9 Fixed / 0 Manual, **build green**. dotnet/eShop (MAUI projects
+  removed from the copy solution, as in the corpus run): loads, 36 Manual (all-or-nothing), build fails only on ASPIRE009 like the baseline.
+  kgrzybek loads (258 Manual), build fails only on MSBuild.Sdk.SqlProj (environment).
 
 
-## Zie ook
+## See also
 
 - `claude/tasks/CORPUSRUN-mediatr.md`

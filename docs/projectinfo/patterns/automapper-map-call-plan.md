@@ -17,62 +17,62 @@ files_expected:
 | ------------- | ----------------------------------------------------------------- |
 | **Project**   | Unshackle                                                         |
 | **Status**    | Approved                                                          |
-| **Generated** | 2026-10-12 by KingmaDoc (handmatig, `kingmadoc` niet beschikbaar) |
+| **Generated** | 2026-10-12 by KingmaDoc (by hand, `kingmadoc` not available)      |
 
-> Opgesteld uit TAAK-157.
+> Drawn up from TAAK-157.
 
 ## One-sentence summary
 
-automapper.map-call: `mapper.Map<B>(a)` en `mapper.Map<A, B>(a)` worden `a.ToB()`, de extensiemethode die al bestaat of die `automapper.create-map` (of een ForMember-patroon) voor `CreateMap<A, B>` schrijft.
+automapper.map-call: `mapper.Map<B>(a)` and `mapper.Map<A, B>(a)` become `a.ToB()`, the extension method that already exists or that `automapper.create-map` (or a ForMember pattern) writes for `CreateMap<A, B>`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `Map<B>(a)` en `Map<A, B>(a)` van AutoMapper (één argument), aangeroepen op een naam, `this.x` of een keten van namen.
-- `ToB` die de aanroepende code al ziet, of die in de broncode van het project staat (dan een `using` voor de namespace).
-- `CreateMap<A, B>` in een profile dat de profile-patronen herschrijven, in hetzelfde project of een project waarvan het afhangt.
+- AutoMapper's `Map<B>(a)` and `Map<A, B>(a)` (one argument), called on a name, `this.x` or a chain of names.
+- A `ToB` that the calling code already sees, or that is in the project's source code (then a `using` for the namespace).
+- `CreateMap<A, B>` in a profile that the profile patterns rewrite, in the same project or a project it depends on.
 
-**Out of scope (Manual of ander patroon)**
+**Out of scope (Manual or another pattern)**
 
-- `Map(src, dest)`, `Map` met opties en `ProjectTo`: blijven Manual in `CreateMapPattern` (rijen 5 en 7).
-- Collecties (`Map<List<B>>(as)`), bron `object`/`dynamic`, een bron die volgens de nullable-flow null kan zijn.
-- Geen of een Manual-profile, meerdere profiles met dezelfde map, een internal methode in een ander project.
-- `IMapper`-injectie verwijderen: blijft staan (zie Ontwerp).
+- `Map(src, dest)`, `Map` with options and `ProjectTo`: stay Manual in `CreateMapPattern` (rows 5 and 7).
+- Collections (`Map<List<B>>(as)`), source `object`/`dynamic`, a source that can be null according to the nullable flow.
+- No profile or a Manual profile, several profiles with the same map, an internal method in another project.
+- Removing the `IMapper` injection: it stays (see Design).
 
-## Ontwerp
+## Design
 
-`MapCallPattern` is een `ISolutionPattern`. De Fixer fixt elk bestand tegen de originele solution: in een ander bestand bestaat `ToB` voor het semantic model nog niet. Het patroon zoekt daarom eerst een bestaande `ToB` (in scope, of in de broncode van de compilatie; dat dekt ook het profile in hetzelfde bestand, dat `CreateMapPattern` dan al herschreven heeft) en anders in de solution elk profile met `CreateMap<A, B>`. Daarvoor roept het `CreateMapPattern.Rewrite` aan en neemt het de methodenaam en toegankelijkheid uit de gegenereerde klasse, zodat die gelijk blijven aan wat de fix echt schrijft.
+`MapCallPattern` is an `ISolutionPattern`. The Fixer fixes every file against the original solution: in another file `ToB` does not exist yet for the semantic model. The pattern therefore first looks for an existing `ToB` (in scope, or in the compilation's source code; that also covers the profile in the same file, which `CreateMapPattern` has then already rewritten) and otherwise in the solution for every profile with `CreateMap<A, B>`. For that it calls `CreateMapPattern.Rewrite` and takes the method name and accessibility from the generated class, so they stay equal to what the fix really writes.
 
-`CreateMapPattern.Find` laat de aanroepen die `MapCallPattern.IsMapCall` herkent los; de rest van `Map`/`ProjectTo` blijft Manual en houdt met `AllOrNothing` de hele fix tegen.
+`CreateMapPattern.Find` leaves alone the calls that `MapCallPattern.IsMapCall` recognises; the rest of `Map`/`ProjectTo` stays Manual and with `AllOrNothing` holds back the whole fix.
 
-`IMapper` blijft geïnjecteerd: een constructorparameter weghalen verandert elke aanroeper (DI, tests met `new Service(mapper)`). Opruimen hoort bij rij 6 (`add-automapper`), als ook de registratie verdwijnt.
+`IMapper` stays injected: removing a constructor parameter changes every caller (DI, tests with `new Service(mapper)`). Cleaning up belongs to row 6 (`add-automapper`), when the registration disappears too.
 
 ## Requirements
 
-- **REQ-1**: WHEN `Map<B>(a)` of `Map<A, B>(a)` een zichtbare `ToB()` heeft THE SYSTEM SHALL de aanroep vervangen door `a.ToB()`, met haakjes waar nodig (proof `existing-method`).
-- **REQ-2**: WHEN het profile met `CreateMap<A, B>` herschreven wordt THE SYSTEM SHALL `a.ToB()` schrijven en de namespace van de extensieklasse importeren (combined proofs `map-call-profile`, `map-call-global`, unittest `FixAsync_ProfileInOtherFile_CallsGeneratedMethodWithUsing`).
-- **REQ-3**: WHEN het profile in een project staat waarvan het aanroepende project afhangt THE SYSTEM SHALL de publieke methode aanroepen en een internal methode Manual melden (unittest `FixAsync_ProfileInReferencedProject_FollowsAccessibility`).
-- **REQ-4**: IF bron of doel een collectie is THEN THE SYSTEM SHALL Manual melden (proof `collection`).
-- **REQ-5**: IF er geen herschreven `CreateMap<A, B>` en geen `ToB` is THEN THE SYSTEM SHALL Manual melden (proofs `unknown-map`, `manual-profile`).
-- **REQ-6**: IF de bron volgens de nullable-flow null kan zijn THEN THE SYSTEM SHALL Manual melden (proof `maybe-null`).
-- **REQ-7**: IF de bron `object` of `dynamic` is, of de ontvanger bijwerkingen kan hebben THEN THE SYSTEM SHALL Manual melden (proofs `object-source`, `receiver-call`).
-- **REQ-8**: WHEN `Map` met opties of `ProjectTo` voorkomt THE SYSTEM SHALL dat in `CreateMapPattern` Manual laten (geen eigen proof meer: `CreateMap/map-into` is verwijderd sinds `Map(src, dest)` naar `automapper.map-into` ging, zie [automapper-map-into-plan.md](automapper-map-into-plan.md); bijgewerkt in TAAK-159).
+- **REQ-1**: WHEN `Map<B>(a)` or `Map<A, B>(a)` has a visible `ToB()` THE SYSTEM SHALL replace the call with `a.ToB()`, with parentheses where needed (proof `existing-method`).
+- **REQ-2**: WHEN the profile with `CreateMap<A, B>` is rewritten THE SYSTEM SHALL write `a.ToB()` and import the namespace of the extension class (combined proofs `map-call-profile`, `map-call-global`, unit test `FixAsync_ProfileInOtherFile_CallsGeneratedMethodWithUsing`).
+- **REQ-3**: WHEN the profile is in a project the calling project depends on THE SYSTEM SHALL call the public method and report an internal method as Manual (unit test `FixAsync_ProfileInReferencedProject_FollowsAccessibility`).
+- **REQ-4**: IF source or destination is a collection THEN THE SYSTEM SHALL report Manual (proof `collection`).
+- **REQ-5**: IF there is no rewritten `CreateMap<A, B>` and no `ToB` THEN THE SYSTEM SHALL report Manual (proofs `unknown-map`, `manual-profile`).
+- **REQ-6**: IF the source can be null according to the nullable flow THEN THE SYSTEM SHALL report Manual (proof `maybe-null`).
+- **REQ-7**: IF the source is `object` or `dynamic`, or the receiver can have side effects THEN THE SYSTEM SHALL report Manual (proofs `object-source`, `receiver-call`).
+- **REQ-8**: WHEN `Map` with options or `ProjectTo` occurs THE SYSTEM SHALL leave it Manual in `CreateMapPattern` (no own proof any more: `CreateMap/map-into` was removed since `Map(src, dest)` went to `automapper.map-into`, see [automapper-map-into-plan.md](automapper-map-into-plan.md); updated in TAAK-159).
 
 ## Assumptions
 
-- AutoMapper kiest bij `Map<B>(object)` de map op het runtime-type; hier is het statische type van `a` de bron. Een afgeleid type met een eigen map wordt na de fix anders gemapt.
-- Zonder nullable-context is de flow-state `None`: dan wordt herschreven.
+- For `Map<B>(object)` AutoMapper chooses the map by the runtime type; here the static type of `a` is the source. A derived type with its own map is mapped differently after the fix.
+- Without a nullable context the flow state is `None`: then it is rewritten.
 
 ## Risks
 
-- `ToB` gooit bij `null` een NullReferenceException waar AutoMapper `null` gaf; code zonder nullable-context die `null` doorgeeft, merkt dat pas bij runtime.
-- Per aanroep wordt de solution op profiles doorzocht (alleen bestanden met de tekst `CreateMap`); bij veel aanroepen traag.
+- `ToB` throws a NullReferenceException on `null` where AutoMapper gave `null`; code without a nullable context that passes `null` only notices at runtime.
+- Per call the solution is searched for profiles (only files with the text `CreateMap`); slow with many calls.
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [automapper-map-call-modellen.md](automapper-map-call-modellen.md).
+Class diagram, sequence and decision tree: [automapper-map-call-modellen.md](automapper-map-call-modellen.md).
 
 ## Open questions
 
-- Ongebruikte `IMapper`-injectie: bij rij 6 meenemen.
+- Unused `IMapper` injection: include it with row 6.

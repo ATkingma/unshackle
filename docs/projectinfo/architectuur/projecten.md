@@ -1,35 +1,35 @@
-# Projecten en afhankelijkheden
+# Projects and dependencies
 
-## Projecten
+## Projects
 
 ```
 src/
-├─ Unshackle.Interface/     ← waar de gebruiker mee werkt (CLI: fix, scan, list), console-output
-├─ Unshackle.Core/          ← hoofdproject: de Fixer, fixes per bibliotheek, patronen per fix, contracten
-├─ Unshackle.DataAccess/    ← alles wat leest of schrijft: solutions (MSBuild), rapporten (CSV/JSON/Markdown)
-└─ Unshackle.Tests/         ← alle tests: unit, proofs per patroon, Integration/ (samples/)
+├─ Unshackle.Interface/     ← what the user works with (CLI: fix, scan, list), console output
+├─ Unshackle.Core/          ← main project: the Fixer, fixes per library, patterns per fix, contracts
+├─ Unshackle.DataAccess/    ← everything that reads or writes: solutions (MSBuild), reports (CSV/JSON/Markdown)
+└─ Unshackle.Tests/         ← all tests: unit, proofs per pattern, Integration/ (samples/)
 ```
 
-## Afhankelijkheden
+## Dependencies
 
 ```
 Interface ──► Core ◄── DataAccess
     └─────────────────────►┘
 ```
-- **Core kent geen ander project.** Wat Core van buiten nodig heeft, legt Core vast als
+- **Core knows no other project.** Whatever Core needs from outside, Core defines as an
   interface (`ISolutionStore`, `IReportWriter`).
-- **DataAccess implementeert die interfaces.**
-- **Interface koppelt alles** in `Program.cs` (composition root). Een tweede interface, zoals
-  web of een VS Code-extensie, kan later zonder Core of DataAccess aan te passen.
+- **DataAccess implements those interfaces.**
+- **Interface wires everything together** in `Program.cs` (composition root). A second interface, such as
+  web or a VS Code extension, can be added later without changing Core or DataAccess.
 
-## Build-instellingen
+## Build settings
 
 - .NET 10 (`global.json`), solution in `.slnx`
-- `Directory.Build.props`: nullable aan, warnings tellen als errors, analyzers op `latest-recommended`
-- `Directory.Packages.props`: alle pakketversies op één plek
-- Interface wordt gepubliceerd als `dotnet tool` met het commando `unshackle`
+- `Directory.Build.props`: nullable on, warnings count as errors, analyzers at `latest-recommended`
+- `Directory.Packages.props`: all package versions in one place
+- Interface is published as a `dotnet tool` with the command `unshackle`
 
-## Zie ook
+## See also
 
-- `docs/projectinfo/README.md` — overzicht en C4-diagrammen
-- `docs/projectinfo/architectuur/core.md` — binnen Core
+- `docs/projectinfo/README.md` — overview and C4 diagrams
+- `docs/projectinfo/architectuur/core.md` — inside Core

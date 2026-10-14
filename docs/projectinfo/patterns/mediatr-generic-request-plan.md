@@ -11,53 +11,53 @@ files_expected:
     - src/Unshackle.Tests/Proofs/MediatR/_Combined/identified-command-eshop.before.cs
 ---
 
-# Feature: mediatr.generic-request: generiek request → abstracte basis + concrete subklasse per gesloten type
+# Feature: mediatr.generic-request: generic request → abstract base + concrete subclass per closed type
 
 |               |                         |
 | ------------- | ----------------------- |
 | **Project**   | Unshackle               |
 | **Status**    | Approved                |
-| **Generated** | 2026-10-12 (met de hand) |
+| **Generated** | 2026-10-12 (by hand)    |
 
-> Opgesteld uit TAAK-193 (dotnet/eShop `IdentifiedCommand<T, R>`, kgrzybek `DomainNotificationBase<T>`).
+> Drawn up from TAAK-193 (dotnet/eShop `IdentifiedCommand<T, R>`, kgrzybek `DomainNotificationBase<T>`).
 
 ## One-sentence summary
 
-`class G<T, R> : IRequest<R>` wordt `abstract`, krijgt per gesloten type uit de solution een `class GOfXAndY : G<X, Y>` met dezelfde constructors,
-elke gesloten `G<X, Y>` (handlers, `new`, validators, DI-sleutels) wordt `GOfXAndY`, en een concrete handler die `IRequestHandler<G<X, Y>, Y>` van een
-abstracte generieke basis erft krijgt `IRequestHandler<GOfXAndY, Y>` met een `Handle` die de basis aanroept.
+`class G<T, R> : IRequest<R>` becomes `abstract`, gets a `class GOfXAndY : G<X, Y>` with the same constructors per closed type from the solution,
+every closed `G<X, Y>` (handlers, `new`, validators, DI keys) becomes `GOfXAndY`, and a concrete handler that inherits `IRequestHandler<G<X, Y>, Y>` from an
+abstract generic base gets `IRequestHandler<GOfXAndY, Y>` with a `Handle` that calls the base.
 
 ## Scope (in / out)
 
-**In**: niet-abstracte, niet-statische, top-level generieke klasse in de bron die een MediatR-request is (geen stream-request); een generiek request of
-generieke notification die alleen basis is van concrete subklassen (wordt alleen `abstract`).
+**In**: a non-abstract, non-static, top-level generic class in the source that is a MediatR request (not a stream request); a generic request or
+generic notification that is only the base of concrete subclasses (only becomes `abstract`).
 
-**Out (Manual)**: record, partial of file-local; `typeof(G<>)`; `new G<TParam>` in generieke code; typeargument dat geen gewoon benoemd type is;
-gesloten verwijzing in een override-signatuur; gesloten type dat al een subklasse heeft; naambotsing; gesloten type niet zichtbaar vanuit het project van `G`;
-alleen private constructors of constructors met `ref`/`params`/optionele parameters; geërfde `Handle` die expliciet, overridden of niet public is.
+**Out (Manual)**: record, partial or file-local; `typeof(G<>)`; `new G<TParam>` in generic code; a type argument that is not a plain named type;
+a closed reference in an override signature; a closed type that already has a subclass; a name clash; a closed type not visible from `G`'s project;
+only private constructors or constructors with `ref`/`params`/optional parameters; an inherited `Handle` that is explicit, overridden or not public.
 
 ## Requirements
 
-- **REQ-1**: WHEN gesloten `G<X, Y>` in de solution staan THE SYSTEM SHALL `G` abstract maken en per gesloten type `{G}Of{X}And{Y}` schrijven (CLR-naam voor speciale typen: `Boolean`), constructors door (proof `closed-uses`, `_Combined/identified-command-eshop`).
-- **REQ-2**: THE SYSTEM SHALL elke gesloten verwijzing buiten `G` en buiten de basislijst van een bestaande subklasse hernoemen, met behoud van de qualifier (proof `closed-uses`).
-- **REQ-3**: WHEN een concrete handler `IRequestHandler<G<X, Y>, Y>` erft THE SYSTEM SHALL `IRequestHandler<GOfXAndY, Y>` en `Handle(GOfXAndY, ct) => base.Handle(...)` toevoegen (proof `_Combined/identified-command-eshop`).
-- **REQ-4**: WHEN een gesloten type alleen in een ander project gebruikt wordt THE SYSTEM SHALL zijn subklasse toch bij `G` schrijven; staat het type zelf in een project dat `G` niet ziet THEN Manual (unittests `RewriteAsync_ClosedTypeOnlyUsedInOtherProject_WritesItsSubclass`, `RewriteAsync_ClosedTypeDeclaredInOtherProject_Manual`).
-- **REQ-5**: WHEN een generiek message alleen basis is van concrete subklassen THE SYSTEM SHALL het alleen `abstract` maken (unittest `Find_OnlyBaseOfConcreteSubclass_FindsTheDeclaration`, `_Combined/generic-decorators-kgrzybek`).
-- **REQ-6**: IF `typeof(G<>)`, open creatie, een niet-gewoon typeargument of een record THEN Manual (proofs `unbound-typeof`, `open-creation`, `not-plain-argument`, `derived-generic-record`).
-- **REQ-7**: THE SYSTEM SHALL bij de declaratie een `Warning` geven: `GetType()` is nu de subklasse (logteksten veranderen, gedrag niet).
+- **REQ-1**: WHEN closed `G<X, Y>` occur in the solution THE SYSTEM SHALL make `G` abstract and write `{G}Of{X}And{Y}` per closed type (CLR name for special types: `Boolean`), constructors passed through (proof `closed-uses`, `_Combined/identified-command-eshop`).
+- **REQ-2**: THE SYSTEM SHALL rename every closed reference outside `G` and outside the base list of an existing subclass, keeping the qualifier (proof `closed-uses`).
+- **REQ-3**: WHEN a concrete handler inherits `IRequestHandler<G<X, Y>, Y>` THE SYSTEM SHALL add `IRequestHandler<GOfXAndY, Y>` and `Handle(GOfXAndY, ct) => base.Handle(...)` (proof `_Combined/identified-command-eshop`).
+- **REQ-4**: WHEN a closed type is only used in another project THE SYSTEM SHALL still write its subclass next to `G`; if the type itself is in a project that does not see `G` THEN Manual (unit tests `RewriteAsync_ClosedTypeOnlyUsedInOtherProject_WritesItsSubclass`, `RewriteAsync_ClosedTypeDeclaredInOtherProject_Manual`).
+- **REQ-5**: WHEN a generic message is only the base of concrete subclasses THE SYSTEM SHALL only make it `abstract` (unit test `Find_OnlyBaseOfConcreteSubclass_FindsTheDeclaration`, `_Combined/generic-decorators-kgrzybek`).
+- **REQ-6**: IF `typeof(G<>)`, open creation, a non-plain type argument or a record THEN Manual (proofs `unbound-typeof`, `open-creation`, `not-plain-argument`, `derived-generic-record`).
+- **REQ-7**: THE SYSTEM SHALL give a `Warning` at the declaration: `GetType()` is now the subclass (log texts change, behaviour does not).
 
 ## Assumptions
 
-- Gemeten (probe p1, TAAK-193): de generator van Mediator 3.0.2 ziet alleen `G<T, R>` (MSG0005) en dispatcht `G<X, bool>` niet (MissingMessageHandlerException);
-  een handler van een basistype wordt voor een afgeleid request níet gebruikt (anders dan bij notifications), dus de handler moet het subtype zelf implementeren.
-- Validators en DI-sleutels als `IValidator<G<X, Y>>` moeten mee hernoemd worden, anders valt validatie stil weg.
+- Measured (probe p1, TAAK-193): the generator of Mediator 3.0.2 only sees `G<T, R>` (MSG0005) and does not dispatch `G<X, bool>` (MissingMessageHandlerException);
+  a handler of a base type is **not** used for a derived request (unlike notifications), so the handler must implement the subtype itself.
+- Validators and DI keys such as `IValidator<G<X, Y>>` must be renamed too, otherwise validation silently disappears.
 
-## Modellen
+## Models
 
 [mediatr-generic-request-modellen.md](mediatr-generic-request-modellen.md).
 
-## Zie ook
+## See also
 
 - [mediatr-generic-request-verify.md](mediatr-generic-request-verify.md)
-- [mediatr-generic-notification-plan.md](mediatr-generic-notification-plan.md) — zelfde aanpak voor notifications (TAAK-192)
+- [mediatr-generic-notification-plan.md](mediatr-generic-notification-plan.md) — same approach for notifications (TAAK-192)
 - `claude/tasks/archief/TAAK-193-mediatr-generieke-decorators-messages.md`

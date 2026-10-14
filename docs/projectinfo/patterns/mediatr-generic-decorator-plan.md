@@ -11,51 +11,51 @@ files_expected:
     - src/Unshackle.Tests/Proofs/MediatR/_Combined/generic-decorators-kgrzybek.before.cs
 ---
 
-# Feature: mediatr.generic-decorator: open generieke handler-decorator blijft container-decorator
+# Feature: mediatr.generic-decorator: an open generic handler decorator stays a container decorator
 
 |               |                         |
 | ------------- | ----------------------- |
 | **Project**   | Unshackle               |
 | **Status**    | Approved                |
-| **Generated** | 2026-10-12 (met de hand) |
+| **Generated** | 2026-10-12 (by hand)    |
 
-> Opgesteld uit TAAK-193 (kgrzybek modular-monolith: zes decorators per module, Autofac `RegisterGenericDecorator`).
+> Drawn up from TAAK-193 (kgrzybek modular-monolith: six decorators per module, Autofac `RegisterGenericDecorator`).
 
 ## One-sentence summary
 
-Een open generieke decorator `D<T> : ICommandHandler<T>` met een constructorparameter `ICommandHandler<T> decorated` blijft een Autofac-decorator;
-bij een void-handler wordt de gedecoreerde parameter `IRequestHandler<T, Unit>` en het servicetype van `RegisterGenericDecorator` `typeof(IRequestHandler<,>)`,
-omdat Mediator een void-handler als `IRequestHandler<T, Unit>` uit DI haalt.
+An open generic decorator `D<T> : ICommandHandler<T>` with a constructor parameter `ICommandHandler<T> decorated` stays an Autofac decorator;
+for a void handler the decorated parameter becomes `IRequestHandler<T, Unit>` and the service type of `RegisterGenericDecorator` `typeof(IRequestHandler<,>)`,
+because Mediator gets a void handler from DI as `IRequestHandler<T, Unit>`.
 
 ## Scope (in / out)
 
-**In**: niet-abstracte open generieke klasse in de bron die MediatR `IRequestHandler<T>`, `IRequestHandler<T, R>` of `INotificationHandler<T>` over haar eigen typeparameter
-implementeert én een constructorparameter van die handler (of een afgeleide interface) heeft; `typeof(S<>)` als tweede argument van Autofac's `RegisterGenericDecorator`.
+**In**: a non-abstract open generic class in the source that implements MediatR `IRequestHandler<T>`, `IRequestHandler<T, R>` or `INotificationHandler<T>` over its own type parameter
+and has a constructor parameter of that handler (or a derived interface); `typeof(S<>)` as the second argument of Autofac's `RegisterGenericDecorator`.
 
-**Out (Manual)**: decorator die ergens anders gebruikt wordt dan als `typeof(D<>)` in `RegisterGenericDecorator`; eigen handler-interface met eigen members;
-gedecoreerde handler die anders gebruikt wordt dan opslaan, toewijzen en `Handle` aanroepen; notification-decorator zonder handmatige MediatR-registratie in Autofac.
-Een open generieke handler zónder gedecoreerde parameter blijft bij `mediatr.unsupported`.
+**Out (Manual)**: a decorator that is used anywhere other than as `typeof(D<>)` in `RegisterGenericDecorator`; an own handler interface with own members;
+a decorated handler that is used other than stored, assigned and `Handle` called; a notification decorator without manual MediatR registration in Autofac.
+An open generic handler **without** a decorated parameter stays with `mediatr.unsupported`.
 
 ## Requirements
 
-- **REQ-1**: WHEN een void-decorator alleen via `RegisterGenericDecorator(typeof(D<>), typeof(S<>))` geregistreerd is THE SYSTEM SHALL velden, parameters en locals van het gedecoreerde type `IRequestHandler<T, Unit>` maken en `typeof(S<>)` → `typeof(IRequestHandler<,>)` (proof `_Combined/generic-decorators-kgrzybek`).
-- **REQ-2**: WHEN de decorator een handler met response decoreert THE SYSTEM SHALL hem niet vinden; de handler-patronen doen `Task` → `ValueTask` (unittest `Find_DecoratorWithResponse_LeavesItToTheHandlerPatterns`).
-- **REQ-3**: THE SYSTEM SHALL MSG0003 in `WarningsNotAsErrors` zetten: de generator slaat de decorator alleen over (`MediatRFix`).
-- **REQ-4**: IF de decorator anders gebruikt wordt dan in `RegisterGenericDecorator` THEN Manual (proof `used-elsewhere`).
-- **REQ-5**: IF de eigen handler-interface members heeft, of de gedecoreerde handler anders gebruikt wordt dan `Handle` aanroepen THEN Manual (proofs `decorated-members`, `decorated-other-use`).
-- **REQ-6**: WHEN een notification-decorator gevonden wordt THE SYSTEM SHALL alleen Fixed geven als MediatR met de hand in Autofac geregistreerd is (`mediatr.autofac-mediator-module`), anders Manual (proof `notification-without-autofac`).
-- **REQ-7** (TAAK-210): WHEN de decorator alleen een eigen marker (`ICommandHandler<T> : IRequestHandler<T>`) implementeert en zijn bestand geen `using MediatR` heeft THE SYSTEM SHALL hem na de eigen herschrijving (`IRequestHandler<T, Unit>`, bindt pas na `using Mediator`) nog als decorator herkennen, zodat `mediatr.unsupported` hem niet als generieke handler meldt (proof `_Combined/generic-decorator-marker-without-using`, unittests `IsDecorator_RewrittenVoidDecoratorInFileWithoutUsingMediatR_True`, `IsDecorator_UnboundHandlerWithOtherResponse_False`).
+- **REQ-1**: WHEN a void decorator is only registered via `RegisterGenericDecorator(typeof(D<>), typeof(S<>))` THE SYSTEM SHALL make fields, parameters and locals of the decorated type `IRequestHandler<T, Unit>` and `typeof(S<>)` → `typeof(IRequestHandler<,>)` (proof `_Combined/generic-decorators-kgrzybek`).
+- **REQ-2**: WHEN the decorator decorates a handler with a response THE SYSTEM SHALL not find it; the handler patterns do `Task` → `ValueTask` (unit test `Find_DecoratorWithResponse_LeavesItToTheHandlerPatterns`).
+- **REQ-3**: THE SYSTEM SHALL put MSG0003 in `WarningsNotAsErrors`: the generator only skips the decorator (`MediatRFix`).
+- **REQ-4**: IF the decorator is used other than in `RegisterGenericDecorator` THEN Manual (proof `used-elsewhere`).
+- **REQ-5**: IF the own handler interface has members, or the decorated handler is used other than calling `Handle` THEN Manual (proofs `decorated-members`, `decorated-other-use`).
+- **REQ-6**: WHEN a notification decorator is found THE SYSTEM SHALL only give Fixed if MediatR is registered by hand in Autofac (`mediatr.autofac-mediator-module`), otherwise Manual (proof `notification-without-autofac`).
+- **REQ-7** (TAAK-210): WHEN the decorator only implements an own marker (`ICommandHandler<T> : IRequestHandler<T>`) and its file has no `using MediatR` THE SYSTEM SHALL still recognise it as a decorator after its own rewrite (`IRequestHandler<T, Unit>`, only binds after `using Mediator`), so that `mediatr.unsupported` does not report it as a generic handler (proof `_Combined/generic-decorator-marker-without-using`, unit tests `IsDecorator_RewrittenVoidDecoratorInFileWithoutUsingMediatR_True`, `IsDecorator_UnboundHandlerWithOtherResponse_False`).
 
 ## Assumptions
 
-- Gemeten (probes p1–p3, TAAK-193): Mediator 3.0.2 resolvet handlers per aanroep uit DI, dus Autofac's decorators wikkelen ze zoals onder MediatR (laatst geregistreerd = buitenste).
-- Met `AddMediator` registreert de generator een open generieke notification-handler voor élke notification: een decorator zou zichzelf decoreren (probe bleef hangen).
+- Measured (probes p1–p3, TAAK-193): Mediator 3.0.2 resolves handlers per call from DI, so Autofac's decorators wrap them as under MediatR (last registered = outermost).
+- With `AddMediator` the generator registers an open generic notification handler for **every** notification: a decorator would decorate itself (the probe hung).
 
-## Modellen
+## Models
 
 [mediatr-generic-decorator-modellen.md](mediatr-generic-decorator-modellen.md).
 
-## Zie ook
+## See also
 
 - [mediatr-generic-decorator-verify.md](mediatr-generic-decorator-verify.md)
 - `claude/tasks/archief/TAAK-193-mediatr-generieke-decorators-messages.md`

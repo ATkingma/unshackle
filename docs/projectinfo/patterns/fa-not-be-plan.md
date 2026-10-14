@@ -9,7 +9,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/FluentAssertions/NotBe/
 ---
 
-# Feature: fa.not-be: x.Should().NotBe(y) wordt x.ShouldNotBe(y)
+# Feature: fa.not-be: x.Should().NotBe(y) becomes x.ShouldNotBe(y)
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -17,44 +17,44 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-032. Spiegel van `fa.should-be` (TAAK-001).
+> Drafted from TAAK-032. Mirror of `fa.should-be` (TAAK-001).
 
 ## One-sentence summary
 
-fa.not-be: `x.Should().NotBe(y[, because])` wordt `x.ShouldNotBe(y[, because])`, met dezelfde regels als `fa.should-be`.
+fa.not-be: `x.Should().NotBe(y[, because])` becomes `x.ShouldNotBe(y[, because])`, with the same rules as `fa.should-be`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Losse `NotBe(y)` met optionele `because`, ook op nullable subjects en records.
-- Manual voor AssertionScope, keten, becauseArgs, comparer, Xml/Types en onveilige typeconversie.
+- Standalone `NotBe(y)` with optional `because`, also on nullable subjects and records.
+- Manual for AssertionScope, chain, becauseArgs, comparer, Xml/Types and unsafe type conversion.
 
 **Out of scope**
 
-- `.And.NotBe(...)` na een andere assertion (rij `fa.and-chain`).
+- `.And.NotBe(...)` after another assertion (row `fa.and-chain`).
 
 ## Requirements
 
-- **REQ-1**: WHEN `x.Should().NotBe(y)` als statement staat THE SYSTEM SHALL `x.ShouldNotBe(y)` geven (proof `NotBe/simple.*`).
-- **REQ-2**: WHEN een `because` zonder `becauseArgs` staat THE SYSTEM SHALL die als `customMessage` meegeven (proof `because.*`).
-- **REQ-3**: WHEN het subject nullable is (`int?`, `string?`) THE SYSTEM SHALL `ShouldNotBe` geven zonder `ShouldNotBeNull()` (proof `nullable.*`).
-- **REQ-4**: WHEN het subject een record is THE SYSTEM SHALL `ShouldNotBe` geven; beide gebruiken `Equals` (proof `record.*`).
-- **REQ-5**: WHEN de constante alleen impliciet naar het subjecttype converteert THE SYSTEM SHALL een cast toevoegen (proof `constant-cast.*`).
-- **REQ-6**: IF de assertion in een AssertionScope staat THEN THE SYSTEM SHALL Manual geven (proof `assertion-scope.*`).
-- **REQ-7**: IF `becauseArgs` of een comparer worden gebruikt THEN THE SYSTEM SHALL Manual geven (proofs `because-args.*`, `comparer.*`).
-- **REQ-8**: IF het resultaat wordt gebruikt (`.And`) THEN THE SYSTEM SHALL Manual geven (proof `chain.*`).
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (Fixed, proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. REQ-7 geldt daarmee alleen nog voor de comparer.
+- **REQ-1**: WHEN `x.Should().NotBe(y)` is a statement THE SYSTEM SHALL produce `x.ShouldNotBe(y)` (proof `NotBe/simple.*`).
+- **REQ-2**: WHEN a `because` is present without `becauseArgs` THE SYSTEM SHALL pass it as `customMessage` (proof `because.*`).
+- **REQ-3**: WHEN the subject is nullable (`int?`, `string?`) THE SYSTEM SHALL produce `ShouldNotBe` without `ShouldNotBeNull()` (proof `nullable.*`).
+- **REQ-4**: WHEN the subject is a record THE SYSTEM SHALL produce `ShouldNotBe`; both use `Equals` (proof `record.*`).
+- **REQ-5**: WHEN the constant only converts implicitly to the subject type THE SYSTEM SHALL add a cast (proof `constant-cast.*`).
+- **REQ-6**: IF the assertion is inside an AssertionScope THEN THE SYSTEM SHALL give Manual (proof `assertion-scope.*`).
+- **REQ-7**: IF `becauseArgs` or a comparer are used THEN THE SYSTEM SHALL give Manual (proofs `because-args.*`, `comparer.*`).
+- **REQ-8**: IF the result is used (`.And`) THEN THE SYSTEM SHALL give Manual (proof `chain.*`).
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL pass `string.Format(CultureInfo.InvariantCulture, because, args)` as customMessage (Fixed, proof `because-args`); named arguments or a non-constant `because` remain Manual. REQ-7 therefore only applies to the comparer.
 
 ## Assumptions
 
-- Shouldly 4.3.0 heeft `ShouldNotBe<T>(this T actual, T expected, string? customMessage = null)`; T wordt uit beide kanten afgeleid, net als `ShouldBe`.
+- Shouldly 4.3.0 has `ShouldNotBe<T>(this T actual, T expected, string? customMessage = null)`; T is inferred from both sides, just like `ShouldBe`.
 
 ## Risks
 
-- Null-subject: FA `NotBe("x")` slaagt op null; daarom bewust geen `NotNull`-helper (zou falen).
-- Melding krijgt "Additional Info:" in plaats van FA's tekst: gedocumenteerd verschil.
+- Null subject: FA `NotBe("x")` passes on null; that is why there is deliberately no `NotNull` helper (it would fail).
+- The message gets "Additional Info:" instead of FA's text: documented difference.
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-not-be-modellen.md](fa-not-be-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-not-be-modellen.md](fa-not-be-modellen.md).

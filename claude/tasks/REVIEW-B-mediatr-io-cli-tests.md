@@ -1,162 +1,162 @@
-# REVIEW-B: MediatR, I/O, CLI en tests
+# REVIEW-B: MediatR, I/O, CLI and tests
 
-Read-only review op `main` 3bd36cf. Scope: `Core/Fixes/MediatR/`, `DataAccess/`, `Interface/`, `Tests/` (Proofs-runner, Helpers, Integration).
-Buiten beschouwing: wat TAAK-060/063/080/081 al raakt (notification publisher config, source generator alleen in host, marker-interface handlers / `symbol.Interfaces` vs `AllInterfaces` in `FindHandleMethods`, behavior request-constraint).
+Read-only review on `main` 3bd36cf. Scope: `Core/Fixes/MediatR/`, `DataAccess/`, `Interface/`, `Tests/` (Proofs runner, Helpers, Integration).
+Out of scope: what TAAK-060/063/080/081 already touch (notification publisher config, source generator only in host, marker-interface handlers / `symbol.Interfaces` vs `AllInterfaces` in `FindHandleMethods`, behavior request constraint).
 
-## Hoog
+## High
 
-### H1. `fix` schrijft half: broncode staat al op schijf als een projectbestand daarna faalt
+### H1. `fix` writes halfway: source code is already on disk when a project file fails afterwards
 
-- **Waar:** `src/Unshackle.Interface/Commands/FixCommand.cs:80-88`, `src/Unshackle.DataAccess/Projects/XmlProjectFileStore.cs:85-99`
-- **Probleem:** eerst `_store.SaveAsync` (alle `.cs`), dan `_projectFiles.SaveAsync`. De staleness-check (`text != change.OldText`) zit per bestand ín de schrijflus. Is het tweede projectbestand intussen gewijzigd (of niet leesbaar), dan zijn de `.cs`-bestanden én het eerste projectbestand al geschreven.
-- **Waarom:** de code is gemigreerd naar `Mediator`/Shouldly maar de csproj verwijst nog naar het oude pakket → build stuk, half toegepaste migratie. Met `--force` (dirty tree) is dat niet via git terug te draaien. De test `FixExecuteAsync_ProjectFileChangedOnDisk_ReturnsFailure` bewijst alleen de exitcode, niet dat er niets geschreven is.
-- **Fix:** in `IProjectFileStore` een check-fase scheiden (bv. `SaveAsync` eerst alle bestanden lezen en vergelijken, pas daarna schrijven), en in `FixCommand` die check vóór `_store.SaveAsync` doen. Test: twee changes, tweede stale → eerste bestand en solution onaangeraakt.
+- **Where:** `src/Unshackle.Interface/Commands/FixCommand.cs:80-88`, `src/Unshackle.DataAccess/Projects/XmlProjectFileStore.cs:85-99`
+- **Problem:** first `_store.SaveAsync` (all `.cs`), then `_projectFiles.SaveAsync`. The staleness check (`text != change.OldText`) sits per file inside the write loop. If the second project file changed in the meantime (or is unreadable), the `.cs` files and the first project file have already been written.
+- **Why:** the code is migrated to `Mediator`/Shouldly but the csproj still refers to the old package → build broken, half-applied migration. With `--force` (dirty tree) this cannot be undone via git. The test `FixExecuteAsync_ProjectFileChangedOnDisk_ReturnsFailure` only proves the exit code, not that nothing was written.
+- **Fix:** separate a check phase in `IProjectFileStore` (e.g. `SaveAsync` first reads and compares all files, only then writes), and do that check in `FixCommand` before `_store.SaveAsync`. Test: two changes, the second stale → first file and solution untouched.
 
-### H2. Broncode wordt overschreven zonder staleness-check
+### H2. Source code is overwritten without a staleness check
 
-- **Waar:** `src/Unshackle.DataAccess/Solutions/MsBuildSolutionStore.cs:40-52`
-- **Probleem:** `TryApplyChanges` schrijft de documenten weg op basis van de in-memory solution; wijzigingen die de gebruiker tussen laden (MSBuild-load duurt lang) en schrijven maakt, gaan stil verloren. Voor projectbestanden bestaat die check wel.
-- **Waarom:** dataverlies in gebruikerscode, inconsistent met `XmlProjectFileStore`.
-- **Fix:** vóór `TryApplyChanges` per gewijzigd document `File.ReadAllText(document.FilePath)` vergelijken met de geladen `SourceText` van `Original`; bij verschil `InvalidOperationException` (wordt al netjes vertaald in `FixCommand:85`). Combineer met H1 zodat alle checks vóór de eerste write gebeuren.
+- **Where:** `src/Unshackle.DataAccess/Solutions/MsBuildSolutionStore.cs:40-52`
+- **Problem:** `TryApplyChanges` writes the documents based on the in-memory solution; changes the user makes between loading (the MSBuild load takes long) and writing are silently lost. For project files that check does exist.
+- **Why:** data loss in user code, inconsistent with `XmlProjectFileStore`.
+- **Fix:** before `TryApplyChanges`, compare `File.ReadAllText(document.FilePath)` per changed document with the loaded `SourceText` of `Original`; on a difference `InvalidOperationException` (already translated neatly in `FixCommand:85`). Combine with H1 so all checks happen before the first write.
 
-### H3. Git-fout wordt als "schone working tree" gelezen
+### H3. A git error is read as a "clean working tree"
 
-- **Waar:** `src/Unshackle.DataAccess/SourceControl/GitSourceControl.cs:29-31, 40-41`
-- **Probleem:** elke exitcode ≠ 0 en een ontbrekende `git` geven `false` = "geen wijzigingen". Ook `fatal: detected dubious ownership` (exit 128, veelvoorkomend op gedeelde schijven/WSL/containers), een kapotte index of lock geven dus groen licht om te schrijven.
-- **Waarom:** de enige bescherming tegen onomkeerbaar overschrijven valt stil weg, zonder melding.
-- **Fix:** onderscheid "geen repository" (`git rev-parse --is-inside-work-tree` faalt, of stderr bevat `not a git repository`) van andere fouten; bij andere fouten en bij ontbrekende git: `true` teruggeven of een expliciete fout/waarschuwing in de view ("kan working tree niet controleren, gebruik --force"). Test met een fake git-fout (bv. directory zonder leesrechten).
+- **Where:** `src/Unshackle.DataAccess/SourceControl/GitSourceControl.cs:29-31, 40-41`
+- **Problem:** every exit code ≠ 0 and a missing `git` give `false` = "no changes". So `fatal: detected dubious ownership` (exit 128, common on shared drives/WSL/containers), a broken index or a lock also give the green light to write.
+- **Why:** the only protection against irreversible overwriting silently disappears, without a message.
+- **Fix:** distinguish "no repository" (`git rev-parse --is-inside-work-tree` fails, or stderr contains `not a git repository`) from other errors; on other errors and on missing git: return `true` or an explicit error/warning in the view ("cannot check working tree, use --force"). Test with a fake git error (e.g. a directory without read permission).
 
-### H4. Geen integratietest voor `--fix mediatr`
+### H4. No integration test for `--fix mediatr`
 
-- **Waar:** `src/Unshackle.Tests/Integration/SampleShopTests.cs` (alle drie tests gebruiken `fluentassertions`); `CliTests.cs:42` test alleen "missing solution".
-- **Probleem:** `samples/SampleShop` bevat MediatR-code (handlers, behavior, `ServiceCollectionExtensions`), maar de echte keten MSBuild-load → patterns → `Directory.Packages.props`-edit (twee added packages + `MediatR.Contracts` weg) → build + test met de source generator draait nergens.
-- **Waarom:** juist het riskantste deel (pakketwissel met twee nieuwe pakketten, generator die `AddMediator` schrijft) is alleen met unit-proofs in-memory gedekt.
-- **Fix:** `FixTwice_SampleShopCopy_...` parametriseren over fixId, of een aparte `FixMediatR_SampleShopCopy_BuildsAndTests` met `dotnet build`/`dotnet test` na de fix.
+- **Where:** `src/Unshackle.Tests/Integration/SampleShopTests.cs` (all three tests use `fluentassertions`); `CliTests.cs:42` only tests "missing solution".
+- **Problem:** `samples/SampleShop` contains MediatR code (handlers, behavior, `ServiceCollectionExtensions`), but the real chain MSBuild load → patterns → `Directory.Packages.props` edit (two added packages + `MediatR.Contracts` removed) → build + test with the source generator runs nowhere.
+- **Why:** precisely the riskiest part (package swap with two new packages, a generator that writes `AddMediator`) is only covered in memory by unit proofs.
+- **Fix:** parametrise `FixTwice_SampleShopCopy_...` over fixId, or a separate `FixMediatR_SampleShopCopy_BuildsAndTests` with `dotnet build`/`dotnet test` after the fix.
 
-## Midden
+## Medium
 
-### M1. Report kan elk bestand met `.md/.csv/.json` overschrijven, ook in de doelrepo
+### M1. The report can overwrite any file with `.md/.csv/.json`, also in the target repo
 
-- **Waar:** `src/Unshackle.DataAccess/Reports/*ReportWriter.cs` (`File.Create`/`WriteAllLinesAsync`), `ScanCommand.cs:47`
-- **Probleem:** `--report README.md` of `--report Directory.Packages.json`… overschrijft zonder vraag; bij `fix` gebeurt dat ná de git-check, dus het report zelf maakt de tree ook vuil voor een volgende run. Geen path traversal-risico in de klassieke zin (CLI-argument van de gebruiker zelf), wel stil dataverlies.
-- **Fix:** weigeren als het doel al bestaat en niet eerder door Unshackle geschreven is, of minimaal: weigeren als het pad binnen de solution-map ligt en bestaat zonder `--force`. Goedkoopste variant: `FileMode.CreateNew` tenzij `--force`.
+- **Where:** `src/Unshackle.DataAccess/Reports/*ReportWriter.cs` (`File.Create`/`WriteAllLinesAsync`), `ScanCommand.cs:47`
+- **Problem:** `--report README.md` or `--report Directory.Packages.json`… overwrites without asking; with `fix` this happens after the git check, so the report itself also makes the tree dirty for a next run. No path traversal risk in the classic sense (a CLI argument from the user themselves), but silent data loss.
+- **Fix:** refuse if the target already exists and was not written by Unshackle before, or at least: refuse if the path lies inside the solution folder and exists, without `--force`. Cheapest variant: `FileMode.CreateNew` unless `--force`.
 
-### M2. Markdown-report escapet alleen `|`
+### M2. Markdown report only escapes `|`
 
-- **Waar:** `src/Unshackle.DataAccess/Reports/MarkdownReportWriter.cs:34`
-- **Probleem:** `Reason` en `File` komen uit gebruikerscode (o.a. `'{setting}'` in `AddMediatRPattern.cs:200` zet de broncode letterlijk in de reden). `<script>`, `<img onerror>`, backticks en een eindigende `\` (die de `\|` van de volgende cel opheft) gaan ongeëscaped de tabel in. Gerenderd in een PR-comment of wiki is dat HTML-injectie / kapotte tabel.
-- **Fix:** in `Cell` eerst `\` → `\\`, dan `|` → `\|`, en `<`, `>`, `&` HTML-encoden (`System.Net.WebUtility.HtmlEncode`). Test toevoegen met `<script>` en een trailing backslash.
+- **Where:** `src/Unshackle.DataAccess/Reports/MarkdownReportWriter.cs:34`
+- **Problem:** `Reason` and `File` come from user code (e.g. `'{setting}'` in `AddMediatRPattern.cs:200` puts the source code literally into the reason). `<script>`, `<img onerror>`, backticks and a trailing `\` (which cancels the `\|` of the next cell) go into the table unescaped. Rendered in a PR comment or wiki that is HTML injection / a broken table.
+- **Fix:** in `Cell` first `\` → `\\`, then `|` → `\|`, and HTML-encode `<`, `>`, `&` (`System.Net.WebUtility.HtmlEncode`). Add a test with `<script>` and a trailing backslash.
 
-### M3. `AddMediatRPattern` dupliceert/verliest commentaar in het lambda-blok
+### M3. `AddMediatRPattern` duplicates/loses comments in the lambda block
 
-- **Waar:** `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs:211-214`
-- **Probleem:** elke nieuwe statement krijgt de leading en trailing trivia van `body.Statements[0]`. Staat er boven de eerste regel een comment (`// handlers`), dan verschijnt die boven `ServiceLifetime =` én boven `PipelineBehaviors =`; comments bij latere statements verdwijnen.
-- **Fix:** alleen de whitespace-indentatie van `Statements[0]` kopiëren (`.Where(t => t.IsKind(WhitespaceTrivia)).TakeLast(1)`, zoals `VoidRequestHandlerPattern.cs:521` al doet) en de comments van alle originele statements vóór de eerste nieuwe zetten. Proof toevoegen.
+- **Where:** `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs:211-214`
+- **Problem:** every new statement gets the leading and trailing trivia of `body.Statements[0]`. If there is a comment above the first line (`// handlers`), it appears above `ServiceLifetime =` and above `PipelineBehaviors =`; comments on later statements disappear.
+- **Fix:** copy only the whitespace indentation of `Statements[0]` (`.Where(t => t.IsKind(WhitespaceTrivia)).TakeLast(1)`, as `VoidRequestHandlerPattern.cs:521` already does) and put the comments of all original statements before the first new one. Add a proof.
 
-### M4. Alleen `Statements` met expressies; `if (env.IsDev) cfg.AddBehavior...` → Manual, maar `settings.Count == 0` dekt ook een leeg blok
+### M4. Only `Statements` with expressions; `if (env.IsDev) cfg.AddBehavior...` → Manual, but `settings.Count == 0` also covers an empty block
 
-- **Waar:** `AddMediatRPattern.cs:158-168`
-- **Probleem:** `services.AddMediatR(cfg => { })` (leeg) wordt Manual met een misleidende reden ("not a list of cfg calls"), terwijl `AddMediator(cfg => { cfg.ServiceLifetime = ServiceLifetime.Transient; })` gewoon kan.
-- **Fix:** leeg blok behandelen als `settings = []` met geldige rewrite; alleen niet-expressie-statements Manual.
+- **Where:** `AddMediatRPattern.cs:158-168`
+- **Problem:** `services.AddMediatR(cfg => { })` (empty) becomes Manual with a misleading reason ("not a list of cfg calls"), while `AddMediator(cfg => { cfg.ServiceLifetime = ServiceLifetime.Transient; })` is simply possible.
+- **Fix:** treat an empty block as `settings = []` with a valid rewrite; only non-expression statements Manual.
 
-### M5. `UnsupportedPattern` kijkt alleen naar direct geïmplementeerde interfaces
+### M5. `UnsupportedPattern` only looks at directly implemented interfaces
 
-- **Waar:** `src/Unshackle.Core/Fixes/MediatR/Patterns/UnsupportedPattern.cs:439`
-- **Probleem:** `class AuditPre : BasePre<Foo>` met `abstract class BasePre<T> : IRequestPreProcessor<T>` meldt alleen de basisclass; afgeleide generieke messages (`class Query<T> : BaseQuery`, `BaseQuery : IRequest`) worden helemaal niet gemeld, terwijl de generator erop breekt.
-- **Waarom:** een generieke message die niet Manual wordt gerapporteerd geeft na de fix een build-fout in `Mediator.g.cs` zonder uitleg. (Als TAAK-080 dit voor `FindHandleMethods` oplost: dezelfde fix hier meenemen.)
-- **Fix:** `symbol.AllInterfaces` gebruiken voor de `s_noGeneric`-check; advies-check mag op `AllInterfaces` blijven maar alleen rapporteren op het type dat de interface zelf declareert. Proof met afgeleide generieke query.
+- **Where:** `src/Unshackle.Core/Fixes/MediatR/Patterns/UnsupportedPattern.cs:439`
+- **Problem:** `class AuditPre : BasePre<Foo>` with `abstract class BasePre<T> : IRequestPreProcessor<T>` only reports the base class; derived generic messages (`class Query<T> : BaseQuery`, `BaseQuery : IRequest`) are not reported at all, while the generator breaks on them.
+- **Why:** a generic message that is not reported as Manual gives a build error in `Mediator.g.cs` after the fix, without explanation. (If TAAK-080 solves this for `FindHandleMethods`: include the same fix here.)
+- **Fix:** use `symbol.AllInterfaces` for the `s_noGeneric` check; the advice check may stay on `AllInterfaces` but only report on the type that declares the interface itself. Proof with a derived generic query.
 
-### M6. Padvergelijking case-sensitive in `XmlProjectFileStore`
+### M6. Case-sensitive path comparison in `XmlProjectFileStore`
 
-- **Waar:** `XmlProjectFileStore.cs:38-39, 41`
-- **Probleem:** `files` en `Keeps` gebruiken `Ordinal`. Op Windows kunnen `ProjectPath` (uit MSBuild) en `FindUp`-resultaat in casing verschillen (`src\App` vs `SRC\app`): hetzelfde bestand wordt twee keer geladen, twee changes met dezelfde `OldText`; de tweede `SaveAsync` ziet de eerste write en gooit "changed after it was read" — ná een gedeeltelijke write (zie H1). `Keeps` kan bovendien een gedeelde props-file missen en het pakket weghalen terwijl een project het nog nodig heeft.
-- **Fix:** `Path.GetFullPath` normaliseren en `StringComparer.OrdinalIgnoreCase` op Windows (of `OperatingSystem.IsWindows() ? OrdinalIgnoreCase : Ordinal`) in een helper.
+- **Where:** `XmlProjectFileStore.cs:38-39, 41`
+- **Problem:** `files` and `Keeps` use `Ordinal`. On Windows, `ProjectPath` (from MSBuild) and the `FindUp` result can differ in casing (`src\App` vs `SRC\app`): the same file is loaded twice, two changes with the same `OldText`; the second `SaveAsync` sees the first write and throws "changed after it was read" — after a partial write (see H1). `Keeps` can moreover miss a shared props file and remove the package while a project still needs it.
+- **Fix:** normalise with `Path.GetFullPath` and `StringComparer.OrdinalIgnoreCase` on Windows (or `OperatingSystem.IsWindows() ? OrdinalIgnoreCase : Ordinal`) in a helper.
 
-### M7. `<Using Include="MediatR" Alias="..."/>` en `Static` blijven staan terwijl het pakket weg gaat
+### M7. `<Using Include="MediatR" Alias="..."/>` and `Static` stay while the package goes
 
-- **Waar:** `XmlProjectFileStore.cs:10` (shortcut), `:160`
-- **Probleem:** de shortcut is gedocumenteerd, maar het gevolg is niet "left alone" maar een build-fout: het pakket wordt wél verwijderd. Er komt geen Manual-finding.
-- **Fix:** nu: als zo'n `<Using>` gevonden wordt, `EditAsync` laten signaleren (exception → wordt al Manual in `Fixer.cs:149`) of het project als `KeepRemovedPackage` behandelen. Shortcut-comment aanpassen.
+- **Where:** `XmlProjectFileStore.cs:10` (shortcut), `:160`
+- **Problem:** the shortcut is documented, but the consequence is not "left alone" but a build error: the package **is** removed. No Manual finding is produced.
+- **Fix:** now: when such a `<Using>` is found, let `EditAsync` signal it (exception → already becomes Manual in `Fixer.cs:149`) or treat the project as `KeepRemovedPackage`. Adjust the shortcut comment.
 
-### M8. Git-proces blijft draaien bij annulering
+### M8. Git process keeps running on cancellation
 
-- **Waar:** `GitSourceControl.cs:33-38`; zelfde patroon in `SampleShopTests.cs:194-198`
-- **Probleem:** `WaitForExitAsync(ct)` gooit bij cancel, maar het proces wordt niet gekild; `using` disposed alleen de handle. Bij `dotnet restore` in de integratietest blijven bij timeout child-processen (en MSBuild-nodes) hangen → flaky vervolg-runs.
-- **Fix:** `catch (OperationCanceledException) { process.Kill(entireProcessTree: true); throw; }`. Het proces-starten zit nu drie keer gedupliceerd (GitSourceControl, `DotnetAsync`, `GitInitAsync`); een test-helper `ProcessRunner` in `Tests/Helpers` voor de twee testkopieën.
+- **Where:** `GitSourceControl.cs:33-38`; same pattern in `SampleShopTests.cs:194-198`
+- **Problem:** `WaitForExitAsync(ct)` throws on cancel, but the process is not killed; `using` only disposes the handle. With `dotnet restore` in the integration test, child processes (and MSBuild nodes) keep hanging on timeout → flaky follow-up runs.
+- **Fix:** `catch (OperationCanceledException) { process.Kill(entireProcessTree: true); throw; }`. Process starting is now duplicated three times (GitSourceControl, `DotnetAsync`, `GitInitAsync`); a test helper `ProcessRunner` in `Tests/Helpers` for the two test copies.
 
-## Laag
+## Low
 
-### L1. `MsBuildSolutionStore` gebruikt `System.IO.File` direct
+### L1. `MsBuildSolutionStore` uses `System.IO.File` directly
 
-- **Waar:** `MsBuildSolutionStore.cs:16`
-- **Probleem:** alle andere DataAccess-klassen krijgen `IFileSystem` geïnjecteerd; deze niet. Inconsistent, en niet te testen zonder echt bestand.
-- **Fix:** `IFileSystem` via constructor (klassieke constructor, zoals de report writers).
+- **Where:** `MsBuildSolutionStore.cs:16`
+- **Problem:** all other DataAccess classes get `IFileSystem` injected; this one does not. Inconsistent, and not testable without a real file.
+- **Fix:** `IFileSystem` via the constructor (classic constructor, like the report writers).
 
-### L2. `Cli.RunAsync` krijgt altijd `CancellationToken.None`
+### L2. `Cli.RunAsync` always gets `CancellationToken.None`
 
-- **Waar:** `src/Unshackle.Interface/Program.cs:3`
-- **Probleem:** werkt omdat System.CommandLine zelf Ctrl+C koppelt, maar dat is impliciet. Prima, alleen één comment waard. Geen actie nodig behalve comment.
+- **Where:** `src/Unshackle.Interface/Program.cs:3`
+- **Problem:** works because System.CommandLine wires Ctrl+C itself, but that is implicit. Fine, only worth a comment. No action needed except a comment.
 
-### L3. Explicit-interface-check en `CommaList` gedupliceerd over MediatR-patterns
+### L3. Explicit-interface check and `CommaList` duplicated across MediatR patterns
 
-- **Waar:** `PipelineBehaviorPattern.cs:275, 336`, `VoidRequestHandlerPattern.cs:476`, (Request/NotificationHandler idem)
-- **Fix:** `CommaList` naar `MediatRSyntax`; het `ExplicitInterfaceSpecifier`-Manual-bericht als gedeelde helper. Pas oppakken ná TAAK-060/063/080/081 om merge-conflicten te vermijden.
+- **Where:** `PipelineBehaviorPattern.cs:275, 336`, `VoidRequestHandlerPattern.cs:476`, (Request/NotificationHandler likewise)
+- **Fix:** `CommaList` to `MediatRSyntax`; the `ExplicitInterfaceSpecifier` Manual message as a shared helper. Only pick up after TAAK-060/063/080/081 to avoid merge conflicts.
 
-### L4. `SendAsTaskPattern` mist `_mediator?.Send(x)`
+### L4. `SendAsTaskPattern` misses `_mediator?.Send(x)`
 
-- **Waar:** `SendAsTaskPattern.cs:565`
-- **Probleem:** bij null-conditional is `i.Expression` een `MemberBindingExpressionSyntax`; geen finding, terwijl het type `ValueTask?`-achtig wordt en `Task`-gebruik breekt zonder melding.
-- **Fix:** `MemberBindingExpressionSyntax` herkennen en Manual rapporteren (`.AsTask()` op een nullable ValueTask is niet triviaal).
+- **Where:** `SendAsTaskPattern.cs:565`
+- **Problem:** with null-conditional, `i.Expression` is a `MemberBindingExpressionSyntax`; no finding, while the type becomes `ValueTask?`-like and `Task` usage breaks without a message.
+- **Fix:** recognise `MemberBindingExpressionSyntax` and report Manual (`.AsTask()` on a nullable ValueTask is not trivial).
 
-### L5. `ProjectFile` zoekt de sluittag tekstueel
+### L5. `ProjectFile` searches the closing tag textually
 
-- **Waar:** `src/Unshackle.DataAccess/Projects/ProjectFile.cs:29-30`
-- **Probleem:** `LastIndexOf("</Project")` matcht ook een comment ná de root (`<!-- </Project> -->`); dan wordt `_suffix` verkeerd afgesneden en raakt de file corrupt bij schrijven. Ook alleen-`\r`-regeleinden breken de regelberekening.
-- **Fix:** sluitpositie bepalen via `XmlReader` (laatste `EndElement` op depth 0) of een round-trip-check: `_prefix + root + _suffix` met ongewijzigd document moet `OldText` opleveren, anders gooien (wordt Manual).
+- **Where:** `src/Unshackle.DataAccess/Projects/ProjectFile.cs:29-30`
+- **Problem:** `LastIndexOf("</Project")` also matches a comment after the root (`<!-- </Project> -->`); then `_suffix` is cut wrongly and the file gets corrupted on write. `\r`-only line endings also break the line calculation.
+- **Fix:** determine the closing position via `XmlReader` (last `EndElement` at depth 0) or a round-trip check: `_prefix + root + _suffix` with an unchanged document must yield `OldText`, otherwise throw (becomes Manual).
 
-### L6. Manual-proof met lege `.manual.txt` bewijst niets
+### L6. A Manual proof with an empty `.manual.txt` proves nothing
 
-- **Waar:** `src/Unshackle.Tests/ProofTests.cs:77-78`
-- **Probleem:** `Reason.Contains("")` is altijd waar; een lege of per ongeluk geleegde file test dan alleen "is Manual".
-- **Fix:** `reason.ShouldNotBeNullOrWhiteSpace("manual.txt must name the reason")` vóór de assert.
+- **Where:** `src/Unshackle.Tests/ProofTests.cs:77-78`
+- **Problem:** `Reason.Contains("")` is always true; an empty or accidentally emptied file then only tests "is Manual".
+- **Fix:** `reason.ShouldNotBeNullOrWhiteSpace("manual.txt must name the reason")` before the assert.
 
-### L7. `ProofTests` faalt onduidelijk bij een tikfout in de mapnaam
+### L7. `ProofTests` fails unclearly on a typo in the folder name
 
-- **Waar:** `ProofTests.cs:53-54`
-- **Probleem:** `s_fixes[parts[0]]` → `KeyNotFoundException`, `.Single(...)` → "Sequence contains no matching element"; geen hint welke map.
+- **Where:** `ProofTests.cs:53-54`
+- **Problem:** `s_fixes[parts[0]]` → `KeyNotFoundException`, `.Single(...)` → "Sequence contains no matching element"; no hint which folder.
 - **Fix:** `ShouldContainKey` / `SingleOrDefault(...).ShouldNotBeNull($"no pattern {parts[1]}Pattern for proof {proof}")`.
 
-### L8. `ConsoleText.Sanitize` laat bidi- en zero-width-tekens door
+### L8. `ConsoleText.Sanitize` lets bidi and zero-width characters through
 
-- **Waar:** `src/Unshackle.Interface/Output/ConsoleText.cs:12`
-- **Probleem:** `char.IsControl` dekt U+202E (RLO), U+2066-2069 en U+200B niet (categorie `Format`). Een diff kan zo andere code tonen dan er geschreven wordt ("Trojan Source").
-- **Fix:** ook `char.GetUnicodeCategory(c) == UnicodeCategory.Format` vervangen. Test toevoegen naast `Sanitize_EscapeSequence_...`.
+- **Where:** `src/Unshackle.Interface/Output/ConsoleText.cs:12`
+- **Problem:** `char.IsControl` does not cover U+202E (RLO), U+2066-2069 and U+200B (category `Format`). A diff can thus show different code than what is written ("Trojan Source").
+- **Fix:** also replace `char.GetUnicodeCategory(c) == UnicodeCategory.Format`. Add a test next to `Sanitize_EscapeSequence_...`.
 
-## Eerst fixen
+## Fix first
 
-1. **H1 + H2** samen: alle staleness-checks (bron én projectbestanden) vóór de eerste write; test dat er bij een stale bestand niets geschreven is.
-2. **H3**: git-fouten niet als "schoon" interpreteren.
-3. **M1**: report mag geen bestaand bestand stil overschrijven.
-4. **H4**: integratietest voor `--fix mediatr` op SampleShop met build + test.
-5. **M2**: Markdown-cellen correct escapen (backslash + HTML).
+1. **H1 + H2** together: all staleness checks (source and project files) before the first write; test that nothing is written for a stale file.
+2. **H3**: do not interpret git errors as "clean".
+3. **M1**: the report must not silently overwrite an existing file.
+4. **H4**: integration test for `--fix mediatr` on SampleShop with build + test.
+5. **M2**: escape Markdown cells correctly (backslash + HTML).
 
-## Status (afhandeling 2026-10-11)
+## Status (handled 2026-10-11)
 
-| Bevinding                 | Status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| H1 + H2                   | **Opgelost.** `ISolutionStore.SaveAsync` en `MsBuildSolutionStore.SaveAsync` verwijderd (geen `TryApplyChanges` meer). `FixCommand` maakt van elk gewijzigd document een `ProjectFileChange` en geeft bron + projectbestanden in één `IProjectFileStore.SaveAsync`: eerst alle bestanden controleren (oude tekst, strikt UTF-8), dan schrijven via temp + move, bij fout de al geschreven bestanden terugzetten. Tests: `SaveAsync_SecondFileChanged_WritesNothing`, `SaveAsync_SecondWriteFails_RestoresTheFirst`, `SaveAsync_NotUtf8_ThrowsAndKeepsFile`, `FixExecuteAsync_ProjectFileChanges_SavesThemWithTheSourceInOneCall`. `Fixer.cs` niet aangeraakt; wel `Core/Abstractions/ISolutionStore.cs` (methode weg), `IProjectFileStore.cs` en `ISourceControl.cs` (alleen doc). |
-| H3                        | **Opgelost.** `GitSourceControl` gooit `InvalidOperationException`: "not in a git repository" / "git could not check…" / git ontbreekt; `FixCommand` weigert met advies `--force`. Tests: `NotARepository_ThrowsNotARepository`, `BrokenIndex_ThrowsGitError`, `FixExecuteAsync_SourceControlCannotTell_RefusesWithoutLoading`. Integratietests in temp-mappen gebruiken nu `--force`.                                                                                                                                                                                                                                                                                                                                                                                             |
-| H4 | **Opgelost.** `SampleShopTests.FixMediatRTwice_SampleShopCopy_FirstChangesNothingThenMigratesAndBuildsAndTests`: eerste fix laat alles staan (generieke `CountQuery` Manual, alles-of-niets), build + test groen; na handmatige fix van `CountQuery` migreert de tweede fix alles, geen `MediatR` meer in project/props, build + 38 tests groen. |
-| M1                        | **Opgelost.** `--report` weigert een bestaand bestand zonder `--force`; `scan` kreeg ook `--force`. Tests: `ScanExecuteAsync_ReportExists_RefusesWithoutForce`, `ScanExecuteAsync_ReportExistsWithForce_Overwrites`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| M2                        | **Opgelost.** HTML-encode + escape van `\`, `                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `, backtick, regeleinden. Test: `MarkdownWriteAsync_HtmlBackticksAndTrailingBackslash_EscapesEveryCell`. |
-| M3, M4, M5 | **Opgelost.** M3/M4 in `AddMediatRPattern` (proofs `processors`, `empty`); M5 in `UnsupportedPattern` (proof `derived-generic-message`). |
-| M6                        | **Opgelost.** `GetFullPath` + `OrdinalIgnoreCase` op Windows/macOS in `XmlProjectFileStore`. Geen test (platformafhankelijk; CI is Linux).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| M7 | **Opgelost.** `XmlProjectFileStore` gooit `InvalidDataException` bij `<Using Include=…>` met `Alias`/`Static` van een verwijderde namespace (→ Manual, en door alles-of-niets geen half werk). Test: `EditAsync_AliasOrStaticUsingOfRemovedNamespace_Throws`. |
-| M8                        | **Opgelost.** `DataAccess/Processes/ProcessRunner` killt de procesboom bij annulering; gebruikt door `GitSourceControl` en de twee testkopieën.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| L1                        | **Opgelost.** `MsBuildSolutionStore(IFileSystem)`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| L2                        | **Opgelost** (comment in `Program.cs`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| L3, L4 | **Opgelost.** L3: `CommaList`, `RejectExplicit`, `WithConstraint` in `MediatRSyntax`. L4: `?.Send` → Manual (proof `null-conditional`). |
-| L5                        | **Opgelost.** Round-trip-check in `ProjectFile`; anders `InvalidDataException` (→ Manual). Test: `EditAsync_ClosingTagInTrailingComment_ThrowsInsteadOfCorrupting`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| L6, L7                    | **Opgelost** in `ProofTests`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| L8                        | **Opgelost.** Ook `UnicodeCategory.Format`. Test: `Sanitize_BidiAndZeroWidth_ReplacesFormatCharacters`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| B-extra (niet gerestored) | **Opgelost.** Een ongerestorede solution geeft geen WorkspaceFailed-fout (geverifieerd). `MsBuildSolutionStore.LoadAsync` compileert daarom elk project en gooit `SolutionLoadException` bij CS0246/CS0234 met advies `dotnet restore "<pad>"`. Gekozen boven automatisch restoren: geen netwerk/side-effects zonder vraag, en het vangt ook andere niet-bindende code af. Test: `SampleShopTests.Scan_NotRestored_FailsWithRestoreAdvice`.                                                                                                                                                                                                                                                                                                                                        |
+| Finding | Status |
+| ------- | ------ |
+| H1 + H2 | **Fixed.** `ISolutionStore.SaveAsync` and `MsBuildSolutionStore.SaveAsync` removed (no more `TryApplyChanges`). `FixCommand` turns every changed document into a `ProjectFileChange` and passes source + project files in one `IProjectFileStore.SaveAsync`: first check all files (old text, strict UTF-8), then write via temp + move, on an error restore the files already written. Tests: `SaveAsync_SecondFileChanged_WritesNothing`, `SaveAsync_SecondWriteFails_RestoresTheFirst`, `SaveAsync_NotUtf8_ThrowsAndKeepsFile`, `FixExecuteAsync_ProjectFileChanges_SavesThemWithTheSourceInOneCall`. `Fixer.cs` not touched; but `Core/Abstractions/ISolutionStore.cs` (method removed), `IProjectFileStore.cs` and `ISourceControl.cs` (doc only). |
+| H3 | **Fixed.** `GitSourceControl` throws `InvalidOperationException`: "not in a git repository" / "git could not check…" / git missing; `FixCommand` refuses with the advice `--force`. Tests: `NotARepository_ThrowsNotARepository`, `BrokenIndex_ThrowsGitError`, `FixExecuteAsync_SourceControlCannotTell_RefusesWithoutLoading`. Integration tests in temp folders now use `--force`. |
+| H4 | **Fixed.** `SampleShopTests.FixMediatRTwice_SampleShopCopy_FirstChangesNothingThenMigratesAndBuildsAndTests`: the first fix leaves everything alone (generic `CountQuery` Manual, all-or-nothing), build + test green; after fixing `CountQuery` by hand the second fix migrates everything, no `MediatR` left in project/props, build + 38 tests green. |
+| M1 | **Fixed.** `--report` refuses an existing file without `--force`; `scan` also got `--force`. Tests: `ScanExecuteAsync_ReportExists_RefusesWithoutForce`, `ScanExecuteAsync_ReportExistsWithForce_Overwrites`. |
+| M2 | **Fixed.** HTML encode + escaping of `\`, `\|`, backtick, line endings. Test: `MarkdownWriteAsync_HtmlBackticksAndTrailingBackslash_EscapesEveryCell`. |
+| M3, M4, M5 | **Fixed.** M3/M4 in `AddMediatRPattern` (proofs `processors`, `empty`); M5 in `UnsupportedPattern` (proof `derived-generic-message`). |
+| M6 | **Fixed.** `GetFullPath` + `OrdinalIgnoreCase` on Windows/macOS in `XmlProjectFileStore`. No test (platform-dependent; CI is Linux). |
+| M7 | **Fixed.** `XmlProjectFileStore` throws `InvalidDataException` on `<Using Include=…>` with `Alias`/`Static` of a removed namespace (→ Manual, and through all-or-nothing no half work). Test: `EditAsync_AliasOrStaticUsingOfRemovedNamespace_Throws`. |
+| M8 | **Fixed.** `DataAccess/Processes/ProcessRunner` kills the process tree on cancellation; used by `GitSourceControl` and the two test copies. |
+| L1 | **Fixed.** `MsBuildSolutionStore(IFileSystem)`. |
+| L2 | **Fixed** (comment in `Program.cs`). |
+| L3, L4 | **Fixed.** L3: `CommaList`, `RejectExplicit`, `WithConstraint` in `MediatRSyntax`. L4: `?.Send` → Manual (proof `null-conditional`). |
+| L5 | **Fixed.** Round-trip check in `ProjectFile`; otherwise `InvalidDataException` (→ Manual). Test: `EditAsync_ClosingTagInTrailingComment_ThrowsInsteadOfCorrupting`. |
+| L6, L7 | **Fixed** in `ProofTests`. |
+| L8 | **Fixed.** Also `UnicodeCategory.Format`. Test: `Sanitize_BidiAndZeroWidth_ReplacesFormatCharacters`. |
+| B-extra (not restored) | **Fixed.** An unrestored solution gives no WorkspaceFailed error (verified). `MsBuildSolutionStore.LoadAsync` therefore compiles every project and throws `SolutionLoadException` on CS0246/CS0234 with the advice `dotnet restore "<path>"`. Chosen over restoring automatically: no network/side effects without asking, and it also catches other non-binding code. Test: `SampleShopTests.Scan_NotRestored_FailsWithRestoreAdvice`. |

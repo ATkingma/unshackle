@@ -1,37 +1,37 @@
-# Modellen: mediatr.autofac-mediator-module
+# Models: mediatr.autofac-mediator-module
 
-Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/AutofacMediatorModulePattern.cs`. Diagrammen ontbreken (d2/kingmadoc niet beschikbaar); tabellen vervangen ze.
+Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/AutofacMediatorModulePattern.cs`. Diagrams are missing (d2/kingmadoc not available); tables replace them.
 
-## Klassen
+## Classes
 
-| Element | Rol |
-| ------- | --- |
-| `AutofacMediatorModulePattern` | `IPattern`; vindt de methode-body met de scan, herschrijft het hele blok |
-| `ProjectPackages.TypeofAssembly` | `"typeof().Assembly"`: telt in `ForProjectAsync` als aanroep, zodat `AddedPackage.OnlyWithCallTo` de generator plaatst |
-| `InternalHandlerAccessPattern.HostsAsync` | telt een project met deze module dat de handler-assembly refereert als host |
-| `AddMediatRPattern.Types` | gedeeld: alle typen van een assembly (processor-zoektocht) |
+| Element | Role |
+| ------- | ---- |
+| `AutofacMediatorModulePattern` | `IPattern`; finds the method body with the scan, rewrites the whole block |
+| `ProjectPackages.TypeofAssembly` | `"typeof().Assembly"`: counts as a call in `ForProjectAsync`, so that `AddedPackage.OnlyWithCallTo` places the generator |
+| `InternalHandlerAccessPattern.HostsAsync` | counts a project with this module that references the handler assembly as a host |
+| `AddMediatRPattern.Types` | shared: all types of an assembly (processor search) |
 
 ## Sequence
 
-| Stap | Methode | Wat gebeurt er |
-| ---- | ------- | -------------- |
-| Vinden | `Find` → `ScanOfMediatR` | statement in een blok; keten terug tot `RegisterAssemblyTypes(typeof(T)[.GetTypeInfo()].Assembly)`, `T` uit MediatR, methode uit `Autofac*` |
-| Keten | `Lifetime` | `AsImplementedInterfaces` verplicht, hoogstens één lifetime-aanroep |
-| Checks | `GetTypeByMetadataName` | `AutofacRegistration` en `ServiceCollection` aanwezig |
-| Behaviors | `RegisteredPipelineType`, `Processors` | pre/post zonder processors → weg; anders Manual |
-| Lijsten | `IsListElement`, `RemoveElements` | `typeof(MediatR.Pipeline.*)` uit initializers, scheidingstekens kloppend |
-| Rest | `IsPipelineType` | nog een `MediatR.Pipeline`-type in het blok → Manual |
-| Schrijven | `Rewrite` | scan → drie statements (+ commentaar), vrije namen via `LookupSymbols`; usings `System.Linq`, `Microsoft.Extensions.DependencyInjection`, `Autofac.Extensions.DependencyInjection` |
+| Step | Method | What happens |
+| ---- | ------ | ------------ |
+| Find | `Find` → `ScanOfMediatR` | a statement in a block; the chain back to `RegisterAssemblyTypes(typeof(T)[.GetTypeInfo()].Assembly)`, `T` from MediatR, a method from `Autofac*` |
+| Chain | `Lifetime` | `AsImplementedInterfaces` required, at most one lifetime call |
+| Checks | `GetTypeByMetadataName` | `AutofacRegistration` and `ServiceCollection` present |
+| Behaviors | `RegisteredPipelineType`, `Processors` | pre/post without processors → removed; otherwise Manual |
+| Lists | `IsListElement`, `RemoveElements` | `typeof(MediatR.Pipeline.*)` out of initializers, separators kept correct |
+| Rest | `IsPipelineType` | another `MediatR.Pipeline` type in the block → Manual |
+| Write | `Rewrite` | scan → three statements (+ comment), free names via `LookupSymbols`; usings `System.Linq`, `Microsoft.Extensions.DependencyInjection`, `Autofac.Extensions.DependencyInjection` |
 
-## Beslisboom
+## Decision tree
 
-| Blad | Voorwaarde | Bewijs |
-| ---- | ---------- | ------ |
-| niet gevonden | geen Autofac-`RegisterAssemblyTypes` over MediatR's assembly | geen finding |
-| Manual | twee scans, andere ketenaanroep, geen Autofac.Extensions.DependencyInjection, processors, exception-behavior, ander Pipeline-gebruik | `scan-lifetime`, `with-processor` |
-| Fixed | anders | `kgrzybek-module`, `_Combined/autofac-mediator-module` |
+| Leaf | Condition | Evidence |
+| ---- | --------- | -------- |
+| not found | no Autofac `RegisterAssemblyTypes` over MediatR's assembly | no finding |
+| Manual | two scans, another chain call, no Autofac.Extensions.DependencyInjection, processors, an exception behavior, other Pipeline usage | `scan-lifetime`, `with-processor` |
+| Fixed | otherwise | `kgrzybek-module`, `_Combined/autofac-mediator-module` |
 
-## Zie ook
+## See also
 
 - [mediatr-autofac-mediator-module-plan.md](mediatr-autofac-mediator-module-plan.md)
 - [mediatr-autofac-mediator-module-verify.md](mediatr-autofac-mediator-module-verify.md)

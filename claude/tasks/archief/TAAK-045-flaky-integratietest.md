@@ -1,36 +1,36 @@
-# TAAK-045 — Flaky integratietest `FixTwice_SampleShopCopy_MigratesProjectFilesAndBuildsAndTests`
+# TAAK-045 — Flaky integration test `FixTwice_SampleShopCopy_MigratesProjectFilesAndBuildsAndTests`
 
-**Status**: ✅ voltooid (2026-10-11)
-**Aangemaakt**: 2026-10-11
-**Doel**: de integratietest in `src/Unshackle.Tests/Integration/SampleShopTests.cs` slaagt ook bij de eerste `dotnet test` in een verse (koude) worktree, zonder de asserts af te zwakken.
+**Status**: ✅ completed (2026-10-11)
+**Created**: 2026-10-11
+**Goal**: the integration test in `src/Unshackle.Tests/Integration/SampleShopTests.cs` also passes on the first `dotnet test` in a fresh (cold) worktree, without weakening the asserts.
 
-## Melding
+## Report
 
-Faalde soms bij de eerste `dotnet test` in een verse worktree (geen `obj/`/`bin/`), slaagde bij herhaling en los. Hint: een scan vóór `dotnet restore` geeft 0 findings.
+Sometimes failed on the first `dotnet test` in a fresh worktree (no `obj/`/`bin/`), passed on repetition and on its own. Hint: a scan before `dotnet restore` gives 0 findings.
 
-## Reproductie
+## Reproduction
 
-- Koude kopie (rsync zonder `bin/obj`) + `dotnet build` + `dotnet test`: 7 runs sequentieel en 6 runs (3 parallel) — **niet gereproduceerd**, alles groen. De oorspronkelijke foutmelding is dus niet vastgelegd.
-- Wel gevonden (`/proc/<pid>/environ` van de testhost): de buitenste `dotnet test` zet `MSBuildLoadMicrosoftTargetsReadOnly`, `MSBUILDFAILONDRIVEENUMERATINGWILDCARD`, `_MSBUILDTLENABLED` en `TESTINGPLATFORM_*` in de testhost. De `dotnet restore/build/test`-kindprocessen van de test erfden die, en gebruikten MSBuild node reuse en de MSBuild-server die de koude build van de repo net had achtergelaten.
+- Cold copy (rsync without `bin/obj`) + `dotnet build` + `dotnet test`: 7 runs sequentially and 6 runs (3 parallel) — **not reproduced**, everything green. The original error message was therefore not captured.
+- Found though (`/proc/<pid>/environ` of the test host): the outer `dotnet test` sets `MSBuildLoadMicrosoftTargetsReadOnly`, `MSBUILDFAILONDRIVEENUMERATINGWILDCARD`, `_MSBUILDTLENABLED` and `TESTINGPLATFORM_*` in the test host. The test's `dotnet restore/build/test` child processes inherited them, and used MSBuild node reuse and the MSBuild server that the cold build of the repo had just left behind.
 
-## Oorzaak (meest waarschijnlijk)
+## Cause (most likely)
 
-De kind-`dotnet`-processen waren niet geïsoleerd van de buitenste build/test: hergebruikte MSBuild-nodes/server uit de koude build en gelekte MSBuild-/testplatform-omgevingsvariabelen. Bij een koude run (nodes net gestart, druk systeem, eventueel andere agents die tegelijk bouwen) kan de restore van de kopie dan anders/onvolledig uitpakken, waarna MSBuildWorkspace zonder geldige assets laadt → 0 findings → assert op de rapportregels faalt (past bij de hint). Racen tussen de integratietests zelf is uitgesloten: ze zitten in één class (= één xUnit-collection, sequentieel) en elk gebruikt een eigen `TempDirectory` (GUID).
+The child `dotnet` processes were not isolated from the outer build/test: reused MSBuild nodes/server from the cold build and leaked MSBuild/test-platform environment variables. In a cold run (nodes just started, a busy system, possibly other agents building at the same time) the restore of the copy can then unpack differently/incompletely, after which MSBuildWorkspace loads without valid assets → 0 findings → the assert on the report rows fails (matches the hint). Races between the integration tests themselves are ruled out: they are in one class (= one xUnit collection, sequential) and each uses its own `TempDirectory` (GUID).
 
 ## Fix
 
-`DotnetAsync` in `SampleShopTests.cs`: verwijdert overgeërfde `MSBuild*`, `_MSBuild*` en `TESTINGPLATFORM_*` variabelen en zet `MSBUILDDISABLENODEREUSE=1` en `DOTNET_CLI_USE_MSBUILD_SERVER=false`. Asserts ongewijzigd; restore stond al expliciet in elke test.
+`DotnetAsync` in `SampleShopTests.cs`: removes inherited `MSBuild*`, `_MSBuild*` and `TESTINGPLATFORM_*` variables and sets `MSBUILDDISABLENODEREUSE=1` and `DOTNET_CLI_USE_MSBUILD_SERVER=false`. Asserts unchanged; restore was already explicit in every test.
 
-## Bewijs
+## Proof
 
-- 5 opeenvolgende koude runs (verse kopie zonder `bin/obj`, `dotnet build` + `dotnet test`): 5× 346/346 groen.
-- `dotnet build` 0 fouten, `dotnet test` 346/346, `dotnet test --solution samples/SampleShop/SampleShop.slnx` 38/38, hook `check-pattern-docs.sh` exit 0.
+- 5 consecutive cold runs (fresh copy without `bin/obj`, `dotnet build` + `dotnet test`): 5× 346/346 green.
+- `dotnet build` 0 errors, `dotnet test` 346/346, `dotnet test --solution samples/SampleShop/SampleShop.slnx` 38/38, hook `check-pattern-docs.sh` exit 0.
 
-## Restrisico
+## Remaining risk
 
-Omdat de fout niet lokaal reproduceerbaar was, is de oorzaak niet hard bewezen. Faalt hij opnieuw: leg de volledige Shouldly-melding vast (bevat stdout/stderr van `dotnet` of de rapportregels).
+Because the failure was not reproducible locally, the cause is not hard-proven. If it fails again: capture the full Shouldly message (contains stdout/stderr of `dotnet` or the report rows).
 
-## Zie ook
+## See also
 
-- `claude/docs/agent-werkwijze.md` §6 — main blijft groen
+- `claude/docs/agent-werkwijze.md` §6 — main stays green
 - `src/Unshackle.Tests/Integration/SampleShopTests.cs`

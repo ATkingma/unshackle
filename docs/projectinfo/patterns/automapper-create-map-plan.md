@@ -9,7 +9,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/AutoMapper/CreateMap/
 ---
 
-# Feature: automapper.create-map: Profile met CreateMap<A,B>() zonder opties → ToB-extensiemethode
+# Feature: automapper.create-map: Profile with CreateMap<A,B>() without options → ToB extension method
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -17,49 +17,49 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-146.
+> Drawn up from TAAK-146.
 
 ## One-sentence summary
 
-automapper.create-map: een `Profile` waarvan de constructor alleen `CreateMap<A, B>()` zonder opties bevat, krijgt een statische klasse `<Profile>Extensions` met per map `static B ToB(this A source) => new() { X = source.X, ... }`; de constructor wordt leeg.
+automapper.create-map: a `Profile` whose constructor only contains `CreateMap<A, B>()` without options gets a static class `<Profile>Extensions` with per map `static B ToB(this A source) => new() { X = source.X, ... }`; the constructor becomes empty.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Top-level, niet-generieke, niet-partial `Profile`-subklasse met één constructor die alleen `CreateMap<A, B>();`-statements heeft.
-- Bestemmingsleden die AutoMapper schrijft: publieke properties met publieke `set`/`init` en publieke niet-readonly velden, ook geërfd.
-- `Map`/`ProjectTo`-aanroepen van AutoMapper: Manual, zodat de hele fix (AllOrNothing) niets wijzigt zolang AutoMapper nog mapt.
+- A top-level, non-generic, non-partial `Profile` subclass with one constructor that only has `CreateMap<A, B>();` statements.
+- Destination members that AutoMapper writes: public properties with a public `set`/`init` and public non-readonly fields, also inherited.
+- AutoMapper's `Map`/`ProjectTo` calls: Manual, so the whole fix (AllOrNothing) changes nothing as long as AutoMapper still maps.
 
 **Out of scope**
 
-- `ForMember`, `ReverseMap`, `ConvertUsing` en andere opties (rijen 2, 3 en 7 van `claude/tasks/automapper-queue.md`): Manual.
-- Het lege `Profile` verwijderen en het AutoMapper-pakket weghalen: pas als `map-call` en `add-automapper` er zijn.
+- `ForMember`, `ReverseMap`, `ConvertUsing` and other options (rows 2, 3 and 7 of `claude/tasks/automapper-queue.md`): Manual.
+- Removing the empty `Profile` and the AutoMapper package: only once `map-call` and `add-automapper` exist.
 
 ## Requirements
 
-- **REQ-1**: WHEN een profile alleen `CreateMap<A, B>()` zonder opties heeft THE SYSTEM SHALL per map een `ToB(this A source)` met alle gelijknamige leden van hetzelfde type schrijven en de constructor leegmaken (proof `simple`, ook struct-bestemming en velden).
-- **REQ-2**: WHEN A of B `internal` is THE SYSTEM SHALL de klasse en methodes `internal` maken (proof `internal-types`).
-- **REQ-3**: IF een statement geen `CreateMap<A, B>()` zonder opties is THEN THE SYSTEM SHALL Manual melden voor het hele profile (proof `options`).
-- **REQ-4**: IF een bestemmingslid geen bronlid met exact dezelfde naam heeft (flattening, `GetX()`, andere hoofdletters) THEN THE SYSTEM SHALL Manual melden (proof `flattening`, unittest hoofdletters).
-- **REQ-5**: IF de typen verschillen of het lid een collectie is THEN THE SYSTEM SHALL Manual melden (proofs `conversion`, `collection`).
-- **REQ-6**: IF B geen publieke parameterloze constructor heeft of abstract is THEN THE SYSTEM SHALL Manual melden (proof `constructor`).
-- **REQ-7**: WHEN AutoMapper's `Map`/`ProjectTo` aangeroepen wordt THE SYSTEM SHALL Manual melden, zodat de fix niets wijzigt (proof `map-call`; sinds TAAK-157 alleen `ProjectTo`, `Map(src, dest)` en `Map` met opties, proof `map-into`).
+- **REQ-1**: WHEN a profile only has `CreateMap<A, B>()` without options THE SYSTEM SHALL write per map a `ToB(this A source)` with all same-named members of the same type and empty the constructor (proof `simple`, also a struct destination and fields).
+- **REQ-2**: WHEN A or B is `internal` THE SYSTEM SHALL make the class and methods `internal` (proof `internal-types`).
+- **REQ-3**: IF a statement is not a `CreateMap<A, B>()` without options THEN THE SYSTEM SHALL report Manual for the whole profile (proof `options`).
+- **REQ-4**: IF a destination member has no source member with exactly the same name (flattening, `GetX()`, different case) THEN THE SYSTEM SHALL report Manual (proof `flattening`, unit test for case).
+- **REQ-5**: IF the types differ or the member is a collection THEN THE SYSTEM SHALL report Manual (proofs `conversion`, `collection`).
+- **REQ-6**: IF B has no public parameterless constructor or is abstract THEN THE SYSTEM SHALL report Manual (proof `constructor`).
+- **REQ-7**: WHEN AutoMapper's `Map`/`ProjectTo` is called THE SYSTEM SHALL report Manual, so the fix changes nothing (proof `map-call`; since TAAK-157 only `ProjectTo`, `Map(src, dest)` and `Map` with options, proof `map-into`).
 
 ## Assumptions
 
-- AutoMapper 14.0.0 wijst gelijke, niet-collectie typen direct toe (geen kopie); collecties kopieert hij naar een nieuwe instantie.
-- Een get-only bestemmingslid zonder bronlid negeert AutoMapper; met bronlid kan hij het vullen (bestaande collectie), daarom Manual.
+- AutoMapper 14.0.0 assigns equal, non-collection types directly (no copy); collections it copies to a new instance.
+- AutoMapper ignores a get-only destination member without a source member; with a source member it can fill it (existing collection), hence Manual.
 
 ## Risks
 
-- `Map`-aanroepen in een **ander** project dan dat van de profile vindt de Fixer wel (hij draait alle projecten), maar buiten de solution niet; daar zou een ontbrekende type-map pas tijdens runtime falen.
-- `ToB` geeft bij `null` een `NullReferenceException`, waar `mapper.Map` `null` gaf: van belang voor rij 4 (`map-call`).
+- The Fixer does find `Map` calls in **another** project than the profile's (it runs all projects), but not outside the solution; there a missing type map would only fail at runtime.
+- `ToB` gives a `NullReferenceException` on `null`, where `mapper.Map` gave `null`: relevant for row 4 (`map-call`).
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [automapper-create-map-modellen.md](automapper-create-map-modellen.md).
+Class diagram, sequence and decision tree: [automapper-create-map-modellen.md](automapper-create-map-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

@@ -1,36 +1,36 @@
-# Modellen: mediatr.request-processor-caller
+# Models: mediatr.request-processor-caller
 
-Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestProcessorCallerPattern.cs`. Diagrammen ontbreken (d2/kingmadoc niet beschikbaar); tabellen vervangen ze.
+Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestProcessorCallerPattern.cs`. Diagrams are missing (d2/kingmadoc not available); tables replace them.
 
-## Klassen
+## Classes
 
-| Element | Rol |
-| ------- | --- |
-| `RequestProcessorCallerPattern` | `IPattern`; vindt processorverwijzingen en `Process`-aanroepen en schrijft ze om |
-| `MediatRSyntax` | `ResponseOf` (gedeeld met `RequestProcessorPattern`), `DeclaredInterface`, `IsMediatR`, `CommaList` |
-| `CallAnalysis` | Uitkomst van de analyse van één `Process`: probleem, pre of post, responsetype |
+| Element | Role |
+| ------- | ---- |
+| `RequestProcessorCallerPattern` | `IPattern`; finds processor references and `Process` calls and rewrites them |
+| `MediatRSyntax` | `ResponseOf` (shared with `RequestProcessorPattern`), `DeclaredInterface`, `IsMediatR`, `CommaList` |
+| `CallAnalysis` | Outcome of the analysis of one `Process`: problem, pre or post, response type |
 
 ## Sequence
 
-| Stap | Methode | Wat gebeurt er |
-| ---- | ------- | -------------- |
-| Vinden | `Find` | `GenericName` van een pre-processorklasse met open bericht (buiten eigen klasse en `AddMediatR`), `Process`-naam en bijbehorende `ArgumentList` |
-| Verwijzing | `RewriteReference` | `MediatRSyntax.ResponseOf` van het typeargument, tweede argument toevoegen |
-| Aanroep | `Analyze` | Is het een `await x.Process(...);`-statement met positionele argumenten? |
-| Naam | `Rewrite` (IdentifierName) | `Process` wordt `Handle` |
-| Argumenten | `RewriteArguments` | `next`-delegate tussen request en token |
+| Step | Method | What happens |
+| ---- | ------ | ------------ |
+| Find | `Find` | `GenericName` of a pre-processor class with an open message (outside its own class and `AddMediatR`), `Process` name and associated `ArgumentList` |
+| Reference | `RewriteReference` | `MediatRSyntax.ResponseOf` of the type argument, add second argument |
+| Call | `Analyze` | Is it an `await x.Process(...);` statement with positional arguments? |
+| Name | `Rewrite` (IdentifierName) | `Process` becomes `Handle` |
+| Arguments | `RewriteArguments` | `next` delegate between request and token |
 
-## Beslisboom
+## Decision tree
 
-| Blad | Voorwaarde | Bewijs |
-| ---- | ---------- | ------ |
-| Fixed | `P<Cmd>` met `Cmd : IRequest<T>` of `IRequest` | `_Combined/request-processor-callers` |
-| Fixed | `await p.Process(...)` pre of post | `_Combined/request-processor-callers` |
-| Manual "unknown" | typeargument zonder `IRequest`, open argument | `unknown-response` |
-| Manual "not a plain await statement" | resultaat gebruikt, niet awaited, mock, methodegroep | `result-used` |
-| Manual "through the MediatR interface" | ontvanger is `IRequestPreProcessor<T>`/`IRequestPostProcessor<T,R>` | `through-interface` |
+| Leaf | Condition | Proof |
+| ---- | --------- | ----- |
+| Fixed | `P<Cmd>` with `Cmd : IRequest<T>` or `IRequest` | `_Combined/request-processor-callers` |
+| Fixed | `await p.Process(...)` pre or post | `_Combined/request-processor-callers` |
+| Manual "unknown" | type argument without `IRequest`, open argument | `unknown-response` |
+| Manual "not a plain await statement" | result used, not awaited, mock, method group | `result-used` |
+| Manual "through the MediatR interface" | receiver is `IRequestPreProcessor<T>`/`IRequestPostProcessor<T,R>` | `through-interface` |
 
-## Zie ook
+## See also
 
 - [mediatr-request-processor-caller-plan.md](mediatr-request-processor-caller-plan.md)
 - [mediatr-request-processor-caller-verify.md](mediatr-request-processor-caller-verify.md)

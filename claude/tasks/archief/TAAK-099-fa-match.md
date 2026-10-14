@@ -1,27 +1,27 @@
-# TAAK-099 — `fa.match`: MatchRegex/NotMatchRegex en wildcard-Match
+# TAAK-099 — `fa.match`: MatchRegex/NotMatchRegex and wildcard Match
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-11
-**Bron**: `claude/tasks/ANALYSE-fa-100.md` (acties 5–10)
+**Status**: ✅ Done
+**Created**: 2026-10-11
+**Source**: `claude/tasks/ANALYSE-fa-100.md` (actions 5–10)
 
-## Keuzes
+## Choices
 
-Nieuw patroon `MatchPattern` (`fa.match`), zie `docs/projectinfo/patterns/fa-match-plan.md`.
+New pattern `MatchPattern` (`fa.match`), see `docs/projectinfo/patterns/fa-match-plan.md`.
 
-## Bewijs
+## Evidence
 
-Zie plan (probe 22 wildcardgevallen, lege regex).
-Probe-code: scratchpad `p096/` (FA 7.2.2 + Shouldly 4.3.0, reflectie op `Shouldly.dll`).
+See plan (probe of 22 wildcard cases, empty regex).
+Probe code: scratchpad `p096/` (FA 7.2.2 + Shouldly 4.3.0, reflection on `Shouldly.dll`).
 
 ## Proofs
 
 Match/* (6 Fixed, 4 Manual)
 
-## Resultaat
+## Result
 
-`dotnet build`, `dotnet test` (621) en de SampleShop-tests (38) groen. Scan: `ANALYSE-fa-100.md` sectie "Na acties 5–10".
+`dotnet build`, `dotnet test` (621) and the SampleShop tests (38) green. Scan: `ANALYSE-fa-100.md` section "Na acties 5–10".
 
-## Zie ook
+## See also
 
 - `claude/tasks/ANALYSE-fa-100.md`
 - `docs/projectinfo/architectuur/proofs.md`

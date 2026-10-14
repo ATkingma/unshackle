@@ -1,55 +1,55 @@
-# Modellen: fa.match
+# Models: fa.match
 
-`s.Should().MatchRegex(r)` wordt `s.ShouldMatch(r)`, `NotMatchRegex` → `ShouldNotMatch`; wildcard-`Match`/`NotMatch` met een constante wordt de regex `(?s)\A…$`. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/MatchPattern.cs`.
+`s.Should().MatchRegex(r)` becomes `s.ShouldMatch(r)`, `NotMatchRegex` → `ShouldNotMatch`; wildcard `Match`/`NotMatch` with a constant becomes the regex `(?s)\A…$`. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/MatchPattern.cs`.
 
-**Figure 1.** Klassen: wat het patroon erft, gebruikt en aanmaakt. Weggelaten: `Fixer`, `IFix` en de usings (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes: what the pattern inherits, uses and creates. Omitted: `Fixer`, `IFix` and the usings (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-match-modellen-1.d2 -->
-![Modellen: fa.match](img/fa-match-modellen-1.png)
+![Models: fa.match](img/fa-match-modellen-1.png)
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
-| `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract: `Find` en `Rewrite` |
-| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` doet scope, vorm, resultaat en because(-args), dan `RewriteAssertion` |
-| `MatchPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/MatchPattern.cs` | Dit patroon, Id `fa.match`; `RewriteAssertion`; `s_methods` (FA-naam → Shouldly-naam) |
+| `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract: `Find` and `Rewrite` |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` handles scope, form, result and because(-args), then `RewriteAssertion` |
+| `MatchPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/MatchPattern.cs` | This pattern, Id `fa.match`; `RewriteAssertion`; `s_methods` (FA name → Shouldly name) |
 | `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | `FindInvocations`, `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments`, `NotNull`, `Invoke` |
-| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst |
-| «FluentAssertions» herkend | - | `MatchRegex`/`NotMatchRegex(string)`, `Match`/`NotMatch(wildcard)` op een string; `Regex`-overloads, occurrence en predicate → Manual |
-| «Shouldly» aangemaakt | - | `s[.ShouldNotBeNull()].ShouldMatch(r[, because])` / `ShouldNotMatch`; wildcard als `@"(?s)\A…$"` |
+| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Outcome |
+| «FluentAssertions» recognized | - | `MatchRegex`/`NotMatchRegex(string)`, `Match`/`NotMatch(wildcard)` on a string; `Regex` overloads, occurrence and predicate → Manual |
+| «Shouldly» created | - | `s[.ShouldNotBeNull()].ShouldMatch(r[, because])` / `ShouldNotMatch`; wildcard as `@"(?s)\A…$"` |
 
-**Figure 2.** `Fixer` roept `Find` en per node `FluentAssertionPattern.Rewrite` aan; die doet de gedeelde controles en roept de eigen stappen van het patroon aan. Weggelaten: het vervangen van de node door de `Fixer`.
+**Figure 2.** `Fixer` calls `Find` and, per node, `FluentAssertionPattern.Rewrite`; that performs the shared checks and calls the pattern's own steps. Omitted: the replacement of the node by the `Fixer`.
 
 <!-- kingmadoc:diagram img/fa-match-modellen-2.d2 -->
-![Modellen: fa.match](img/fa-match-modellen-2.png)
+![Models: fa.match](img/fa-match-modellen-2.png)
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Location | What happens |
 | --- | --- | --- |
-| Find | `MatchPattern.Find` | `FindInvocations` op `Match`, `NotMatch`, `MatchRegex`, `NotMatchRegex` |
-| Gedeelde controles | `FluentAssertionPattern.Rewrite` | `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments` (becauseArgs met constante because → `string.Format(CultureInfo.InvariantCulture, ...)`) |
-| Eigen controles | `MatchPattern.RewriteAssertion` | subject is string; één niet-lege stringconstante; wildcard → regex; `NotNull` |
-| Uitkomst | `PatternResult.Fixed` / `Manual` | Shouldly-aanroep of reden |
+| Find | `MatchPattern.Find` | `FindInvocations` on `Match`, `NotMatch`, `MatchRegex`, `NotMatchRegex` |
+| Shared checks | `FluentAssertionPattern.Rewrite` | `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments` (becauseArgs with constant because → `string.Format(CultureInfo.InvariantCulture, ...)`) |
+| Own checks | `MatchPattern.RewriteAssertion` | subject is string; one non-empty string constant; wildcard → regex; `NotNull` |
+| Outcome | `PatternResult.Fixed` / `Manual` | Shouldly call or reason |
 
-**Figure 3.** Beslisboom in de volgorde van de code; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/Match/`.
+**Figure 3.** Decision tree in code order; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/Match/`.
 
 <!-- kingmadoc:diagram img/fa-match-modellen-3.d2 -->
-![Modellen: fa.match](img/fa-match-modellen-3.png)
+![Models: fa.match](img/fa-match-modellen-3.png)
 
-| Vraag | Bij nee: Manual-reden | Proof |
+| Question | If no: Manual reason | Proof |
 | --- | --- | --- |
-| Buiten een AssertionScope? | Inside an AssertionScope | geen proof |
-| Vorm s.Should().Match..(..)? | is not in the form x.Should() | geen proof |
-| Resultaat weggegooid? | The result of ... is used | geen proof |
-| Geen benoemde argumenten; because constant formatteerbaar? | named arguments, or becauseArgs whose because is no constant format string | geen proof |
-| Subject is een string? | on a non-string subject | predicate |
-| Eén niet-lege stringconstante? | without one non-empty string constant | regex-object, variable, empty |
+| Outside an AssertionScope? | Inside an AssertionScope | no proof |
+| Form s.Should().Match..(..)? | is not in the form x.Should() | no proof |
+| Result discarded? | The result of ... is used | no proof |
+| No named arguments; because constant and formattable? | named arguments, or becauseArgs whose because is no constant format string | no proof |
+| Subject is a string? | on a non-string subject | predicate |
+| One non-empty string constant? | without one non-empty string constant | regex-object, variable, empty |
 
-| Voorwaarde | Fixed-vorm | Proofs |
+| Condition | Fixed form | Proofs |
 | --- | --- | --- |
-| `MatchRegex` / `NotMatchRegex` | `s.ShouldMatch(r[, because])` / `ShouldNotMatch`, patroon ongewijzigd | `regex`, `not-regex`, `because`, `nullable` |
+| `MatchRegex` / `NotMatchRegex` | `s.ShouldMatch(r[, because])` / `ShouldNotMatch`, pattern unchanged | `regex`, `not-regex`, `because`, `nullable` |
 | `Match` / `NotMatch` (wildcard) | `s.ShouldMatch(@"(?s)\A…$")` / `ShouldNotMatch` | `wildcard`, `not-wildcard` |
 
-## Zie ook
+## See also
 
 - [fa-match-plan.md](fa-match-plan.md) - plan
-- [fa-match-verify.md](fa-match-verify.md) - verificatie
-- `src/Unshackle.Tests/Proofs/FluentAssertions/Match/` - de proofs
+- [fa-match-verify.md](fa-match-verify.md) - verification
+- `src/Unshackle.Tests/Proofs/FluentAssertions/Match/` - the proofs

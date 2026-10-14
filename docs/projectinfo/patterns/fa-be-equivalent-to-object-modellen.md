@@ -1,66 +1,66 @@
-# Modellen: fa.be-equivalent-to-object
+# Models: fa.be-equivalent-to-object
 
-obj.Should().BeEquivalentTo(other) naar obj.ShouldBeEquivalentTo(other), alleen voor het zelfde gewone type met eenvoudige leden; een collectie van leaves wordt `ShouldBe(other, ignoreOrder: true)` (TAAK-092); al het andere is Manual. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPattern.cs`.
+obj.Should().BeEquivalentTo(other) to obj.ShouldBeEquivalentTo(other), only for the same plain type with simple members; a collection of leaves becomes `ShouldBe(other, ignoreOrder: true)` (TAAK-092); everything else is Manual. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPattern.cs`.
 
-**Figure 1.** Klassen rond `BeEquivalentToObjectPattern`: wat hij implementeert, gebruikt en aanmaakt. Weggelaten: `Fixer`, `IFix` en de usings-afhandeling (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes around `BeEquivalentToObjectPattern`: what it implements, uses and creates. Left out: `Fixer`, `IFix` and the usings handling (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-be-equivalent-to-object-modellen-1.d2 -->
-![Modellen: fa.be-equivalent-to-object](img/fa-be-equivalent-to-object-modellen-1.png)
+![Models: fa.be-equivalent-to-object](img/fa-be-equivalent-to-object-modellen-1.png)
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
-| `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract: `Find` en `Rewrite` |
-| `BeEquivalentToObjectPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPattern.cs` | Dit patroon, Id `fa.be-equivalent-to-object`; `Unsupported` loopt over het type en zijn publieke leden |
-| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Gedeelde bouwstenen: `FindInvocations`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments`, `Invoke` |
-| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` doet de gedeelde controles, roept `RewriteBeforeArguments` (NotBeEquivalentTo, params) en dan `RewriteAssertion` aan |
-| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst: `Fixed` met nieuwe node (bij een niet-sealed class met `Warning`), of `Manual` met reden |
-| «FluentAssertions» herkend | - | `BeEquivalentTo(expected[, because])`, met `options =>`, en `NotBeEquivalentTo` |
-| «Shouldly» aangemaakt | - | `ShouldBeEquivalentTo(expected[, because])`; voor een collectie van leaves `ShouldBe(expected, ignoreOrder: true[, because])` |
-| Uitgesloten typen | - | `StringAssertions` (doet `fa.be-equivalent-to-string`) |
+| `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract: `Find` and `Rewrite` |
+| `BeEquivalentToObjectPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPattern.cs` | This pattern, Id `fa.be-equivalent-to-object`; `Unsupported` walks over the type and its public members |
+| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Shared building blocks: `FindInvocations`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments`, `Invoke` |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` does the shared checks, calls `RewriteBeforeArguments` (NotBeEquivalentTo, params) and then `RewriteAssertion` |
+| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Outcome: `Fixed` with a new node (with a `Warning` for a non-sealed class), or `Manual` with a reason |
+| «FluentAssertions» recognised | - | `BeEquivalentTo(expected[, because])`, with `options =>`, and `NotBeEquivalentTo` |
+| «Shouldly» created | - | `ShouldBeEquivalentTo(expected[, because])`; for a collection of leaves `ShouldBe(expected, ignoreOrder: true[, because])` |
+| Excluded types | - | `StringAssertions` (handled by `fa.be-equivalent-to-string`) |
 
-**Figure 2.** `Fixer` roept `Find` en per node `Rewrite` aan; `FluentAssertionPattern.Rewrite` → `RewriteAssertion` doet de controles via `FluentAssertionsSyntax` en `SemanticModel` en levert `Fixed` of `Manual`. Weggelaten: het vervangen van de node en de usings door de `Fixer`.
+**Figure 2.** `Fixer` calls `Find` and `Rewrite` per node; `FluentAssertionPattern.Rewrite` → `RewriteAssertion` does the checks via `FluentAssertionsSyntax` and `SemanticModel` and returns `Fixed` or `Manual`. Left out: replacing the node and the usings by the `Fixer`.
 
 <!-- kingmadoc:diagram img/fa-be-equivalent-to-object-modellen-2.d2 -->
-![Modellen: fa.be-equivalent-to-object](img/fa-be-equivalent-to-object-modellen-2.png)
+![Models: fa.be-equivalent-to-object](img/fa-be-equivalent-to-object-modellen-2.png)
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Place | What happens |
 | --- | --- | --- |
-| Find | `BeEquivalentToObjectPattern.Find` | `FindInvocations` zoekt `BeEquivalentTo`, `NotBeEquivalentTo` in FluentAssertions; `StringAssertions` valt af |
-| Vorm en argumenten | `FluentAssertionPattern.Rewrite` | `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `RewriteBeforeArguments`, `TryGetArguments` (becauseArgs → `string.Format`) |
-| Typen | `RewriteAssertion` | `GetTypeInfo` van subject en verwachting; `ElementType` + `IsLeaf` voor een collectie; `SymbolEqualityComparer` |
-| Type-onderzoek | `Unsupported` | Collectie, gewoon type, `Equals`-override, cyclus, publieke leden, leden recursief |
-| Manual | `PatternResult.Manual` | Eerste mislukte controle geeft `ManualResult` met reden (zie figuur 3) |
-| Fixed | `PatternResult.Fixed` / `FixedResult` met `Warning` | Nieuwe node; trivia en usings regelt de `Fixer` |
+| Find | `BeEquivalentToObjectPattern.Find` | `FindInvocations` looks for `BeEquivalentTo`, `NotBeEquivalentTo` in FluentAssertions; `StringAssertions` drops out |
+| Shape and arguments | `FluentAssertionPattern.Rewrite` | `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `RewriteBeforeArguments`, `TryGetArguments` (becauseArgs → `string.Format`) |
+| Types | `RewriteAssertion` | `GetTypeInfo` of subject and expectation; `ElementType` + `IsLeaf` for a collection; `SymbolEqualityComparer` |
+| Type examination | `Unsupported` | Collection, plain type, `Equals` override, cycle, public members, members recursively |
+| Manual | `PatternResult.Manual` | The first failing check gives a `ManualResult` with a reason (see figure 3) |
+| Fixed | `PatternResult.Fixed` / `FixedResult` with `Warning` | New node; the `Fixer` handles trivia and usings |
 
-**Figure 3.** Beslisboom van `FluentAssertionPattern.Rewrite` → `RewriteAssertion`: de vragen in de volgorde van de code, elk blad noemt de proof in `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToObject/` die het bewijst.
+**Figure 3.** Decision tree of `FluentAssertionPattern.Rewrite` → `RewriteAssertion`: the questions in the order of the code, every leaf names the proof in `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToObject/` that proves it.
 
 <!-- kingmadoc:diagram img/fa-be-equivalent-to-object-modellen-3.d2 -->
-![Modellen: fa.be-equivalent-to-object](img/fa-be-equivalent-to-object-modellen-3.png)
+![Models: fa.be-equivalent-to-object](img/fa-be-equivalent-to-object-modellen-3.png)
 
-| Vraag of selector | Bij nee: Manual-reden | Proof |
+| Question or selector | If no: Manual reason | Proof |
 | --- | --- | --- |
-| Vorm x.Should().BeEquivalentTo(...)? | is not in the form | `and-chain` |
-| Resultaat weggegooid? | The result of ... is used | `value-used` |
-| Niet NotBeEquivalentTo, geen `params`-overload? (`RewriteBeforeArguments`) | no Shouldly equivalent / (params items) is a collection assertion | `not-equivalent`, `edge-collection-params` |
-| Argumenten splitsbaar (becauseArgs alleen met constante because)? | named arguments, or becauseArgs whose because is no constant format string | geen proof (`because-args` is sinds TAAK-097 Fixed) |
-| Precies één waarde? | options => ... configuration | `options` |
-| Type bekend? | The type of the subject or the expectation is unknown | geen proof (`BeEquivalentTo(null)` is ambigu) |
-| Collectie van leaves met hetzelfde elementtype? | ja: Fixed `ShouldBe(.., ignoreOrder: true)`; nee: verder | zie hieronder |
-| Zelfde compile-time type? | Different compile-time types | `anonymous`, `different-types`, `base-vs-derived`, `collection-element-types` |
-| Gewoon type, zonder collectie, Equals-override, cyclus? | is a collection / not a plain class / overrides Equals / cyclic / no public members | `collection`, `collection-member`, `object-subject`, `object-member`, `equals-override`, `equals-member`, `cyclic`, `no-members` |
+| Shape x.Should().BeEquivalentTo(...)? | is not in the form | `and-chain` |
+| Result discarded? | The result of ... is used | `value-used` |
+| Not NotBeEquivalentTo, no `params` overload? (`RewriteBeforeArguments`) | no Shouldly equivalent / (params items) is a collection assertion | `not-equivalent`, `edge-collection-params` |
+| Arguments splittable (becauseArgs only with a constant because)? | named arguments, or becauseArgs whose because is no constant format string | no proof (`because-args` is Fixed since TAAK-097) |
+| Exactly one value? | options => ... configuration | `options` |
+| Type known? | The type of the subject or the expectation is unknown | no proof (`BeEquivalentTo(null)` is ambiguous) |
+| Collection of leaves with the same element type? | yes: Fixed `ShouldBe(.., ignoreOrder: true)`; no: continue | see below |
+| Same compile-time type? | Different compile-time types | `anonymous`, `different-types`, `base-vs-derived`, `collection-element-types` |
+| Plain type, without collection, Equals override, cycle? | is a collection / not a plain class / overrides Equals / cyclic / no public members | `collection`, `collection-member`, `object-subject`, `object-member`, `equals-override`, `equals-member`, `cyclic`, `no-members` |
 
-| Voorwaarde | Fixed-vorm | Proofs |
+| Condition | Fixed form | Proofs |
 | --- | --- | --- |
-| collectie van leaves (TAAK-092) | `a.ShouldBe(b, ignoreOrder: true[, because])` | `collection-ints`, `collection-strings-because`, `collection-nullable-enum`, `collection-because-args`, `edge-array-literal` |
-| geen because | `a.ShouldBeEquivalentTo(b)` | `simple`, `new-expectation`, `record`, `nested`, `lambda` |
+| collection of leaves (TAAK-092) | `a.ShouldBe(b, ignoreOrder: true[, because])` | `collection-ints`, `collection-strings-because`, `collection-nullable-enum`, `collection-because-args`, `edge-array-literal` |
+| no because | `a.ShouldBeEquivalentTo(b)` | `simple`, `new-expectation`, `record`, `nested`, `lambda` |
 | because / becauseArgs | `a.ShouldBeEquivalentTo(b, because)`; becauseArgs → `string.Format(CultureInfo.InvariantCulture, because, args)` | `because`, `because-args` |
-| sealed type of beide `new` | geen `Warning`; anders `Warning` over afgeleide runtime-typen | `sealed`, `both-new` |
+| sealed type or both `new` | no `Warning`; otherwise a `Warning` about derived runtime types | `sealed`, `both-new` |
 
-## Zie ook
+## See also
 
 - [fa-be-equivalent-to-object-plan.md](fa-be-equivalent-to-object-plan.md) - plan
-- [fa-be-equivalent-to-object-verify.md](fa-be-equivalent-to-object-verify.md) - verificatie
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPattern.cs` - het patroon
-- `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToObject/` - de proofs
-- [../modellen/pattern-beslissing.md](../modellen/pattern-beslissing.md) - generieke beslissing van een pattern
+- [fa-be-equivalent-to-object-verify.md](fa-be-equivalent-to-object-verify.md) - verification
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPattern.cs` - the pattern
+- `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToObject/` - the proofs
+- [../modellen/pattern-beslissing.md](../modellen/pattern-beslissing.md) - generic decision of a pattern
 - [../README.md](../README.md)

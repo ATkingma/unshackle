@@ -13,7 +13,7 @@ Het harnas haalde `test.runner` uit elke `global.json` om VSTest (`--logger trx`
 - `corpus-regression.sh`: bij `mtp` → `dotnet test --solution <sln> --no-build --report-trx --results-directory <dir>`. Zelfde TRX-vergelijking per test.
 - Beperking: in MTP-modus alleen een solution als doel (geen `.csproj`); gemengde solutions (VSTest + MTP) niet getest.
 
-## Bewijs (2026-10-11, tool uit `out/tool`, verse GitHub-tarballs in `/mnt/dikkeschijf/unshackle-corpus/src/`, uitvoer `/mnt/dikkeschijf/unshackle-corpus/t143/`)
+## Bewijs (2026-10-11, tool uit `out/tool`, verse GitHub-tarballs in `<corpus>/src/`, uitvoer `<corpus>/t143/`)
 
 | Solution                                             | runner | vóór          | na            | regressies |
 | ---------------------------------------------------- | ------ | ------------- | ------------- | ---------- |

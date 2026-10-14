@@ -1,89 +1,89 @@
-# TAAK-020 — MediatRFix-infrastructuur (MediatR 12.5.0 → Mediator 3.x)
+# TAAK-020 — MediatRFix infrastructure (MediatR 12.5.0 → Mediator 3.x)
 
-**Status**: voltooid
-**Aangemaakt**: 2026-10-11
-**Doel**: een tweede `IFix` (`mediatr`) staat, is aan de CLI en de proof-runner gekoppeld, zonder patronen; de patronen komen uit `claude/tasks/mediatr-queue.md`.
+**Status**: done
+**Created**: 2026-10-11
+**Goal**: a second `IFix` (`mediatr`) exists and is wired to the CLI and the proof runner, without patterns; the patterns come from `claude/tasks/mediatr-queue.md`.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Roadmap stap 3 in `docs/projectinfo/project.md`. Ontwerp-voorbeeld: `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs`.
-- Lege mappen staan al: `src/Unshackle.Core/Fixes/MediatR/Patterns/`.
-- Pakketten in `Directory.Packages.props`: `MediatR` 12.5.0, `Mediator.Abstractions` 3.0.2 (types voor proofs).
-- Doelcode: `samples/SampleShop/SampleShop/` (handlers, `LoggingBehavior`, `ServiceCollectionExtensions.AddMediatR`) en `SampleShop.Tests/OrderHandlerTests.cs` (`ISender.Send`).
-- Na deze taak draait de patroon-loop (`claude/docs/patroon-loop.md`) op `claude/tasks/mediatr-queue.md`.
+- Roadmap step 3 in `docs/projectinfo/project.md`. Design example: `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs`.
+- Empty folders already exist: `src/Unshackle.Core/Fixes/MediatR/Patterns/`.
+- Packages in `Directory.Packages.props`: `MediatR` 12.5.0, `Mediator.Abstractions` 3.0.2 (types for proofs).
+- Target code: `samples/SampleShop/SampleShop/` (handlers, `LoggingBehavior`, `ServiceCollectionExtensions.AddMediatR`) and `SampleShop.Tests/OrderHandlerTests.cs` (`ISender.Send`).
+- After this task the pattern loop (`claude/docs/patroon-loop.md`) runs on `claude/tasks/mediatr-queue.md`.
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-`IFix` heeft één implementatie; `Cli.cs:24`, `ProofTests.cs:23` en `CombinedProofTests.cs:37/53` noemen `FluentAssertionsFix` hard. `PackageMigration` kent precies één toegevoegd pakket.
+`IFix` has one implementation; `Cli.cs:24`, `ProofTests.cs:23` and `CombinedProofTests.cs:37/53` hard-code `FluentAssertionsFix`. `PackageMigration` knows exactly one added package.
 
-### Probleem
+### Problem
 
-- Mediator heeft **twee** pakketten nodig: `Mediator.Abstractions` (types) én `Mediator.SourceGenerator` (genereert `AddMediator` en de dispatcher). `PackageMigration` kan dat niet uitdrukken.
-- De proof-runner kiest de fix niet per proof-map; proofs onder `Proofs/MediatR/` zouden met de FA-fix draaien.
-- Patroon-ID's gebruiken prefix `fa.`; voor deze fix wordt dat `mediatr.`.
+- Mediator needs **two** packages: `Mediator.Abstractions` (types) and `Mediator.SourceGenerator` (generates `AddMediator` and the dispatcher). `PackageMigration` cannot express that.
+- The proof runner does not pick the fix per proof folder; proofs under `Proofs/MediatR/` would run with the FA fix.
+- Pattern IDs use the prefix `fa.`; for this fix it becomes `mediatr.`.
 
-### Nieuwe situatie
+### New situation
 
-`MediatRFix` (`Id = "mediatr"`, `RemovedNamespaces = ["MediatR"]`, `AddedNamespaces = ["Mediator"]`), de CLI accepteert `--fix mediatr`, proofs onder `Proofs/MediatR/` draaien tegen MediatR (before) en Mediator.Abstractions (after).
+`MediatRFix` (`Id = "mediatr"`, `RemovedNamespaces = ["MediatR"]`, `AddedNamespaces = ["Mediator"]`), the CLI accepts `--fix mediatr`, proofs under `Proofs/MediatR/` run against MediatR (before) and Mediator.Abstractions (after).
 
-### Verbetering
+### Improvement
 
-Roadmap stap 3 kan in de bestaande patroon-loop, parallel per patroon, zonder dat patroon-agents contracten hoeven te wijzigen (wat de agent-brief verbiedt).
+Roadmap step 3 can go through the existing pattern loop, in parallel per pattern, without pattern agents having to change contracts (which the agent brief forbids).
 
-## Aanpak
+## Approach
 
-### Wat
+### What
 
-1. `src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs` met lege `Patterns`-lijst.
-2. Contractwijziging `PackageMigration`: meerdere toegevoegde pakketten (bv. `AddedPackages` als lijst van naam+versie). Mediator 3.x-versie voor beide pakketten vastleggen (zelfde versie; nu 3.0.2 in props, `Mediator.SourceGenerator` toevoegen).
-3. Registratie in `Cli.cs` en een fix-per-proofmap in `ProofTests.cs`/`CombinedProofTests.cs`.
-4. Hulpklasse `MediatRSyntax` (zoals `FluentAssertionsSyntax`) alleen als het eerste patroon hem nodig heeft — niet vooraf.
-5. Docs: rij in `docs/projectinfo/README.md`, `architectuur/core.md` noemt de tweede fix, `INDEX.md` → `mediatr-queue.md`.
+1. `src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs` with an empty `Patterns` list.
+2. Contract change `PackageMigration`: multiple added packages (e.g. `AddedPackages` as a list of name+version). Pin the Mediator 3.x version for both packages (same version; now 3.0.2 in props, add `Mediator.SourceGenerator`).
+3. Registration in `Cli.cs` and a fix per proof folder in `ProofTests.cs`/`CombinedProofTests.cs`.
+4. Helper class `MediatRSyntax` (like `FluentAssertionsSyntax`) only if the first pattern needs it — not upfront.
+5. Docs: row in `docs/projectinfo/README.md`, `architectuur/core.md` mentions the second fix, `INDEX.md` → `mediatr-queue.md`.
 
-### Waar
+### Where
 
-`src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs`, `src/Unshackle.Core/Models/PackageMigration.cs` (+ DataAccess-gebruik ervan), `src/Unshackle.Interface/Cli.cs`, `src/Unshackle.Tests/ProofTests.cs`, `src/Unshackle.Tests/CombinedProofTests.cs`, `Directory.Packages.props`.
+`src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs`, `src/Unshackle.Core/Models/PackageMigration.cs` (+ its DataAccess usage), `src/Unshackle.Interface/Cli.cs`, `src/Unshackle.Tests/ProofTests.cs`, `src/Unshackle.Tests/CombinedProofTests.cs`, `Directory.Packages.props`.
 
-### Hoe
+### How
 
-Kopieer de vorm van `FluentAssertionsFix`. Breid `PackageMigration` minimaal uit en pas de FA-fix mee aan; bestaande tests moeten groen blijven. Eén smoke-proof (`using MediatR;` → `using Mediator;` op een bestand zonder andere MediatR-code) bewijst de koppeling.
+Copy the shape of `FluentAssertionsFix`. Extend `PackageMigration` minimally and adjust the FA fix along with it; existing tests must stay green. One smoke proof (`using MediatR;` → `using Mediator;` on a file without other MediatR code) proves the wiring.
 
-### Waarom deze aanpak
+### Why this approach
 
-Contracten nu wijzigen, vóór de patroon-loop, omdat patroon-agents dat niet mogen. Geen `MediatRSyntax` vooraf: YAGNI.
+Change contracts now, before the pattern loop, because pattern agents are not allowed to. No `MediatRSyntax` upfront: YAGNI.
 
-## Stappen
+## Steps
 
-- [x] 1. `PackageMigration` meerdere pakketten + FA-fix en DataAccess aanpassen, tests groen.
-- [x] 2. `MediatRFix` aanmaken, in `Cli.cs` registreren.
-- [x] 3. Proof-runner: fix kiezen op proof-map (`Proofs/<Fix>/`). Smoke-proof niet mogelijk zonder patroon (Fixer wisselt usings alleen na een patroon-wijziging); het eerste patroon levert de eerste proof.
+- [x] 1. `PackageMigration` multiple packages + adjust FA fix and DataAccess, tests green.
+- [x] 2. Create `MediatRFix`, register in `Cli.cs`.
+- [x] 3. Proof runner: pick fix by proof folder (`Proofs/<Fix>/`). Smoke proof not possible without a pattern (the Fixer only swaps usings after a pattern change); the first pattern delivers the first proof.
 - [x] 4. `Mediator.SourceGenerator` in `Directory.Packages.props`.
 - [x] 5. Docs (README, core.md, INDEX.md).
-- [x] 6. `dotnet build`, `dotnet test`, sample-tests groen; rij 0 in `mediatr-queue.md` op `klaar`.
+- [x] 6. `dotnet build`, `dotnet test`, sample tests green; row 0 in `mediatr-queue.md` set to `klaar`.
 
-## Risico's & randgevallen
+## Risks & edge cases
 
-| Risico | Mitigatie |
-| ------ | --------- |
-| Mediator heeft source-generator nodig; zonder die compileert `AddMediator` niet | beide pakketten via `PackageMigration` |
-| Gemengde code (FA-fix en MediatR-fix tegelijk in SampleShop) | `CombinedProofTests` per fix laten draaien |
-| `using MediatR` verdwijnt pas als niets meer bindt; Manual-gevallen houden hem | bestaand gedrag van de Fixer, zo laten |
+| Risk | Mitigation |
+| ---- | ---------- |
+| Mediator needs the source generator; without it `AddMediator` does not compile | both packages via `PackageMigration` |
+| Mixed code (FA fix and MediatR fix at the same time in SampleShop) | run `CombinedProofTests` per fix |
+| `using MediatR` only disappears when nothing binds anymore; Manual cases keep it | existing Fixer behaviour, leave as is |
 
-## Gewijzigde bestanden
+## Changed files
 
-- `src/Unshackle.Core/Models/PackageMigration.cs`, `AddedPackage.cs` (nieuw): `AddedPackages` lijst
-- `src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs` (nieuw), `FluentAssertionsFix.cs`
-- `src/Unshackle.DataAccess/Projects/XmlProjectFileStore.cs`: extra pakketten naast het oude, eerste in place
+- `src/Unshackle.Core/Models/PackageMigration.cs`, `AddedPackage.cs` (new): `AddedPackages` list
+- `src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs` (new), `FluentAssertionsFix.cs`
+- `src/Unshackle.DataAccess/Projects/XmlProjectFileStore.cs`: extra packages next to the old one, the first in place
 - `src/Unshackle.Interface/Cli.cs`
 - `src/Unshackle.Tests/ProofTests.cs`, `Helpers/TestReferences.cs`, `Interface/CliTests.cs`, `DataAccess/Projects/XmlProjectFileStoreTests.cs`, `Core/FixerProjectFileTests.cs`
-- `Directory.Packages.props`: `Mediator.SourceGenerator` 3.0.2 (3.0.2 = laatste stabiele, NuGet-index)
+- `Directory.Packages.props`: `Mediator.SourceGenerator` 3.0.2 (3.0.2 = latest stable, NuGet index)
 - `docs/projectinfo/features/mediatr-fix-plan.md` / `-verify.md`, `README.md`, `architectuur/core.md`, `claude/docs/INDEX.md`, `claude/tasks/mediatr-queue.md`
 
-Noot: `CombinedProofTests` blijft FA-only; een MediatR-`_Combined` hoort bij de patroon-loop.
+Note: `CombinedProofTests` stays FA-only; a MediatR `_Combined` belongs to the pattern loop.
 
-## Zie ook
+## See also
 
 - `claude/tasks/mediatr-queue.md`
 - `docs/projectinfo/features/mediatr-fix-plan.md`

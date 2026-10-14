@@ -1,67 +1,67 @@
-# TAAK-210 — Generieke decorator in bestand zonder `using MediatR` valt alsnog in `mediatr.unsupported`
+# TAAK-210 — A generic decorator in a file without `using MediatR` still falls into `mediatr.unsupported`
 
-**Status**: ✅ voltooid (2026-10-13) — 0 Manual op kgrzybek; de build na de fix breekt nog op nieuwe oorzaken → TAAK-212
-**Aangemaakt**: 2026-10-13 (uit corpus-ronde 3, `claude/tasks/CORPUSRUN-mediatr.md`)
-**Doel**: kgrzybek `91c8ef2` migreert volledig: 0 Manual, build ok, tests 246/287 → 246/287.
+**Status**: ✅ completed (2026-10-13) — 0 Manual on kgrzybek; the build after the fix still breaks on new causes → TAAK-212
+**Created**: 2026-10-13 (from corpus round 3, `claude/tasks/CORPUSRUN-mediatr.md`)
+**Goal**: kgrzybek `91c8ef2` migrates fully: 0 Manual, build ok, tests 246/287 → 246/287.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Corpus-ronde 3 (main `9189df4`): kgrzybek 0 Fixed, 270 Manual. Enige root-Manuals: 15× `mediatr.unsupported`
-  ("Mediator's source generator does not support generic messages…") op de module-decorators
+- Corpus round 3 (main `9189df4`): kgrzybek 0 Fixed, 270 Manual. Only root Manuals: 15× `mediatr.unsupported`
+  ("Mediator's source generator does not support generic messages…") on the module decorators
   `Modules/<Module>/Infrastructure/Configuration/Processing/{Logging,UnitOfWork,Validation}CommandHandlerDecorator<T>` (5 modules × 3).
-- Op dezelfde klassen vindt `mediatr.generic-decorator` (TAAK-193) ze wél als decorator. Ook `mediatr.void-request-handler` vindt ze.
-- De BuildingBlocks-decorator `UnitOfWorkCommandHandlerDecorator<T> : IRequestHandler<T>` (bestand mét `using MediatR`) krijgt géén unsupported.
-- De module-decorators implementeren alleen de eigen marker `ICommandHandler<T> : IRequestHandler<T>` (ander project, `Application`)
-  en hun bestand heeft **geen `using MediatR;`**.
+- On the same classes `mediatr.generic-decorator` (TAAK-193) **does** find them as decorators. `mediatr.void-request-handler` also finds them.
+- The BuildingBlocks decorator `UnitOfWorkCommandHandlerDecorator<T> : IRequestHandler<T>` (file **with** `using MediatR`) gets **no** unsupported.
+- The module decorators only implement the own marker `ICommandHandler<T> : IRequestHandler<T>` (another project, `Application`)
+  and their file has **no `using MediatR;`**.
 
-## Reproductie (gemeten)
+## Reproduction (measured)
 
-Twee projecten: `App` (MediatR 12.2.0; `ICommand : IRequest`, `ICommandHandler<in T> : IRequestHandler<T>`, handler) en `Infra`
-(Autofac 7.1.0; `LogDecorator<T> : ICommandHandler<T>` met ctor `ICommandHandler<T>`, `RegisterGenericDecorator(typeof(LogDecorator<>), typeof(ICommandHandler<>))`).
+Two projects: `App` (MediatR 12.2.0; `ICommand : IRequest`, `ICommandHandler<in T> : IRequestHandler<T>`, handler) and `Infra`
+(Autofac 7.1.0; `LogDecorator<T> : ICommandHandler<T>` with ctor `ICommandHandler<T>`, `RegisterGenericDecorator(typeof(LogDecorator<>), typeof(ICommandHandler<>))`).
 
-| `Infra/D.cs`                         | Resultaat `fix --dry-run`                                   |
+| `Infra/D.cs`                         | Result `fix --dry-run`                                      |
 | ------------------------------------ | ----------------------------------------------------------- |
-| met `using MediatR;`                 | alles Fixed (void-request-handler, generic-decorator)        |
-| zonder (`typeof(MediatR.IRequestHandler<>)` volledig gekwalificeerd) | `mediatr.unsupported` Manual op `LogDecorator<T>` → alles Manual |
+| with `using MediatR;`                | everything Fixed (void-request-handler, generic-decorator)  |
+| without (`typeof(MediatR.IRequestHandler<>)` fully qualified) | `mediatr.unsupported` Manual on `LogDecorator<T>` → everything Manual |
 
-Een kgrzybek-uitsnede (alleen Payments Application + Infrastructure in een eigen `.slnx`) reproduceert het ook; daar hielp alleen
-`using MediatR;` toevoegen aan één decorator níet — er speelt dus mogelijk nog iets mee (eerst de kleine repro oplossen, dan opnieuw meten).
+A kgrzybek excerpt (only Payments Application + Infrastructure in its own `.slnx`) reproduces it too; there, only
+adding `using MediatR;` to one decorator did **not** help — so something else may play a part (first solve the small repro, then measure again).
 
-## Vermoedelijke oorzaak
+## Presumed cause
 
-`UnsupportedPattern` draait na `VoidRequestHandlerPattern`/`GenericDecoratorPattern` op het al herschreven bestand.
-`GenericDecoratorPattern.Decorated` heeft een terugval voor "al herschreven in dit bestand" die de ctor-parameter als
-`IRequestHandler<T, Unit>` van MediatR verwacht; zonder `using MediatR` bindt de herschreven tekst (of de marker-route) niet,
-`Decorated` geeft `null` en `UnsupportedPattern` ziet een generieke request-handler → Manual.
+`UnsupportedPattern` runs after `VoidRequestHandlerPattern`/`GenericDecoratorPattern` on the already rewritten file.
+`GenericDecoratorPattern.Decorated` has a fallback for "already rewritten in this file" that expects the ctor parameter as
+MediatR's `IRequestHandler<T, Unit>`; without `using MediatR` the rewritten text (or the marker route) does not bind,
+`Decorated` returns `null` and `UnsupportedPattern` sees a generic request handler → Manual.
 
-## Stappen
+## Steps
 
-- [x] 1. Repro: `Proofs/MediatR/_Combined/generic-decorator-marker-without-using` (projecten `App`, `Handlers`, `Infra`; zonder fix → `mediatr.unsupported`, alles Manual) en unittests in `GenericDecoratorPatternTests`.
-- [x] 2. Oorzaak bevestigd (zoals vermoed): `GenericDecoratorPattern.RewriteVoid` schrijft `IRequestHandler<T, Unit>`; zonder `using MediatR` bindt dat pas na `using Mediator` (einde van de run), dus is het voor `UnsupportedPattern` een error-type, `Decorated` geeft `null` → Manual.
-- [x] 3. Fix: `GenericDecoratorPattern.IsRewrittenVoid` herkent ook het error-type `IRequestHandler<T, Unit>` (naam, ariteit 2, eerste argument de typeparameter, tweede `Unit`).
-- [x] 4. Proof als `_Combined` (de bug zit tussen twee patronen; een losse proof draait alleen één pattern). Docs: generic-decorator plan/verify REQ-7, void-request-handler plan/verify REQ-6/7, `architectuur/core.md`.
-- [~] 5. Bewijs (`_results/r4/kgr`): 217 Fixed, **0 Manual** (was 270 Manual). Build na de fix faalt nog → TAAK-212.
+- [x] 1. Repro: `Proofs/MediatR/_Combined/generic-decorator-marker-without-using` (projects `App`, `Handlers`, `Infra`; without the fix → `mediatr.unsupported`, everything Manual) and unit tests in `GenericDecoratorPatternTests`.
+- [x] 2. Cause confirmed (as presumed): `GenericDecoratorPattern.RewriteVoid` writes `IRequestHandler<T, Unit>`; without `using MediatR` that only binds after `using Mediator` (end of the run), so for `UnsupportedPattern` it is an error type, `Decorated` returns `null` → Manual.
+- [x] 3. Fix: `GenericDecoratorPattern.IsRewrittenVoid` also recognises the error type `IRequestHandler<T, Unit>` (name, arity 2, first argument the type parameter, second `Unit`).
+- [x] 4. Proof as `_Combined` (the bug sits between two patterns; a separate proof runs only one pattern). Docs: generic-decorator plan/verify REQ-7, void-request-handler plan/verify REQ-6/7, `architectuur/core.md`.
+- [~] 5. Proof (`_results/r4/kgr`): 217 Fixed, **0 Manual** (was 270 Manual). The build after the fix still fails → TAAK-212.
 
-## Extra oorzaken (gevonden bij het bewijs)
+## Extra causes (found during the proof)
 
-De uitsnede-observatie ("`using MediatR` toevoegen hielp niet") kwam door alles-of-niets: alle 15 decorators moeten tegelijk goed gaan. Na de fix
-kwamen in de corpusrun drie nieuwe oorzaken boven, alle drie opgelost:
+The excerpt observation ("adding `using MediatR` did not help") came from all-or-nothing: all 15 decorators must succeed at the same time. After the fix
+three new causes surfaced in the corpus run, all three solved:
 
-1. **`Directory.Packages.props` zonder central package management** (kgrzybek: `<PackageReference Include="MediatR" Version="12.2.0" />` in een
-   `ItemGroup Condition="...EndsWith('BuildingBlocks.Domain')"`, geen `<PackageVersion>`): `XmlProjectFileStore` behandelde het als CPM →
-   versieloze `<PackageReference>` in de projecten + `<PackageVersion>` → `NU1015` bij restore. Nu: CPM alleen bij een `<PackageVersion>` of
-   `ManagePackageVersionsCentrally=true`; anders hoort het bestand bij de keten (referentie in place gewisseld) en gaat een extra pakket (generator)
-   naar het project zelf i.p.v. naast een geconditioneerde referentie. Unittest `EditAsync_PackagesPropsWithoutCentralManagement_…`.
-2. **`Unit`/`ValueTask<Unit>` zonder `using Mediator`**: `VoidRequestHandlerPattern` eiste geen namespace; handlers in een bestand zonder `using MediatR`
-   (alleen de eigen marker) kregen `ValueTask<Unit>` zonder `using Mediator` → 92× CS0246/CS0738. Nu `Fixed(..., "Mediator", "System.Threading.Tasks")`.
-3. **SA1513** (StyleCop, TWAE): `return Unit.Value;` direct na een `}`. Nu een lege regel ervoor (proof `VoidRequestHandler/block-end`).
+1. **`Directory.Packages.props` without central package management** (kgrzybek: `<PackageReference Include="MediatR" Version="12.2.0" />` in an
+   `ItemGroup Condition="...EndsWith('BuildingBlocks.Domain')"`, no `<PackageVersion>`): `XmlProjectFileStore` treated it as CPM →
+   versionless `<PackageReference>` in the projects + `<PackageVersion>` → `NU1015` on restore. Now: CPM only with a `<PackageVersion>` or
+   `ManagePackageVersionsCentrally=true`; otherwise the file belongs to the chain (reference swapped in place) and an extra package (generator)
+   goes into the project itself instead of next to a conditioned reference. Unit test `EditAsync_PackagesPropsWithoutCentralManagement_…`.
+2. **`Unit`/`ValueTask<Unit>` without `using Mediator`**: `VoidRequestHandlerPattern` required no namespace; handlers in a file without `using MediatR`
+   (only the own marker) got `ValueTask<Unit>` without `using Mediator` → 92× CS0246/CS0738. Now `Fixed(..., "Mediator", "System.Threading.Tasks")`.
+3. **SA1513** (StyleCop, TWAE): `return Unit.Value;` directly after a `}`. Now a blank line before it (proof `VoidRequestHandler/block-end`).
 
-Restant (TAAK-212): `MSG0001` "multiple handlers" (44 handlertypen), `SA1210` using-volgorde (Fixer/`UsingDirectives`), `CS1503` in
-`Validation…WithResultDecorator` (`ValueTask<TResult>` naar een `Task<TResult>`-parameter), `CS0122` internal domain events in `Mediator.g.cs`.
+Remainder (TAAK-212): `MSG0001` "multiple handlers" (44 handler types), `SA1210` using order (Fixer/`UsingDirectives`), `CS1503` in
+`Validation…WithResultDecorator` (`ValueTask<TResult>` to a `Task<TResult>` parameter), `CS0122` internal domain events in `Mediator.g.cs`.
 
-## Zie ook
+## See also
 
 - `claude/tasks/archief/TAAK-193-mediatr-generieke-decorators-messages.md` — `mediatr.generic-decorator`
-- `claude/tasks/CORPUSRUN-mediatr.md` — "Herhaling ronde 3"
+- `claude/tasks/CORPUSRUN-mediatr.md` — "Repeat round 3"
 - `src/Unshackle.Core/Fixes/MediatR/Patterns/UnsupportedPattern.cs`, `src/Unshackle.Core/Fixes/MediatR/Patterns/GenericDecoratorPattern.cs`
 - `claude/tasks/mediatr-queue.md`

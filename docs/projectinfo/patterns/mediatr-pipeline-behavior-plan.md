@@ -18,48 +18,48 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-027.
+> Drafted from TAAK-027.
 
 ## One-sentence summary
 
-mediatr.pipeline-behavior: `Task<TRes> Handle(TReq request, RequestHandlerDelegate<TRes> next, CancellationToken ct)` wordt `ValueTask<TRes> Handle(TReq request, MessageHandlerDelegate<TReq, TRes> next, CancellationToken ct)`, `next()` wordt `next(request, ct)` en een open request-typeparameter krijgt `IMessage` als constraint.
+mediatr.pipeline-behavior: `Task<TRes> Handle(TReq request, RequestHandlerDelegate<TRes> next, CancellationToken ct)` becomes `ValueTask<TRes> Handle(TReq request, MessageHandlerDelegate<TReq, TRes> next, CancellationToken ct)`, `next()` becomes `next(request, ct)` and an open request type parameter gets `IMessage` as a constraint.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Open (`LoggingBehavior<TReq, TRes>`) en gesloten (`IPipelineBehavior<Cmd, Unit>`) behaviors.
-- `async` en niet-async; niet-async alleen als elke return `next(...)` of `Task.FromResult(...)` is.
-- `next()` en `next(token)` (MediatR 12.5 heeft een optionele token-parameter) → `next(request, token)`.
-- `IPipelineBehavior\`2`in`MediatRFix.SwappedTypes`: de naam blijft, de using wordt `Mediator`.
+- Open (`LoggingBehavior<TReq, TRes>`) and closed (`IPipelineBehavior<Cmd, Unit>`) behaviors.
+- `async` and non-async; non-async only if every return is `next(...)` or `Task.FromResult(...)`.
+- `next()` and `next(token)` (MediatR 12.5 has an optional token parameter) → `next(request, token)`.
+- `IPipelineBehavior\`2`in`MediatRFix.SwappedTypes`: the name stays, the using becomes `Mediator`.
 
 **Out of scope**
 
-- `IStreamPipelineBehavior`: rij 7 (`mediatr.unsupported`).
-- Registratie (`AddOpenBehavior`): rij 5.
+- `IStreamPipelineBehavior`: row 7 (`mediatr.unsupported`).
+- Registration (`AddOpenBehavior`): row 5.
 
 ## Requirements
 
-- **REQ-1**: WHEN een open behavior `async` is THE SYSTEM SHALL returntype, delegate en `next`-aanroepen herschrijven en `IMessage` toevoegen aan de bestaande constraint (proof `open-async`).
-- **REQ-2**: WHEN de request-typeparameter geen constraint heeft THE SYSTEM SHALL `where TRequest : IMessage` toevoegen; met `new()` komt `IMessage` ervoor (proofs `no-constraint`, `new-constraint`).
-- **REQ-3**: WHEN een gesloten behavior niet-async `next()` of `Task.FromResult` teruggeeft THE SYSTEM SHALL `next(request, token)` en `ValueTask.FromResult` schrijven, zonder constraint (proof `closed`).
-- **REQ-4**: WHEN `next(token)` wordt aangeroepen THE SYSTEM SHALL `next(request, token)` schrijven (proof `next-token`).
-- **REQ-5**: IF `next` anders gebruikt wordt dan aangeroepen, een niet-async return iets anders is, of `Handle` expliciet geïmplementeerd is THEN THE SYSTEM SHALL Manual melden (proofs `next-stored`, `next-passed`, `explicit`).
-- **Uitbreiding TAAK-081**: WHEN de constraint van de request-typeparameter na de swap al `IMessage` is (`IRequest<TResponse>`, `INotification` of een eigen interface daarop) THE SYSTEM SHALL geen extra `IMessage` toevoegen (proof `edge-request-constraint`); een andere constraint zoals `notnull` krijgt `IMessage` erachter (proof `edge-notnull-constraint`).
+- **REQ-1**: WHEN an open behavior is `async` THE SYSTEM SHALL rewrite the return type, delegate and `next` calls and add `IMessage` to the existing constraint (proof `open-async`).
+- **REQ-2**: WHEN the request type parameter has no constraint THE SYSTEM SHALL add `where TRequest : IMessage`; with `new()`, `IMessage` goes before it (proofs `no-constraint`, `new-constraint`).
+- **REQ-3**: WHEN a closed behavior non-async returns `next()` or `Task.FromResult` THE SYSTEM SHALL write `next(request, token)` and `ValueTask.FromResult`, without a constraint (proof `closed`).
+- **REQ-4**: WHEN `next(token)` is called THE SYSTEM SHALL write `next(request, token)` (proof `next-token`).
+- **REQ-5**: IF `next` is used other than being called, a non-async return is something else, or `Handle` is implemented explicitly THEN THE SYSTEM SHALL report Manual (proofs `next-stored`, `next-passed`, `explicit`).
+- **Extension TAAK-081**: WHEN the constraint of the request type parameter is already `IMessage` after the swap (`IRequest<TResponse>`, `INotification` or an own interface on top of it) THE SYSTEM SHALL not add an extra `IMessage` (proof `edge-request-constraint`); another constraint such as `notnull` gets `IMessage` after it (proof `edge-notnull-constraint`).
 
 ## Assumptions
 
-- Mediator 3.0.2: `IPipelineBehavior<TMessage, TResponse> where TMessage : IMessage`, `ValueTask<TResponse> Handle(TMessage, MessageHandlerDelegate<TMessage, TResponse>, CancellationToken)`; `MessageHandlerDelegate.Invoke(TMessage, CancellationToken)` (gecontroleerd met reflectie op de echte assembly).
-- Een gesloten request-type implementeert na de swap `Mediator.IRequest*` en dus `IMessage`.
+- Mediator 3.0.2: `IPipelineBehavior<TMessage, TResponse> where TMessage : IMessage`, `ValueTask<TResponse> Handle(TMessage, MessageHandlerDelegate<TMessage, TResponse>, CancellationToken)`; `MessageHandlerDelegate.Invoke(TMessage, CancellationToken)` (checked with reflection on the real assembly).
+- After the swap, a closed request type implements `Mediator.IRequest*` and therefore `IMessage`.
 
 ## Risks
 
-- Bij Manual blijft `IPipelineBehavior` door de swap naar Mediator wijzen; `RequestHandlerDelegate` houdt dan de MediatR-using en het pakket vast (Manual-bevinding project-file). Zelfde gedrag als de handler-patronen.
+- On Manual, `IPipelineBehavior` keeps pointing to Mediator because of the swap; `RequestHandlerDelegate` then holds on to the MediatR using and the package (Manual finding project-file). Same behavior as the handler patterns.
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [mediatr-pipeline-behavior-modellen.md](mediatr-pipeline-behavior-modellen.md).
+Class diagram, sequence and decision tree: [mediatr-pipeline-behavior-modellen.md](mediatr-pipeline-behavior-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

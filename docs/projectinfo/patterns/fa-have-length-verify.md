@@ -10,17 +10,17 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveLengthPattern.cs`; registratie in `FluentAssertionsFix.cs` (ook als schakel van `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/HaveLength/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveLengthPattern.cs`; registration in `FluentAssertionsFix.cs` (also as a link of `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/HaveLength/`, run by `ProofTests`.
 
-| REQ | Oordeel | Bewijs |
+| REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Gehaald | `simple` |
-| REQ-2 | Gehaald | `because` |
-| REQ-3 | Gehaald | `nullable` |
-| REQ-4 | Gehaald | `receiver-parens` |
-| REQ-5 | Gehaald (becauseArgs vervangen) | `stream`, `assertion-scope` |
-| REQ-6 | Gehaald | `AndChain/equal-length-approximately` |
-| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` (`string.Format(CultureInfo.InvariantCulture, ...)`) |
+| REQ-1 | Met | `simple` |
+| REQ-2 | Met | `because` |
+| REQ-3 | Met | `nullable` |
+| REQ-4 | Met | `receiver-parens` |
+| REQ-5 | Met (becauseArgs replaced) | `stream`, `assertion-scope` |
+| REQ-6 | Met | `AndChain/equal-length-approximately` |
+| Extension TAAK-097 | Met | `because-args.after.cs` (`string.Format(CultureInfo.InvariantCulture, ...)`) |
 
 ## Deviations
 
@@ -36,7 +36,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveLengthPattern.cs`;
 | Test | `dotnet test` | passed (474 tests) |
 | Sample | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | passed (38 tests) |
 
-## Zie ook
+## See also
 
 - [fa-have-length-modellen.md](fa-have-length-modellen.md)
 - `claude/docs/patroon-loop.md`

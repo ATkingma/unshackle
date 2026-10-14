@@ -1,20 +1,20 @@
 # Flow: Fixer.FixAsync
 
-**Figure 1.** Eén document in `FixAsync`: elk pattern draait op de uitkomst van het vorige, daarna volgen de usings. Volgorde van de patterns telt: `AllSatisfyPattern` staat eerst in `FluentAssertionsFix` (zie [patronen.md](patronen.md#volgorde)). Weggelaten: annulering, onbekende fix (`ArgumentException`) en documenten van niet-C#-projecten (worden overgeslagen).
+**Figure 1.** One document in `FixAsync`: each pattern runs on the outcome of the previous one, then the usings follow. The order of the patterns matters: `AllSatisfyPattern` comes first in `FluentAssertionsFix` (see [patronen.md](patronen.md#order)). Omitted: cancellation, unknown fix (`ArgumentException`) and documents of non-C# projects (they are skipped).
 
 <!-- kingmadoc:diagram img/fix-flow-1.d2 -->
 ![Flow: Fixer.FixAsync](img/fix-flow-1.png)
 
-| Stap | Plek in `src/Unshackle.Core/Fixer.cs` | Wat gebeurt er |
-| ---- | ------------------------------------- | -------------- |
-| Fix kiezen | `FixAsync` | Zoekt `IFix` op `FixId` (hoofdletterongevoelig) |
-| Find | `ApplyPattern` | Een exception wordt één `Manual`-bevinding met regel 0 |
-| Rewrite | `Rewrite` | Een exception wordt `Manual("Internal error in …")` |
-| Vervangen | `Replace`, `ReplaceWithTrivia` | Overlap met een eerdere vervanging wordt `Manual`; trivia komt van de oude node |
-| Usings | `UsingDirectives.UpdateAsync` | Alleen als het document veranderd is; namespaces van de resultaten plus `AddedNamespaces` |
+| Step | Location in `src/Unshackle.Core/Fixer.cs` | What happens |
+| ---- | ----------------------------------------- | ------------ |
+| Pick fix | `FixAsync` | Looks up `IFix` by `FixId` (case-insensitive) |
+| Find | `ApplyPattern` | An exception becomes one `Manual` finding with line 0 |
+| Rewrite | `Rewrite` | An exception becomes `Manual("Internal error in …")` |
+| Replace | `Replace`, `ReplaceWithTrivia` | Overlap with an earlier replacement becomes `Manual`; trivia comes from the old node |
+| Usings | `UsingDirectives.UpdateAsync` | Only if the document changed; namespaces of the results plus `AddedNamespaces` |
 
-## Zie ook
+## See also
 
-- [klassen.md](klassen.md) — de betrokken contracten
-- [pattern-beslissing.md](pattern-beslissing.md) — wat een pattern in `Rewrite` beslist
+- [klassen.md](klassen.md) — the contracts involved
+- [pattern-beslissing.md](pattern-beslissing.md) — what a pattern decides in `Rewrite`
 - [../README.md](../README.md)

@@ -1,37 +1,37 @@
-# TAAK-191 — MediatR: één `RequestHandlerDelegate`-mock gedeeld door meerdere requesttypen
+# TAAK-191 — MediatR: one `RequestHandlerDelegate` mock shared by multiple request types
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-12 (`claude/tasks/CORPUSRUN-mediatr.md`, Herhaling na TAAK-180..184)
-**Doel**: amantin migreert volledig (build + 85/85).
+**Status**: ✅ Done
+**Created**: 2026-10-12 (`claude/tasks/CORPUSRUN-mediatr.md`, Repetition after TAAK-180..184)
+**Goal**: amantin migrates fully (build + 85/85).
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- amantin (`5822811`, MediatR 12.2.0), enige root-Manual na TAAK-180: `tests/CleanArchitecture.Application.UnitTests/Common/Behaviors/AuthorizationBehaviorTests.cs:9`, `mediatr.request-handler-delegate`: "_mockNextBehavior is not handed to exactly one request type of a behavior's Handle".
-- Het veld `RequestHandlerDelegate<ErrorOr<Response>> _mockNextBehavior` gaat naar `AuthorizationBehavior<RequestWithNoAuthorizationAttribute, …>`, `<RequestWithSingleAuthorizationAttribute, …>` en `<RequestWithTonsOfAuthorizationAttribute, …>`; alle drie zijn records die `IAuthorizeableRequest<ErrorOr<Response>>` implementeren.
-- `ValidationBehaviorTests` (één requesttype) wordt al wel gedekt.
+- amantin (`5822811`, MediatR 12.2.0), only root Manual after TAAK-180: `tests/CleanArchitecture.Application.UnitTests/Common/Behaviors/AuthorizationBehaviorTests.cs:9`, `mediatr.request-handler-delegate`: "_mockNextBehavior is not handed to exactly one request type of a behavior's Handle".
+- The field `RequestHandlerDelegate<ErrorOr<Response>> _mockNextBehavior` goes to `AuthorizationBehavior<RequestWithNoAuthorizationAttribute, …>`, `<RequestWithSingleAuthorizationAttribute, …>` and `<RequestWithTonsOfAuthorizationAttribute, …>`; all three are records implementing `IAuthorizeableRequest<ErrorOr<Response>>`.
+- `ValidationBehaviorTests` (one request type) is already covered.
 
-## Analyse
+## Analysis
 
-- Optie A: veldtype `MessageHandlerDelegate<TCommon, R>` met `TCommon` = meest specifieke gemeenschappelijke basis (hier `IAuthorizeableRequest<ErrorOr<Response>>`, anders `IMessage`). Werkt alleen als `TMessage` in Mediator's delegate contravariant (`in`) is en alle requesttypen referentietypen zijn: eerst controleren in Mediator.Abstractions 3.x.
-- Optie B: per aanroep een adapter-lambda `(m, ct) => _mockNextBehavior(m, ct)`; vereist wel een veldtype waarop alle drie passen, dus dezelfde vraag.
-- `Invoke(Arg.Any<TCommon>(), Arg.Any<CancellationToken>())` blijft voor alle aanroepen matchen.
-- Geen gemeenschappelijke basis of waardetypen → Manual blijft (huidig gedrag).
+- Option A: field type `MessageHandlerDelegate<TCommon, R>` with `TCommon` = most specific common base (here `IAuthorizeableRequest<ErrorOr<Response>>`, otherwise `IMessage`). Only works if `TMessage` in Mediator's delegate is contravariant (`in`) and all request types are reference types: check Mediator.Abstractions 3.x first.
+- Option B: per call an adapter lambda `(m, ct) => _mockNextBehavior(m, ct)`; still requires a field type that all three fit, so the same question.
+- `Invoke(Arg.Any<TCommon>(), Arg.Any<CancellationToken>())` keeps matching for all calls.
+- No common base, or value types → Manual remains (current behavior).
 
-## Keuzes
+## Choices
 
-- Probe (Mediator.Abstractions 3.0.2): `MessageHandlerDelegate<TMessage, TResponse>` is invariant; `MessageHandlerDelegate<IA<int>,int>` is niet toewijsbaar aan `<R1,int>` (CS0029), een lambda `(m, ct) => f(m, ct)` wel.
-- Optie A+B gecombineerd: veld/mock krijgt `MessageHandlerDelegate<IMessage, TRes>`, elk `next`-argument van een `Handle` wordt een adapter-lambda. Gemeenschappelijk type is altijd `IMessage` (niet de meest specifieke basis): altijd geldig, ook bij waardetypen (boxing) en zonder constraint-/toegankelijkheidsrisico.
-- Eén request-type blijft het oude pad (geen lambda). Geen `Handle`-aanroep: Manual met nieuwe tekst.
-- Lambda-parameternamen worden vrij gekozen (`_`-suffix bij botsing).
+- Probe (Mediator.Abstractions 3.0.2): `MessageHandlerDelegate<TMessage, TResponse>` is invariant; `MessageHandlerDelegate<IA<int>,int>` is not assignable to `<R1,int>` (CS0029), a lambda `(m, ct) => f(m, ct)` is.
+- Options A+B combined: the field/mock gets `MessageHandlerDelegate<IMessage, TRes>`, every `next` argument of a `Handle` becomes an adapter lambda. The common type is always `IMessage` (not the most specific base): always valid, also with value types (boxing) and without constraint/accessibility risk.
+- A single request type keeps the old path (no lambda). No `Handle` call: Manual with new text.
+- Lambda parameter names are chosen freely (`_` suffix on collision).
 
-## Stappen
+## Steps
 
-1. [x] Variantie gemeten (probe `<probe-dir>/probe-191`, opgeruimd).
+1. [x] Variance measured (probe `<probe-dir>/probe-191`, cleaned up).
 2. [x] Proof `_Combined/request-handler-delegate-shared-field` (before/after).
-3. [x] Implementatie in `RequestHandlerDelegatePattern` + plan/modellen/verify.
-4. [ ] Harnas op amantin niet gedraaid (corpusproject niet aanwezig); nabootsing via de proof.
+3. [x] Implementation in `RequestHandlerDelegatePattern` + plan/models/verify.
+4. [ ] Harness not run on amantin (corpus project not present); mimicked via the proof.
 
-## Zie ook
+## See also
 
 - `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerDelegatePattern.cs`
 - `claude/tasks/archief/TAAK-180-mediatr-test-request-handler-delegate.md`

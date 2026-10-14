@@ -10,18 +10,18 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainSinglePattern.cs`; registratie in `FluentAssertionsFix.cs` (ook als schakel van `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/ContainSingle/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainSinglePattern.cs`; registration in `FluentAssertionsFix.cs` (also as a link of `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/ContainSingle/`, run by `ProofTests`.
 
-| REQ | Oordeel | Bewijs |
+| REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Gehaald | `simple` |
-| REQ-2 | Gehaald | `predicate`, `enumerable` |
-| REQ-3 | Gehaald | `because` |
-| REQ-4 | Gehaald | `which` |
-| REQ-5 | Gehaald | `nullable` |
-| REQ-6 | Deels vervangen | `expression-variable`, `assertion-scope` (Manual); `which-chain` en `because-args` zijn nu Fixed |
-| Uitbreiding TAAK-096 | Gehaald | `which-chain.after.cs` |
-| Uitbreiding TAAK-097 | Gehaald | `because-args.after.cs` |
+| REQ-1 | Met | `simple` |
+| REQ-2 | Met | `predicate`, `enumerable` |
+| REQ-3 | Met | `because` |
+| REQ-4 | Met | `which` |
+| REQ-5 | Met | `nullable` |
+| REQ-6 | Partly replaced | `expression-variable`, `assertion-scope` (Manual); `which-chain` and `because-args` are now Fixed |
+| Extension TAAK-096 | Met | `which-chain.after.cs` |
+| Extension TAAK-097 | Met | `because-args.after.cs` |
 
 ## Deviations
 
@@ -37,7 +37,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainSinglePattern.c
 | Test | `dotnet test` | passed (432 tests) |
 | Sample | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | passed (38 tests) |
 
-## Zie ook
+## See also
 
 - [fa-contain-single-which-modellen.md](fa-contain-single-which-modellen.md)
 - `claude/docs/patroon-loop.md`

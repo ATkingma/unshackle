@@ -1,116 +1,116 @@
-# TAAK-003 — Patroon fa.be-true-false
+# TAAK-003 — Pattern fa.be-true-false
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-10
-**Doel**: `x.Should().BeTrue()` / `BeFalse()` op `bool` en `bool?` wordt herschreven naar Shouldly, met proofs, groen in `dotnet test`.
+**Status**: ✅ Done
+**Created**: 2026-10-10
+**Goal**: `x.Should().BeTrue()` / `BeFalse()` on `bool` and `bool?` is rewritten to Shouldly, with proofs, green in `dotnet test`.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Rij 2 in `claude/tasks/patroon-queue.md`. Wacht op rij 0 (TAAK-001, bij aanmaak nog `bezig`).
-- Bij aanmaak bestaan al (half af): `IPattern`/`IFix`/`IFixer`, `FluentAssertionsFix`, `FluentAssertionsSyntax` (`FindInvocations`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments`) en `ShouldBePattern`. Volg dat voorbeeld; controleer bij hervatten de echte vorm en wijzig de contracten niet.
-- Aanname (van de opdrachtgever): het fundament voegt `using Shouldly;` toe en haalt `using FluentAssertions;` weg via `IFix.AddedNamespaces`/`RemovedNamespaces` en `PatternResult.Fixed(node, namespaces)`. Dit pattern hoeft zelf geen usings te beheren.
-- Sample-voorkomen: `samples/SampleShop/SampleShop.Tests/OrderTests.cs:62` `(order.Status == OrderStatus.Cancelled).Should().BeTrue();` (`bool`). Geen `BeFalse` of `bool?` in de samples.
+- Row 2 in `claude/tasks/patroon-queue.md`. Waits on row 0 (TAAK-001, still `bezig` at creation).
+- Already existing at creation (half done): `IPattern`/`IFix`/`IFixer`, `FluentAssertionsFix`, `FluentAssertionsSyntax` (`FindInvocations`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments`) and `ShouldBePattern`. Follow that example; when resuming, check the actual shape and do not change the contracts.
+- Assumption (from the requester): the foundation adds `using Shouldly;` and removes `using FluentAssertions;` via `IFix.AddedNamespaces`/`RemovedNamespaces` and `PatternResult.Fixed(node, namespaces)`. This pattern does not need to manage usings itself.
+- Sample occurrence: `samples/SampleShop/SampleShop.Tests/OrderTests.cs:62` `(order.Status == OrderStatus.Cancelled).Should().BeTrue();` (`bool`). No `BeFalse` or `bool?` in the samples.
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-FA 7.2.2: `BooleanAssertions<TAssertions>` heeft `BeTrue(string because = "", params object[] becauseArgs)` en `BeFalse(...)`. `Should()` op `bool` geeft `BooleanAssertions`, op `bool?` `NullableBooleanAssertions` (erft van `BooleanAssertions`, dus dezelfde `BeTrue`/`BeFalse`). Resultaat is `AndConstraint<..>`: `.And` ketens mogelijk. Op `bool?` faalt `BeTrue` ook bij `null`. `NotBeTrue`/`NotBeFalse` bestaan alleen op `NullableBooleanAssertions` (buiten scope).
+FA 7.2.2: `BooleanAssertions<TAssertions>` has `BeTrue(string because = "", params object[] becauseArgs)` and `BeFalse(...)`. `Should()` on `bool` returns `BooleanAssertions`, on `bool?` `NullableBooleanAssertions` (inherits from `BooleanAssertions`, so the same `BeTrue`/`BeFalse`). The result is `AndConstraint<..>`: `.And` chains are possible. On `bool?`, `BeTrue` also fails on `null`. `NotBeTrue`/`NotBeFalse` exist only on `NullableBooleanAssertions` (out of scope).
 
-### Shouldly 4.3.0 (via reflectie op `Shouldly.dll` gecontroleerd)
+### Shouldly 4.3.0 (checked via reflection on `Shouldly.dll`)
 
-`ShouldBeBooleanExtensions.ShouldBeTrue(bool actual, string customMessage)` en `ShouldBeFalse(bool actual, string customMessage)`. Er is **geen** overload voor `bool?`: `nullable.ShouldBeTrue()` compileert niet (geen impliciete `bool?` → `bool`). Voor `bool?` is het equivalent `x.ShouldBe(true[, msg])` (`ShouldBe<T>(T actual, T expected, string? customMessage)` met `T = bool?`); faalt ook bij `null`, dus gelijk aan FA. `customMessage` is een kale string, zonder `{0}`-formatting.
+`ShouldBeBooleanExtensions.ShouldBeTrue(bool actual, string customMessage)` and `ShouldBeFalse(bool actual, string customMessage)`. There is **no** overload for `bool?`: `nullable.ShouldBeTrue()` does not compile (no implicit `bool?` → `bool`). For `bool?` the equivalent is `x.ShouldBe(true[, msg])` (`ShouldBe<T>(T actual, T expected, string? customMessage)` with `T = bool?`); it also fails on `null`, so equal to FA. `customMessage` is a plain string, without `{0}` formatting.
 
-### Probleem
+### Problem
 
-- Naïef `BeTrue` → `ShouldBeTrue` breekt `bool?` (compileert niet).
-- FA's `because` kent format-args, Shouldly niet.
-- FA geeft een `AndConstraint` terug, Shouldly niets (void).
+- Naively mapping `BeTrue` → `ShouldBeTrue` breaks `bool?` (does not compile).
+- FA's `because` supports format args, Shouldly does not.
+- FA returns an `AndConstraint`, Shouldly returns nothing (void).
 
-### Nieuwe situatie
+### New situation
 
-`BeTrueFalsePattern` (ID `fa.be-true-false`) herschrijft de veilige gevallen en geeft anders `Manual(reden)`.
+`BeTrueFalsePattern` (ID `fa.be-true-false`) rewrites the safe cases and otherwise returns `Manual(reason)`.
 
-### Verbetering
+### Improvement
 
-Foutmeldingen noemen in Shouldly de expressie ("`order.IsPaid` should be `True` but was `False`"); FA schrijft "Expected ... to be true". Consistent, en alleen echt dubbelzinnige gevallen blijven voor handwerk.
+In Shouldly, error messages name the expression ("`order.IsPaid` should be `True` but was `False`"); FA writes "Expected ... to be true". Consistent, and only truly ambiguous cases are left for manual work.
 
-## Keuzes
+## Choices
 
-| # | Keuze | Reden |
+| # | Choice | Reason |
 |---|---|---|
-| 1 | Eén pattern `BeTrueFalsePattern`, ID `fa.be-true-false`; `Find` levert beide `BeTrue` en `BeFalse` (twee `FindInvocations`-aanroepen samengevoegd) | Queue-rij is één patroon; de logica is identiek op de naam na |
-| 2 | Alleen herschrijven als de FA-methode `BeTrue`/`BeFalse` uit `FluentAssertions.Primitives` is (symbool-check via `FindInvocations`) | Voorkomt valse treffers op eigen `BeTrue` |
-| 3 | Subject van type `bool` → `x.ShouldBeTrue([msg])` / `x.ShouldBeFalse([msg])` | Directe 1:1 |
-| 4 | Subject van type `bool?` (`Nullable<bool>`) → `x.ShouldBe(true[, msg])` / `x.ShouldBe(false[, msg])` | Shouldly heeft geen `bool?`-overload (zie boven); `ShouldBe(true)` faalt ook op `null`, gelijk aan FA |
-| 5 | Type van het subject onbekend/error type, of niet `bool`/`bool?` → `Manual("type onbekend")` | Voorkomt stille fouten bij ontbrekende referenties |
-| 6 | `because` zonder `becauseArgs` → ongewijzigd als `customMessage` | Directe 1:1 via `TryGetArguments`; het "because"-voorvoegsel van FA vervalt, Shouldly zet "Additional Info:" ervoor: gedocumenteerd verschil |
-| 7 | `because` met `becauseArgs`, of benoemde argumenten → `Manual("because met format-args")` | Shouldly formatteert niet; weglaten of `string.Format` bouwen is gokken |
-| 8 | Alleen herschrijven als het resultaat wordt genegeerd (`IsResultDiscarded`); `.And`/`.Which`-vervolg, waarde gebruikt of niet in de vorm `x.Should().BeTrue()` (`GetSubject` null) → `Manual` | ShouldBeTrue geeft niets terug; ketens splitsen is rij 10. Zelfde regel als `ShouldBePattern` |
-| 9 | Subject-expressie ongewijzigd overnemen (zoals `ShouldBePattern`): `(a == b).Should().BeTrue()` → `(a == b).ShouldBeTrue()` | De haakjes staan al in de bron omdat `.Should()` ze vereist; geen extra precedence-werk |
-| 10 | `NotBeTrue`/`NotBeFalse` (alleen `bool?`) en `Be(true)` buiten scope | Andere semantiek (`null` slaagt) resp. ander patroon (`fa.should-be`) |
-| 11 | Geen eigen `using`-beheer | Aanname fundament: `Shouldly` erbij, `FluentAssertions` eraf via de Fix |
+| 1 | One pattern `BeTrueFalsePattern`, ID `fa.be-true-false`; `Find` returns both `BeTrue` and `BeFalse` (two `FindInvocations` calls merged) | The queue row is one pattern; the logic is identical apart from the name |
+| 2 | Only rewrite if the FA method `BeTrue`/`BeFalse` comes from `FluentAssertions.Primitives` (symbol check via `FindInvocations`) | Prevents false hits on a custom `BeTrue` |
+| 3 | Subject of type `bool` → `x.ShouldBeTrue([msg])` / `x.ShouldBeFalse([msg])` | Direct 1:1 |
+| 4 | Subject of type `bool?` (`Nullable<bool>`) → `x.ShouldBe(true[, msg])` / `x.ShouldBe(false[, msg])` | Shouldly has no `bool?` overload (see above); `ShouldBe(true)` also fails on `null`, equal to FA |
+| 5 | Subject type unknown/error type, or not `bool`/`bool?` → `Manual("type onbekend")` | Prevents silent errors with missing references |
+| 6 | `because` without `becauseArgs` → unchanged as `customMessage` | Direct 1:1 via `TryGetArguments`; FA's "because" prefix is dropped, Shouldly prepends "Additional Info:": documented difference |
+| 7 | `because` with `becauseArgs`, or named arguments → `Manual("because met format-args")` | Shouldly does not format; dropping it or building `string.Format` is guessing |
+| 8 | Only rewrite if the result is discarded (`IsResultDiscarded`); `.And`/`.Which` continuation, value used, or not in the form `x.Should().BeTrue()` (`GetSubject` null) → `Manual` | ShouldBeTrue returns nothing; splitting chains is row 10. Same rule as `ShouldBePattern` |
+| 9 | Take over the subject expression unchanged (like `ShouldBePattern`): `(a == b).Should().BeTrue()` → `(a == b).ShouldBeTrue()` | The parentheses are already in the source because `.Should()` requires them; no extra precedence work |
+| 10 | `NotBeTrue`/`NotBeFalse` (only `bool?`) and `Be(true)` out of scope | Different semantics (`null` passes) and a different pattern (`fa.should-be`), respectively |
+| 11 | No own `using` management | Foundation assumption: `Shouldly` added, `FluentAssertions` removed via the Fix |
 
-## Aanpak
+## Approach
 
-### Wat / Waar
+### What / Where
 
 - `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeTrueFalsePattern.cs` (`Id => "fa.be-true-false"`, `Description => "x.Should().BeTrue() → x.ShouldBeTrue()"`).
-- Eén regel `new BeTrueFalsePattern(),` in `Patterns` van `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs`.
+- One line `new BeTrueFalsePattern(),` in `Patterns` of `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs`.
 - Proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/`.
 
-### Hoe
+### How
 
 1. `Find`: `FindInvocations(root, model, "BeTrue").Concat(FindInvocations(root, model, "BeFalse"))`.
-2. `Rewrite`: Manual-checks (keuzes 8, 7, 5), dan type-switch: `bool` → `Should{True|False}`, `bool?` → `ShouldBe` met `true`/`false`-literal als eerste argument en eventuele `because` als tweede.
-3. Bouw `InvocationExpression(MemberAccess(subject.WithoutTrailingTrivia(), name), args)` zoals `ShouldBePattern`.
+2. `Rewrite`: Manual checks (choices 8, 7, 5), then the type switch: `bool` → `Should{True|False}`, `bool?` → `ShouldBe` with a `true`/`false` literal as the first argument and any `because` as the second.
+3. Build `InvocationExpression(MemberAccess(subject.WithoutTrailingTrivia(), name), args)` like `ShouldBePattern`.
 
-## Proofs (te maken)
+## Proofs (to be made)
 
-Map `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/`; `before` compileert tegen FA, `after` tegen Shouldly.
+Folder `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/`; `before` compiles against FA, `after` against Shouldly.
 
-| Bestand | Inhoud |
+| File | Contents |
 |---|---|
 | `be-true.before.cs` / `.after.cs` | `bool`: `flag.Should().BeTrue()` → `flag.ShouldBeTrue()` |
-| `be-false.before.cs` / `.after.cs` | `bool`: `BeFalse()` → `ShouldBeFalse()`; ook `(a == b).Should().BeFalse()` |
-| `because.before.cs` / `.after.cs` | `BeTrue("must be paid")` → `ShouldBeTrue("must be paid")` (en BeFalse) |
+| `be-false.before.cs` / `.after.cs` | `bool`: `BeFalse()` → `ShouldBeFalse()`; also `(a == b).Should().BeFalse()` |
+| `because.before.cs` / `.after.cs` | `BeTrue("must be paid")` → `ShouldBeTrue("must be paid")` (and BeFalse) |
 | `nullable.before.cs` / `.after.cs` | `bool?`: `BeTrue()` → `ShouldBe(true)`, `BeFalse("why")` → `ShouldBe(false, "why")` |
-| `because-args.before.cs` / `.manual.txt` | `BeTrue("x {0}", y)` → Manual (keuze 7) |
-| `chain.before.cs` / `.manual.txt` | `flag.Should().BeTrue().And.Be(true)` en `.BeTrue()` als waarde (`var c = ...`) → Manual (keuze 8) |
-| `unknown-type.before.cs` / `.manual.txt` | indien een error type te maken is zonder dat `before` faalt in de compileercheck: anders overslaan en met unittest dekken |
+| `because-args.before.cs` / `.manual.txt` | `BeTrue("x {0}", y)` → Manual (choice 7) |
+| `chain.before.cs` / `.manual.txt` | `flag.Should().BeTrue().And.Be(true)` and `.BeTrue()` as a value (`var c = ...`) → Manual (choice 8) |
+| `unknown-type.before.cs` / `.manual.txt` | if an error type can be made without `before` failing the compile check: otherwise skip and cover with a unit test |
 
-## Stappen
+## Steps
 
-- [x] 1. Claimen (rij 2) en taak aanmaken
-- [x] 2. Onderzoek FA 7.2.2 / Shouldly 4.3.0 / sample-voorkomens, keuzes vastgelegd
-- [x] 3. Rij 0 gecontroleerd: fundament klaar, contract (`Fixed`/`Manual`, usings via `IFix`) komt overeen met de aanname
-- [x] 4. `BeTrueFalsePattern` + registratie in `FluentAssertionsFix`
-- [x] 5. Proofs (zie tabel)
-- [x] 6. `dotnet build` en `dotnet test` groen; taak archiveren, rij `klaar`
+- [x] 1. Claim (row 2) and create task
+- [x] 2. Research FA 7.2.2 / Shouldly 4.3.0 / sample occurrences, choices recorded
+- [x] 3. Row 0 checked: foundation done, contract (`Fixed`/`Manual`, usings via `IFix`) matches the assumption
+- [x] 4. `BeTrueFalsePattern` + registration in `FluentAssertionsFix`
+- [x] 5. Proofs (see table)
+- [x] 6. `dotnet build` and `dotnet test` green; archive task, row `klaar`
 
-## Risico's & randgevallen
+## Risks & edge cases
 
-| Risico | Mitigatie |
+| Risk | Mitigation |
 |---|---|
-| `bool?` met `ShouldBeTrue` compileert niet | Keuze 4; proof `nullable` met compileercheck |
-| Contract voor usings anders dan aangenomen | Bij hervatten controleren; wijzig het contract niet |
-| Foutmelding anders van vorm (Additional Info) | Gedocumenteerd verschil, geen Manual |
+| `bool?` with `ShouldBeTrue` does not compile | Choice 4; proof `nullable` with compile check |
+| Contract for usings differs from the assumption | Check when resuming; do not change the contract |
+| Error message has a different shape (Additional Info) | Documented difference, no Manual |
 
-## Aanpassingen bij realisatie
+## Adjustments during implementation
 
-- `unknown-type`-proof vervallen: `before` compileert dan niet; type-check alleen via code bewaakt.
-- Extra proof `value-used` (`var c = flag.Should().BeFalse()`); `chain` gebruikt `.And.NotBe(false)` zodat alleen BeTrue een finding geeft (ProofTests eist de reden bij alle findings).
-- Bij `bool?` krijgt `because` een leidende spatie (`ShouldBe(false, "why")`), anders plakt `SeparatedList` de argumenten aan elkaar.
-- Contract klopte met de aanname; geen wijzigingen aan contracten.
+- `unknown-type` proof dropped: `before` would not compile; type check guarded by code only.
+- Extra proof `value-used` (`var c = flag.Should().BeFalse()`); `chain` uses `.And.NotBe(false)` so that only BeTrue produces a finding (ProofTests requires the reason on all findings).
+- For `bool?`, `because` gets a leading space (`ShouldBe(false, "why")`), otherwise `SeparatedList` glues the arguments together.
+- The contract matched the assumption; no changes to contracts.
 
-## Gewijzigde bestanden
+## Changed files
 
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeTrueFalsePattern.cs` (nieuw)
-- `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` (1 regel)
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeTrueFalsePattern.cs` (new)
+- `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` (1 line)
 - `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/` (7 proofs)
-- `docs/projectinfo/patterns/fa-be-true-false-{plan,verify}.md`, `docs/projectinfo/README.md` (rij)
+- `docs/projectinfo/patterns/fa-be-true-false-{plan,verify}.md`, `docs/projectinfo/README.md` (row)
 
-## Zie ook
+## See also
 
 - `claude/tasks/patroon-queue.md`
 - `claude/docs/patroon-loop.md`

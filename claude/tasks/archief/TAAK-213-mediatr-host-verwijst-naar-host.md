@@ -1,72 +1,72 @@
-# TAAK-213 — MediatR: generator-host verwijst naar een andere host (kgrzybek CS0436/CS0121)
+# TAAK-213 — MediatR: a generator host refers to another host (kgrzybek CS0436/CS0121)
 
-**Status**: ✅ voltooid (build kgrzybek groen); 4 archtest-regressies → TAAK-214
-**Afgerond**: 2026-10-13
-**Aangemaakt**: 2026-10-13 (uit TAAK-212, corpus-ronde 5)
-**Doel**: kgrzybek `91c8ef2` bouwt na `fix --fix mediatr`.
+**Status**: ✅ completed (kgrzybek build green); 4 archtest regressions → TAAK-214
+**Finished**: 2026-10-13
+**Created**: 2026-10-13 (from TAAK-212, corpus round 5)
+**Goal**: kgrzybek `91c8ef2` builds after `fix --fix mediatr`.
 
-## Context voor de volgende agent
+## Context for the next agent
 
 - `_results/r5/kgr/logs/build1.log`: 410× CS0436 (`RequestHandlerWrapper`, `NotificationHandlerWrapper`, `ContainerMetadata`, `Mediator`, ...)
-  en 2× CS0121 (`AddMediator` dubbelzinnig), alleen in `Registrations.Infrastructure`.
-- `Registrations.Infrastructure` verwijst naar `UserAccess.Infrastructure`; beide krijgen `Mediator.SourceGenerator` (Autofac `MediatorModule`).
-  De publieke gegenereerde `AddMediator`-extensie van UserAccess botst (CS0121); `UserAccess.Infrastructure` geeft Registrations
-  `InternalsVisibleTo` (internal-handler-access), waardoor ook de internal gegenereerde typen botsen (CS0436).
-- De generator (3.0.2) controleert geen toegankelijkheid: zonder IVT wordt het CS0122 voor de internal handlers van UserAccess.Infrastructure.
-- In ronde 4 verborgen: UserAccess.Infrastructure brak toen al op MSG0001, dus Registrations werd niet gecompileerd.
+  and 2× CS0121 (`AddMediator` ambiguous), only in `Registrations.Infrastructure`.
+- `Registrations.Infrastructure` refers to `UserAccess.Infrastructure`; both get `Mediator.SourceGenerator` (Autofac `MediatorModule`).
+  The public generated `AddMediator` extension of UserAccess clashes (CS0121); `UserAccess.Infrastructure` gives Registrations
+  `InternalsVisibleTo` (internal-handler-access), so the internal generated types clash too (CS0436).
+- The generator (3.0.2) does not check accessibility: without IVT it becomes CS0122 for the internal handlers of UserAccess.Infrastructure.
+- Hidden in round 4: UserAccess.Infrastructure already broke on MSG0001 then, so Registrations was not compiled.
 
-## Stappen
+## Steps
 
-- [x] 1. Repro: twee host-projecten waarvan de ene de andere refereert (probe in scratch + `_Combined/host-references-host`).
-- [x] 2. Opties onderzoeken: `Assemblies` beperken, `GenerateTypesAsInternal`, `Namespace` (zie Probe).
-- [x] 3. Realisatie: `MediatorHosts` + Autofac/AddMediatR/internal-handler-access.
-- [x] 4. Bewijs op kgrzybek met het harnas (`_results/r6`).
+- [x] 1. Repro: two host projects of which one references the other (probe in scratch + `_Combined/host-references-host`).
+- [x] 2. Investigate options: limit `Assemblies`, `GenerateTypesAsInternal`, `Namespace` (see Probe).
+- [x] 3. Realisation: `MediatorHosts` + Autofac/AddMediatR/internal-handler-access.
+- [x] 4. Proof on kgrzybek with the harness (`_results/r6`).
 
-## Probe (Mediator.SourceGenerator 3.0.2, net8.0, HostB → HostA, beide met generator)
+## Probe (Mediator.SourceGenerator 3.0.2, net8.0, HostB → HostA, both with the generator)
 
-| HostA (verwezen) | HostB (verwijzend) | IVT A→B | Resultaat |
-| ---------------- | ------------------ | ------- | --------- |
-| standaard | standaard | ja | CS0121 (`AddMediator`) |
-| standaard | standaard | nee | CS0122 (B noemt A's internal handler) + CS0436-waarschuwingen |
-| `GenerateTypesAsInternal` | standaard | nee | CS0122 |
-| standaard | `Assemblies` beperkt (± `GenerateTypesAsInternal`) | nee | CS0122 + CS0436 (A's publieke typen) |
-| `GenerateTypesAsInternal` | `Assemblies` beperkt | ja | CS0121 + 130× CS0436 (ook met B internal of `Namespace` in B) |
-| **`GenerateTypesAsInternal`** | **`Assemblies = [typeof(eigen), typeof(lib)]`** | **nee** | **bouwt**, geen waarschuwingen; B registreert eigen + lib-handlers, niet die van A |
+| HostA (referenced) | HostB (referring) | IVT A→B | Result |
+| ------------------ | ----------------- | ------- | ------ |
+| default | default | yes | CS0121 (`AddMediator`) |
+| default | default | no | CS0122 (B names A's internal handler) + CS0436 warnings |
+| `GenerateTypesAsInternal` | default | no | CS0122 |
+| default | `Assemblies` limited (± `GenerateTypesAsInternal`) | no | CS0122 + CS0436 (A's public types) |
+| `GenerateTypesAsInternal` | `Assemblies` limited | yes | CS0121 + 130× CS0436 (also with B internal or `Namespace` in B) |
+| **`GenerateTypesAsInternal`** | **`Assemblies = [typeof(own), typeof(lib)]`** | **no** | **builds**, no warnings; B registers its own + lib handlers, not those of A |
 
-- `MediatorOptions`, `AssemblyReference` en `MediatorDependencyInjectionExtensions` staan altijd in `Mediator` / `Microsoft.Extensions.DependencyInjection`;
-  `Namespace` verplaatst alleen `Mediator`, dus helpt niet. `GenerateTypesAsInternal` maakt ze allemaal internal.
-- `Assemblies` leest de generator uit de broncode: `typeof(T)` (ook `global::`) en `typeof(T).Assembly` werken.
+- `MediatorOptions`, `AssemblyReference` and `MediatorDependencyInjectionExtensions` are always in `Mediator` / `Microsoft.Extensions.DependencyInjection`;
+  `Namespace` only moves `Mediator`, so it does not help. `GenerateTypesAsInternal` makes them all internal.
+- The generator reads `Assemblies` from the source code: `typeof(T)` (also `global::`) and `typeof(T).Assembly` work.
 
-## Keuzes
+## Choices
 
-- **Verwezen host** (een andere host hangt er transitief van af): `GenerateTypesAsInternal = true`.
-- **Verwijzende host**: `Assemblies = [typeof(<type rond de aanroep>), typeof(<één type per verwezen assembly met MediatR-messages/handlers, geen host>)]`,
-  op naam gesorteerd; per assembly bij voorkeur een publiek message/handler-type. Zo ziet hij dezelfde assemblies als de generator standaard, minus de andere hosts.
-  Dat volgt MediatR: de Autofac-module van kgrzybek registreerde alleen `Assemblies.Application` + `ThisAssembly`.
-- **Geen IVT van host naar host**: `InternalHandlerAccessPattern` slaat een project over dat zelf host is.
-- **Manual**: een host geeft de andere al zelf `InternalsVisibleTo` (geen optie helpt); `AddMediatR` scant expliciet een andere host;
-  geen nameable type in een te noemen assembly.
-- "Host" = project met `AddMediatR` of een Autofac-module die MediatR scant (`MediatorHosts.AssemblyNamesAsync`). De Fixer geeft de
-  *werk*-solution door (het huidige bestand is al deels herschreven), dus een `AddMediator`-aanroep telt ook (op naam).
-- Gedeelde code in `Fixes/MediatR/MediatorHosts.cs` (+ model `MediatorHostSettings`); `AutofacMediatorModulePattern` is nu `ISolutionPattern`.
-- `TestProjects.CompileErrors` telt CS0436 nu mee: een botsing van gegenereerde typen is in een proof altijd fout.
+- **Referenced host** (another host depends on it transitively): `GenerateTypesAsInternal = true`.
+- **Referring host**: `Assemblies = [typeof(<type around the call>), typeof(<one type per referenced assembly with MediatR messages/handlers, not a host>)]`,
+  sorted by name; per assembly preferably a public message/handler type. That way it sees the same assemblies as the generator by default, minus the other hosts.
+  That follows MediatR: kgrzybek's Autofac module only registered `Assemblies.Application` + `ThisAssembly`.
+- **No IVT from host to host**: `InternalHandlerAccessPattern` skips a project that is a host itself.
+- **Manual**: one host already gives the other `InternalsVisibleTo` itself (no option helps); `AddMediatR` explicitly scans another host;
+  no nameable type in an assembly that must be named.
+- "Host" = a project with `AddMediatR` or an Autofac module that scans MediatR (`MediatorHosts.AssemblyNamesAsync`). The Fixer passes the
+  *working* solution (the current file is already partly rewritten), so an `AddMediator` call counts too (by name).
+- Shared code in `Fixes/MediatR/MediatorHosts.cs` (+ model `MediatorHostSettings`); `AutofacMediatorModulePattern` is now an `ISolutionPattern`.
+- `TestProjects.CompileErrors` now counts CS0436: a clash of generated types is always wrong in a proof.
 
-## Bewijs
+## Proof
 
-- Proof `Proofs/MediatR/_Combined/host-references-host` (twee Autofac-hosts, één verwijst naar de andere; after compileert per project met generator).
-- `src/Unshackle.Tests/Core/MediatorHostsTests.cs` (6 tests: hostdetectie, beide settings, IVT-Manual, AddMediatR-variant + Manual).
+- Proof `Proofs/MediatR/_Combined/host-references-host` (two Autofac hosts, one refers to the other; after compiles per project with the generator).
+- `src/Unshackle.Tests/Core/MediatorHostsTests.cs` (6 tests: host detection, both settings, IVT Manual, AddMediatR variant + Manual).
 
-## Resultaat
+## Result
 
-- Unshackle: `dotnet build` ok, `dotnet test` 1073/1073 groen (incl. 6 `MediatorHostsTests` en de nieuwe combined proof), SampleShop 38/38.
-- kgrzybek (`_results/r6/kgr`): 218 bestanden gefixt, 0 Manual; **build na fix ok** (r5: 410× CS0436 + 2× CS0121). Registrations kreeg `Assemblies`,
-  UserAccess `GenerateTypesAsInternal`, geen IVT meer van UserAccess.Infrastructure. Tests 242/287 (basis 246/287): 4 regressies in de
-  ArchTests (gegenereerde `Mediator.Mediator`/`ContainerMetadata` hangen af van andere modules) → **TAAK-214**.
+- Unshackle: `dotnet build` ok, `dotnet test` 1073/1073 green (incl. 6 `MediatorHostsTests` and the new combined proof), SampleShop 38/38.
+- kgrzybek (`_results/r6/kgr`): 218 files fixed, 0 Manual; **build after fix ok** (r5: 410× CS0436 + 2× CS0121). Registrations got `Assemblies`,
+  UserAccess `GenerateTypesAsInternal`, no more IVT from UserAccess.Infrastructure. Tests 242/287 (baseline 246/287): 4 regressions in the
+  ArchTests (generated `Mediator.Mediator`/`ContainerMetadata` depend on other modules) → **TAAK-214**.
 
-## Zie ook
+## See also
 
 - `claude/tasks/archief/TAAK-214-mediatr-archtests-gegenereerde-mediator.md`
 - `claude/tasks/archief/TAAK-212-mediatr-kgrzybek-build-na-fix.md`
-- `claude/tasks/CORPUSRUN-mediatr.md` — "Herhaling ronde 5" en "Herhaling ronde 6"
+- `claude/tasks/CORPUSRUN-mediatr.md` — "Repeat round 5" and "Repeat round 6"
 - `claude/tasks/mediatr-queue.md`
 - `docs/projectinfo/patterns/mediatr-autofac-mediator-module-plan.md` (REQ-7, REQ-8), `mediatr-internal-handler-access-plan.md` (REQ-7), `mediatr-add-mediatr-plan.md` (REQ-7)

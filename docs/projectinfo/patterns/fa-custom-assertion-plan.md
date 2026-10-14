@@ -11,7 +11,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/FluentAssertions/CustomAssertion/
 ---
 
-# Feature: fa.custom-assertion: eigen FA-assertions als Manual, gegroepeerd per extensie
+# Feature: fa.custom-assertion: own FA assertions as Manual, grouped per extension
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -19,42 +19,42 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-091 (ANALYSE-fa-100, categorie 3).
+> Drawn up from TAAK-091 (ANALYSE-fa-100, category 3).
 
 ## One-sentence summary
 
-Een aanroep van een niet-FA-methode op een FA-assertions-type (`result.Should().BeFailure()`) wordt `Manual` met één reden per extensie, en rapport en console tonen die aanroepen als één regel met aantal.
+A call of a non-FA method on an FA assertions type (`result.Should().BeFailure()`) becomes `Manual` with one reason per extension, and report and console show those calls as one line with a count.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Herkennen: methode niet uit een `FluentAssertions`-namespace, receiver (extensie) of declarerend type (instance) is of erft van een FA-type waarvan de naam op `Assertions` eindigt.
-- Reden: "Custom assertion `Type.Methode` (bestand of assembly): rewrite this FluentAssertions extension to Shouldly once; its calls can stay."
-- Rapport (csv/json/md): één rij per extensie (eerste aanroep) met "N call(s), first here." voor de reden. Console: lijst per extensie met aantal, aflopend.
+- Recognising: a method not from a `FluentAssertions` namespace, whose receiver (extension) or declaring type (instance) is or inherits from an FA type whose name ends in `Assertions`.
+- Reason: "Custom assertion `Type.Method` (file or assembly): rewrite this FluentAssertions extension to Shouldly once; its calls can stay."
+- Report (csv/json/md): one row per extension (first call) with "N call(s), first here." before the reason. Console: list per extension with a count, descending.
 
 **Out of scope**
 
-- De extensie zelf herschrijven (body gebruikt `Execute.Assertion`), shims genereren.
-- Eigen `Should()`-methodes die geen FA-type teruggeven.
+- Rewriting the extension itself (the body uses `Execute.Assertion`), generating shims.
+- Own `Should()` methods that do not return an FA type.
 
 ## Requirements
 
-- **REQ-1**: WHEN een eigen extensie op een FA-assertions-type wordt aangeroepen THE SYSTEM SHALL Manual geven met de extensienaam (proof `CustomAssertion/extension`).
-- **REQ-2**: WHEN een instance-methode van een subklasse van een FA-assertions-type wordt aangeroepen THE SYSTEM SHALL Manual geven (proof `CustomAssertion/subclass`).
-- **REQ-3**: WHEN een FA-methode zelf wordt aangeroepen THE SYSTEM SHALL dit patroon niet laten matchen (`IsFluentAssertions` op de methode).
-- **REQ-4**: WHEN het rapport wordt geschreven THE SYSTEM SHALL de aanroepen van één extensie samenvoegen tot één rij met aantal (unittest `FromAll_CustomAssertionCalls_OneRowPerAssertionWithCount`).
-- **REQ-5**: WHEN de console de samenvatting toont THE SYSTEM SHALL per extensie aantal en reden tonen, met één advieskop.
-- **Uitbreiding**: WHEN een eigen extensie binnen een `AssertionScope` staat THE SYSTEM SHALL dezelfde custom-reden geven (niet "Inside an AssertionScope"); `fa.assertion-scope` zet zo'n scope niet om, omdat de aanroep geen FA-methode is (proof `CustomAssertion/in-assertion-scope`).
+- **REQ-1**: WHEN an own extension on an FA assertions type is called THE SYSTEM SHALL give Manual with the extension name (proof `CustomAssertion/extension`).
+- **REQ-2**: WHEN an instance method of a subclass of an FA assertions type is called THE SYSTEM SHALL give Manual (proof `CustomAssertion/subclass`).
+- **REQ-3**: WHEN an FA method itself is called THE SYSTEM SHALL not let this pattern match (`IsFluentAssertions` on the method).
+- **REQ-4**: WHEN the report is written THE SYSTEM SHALL merge the calls of one extension into one row with a count (unit test `FromAll_CustomAssertionCalls_OneRowPerAssertionWithCount`).
+- **REQ-5**: WHEN the console shows the summary THE SYSTEM SHALL show count and reason per extension, with one advice header.
+- **Extension**: WHEN an own extension is inside an `AssertionScope` THE SYSTEM SHALL give the same custom reason (not "Inside an AssertionScope"); `fa.assertion-scope` does not convert such a scope, because the call is not an FA method (proof `CustomAssertion/in-assertion-scope`).
 
 ## Risks
 
-- Een JSON/CSV-consument die Manual-rijen telt, telt bij deze extensies nu één rij per extensie; het aantal staat in de reden.
+- A JSON/CSV consumer that counts Manual rows now counts one row per extension for these extensions; the count is in the reason.
 
-## Modellen
+## Models
 
 [fa-custom-assertion-modellen.md](fa-custom-assertion-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

@@ -1,38 +1,38 @@
-# TAAK-240 — MediatR: waarschuwing in het rapport bij architectuurtests (namespace `Mediator` uitzonderen)
+# TAAK-240 — MediatR: a warning in the report with architecture tests (exclude namespace `Mediator`)
 
-**Status**: ✅ voltooid
-**Afgerond**: 2026-10-13
-**Aangemaakt**: 2026-10-13 (vervolg op TAAK-214)
-**Doel**: wie MediatR migreert in een solution met NetArchTest/ArchUnitNET krijgt in het rapport te horen dat archtests de namespace `Mediator` moeten uitzonderen.
+**Status**: ✅ completed
+**Finished**: 2026-10-13
+**Created**: 2026-10-13 (follow-up of TAAK-214)
+**Goal**: whoever migrates MediatR in a solution with NetArchTest/ArchUnitNET is told in the report that archtests must exclude the namespace `Mediator`.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- TAAK-214: kgrzybek's `*Module_DoesNotHave_Dependency_On_Other_Modules` falen na de fix op de gegenereerde `Mediator.Mediator` en
-  `Mediator.Internals.ContainerMetadata` (die noemen messages van andere modules). Legitiem verschil; oplossing in de test:
+- TAAK-214: kgrzybek's `*Module_DoesNotHave_Dependency_On_Other_Modules` fail after the fix on the generated `Mediator.Mediator` and
+  `Mediator.Internals.ContainerMetadata` (they name messages of other modules). A legitimate difference; the solution in the test:
   `.And().DoNotResideInNamespace("Mediator")`.
-- TAAK-214 vond een automatische melding "niet betrouwbaar af te leiden". Gekozen compromis: geen analyse van de tests, alleen een
-  waarschuwing zodra een project van de solution een architectuurtest-bibliotheek refereert.
+- TAAK-214 found an automatic report "cannot be derived reliably". Chosen compromise: no analysis of the tests, only a
+  warning as soon as a project of the solution references an architecture-test library.
 
-## Stappen
+## Steps
 
-- [x] 1. `MediatorHosts.WithArchitectureTestWarning(result, solution)`: voegt aan een `FixedResult` een `Warning` toe (achter een bestaande)
-  als een project een `PortableExecutableReference` heeft waarvan de bestandsnaam met `NetArchTest` (NetArchTest.Rules,
-  NetArchTest.eNhancedEdition) of `ArchUnitNET` (TngTech.ArchUnitNET + xUnit/NUnit/MSTest) begint. Geen I/O: de referenties komen uit de Roslyn-`Solution`.
-- [x] 2. Aangeroepen in `AddMediatRPattern.RewriteAsync` en `AutofacMediatorModulePattern.RewriteAsync` (alleen met solution; Manual blijft Manual).
-- [x] 3. Unittest `AddMediatRPatternTests.RewriteAsync_SolutionWithArchitectureTests_WarnsAboutMediatorNamespace` (NetArchTest.Rules, ArchUnitNET.xUnit, andere dll).
-- [x] 4. KingmaDoc plan/verify van `mediatr.add-mediatr` en `mediatr.autofac-mediator-module`, `mediatr-queue.md`, `INDEX.md`.
-- [x] 5. Scan (alleen rapport) op een kopie van kgrzybek `91c8ef2`: de 4 `mediatr.autofac-mediator-module`-rijen zijn Fixed met de waarschuwing.
+- [x] 1. `MediatorHosts.WithArchitectureTestWarning(result, solution)`: adds a `Warning` to a `FixedResult` (after an existing one)
+  if a project has a `PortableExecutableReference` whose file name starts with `NetArchTest` (NetArchTest.Rules,
+  NetArchTest.eNhancedEdition) or `ArchUnitNET` (TngTech.ArchUnitNET + xUnit/NUnit/MSTest). No I/O: the references come from the Roslyn `Solution`.
+- [x] 2. Called in `AddMediatRPattern.RewriteAsync` and `AutofacMediatorModulePattern.RewriteAsync` (only with a solution; Manual stays Manual).
+- [x] 3. Unit test `AddMediatRPatternTests.RewriteAsync_SolutionWithArchitectureTests_WarnsAboutMediatorNamespace` (NetArchTest.Rules, ArchUnitNET.xUnit, another dll).
+- [x] 4. KingmaDoc plan/verify of `mediatr.add-mediatr` and `mediatr.autofac-mediator-module`, `mediatr-queue.md`, `INDEX.md`.
+- [x] 5. Scan (report only) on a copy of kgrzybek `91c8ef2`: the 4 `mediatr.autofac-mediator-module` rows are Fixed with the warning.
 
-## Resultaat
+## Result
 
-- Tests: `*Mediat*` + `*ProofTests` 820/820 groen; nieuwe test 3/3.
-- kgrzybek-scan: waarschuwing op `Modules/{Meetings,Administration,UserAccess,Payments}/Infrastructure/Configuration/Mediation/MediatorModule.cs`
-  (het eerste project met de bibliotheek wordt genoemd, hier `...UserAccess.Domain.UnitTests`).
-- Afweging: de waarschuwing komt ook als de archtests geen module-afhankelijkheid testen (vals positief, maar onschuldig: het advies klopt altijd).
+- Tests: `*Mediat*` + `*ProofTests` 820/820 green; new test 3/3.
+- kgrzybek scan: warning on `Modules/{Meetings,Administration,UserAccess,Payments}/Infrastructure/Configuration/Mediation/MediatorModule.cs`
+  (the first project with the library is named, here `...UserAccess.Domain.UnitTests`).
+- Trade-off: the warning also appears when the archtests do not test module dependencies (a false positive, but harmless: the advice is always right).
 
-## Zie ook
+## See also
 
 - `claude/tasks/archief/TAAK-214-mediatr-archtests-gegenereerde-mediator.md`
-- `claude/tasks/CORPUSRUN-mediatr.md` — "Herhaling ronde 6"
+- `claude/tasks/CORPUSRUN-mediatr.md` — "Repeat round 6"
 - `claude/tasks/mediatr-queue.md`
 - `docs/projectinfo/patterns/mediatr-add-mediatr-plan.md`, `docs/projectinfo/patterns/mediatr-autofac-mediator-module-plan.md`

@@ -6,22 +6,22 @@
 | **Status**    | Verified                                                           |
 | **Generated** | 2026-10-11 by KingmaDoc skill                                      |
 
-> Verified by an AI agent against uncommitted changes (basis c461a14).
+> Verified by an AI agent against uncommitted changes (base c461a14).
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeApproximatelyPattern.cs`; registratie in `FluentAssertionsFix.cs` (ook als schakel van `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/BeApproximately/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeApproximatelyPattern.cs`; registration in `FluentAssertionsFix.cs` (also as a link of `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/BeApproximately/`, run by `ProofTests`.
 
-| REQ | Oordeel | Bewijs |
+| REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Gehaald | `simple` |
-| REQ-2 | Gehaald | `because`, `close-to` |
-| REQ-3 | Gehaald | `not` |
-| REQ-4 | Gehaald | `close-to` |
-| REQ-5 | Gehaald | `nullable` |
-| REQ-6 | Gehaald | `int-close-to`, `nullable-not`, `assertion-scope`; becauseArgs vervangen door REQ-8 |
-| REQ-7 | Gehaald | `AndChain/equal-length-approximately` |
-| REQ-8 | Gehaald | `because-args` (Fixed met `string.Format`) |
+| REQ-1 | Met | `simple` |
+| REQ-2 | Met | `because`, `close-to` |
+| REQ-3 | Met | `not` |
+| REQ-4 | Met | `close-to` |
+| REQ-5 | Met | `nullable` |
+| REQ-6 | Met | `int-close-to`, `nullable-not`, `assertion-scope`; becauseArgs replaced by REQ-8 |
+| REQ-7 | Met | `AndChain/equal-length-approximately` |
+| REQ-8 | Met | `because-args` (Fixed with `string.Format`) |
 
 ## Deviations
 
@@ -37,7 +37,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeApproximatelyPattern
 | Test | `dotnet test` | passed (474 tests) |
 | Sample | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | passed (38 tests) |
 
-## Zie ook
+## See also
 
 - [fa-be-approximately-modellen.md](fa-be-approximately-modellen.md)
 - `claude/docs/patroon-loop.md`

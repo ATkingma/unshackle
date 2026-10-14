@@ -1,36 +1,36 @@
 # TAAK-155 — automapper.for-member-ignore
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-12
-**Doel**: rij 2 van `claude/tasks/automapper-queue.md`: `.ForMember(d => d.X, o => o.Ignore())` → lid weglaten in de `ToB`-methode.
+**Status**: ✅ completed
+**Created**: 2026-10-12
+**Goal**: row 2 of `claude/tasks/automapper-queue.md`: `.ForMember(d => d.X, o => o.Ignore())` → leave the member out of the `ToB` method.
 
-## Onderzoek
+## Research
 
-- AutoMapper 14: `ForMember(Expression<Func<TDest, TMember>>, Action<IMemberConfigurationExpression<TSrc, TDest, TMember>>)`; ook een overload met stringnaam. `o.Ignore()` laat het bestemmingslid ongemoeid (ook als de bron een gelijknamig lid heeft).
-- Corpus: 1015 treffers in 1 project; SampleShop-profiles gebruiken `ForMember` met `MapFrom` en `ReverseMap` (blijven Manual).
+- AutoMapper 14: `ForMember(Expression<Func<TDest, TMember>>, Action<IMemberConfigurationExpression<TSrc, TDest, TMember>>)`; also an overload with a string name. `o.Ignore()` leaves the destination member untouched (also if the source has a same-named member).
+- Corpus: 1015 hits in 1 project; the SampleShop profiles use `ForMember` with `MapFrom` and `ReverseMap` (stay Manual).
 
-## Keuzes
+## Choices
 
-- **Subklasse in plaats van los pattern met eigen `Rewrite`**: een profile wordt als geheel vervangen (`[profile, <Profile>Extensions]`). Twee patterns met elk een `Rewrite` op dezelfde klasse overschrijven elkaar. `ForMemberIgnorePattern : CreateMapPattern` deelt dus `Rewrite`; `Find` verdeelt de profiles (met Ignore → dit pattern, rest → `CreateMapPattern`), zodat precies één pattern een profile vindt. Contracten onaangeroerd.
-- **Alleen de lambda-vorm `d => d.X` + `o => o.Ignore()`** met symboolcontrole op de AutoMapper-assembly. Stringnaam, geneste leden, blok-lambda's, `MapFrom` en `ReverseMap` → Manual met de bestaande "not a CreateMap<A, B>() without options".
-- **Genegeerd lid wordt vóór de naam/type-controle overgeslagen**: ook een lid zonder bronlid of met een ander type is dan geen probleem.
-- **Genegeerd lid dat B niet publiek heeft → Manual**: AutoMapper zou de configuratie afkeuren; niets zinnigs om weg te laten.
-- Alleen `public` leden tellen; `AllOrNothing` en `Map`-Manual blijven zoals bij rij 1.
+- **A subclass instead of a separate pattern with its own `Rewrite`**: a profile is replaced as a whole (`[profile, <Profile>Extensions]`). Two patterns each with a `Rewrite` on the same class overwrite each other. `ForMemberIgnorePattern : CreateMapPattern` therefore shares `Rewrite`; `Find` splits the profiles (with Ignore → this pattern, the rest → `CreateMapPattern`), so exactly one pattern finds a profile. Contracts untouched.
+- **Only the lambda form `d => d.X` + `o => o.Ignore()`** with a symbol check on the AutoMapper assembly. String name, nested members, block lambdas, `MapFrom` and `ReverseMap` → Manual with the existing "not a CreateMap<A, B>() without options".
+- **An ignored member is skipped before the name/type check**: a member without a source member or with another type is then no problem either.
+- **An ignored member that B does not have as public → Manual**: AutoMapper would reject the configuration; nothing sensible to leave out.
+- Only `public` members count; `AllOrNothing` and the `Map` Manual stay as in row 1.
 
-## Stappen
+## Steps
 
-- [x] 1. Onderzoek en keuzes.
-- [x] 2. Plan `docs/projectinfo/patterns/automapper-for-member-ignore-plan.md` (approved, handmatig: `kingmadoc` niet beschikbaar).
-- [x] 3. `ForMemberIgnorePattern`, `CreateMapPattern` uitgebreid, registratie in `AutoMapperFix`.
+- [x] 1. Research and choices.
+- [x] 2. Plan `docs/projectinfo/patterns/automapper-for-member-ignore-plan.md` (approved, by hand: `kingmadoc` not available).
+- [x] 3. `ForMemberIgnorePattern`, `CreateMapPattern` extended, registration in `AutoMapperFix`.
 - [x] 4. Proofs (`simple`, `mixed`, 4× Manual), `ForMemberIgnorePatternTests`, `proofs-doc.py`.
-- [x] 5. Modellen (D2-bronnen; niet gerenderd), verify, README-rij, queue.
+- [x] 5. Models (D2 sources; not rendered), verify, README row, queue.
 
-## Resultaat
+## Result
 
-- `dotnet build` 0 warnings; ProofTests en pattern-tests 556/556. Volledige run 723/759: 36 falers buiten dit patroon (FixerTests, XmlProjectFileStoreTests, CommandTests, SampleShop-integratie; regeleinden en een tweede NuGet-bron `afas` in deze omgeving).
-- Build en test vragen in deze omgeving `-p:WarningsNotAsErrors=NU1507 -p:NoWarn=NU1507` (NU1507 door twee NuGet-bronnen).
+- `dotnet build` 0 warnings; ProofTests and pattern tests 556/556. Full run 723/759: 36 failures outside this pattern (FixerTests, XmlProjectFileStoreTests, CommandTests, SampleShop integration; line endings and a second NuGet source `afas` in this environment).
+- Build and test in this environment need `-p:WarningsNotAsErrors=NU1507 -p:NoWarn=NU1507` (NU1507 because of two NuGet sources).
 
-## Zie ook
+## See also
 
 - `claude/tasks/automapper-queue.md`
 - `claude/tasks/archief/TAAK-146-automapper-create-map.md`

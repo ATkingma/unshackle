@@ -8,7 +8,7 @@ files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
   - src/Unshackle.Tests/Proofs/FluentAssertions/BeNull/
 ---
-# Feature: fa.be-null: x.Should().BeNull()/NotBeNull() wordt x.ShouldBeNull()/ShouldNotBeNull()
+# Feature: fa.be-null: x.Should().BeNull()/NotBeNull() becomes x.ShouldBeNull()/ShouldNotBeNull()
 
 | | |
 |---|---|
@@ -16,53 +16,53 @@ files_expected:
 | **Status** | Approved |
 | **Generated** | 2026-10-10T23:42+02:00 by KingmaDoc 0.3.0.dev9 |
 
-> Opgesteld uit TAAK-004. Alles gemarkeerd als _(inferred)_ komt uit de codebase-analyse.
+> Drawn up from TAAK-004. Everything marked _(inferred)_ comes from the codebase analysis.
 
 ## One-sentence summary
 
-fa.be-null: x.Should().BeNull()/NotBeNull() wordt x.ShouldBeNull()/ShouldNotBeNull(), voor referentietypes en `Nullable<T>`.
+fa.be-null: x.Should().BeNull()/NotBeNull() becomes x.ShouldBeNull()/ShouldNotBeNull(), for reference types and `Nullable<T>`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `x.Should().BeNull()` / `NotBeNull()` (met optionele `because` zonder `becauseArgs`) als losse assertion, op referentietypes (string, object, collecties) en `Nullable<T>`.
-- `Manual(reden)` voor `becauseArgs`, ketens (`.And`, `.Which`) en gebruikt resultaat.
+- `x.Should().BeNull()` / `NotBeNull()` (with an optional `because` without `becauseArgs`) as a standalone assertion, on reference types (string, object, collections) and `Nullable<T>`.
+- `Manual(reason)` for `becauseArgs`, chains (`.And`, `.Which`) and a used result.
 
 **Out of scope**
 
-- `NotBeNull().Which...` omzetten naar `var v = x.ShouldNotBeNull()` (Shouldly geeft de waarde terug, maar dat is ketens splitsen).
-- `BeNull`/`NotBeNull` op `Action`/`Func`-subjects: FA heeft daar geen `BeNull`.
-- Beheer van `using`-directives: de `Fixer` doet dat via `IFix`.
+- Converting `NotBeNull().Which...` to `var v = x.ShouldNotBeNull()` (Shouldly returns the value, but that is splitting chains).
+- `BeNull`/`NotBeNull` on `Action`/`Func` subjects: FA has no `BeNull` there.
+- Management of `using` directives: the `Fixer` does that via `IFix`.
 
 ## Requirements
 
-- **REQ-1**: WHEN `x.Should().BeNull()` op een referentietype staat THE SYSTEM SHALL het herschrijven naar `x.ShouldBeNull()` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeNull/be-null.*.cs`).
-- **REQ-2**: WHEN `x.Should().NotBeNull()` op een referentietype staat THE SYSTEM SHALL het herschrijven naar `x.ShouldNotBeNull()` (proof `.../BeNull/not-be-null.*.cs`).
-- **REQ-3**: WHEN `BeNull`/`NotBeNull` een `because` zonder `becauseArgs` heeft THE SYSTEM SHALL die als `customMessage` overnemen (proof `.../BeNull/because.*.cs`).
-- **REQ-4**: WHEN het subject een `Nullable<T>` is (`int?`, `bool?`) THE SYSTEM SHALL dezelfde `ShouldBeNull`/`ShouldNotBeNull` gebruiken (proof `.../BeNull/nullable-value.*.cs`).
-- **REQ-5**: WHEN het subject een collectie of array is THE SYSTEM SHALL het herschrijven (proof `.../BeNull/collection.*.cs`); WHEN de assertion de body van een void-lambda is THE SYSTEM SHALL het herschrijven (proof `.../BeNull/lambda.*.cs`).
-- **REQ-6**: IF `becauseArgs` of benoemde argumenten gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `.../BeNull/because-args.*`).
-- **REQ-7**: IF een vervolg op de assertion staat (`.And`, `.Which`) of het resultaat als waarde wordt gebruikt THEN THE SYSTEM SHALL Manual geven (proofs `.../BeNull/chain.*`, `value-used.*`).
-- **REQ-8**: IF de assertion zelf een vervolg op een andere assertion is (`x.Should().NotBeEmpty().And.NotBeNull()`) THEN THE SYSTEM SHALL Manual geven (proof `.../BeNull/and-chain.*`).
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als `customMessage` geven (proof `.../BeNull/because-args.after.cs`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt REQ-6 voor dit geval.
-- **Uitbreiding TAAK-100**: IF de assertion in een `AssertionScope` staat die `fa.assertion-scope` niet omzet THEN THE SYSTEM SHALL Manual geven ("Inside an AssertionScope").
+- **REQ-1**: WHEN `x.Should().BeNull()` is on a reference type THE SYSTEM SHALL rewrite it to `x.ShouldBeNull()` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/BeNull/be-null.*.cs`).
+- **REQ-2**: WHEN `x.Should().NotBeNull()` is on a reference type THE SYSTEM SHALL rewrite it to `x.ShouldNotBeNull()` (proof `.../BeNull/not-be-null.*.cs`).
+- **REQ-3**: WHEN `BeNull`/`NotBeNull` has a `because` without `becauseArgs` THE SYSTEM SHALL take it over as `customMessage` (proof `.../BeNull/because.*.cs`).
+- **REQ-4**: WHEN the subject is a `Nullable<T>` (`int?`, `bool?`) THE SYSTEM SHALL use the same `ShouldBeNull`/`ShouldNotBeNull` (proof `.../BeNull/nullable-value.*.cs`).
+- **REQ-5**: WHEN the subject is a collection or array THE SYSTEM SHALL rewrite it (proof `.../BeNull/collection.*.cs`); WHEN the assertion is the body of a void lambda THE SYSTEM SHALL rewrite it (proof `.../BeNull/lambda.*.cs`).
+- **REQ-6**: IF `becauseArgs` or named arguments are used THEN THE SYSTEM SHALL give Manual (proof `.../BeNull/because-args.*`).
+- **REQ-7**: IF a continuation follows the assertion (`.And`, `.Which`) or the result is used as a value THEN THE SYSTEM SHALL give Manual (proofs `.../BeNull/chain.*`, `value-used.*`).
+- **REQ-8**: IF the assertion itself is a continuation of another assertion (`x.Should().NotBeEmpty().And.NotBeNull()`) THEN THE SYSTEM SHALL give Manual (proof `.../BeNull/and-chain.*`).
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL give `string.Format(CultureInfo.InvariantCulture, because, args)` as `customMessage` (proof `.../BeNull/because-args.after.cs`); named arguments or a non-constant `because` stay Manual. Replaces REQ-6 for this case.
+- **Extension TAAK-100**: IF the assertion is inside an `AssertionScope` that `fa.assertion-scope` does not convert THEN THE SYSTEM SHALL give Manual ("Inside an AssertionScope").
 
 ## Assumptions
 
-- Shouldly 4.3.0 heeft `ShouldBeNull<T>(this T? actual, string? customMessage)` en `ShouldNotBeNull<T>(...)` die voor referentietypes en `Nullable<T>` compileren (bewezen door de compileercheck van `nullable-value.after.cs`).
-- `ShouldNotBeNull()` geeft de waarde terug; bij een weggegooid resultaat maakt dat niet uit.
-- De `Fixer` beheert `using Shouldly;`/`using FluentAssertions;` via `IFix`.
+- Shouldly 4.3.0 has `ShouldBeNull<T>(this T? actual, string? customMessage)` and `ShouldNotBeNull<T>(...)`, which compile for reference types and `Nullable<T>` (proven by the compile check of `nullable-value.after.cs`).
+- `ShouldNotBeNull()` returns the value; with a discarded result that does not matter.
+- The `Fixer` manages `using Shouldly;`/`using FluentAssertions;` via `IFix`.
 
 ## Risks
 
-- Foutmelding krijgt "Additional Info:" in plaats van FA's "because"-voorvoegsel: gedocumenteerd verschil.
-- Na `x.Should().NotBeNull(); x!.Y` blijft de `!` staan: onschadelijk, Shouldly's `[NotNull]` maakt hem alleen overbodig.
+- The error message gets "Additional Info:" instead of FA's "because" prefix: a documented difference.
+- After `x.Should().NotBeNull(); x!.Y` the `!` stays: harmless, Shouldly's `[NotNull]` only makes it superfluous.
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-be-null-modellen.md](fa-be-null-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-be-null-modellen.md](fa-be-null-modellen.md).
 
 ## Open questions
 
-- Geen. `NotBeNull().Which`-herschrijving kan later een eigen patroon worden.
+- None. A `NotBeNull().Which` rewrite can later become its own pattern.

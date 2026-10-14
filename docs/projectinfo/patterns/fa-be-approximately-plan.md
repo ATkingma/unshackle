@@ -9,7 +9,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/FluentAssertions/BeApproximately/
 ---
 
-# Feature: fa.be-approximately: BeApproximately en BeCloseTo worden ShouldBe met tolerance
+# Feature: fa.be-approximately: BeApproximately and BeCloseTo become ShouldBe with tolerance
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -17,45 +17,45 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-050.
+> Drafted from TAAK-050.
 
 ## One-sentence summary
 
-`x.Should().BeApproximately(y, tol)` en `t.Should().BeCloseTo(u, span)` worden `x.ShouldBe(y, tol)`; `NotBeCloseTo` wordt `ShouldNotBe(u, span)`; `NotBeApproximately` wordt `System.Math.Abs(x - y).ShouldBeGreaterThan(tol)`.
+`x.Should().BeApproximately(y, tol)` and `t.Should().BeCloseTo(u, span)` become `x.ShouldBe(y, tol)`; `NotBeCloseTo` becomes `ShouldNotBe(u, span)`; `NotBeApproximately` becomes `System.Math.Abs(x - y).ShouldBeGreaterThan(tol)`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `(Not)BeApproximately` op double, float, decimal (ook nullable subject).
-- `(Not)BeCloseTo` op DateTime, DateTimeOffset, TimeSpan (dekt ook rij `fa.be-close-to`).
+- `(Not)BeApproximately` on double, float, decimal (also nullable subject).
+- `(Not)BeCloseTo` on DateTime, DateTimeOffset, TimeSpan (also covers row `fa.be-close-to`).
 
 **Out of scope**
 
-- `BeCloseTo` op integers, TimeOnly en ExecutionTime (Manual: geen Shouldly-tolerance).
-- Nullable verwachte waarde (Manual).
-- `Not…` op een nullable subject (Manual).
+- `BeCloseTo` on integers, TimeOnly and ExecutionTime (Manual: no Shouldly tolerance).
+- Nullable expected value (Manual).
+- `Not…` on a nullable subject (Manual).
 
 ## Requirements
 
-- **REQ-1**: WHEN `BeApproximately(y, tol)` op double/float/decimal staat THE SYSTEM SHALL `x.ShouldBe(y, tol)` geven (proof `simple`).
-- **REQ-2**: WHEN `because` zonder becauseArgs staat THE SYSTEM SHALL die als customMessage achteraan zetten (proofs `because`, `close-to`).
-- **REQ-3**: WHEN `NotBeApproximately(y, tol)` staat THE SYSTEM SHALL `System.Math.Abs(x - y).ShouldBeGreaterThan(tol)` geven, samengestelde operanden tussen haakjes (proof `not`).
-- **REQ-4**: WHEN `(Not)BeCloseTo(u, span)` op DateTime/DateTimeOffset/TimeSpan staat THE SYSTEM SHALL `ShouldBe`/`ShouldNotBe(u, span)` geven (proof `close-to`).
-- **REQ-5**: WHEN het subject `Nullable<T>` is THE SYSTEM SHALL `x.ShouldNotBeNull().ShouldBe(..)` geven (proof `nullable`).
-- **REQ-6**: IF een integer-subject, `Not…` op nullable, becauseArgs of een AssertionScope THEN THE SYSTEM SHALL Manual geven (proofs `int-close-to`, `nullable-not`, `because-args`, `assertion-scope`). becauseArgs: vervangen door REQ-8.
-- **REQ-7**: WHEN `BeApproximately` een schakel na `.And` is THE SYSTEM SHALL via `fa.and-chain` een los statement geven (proof `AndChain/equal-length-approximately`).
-- **REQ-8** (Uitbreiding TAAK-097): WHEN `becauseArgs` met een constante, formatteerbare `because` staat THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (proof `because-args`); named arguments of een niet-constante `because` blijven Manual.
+- **REQ-1**: WHEN `BeApproximately(y, tol)` is on double/float/decimal THE SYSTEM SHALL give `x.ShouldBe(y, tol)` (proof `simple`).
+- **REQ-2**: WHEN `because` without becauseArgs is present THE SYSTEM SHALL put it at the end as customMessage (proofs `because`, `close-to`).
+- **REQ-3**: WHEN `NotBeApproximately(y, tol)` is present THE SYSTEM SHALL give `System.Math.Abs(x - y).ShouldBeGreaterThan(tol)`, with compound operands in parentheses (proof `not`).
+- **REQ-4**: WHEN `(Not)BeCloseTo(u, span)` is on DateTime/DateTimeOffset/TimeSpan THE SYSTEM SHALL give `ShouldBe`/`ShouldNotBe(u, span)` (proof `close-to`).
+- **REQ-5**: WHEN the subject is `Nullable<T>` THE SYSTEM SHALL give `x.ShouldNotBeNull().ShouldBe(..)` (proof `nullable`).
+- **REQ-6**: IF an integer subject, `Not…` on nullable, becauseArgs or an AssertionScope THEN THE SYSTEM SHALL give Manual (proofs `int-close-to`, `nullable-not`, `because-args`, `assertion-scope`). becauseArgs: replaced by REQ-8.
+- **REQ-7**: WHEN `BeApproximately` is a link after `.And` THE SYSTEM SHALL give a separate statement via `fa.and-chain` (proof `AndChain/equal-length-approximately`).
+- **REQ-8** (Extension TAAK-097): WHEN `becauseArgs` with a constant, formattable `because` is present THE SYSTEM SHALL give `string.Format(CultureInfo.InvariantCulture, because, args)` as customMessage (proof `because-args`); named arguments or a non-constant `because` stay Manual.
 
 ## Assumptions
 
-- Probe (FA 7.2.2 + Shouldly 4.3.0): beide slagen op de grens `|x - y| == tol` (double, decimal, DateTime); `Not…` faalt op de grens bij FA en bij `Math.Abs(..) > tol` / `ShouldNotBe(.., span)`.
-- Shouldly 4.3.0 (reflectie): `ShouldBe(double|float|decimal, …, tolerance, customMessage)`, `ShouldBe/ShouldNotBe(DateTime|DateTimeOffset|TimeSpan, …, TimeSpan, customMessage)`; geen numerieke `ShouldNotBe` met tolerance.
+- Probe (FA 7.2.2 + Shouldly 4.3.0): both pass at the boundary `|x - y| == tol` (double, decimal, DateTime); `Not…` fails at the boundary in FA and with `Math.Abs(..) > tol` / `ShouldNotBe(.., span)`.
+- Shouldly 4.3.0 (reflection): `ShouldBe(double|float|decimal, …, tolerance, customMessage)`, `ShouldBe/ShouldNotBe(DateTime|DateTimeOffset|TimeSpan, …, TimeSpan, customMessage)`; no numeric `ShouldNotBe` with tolerance.
 
 ## Risks
 
-- Oneindig: FA slaagt bij `+inf` vs `+inf`, Shouldly faalt (inf - inf = NaN). NaN: FA gooit ArgumentException, Shouldly faalt; beide rood.
+- Infinity: FA passes on `+inf` vs `+inf`, Shouldly fails (inf - inf = NaN). NaN: FA throws ArgumentException, Shouldly fails; both red.
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-be-approximately-modellen.md](fa-be-approximately-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-be-approximately-modellen.md](fa-be-approximately-modellen.md).

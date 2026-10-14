@@ -1,38 +1,38 @@
-# TAAK-180 — MediatR: `RequestHandlerDelegate` in testcode blokkeert stil de hele migratie
+# TAAK-180 — MediatR: `RequestHandlerDelegate` in test code silently blocks the whole migration
 
-**Status**: ✅ voltooid — 2026-10-12 (stap 4 corpusbewijs op amantin niet gedraaid, zie Context)
-**Aangemaakt**: 2026-10-12 (`claude/tasks/CORPUSRUN-mediatr.md`, run 2026-10-12)
-**Doel**: amantinband clean-architecture migreert volledig (build + 85/85 tests), en elk resterend MediatR-gebruik zonder patroon krijgt een eigen Manual met locatie.
+**Status**: ✅ completed — 2026-10-12 (step 4 corpus proof on amantin not run, see Context)
+**Created**: 2026-10-12 (`claude/tasks/CORPUSRUN-mediatr.md`, run 2026-10-12)
+**Goal**: amantinband clean-architecture migrates fully (build + 85/85 tests), and every remaining MediatR usage without a pattern gets its own Manual with a location.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- amantin (`582281115489ac69d048e47c7363c7832e5b425a`, MediatR 12.2.0): `tests/CleanArchitecture.Application.UnitTests/Common/Behaviors/{Validation,Authorization}BehaviorTests.cs` mocken `Substitute.For<RequestHandlerDelegate<ErrorOr<T>>>()`, zetten `_next.Invoke().Returns(x)` en roepen `behavior.Handle(cmd, _next, default)` aan.
-- Geen patroon vindt dit. Het enige echte Manual is `project-file` "MediatR is still used in this project" op het testproject; daardoor worden alle 27 andere findings cascade-Manual (alles-of-niets), en ziet de gebruiker niet *waar* het gebruik zit.
-- `PipelineBehaviorPattern` herschrijft de behavior al naar `MessageHandlerDelegate<TReq,TRes>`; de aanroeper in de test moet mee.
+- amantin (`582281115489ac69d048e47c7363c7832e5b425a`, MediatR 12.2.0): `tests/CleanArchitecture.Application.UnitTests/Common/Behaviors/{Validation,Authorization}BehaviorTests.cs` mock `Substitute.For<RequestHandlerDelegate<ErrorOr<T>>>()`, set `_next.Invoke().Returns(x)` and call `behavior.Handle(cmd, _next, default)`.
+- No pattern finds this. The only real Manual is `project-file` "MediatR is still used in this project" on the test project; because of that all 27 other findings become cascade Manuals (all-or-nothing), and the user does not see *where* the usage is.
+- `PipelineBehaviorPattern` already rewrites the behavior to `MessageHandlerDelegate<TReq,TRes>`; the caller in the test must come along.
 
-- Gedaan (2026-10-12): `RequestHandlerDelegatePattern` (vóór `PipelineBehaviorPattern` geregistreerd), vangnet `Fixer.UnmatchedPatternId` + `ProjectPackages.RemainingUsesAsync`, proofs `Proofs/MediatR/RequestHandlerDelegate/` + `_Combined`, `CombinedProofTests.CombinedMediatR_*`, NSubstitute in `TestReferences.MediatR/Mediator`, unittests in `FixerProjectFileTests`, patroon-docs en README-rij.
-- Let op: MediatR 12.5's delegate heeft een optionele `CancellationToken`; `Invoke(token)` blijft het tweede argument. Lambda's als `next` zijn niet gedekt.
+- Done (2026-10-12): `RequestHandlerDelegatePattern` (registered before `PipelineBehaviorPattern`), safety net `Fixer.UnmatchedPatternId` + `ProjectPackages.RemainingUsesAsync`, proofs `Proofs/MediatR/RequestHandlerDelegate/` + `_Combined`, `CombinedProofTests.CombinedMediatR_*`, NSubstitute in `TestReferences.MediatR/Mediator`, unit tests in `FixerProjectFileTests`, pattern docs and README row.
+- Note: MediatR 12.5's delegate has an optional `CancellationToken`; `Invoke(token)` stays the second argument. Lambdas as `next` are not covered.
 
-## Analyse
+## Analysis
 
-Mediator: `MessageHandlerDelegate<TMessage,TResponse>(TMessage message, CancellationToken ct)` → `ValueTask<TResponse>`. Testcode: type `RequestHandlerDelegate<R>` → `MessageHandlerDelegate<TCmd,R>` (TCmd uit het `Handle`-argument), `next.Invoke()` → `next.Invoke(Arg.Any<TCmd>(), Arg.Any<CancellationToken>())`, `.Returns(x)` → `.Returns(new ValueTask<R>(x))`; `await behavior.Handle(...)` blijft werken. Zonder herleidbare TCmd: Manual met locatie.
+Mediator: `MessageHandlerDelegate<TMessage,TResponse>(TMessage message, CancellationToken ct)` → `ValueTask<TResponse>`. Test code: type `RequestHandlerDelegate<R>` → `MessageHandlerDelegate<TCmd,R>` (TCmd from the `Handle` argument), `next.Invoke()` → `next.Invoke(Arg.Any<TCmd>(), Arg.Any<CancellationToken>())`, `.Returns(x)` → `.Returns(new ValueTask<R>(x))`; `await behavior.Handle(...)` keeps working. Without a derivable TCmd: Manual with a location.
 
-## Stappen
+## Steps
 
-1. [x] Vangnet in `ProjectPackages`/`MediatRFix`: elke resterende MediatR-symboolreferentie zonder finding wordt een Manual op die regel (niet alleen "still used" op het csproj).
-2. [x] Proof `Proofs/MediatR/RequestHandlerDelegate/` (NSubstitute-mock + `Invoke().Returns`).
-3. [x] Patroon `mediatr.request-handler-delegate` + KingmaDoc-docs.
-4. [x] Bewijs: nagebootst met `_Combined`-proof. Corpusrun 2026-10-12 op 5f9b366 (`CORPUSRUN-mediatr.md`, sectie Herhaling na TAAK-180..184): `ValidationBehaviorTests` gedekt, maar `AuthorizationBehaviorTests` deelt één `_mockNextBehavior`-veld over drie requesttypen → nu een Manual mét locatie (vangnet werkt), amantin nog niet gemigreerd (0 Fixed, 85/85, 0 regressies). Vervolg: TAAK-191.
+1. [x] Safety net in `ProjectPackages`/`MediatRFix`: every remaining MediatR symbol reference without a finding becomes a Manual on that line (not only "still used" on the csproj).
+2. [x] Proof `Proofs/MediatR/RequestHandlerDelegate/` (NSubstitute mock + `Invoke().Returns`).
+3. [x] Pattern `mediatr.request-handler-delegate` + KingmaDoc docs.
+4. [x] Proof: imitated with a `_Combined` proof. Corpus run 2026-10-12 on 5f9b366 (`CORPUSRUN-mediatr.md`, section Repeat after TAAK-180..184): `ValidationBehaviorTests` covered, but `AuthorizationBehaviorTests` shares one `_mockNextBehavior` field across three request types → now a Manual with a location (the safety net works), amantin not yet migrated (0 Fixed, 85/85, 0 regressions). Follow-up: TAAK-191.
 
-## Gewijzigde bestanden
+## Changed files
 
-- `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerDelegatePattern.cs` (nieuw), `MediatRFix.cs`
+- `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerDelegatePattern.cs` (new), `MediatRFix.cs`
 - `src/Unshackle.Core/Fixer.cs`, `src/Unshackle.Core/ProjectPackages.cs`
 - `src/Unshackle.Tests/CombinedProofTests.cs`, `Helpers/TestReferences.cs`, `Core/FixerProjectFileTests.cs`
 - `src/Unshackle.Tests/Proofs/MediatR/RequestHandlerDelegate/`, `Proofs/MediatR/_Combined/`
 - `docs/projectinfo/patterns/mediatr-request-handler-delegate-{plan,modellen,verify}.md`, `docs/projectinfo/README.md`, `claude/docs/INDEX.md`
 
-## Zie ook
+## See also
 
 - `src/Unshackle.Core/Fixes/MediatR/Patterns/PipelineBehaviorPattern.cs`
 - `src/Unshackle.Core/ProjectPackages.cs`

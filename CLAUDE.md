@@ -2,58 +2,60 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Weet je niet waar iets staat?** → zie `claude/docs/INDEX.md`
+**Don't know where something lives?** → see `claude/docs/INDEX.md`
 
-**Sessie overgenomen?** → lees eerst `claude/docs/overdracht.md` (lopend werk, openstaande opdrachten, werkafspraken).
+**Took over a session?** → first read `claude/docs/overdracht.md` (ongoing work, open assignments, working agreements).
 
-## Documentatie-architectuur
+## Documentation architecture
 
-| Locatie                          | Inhoud                                                                              |
+| Location                         | Contents                                                                            |
 | -------------------------------- | ----------------------------------------------------------------------------------- |
-| `CLAUDE.md` (dit bestand)        | Commando's, architectuur in het kort, pakketregels                                  |
-| `docs/projectinfo/README.md`     | Hoofddocument: C4-diagrammen, links naar architectuur, project en elk patroon (KingmaDoc) |
-| `docs/projectinfo/project.md`    | Wat Unshackle is, waarom, wat er al bestaat, roadmap |
-| `docs/projectinfo/architectuur/` | Projecten, Core (Fixer → Fix → Pattern), testen, rapportage |
-| `claude/docs/INDEX.md`           | Volledige index: zoek hier als je niet weet waar iets staat                         |
-| `claude/docs/code-standaarden.md` | Codestijl en design patterns |
-| `claude/docs/agent-werkwijze.md` | Regels voor taakbeheer, cross-referenties, documentsplitsing                        |
-| `claude/tasks/`                  | Actieve taken `TAAK-NNN-<slug>.md`; voltooid in `archief/`                          |
+| `CLAUDE.md` (this file)          | Commands, architecture in brief, package rules                                      |
+| `docs/projectinfo/README.md`     | Main document: C4 diagrams, links to architecture, project and every pattern (KingmaDoc) |
+| `docs/projectinfo/project.md`    | What Unshackle is, why, what already exists, roadmap |
+| `docs/projectinfo/architectuur/` | Projects, Core (Fixer → Fix → Pattern), testing, reporting |
+| `claude/docs/INDEX.md`           | Full index: look here when you don't know where something lives                    |
+| `claude/docs/code-standaarden.md` | Code style and design patterns |
+| `claude/docs/agent-werkwijze.md` | Rules for task management, cross-references, document splitting                    |
+| `claude/tasks/`                  | Active tasks `TAAK-NNN-<slug>.md`; completed ones in `archief/`                     |
 | `.claude/skills/`                | `/taak-start`, `/taak-specifiek`, `/taak-oppakken`                                  |
 
-## Werkafspraken
+File names are historical and partly Dutch (`archief/`, `overdracht.md`, `-modellen.md`, ...); they are kept so links keep working.
 
-- Communiceer in het Nederlands; code, namen en commitberichten in het Engels.
-- **Nooit pushen of mergen naar `main` als er een test faalt (oud of nieuw).** Zie `claude/docs/agent-werkwijze.md` §6.
-- Elk patroon krijgt KingmaDoc plan + verify in `docs/projectinfo/patterns/` en een rij in `docs/projectinfo/README.md` (hook `.claude/hooks/check-pattern-docs.sh` bewaakt dit).
-- Documentatie en taken volgens `claude/docs/agent-werkwijze.md` (nieuw document → `INDEX.md`, `## Zie ook` onderaan).
-- Code volgt `claude/docs/code-standaarden.md`: o.a. class met `required init` voor modellen, klassieke constructors, **nooit `sealed`**, `CancellationToken` altijd verplicht, design patterns volgens GoF/refactoring.guru.
+## Working agreements
 
-## Commando's
+- Communicate with the user in Dutch. Code, names, commit messages **and all documentation, models (KingmaDoc plan/models/verify, C4/UML diagram text), tasks, queues and corpus reports** are in English.
+- **Never push or merge to `main` when a test fails (old or new).** Only push what demonstrably works (partial work included), and after every push check the CI run until it is green. See `claude/docs/agent-werkwijze.md` §6.
+- Every pattern gets a KingmaDoc plan + verify in `docs/projectinfo/patterns/` and a row in `docs/projectinfo/README.md` (hook `.claude/hooks/check-pattern-docs.sh` guards this).
+- Documentation and tasks follow `claude/docs/agent-werkwijze.md` (new document → `INDEX.md`, `## See also` at the bottom).
+- Code follows `claude/docs/code-standaarden.md`: among others a class with `required init` for models, classic constructors, **never `sealed`**, `CancellationToken` always required, design patterns per GoF/refactoring.guru.
+
+## Commands
 
 ```bash
-dotnet build                                                        # warnings = errors, code style afgedwongen
+dotnet build                                                        # warnings = errors, code style enforced
 dotnet test                                                         # Microsoft.Testing.Platform (global.json), xUnit v3
-dotnet test --project src/Unshackle.Tests -- --filter-method "*ShouldBe*"   # één test
+dotnet test --project src/Unshackle.Tests -- --filter-method "*ShouldBe*"   # a single test
 dotnet test --project src/Unshackle.Tests -- --filter-class "*ProofTests"
 dotnet run --project src/Unshackle.Interface -- scan MijnApp.sln --fix fluentassertions
-dotnet test --solution samples/SampleShop/SampleShop.slnx         # sample-doelcode (oude FA/MediatR/AutoMapper)
+dotnet test --solution samples/SampleShop/SampleShop.slnx         # sample target code (old FA/MediatR/AutoMapper)
 ```
 
-Exitcode 8 bij `dotnet test` betekent "geen tests gevonden", geen fout.
+Exit code 8 from `dotnet test` means "no tests found", not an error.
 
-CI: `.github/workflows/ci.yml` draait build, tests en de sample-tests op elke PR naar `main` en elke push naar `main`.
+CI: `.github/workflows/ci.yml` runs build, tests and the sample tests on every PR to `main` and every push to `main`.
 
-## Architectuur in het kort
+## Architecture in brief
 
-- `Interface → Core ← DataAccess`, `Interface → DataAccess`. **Core verwijst naar geen ander project.** Nieuwe I/O hoort in DataAccess, achter een interface uit Core; `Interface/Program.cs` is de composition root.
-- Core: `Fixer` → `IFix` (één per bibliotheek) → `IPattern` (`Find` + `Rewrite`). Een pattern gooit nooit; mislukt een rewrite, dan `Manual(reden)` voor het rapport.
-- Eén testproject `src/Unshackle.Tests`: unit (`Core/`, `DataAccess/`, `Interface/`), `Proofs/`, en `Integration/` (draait op `samples/` via MSBuild, traag). `samples/` is "gebruikerscode": eigen props en `.editorconfig`, niet in `Unshackle.slnx`, valt niet onder onze code-standaarden.
-- Elk nieuw patroon krijgt proofs in `src/Unshackle.Tests/Proofs/<Fix>/<Pattern>/` (`*.before.cs` + `*.after.cs` of `*.manual.txt`). `Proofs/` wordt niet gecompileerd; `before` moet compileren tegen de oude bibliotheek, `after` tegen de nieuwe.
-- Types in unittests komen uit echte assemblies (FluentAssertions 7.2.2, MediatR 12.5.0, AutoMapper 14.0.0, Shouldly, Mediator.Abstractions, `Basic.Reference.Assemblies.Net100`), niet uit een build.
-- Mock alleen eigen interfaces met NSubstitute, nooit Roslyn-typen. Geen Moq.
+- `Interface → Core ← DataAccess`, `Interface → DataAccess`. **Core references no other project.** New I/O belongs in DataAccess, behind an interface from Core; `Interface/Program.cs` is the composition root.
+- Core: `Fixer` → `IFix` (one per library) → `IPattern` (`Find` + `Rewrite`). A pattern never throws; if a rewrite fails, it returns `Manual(reason)` for the report.
+- One test project `src/Unshackle.Tests`: unit (`Core/`, `DataAccess/`, `Interface/`), `Proofs/`, and `Integration/` (runs on `samples/` via MSBuild, slow). `samples/` is "user code": its own props and `.editorconfig`, not in `Unshackle.slnx`, not subject to our code standards.
+- Every new pattern gets proofs in `src/Unshackle.Tests/Proofs/<Fix>/<Pattern>/` (`*.before.cs` + `*.after.cs` or `*.manual.txt`). `Proofs/` is not compiled; `before` must compile against the old library, `after` against the new one.
+- Types in unit tests come from real assemblies (FluentAssertions 7.2.2, MediatR 12.5.0, AutoMapper 14.0.0, Shouldly, Mediator.Abstractions, `Basic.Reference.Assemblies.Net100`), not from a build.
+- Only mock our own interfaces with NSubstitute, never Roslyn types. No Moq.
 
-## Pakketten
+## Packages
 
-- Versies alleen in `Directory.Packages.props` (central package management).
-- Geen pakketten met licentie- of sponsorchecks (daarom is Verify eruit). AutoMapper 14.0.0 staat in de tests met `NoWarn="NU1903"`: bewust de laatste vrije versie, alleen als types voor proofs.
-- Geen `Microsoft.Build.Locator`: Roslyn 5.x `MSBuildWorkspace` gebruikt een eigen build host.
+- Versions only in `Directory.Packages.props` (central package management).
+- No packages with license or sponsor checks (that is why Verify was removed). AutoMapper 14.0.0 is in the tests with `NoWarn="NU1903"`: deliberately the last free version, only as types for proofs.
+- No `Microsoft.Build.Locator`: Roslyn 5.x `MSBuildWorkspace` uses its own build host.

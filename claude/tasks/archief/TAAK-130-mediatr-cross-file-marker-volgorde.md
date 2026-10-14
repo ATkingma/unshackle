@@ -1,46 +1,46 @@
-# TAAK-130 — MediatR: handler via marker-interface in ander bestand wordt gemist (bestandsvolgorde)
+# TAAK-130 — MediatR: handler via marker interface in another file is missed (file order)
 
-**Status**: klaar
-**Aangemaakt**: 2026-10-11
-**Gevonden in**: `claude/tasks/CORPUSRUN-mediatr.md` (evolutionary-architecture hfst. 1 en 2)
+**Status**: done
+**Created**: 2026-10-11
+**Found in**: `claude/tasks/CORPUSRUN-mediatr.md` (evolutionary-architecture ch. 1 and 2)
 
-## Probleem
+## Problem
 
-`Fixer` draait de patterns bestand voor bestand op de **al bijgewerkte** solution. Staat de marker
-(`interface IIntegrationEventHandler<in T> : INotificationHandler<T>`) in een bestand dat eerder aan de beurt is
-(`Common/...` vóór `Offers/...`), dan is zijn `using MediatR` al `using Mediator`. Het semantisch model van het
-handlerbestand ziet dan `Mediator.INotificationHandler`, `MediatRSyntax.FindHandleMethods` vindt niets, er komt
-**geen Fixed en geen Manual**. Gevolg: alles-of-niets laat het door, de build breekt (CS0738 `Task Handle`).
+`Fixer` runs the patterns file by file on the **already updated** solution. If the marker
+(`interface IIntegrationEventHandler<in T> : INotificationHandler<T>`) is in a file that comes earlier
+(`Common/...` before `Offers/...`), its `using MediatR` has already become `using Mediator`. The semantic model of the
+handler file then sees `Mediator.INotificationHandler`, `MediatRSyntax.FindHandleMethods` finds nothing, and there is
+**no Fixed and no Manual**. Consequence: all-or-nothing lets it through, the build breaks (CS0738 `Task Handle`).
 
-Gereproduceerd: twee bestanden `A.cs` (marker) + `B.cs` (handler) → handler gemist; `A.cs` hernoemd naar `Z.cs` → gevonden.
-De bestaande proof `MediatR/NotificationHandler/edge-marker-interface` staat in één bestand en ziet dit niet.
+Reproduced: two files `A.cs` (marker) + `B.cs` (handler) → handler missed; `A.cs` renamed to `Z.cs` → found.
+The existing proof `MediatR/NotificationHandler/edge-marker-interface` is in one file and does not see this.
 
-## Wat, waar, hoe
+## What, where, how
 
-- **Waar**: `src/Unshackle.Core/Fixer.cs` (lus over `files`, r. ~64–80).
-- **Hoe**: `Find` en de semantische vragen op het model van de **oorspronkelijke** solution laten draaien
-  (`original`), alleen herschrijven op de lopende root; of eerst alle findings verzamelen, dan pas toepassen.
-  Raakt elke cross-file symboolcheck (marker-interfaces, behavior-constraints, basisklassen), ook bij FA.
-- Proof kan niet (proofs zijn één bestand): unittest in `src/Unshackle.Tests/Core/` met twee documenten, marker
-  in het bestand dat alfabetisch eerst komt.
+- **Where**: `src/Unshackle.Core/Fixer.cs` (loop over `files`, lines ~64–80).
+- **How**: run `Find` and the semantic questions on the model of the **original** solution
+  (`original`), only rewrite on the running root; or first collect all findings, then apply them.
+  Affects every cross-file symbol check (marker interfaces, behavior constraints, base classes), also for FA.
+- A proof is not possible (proofs are a single file): unit test in `src/Unshackle.Tests/Core/` with two documents, marker
+  in the file that comes first alphabetically.
 
-## Stappen
+## Steps
 
-- [ ] Rode test: twee documenten, handler-bestand na marker-bestand
-- [ ] Fixer op originele semantiek
-- [ ] `dotnet build` + `dotnet test` groen
+- [ ] Red test: two documents, handler file after marker file
+- [ ] Fixer on original semantics
+- [ ] `dotnet build` + `dotnet test` green
 
-## Uitkomst (2026-10-11)
+## Outcome (2026-10-11)
 
-**Status**: klaar. `Fixer` fixt elk bestand in een werkkopie van de **originele** solution (alleen dat bestand verandert)
-en zet de eindtekst daarna in de verzamelde solution. Test `FixerTests.FixAsync_MarkerInterfaceInOtherFile_FindsHandlerWhateverTheFileOrder`
-(marker voor/na het handler-bestand, echte `MediatRFix`); was rood bij marker-eerst. Proof-runner hoefde niet aangepast.
+**Status**: done. `Fixer` fixes each file in a working copy of the **original** solution (only that file changes)
+and then puts the final text into the collected solution. Test `FixerTests.FixAsync_MarkerInterfaceInOtherFile_FindsHandlerWhateverTheFileOrder`
+(marker before/after the handler file, real `MediatRFix`); was red with marker first. The proof runner did not need changes.
 
-Bewijs: evo1 CS0738 weg (build nog rood op MSG0005 = TAAK-136 en IDE0005/IDE0065/IDE0060 door usings-plaatsing in
-`InMemoryEventBusModule.cs`, `PassExpiredEventHandler.cs`, `RegisterEndpoint.cs` - nieuw, nog geen taak). evo2: 25 Fixed (sim: 22,
-de gemiste handlers worden nu gevonden); build alleen nog rood op TAAK-131 (CS0246/CS1961 door `*.Mediator`-schaduw).
+Evidence: evo1 CS0738 gone (build still red on MSG0005 = TAAK-136 and IDE0005/IDE0065/IDE0060 due to using placement in
+`InMemoryEventBusModule.cs`, `PassExpiredEventHandler.cs`, `RegisterEndpoint.cs` - new, no task yet). evo2: 25 Fixed (sim: 22,
+the missed handlers are now found); build only still red on TAAK-131 (CS0246/CS1961 due to `*.Mediator` shadowing).
 
-## Zie ook
+## See also
 
 - `claude/tasks/CORPUSRUN-mediatr.md`
 - `claude/tasks/archief/TAAK-080-mediatr-marker-interface-handler.md`

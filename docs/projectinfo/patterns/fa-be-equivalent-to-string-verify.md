@@ -10,30 +10,30 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToStringPattern.cs`; registratie in `FluentAssertionsFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToString/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToStringPattern.cs`; registration in `FluentAssertionsFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/BeEquivalentToString/`, run by `ProofTests`.
 
-| REQ   | Oordeel | Bewijs |
-| ----- | ------- | ------ |
-| REQ-1 | Gehaald | `simple.*.cs`, `edge-interpolated.*.cs` (after compileert tegen Shouldly) |
-| REQ-2 | Gehaald | `because.*.cs` |
-| REQ-3 | Gehaald | `lambda.*.cs` |
-| REQ-4 | Gehaald | `not-equivalent.*` |
-| REQ-5 | Vervangen | door REQ-8 (TAAK-097): `because-args` is nu Fixed |
-| REQ-6 | Gehaald | `chain.*`, `value-used.*` |
-| REQ-7 | Gehaald | `and-chain.*` |
-| REQ-8 | Gehaald | `because-args.*.cs` (`string.Format`) |
+| REQ   | Verdict | Evidence |
+| ----- | ------- | -------- |
+| REQ-1 | Met | `simple.*.cs`, `edge-interpolated.*.cs` (after compiles against Shouldly) |
+| REQ-2 | Met | `because.*.cs` |
+| REQ-3 | Met | `lambda.*.cs` |
+| REQ-4 | Met | `not-equivalent.*` |
+| REQ-5 | Replaced | by REQ-8 (TAAK-097): `because-args` is now Fixed |
+| REQ-6 | Met | `chain.*`, `value-used.*` |
+| REQ-7 | Met | `and-chain.*` |
+| REQ-8 | Met | `because-args.*.cs` (`string.Format`) |
 
 ## Deviations
 
 | # | Area | Plan says | Code does | Impact |
 | - | ---- | --------- | --------- | ------ |
-| 1 | Behaviour | Foutmelding gelijk aan FA | Shouldly zet "Additional Info:" voor de `because`; gedocumenteerd verschil | Low |
-| 2 | Coverage | Objecten/collecties blijven ongemoeid | Alleen `StringAssertions` wordt gevonden; geen eigen proof (ProofTests eist een vondst), gedekt door de symboolfilter in `Find` | Low |
+| 1 | Behaviour | Error message equal to FA | Shouldly puts "Additional Info:" before the `because`; a documented difference | Low |
+| 2 | Coverage | Objects/collections stay untouched | Only `StringAssertions` is found; no own proof (ProofTests requires a finding), covered by the symbol filter in `Find` | Low |
 
 ## Validation results
 
 | Check | Command        | Result |
 | ----- | -------------- | ------ |
 | Build | `dotnet build` | passed (0 warnings) |
-| Tests | `dotnet test`  | passed: 98 of 98; sample-tests 15 van 15 |
-| Lint  | _geen_         | _not run_: geen lint-commando ingesteld |
+| Tests | `dotnet test`  | passed: 98 of 98; sample tests 15 of 15 |
+| Lint  | _none_         | _not run_: no lint command configured   |

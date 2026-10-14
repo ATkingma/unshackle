@@ -1,104 +1,104 @@
-# TAAK-017 — Projectbestanden migreren
+# TAAK-017 — Migrate project files
 
-**Status**: stap 8/8 — checks, commit door hoofdsessie
-**Aangemaakt**: 2026-10-11
-**Doel**: `unshackle fix` past ook `.csproj`, `Directory.Build.props` en `Directory.Packages.props` aan (FluentAssertions eruit, Shouldly 4.3.0 erin, `<Using>` omgezet), zodat de gefixte solution zonder handwerk bouwt.
+**Status**: step 8/8 — checks, commit by main session
+**Created**: 2026-10-11
+**Goal**: `unshackle fix` also updates `.csproj`, `Directory.Build.props` and `Directory.Packages.props` (FluentAssertions out, Shouldly 4.3.0 in, `<Using>` converted), so the fixed solution builds without manual work.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Keten uit TAAK-005: `Cli.cs` (composition root) → `ScanCommand.RunAsync` → `IFixer.FixAsync` → `FixReport`; `FixCommand` toont de
-  diff (`LineDiff`) of schrijft via `ISolutionStore.SaveAsync` (`MsBuildSolutionStore`, alleen documenten).
-- `samples/SampleShop/SampleShop.Tests/SampleShop.Tests.csproj` heeft `<PackageReference Include="FluentAssertions" />` (CPM, zonder
-  versie) en `<Using Include="FluentAssertions" />`; `samples/Directory.Packages.props` heeft `<PackageVersion Include="FluentAssertions" Version="7.2.2" />`.
-- Na `fix` blijft één Manual over (`RepositoryTests.cs:16`, `fa.have-count` op een dictionary): die regel gebruikt FA nog.
-- Een andere agent werkt aan TAAK-018 in `src/Unshackle.Tests/` (samenwerking tussen patronen): diens bestanden niet aanraken;
-  `ProofFix.cs` en `FixerTests.cs` daarom ook niet (contract zo uitbreiden dat ze ongewijzigd blijven compileren).
-- `samples/` niet wijzigen; integratietest werkt op een kopie.
+- Chain from TAAK-005: `Cli.cs` (composition root) → `ScanCommand.RunAsync` → `IFixer.FixAsync` → `FixReport`; `FixCommand` shows the
+  diff (`LineDiff`) or writes via `ISolutionStore.SaveAsync` (`MsBuildSolutionStore`, documents only).
+- `samples/SampleShop/SampleShop.Tests/SampleShop.Tests.csproj` has `<PackageReference Include="FluentAssertions" />` (CPM, without
+  version) and `<Using Include="FluentAssertions" />`; `samples/Directory.Packages.props` has `<PackageVersion Include="FluentAssertions" Version="7.2.2" />`.
+- After `fix` one Manual remains (`RepositoryTests.cs:16`, `fa.have-count` on a dictionary): that line still uses FA.
+- Another agent is working on TAAK-018 in `src/Unshackle.Tests/` (patterns working together): do not touch their files;
+  therefore not `ProofFix.cs` and `FixerTests.cs` either (extend the contract so they keep compiling unchanged).
+- Do not modify `samples/`; the integration test works on a copy.
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-`IFix` beschrijft alleen code (`Patterns`, `RemovedNamespaces`, `AddedNamespaces`). Niets leest of schrijft projectbestanden.
-TAAK-005 noemde dit als vervolgtaak (risicotabel).
+`IFix` only describes code (`Patterns`, `RemovedNamespaces`, `AddedNamespaces`). Nothing reads or writes project files.
+TAAK-005 listed this as a follow-up task (risk table).
 
-### Probleem
+### Problem
 
-- Na `fix` staan FA-pakket en `<Using Include="FluentAssertions" />` er nog en ontbreekt Shouldly: de code bouwt niet.
-- De integratietest kan de gefixte sample daardoor niet bouwen en testen; "fix werkt" is onbewezen.
+- After `fix` the FA package and `<Using Include="FluentAssertions" />` are still there and Shouldly is missing: the code does not build.
+- So the integration test cannot build and test the fixed sample; "fix works" is unproven.
 
-### Nieuwe situatie
+### New situation
 
-`fix` (en `scan`, `--dry-run`) wijzigt per project dat FA-assembly's refereert: Shouldly erbij (PackageReference, met `Version` of via
-`PackageVersion` bij CPM), FA eruit en `<Using>` omgezet, maar alleen als geen `.cs`-bestand van dat project FA nog gebruikt; anders blijft
-FA staan en komt er een Manual-rij op projectniveau. Rapport en diff tonen de projectbestanden (Line 0).
+`fix` (and `scan`, `--dry-run`) changes each project that references FA assemblies: Shouldly added (PackageReference, with `Version` or via
+`PackageVersion` under CPM), FA removed and `<Using>` converted, but only if no `.cs` file of that project still uses FA; otherwise
+FA stays and a project-level Manual row is added. Report and diff show the project files (Line 0).
 
-### Verbetering
+### Improvement
 
-De gefixte solution bouwt en de tests draaien zonder handwerk (op de Manual-findings na); bewezen met `dotnet build` + `dotnet test` in de integratietest.
+The fixed solution builds and the tests run without manual work (apart from the Manual findings); proven with `dotnet build` + `dotnet test` in the integration test.
 
-## Aanpak
+## Approach
 
-### Wat
+### What
 
-1. Core: model `PackageMigration` (welk pakket weg, welk erbij, versie) als default-member `IFix.Package` (null = niets aan projectbestanden).
-   Model `ProjectMigration` (project, pakket, namespaces, `KeepRemovedPackage`) en `ProjectFileChange` (pad, oude en nieuwe tekst).
-   Interface `IProjectFileStore` (`EditAsync` → wijzigingen zonder schrijven, `SaveAsync`). `FixReport.ProjectFileChanges`.
-2. Core: `Fixer` bepaalt per project of FA nog gebruikt wordt (semantisch, zoals `UsingDirectives`), vraagt de wijzigingen op en zet
-   rijen in de findings (Fixed per gewijzigd bestand, Manual per project dat FA houdt).
-3. DataAccess: `XmlProjectFileStore` (XDocument, `IFileSystem`) voor csproj, dichtstbijzijnde `Directory.Build.props` en `Directory.Packages.props`.
-4. Interface: `Cli` geeft de store aan `Fixer` en `FixCommand`; `FixCommand` toont de diff en schrijft de projectbestanden.
+1. Core: model `PackageMigration` (which package out, which in, version) as default member `IFix.Package` (null = nothing to project files).
+   Model `ProjectMigration` (project, package, namespaces, `KeepRemovedPackage`) and `ProjectFileChange` (path, old and new text).
+   Interface `IProjectFileStore` (`EditAsync` → changes without writing, `SaveAsync`). `FixReport.ProjectFileChanges`.
+2. Core: `Fixer` determines per project whether FA is still used (semantically, like `UsingDirectives`), requests the changes and adds
+   rows to the findings (Fixed per changed file, Manual per project that keeps FA).
+3. DataAccess: `XmlProjectFileStore` (XDocument, `IFileSystem`) for csproj, nearest `Directory.Build.props` and `Directory.Packages.props`.
+4. Interface: `Cli` passes the store to `Fixer` and `FixCommand`; `FixCommand` shows the diff and writes the project files.
 
-### Waar
+### Where
 
 `src/Unshackle.Core/Abstractions/{IFix,IProjectFileStore}.cs`, `src/Unshackle.Core/Models/{PackageMigration,ProjectMigration,ProjectFileChange,FixReport}.cs`,
 `src/Unshackle.Core/{Fixer,ProjectPackages}.cs`, `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs`,
 `src/Unshackle.DataAccess/Projects/XmlProjectFileStore.cs`, `src/Unshackle.Interface/{Cli.cs,Commands/FixCommand.cs}`,
 tests in `src/Unshackle.Tests/{DataAccess/XmlProjectFileStoreTests.cs,Core/FixerProjectFileTests.cs,Interface/Commands/CommandTests.cs,Integration/SampleShopTests.cs}`.
 
-### Hoe
+### How
 
-KingmaDoc-plan eerst; dan DataAccess-store met `MockFileSystem`-tests; dan Core (Fixer + modellen) met NSubstitute-mock van
-`IProjectFileStore`; dan Interface; als laatste de integratietest (fix → handwerk Manual → fix → build + test op de kopie).
+KingmaDoc plan first; then the DataAccess store with `MockFileSystem` tests; then Core (Fixer + models) with an NSubstitute mock of
+`IProjectFileStore`; then Interface; finally the integration test (fix → manual handling of Manual → fix → build + test on the copy).
 
-### Waarom deze aanpak
+### Why this approach
 
-Beslissen "FA nog gebruikt?" vraagt het SemanticModel → Core. XML lezen/schrijven is I/O → DataAccess achter een Core-interface.
-Eén batch-aanroep (`EditAsync` met alle projecten) omdat `Directory.*.props` gedeeld is: FA mag daar alleen weg als geen enkel project het houdt.
+Deciding "is FA still used?" requires the SemanticModel → Core. Reading/writing XML is I/O → DataAccess behind a Core interface.
+One batch call (`EditAsync` with all projects) because `Directory.*.props` is shared: FA may only be removed there if no project keeps it.
 
-## Stappen
+## Steps
 
-- [x] 1. KingmaDoc-plan `docs/projectinfo/features/projectbestanden-migreren-plan.md`, check + approve
-- [x] 2. Core-contract: modellen, `IProjectFileStore`, `IFix.Package`, `FluentAssertionsFix.Package`
-- [x] 3. `XmlProjectFileStore` + unittests (CPM, niet-CPM, Using, props, FA blijft)
-- [x] 4. `Fixer`: projecten bepalen, store aanroepen, findings + unittests met NSubstitute
-- [x] 5. `Cli` + `FixCommand` (diff en schrijven) + command-tests
-- [x] 6. Integratietest: fix op kopie SampleShop, `dotnet build` + `dotnet test`, geen FA in csproj/props
-- [x] 7. KingmaDoc-verify, `core.md`, `modellen/klassen.md` (render), README Documenten, INDEX
-- [x] 8. Drie checks groen (`claude/docs/agent-werkwijze.md` §6); commit/push door de hoofdsessie
+- [x] 1. KingmaDoc plan `docs/projectinfo/features/projectbestanden-migreren-plan.md`, check + approve
+- [x] 2. Core contract: models, `IProjectFileStore`, `IFix.Package`, `FluentAssertionsFix.Package`
+- [x] 3. `XmlProjectFileStore` + unit tests (CPM, non-CPM, Using, props, FA stays)
+- [x] 4. `Fixer`: determine projects, call store, findings + unit tests with NSubstitute
+- [x] 5. `Cli` + `FixCommand` (diff and writing) + command tests
+- [x] 6. Integration test: fix on a SampleShop copy, `dotnet build` + `dotnet test`, no FA in csproj/props
+- [x] 7. KingmaDoc verify, `core.md`, `modellen/klassen.md` (render), README Documents, INDEX
+- [x] 8. Three checks green (`claude/docs/agent-werkwijze.md` §6); commit/push by the main session
 
-## Risico's & randgevallen
+## Risks & edge cases
 
-| Risico                                                        | Mitigatie                                                                                                |
+| Risk                                                          | Mitigation                                                                                               |
 | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| FA weghalen terwijl code het nog gebruikt → build kapot       | Alleen weg als geen `.cs` in het project FA-symbolen bindt; anders Manual op projectniveau               |
-| Gedeelde `Directory.*.props`: één project houdt FA            | FA blijft in een gedeeld bestand als één project in de batch het houdt                                   |
-| Opmaak/commentaar van XML gaat verloren                       | `XDocument` met `PreserveWhitespace`; tekst buiten `<Project>` letterlijk behouden; CRLF en BOM behouden |
-| Projecten buiten de solution delen `Directory.Packages.props` | Bekende grens, in Keuzes; alleen projecten in de solution tellen                                         |
-| Bestand gewijzigd tussen lezen en schrijven                   | `SaveAsync` vergelijkt de huidige tekst met `OldText` en weigert bij verschil                            |
+| Removing FA while code still uses it → build broken           | Only remove if no `.cs` in the project binds FA symbols; otherwise Manual at project level               |
+| Shared `Directory.*.props`: one project keeps FA              | FA stays in a shared file if one project in the batch keeps it                                           |
+| XML formatting/comments get lost                              | `XDocument` with `PreserveWhitespace`; text outside `<Project>` kept literally; CRLF and BOM preserved    |
+| Projects outside the solution share `Directory.Packages.props` | Known limit, in Choices; only projects in the solution count                                            |
+| File changed between reading and writing                      | `SaveAsync` compares the current text with `OldText` and refuses on a difference                        |
 
-## Gewijzigde bestanden
+## Changed files
 
-Zie `files_expected` in het plan; extra `src/Unshackle.DataAccess/Projects/ProjectFile.cs`. Docs: `projectbestanden-migreren-verify.md`, `architectuur/core.md`, `modellen/klassen.md` (+ `img/klassen-2.*`), README, INDEX.
+See `files_expected` in the plan; additionally `src/Unshackle.DataAccess/Projects/ProjectFile.cs`. Docs: `projectbestanden-migreren-verify.md`, `architectuur/core.md`, `modellen/klassen.md` (+ `img/klassen-2.*`), README, INDEX.
 
-## Keuzes
+## Choices
 
-- Store-tests in `DataAccess/Projects/` (zoals `Reports/`).
-- Integratietest slaat `obj/` over bij de FA-check: restore-bestanden van vóór de fix.
-- Projecten buiten de solution die `Directory.Packages.props` delen tellen niet mee (bekende grens).
+- Store tests in `DataAccess/Projects/` (like `Reports/`).
+- Integration test skips `obj/` in the FA check: restore files from before the fix.
+- Projects outside the solution that share `Directory.Packages.props` are not counted (known limit).
 
-## Zie ook
+## See also
 
 - `claude/docs/INDEX.md`
 - `docs/projectinfo/README.md`
-- `claude/tasks/archief/TAAK-005-end-to-end-keten.md` — CLI, `MsBuildSolutionStore`, vervolgtaak projectbestanden
+- `claude/tasks/archief/TAAK-005-end-to-end-keten.md` — CLI, `MsBuildSolutionStore`, follow-up task project files

@@ -8,7 +8,7 @@ files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
   - src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/
 ---
-# Feature: fa.have-count: x.Should().HaveCount(n) wordt type-afhankelijk x.Count.ShouldBe(n), x.Length.ShouldBe(n) of x.Count().ShouldBe(n).
+# Feature: fa.have-count: x.Should().HaveCount(n) becomes, depending on the type, x.Count.ShouldBe(n), x.Length.ShouldBe(n) or x.Count().ShouldBe(n).
 
 | | |
 |---|---|
@@ -16,82 +16,83 @@ files_expected:
 | **Status** | Approved |
 | **Generated** | 2026-10-10T23:33+02:00 by KingmaDoc 0.3.0.dev9 |
 
-> Achteraf opgesteld uit TAAK-002 na de bouw. Dit plan beschrijft wat is gebouwd en waarom; het is geen ontwerp vooraf.
-> Alles gemarkeerd als _(inferred)_ komt uit de codebase-analyse.
+> Drawn up afterwards from TAAK-002, after the build. This plan describes what was built and why; it is not an up-front design.
+> Everything marked _(inferred)_ comes from the codebase analysis.
 
 ## One-sentence summary
 
-fa.have-count: x.Should().HaveCount(n) wordt type-afhankelijk x.Count.ShouldBe(n), x.Length.ShouldBe(n) of x.Count().ShouldBe(n).
+fa.have-count: x.Should().HaveCount(n) becomes, depending on the type, x.Count.ShouldBe(n), x.Length.ShouldBe(n) or x.Count().ShouldBe(n).
 
-**Full description:** fa.have-count: x.Should().HaveCount(n) wordt type-afhankelijk x.Count.ShouldBe(n), x.Length.ShouldBe(n) of x.Count().ShouldBe(n).
+**Full description:** fa.have-count: x.Should().HaveCount(n) becomes, depending on the type, x.Count.ShouldBe(n), x.Length.ShouldBe(n) or x.Count().ShouldBe(n).
 
 ## Scope (in / out)
 
 **In scope**
 
-- `x.Should().HaveCount(n[, because])` als losse assertion, herschreven op basis van het type van `x`: `Count`-property, `Length` (arrays) of LINQ `Count()` met `using System.Linq`.
-- `because` zonder `becauseArgs` wordt `customMessage` van `ShouldBe`.
-- Haakjes om een ontvanger met lagere precedence (`(a ?? b).Count`).
-- `Manual(reden)` voor dictionaries, predicates, `becauseArgs`, ketens, `?.`, non-generic `IEnumerable` en onbekende types.
+- `x.Should().HaveCount(n[, because])` as a standalone assertion, rewritten based on the type of `x`: `Count` property, `Length` (arrays) or LINQ `Count()` with `using System.Linq`.
+- `because` without `becauseArgs` becomes the `customMessage` of `ShouldBe`.
+- Parentheses around a receiver with lower precedence (`(a ?? b).Count`).
+- `Manual(reason)` for dictionaries, predicates, `becauseArgs`, chains, `?.`, non-generic `IEnumerable` and unknown types.
 
 **Out of scope**
 
-- `NotHaveCount`, `HaveCountGreaterThan(OrEqualTo)`, `HaveCountLessThan(OrEqualTo)` (andere patronen).
-- Predicate-herschrijving (`c => c > 1`) naar `ShouldBeGreaterThan` e.d.
-- Ketens met `.And`/`.Which` splitsen.
-- De `using`-afhandeling zelf: de `Fixer` voegt `System.Linq` toe als het ontbreekt.
+- `NotHaveCount`, `HaveCountGreaterThan(OrEqualTo)`, `HaveCountLessThan(OrEqualTo)` (other patterns).
+- Predicate rewriting (`c => c > 1`) to `ShouldBeGreaterThan` etc.
+- Splitting chains with `.And`/`.Which`.
+- The `using` handling itself: the `Fixer` adds `System.Linq` if it is missing.
 
 ## Requirements
 
-- **REQ-1**: WHEN `x.Should().HaveCount(n)` op een type met publieke `int Count` staat (bijv. `List<T>`) THE SYSTEM SHALL het herschrijven naar `x.Count.ShouldBe(n)` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/list.*.cs`).
-- **REQ-2**: WHEN `HaveCount` een `because` zonder `becauseArgs` heeft THE SYSTEM SHALL die als tweede argument van `ShouldBe` overnemen (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/list-because.*.cs`).
-- **REQ-3**: WHEN het subject `ICollection<T>`, `IReadOnlyCollection<T>`, `IReadOnlyList<T>`, `IList<T>` of `HashSet<T>` is THE SYSTEM SHALL `.Count` gebruiken, ook als `Count` van een basis-interface komt (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/collection-interfaces.*.cs`).
-- **REQ-4**: WHEN het subject een array is, of een type met `Length` maar zonder `Count` (bijv. `ImmutableArray<T>`), THE SYSTEM SHALL `.Length.ShouldBe(n)` gebruiken (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/array.*.cs`; `ImmutableArray<T>` heeft geen proof).
-- **REQ-5**: WHEN het subject een generieke `IEnumerable<T>` zonder `Count`/`Length` is THE SYSTEM SHALL `x.Count().ShouldBe(n)` bouwen en `System.Linq` laten toevoegen (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/enumerable.*.cs`).
-- **REQ-6**: WHEN het document `using System.Linq;` al heeft THE SYSTEM SHALL die niet nog eens toevoegen (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/enumerable-existing-using.*.cs`).
-- **REQ-7**: WHEN een generieke `IEnumerable<T>` een `because` heeft THE SYSTEM SHALL die als tweede argument van `ShouldBe` overnemen (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/enumerable-because.*.cs`).
-- **REQ-8**: WHEN het subject een expressie met lagere precedence is (bijv. `a ?? b`) THE SYSTEM SHALL haakjes om de ontvanger zetten (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/receiver-parens.*.cs`).
-- **REQ-9**: IF het subject een dictionary is (`IDictionary<,>`, `IReadOnlyDictionary<,>` of een implementatie) THEN THE SYSTEM SHALL Manual geven omdat Count of Keys bedoeld kan zijn (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/dictionary.*`).
-- **REQ-10**: IF `HaveCount` een predicate krijgt (`c => c > 1`) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/predicate.*`).
-- **REQ-11**: IF `HaveCount` `becauseArgs` of benoemde argumenten heeft THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/because-args.*`). _Voor becauseArgs vervangen door Uitbreiding TAAK-097._
-- **REQ-12**: IF het resultaat van `HaveCount` wordt gebruikt (`.And`, `.Which`, waarde) THEN THE SYSTEM SHALL Manual geven (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/chain.*`).
-- **REQ-13**: IF het subject een non-generic `IEnumerable` is THEN THE SYSTEM SHALL Manual geven met het advies `Cast<T>().Count()`. _Geen proof: FA 7.2.2 heeft geen `HaveCount` op non-generic `IEnumerable`, dus before compileert niet._
-- **REQ-14**: IF het subject een conditional access is (`a?.b`) THEN THE SYSTEM SHALL Manual geven. _Geen proof: alleen via code bewaakt._
-- **REQ-15**: IF het type van het subject onbekend is (error type) THEN THE SYSTEM SHALL Manual geven. _Geen proof: alleen via code bewaakt._
-- **REQ-16**: IF het subject in een nullable-enabled context mogelijk null is (flow state MaybeNull) THEN THE SYSTEM SHALL `x.ShouldNotBeNull().Count.ShouldBe(n)` schrijven (TAAK-021: FluentAssertions accepteert een nullable subject, Shouldly's receiver niet; zonder dit CS8602/CS8604 in projecten met warnings-as-errors. `ShouldNotBeNull()` behoudt FA's falen op null) (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/nullable.*`).
-- **Uitbreiding TAAK-095**: WHEN `HaveCountGreaterThan`/`…OrEqualTo`/`HaveCountLessThan`/`…OrEqualTo` (ook de `…GreaterOrEqualTo`/`…LessOrEqualTo`-aliassen) staat THE SYSTEM SHALL dezelfde count-receiver met `ShouldBeGreaterThan`/`…OrEqualTo`/`ShouldBeLessThan`/`…OrEqualTo` geven (proofs `count-comparisons`, `count-comparison-because-args`). Probe: grens n-1, n, n+1 gelijk.
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (Fixed, proofs `because-args`, `count-comparison-because-args`); benoemde argumenten of een niet-constante `because` blijven Manual. De gedeelde controles (AssertionScope, vorm, resultaat, becauseArgs) zitten sinds de Template Method in `FluentAssertionPattern.Rewrite`; `HaveCountPattern` implementeert `RewriteAssertion` en gebruikt `FluentAssertionsSyntax.NotNullReceiver` (haakjes en `ShouldNotBeNull()`) in plaats van een eigen `IsSafeReceiver`.
+- **REQ-1**: WHEN `x.Should().HaveCount(n)` is on a type with a public `int Count` (e.g. `List<T>`) THE SYSTEM SHALL rewrite it to `x.Count.ShouldBe(n)` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/list.*.cs`).
+- **REQ-2**: WHEN `HaveCount` has a `because` without `becauseArgs` THE SYSTEM SHALL take it over as the second argument of `ShouldBe` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/list-because.*.cs`).
+- **REQ-3**: WHEN the subject is `ICollection<T>`, `IReadOnlyCollection<T>`, `IReadOnlyList<T>`, `IList<T>` or `HashSet<T>` THE SYSTEM SHALL use `.Count`, also when `Count` comes from a base interface (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/collection-interfaces.*.cs`).
+- **REQ-4**: WHEN the subject is an array, or a type with `Length` but without `Count` (e.g. `ImmutableArray<T>`), THE SYSTEM SHALL use `.Length.ShouldBe(n)` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/array.*.cs`; `ImmutableArray<T>` has no proof).
+- **REQ-5**: WHEN the subject is a generic `IEnumerable<T>` without `Count`/`Length` THE SYSTEM SHALL build `x.Count().ShouldBe(n)` and have `System.Linq` added (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/enumerable.*.cs`).
+- **REQ-6**: WHEN the document already has `using System.Linq;` THE SYSTEM SHALL not add it again (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/enumerable-existing-using.*.cs`).
+- **REQ-7**: WHEN a generic `IEnumerable<T>` has a `because` THE SYSTEM SHALL take it over as the second argument of `ShouldBe` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/enumerable-because.*.cs`).
+- **REQ-8**: WHEN the subject is an expression with lower precedence (e.g. `a ?? b`) THE SYSTEM SHALL put parentheses around the receiver (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/receiver-parens.*.cs`).
+- **REQ-9**: IF the subject is a dictionary (`IDictionary<,>`, `IReadOnlyDictionary<,>` or an implementation) THEN THE SYSTEM SHALL give Manual because Count or Keys may be meant (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/dictionary.*`).
+- **REQ-10**: IF `HaveCount` gets a predicate (`c => c > 1`) THEN THE SYSTEM SHALL give Manual (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/predicate.*`).
+- **REQ-11**: IF `HaveCount` has `becauseArgs` or named arguments THEN THE SYSTEM SHALL give Manual (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/because-args.*`). _For becauseArgs replaced by Extension TAAK-097._
+- **REQ-12**: IF the result of `HaveCount` is used (`.And`, `.Which`, value) THEN THE SYSTEM SHALL give Manual (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/chain.*`).
+- **REQ-13**: IF the subject is a non-generic `IEnumerable` THEN THE SYSTEM SHALL give Manual with the advice `Cast<T>().Count()`. _No proof: FA 7.2.2 has no `HaveCount` on non-generic `IEnumerable`, so before does not compile._
+- **REQ-14**: IF the subject is a conditional access (`a?.b`) THEN THE SYSTEM SHALL give Manual. _No proof: guarded by code only._
+- **REQ-15**: IF the type of the subject is unknown (error type) THEN THE SYSTEM SHALL give Manual. _No proof: guarded by code only._
+- **REQ-16**: IF the subject may be null in a nullable-enabled context (flow state MaybeNull) THEN THE SYSTEM SHALL write `x.ShouldNotBeNull().Count.ShouldBe(n)` (TAAK-021: FluentAssertions accepts a nullable subject, Shouldly's receiver does not; without this CS8602/CS8604 in projects with warnings-as-errors. `ShouldNotBeNull()` keeps FA's failure on null) (proof `src/Unshackle.Tests/Proofs/FluentAssertions/HaveCount/nullable.*`).
+- **Extension TAAK-095**: WHEN `HaveCountGreaterThan`/`…OrEqualTo`/`HaveCountLessThan`/`…OrEqualTo` (also the `…GreaterOrEqualTo`/`…LessOrEqualTo` aliases) is used THE SYSTEM SHALL give the same count receiver with `ShouldBeGreaterThan`/`…OrEqualTo`/`ShouldBeLessThan`/`…OrEqualTo` (proofs `count-comparisons`, `count-comparison-because-args`). Probe: boundary n-1, n, n+1 equal.
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL give `string.Format(CultureInfo.InvariantCulture, because, args)` as customMessage (Fixed, proofs `because-args`, `count-comparison-because-args`); named arguments or a non-constant `because` stay Manual. Since the Template Method, the shared checks (AssertionScope, shape, result, becauseArgs) live in `FluentAssertionPattern.Rewrite`; `HaveCountPattern` implements `RewriteAssertion` and uses `FluentAssertionsSyntax.NotNullReceiver` (parentheses and `ShouldNotBeNull()`) instead of its own `IsSafeReceiver`.
 
 ## Assumptions
 
-- _(inferred)_ Gebouwd op de bestaande stack: C#, Roslyn, Shouldly 4.3.0 als doel, FluentAssertions 7.2.2 als bron.
-- Shouldly heeft geen `ShouldHaveCount`; de teller zelf asserten (`x.Count.ShouldBe(n)`) is het equivalent.
-- `customMessage` van Shouldly is een kale string zonder `{0}`-formatting, dus `becauseArgs` kan niet mee.
-- De `Fixer` kan via `PatternResult.Fixed(node, "System.Linq")` een using laten toevoegen als die ontbreekt.
-- `Count()` en FA enumereren beide één keer: gedrag bij lazy sequences is gelijk.
+- _(inferred)_ Built on the existing stack: C#, Roslyn, Shouldly 4.3.0 as target, FluentAssertions 7.2.2 as source.
+- Shouldly has no `ShouldHaveCount`; asserting the counter itself (`x.Count.ShouldBe(n)`) is the equivalent.
+- Shouldly's `customMessage` is a bare string without `{0}` formatting, so `becauseArgs` cannot come along.
+- The `Fixer` can have a using added via `PatternResult.Fixed(node, "System.Linq")` if it is missing.
+- `Count()` and FA both enumerate once: behaviour with lazy sequences is the same.
 
 ## Risks
 
-- `Count`-property dat geen `int` is op een eigen type: alleen een publieke `int`-property wordt geaccepteerd, anders volgt een andere tak of Manual.
-- Foutmelding wordt korter (Shouldly toont "x.Count should be 2 but was 3" in plaats van de hele collectie): gedocumenteerd verschil, geen Manual.
-- Dictionary-intentie (aantal keys of entries) is niet af te leiden: bewust Manual.
-- Multidimensionale arrays vallen onder `IArrayTypeSymbol` en krijgen `Length` (totaal aantal elementen), net als FA telt. Geen proof.
-## Modellen
+- A `Count` property that is not an `int` on an own type: only a public `int` property is accepted, otherwise another branch or Manual follows.
+- The error message gets shorter (Shouldly shows "x.Count should be 2 but was 3" instead of the whole collection): a documented difference, no Manual.
+- Dictionary intent (number of keys or entries) cannot be inferred: deliberately Manual.
+- Multidimensional arrays fall under `IArrayTypeSymbol` and get `Length` (total number of elements), just as FA counts. No proof.
 
-Klassendiagram, sequencediagram en beslisboom: [fa-have-count-modellen.md](fa-have-count-modellen.md).
+## Models
+
+Class diagram, sequence diagram and decision tree: [fa-have-count-modellen.md](fa-have-count-modellen.md).
 
 ## Open questions
 
-- **Moet een pattern een using kunnen toevoegen?** Opgelost via `PatternResult.Fixed(node, "System.Linq")` (TAAK-002, aanpassingen bij realisatie).
-- **Moet `HaveCount` met predicate later automatisch?** Nog open: eventueel aparte patronen voor `HaveCountGreaterThan` e.d.
+- **Should a pattern be able to add a using?** Solved via `PatternResult.Fixed(node, "System.Linq")` (TAAK-002, adjustments during realisation).
+- **Should `HaveCount` with a predicate become automatic later?** Still open: possibly separate patterns for `HaveCountGreaterThan` etc.
 
 **Answered while planning**
 
-- [x] Wat lost dit op en voor wie? Developers die van FluentAssertions af willen; samples: `OrderTests.cs:33,42`, `OrderHandlerTests.cs:68`, `RepositoryTests.cs:16` (dictionary, Manual).
-- [x] Wie of wat triggert het? De `Fixer` draait het patroon per document.
-- [x] Externe systemen? Roslyn (SemanticModel); geen datastore.
-- [x] Welke modules veranderen? `Unshackle.Core` (patroon en registratie in `FluentAssertionsFix`) en `Unshackle.Tests` (proofs).
-- [x] Hoe weten we dat het werkt? `ProofTests` draait alle 12 proofs (before met FA, after met Shouldly, manual.txt met reden).
+- [x] What does this solve and for whom? Developers who want to get rid of FluentAssertions; samples: `OrderTests.cs:33,42`, `OrderHandlerTests.cs:68`, `RepositoryTests.cs:16` (dictionary, Manual).
+- [x] Who or what triggers it? The `Fixer` runs the pattern per document.
+- [x] External systems? Roslyn (SemanticModel); no data store.
+- [x] Which modules change? `Unshackle.Core` (pattern and registration in `FluentAssertionsFix`) and `Unshackle.Tests` (proofs).
+- [x] How do we know it works? `ProofTests` runs all 12 proofs (before with FA, after with Shouldly, manual.txt with reason).
 
 ## Appendix: codebase context _(inferred)_
 

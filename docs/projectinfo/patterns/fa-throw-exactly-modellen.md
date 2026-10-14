@@ -1,47 +1,47 @@
-# Modellen: fa.throw-exactly
+# Models: fa.throw-exactly
 
-`act.Should().ThrowExactly<T>()` wordt `Should.Throw<T>(act).ShouldBeOfType<T>()`; `await act.Should().ThrowExactlyAsync<T>()` wordt `(await Should.ThrowAsync<T>(act)).ShouldBeOfType<T>()`; `.WithMessage` zoals `fa.throw`. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowExactlyPattern.cs`, `ThrowSyntax.cs`, `ThrowPattern.cs`, `ThrowAsyncPattern.cs`, `NotThrowPattern.cs` en `ThrowMessage.cs`.
+`act.Should().ThrowExactly<T>()` becomes `Should.Throw<T>(act).ShouldBeOfType<T>()`; `await act.Should().ThrowExactlyAsync<T>()` becomes `(await Should.ThrowAsync<T>(act)).ShouldBeOfType<T>()`; `.WithMessage` as in `fa.throw`. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowExactlyPattern.cs`, `ThrowSyntax.cs`, `ThrowPattern.cs`, `ThrowAsyncPattern.cs`, `NotThrowPattern.cs` and `ThrowMessage.cs`.
 
-**Figure 1.** Klassen rond `ThrowExactlyPattern`. Weggelaten: `Fixer`, `IFix` en de usings (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes around `ThrowExactlyPattern`. Omitted: `Fixer`, `IFix` and the usings (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-throw-exactly-modellen-1.d2 -->
-![Modellen: fa.throw-exactly](img/fa-throw-exactly-modellen-1.png)
+![Models: fa.throw-exactly](img/fa-throw-exactly-modellen-1.png)
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
-| `ThrowExactlyPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowExactlyPattern.cs` | Dit patroon, Id `fa.throw-exactly`: claimt de nodes |
-| `ThrowSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowSyntax.cs` | `FindThrow`/`FindThrowAsync` met `IsExactly`; `Rewrite` kiest het herschrijvende patroon op de naam; `TryGetAction` maakt `() => ...` (voor `InvokingPattern`) |
-| `ThrowPattern`, `ThrowAsyncPattern`, `NotThrowPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/` | Herschrijven (ook ThrowExactly en Invoking) |
-| `ThrowMessage` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowMessage.cs` | `OfType`, message-check, AggregateException-heuristiek |
+| `ThrowExactlyPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowExactlyPattern.cs` | This pattern, Id `fa.throw-exactly`: claims the nodes |
+| `ThrowSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowSyntax.cs` | `FindThrow`/`FindThrowAsync` with `IsExactly`; `Rewrite` picks the rewriting pattern by name; `TryGetAction` builds `() => ...` (for `InvokingPattern`) |
+| `ThrowPattern`, `ThrowAsyncPattern`, `NotThrowPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/` | Rewrite (also ThrowExactly and Invoking) |
+| `ThrowMessage` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowMessage.cs` | `OfType`, message check, AggregateException heuristic |
 
-**Figure 2.** Volgorde van `Find` en `Rewrite`.
+**Figure 2.** Order of `Find` and `Rewrite`.
 
 <!-- kingmadoc:diagram img/fa-throw-exactly-modellen-2.d2 -->
-![Modellen: fa.throw-exactly](img/fa-throw-exactly-modellen-2.png)
+![Models: fa.throw-exactly](img/fa-throw-exactly-modellen-2.png)
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Place | What happens |
 | --- | --- | --- |
-| Find | `ThrowExactlyPattern.Find` | `ThrowSyntax.FindThrow` + `FindThrowAsync` met filter `IsExactly && !IsInvoking` (Invoking-subjects horen bij `InvokingPattern`) |
-| Rewrite | `ThrowSyntax.Rewrite` | Kiest `ThrowPattern`/`ThrowAsyncPattern` op de naam van de assertion |
-| Uitkomst | `PatternResult.Fixed` / `Manual` | Shouldly-aanroep of reden |
+| Find | `ThrowExactlyPattern.Find` | `ThrowSyntax.FindThrow` + `FindThrowAsync` with filter `IsExactly && !IsInvoking` (Invoking subjects belong to `InvokingPattern`) |
+| Rewrite | `ThrowSyntax.Rewrite` | Picks `ThrowPattern`/`ThrowAsyncPattern` by the name of the assertion |
+| Outcome | `PatternResult.Fixed` / `Manual` | Shouldly call or reason |
 
-**Figure 3.** Beslisboom; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/ThrowExactly/`.
+**Figure 3.** Decision tree; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/ThrowExactly/`.
 
 <!-- kingmadoc:diagram img/fa-throw-exactly-modellen-3.d2 -->
-![Modellen: fa.throw-exactly](img/fa-throw-exactly-modellen-3.png)
+![Models: fa.throw-exactly](img/fa-throw-exactly-modellen-3.png)
 
-| Vraag | Bij nee: Manual-reden | Proof |
+| Question | If no: Manual reason | Proof |
 | --- | --- | --- |
-| Buiten een AssertionScope? | Inside an AssertionScope | `assertion-scope` |
-| Vorm act.Should().ThrowExactly<T>()? | is not in the form | `geen proof` |
-| Node is `.Which`, of resultaat weggegooid? | is used | geen eigen proof (`.Which` is Fixed: `value-used`) |
-| Delegate die Should.Throw(Async) accepteert? | The subject is not | `geen proof (fa.throw: value-func)` |
-| Geen named args; becauseArgs alleen bij constante `because`? | named arguments or becauseArgs | geen proof (`because-args` is Fixed met `string.Format`) |
+| Outside an AssertionScope? | Inside an AssertionScope | `assertion-scope` |
+| Form act.Should().ThrowExactly<T>()? | is not in the form | `no proof` |
+| Node is `.Which`, or result discarded? | is used | no own proof (`.Which` is Fixed: `value-used`) |
+| Delegate that Should.Throw(Async) accepts? | The subject is not | `no proof (fa.throw: value-func)` |
+| No named args; becauseArgs only with constant `because`? | named arguments or becauseArgs | no proof (`because-args` is Fixed with `string.Format`) |
 
-## Zie ook
+## See also
 
 - [fa-throw-exactly-plan.md](fa-throw-exactly-plan.md) - plan
-- [fa-throw-exactly-verify.md](fa-throw-exactly-verify.md) - verificatie
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowExactlyPattern.cs` - het patroon
-- `src/Unshackle.Tests/Proofs/FluentAssertions/ThrowExactly/` - de proofs
+- [fa-throw-exactly-verify.md](fa-throw-exactly-verify.md) - verification
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowExactlyPattern.cs` - the pattern
+- `src/Unshackle.Tests/Proofs/FluentAssertions/ThrowExactly/` - the proofs
 - [../README.md](../README.md)

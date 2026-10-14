@@ -1,40 +1,40 @@
-# Modellen: mediatr.generic-decorator
+# Models: mediatr.generic-decorator
 
-Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/GenericDecoratorPattern.cs`. Diagrammen ontbreken (d2/kingmadoc niet beschikbaar); tabellen vervangen ze.
+Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/GenericDecoratorPattern.cs`. Diagrams are missing (d2/kingmadoc not available); tables replace them.
 
-## Klassen
+## Classes
 
-| Element | Rol |
-| ------- | --- |
-| `GenericDecoratorPattern` | `ISolutionPattern`; declaratie en `typeof(S<>)` met de hele solution |
-| `Kind` (genest) | `Void`, `Result`, `Notification`: soort gedecoreerde handler |
-| `IsDecorator` (statisch) | Gebruikt door `UnsupportedPattern` om de decorator niet als generiek type te melden |
-| `AutofacMediatorModulePattern` | Zijn `Populate`-filter op `"Mediator.Internals"` telt als "MediatR met de hand in Autofac" |
+| Element | Role |
+| ------- | ---- |
+| `GenericDecoratorPattern` | `ISolutionPattern`; declaration and `typeof(S<>)` with the whole solution |
+| `Kind` (nested) | `Void`, `Result`, `Notification`: kind of decorated handler |
+| `IsDecorator` (static) | Used by `UnsupportedPattern` so that the decorator is not reported as a generic type |
+| `AutofacMediatorModulePattern` | Its `Populate` filter on `"Mediator.Internals"` counts as "MediatR registered by hand in Autofac" |
 
 ## Sequence
 
-| Stap | Methode | Wat gebeurt er |
-| ---- | ------- | -------------- |
-| Vinden | `Find` | Decorator-declaratie (`Decorated`, niet `Result`) en `typeof(S<>)` als service van `RegisterGenericDecorator` (`VoidService`) |
+| Step | Method | What happens |
+| ---- | ------ | ------------ |
+| Find | `Find` | Decorator declaration (`Decorated`, not `Result`) and `typeof(S<>)` as the service of `RegisterGenericDecorator` (`VoidService`) |
 | Service | `RewriteAsync` | `typeof(S<>)` → `typeof(IRequestHandler<,>)` |
-| Registratie | `UnregisteredUseAsync` | `SymbolFinder.FindReferencesAsync`: elke verwijzing buiten de klasse moet `typeof(D<>)` als eerste argument van `RegisterGenericDecorator` zijn |
-| Notification | `RegistersMediatRInAutofacAsync` | `Populate(... "Mediator.Internals" ...)` of `RegisterAssemblyTypes(typeof(<MediatR-type>)...)` ergens in de solution |
-| Void | `RewriteVoid` | Geschreven gedecoreerde typen → `IRequestHandler<T, Unit>`; gebruik moet `Handle(...)` of toewijzing zijn |
+| Registration | `UnregisteredUseAsync` | `SymbolFinder.FindReferencesAsync`: every reference outside the class must be `typeof(D<>)` as the first argument of `RegisterGenericDecorator` |
+| Notification | `RegistersMediatRInAutofacAsync` | `Populate(... "Mediator.Internals" ...)` or `RegisterAssemblyTypes(typeof(<MediatR type>)...)` somewhere in the solution |
+| Void | `RewriteVoid` | Written decorated types → `IRequestHandler<T, Unit>`; usage must be `Handle(...)` or an assignment |
 
-## Beslisboom
+## Decision tree
 
-| Blad | Voorwaarde | Bewijs |
-| ---- | ---------- | ------ |
-| Niet gevonden | decorator van handler met response | `Find_DecoratorWithResponse_LeavesItToTheHandlerPatterns` |
-| Niet gevonden (blijft `mediatr.unsupported`) | geen gedecoreerde parameter | `IsDecorator_OpenGenericHandlerWithoutDecoratedParameter_False` |
-| Manual "used other than in RegisterGenericDecorator" | andere verwijzing | `used-elsewhere` |
-| Manual "every notification" | notification, geen Autofac-registratie van MediatR | `notification-without-autofac` |
-| Fixed (ongewijzigd) | notification, MediatR in Autofac | `_Combined/generic-decorators-kgrzybek` |
-| Manual "declares members of its own" | eigen interface met members | `decorated-members` |
-| Manual "used other than to call Handle" | ander gebruik van de gedecoreerde handler | `decorated-other-use` |
-| Fixed: `IRequestHandler<T, Unit>` + `typeof(IRequestHandler<,>)` | void-decorator, alleen geregistreerd | `_Combined/generic-decorators-kgrzybek` |
+| Leaf | Condition | Evidence |
+| ---- | --------- | -------- |
+| Not found | decorator of a handler with a response | `Find_DecoratorWithResponse_LeavesItToTheHandlerPatterns` |
+| Not found (stays `mediatr.unsupported`) | no decorated parameter | `IsDecorator_OpenGenericHandlerWithoutDecoratedParameter_False` |
+| Manual "used other than in RegisterGenericDecorator" | another reference | `used-elsewhere` |
+| Manual "every notification" | notification, no Autofac registration of MediatR | `notification-without-autofac` |
+| Fixed (unchanged) | notification, MediatR in Autofac | `_Combined/generic-decorators-kgrzybek` |
+| Manual "declares members of its own" | own interface with members | `decorated-members` |
+| Manual "used other than to call Handle" | other use of the decorated handler | `decorated-other-use` |
+| Fixed: `IRequestHandler<T, Unit>` + `typeof(IRequestHandler<,>)` | void decorator, only registered | `_Combined/generic-decorators-kgrzybek` |
 
-## Zie ook
+## See also
 
 - [mediatr-generic-decorator-plan.md](mediatr-generic-decorator-plan.md)
 - [mediatr-generic-decorator-verify.md](mediatr-generic-decorator-verify.md)

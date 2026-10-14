@@ -17,48 +17,48 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-023.
+> Drafted from TAAK-023.
 
 ## One-sentence summary
 
-mediatr.request-handler: in klassen die `MediatR.IRequestHandler<TReq,TRes>` implementeren wordt `Task<TRes> Handle(...)` `ValueTask<TRes> Handle(...)` en `Task.FromResult(x)` `ValueTask.FromResult(x)`; de using-swap van `MediatRFix.SwappedTypes` doet de rest.
+mediatr.request-handler: in classes that implement `MediatR.IRequestHandler<TReq,TRes>`, `Task<TRes> Handle(...)` becomes `ValueTask<TRes> Handle(...)` and `Task.FromResult(x)` becomes `ValueTask.FromResult(x)`; the using swap of `MediatRFix.SwappedTypes` does the rest.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `Handle` gevonden via het semantisch model (`FindImplementationForInterfaceMember`), ook in generieke handlers.
-- `async`: alleen het returntype. Niet-async: returntype en elke `Task.FromResult` (expression body of block).
+- `Handle` found via the semantic model (`FindImplementationForInterfaceMember`), also in generic handlers.
+- `async`: only the return type. Non-async: return type and every `Task.FromResult` (expression body or block).
 
 **Out of scope**
 
-- `IRequestHandler<TReq>` (void), notification-handlers, pipeline-behaviors: eigen patronen (rijen 2–4).
-- `Task.Run`, doorgegeven `Task`s, expliciete interface-implementaties: Manual.
+- `IRequestHandler<TReq>` (void), notification handlers, pipeline behaviors: own patterns (rows 2–4).
+- `Task.Run`, passed-through `Task`s, explicit interface implementations: Manual.
 
 ## Requirements
 
-- **REQ-1**: WHEN `Handle` `async Task<T>` is THE SYSTEM SHALL alleen het returntype `ValueTask<T>` maken (proof `async`).
-- **REQ-2**: WHEN `Handle` niet-async is en de expression body `Task.FromResult(x)` is THE SYSTEM SHALL `ValueTask<T>` + `ValueTask.FromResult(x)` schrijven (proof `from-result-expression`).
-- **REQ-3**: WHEN elke `return` in de body `Task.FromResult(...)` is, ook met type-argument THE SYSTEM SHALL ze allemaal `ValueTask.FromResult(...)` maken (proof `from-result-block`).
-- **REQ-4**: WHEN de handler generiek is THE SYSTEM SHALL hem hetzelfde herschrijven (proof `generic`).
-- **REQ-5**: WHEN de `CancellationToken`-parameter een andere naam heeft THE SYSTEM SHALL de parameters ongemoeid laten (proof `token-name`).
-- **REQ-6**: IF een niet-async `Handle` iets anders dan `Task.FromResult` teruggeeft, of `Handle` expliciet geïmplementeerd is THEN THE SYSTEM SHALL Manual melden (proofs `other-return`, `explicit`).
-- **REQ-7**: WHEN een niet-async `Handle` (bv. een decorator) `inner.Handle(...)` van een `IRequestHandler<,>` (of een eigen afgeleide interface) teruggeeft THE SYSTEM SHALL die return ongemoeid laten: na de wissel geeft de binnenste handler zelf een `ValueTask<T>` (proof `decorator-inner-handle`, TAAK-212; was CS1503 in kgrzybek).
-- **Uitbreiding TAAK-080**: WHEN de handler `IRequestHandler<,>` via een eigen marker-interface implementeert (`IAppQueryHandler<TQ, TR> : IRequestHandler<TQ, TR>`) THE SYSTEM SHALL hem hetzelfde herschrijven (`MediatRSyntax.FindHandleMethods` kijkt naar `AllInterfaces`; proof `edge-marker-interface`).
+- **REQ-1**: WHEN `Handle` is `async Task<T>` THE SYSTEM SHALL only make the return type `ValueTask<T>` (proof `async`).
+- **REQ-2**: WHEN `Handle` is non-async and the expression body is `Task.FromResult(x)` THE SYSTEM SHALL write `ValueTask<T>` + `ValueTask.FromResult(x)` (proof `from-result-expression`).
+- **REQ-3**: WHEN every `return` in the body is `Task.FromResult(...)`, also with a type argument THE SYSTEM SHALL make them all `ValueTask.FromResult(...)` (proof `from-result-block`).
+- **REQ-4**: WHEN the handler is generic THE SYSTEM SHALL rewrite it the same way (proof `generic`).
+- **REQ-5**: WHEN the `CancellationToken` parameter has a different name THE SYSTEM SHALL leave the parameters untouched (proof `token-name`).
+- **REQ-6**: IF a non-async `Handle` returns something other than `Task.FromResult`, or `Handle` is implemented explicitly THEN THE SYSTEM SHALL report Manual (proofs `other-return`, `explicit`).
+- **REQ-7**: WHEN a non-async `Handle` (e.g. a decorator) returns `inner.Handle(...)` of an `IRequestHandler<,>` (or an own derived interface) THE SYSTEM SHALL leave that return untouched: after the swap the inner handler itself returns a `ValueTask<T>` (proof `decorator-inner-handle`, TAAK-212; was CS1503 in kgrzybek).
+- **Extension TAAK-080**: WHEN the handler implements `IRequestHandler<,>` via an own marker interface (`IAppQueryHandler<TQ, TR> : IRequestHandler<TQ, TR>`) THE SYSTEM SHALL rewrite it the same way (`MediatRSyntax.FindHandleMethods` looks at `AllInterfaces`; proof `edge-marker-interface`).
 
 ## Assumptions
 
-- Doel-framework .NET 5+ (`ValueTask.FromResult`).
-- `using MediatR` → `using Mediator` komt van de Fixer via `SwappedTypes` (TAAK-024).
+- Target framework .NET 5+ (`ValueTask.FromResult`).
+- `using MediatR` → `using Mediator` comes from the Fixer via `SwappedTypes` (TAAK-024).
 
 ## Risks
 
-- Bestanden met nog andere MediatR-typen (bv. `INotificationHandler` wél swapped, `IPipelineBehavior` niet) houden `using MediatR` tot hun patroon er is.
+- Files with other MediatR types as well (e.g. `INotificationHandler` swapped, `IPipelineBehavior` not) keep `using MediatR` until their pattern exists.
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [mediatr-request-handler-modellen.md](mediatr-request-handler-modellen.md).
+Class diagram, sequence and decision tree: [mediatr-request-handler-modellen.md](mediatr-request-handler-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

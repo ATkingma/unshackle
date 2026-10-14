@@ -1,44 +1,44 @@
-# TAAK-037 — mediatr.unsupported (+ RegisterGenericHandlers, stream-swap, end-to-end)
+# TAAK-037 — mediatr.unsupported (+ RegisterGenericHandlers, stream swap, end-to-end)
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-11
-**Doel**: MediatR-constructies zonder 1-op-1-tegenhanger in Mediator 3.0.2 als Manual melden met concreet advies; onderzoeken wat wél een tweeling heeft; SampleShop end-to-end migreren.
+**Status**: ✅ completed
+**Created**: 2026-10-11
+**Goal**: report MediatR constructs without a 1-to-1 counterpart in Mediator 3.0.2 as Manual with concrete advice; investigate what does have a twin; migrate SampleShop end-to-end.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Rij 7 in `claude/tasks/mediatr-queue.md`. Voorbeelden: `samples/SampleShop/SampleShop/Behaviors/`, `Features/Common/CountQuery.cs`, `Features/Orders/CancelOrderCommand.cs`.
+- Row 7 in `claude/tasks/mediatr-queue.md`. Examples: `samples/SampleShop/SampleShop/Behaviors/`, `Features/Common/CountQuery.cs`, `Features/Orders/CancelOrderCommand.cs`.
 
-## Analyse (Mediator 3.0.2, `Mediator.dll`/`Mediator.xml`/README)
+## Analysis (Mediator 3.0.2, `Mediator.dll`/`Mediator.xml`/README)
 
-- **Wel een tweeling**: `IStreamRequest<T>`, `IStreamRequestHandler<T,R>` (zelfde `IAsyncEnumerable<R> Handle(request, ct)`), `ISender.Send(object)`/`IPublisher.Publish(object)` (→ `ValueTask`), `TaskWhenAllPublisher`/`ForeachAwaitPublisher`.
-- **Andere vorm**: `MessagePreProcessor<TMessage,TResponse>`, `MessagePostProcessor<,>`, `MessageExceptionHandler<,,>` (abstracte klassen, als pipeline-behavior geregistreerd); `INotificationPublisher.Publish(NotificationHandlers<T>, T, ct)`; `IStreamPipelineBehavior<TMessage,TResponse>` met `StreamHandlerDelegate<TMessage,TResponse>`.
-- **Geen**: generieke requests/notifications en generieke request-handlers (README "doesn't support generic requests/notifications"; generator: "request/query/command handlers cannot be generic"). Op de SampleShop-kopie gaf `CountQuery<TEntity>` CS0246 in `Mediator.g.cs`. Open generieke _notification_-handlers registreert Mediator zelf.
+- **Does have a twin**: `IStreamRequest<T>`, `IStreamRequestHandler<T,R>` (the same `IAsyncEnumerable<R> Handle(request, ct)`), `ISender.Send(object)`/`IPublisher.Publish(object)` (→ `ValueTask`), `TaskWhenAllPublisher`/`ForeachAwaitPublisher`.
+- **Different shape**: `MessagePreProcessor<TMessage,TResponse>`, `MessagePostProcessor<,>`, `MessageExceptionHandler<,,>` (abstract classes, registered as pipeline behaviors); `INotificationPublisher.Publish(NotificationHandlers<T>, T, ct)`; `IStreamPipelineBehavior<TMessage,TResponse>` with `StreamHandlerDelegate<TMessage,TResponse>`.
+- **None**: generic requests/notifications and generic request handlers (README "doesn't support generic requests/notifications"; generator: "request/query/command handlers cannot be generic"). On the SampleShop copy `CountQuery<TEntity>` gave CS0246 in `Mediator.g.cs`. Mediator registers open generic _notification_ handlers itself.
 
-## Keuzes
+## Choices
 
-- **`IStreamRequest`1`en`IStreamRequestHandler`2` naar `MediatRFix.SwappedTypes`** in plaats van Manual; bewezen met `SwappedTypesTests.FixAsync_StreamRequestHandler_CompilesAgainstMediator` (compileert met de generator). Geen eigen pattern: er valt niets te herschrijven.
-- **`Send(object)` geen Manual**: bestaat; `mediatr.send-as-task` dekt Task-gebruik.
-- **`UnsupportedPattern` meldt per typedeclaratie** (pre/post-processor, exception-handler/-action, notification-publisher, stream-behavior, generiek bericht of request-handler) met advies in de reden.
-- **`RegisterGenericHandlers` valt weg in `AddMediatRPattern`** (proof `AddMediatR/generic-handlers`): de vlag heeft in Mediator geen betekenis; het echte probleem (generieke request-handler) meldt `mediatr.unsupported` op de plek zelf.
-- **`NotificationPublisher = new TaskWhenAllPublisher()` blijft Manual** (zie TAAK-060).
+- **`IStreamRequest`1` and `IStreamRequestHandler`2` to `MediatRFix.SwappedTypes`** instead of Manual; proven with `SwappedTypesTests.FixAsync_StreamRequestHandler_CompilesAgainstMediator` (compiles with the generator). No own pattern: there is nothing to rewrite.
+- **`Send(object)` no Manual**: it exists; `mediatr.send-as-task` covers Task usage.
+- **`UnsupportedPattern` reports per type declaration** (pre/post processor, exception handler/action, notification publisher, stream behavior, generic message or request handler) with advice in the reason.
+- **`RegisterGenericHandlers` is dropped in `AddMediatRPattern`** (proof `AddMediatR/generic-handlers`): the flag has no meaning in Mediator; the real problem (a generic request handler) is reported by `mediatr.unsupported` at the place itself.
+- **`NotificationPublisher = new TaskWhenAllPublisher()` stays Manual** (see TAAK-060).
 
-## Stappen
+## Steps
 
-- [x] 1. Claim rij 7.
+- [x] 1. Claim row 7.
 - [x] 2. Plan `docs/projectinfo/patterns/mediatr-unsupported-plan.md` (approved).
 - [x] 3. `UnsupportedPattern`, `SwappedTypes`, `RegisterGenericHandlers` in `AddMediatRPattern`.
-- [x] 4. Proofs `Unsupported/*` (6 Manual), `AddMediatR/generic-handlers`; test stream-swap.
-- [x] 5. Modellen, verify, README-rij, add-mediatr-docs bijgewerkt, queue-rij.
-- [x] 6. Scan en end-to-end op een kopie van SampleShop.
+- [x] 4. Proofs `Unsupported/*` (6 Manual), `AddMediatR/generic-handlers`; stream swap test.
+- [x] 5. Models, verify, README row, add-mediatr docs updated, queue row.
+- [x] 6. Scan and end-to-end on a copy of SampleShop.
 
-## Resultaat
+## Result
 
-- `dotnet build` 0 warnings, `dotnet test` 458/458, sample-tests 38/38.
-- Scan SampleShop (`--fix mediatr`): add-mediatr 0/1 (`NotificationPublisher`), notification-handler 3/0, pipeline-behavior 2/0, request-handler 5/0, send-as-task 5/0, unsupported 0/6, void-request-handler 1/0, project-file 4/1. Totaal 20 fixed, 8 manual.
-- **End-to-end** (`fix` op een kopie in de scratchpad): bouwt **niet** direct (CS0104: `TaskWhenAllPublisher` dubbelzinnig tussen `Mediator` en `MediatR.NotificationPublishers`, omdat de using-swap in een bestand met een Manual toch `using Mediator;` zet). Na het met de hand afwerken van de 8 Manuals volgens de adviezen (AddMediator met `NotificationPublisherType`, `PipelineBehaviors` incl. pre/post/exception, `StreamPipelineBehaviors`; processors als `MessagePre/PostProcessor`; exception-handler als `MessageExceptionHandler` met `Handled(Unit.Value)`; `CountQuery<T>` gesplitst; `MediatR`-pakket weg) **bouwt de kopie (0 errors) en slagen 38/38 tests**. Wel CS0436-warnings in beide testprojecten (zie TAAK-063).
-- Vervolgtaken: TAAK-060 (publisher + dubbelzinnige using), TAAK-061 (pre/post/exception-handlers herschrijven), TAAK-062 (stream-behavior herschrijven), TAAK-063 (source generator alleen in het host-project).
+- `dotnet build` 0 warnings, `dotnet test` 458/458, sample tests 38/38.
+- Scan SampleShop (`--fix mediatr`): add-mediatr 0/1 (`NotificationPublisher`), notification-handler 3/0, pipeline-behavior 2/0, request-handler 5/0, send-as-task 5/0, unsupported 0/6, void-request-handler 1/0, project-file 4/1. Total 20 fixed, 8 manual.
+- **End-to-end** (`fix` on a copy in the scratchpad): does **not** build directly (CS0104: `TaskWhenAllPublisher` ambiguous between `Mediator` and `MediatR.NotificationPublishers`, because the using swap still puts `using Mediator;` in a file with a Manual). After finishing the 8 Manuals by hand following the advice (AddMediator with `NotificationPublisherType`, `PipelineBehaviors` incl. pre/post/exception, `StreamPipelineBehaviors`; processors as `MessagePre/PostProcessor`; exception handler as `MessageExceptionHandler` with `Handled(Unit.Value)`; `CountQuery<T>` split; `MediatR` package removed) **the copy builds (0 errors) and 38/38 tests pass**. CS0436 warnings in both test projects though (see TAAK-063).
+- Follow-up tasks: TAAK-060 (publisher + ambiguous using), TAAK-061 (rewrite pre/post/exception handlers), TAAK-062 (rewrite stream behavior), TAAK-063 (source generator only in the host project).
 
-## Zie ook
+## See also
 
 - `claude/tasks/mediatr-queue.md`
 - `claude/tasks/archief/TAAK-028-mediatr-add-mediatr.md`

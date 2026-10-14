@@ -10,15 +10,15 @@
 
 ## Requirements
 
-| REQ   | Oordeel | Bewijs |
-| ----- | ------- | ------ |
-| REQ-1 | Gehaald | `open` |
-| REQ-2 | Gehaald | `request-constraint` |
-| REQ-3 | Gehaald | `next-passed` |
+| REQ   | Verdict | Evidence |
+| ----- | ------- | -------- |
+| REQ-1 | Met | `open` |
+| REQ-2 | Met | `request-constraint` |
+| REQ-3 | Met | `next-passed` |
 
-Proofs: `src/Unshackle.Tests/Proofs/MediatR/StreamPipelineBehavior/`; elke `after` compileert tegen Mediator 3.0.2 mét source generator.
-End-to-end: `SampleShopTests.FixMediatRTwice_SampleShopCopy_FirstChangesNothingThenMigratesAndBuildsAndTests` (build + 38 tests groen na de migratie).
+Proofs: `src/Unshackle.Tests/Proofs/MediatR/StreamPipelineBehavior/`; every `after` compiles against Mediator 3.0.2 with the source generator.
+End-to-end: `SampleShopTests.FixMediatRTwice_SampleShopCopy_FirstChangesNothingThenMigratesAndBuildsAndTests` (build + 38 tests green after the migration).
 
 ## Deviations
 
-- Geen.
+- None.

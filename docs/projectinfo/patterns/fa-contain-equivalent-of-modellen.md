@@ -1,8 +1,8 @@
-# Modellen: fa.contain-equivalent-of
+# Models: fa.contain-equivalent-of
 
-`ContainEquivalentOf(item)` wordt `ShouldContain(item)` voor waarde-items. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainEquivalentOfPattern.cs`. Diagrammen met de hand in Mermaid (kingmadoc/d2 ontbreken).
+`ContainEquivalentOf(item)` becomes `ShouldContain(item)` for value items. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainEquivalentOfPattern.cs`. Diagrams written by hand in Mermaid (kingmadoc/d2 unavailable).
 
-**Figure 1.** Klassen rond `ContainEquivalentOfPattern`.
+**Figure 1.** Classes around `ContainEquivalentOfPattern`.
 
 ```mermaid
 classDiagram
@@ -16,14 +16,14 @@ classDiagram
     PatternResult <|-- ManualResult
 ```
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
-| `BeEquivalentToObjectPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPattern.cs` | Levert `ElementType`, `IsValueLike`, `IsLeaf` |
-| `ContainEquivalentOfPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainEquivalentOfPattern.cs` | Dit patroon, Id `fa.contain-equivalent-of` |
-| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Hulpmethodes |
-| `PatternResult` e.a. | `src/Unshackle.Core/Models/` | Uitkomst |
+| `BeEquivalentToObjectPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEquivalentToObjectPattern.cs` | Provides `ElementType`, `IsValueLike`, `IsLeaf` |
+| `ContainEquivalentOfPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainEquivalentOfPattern.cs` | This pattern, Id `fa.contain-equivalent-of` |
+| `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | Helper methods |
+| `PatternResult` etc. | `src/Unshackle.Core/Models/` | Outcome |
 
-**Figure 2.** Volgorde.
+**Figure 2.** Order.
 
 ```mermaid
 sequenceDiagram
@@ -36,39 +36,39 @@ sequenceDiagram
     ContainEquivalentOfPattern-->>Fixer: Fixed / Manual
 ```
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Location | What happens |
 | --- | --- | --- |
-| Find | `Find` | Alle `ContainEquivalentOf`/`NotContainEquivalentOf` op FA |
-| Typecheck | `RewriteAssertion` | Element- en verwachtingstype via `ElementType` en `GetTypeInfo` |
-| Waarde-item | `IsValueLike` | Leaf, sealed record, record struct, struct met leaf-leden |
-| Herschrijven | `FluentAssertionsSyntax.Invoke` | `ShouldContain(item, because)` met `NotNull` op het subject |
+| Find | `Find` | All `ContainEquivalentOf`/`NotContainEquivalentOf` on FA |
+| Type check | `RewriteAssertion` | Element and expectation type via `ElementType` and `GetTypeInfo` |
+| Value item | `IsValueLike` | Leaf, sealed record, record struct, struct with leaf members |
+| Rewrite | `FluentAssertionsSyntax.Invoke` | `ShouldContain(item, because)` with `NotNull` on the subject |
 
-**Figure 3.** Beslisboom.
+**Figure 3.** Decision tree.
 
 ```mermaid
 flowchart TD
-    A{AssertionScope of resultaat gebruikt?} -- ja --> M1[Manual]
-    A -- nee --> B{Meer dan een waarde, options?}
-    B -- ja --> M2[Manual: options]
-    B -- nee --> C{Subject een generieke IEnumerable?}
-    C -- nee --> M3[Manual: not IEnumerable]
-    C -- ja --> D{Verwachtingstype gelijk aan elementtype?}
-    D -- nee --> M4[Manual: different-type]
-    D -- ja --> E{Element waarde-achtig?}
-    E -- nee --> M5[Manual: class, dictionary, record met collectie]
-    E -- ja --> F["x.ShouldContain(item) / ShouldNotContain(item)"]
+    A{AssertionScope or result used?} -- yes --> M1[Manual]
+    A -- no --> B{More than one value, options?}
+    B -- yes --> M2[Manual: options]
+    B -- no --> C{Subject a generic IEnumerable?}
+    C -- no --> M3[Manual: not IEnumerable]
+    C -- yes --> D{Expectation type equal to element type?}
+    D -- no --> M4[Manual: different-type]
+    D -- yes --> E{Element value-like?}
+    E -- no --> M5[Manual: class, dictionary, record with collection]
+    E -- yes --> F["x.ShouldContain(item) / ShouldNotContain(item)"]
 ```
 
-| Vraag | Uitkomst | Proof |
+| Question | Outcome | Proof |
 | --- | --- | --- |
 | AssertionScope? | Manual | `assertion-scope` |
-| Resultaat gebruikt? | Manual | `which` |
+| Result used? | Manual | `which` |
 | Options? | Manual | `options` |
-| Ander verwachtingstype? | Manual | `different-type` |
-| Geen waarde-item? | Manual | `class`, `record-unsealed`, `record-list-member`, `dictionary` |
-| Gewoon geval | Fixed | `simple`, `strings`, `sealed-record`, `record-struct`, `because`, `nullable-subject` |
+| Different expectation type? | Manual | `different-type` |
+| Not a value item? | Manual | `class`, `record-unsealed`, `record-list-member`, `dictionary` |
+| Plain case | Fixed | `simple`, `strings`, `sealed-record`, `record-struct`, `because`, `nullable-subject` |
 
-## Zie ook
+## See also
 
 - [fa-contain-equivalent-of-plan.md](fa-contain-equivalent-of-plan.md)
 - [fa-contain-equivalent-of-verify.md](fa-contain-equivalent-of-verify.md)

@@ -1,11 +1,11 @@
 # Core: Fixer → Fix → Pattern
 
 ```
-Fixer                       de ene ingang: FixAsync(solution, request)
- └─ IFix                    één per bibliotheek (FluentAssertions, MediatR, AutoMapper)
-     └─ IPattern            één soort code vinden + herschrijven
-          ├─ Find(...)      → plekken in de code
-          └─ Rewrite(...)   → Fixed(nieuwe node) of Manual(reden)
+Fixer                       the single entry point: FixAsync(solution, request)
+ └─ IFix                    one per library (FluentAssertions, MediatR, AutoMapper)
+     └─ IPattern            find one kind of code + rewrite it
+          ├─ Find(...)      → locations in the code
+          └─ Rewrite(...)   → Fixed(new node) or Manual(reason)
 ```
 
 ```
@@ -19,178 +19,177 @@ src/Unshackle.Core/
    └─ AutoMapper/         AutoMapperFix.cs + Patterns/
 ```
 
-Elke fix heeft dezelfde indeling. Ken je er één, dan ken je ze allemaal.
+Every fix has the same layout. Know one and you know them all.
 
-**Afwijkende patronen** (bijvoorbeeld `HaveCount`, waar het type bepaalt wat de juiste
-vervanging is) regel je binnen dat pattern. Wordt het te groot, dan splits je het in meerdere
-patterns, zoals `HaveCountOnListPattern` en `HaveCountOnEnumerablePattern`. De Fixer merkt
-daar niks van.
+**Deviating patterns** (for example `HaveCount`, where the type decides the right replacement) are handled inside that
+pattern. If it grows too large, split it into several patterns, such as `HaveCountOnListPattern` and
+`HaveCountOnEnumerablePattern`. The Fixer does not notice.
 
-**Een pattern crasht nooit.** Lukt een herschrijving niet, dan geeft het `Manual(reden)`
-terug en komt dat in het rapport.
+**A pattern never crashes.** If a rewrite does not work, it returns `Manual(reason)` and that ends up in the report.
 
-**Dry-run kost niks extra.** Roslyn past een `Solution` nooit aan. De Fixer berekent een
-nieuwe `Solution` en het rapport. Bij `--dry-run` tonen we alleen de diff, anders schrijft
-`ISolutionStore` de wijzigingen weg.
+**Dry-run costs nothing extra.** Roslyn never modifies a `Solution`. The Fixer computes a new `Solution` and the report.
+With `--dry-run` we only show the diff; otherwise `ISolutionStore` writes the changes.
 
-## Zoals gebouwd (TAAK-001)
+## As built (TAAK-001)
 
 - `IPattern`: `Id`, `Description`, `Find(SyntaxNode root, SemanticModel model)` → nodes,
-  `Rewrite(SyntaxNode node, SemanticModel model)` → `PatternResult`. Het pattern kiest zelf welke node het vervangt
-  (expressie, buitenste aanroep van een keten, of een heel statement).
-- `PatternResult.Fixed(node(s), params requiredNamespaces)` of `PatternResult.Manual(reason)`.
+  `Rewrite(SyntaxNode node, SemanticModel model)` → `PatternResult`. The pattern itself chooses which node it replaces
+  (an expression, the outermost call of a chain, or a whole statement).
+- `PatternResult.Fixed(node(s), params requiredNamespaces)` or `PatternResult.Manual(reason)`.
 - `IFix`: `Id`, `Patterns`, `RemovedNamespaces`, `AddedNamespaces`.
-- `Fixer`: per document de patterns na elkaar (vers `SemanticModel`), vervangen met `TrackNodes`/`ReplaceNode`
-  (buitenste eerst, overlap → Manual), daarna usings via `UsingDirectives`. Exceptions per pattern → Manual.
-  Elk bestand wordt gefixt op de **originele** solution (alleen dat bestand verandert in zijn werkkopie): de semantiek
-  van andere bestanden hangt dus niet af van de volgorde (TAAK-130: marker-interface in een eerder bestand was al geswapt,
-  waardoor een handler in een later bestand stil gemist werd). De eindtekst gaat daarna in de verzamelde solution.
-  Per bestandspad één keer: een multi-target project (één Roslyn-project per TFM) wordt eerst in de eerste TFM gefixt;
-  heeft het bestand `#if`-code die in een andere TFM actief is (`#if !NETFRAMEWORK`), dan volgt per afwijkende set
-  inactieve code één extra pass op de tekst tot dan toe, die alleen nodes fixt die in **alle** eerdere passes inactief
-  waren (`Fixer.NewCode`), zodat gedeelde code één keer gefixt en gerapporteerd wordt. De usings-rij "inactive #if
-  branch" van een eerdere pass vervalt als een latere pass de usings bijwerkt (TAAK-223). Alle kopieën krijgen de eindtekst. Projectmigraties tellen ook per
-  projectbestand (package blijft als één TFM het nog nodig heeft); `fix` telt geschreven bestanden uniek (TAAK-022).
-- Details en redenen: `claude/tasks/archief/TAAK-001-fundament.md`.
+- `Fixer`: per document the patterns one after another (fresh `SemanticModel`), replaced with `TrackNodes`/`ReplaceNode`
+  (outermost first, overlap → Manual), then usings via `UsingDirectives`. Exceptions per pattern → Manual.
+  Every file is fixed against the **original** solution (only that file changes in its working copy): the semantics
+  of other files therefore do not depend on the order (TAAK-130: a marker interface in an earlier file had already been
+  swapped, so a handler in a later file was silently missed). The final text then goes into the collected solution.
+  Once per file path: a multi-target project (one Roslyn project per TFM) is first fixed in the first TFM;
+  if the file has `#if` code that is active in another TFM (`#if !NETFRAMEWORK`), then for each differing set of
+  inactive code one extra pass follows on the text so far, which only fixes nodes that were inactive in **all** earlier
+  passes (`Fixer.NewCode`), so shared code is fixed and reported once. The usings row "inactive #if branch" of an
+  earlier pass is dropped when a later pass updates the usings (TAAK-223). All copies get the final text. Project
+  migrations also count per project file (the package stays when one TFM still needs it); `fix` counts written files
+  uniquely (TAAK-022).
+- Details and reasons: `claude/tasks/archief/TAAK-001-fundament.md`.
 
-## FluentAssertions-patronen: gedeelde basis (REVIEW-A)
+## FluentAssertions patterns: shared base (REVIEW-A)
 
-- `FluentAssertionPattern` (Template Method): `Rewrite` doet de controles die elke `x.Should().Method(...)` deelt
-  (AssertionScope, subjectvorm, gebruikt resultaat, becauseArgs) met één redentekst, daarna `RewriteAssertion(AssertionContext)`.
-  Hooks: `GetAssertion` (statement of `.Which` als node), `IsResultDiscarded`/`ResultUsedReason`, `RewriteBeforeArguments`
-  (params-overloads die de argumentsplitsing anders als becauseArgs ziet). De Throw-familie (Throw, ThrowAsync, ThrowExactly,
-  NotThrow, Invoking) heeft een andere node-vorm en deelt `ThrowSyntax` en `ThrowMessage` in plaats van de basis.
-- Gedeelde helpers in `FluentAssertionsSyntax`: `ConvertExpected`, `IsSafeReceiver`/`NotNullReceiver`, `IsSafeToEvaluateTwice`
-  (één symboolgebaseerde regel), `TryGetSplittableStatement`/`NotSplittableReason`, `Arguments`/`Invoke`, `WithWhich`/`WithStatement`.
-  Patronen roepen geen statics van andere patronen meer aan.
-- `.And`-ketens zijn alleen van `AndChainPattern`; het geeft warnings van schakels door en accepteert schakels van meerdere statements.
-- `UsingDirectives` swapt ook usings binnen een namespace-declaratie (blok of file-scoped). Nieuwe usings komen binnen de
-  namespace als het bestand ze daar heeft (IDE0065), tenzij een eigen namespace de nieuwe overschaduwt; en alleen in een bestand
-  dat de oude bibliotheek bij naam noemt (IDE0005, TAAK-115).
-- `IFix.RemovedExtensionMethods` (FA: `Should`): een `x.Should()` die na de fix nergens aan bindt (ontvanger onbekend, bv. na een
-  herschreven lambda-argument) houdt de oude using en het pakket en geeft een Manual-finding `usings` (TAAK-110).
-- `IFix.AddedReferences` (FA: Shouldly, netstandard2.0-build uit `Interface/References/`, aangeleverd door de composition root):
-  de `Fixer` voegt ze, plus een eigen document `Unshackle.AddedUsings.g.cs` met `global using` van de `AddedNamespaces`, toe aan
-  de werkkopie waarop de patronen draaien, niet aan het resultaat. Zo bindt een al herschreven `ctx.ShouldBe(..)` in een
-  lambda-argument, slaagt de overload-resolutie van de omringende aanroep en herkent een later patroon de buitenste assertion
-  in dezelfde run (TAAK-116). `UsingDirectives` telt dat document niet als import van het bestand.
+- `FluentAssertionPattern` (Template Method): `Rewrite` does the checks every `x.Should().Method(...)` shares
+  (AssertionScope, subject shape, used result, becauseArgs) with one reason text, then `RewriteAssertion(AssertionContext)`.
+  Hooks: `GetAssertion` (statement or `.Which` as node), `IsResultDiscarded`/`ResultUsedReason`, `RewriteBeforeArguments`
+  (params overloads that the argument split would otherwise see as becauseArgs). The Throw family (Throw, ThrowAsync,
+  ThrowExactly, NotThrow, Invoking) has a different node shape and shares `ThrowSyntax` and `ThrowMessage` instead of the base.
+- Shared helpers in `FluentAssertionsSyntax`: `ConvertExpected`, `IsSafeReceiver`/`NotNullReceiver`, `IsSafeToEvaluateTwice`
+  (one symbol-based rule), `TryGetSplittableStatement`/`NotSplittableReason`, `Arguments`/`Invoke`, `WithWhich`/`WithStatement`.
+  Patterns no longer call statics of other patterns.
+- `.And` chains belong only to `AndChainPattern`; it passes on warnings of links and accepts links spanning several statements.
+- `UsingDirectives` also swaps usings inside a namespace declaration (block or file-scoped). New usings go inside the
+  namespace if the file has them there (IDE0065), unless an own namespace shadows the new one; and only in a file
+  that names the old library (IDE0005, TAAK-115).
+- `IFix.RemovedExtensionMethods` (FA: `Should`): an `x.Should()` that binds to nothing after the fix (unknown receiver, e.g.
+  after a rewritten lambda argument) keeps the old using and the package and gives a Manual finding `usings` (TAAK-110).
+- `IFix.AddedReferences` (FA: Shouldly, netstandard2.0 build from `Interface/References/`, supplied by the composition root):
+  the `Fixer` adds them, plus its own document `Unshackle.AddedUsings.g.cs` with `global using` of the `AddedNamespaces`, to
+  the working copy the patterns run on, not to the result. That way an already rewritten `ctx.ShouldBe(..)` in a
+  lambda argument binds, overload resolution of the surrounding call succeeds, and a later pattern recognises the outer
+  assertion in the same run (TAAK-116). `UsingDirectives` does not count that document as an import of the file.
 
-## Contracten naar buiten (TAAK-005)
+## Outward contracts (TAAK-005)
 
-- `ISolutionStore`: `LoadAsync(path, ct)` → `Solution` (gooit `FileNotFoundException` of `SolutionLoadException` met
-  de MSBuild-fouten, of als typen niet resolven (CS0246/CS0234: niet gerestored → advies `dotnet restore`). Alleen laden:
-  `FixCommand` schrijft de gewijzigde `.cs`-bestanden samen met de projectbestanden via `IProjectFileStore.SaveAsync`
-  (REVIEW-B H1/H2): eerst worden álle bestanden gecontroleerd (ongewijzigd sinds laden, UTF-8), pas dan geschreven
-  (temp-bestand + move), en bij een fout halverwege worden de al geschreven bestanden teruggezet. Implementatie: `MsBuildSolutionStore`.
-- `IReportWriter`: `Extension` + `WriteAsync(path, findings, ct)`. Zie `rapportage.md`.
-- `ISourceControl`: `HasUncommittedChangesAsync(directory, ct)`; `fix` weigert op een vuile werkmap tenzij `--force`.
-  Geen git-repository, geen git of een git-fout geeft `InvalidOperationException` (nooit "schoon"); `fix` weigert dan
-  ook zonder `--force`. Processen starten via `DataAccess/Processes/ProcessRunner` (killt de procesboom bij annulering).
-- `--report` weigert een bestaand bestand te overschrijven zonder `--force` (`scan` en `fix`).
-- De Fixer zelf is niet veranderd: Interface laadt, roept `FixAsync` aan en laat DataAccess schrijven.
+- `ISolutionStore`: `LoadAsync(path, ct)` → `Solution` (throws `FileNotFoundException` or `SolutionLoadException` with
+  the MSBuild errors, or when types do not resolve (CS0246/CS0234: not restored → advice `dotnet restore`). Load only:
+  `FixCommand` writes the changed `.cs` files together with the project files via `IProjectFileStore.SaveAsync`
+  (REVIEW-B H1/H2): first **all** files are checked (unchanged since loading, UTF-8), only then written
+  (temp file + move), and on an error halfway the files already written are restored. Implementation: `MsBuildSolutionStore`.
+  A file that is not valid UTF-8 gets its text as Latin-1 on every platform (Roslyn falls back to UTF-8 on Linux/macOS),
+  so the Fixer reports it as not UTF-8 everywhere (TAAK-167).
+- `IReportWriter`: `Extension` + `WriteAsync(path, findings, ct)`. See `rapportage.md`.
+- `ISourceControl`: `HasUncommittedChangesAsync(directory, ct)`; `fix` refuses on a dirty working tree unless `--force`.
+  No git repository, no git, or a git error gives `InvalidOperationException` (never "clean"); `fix` then also refuses
+  without `--force`. Processes start via `DataAccess/Processes/ProcessRunner` (kills the process tree on cancellation).
+- `--report` refuses to overwrite an existing file without `--force` (`scan` and `fix`).
+- The Fixer itself did not change: Interface loads, calls `FixAsync` and lets DataAccess write.
 
-## Laden ondanks NuGet-warnings en ontbrekende projecten (TAAK-090)
+## Loading despite NuGet warnings and missing projects (TAAK-090)
 
-- `MsBuildSolutionStore` geeft MSBuild alleen voor de design-time build globale properties mee: `NuGetAudit=false` en
-  `WarningsNotAsErrors=NU1701;NU1900–NU1905`. Gebruikersbestanden blijven ongewijzigd.
-- Roslyn meldt elke MSBuild-melding van een project als `Failure`, ook een gewone warning (NU1903, NU1701). Zo'n failure
-  is alleen een waarschuwing (`ISolutionStore.Warnings`, door `scan`/`fix` getoond als `Warning: …`) als het project
-  toch geladen is, of als het genoemde projectbestand niet bestaat. Elke andere failure blijft fataal.
-- Waarom een ontbrekend project veilig is: er staat niets van op schijf om te herschrijven. Hangt een geladen project
-  ervan af, dan resolven zijn typen niet en faalt de bestaande CS0246/CS0234-check alsnog (met de waarschuwingen erbij in de
-  foutmelding). Een project dat wél bestaat maar niet laadt blijft fataal: de fix zou zijn code overslaan en toch
-  gedeelde pakketbestanden wijzigen.
-- Corpus (TAAK-090): Polly, EventFlow, SmartEnum en Bogus laden nu. Specification niet: het kernproject staat buiten de
-  tarball, de andere projecten verwijzen ernaar (CS0246). EventFlow's eigen `dotnet restore` faalt op NU1902/NU1903 door
-  TreatWarningsAsErrors; dat is een build van de gebruiker (`-p:NuGetAudit=false`), niet iets van de loader.
+- `MsBuildSolutionStore` passes global properties to MSBuild for the design-time build only: `NuGetAudit=false` and
+  `WarningsNotAsErrors=NU1701;NU1900–NU1905`. User files stay unchanged.
+- Roslyn reports every MSBuild message of a project as `Failure`, also an ordinary warning (NU1903, NU1701). Such a failure
+  is only a warning (`ISolutionStore.Warnings`, shown by `scan`/`fix` as `Warning: …`) if the project was loaded anyway,
+  or if the named project file does not exist. Any other failure stays fatal.
+- Why a missing project is safe: nothing of it is on disk to rewrite. If a loaded project depends on it, its types do
+  not resolve and the existing CS0246/CS0234 check still fails (with the warnings included in the error message).
+  A project that does exist but does not load stays fatal: the fix would skip its code and still change shared package files.
+- Corpus (TAAK-090): Polly, EventFlow, SmartEnum and Bogus now load. Specification does not: the core project lies outside the
+  tarball and the other projects refer to it (CS0246). EventFlow's own `dotnet restore` fails on NU1902/NU1903 because of
+  TreatWarningsAsErrors; that is a user build (`-p:NuGetAudit=false`), not something of the loader.
 
-## Eigen assertion-extensies (TAAK-091)
+## Own assertion extensions (TAAK-091)
 
-- `fa.custom-assertion` (`Patterns/CustomAssertionPattern.cs`, nieuw bestand; één regel in `FluentAssertionsFix.Patterns`)
-  herkent een niet-FA-methode op een FA-assertions-type (receiver of basistype in een `FluentAssertions`-namespace,
-  naam eindigt op `Assertions`) en geeft Manual met één reden per extensie. Zie `rapportage.md` voor het groeperen.
+- `fa.custom-assertion` (`Patterns/CustomAssertionPattern.cs`, new file; one line in `FluentAssertionsFix.Patterns`)
+  recognises a non-FA method on an FA assertions type (receiver or base type in a `FluentAssertions` namespace,
+  name ends in `Assertions`) and gives Manual with one reason per extension. See `rapportage.md` for the grouping.
 
-## Projectbestanden (TAAK-017)
+## Project files (TAAK-017)
 
-- `IFix.Package` (default `null`): `PackageMigration` (oud pakket = assembly-naam, `AddedPackages`: naam + versie; het eerste vervangt het oude in place, de rest komt ernaast). FA → Shouldly 4.3.0; MediatR → Mediator.Abstractions + Mediator.SourceGenerator 3.0.2.
-- `Fixer` maakt per project dat de oude assembly refereert een `ProjectMigration`; `KeepRemovedPackage` als een `.cs`-bestand
-  het pakket na de fix nog semantisch gebruikt (`ProjectPackages`). Alle projecten gaan in één `IProjectFileStore.EditAsync`,
-  want `Directory.*.props` is gedeeld.
-- Rapport: Fixed per gewijzigd projectbestand, Manual per project dat het pakket houdt of bij een lees-/XML-fout (Line 0,
-  pattern `project-file`). `FixReport.ProjectFileChanges` bevat de nieuwe tekst; `FixCommand` toont de diff of geeft ze met de broncode aan `SaveAsync`.
-- Implementatie: `XmlProjectFileStore` (DataAccess, `XDocument` + `IFileSystem`), behoudt witruimte, CRLF en BOM en weigert te
-  schrijven als het bestand intussen veranderd is. Zie `docs/projectinfo/features/projectbestanden-migreren-plan.md`.
-- Tekstuele splice (TAAK-134/111): `ProjectFile` loopt bij het laden de originele tekst naast het `XDocument` af en onthoudt per
-  node waar hij staat. Bij schrijven komt elke ongewijzigde node letterlijk uit de originele tekst; alleen gewijzigde
-  attribuutwaarden worden in place vervangen, nieuwe elementen op één regel geschreven en verwijderde weggeknipt (met hun
-  inspringing). Zo blijven `/>`, `" >`, `->` in attributen, attributen over meerdere regels, comments, BOM en (gemengde)
-  regeleinden byte-gelijk; de reader normaliseert geen regeleinden, dus gekopieerde inspringing houdt het regeleinde van de buur.
-  Een bestand zonder wijziging (vaak `Directory.Build.props`) levert geen change op.
-- Veiligheidsregel (TAAK-111): faalt `EditAsync` toch, dan zet de Fixer alle `.cs`-bestanden van de betrokken projecten terug
-  naar de originele tekst en worden hun Fixed-findings Manual ("Not rewritten: Could not edit the project files: …"). Nooit
-  herschreven code zonder het nieuwe pakket.
-- Niet-gemigreerde projecten op schijf (TAAK-118): een gedeeld `Directory.Build.props`/`Directory.Packages.props` verliest het
-  oude pakket alleen als geen `.csproj` onder zijn map (met dit bestand als dichtstbijzijnde) het nog via `PackageReference`
-  gebruikt, ook een project dat bij het laden is overgeslagen (TAAK-112/135). Anders blijft de regel, komt het nieuwe pakket
-  ernaast en zet `XmlProjectFileStore` `ProjectFileChange.KeptRemovedPackageFor`; de Fixer meldt dat bestand Manual.
-- `Directory.Packages.props` zonder central package management (TAAK-210, kgrzybek: geen `<PackageVersion>`, geen
-  `ManagePackageVersionsCentrally`, wel `<PackageReference Version>` in ItemGroups met een `Condition`) is gewoon een geïmporteerd
-  props-bestand: het hoort bij de keten van het project (referenties worden daar in place gewisseld) en er komt geen `<PackageVersion>`.
-  Een extra pakket (bv. de source generator) komt dan niet naast een referentie in een geconditioneerde groep, maar in het project zelf.
+- `IFix.Package` (default `null`): `PackageMigration` (old package = assembly name, `AddedPackages`: name + version; the first replaces the old one in place, the rest go next to it). FA → Shouldly 4.3.0; MediatR → Mediator.Abstractions + Mediator.SourceGenerator 3.0.2.
+- `Fixer` creates a `ProjectMigration` per project that references the old assembly; `KeepRemovedPackage` if a `.cs` file
+  still uses the package semantically after the fix (`ProjectPackages`). All projects go into one `IProjectFileStore.EditAsync`,
+  because `Directory.*.props` is shared.
+- Report: Fixed per changed project file, Manual per project that keeps the package or on a read/XML error (Line 0,
+  pattern `project-file`). `FixReport.ProjectFileChanges` holds the new text; `FixCommand` shows the diff or passes them with the source code to `SaveAsync`.
+- Implementation: `XmlProjectFileStore` (DataAccess, `XDocument` + `IFileSystem`), keeps whitespace, CRLF and BOM and refuses to
+  write if the file changed in the meantime. See `docs/projectinfo/features/projectbestanden-migreren-plan.md`.
+- Textual splice (TAAK-134/111): on load, `ProjectFile` walks the original text alongside the `XDocument` and remembers per
+  node where it is. On write, every unchanged node comes literally from the original text; only changed
+  attribute values are replaced in place, new elements are written on one line and removed ones are cut out (with their
+  indentation). That keeps `/>`, `" >`, `->` in attributes, attributes over several lines, comments, BOM and (mixed)
+  line endings byte-identical; the reader does not normalise line endings, so copied indentation keeps the neighbour's line ending.
+  A file without a change (often `Directory.Build.props`) yields no change.
+- Safety rule (TAAK-111): if `EditAsync` fails anyway, the Fixer resets all `.cs` files of the projects involved
+  to the original text and their Fixed findings become Manual ("Not rewritten: Could not edit the project files: …"). Never
+  rewritten code without the new package.
+- Non-migrated projects on disk (TAAK-118): a shared `Directory.Build.props`/`Directory.Packages.props` only loses the
+  old package if no `.csproj` under its folder (with this file as the nearest) still uses it via `PackageReference`,
+  including a project that was skipped on load (TAAK-112/135). Otherwise the line stays, the new package goes next to it
+  and `XmlProjectFileStore` sets `ProjectFileChange.KeptRemovedPackageFor`; the Fixer reports that file as Manual.
+- `Directory.Packages.props` without central package management (TAAK-210, kgrzybek: no `<PackageVersion>`, no
+  `ManagePackageVersionsCentrally`, but `<PackageReference Version>` in ItemGroups with a `Condition`) is just an imported
+  props file: it belongs to the project's chain (references are swapped there in place) and no `<PackageVersion>` is added.
+  An extra package (e.g. the source generator) then does not go next to a reference in a conditioned group, but into the project itself.
 
-## Gelijknamige typen (TAAK-024)
+## Same-named types (TAAK-024)
 
-- `IFix.SwappedTypes` (default leeg): typen als `MediatR.IRequest\`1`met een tweeling in de nieuwe namespace. Symbolen van
-die typen en hun leden tellen niet als gebruik in`UsingDirectives.UsedNamespaces`en`ProjectPackages`.
-- Een bestand zonder patroon-wijziging krijgt de using-swap toch als alleen swapped typen de oude using nodig hebben.
-- `PackageMigration.AlsoRemovedPackages` (MediatR: `MediatR.Contracts`) wordt mee verwijderd. Zie
+- `IFix.SwappedTypes` (default empty): types such as `MediatR.IRequest\`1` with a twin in the new namespace. Symbols of
+  those types and their members do not count as usage in `UsingDirectives.UsedNamespaces` and `ProjectPackages`.
+- A file without a pattern change still gets the using swap if only swapped types need the old using.
+- `PackageMigration.AlsoRemovedPackages` (MediatR: `MediatR.Contracts`) is removed as well. See
   `docs/projectinfo/features/gelijknamige-typen-swap-plan.md`.
 
-## Inactieve `#if`-code en global usings (TAAK-043, TAAK-044)
+## Inactive `#if` code and global usings (TAAK-043, TAAK-044)
 
-- Code in een inactieve `#if`-tak is `DisabledTextTrivia`: patronen zien hem niet en niets bindt eraan. Heeft een gewijzigd
-  bestand zulke trivia, dan blijft de oude using staan (de nieuwe komt erbij) en meldt de Fixer Manual (pattern `usings`,
-  regel van de inactieve code). `ProjectPackages` houdt dan ook het pakket. Gekozen boven parsen per symbolenset: welke
-  symbolen bestaan (`DEBUG`, eigen) is niet te weten, en alles tegelijk aanzetten parst `#else`-takken niet.
-- `global using <oud>;` in een eigen bestand (niet `*.g.cs`; `<Using Include>` doet `XmlProjectFileStore`) geldt voor het
-  hele project. Bestanden in zo'n project krijgen geen eigen `using <nieuw>;`. Na alle bestanden beslist
-  `Fixer.SwapGlobalUsingsAsync` per projectbestand (alle TFM's): bindt geen bestand meer aan de oude namespace en is er geen
-  inactieve code, dan wordt hij in place `global using <nieuw>;`; anders blijft hij met de nieuwe ernaast + Manual `usings`.
-  Een overgebleven global using houdt het pakket in `ProjectPackages`.
+- Code in an inactive `#if` branch is `DisabledTextTrivia`: patterns do not see it and nothing binds to it. If a changed
+  file has such trivia, the old using stays (the new one is added) and the Fixer reports Manual (pattern `usings`,
+  line of the inactive code). `ProjectPackages` then also keeps the package. Chosen over parsing per symbol set: which
+  symbols exist (`DEBUG`, own ones) cannot be known, and enabling everything at once does not parse `#else` branches.
+- `global using <old>;` in an own file (not `*.g.cs`; `<Using Include>` is handled by `XmlProjectFileStore`) applies to the
+  whole project. Files in such a project do not get their own `using <new>;`. After all files,
+  `Fixer.SwapGlobalUsingsAsync` decides per project file (all TFMs): if no file binds to the old namespace any more and there is no
+  inactive code, it becomes `global using <new>;` in place; otherwise it stays with the new one next to it + Manual `usings`.
+  A remaining global using keeps the package in `ProjectPackages`.
 
-## Dubbelzinnig door een nieuwe namespace (TAAK-174)
+## Ambiguous through a new namespace (TAAK-174)
 
-- Na de using-stap bindt de Fixer het bijgewerkte bestand opnieuw. Geeft een aanroep CS0121 tussen een methode uit een
-  toegevoegde namespace en een bestaande (Akka.TestKit's eigen `ShouldBe` naast Shouldly's), dan blijft het bestand zoals het was:
-  de Fixed-findings van dat bestand worden Manual ("Not rewritten: …") plus één Manual `usings` met beide methoden.
-  Het bestand houdt zo de oude library en het project het oude pakket (project-file-cascade). `UsingDirectives.AmbiguityWithAddedAsync`.
-- Volledig gekwalificeerde Shouldly-aanroepen zijn afgewezen (onleesbaar). Een global using die het conflict veroorzaakt
-  (`SwapGlobalUsingsAsync`) wordt niet gecontroleerd.
-- Zonder dubbelzinnigheid kan een herschreven aanroep stil aan iets anders binden: een eigen extensie in de omsluitende
-  namespace gaat vóór `using Shouldly;` (bestand in `namespace Akka.TestKit`, TAAK-199). Bindt een aanroep met de naam van een
-  extensie uit een toegevoegde namespace ergens anders, en had het origineel er minder, dan volgt dezelfde terugval met reden
-  "binds to <type>.<methode> instead of Shouldly". `UsingDirectives.MisboundAddedCallAsync`.
-- **Gerichte imports (TAAK-198)**: vóór die terugval probeert de Fixer de rest van het bestand toch te migreren
-  (`Fixer.FixWithTargetedImportsAsync`). Het bestand krijgt dan geen `using Shouldly;`, maar `using static` voor elke Shouldly-klasse
-  waarvan het extensies aanroept (`using static Shouldly.ShouldBeBooleanExtensions;`) en een alias voor elk genoemd type
-  (`using Should = Shouldly.Should;`). Een klasse die een aanroep dubbelzinnig maakt blijft weg; een herschrijving die een botsende
-  naam (of een naam uit een weggelaten klasse) zou aanroepen wordt per call Manual ("Not rewritten: … is ambiguous with … (CS0121) …")
-  en blijft FA. Elke ronde draait de patterns opnieuw met de geblokkeerde namen en controleert het resultaat zonder de globale
-  model-using (`ConflictsWithAddedAsync`, plus: niet meer compileerfouten dan het origineel). Groeit er niets meer of komt er een
-  andere fout bij (bijv. een eigen type `Should` dat met de alias botst), dan volgt de terugval per bestand hierboven.
+- After the using step, the Fixer binds the updated file again. If a call gives CS0121 between a method from an
+  added namespace and an existing one (Akka.TestKit's own `ShouldBe` next to Shouldly's), the file stays as it was:
+  the Fixed findings of that file become Manual ("Not rewritten: …") plus one Manual `usings` with both methods.
+  The file thereby keeps the old library and the project the old package (project-file cascade). `UsingDirectives.AmbiguityWithAddedAsync`.
+- Fully qualified Shouldly calls were rejected (unreadable). A global using that causes the conflict
+  (`SwapGlobalUsingsAsync`) is not checked.
+- Without ambiguity a rewritten call can silently bind to something else: an own extension in the enclosing
+  namespace wins over `using Shouldly;` (file in `namespace Akka.TestKit`, TAAK-199). If a call with the name of an
+  extension from an added namespace binds elsewhere, and the original had fewer of them, the same fallback follows with reason
+  "binds to <type>.<method> instead of Shouldly". `UsingDirectives.MisboundAddedCallAsync`.
+- **Targeted imports (TAAK-198)**: before that fallback, the Fixer tries to migrate the rest of the file anyway
+  (`Fixer.FixWithTargetedImportsAsync`). The file then gets no `using Shouldly;`, but a `using static` for every Shouldly class
+  whose extensions it calls (`using static Shouldly.ShouldBeBooleanExtensions;`) and an alias for every named type
+  (`using Should = Shouldly.Should;`). A class that makes a call ambiguous is left out; a rewrite that would call a clashing
+  name (or a name from a left-out class) becomes Manual per call ("Not rewritten: … is ambiguous with … (CS0121) …")
+  and stays FA. Every round runs the patterns again with the blocked names and checks the result without the global
+  model using (`ConflictsWithAddedAsync`, plus: no more compile errors than the original). If nothing grows any more or another
+  error appears (e.g. an own type `Should` clashing with the alias), the per-file fallback above follows.
 
-## SOLID in het kort
+## SOLID in brief
 
-| Principe | Hoe                                                                                                                    |
-| -------- | ---------------------------------------------------------------------------------------------------------------------- |
-| S        | Een pattern beschrijft alleen wat er herschreven wordt. Laden, schrijven en rapporteren gebeurt elders                 |
-| O        | Een nieuwe bibliotheek of nieuw patroon is een nieuwe klasse. De Fixer verandert niet                                  |
-| L        | Elk pattern geeft `Fixed` of `Manual` terug en gooit nooit een exception, dus de Fixer behandelt ze allemaal hetzelfde |
-| I        | Kleine interfaces: zoeken/herschrijven, solution-opslag en rapport-schrijven zijn apart                                |
-| D        | Core hangt af van interfaces. MSBuild, het bestandssysteem en CSV zitten in DataAccess                                 |
+| Principle | How                                                                                                                       |
+| --------- | ------------------------------------------------------------------------------------------------------------------------- |
+| S         | A pattern only describes what is rewritten. Loading, writing and reporting happen elsewhere                               |
+| O         | A new library or new pattern is a new class. The Fixer does not change                                                    |
+| L         | Every pattern returns `Fixed` or `Manual` and never throws an exception, so the Fixer treats them all the same           |
+| I         | Small interfaces: find/rewrite, solution storage and report writing are separate                                         |
+| D         | Core depends on interfaces. MSBuild, the file system and CSV live in DataAccess                                           |
 
-## Zie ook
+## See also
 
-- `docs/projectinfo/README.md` — overzicht en C4-diagrammen
-- `claude/docs/design-patterns.md` — GoF-patronen in deze opzet
-- `src/Unshackle.Core/Fixer.cs` — implementatie
+- `docs/projectinfo/README.md` — overview and C4 diagrams
+- `claude/docs/design-patterns.md` — GoF patterns in this design
+- `src/Unshackle.Core/Fixer.cs` — implementation

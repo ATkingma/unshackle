@@ -1,47 +1,47 @@
-# TAAK-174 — `using Shouldly;` maakt eigen `ShouldBe`-extensies dubbelzinnig (CS0121)
+# TAAK-174 — `using Shouldly;` makes own `ShouldBe` extensions ambiguous (CS0121)
 
-**Status**: voltooid (2026-10-13)
-**Aangemaakt**: 2026-10-12 (corpus-run, `claude/tasks/CORPUSRUN-fa.md`)
-**Doel**: Akka.NET bouwt na de fix, of krijgt een duidelijke Manual in plaats van een kapotte build.
+**Status**: completed (2026-10-13)
+**Created**: 2026-10-12 (corpus run, `claude/tasks/CORPUSRUN-fa.md`)
+**Goal**: Akka.NET builds after the fix, or gets a clear Manual instead of a broken build.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Akka.NET (`23a8566`): na de fix **4 984× CS0121** "ambiguous between `Akka.TestKit.AkkaSpecExtensions.ShouldBe<T>(T, T, string)` and `Shouldly.ShouldBeTestExtensions.ShouldBe<T>`". Voorbeeld: `src/contrib/cluster/Akka.Cluster.Sharding.Tests.MultiNode/ClusterShardingCustomShardAllocationSpec.cs:221`. Daarnaast enkele CS8130, CS0119, CS1061 en CS0452 (nog niet uitgezocht).
-- De fix rapporteerde 8 488 Fixed / 1 868 Manual. Baseline: de grote assemblies zijn groen, met 2–3 bekende falers in Streams/Cluster.
-- Verwant: TAAK-165 (eigen `Should()`-extensie) en "TAAK-150" (eigen `ShouldBe`) uit `REGRESSIE-corpus-2.md`. Dat laatste taakbestand is nooit aangemaakt.
+- Akka.NET (`23a8566`): after the fix **4,984× CS0121** "ambiguous between `Akka.TestKit.AkkaSpecExtensions.ShouldBe<T>(T, T, string)` and `Shouldly.ShouldBeTestExtensions.ShouldBe<T>`". Example: `src/contrib/cluster/Akka.Cluster.Sharding.Tests.MultiNode/ClusterShardingCustomShardAllocationSpec.cs:221`. Besides that a few CS8130, CS0119, CS1061 and CS0452 (not yet investigated).
+- The fix reported 8,488 Fixed / 1,868 Manual. Baseline: the large assemblies are green, with 2–3 known failures in Streams/Cluster.
+- Related: TAAK-165 (own `Should()` extension) and "TAAK-150" (own `ShouldBe`) from `REGRESSIE-corpus-2.md`. That last task file was never created.
 
-## Analyse
+## Analysis
 
-### Probleem
+### Problem
 
-Bestanden die al `Akka.TestKit` importeren (met o.a. `ShouldBe` en `ShouldBeTrue`) krijgen `using Shouldly;` erbij. Daardoor worden zowel de bestaande als de nieuw geschreven calls dubbelzinnig.
+Files that already import `Akka.TestKit` (with among others `ShouldBe` and `ShouldBeTrue`) get `using Shouldly;` added. That makes both the existing and the newly written calls ambiguous.
 
-### Nieuwe situatie
+### New situation
 
-Vóór `using Shouldly;` wordt toegevoegd, controleert de Fixer semantisch of er in scope al extensiemethoden met Shouldly-namen staan (`ShouldBe`, `ShouldBeTrue`, `ShouldContain`, …). Zo ja, dan wordt het bestand Manual ("conflicting Should* extensions from X") en blijft het FA-pakket in het project (project-file-cascade). Volledig gekwalificeerde Shouldly-aanroepen zijn afgewezen omdat ze onleesbaar worden.
+Before `using Shouldly;` is added, the Fixer checks semantically whether extension methods with Shouldly names are already in scope (`ShouldBe`, `ShouldBeTrue`, `ShouldContain`, …). If so, the file becomes Manual ("conflicting Should* extensions from X") and the FA package stays in the project (project-file cascade). Fully qualified Shouldly calls were rejected because they become unreadable.
 
-## Stappen
+## Steps
 
-- [x] 1. Unittest met een eigen statische `ShouldBe<T>`-extensie in scope.
-- [x] 2. Conflictdetectie in de using-stap (`UsingDirectives.cs`) of als pre-check in de Fixer.
-- [x] 3. Bewijs: Akka-harnas bouwt; de overige foutcodes uitzoeken en zo nodig een vervolgtaak maken.
+- [x] 1. Unit test with an own static `ShouldBe<T>` extension in scope.
+- [x] 2. Conflict detection in the using step (`UsingDirectives.cs`) or as a pre-check in the Fixer.
+- [x] 3. Proof: the Akka harness builds; investigate the other error codes and create a follow-up task if needed.
 
-## Resultaat stap 3 (2026-10-13)
+## Result of step 3 (2026-10-13)
 
-Akka.NET `23a8566`, verse kloon in `<probe-dir>`, `unshackle fix Akka.slnx --fix fluentassertions --force`, daarna bin/obj weg, restore + build met `-p:NuGetAudit=false -p:AllowMissingPrunePackageData=true`:
+Akka.NET `23a8566`, fresh clone in `<probe-dir>`, `unshackle fix Akka.slnx --fix fluentassertions --force`, then bin/obj removed, restore + build with `-p:NuGetAudit=false -p:AllowMissingPrunePackageData=true`:
 
-- Fix: **5 463 Fixed / 5 126 Manual** (zonder `project-file`/`usings`; 441 bestanden geschreven). Daarvan 3 449 Manual met "… is ambiguous with Akka.TestKit.AkkaSpecExtensions.… once Shouldly is imported (CS0121)".
-- **Build: 0 fouten** (was 4 984× CS0121 + 8× CS8130, 8× CS0119, 6× CS1061, 6× CS0452). De overige codes zijn mee verdwenen; de oude log bevat geen regelinformatie meer, ze zaten in bestanden die nu Manual zijn (gevolgfouten van de dubbelzinnigheid).
-- Tests (hele solution, 46 assemblies) tegenover de twee baseline-runs: bekende falers (Cluster `ProviderSelectionSpec`, DData, Streams `TcpSpec`) gelijk. Nieuw:
-  - `MixedBindingPairSpec.Should_FailTheCheck_When_TheV2NodeIsStillPinnedToLegacy` — echte regressie: eigen `ShouldBe` in de omsluitende namespace `Akka.TestKit` wint stil van Shouldly → TAAK-199.
-  - `ReplicatorMessageSerializerSpec.ReplicatorMessageSerializer_should_serialize_Replicator_message` — echte regressie (los 2× rood): `object`-subject `ShouldBe` → TAAK-200.
-  - `ConductorBindSpec` (3×, poort 2552 bezet) en `ClusterShardingGetStateSpec` (MultiNode, `ExpectMsg`-timeout; diff is equivalent) — flaky: Remote.TestKit los 40/40 groen.
-- Vervolg: TAAK-198 (conflict-Manual verkleinen), TAAK-199, TAAK-200.
+- Fix: **5,463 Fixed / 5,126 Manual** (without `project-file`/`usings`; 441 files written). Of those, 3,449 Manual with "… is ambiguous with Akka.TestKit.AkkaSpecExtensions.… once Shouldly is imported (CS0121)".
+- **Build: 0 errors** (was 4,984× CS0121 + 8× CS8130, 8× CS0119, 6× CS1061, 6× CS0452). The other codes disappeared along with it; the old log no longer has line information, they were in files that are now Manual (follow-up errors of the ambiguity).
+- Tests (whole solution, 46 assemblies) against the two baseline runs: known failures (Cluster `ProviderSelectionSpec`, DData, Streams `TcpSpec`) equal. New:
+  - `MixedBindingPairSpec.Should_FailTheCheck_When_TheV2NodeIsStillPinnedToLegacy` — a real regression: an own `ShouldBe` in the enclosing namespace `Akka.TestKit` silently wins over Shouldly → TAAK-199.
+  - `ReplicatorMessageSerializerSpec.ReplicatorMessageSerializer_should_serialize_Replicator_message` — a real regression (red 2× on its own): `object` subject `ShouldBe` → TAAK-200.
+  - `ConductorBindSpec` (3×, port 2552 in use) and `ClusterShardingGetStateSpec` (MultiNode, `ExpectMsg` timeout; the diff is equivalent) — flaky: Remote.TestKit on its own 40/40 green.
+- Follow-up: TAAK-198 (shrink the conflict Manual), TAAK-199, TAAK-200.
 
-## Zie ook
+## See also
 
 - `claude/tasks/CORPUSRUN-fa.md`
 - `claude/tasks/archief/TAAK-198-shouldly-conflict-manual-verkleinen.md`
-- `claude/tasks/TAAK-199-eigen-shouldbe-in-omsluitende-namespace.md`
-- `claude/tasks/TAAK-200-shouldbe-object-gelijkheid-ddata.md`
+- `claude/tasks/archief/TAAK-199-eigen-shouldbe-in-omsluitende-namespace.md`
+- `claude/tasks/archief/TAAK-200-shouldbe-object-gelijkheid-ddata.md`
 - `claude/tasks/archief/TAAK-165-custom-assertions-should-extensie.md`

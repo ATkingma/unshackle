@@ -10,7 +10,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/FluentAssertions/CatchAssertionException/
 ---
 
-# Feature: fa.catch-assertion-exception: catch-plekken van de assertie-exception vangen ook Shouldly
+# Feature: fa.catch-assertion-exception: sites that catch the assertion exception also catch Shouldly
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -18,41 +18,41 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-140 (Polly, 26 regressies).
+> Drafted from TAAK-140 (Polly, 26 regressions).
 
 ## One-sentence summary
 
-Eigen code die `FluentAssertions.Execution.AssertionFailedException` of `Xunit.Sdk.XunitException` vangt of filtert (bijvoorbeeld een retry-helper) vangt na de omzetting ook `Shouldly.ShouldAssertException`.
+User code that catches or filters `FluentAssertions.Execution.AssertionFailedException` or `Xunit.Sdk.XunitException` (for example a retry helper) also catches `Shouldly.ShouldAssertException` after the conversion.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `catch (T)` zonder gebruikte variabele: extra `catch (ShouldAssertException)` met dezelfde filter en body erachter.
-- `e is T` (ook in `when (...)` en `!(... || ...)`) met een identifier links: `e is T || e is ShouldAssertException`.
-- Eén wijziging per catch-plek (eerste passende catch van een try, eerste `is` van een conditie); een plek die `ShouldAssertException` al noemt wordt overgeslagen (tweede run).
-- Het oude type blijft staan: nog niet omgezette (Manual) assertions worden nog gevangen. De using van `FluentAssertions.Execution` en het pakket blijven daardoor staan.
+- `catch (T)` without a used variable: an extra `catch (ShouldAssertException)` with the same filter and body after it.
+- `e is T` (also in `when (...)` and `!(... || ...)`) with an identifier on the left: `e is T || e is ShouldAssertException`.
+- One change per catch site (first matching catch of a try, first `is` of a condition); a site that already mentions `ShouldAssertException` is skipped (second run).
+- The old type stays: assertions not yet converted (Manual) are still caught. As a result, the `FluentAssertions.Execution` using and the package stay as well.
 
 **Out of scope**
 
-- Afgeleide exceptiontypes, NUnit/MSTest-excepties, `as T`, `typeof(T)`.
+- Derived exception types, NUnit/MSTest exceptions, `as T`, `typeof(T)`.
 
 ## Requirements
 
-- **REQ-1**: WHEN een conditie `e is AssertionFailedException` filtert THE SYSTEM SHALL `|| e is ShouldAssertException` toevoegen (proofs `retry-filter`, `when-filter`).
-- **REQ-2**: WHEN een `catch (AssertionFailedException)` de variabele niet gebruikt THE SYSTEM SHALL een `catch (ShouldAssertException)` met dezelfde body toevoegen (proof `catch-clause`).
-- **REQ-3**: WHEN de catch-variabele wordt gebruikt, of het een is-pattern is (`e is T x`, `is not T`) THE SYSTEM SHALL Manual geven met uitleg (proof `catch-uses-exception`, unittest `Rewrite_IsPatternWithDesignation_Manual`).
-- **REQ-4**: WHEN één conditie zowel de FA- als de xunit-exception noemt (Polly) THE SYSTEM SHALL Shouldly één keer toevoegen (unittest `Rewrite_FilterOnFluentAssertionsAndXunit_AddsShouldlyOnce`).
-- **REQ-5**: WHEN de plek `ShouldAssertException` al noemt THE SYSTEM SHALL niets vinden (unittest `Find_SiteAlreadyCatchesShouldly_FindsNothing`).
+- **REQ-1**: WHEN a condition filters `e is AssertionFailedException` THE SYSTEM SHALL add `|| e is ShouldAssertException` (proofs `retry-filter`, `when-filter`).
+- **REQ-2**: WHEN a `catch (AssertionFailedException)` does not use the variable THE SYSTEM SHALL add a `catch (ShouldAssertException)` with the same body (proof `catch-clause`).
+- **REQ-3**: WHEN the catch variable is used, or it is an is-pattern (`e is T x`, `is not T`) THE SYSTEM SHALL produce Manual with an explanation (proof `catch-uses-exception`, unit test `Rewrite_IsPatternWithDesignation_Manual`).
+- **REQ-4**: WHEN one condition mentions both the FA and the xunit exception (Polly) THE SYSTEM SHALL add Shouldly once (unit test `Rewrite_FilterOnFluentAssertionsAndXunit_AddsShouldlyOnce`).
+- **REQ-5**: WHEN the site already mentions `ShouldAssertException` THE SYSTEM SHALL find nothing (unit test `Find_SiteAlreadyCatchesShouldly_FindsNothing`).
 
 ## Risks
 
-- Het FA-pakket blijft in een project met zo'n catch staan zolang het type genoemd wordt; de gebruiker haalt het oude type weg als alle assertions om zijn.
+- The FA package stays in a project with such a catch as long as the type is mentioned; the user removes the old type once all assertions are converted.
 
-## Modellen
+## Models
 
 [fa-catch-assertion-exception-modellen.md](fa-catch-assertion-exception-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

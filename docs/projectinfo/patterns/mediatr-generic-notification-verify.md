@@ -4,25 +4,25 @@
 | ------------- | -------------------------------------------- |
 | **Plan**      | [`mediatr-generic-notification-plan.md`](mediatr-generic-notification-plan.md) |
 | **Status**    | Verified (proofs, unittests, corpus nadirbad) |
-| **Generated** | 2026-10-12 (met de hand) |
+| **Generated** | 2026-10-12 (by hand) |
 
 ## Requirements
 
-| REQ   | Oordeel | Bewijs |
-| ----- | ------- | ------ |
-| REQ-1 | Gehaald | `Proofs/MediatR/GenericNotification/make-generic-type` (after compileert tegen Mediator 3.0.2 mét generator) |
-| REQ-2 | Gehaald | `GenericNotification/new-closed` |
-| REQ-3 | Gehaald | `GenericNotification/last-in-file`; nadirbad faalde eerst op SA1513 |
-| REQ-4 | Gehaald | `_Combined/generic-notification-nadirbad`; corpus nadirbad `feb3a15`: 18 Fixed, 0 Manual, build 0 errors (1× MSG0005-warning), tests 30/30 → 30/30 |
-| REQ-5 | Gehaald | `GenericNotificationPatternTests` (4 tests, twee projecten) |
-| REQ-6 | Gehaald | `GenericNotification/generic-code`, `no-constraint` |
+| REQ   | Verdict | Evidence |
+| ----- | ------- | -------- |
+| REQ-1 | Met | `Proofs/MediatR/GenericNotification/make-generic-type` (after compiles against Mediator 3.0.2 with the generator) |
+| REQ-2 | Met | `GenericNotification/new-closed` |
+| REQ-3 | Met | `GenericNotification/last-in-file`; nadirbad failed on SA1513 at first |
+| REQ-4 | Met | `_Combined/generic-notification-nadirbad`; corpus nadirbad `feb3a15`: 18 Fixed, 0 Manual, build 0 errors (1× MSG0005-warning), tests 30/30 → 30/30 |
+| REQ-5 | Met | `GenericNotificationPatternTests` (4 tests, two projects) |
+| REQ-6 | Met | `GenericNotification/generic-code`, `no-constraint` |
 
 ## Deviations
 
-- Nadirbad-run met een worktree van `ac683dd` + dit patroon (lopend werk van andere agents brak de build in de hoofdmap).
-- `GTypes.Close` gooit voor een type buiten de solution; MediatR zou dan stil niets publiceren.
+- Nadirbad run with a worktree of `ac683dd` + this pattern (ongoing work of other agents broke the build in the main folder).
+- `GTypes.Close` throws for a type outside the solution; MediatR would then silently publish nothing.
 
-## Zie ook
+## See also
 
 - [mediatr-generic-notification-plan.md](mediatr-generic-notification-plan.md)
 - `claude/tasks/CORPUSRUN-mediatr.md`

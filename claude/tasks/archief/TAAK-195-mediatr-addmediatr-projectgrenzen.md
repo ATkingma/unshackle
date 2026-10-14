@@ -1,50 +1,50 @@
-# TAAK-195 — MediatR: `AddMediatR` over projectgrenzen 100% automatisch (internal handlers, `Assembly`-parameter, testproject)
+# TAAK-195 — MediatR: `AddMediatR` across project boundaries 100% automatic (internal handlers, `Assembly` parameter, test project)
 
-**Status**: deels — internal handlers ✅ automatisch; `Assembly`-parameter (evo2) en testproject-aanroeper (evo1) ❌ mislukt (poging 1, geen exacte vertaling)
-**Aangemaakt**: 2026-10-12 (100%-ronde, `claude/tasks/mediatr-queue.md` rij 25)
-**Doel**: de `mediatr.add-mediatr`-Manuals van ardalis, evo1 en evo2 (TAAK-144, -148, -183) automatisch en exact migreren, of per variant meten waarom dat niet kan.
+**Status**: partly — internal handlers ✅ automatic; `Assembly` parameter (evo2) and test-project caller (evo1) ❌ failed (attempt 1, no exact translation)
+**Created**: 2026-10-12 (100% round, `claude/tasks/mediatr-queue.md` row 25)
+**Goal**: migrate the `mediatr.add-mediatr` Manuals of ardalis, evo1 and evo2 (TAAK-144, -148, -183) automatically and exactly, or measure per variant why that is not possible.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Varianten (bronnen in `<probe-dir>/probe-195/` tijdens deze taak, daarna opgeruimd; opnieuw klonen: `github.com/ardalis/CleanArchitecture` tag v9.1.0, `github.com/evolutionary-architecture/evolutionary-architecture-by-example` met `core.longpaths`):
-    - ardalis `src/Clean.Architecture.Web/Program.cs:109` scant Core (internal `ContributorDeletedHandler`) en UseCases.
-    - evo2 `Contracts.Infrastructure/Mediation/MediationModule.cs:12` scant `Contracts.Application` (internal handlers); `Common.Infrastructure/Mediator/MediatorModule.cs:8` is een publieke `AddMediator(services, Assembly)` die Offers, Passes en `Common.IntegrationTests.WithFakeConsumers(executingAssembly)` aanroepen.
-    - evo1 `Fitnet/Common/Events/EventBus/InMemory/InMemoryEventBusModule.cs:7` internal `AddInMemoryEventBus(services, assembly)`; `Fitnet.IntegrationTests/.../ConfigurationExtensions.cs:43` roept die in `ConfigureTestServices` aan met de testassembly om `TestEventConsumer : IIntegrationEventHandler<FakeEvent>` (beide in het testproject) te registreren.
+- Variants (sources in `<probe-dir>/probe-195/` during this task, cleaned up afterwards; to clone again: `github.com/ardalis/CleanArchitecture` tag v9.1.0, `github.com/evolutionary-architecture/evolutionary-architecture-by-example` with `core.longpaths`):
+    - ardalis `src/Clean.Architecture.Web/Program.cs:109` scans Core (internal `ContributorDeletedHandler`) and UseCases.
+    - evo2 `Contracts.Infrastructure/Mediation/MediationModule.cs:12` scans `Contracts.Application` (internal handlers); `Common.Infrastructure/Mediator/MediatorModule.cs:8` is a public `AddMediator(services, Assembly)` that Offers, Passes and `Common.IntegrationTests.WithFakeConsumers(executingAssembly)` call.
+    - evo1 `Fitnet/Common/Events/EventBus/InMemory/InMemoryEventBusModule.cs:7` internal `AddInMemoryEventBus(services, assembly)`; `Fitnet.IntegrationTests/.../ConfigurationExtensions.cs:43` calls it in `ConfigureTestServices` with the test assembly to register `TestEventConsumer : IIntegrationEventHandler<FakeEvent>` (both in the test project).
 
 ## Probe (Mediator 3.0.2, net10.0; `<probe-dir>/probe-195/p1`)
 
-| Opzet | Resultaat |
+| Setup | Result |
 | --- | --- |
-| Host (generator, `AddMediator`) + Tst (zonder generator) die `INotificationHandler<FakeEvent>` zelf in DI zet en `Publish(new FakeEvent())` doet | geen fout, handler **niet** aangeroepen: de gegenereerde `Publish` switcht op bij compile-time bekende typen, onbekend → stil genegeerd |
-| Tst ook met generator en eigen `AddMediator` | CS0436 (`Mediator.Mediator`, `MediatorOptions`, `AssemblyReference` dubbel), CS0121 (twee `AddMediator`-extensies), CS0122 (internal host-handler) |
-| Gegenereerde `AddMediator` | `IMediator`/`ISender`/`IPublisher` via `TryAdd`: de eerste aanroep wint; handlers via `Add` (tweede generator zou host-handlers dubbel registreren) |
-| Internal handler in gerefereerd project + `[assembly: InternalsVisibleTo("Host")]` in bron | bouwt (TAAK-183) |
+| Host (generator, `AddMediator`) + Tst (without generator) that puts `INotificationHandler<FakeEvent>` into DI itself and does `Publish(new FakeEvent())` | no error, handler **not** called: the generated `Publish` switches on types known at compile time, unknown → silently ignored |
+| Tst also with a generator and its own `AddMediator` | CS0436 (`Mediator.Mediator`, `MediatorOptions`, `AssemblyReference` twice), CS0121 (two `AddMediator` extensions), CS0122 (internal host handler) |
+| Generated `AddMediator` | `IMediator`/`ISender`/`IPublisher` via `TryAdd`: the first call wins; handlers via `Add` (a second generator would register host handlers twice) |
+| Internal handler in a referenced project + `[assembly: InternalsVisibleTo("Host")]` in the source | builds (TAAK-183) |
 
-## Keuzes
+## Choices
 
-1. **Internal handlers (ardalis, evo2 MediationModule) → automatisch.** Nieuw patroon `mediatr.internal-handler-access` (`InternalHandlerAccessPattern`): het eerste bestand (op pad) van het gescande project met een internal handler krijgt `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("<host>")]`. In het host-project is dat geen gedragsverschil (MediatR bereikte ze via reflectie). `AddMediatRPattern.RewriteAsync` is dan niet meer Manual (`CanGrantAccess`: C#-project van de solution, geen strong name). Gekozen boven csproj-`<InternalsVisibleTo>` (vraagt een nieuw `IProjectFileStore`-contract in DataAccess) en boven handlers `public` maken (CS0050/CS0051 als het requesttype internal is).
-2. **Contract `ISolutionFinder`** (`Core/Abstractions`, één regel in `Fixer.ApplyPatternAsync`): `Find` zonder solution weet niet welk bestand een bevinding heeft; zonder dit kreeg elk bestand met een internal handler een lege Fixed-rij. Apart van `ISolutionPattern` zodat de vier AutoMapper-patterns (andere agents) niet hoeven te veranderen.
-3. **evo1 → mislukt.** De nep-consumer en zijn event staan in het testproject. De host-generator kent `FakeEvent` niet, dus `Publish` doet niets (gemeten); een generator in het testproject bouwt niet (CS0436/CS0121/CS0122) en zou door `TryAdd` toch de host-`IMediator` laten winnen. Exact kan alleen als de testcode de DI-registratie van de host vervangt en de host-handlers niet dubbel registreert: geen veilige automatische vertaling.
-4. **evo2 publieke `AddMediator(services, Assembly)` → mislukt.** Drie modules registreren elk hun assembly in één container; Mediator heeft één gegenereerde mediator per host. De enige exacte vorm is één `AddMediator` in de composition root (`Fitnet`) met `InternalsVisibleTo` van elke module, en de module-aanroepen weg. Maar de integratietests (`WithFakeConsumers(executingAssembly)`) lopen tegen hetzelfde probleem aan als evo1.
-5. **Beste deelvertaling evo1/evo2**: blijft Manual (alles-of-niets); de Manual-tekst wijst de weg (één `AddMediator` in het host-project, testhandlers in de host of een eigen host per testproject). Met keuze 1 valt bij evo2 de `MediationModule`-Manual weg; de `MediatorModule`-Manual blijft.
+1. **Internal handlers (ardalis, evo2 MediationModule) → automatic.** New pattern `mediatr.internal-handler-access` (`InternalHandlerAccessPattern`): the first file (by path) of the scanned project with an internal handler gets `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("<host>")]`. In the host project that is no behaviour difference (MediatR reached them via reflection). `AddMediatRPattern.RewriteAsync` is then no longer Manual (`CanGrantAccess`: a C# project of the solution, no strong name). Chosen over a csproj `<InternalsVisibleTo>` (requires a new `IProjectFileStore` contract in DataAccess) and over making handlers `public` (CS0050/CS0051 if the request type is internal).
+2. **Contract `ISolutionFinder`** (`Core/Abstractions`, one line in `Fixer.ApplyPatternAsync`): `Find` without a solution does not know which file has a finding; without this every file with an internal handler got an empty Fixed row. Separate from `ISolutionPattern` so the four AutoMapper patterns (other agents) do not have to change.
+3. **evo1 → failed.** The fake consumer and its event are in the test project. The host generator does not know `FakeEvent`, so `Publish` does nothing (measured); a generator in the test project does not build (CS0436/CS0121/CS0122) and through `TryAdd` would let the host `IMediator` win anyway. Exact is only possible if the test code replaces the host's DI registration and does not register the host handlers twice: no safe automatic translation.
+4. **evo2 public `AddMediator(services, Assembly)` → failed.** Three modules each register their assembly in one container; Mediator has one generated mediator per host. The only exact form is one `AddMediator` in the composition root (`Fitnet`) with `InternalsVisibleTo` from every module, and the module calls removed. But the integration tests (`WithFakeConsumers(executingAssembly)`) run into the same problem as evo1.
+5. **Best partial translation evo1/evo2**: stays Manual (all-or-nothing); the Manual text shows the way (one `AddMediator` in the host project, test handlers in the host or a host of their own per test project). With choice 1 the `MediationModule` Manual disappears for evo2; the `MediatorModule` Manual stays.
 
-## Gewijzigd
+## Changed
 
-- `src/Unshackle.Core/Abstractions/ISolutionFinder.cs` (nieuw), `src/Unshackle.Core/Fixer.cs` (`FindAsync` als het pattern hem heeft)
-- `src/Unshackle.Core/Fixes/MediatR/Patterns/InternalHandlerAccessPattern.cs` (nieuw), `AddMediatRPattern.cs` (`ScannedAssemblies`, `IsHiddenHandler`, `CanGrantAccess`), `MediatRFix.cs` (pattern achteraan)
-- `src/Unshackle.Tests/Helpers/TestProjects.cs` (meerprojectproofs: `// @project Naam -> Referenties`), `CombinedProofTests.cs`, `Core/InternalHandlerAccessPatternTests.cs`
-- Proof `src/Unshackle.Tests/Proofs/MediatR/_Combined/add-mediatr-internal-handlers-other-project.{before,after}.cs` (ardalis-vorm: Core/UseCases/Web)
-- Docs: `docs/projectinfo/patterns/mediatr-internal-handler-access-{plan,modellen,verify}.md`, `mediatr-add-mediatr-{plan,verify}.md`, README-rij, `proofs.md`
+- `src/Unshackle.Core/Abstractions/ISolutionFinder.cs` (new), `src/Unshackle.Core/Fixer.cs` (`FindAsync` if the pattern has it)
+- `src/Unshackle.Core/Fixes/MediatR/Patterns/InternalHandlerAccessPattern.cs` (new), `AddMediatRPattern.cs` (`ScannedAssemblies`, `IsHiddenHandler`, `CanGrantAccess`), `MediatRFix.cs` (pattern at the end)
+- `src/Unshackle.Tests/Helpers/TestProjects.cs` (multi-project proofs: `// @project Name -> References`), `CombinedProofTests.cs`, `Core/InternalHandlerAccessPatternTests.cs`
+- Proof `src/Unshackle.Tests/Proofs/MediatR/_Combined/add-mediatr-internal-handlers-other-project.{before,after}.cs` (ardalis shape: Core/UseCases/Web)
+- Docs: `docs/projectinfo/patterns/mediatr-internal-handler-access-{plan,modellen,verify}.md`, `mediatr-add-mediatr-{plan,verify}.md`, README row, `proofs.md`
 
-## Stappen
+## Steps
 
-- [x] Probe: onbekende notification, tweede generator, `TryAdd`
-- [x] Pattern + contract + proof + unittests
-- [x] Docs (plan/modellen/verify, README, INDEX, proofs-doc)
-- [x] ardalis-clone: `fix --fix mediatr --force` → 31 Fixed, 0 Manual (met vendored SharedKernel van een parallelle taak); Core/UseCases/Infrastructure/Web bouwen. Nieuw gat: `tests/Clean.Architecture.UnitTests/NoOpMediator.cs` (eigen `IMediator`-implementatie, `Task`-signaturen) breekt de build (CS0535/CS0738) — TAAK-197.
-- [!] evo1 en evo2-`MediatorModule`: geen exacte automatische vertaling (keuzes 3–4)
+- [x] Probe: unknown notification, second generator, `TryAdd`
+- [x] Pattern + contract + proof + unit tests
+- [x] Docs (plan/models/verify, README, INDEX, proofs-doc)
+- [x] ardalis clone: `fix --fix mediatr --force` → 31 Fixed, 0 Manual (with the vendored SharedKernel of a parallel task); Core/UseCases/Infrastructure/Web build. New gap: `tests/Clean.Architecture.UnitTests/NoOpMediator.cs` (own `IMediator` implementation, `Task` signatures) breaks the build (CS0535/CS0738) — TAAK-197.
+- [!] evo1 and evo2 `MediatorModule`: no exact automatic translation (choices 3–4)
 
-## Zie ook
+## See also
 
 - `claude/tasks/archief/TAAK-183-mediatr-addmediatr-over-assemblies.md`
 - `claude/tasks/archief/TAAK-144-mediatr-evo2-naamconflict-generator.md`, `claude/tasks/archief/TAAK-148-mediatr-friend-echte-aanroep.md`

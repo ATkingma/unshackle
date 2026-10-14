@@ -1,58 +1,58 @@
-# Modellen: fa.direct-mapping
+# Models: fa.direct-mapping
 
-`BeOneOf` → `ShouldBeOneOf`, `BeSubsetOf` → `ShouldBeSubsetOf`, `OnlyHaveUniqueItems` → `ShouldBeUnique`, `HaveValue`/`NotHaveValue` → `ShouldNotBeNull`/`ShouldBeNull`; `ContainInOrder` → Manual met code. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/DirectMappingPattern.cs`.
+`BeOneOf` → `ShouldBeOneOf`, `BeSubsetOf` → `ShouldBeSubsetOf`, `OnlyHaveUniqueItems` → `ShouldBeUnique`, `HaveValue`/`NotHaveValue` → `ShouldNotBeNull`/`ShouldBeNull`; `ContainInOrder` → Manual with code. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/DirectMappingPattern.cs`.
 
-**Figure 1.** Klassen: wat het patroon erft, gebruikt en aanmaakt. Weggelaten: `Fixer`, `IFix` en de usings (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes: what the pattern inherits, uses and creates. Left out: `Fixer`, `IFix` and the usings (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-direct-mapping-modellen-1.d2 -->
-![Modellen: fa.direct-mapping](img/fa-direct-mapping-modellen-1.png)
+![Models: fa.direct-mapping](img/fa-direct-mapping-modellen-1.png)
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
-| `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract: `Find` en `Rewrite` |
-| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` doet scope, vorm, resultaat en because(-args), dan `RewriteAssertion` |
-| `DirectMappingPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/DirectMappingPattern.cs` | Dit patroon, Id `fa.direct-mapping`; `RewriteBeforeArguments` (ContainInOrder, BeOneOf(params)), `RewriteAssertion`; `s_methods` |
+| `IPattern` | `src/Unshackle.Core/Abstractions/IPattern.cs` | Contract: `Find` and `Rewrite` |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: `Rewrite` does scope, shape, result and because(-args), then `RewriteAssertion` |
+| `DirectMappingPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/DirectMappingPattern.cs` | This pattern, Id `fa.direct-mapping`; `RewriteBeforeArguments` (ContainInOrder, BeOneOf(params)), `RewriteAssertion`; `s_methods` |
 | `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | `FindInvocations`, `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded`, `TryGetArguments`, `NotNull`, `ConvertExpected`, `Invoke` |
-| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Uitkomst |
-| «FluentAssertions» herkend | - | `BeOneOf(params)`, `BeSubsetOf`, `OnlyHaveUniqueItems`, `HaveValue`/`NotHaveValue` op `Nullable<T>`, `ContainInOrder` (Manual) |
-| «Shouldly» aangemaakt | - | `ShouldBeOneOf`, `ShouldBeSubsetOf`, `ShouldBeUnique`, `ShouldNotBeNull`, `ShouldBeNull` |
+| `PatternResult`, `FixedResult`, `ManualResult` | `src/Unshackle.Core/Models/` | Outcome |
+| «FluentAssertions» recognised | - | `BeOneOf(params)`, `BeSubsetOf`, `OnlyHaveUniqueItems`, `HaveValue`/`NotHaveValue` on `Nullable<T>`, `ContainInOrder` (Manual) |
+| «Shouldly» created | - | `ShouldBeOneOf`, `ShouldBeSubsetOf`, `ShouldBeUnique`, `ShouldNotBeNull`, `ShouldBeNull` |
 
-**Figure 2.** `Fixer` roept `Find` en per node `FluentAssertionPattern.Rewrite` aan; die doet de gedeelde controles en roept de eigen stappen van het patroon aan. Weggelaten: het vervangen van de node door de `Fixer`.
+**Figure 2.** `Fixer` calls `Find` and per node `FluentAssertionPattern.Rewrite`; that does the shared checks and calls the pattern's own steps. Left out: replacing the node by the `Fixer`.
 
 <!-- kingmadoc:diagram img/fa-direct-mapping-modellen-2.d2 -->
-![Modellen: fa.direct-mapping](img/fa-direct-mapping-modellen-2.png)
+![Models: fa.direct-mapping](img/fa-direct-mapping-modellen-2.png)
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Place | What happens |
 | --- | --- | --- |
-| Find | `DirectMappingPattern.Find` | `FindInvocations` op de zes FA-namen |
-| Gedeelde controles | `FluentAssertionPattern.Rewrite` | `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded` |
-| Vóór de argumentsplitsing | `DirectMappingPattern.RewriteBeforeArguments` | `ContainInOrder` → Manual met code; `BeOneOf(params)` → `ShouldBeOneOf` met `ConvertExpected` |
-| Argumenten | `FluentAssertionPattern.Rewrite` | `TryGetArguments` (becauseArgs met constante because → `string.Format(CultureInfo.InvariantCulture, ...)`) |
-| Eigen controles | `DirectMappingPattern.RewriteAssertion` | aantal waarden, `Nullable<T>`, `NotNull` bij `BeSubsetOf`/`OnlyHaveUniqueItems` |
+| Find | `DirectMappingPattern.Find` | `FindInvocations` on the six FA names |
+| Shared checks | `FluentAssertionPattern.Rewrite` | `IsInsideAssertionScope`, `GetSubject`, `IsResultDiscarded` |
+| Before the argument split | `DirectMappingPattern.RewriteBeforeArguments` | `ContainInOrder` → Manual with code; `BeOneOf(params)` → `ShouldBeOneOf` with `ConvertExpected` |
+| Arguments | `FluentAssertionPattern.Rewrite` | `TryGetArguments` (becauseArgs with a constant because → `string.Format(CultureInfo.InvariantCulture, ...)`) |
+| Own checks | `DirectMappingPattern.RewriteAssertion` | number of values, `Nullable<T>`, `NotNull` for `BeSubsetOf`/`OnlyHaveUniqueItems` |
 
-**Figure 3.** Beslisboom in de volgorde van de code; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/DirectMapping/`.
+**Figure 3.** Decision tree in the order of the code; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/DirectMapping/`.
 
 <!-- kingmadoc:diagram img/fa-direct-mapping-modellen-3.d2 -->
-![Modellen: fa.direct-mapping](img/fa-direct-mapping-modellen-3.png)
+![Models: fa.direct-mapping](img/fa-direct-mapping-modellen-3.png)
 
-| Vraag | Bij nee: Manual-reden | Proof |
+| Question | If no: Manual reason | Proof |
 | --- | --- | --- |
-| Buiten een AssertionScope? | Inside an AssertionScope | geen proof |
-| Vorm x.Should().Name(..)? | is not in the form x.Should() | geen proof |
-| Resultaat weggegooid? | The result of ... is used | geen proof |
-| Niet ContainInOrder? | ContainInOrder(...) has no Shouldly equivalent (met code) | contain-in-order |
-| Geen BeOneOf(params), of type bekend en elke waarde converteerbaar? | The type of the subject is unknown / Value type differs from subject type | geen proof |
-| Geen benoemde argumenten; because constant formatteerbaar? | named arguments, or becauseArgs whose because is no constant format string | geen proof |
-| Niet BeOneOf en juiste aantal waarden (geen collectie, comparer, key selector)? | with a collection, comparer or key selector | be-one-of-enumerable, unique-key |
-| HaveValue/NotHaveValue alleen op Nullable<T>? | on a non-Nullable<T> subject | geen proof |
+| Outside an AssertionScope? | Inside an AssertionScope | no proof |
+| Shape x.Should().Name(..)? | is not in the form x.Should() | no proof |
+| Result discarded? | The result of ... is used | no proof |
+| Not ContainInOrder? | ContainInOrder(...) has no Shouldly equivalent (with code) | contain-in-order |
+| No BeOneOf(params), or type known and every value convertible? | The type of the subject is unknown / Value type differs from subject type | no proof |
+| No named arguments; because constant and formattable? | named arguments, or becauseArgs whose because is no constant format string | no proof |
+| Not BeOneOf and the right number of values (no collection, comparer, key selector)? | with a collection, comparer or key selector | be-one-of-enumerable, unique-key |
+| HaveValue/NotHaveValue only on Nullable<T>? | on a non-Nullable<T> subject | no proof |
 
-| Voorwaarde | Fixed-vorm | Proofs |
+| Condition | Fixed form | Proofs |
 | --- | --- | --- |
-| `BeOneOf(params)` | `x.ShouldBeOneOf(a, b)` met cast zoals `ShouldBe` | `be-one-of`, `be-one-of-convert` |
-| overige namen | `ShouldBeSubsetOf(y)` / `ShouldBeUnique()` (subject via `NotNull`) / `ShouldNotBeNull()` / `ShouldBeNull()` | `be-subset-of`, `unique`, `have-value`, `not-have-value` |
+| `BeOneOf(params)` | `x.ShouldBeOneOf(a, b)` with a cast like `ShouldBe` | `be-one-of`, `be-one-of-convert` |
+| other names | `ShouldBeSubsetOf(y)` / `ShouldBeUnique()` (subject via `NotNull`) / `ShouldNotBeNull()` / `ShouldBeNull()` | `be-subset-of`, `unique`, `have-value`, `not-have-value` |
 
-## Zie ook
+## See also
 
 - [fa-direct-mapping-plan.md](fa-direct-mapping-plan.md) - plan
-- [fa-direct-mapping-verify.md](fa-direct-mapping-verify.md) - verificatie
-- `src/Unshackle.Tests/Proofs/FluentAssertions/DirectMapping/` - de proofs
+- [fa-direct-mapping-verify.md](fa-direct-mapping-verify.md) - verification
+- `src/Unshackle.Tests/Proofs/FluentAssertions/DirectMapping/` - the proofs

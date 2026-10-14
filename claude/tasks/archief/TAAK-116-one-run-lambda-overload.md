@@ -1,38 +1,38 @@
-# TAAK-116 — Eén `fix`-run volstaat bij een herschreven lambda-argument
+# TAAK-116 — One `fix` run is enough for a rewritten lambda argument
 
-**Status**: klaar (2026-10-11)
-**Aangemaakt**: 2026-10-11 (vervolg op TAAK-110)
+**Status**: done (2026-10-11)
+**Created**: 2026-10-11 (follow-up to TAAK-110)
 
 ## Context
 
-Na TAAK-110 had CSharpFunctionalExtensions twee runs nodig. `fa.should-be` herschrijft `ctx.Should().Be(context)` in het
-lambda-argument van `maybe.Bind(...)` naar `ctx.ShouldBe(context)`. Shouldly zat niet in het geladen model, dus dat bond niet,
-de overload-resolutie van `Bind` faalde, `maybe2` werd een fouttype en `fa.be-true-false` zag `maybe2.HasValue.Should().BeTrue()`
-niet: 21 Manuals `usings` ("run the fix again").
+After TAAK-110, CSharpFunctionalExtensions needed two runs. `fa.should-be` rewrites `ctx.Should().Be(context)` in the
+lambda argument of `maybe.Bind(...)` to `ctx.ShouldBe(context)`. Shouldly was not in the loaded model, so that did not bind,
+the overload resolution of `Bind` failed, `maybe2` became an error type and `fa.be-true-false` did not see `maybe2.HasValue.Should().BeTrue()`:
+21 Manuals `usings` ("run the fix again").
 
-## Keuze
+## Choice
 
-- (a) gekozen: Shouldly als metadata-referentie in de werkkopie. Klein, en lost het in de bron op.
-- (b) herkenning op de originele compilation: patronen draaien bewust na elkaar op het tussenresultaat (geneste findings van
-  verschillende patronen, AndChain, AssertionScope); alles op het origineel zou die neststructuur breken. De per-bestand-werkkopie
-  van TAAK-130 helpt hier niet: het probleem zit binnen één bestand.
-- (c) fixpoint zonder (a) helpt niet: `ShouldBe` blijft onbekend.
+- (a) chosen: Shouldly as a metadata reference in the working copy. Small, and solves it at the source.
+- (b) recognition on the original compilation: patterns deliberately run one after another on the intermediate result (nested findings of
+  different patterns, AndChain, AssertionScope); doing everything on the original would break that nesting. The per-file working copy
+  of TAAK-130 does not help here: the problem is within a single file.
+- (c) a fixpoint without (a) does not help: `ShouldBe` stays unknown.
 
-## Resultaat
+## Result
 
-- `IFix.AddedReferences` (default leeg). `FluentAssertionsFix(IReadOnlyList<MetadataReference> shouldly)`; de parameterloze
-  constructor blijft (geen referenties, oud gedrag).
-- `Fixer.AddReferences`: per C#-project de ontbrekende referenties (op bestandsnaam) plus document `Unshackle.AddedUsings.g.cs`
-  met `global using Shouldly;` in de `baseline` waarop de patronen draaien. Het resultaat bouwt op `original`, dus de projecten
-  krijgen niets extra. `UsingDirectives.GlobalUsings` negeert dat document (anders kreeg een bestand geen `using Shouldly;`).
-- Composition root (`Cli`): `References/Shouldly.dll` naast de tool, de **netstandard2.0**-build uit het pakket
-  (`GeneratePathProperty`, `ExcludeAssets="all"`). De net9.0-build gaf CS1705 in een net8.0-project en loste dan niets op.
-- Proof: `_Combined/unbound-should.*` → `_Combined/lambda-overload-one-run.*`, nu volledig Fixed (`ShouldBeTrue`, geen FA-using).
-  `CombinedProofTests` gebruikt `new FluentAssertionsFix(TestReferences.ShouldlyAssembly)` zoals de CLI.
-- Corpus: verse kopie CSFE uit `scratchpad/corpus/tgz/vkhorikov_CSharpFunctionalExtensions.tgz` (`scratchpad/t116/run4`):
-  één fix-run 4502 Fixed / 49 Manual, **0 `usings`** (was 4481/70 met 21 `usings`), build groen.
+- `IFix.AddedReferences` (default empty). `FluentAssertionsFix(IReadOnlyList<MetadataReference> shouldly)`; the parameterless
+  constructor stays (no references, old behaviour).
+- `Fixer.AddReferences`: per C# project the missing references (by file name) plus document `Unshackle.AddedUsings.g.cs`
+  with `global using Shouldly;` in the `baseline` on which the patterns run. The result builds on `original`, so the projects
+  get nothing extra. `UsingDirectives.GlobalUsings` ignores that document (otherwise a file would get no `using Shouldly;`).
+- Composition root (`Cli`): `References/Shouldly.dll` next to the tool, the **netstandard2.0** build from the package
+  (`GeneratePathProperty`, `ExcludeAssets="all"`). The net9.0 build gave CS1705 in a net8.0 project and then resolved nothing.
+- Proof: `_Combined/unbound-should.*` → `_Combined/lambda-overload-one-run.*`, now fully Fixed (`ShouldBeTrue`, no FA using).
+  `CombinedProofTests` uses `new FluentAssertionsFix(TestReferences.ShouldlyAssembly)` like the CLI.
+- Corpus: fresh copy of CSFE from `scratchpad/corpus/tgz/vkhorikov_CSharpFunctionalExtensions.tgz` (`scratchpad/t116/run4`):
+  one fix run 4502 Fixed / 49 Manual, **0 `usings`** (was 4481/70 with 21 `usings`), build green.
 
-## Zie ook
+## See also
 
 - `claude/tasks/archief/TAAK-110-unrecognized-should-keeps-using.md`
 - `docs/projectinfo/architectuur/core.md`

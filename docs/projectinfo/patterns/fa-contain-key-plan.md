@@ -8,7 +8,7 @@ files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
   - src/Unshackle.Tests/Proofs/FluentAssertions/ContainKey/
 ---
-# Feature: fa.contain-key: dict.Should().ContainKey(k) wordt dict.ShouldContainKey(k)
+# Feature: fa.contain-key: dict.Should().ContainKey(k) becomes dict.ShouldContainKey(k)
 
 | | |
 |---|---|
@@ -16,56 +16,56 @@ files_expected:
 | **Status** | Approved |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-013.
+> Drawn up from TAAK-013.
 
 ## One-sentence summary
 
-fa.contain-key: `ContainKey`/`NotContainKey` met één sleutel wordt `ShouldContainKey`/`ShouldNotContainKey`; alle andere dictionary-vormen worden Manual.
+fa.contain-key: `ContainKey`/`NotContainKey` with one key becomes `ShouldContainKey`/`ShouldNotContainKey`; all other dictionary forms become Manual.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Losse `dict.Should().ContainKey(k)` en `NotContainKey(k)` (optioneel met `because` zonder `becauseArgs`) op `Dictionary`, `IDictionary` en `IReadOnlyDictionary`.
-- `Manual(reden)` voor `ContainKeys`/`NotContainKeys`, `ContainValue(s)`/`NotContainValue(s)`, `becauseArgs`, ketens en gebruikt resultaat (`.WhoseValue`).
+- Standalone `dict.Should().ContainKey(k)` and `NotContainKey(k)` (optionally with a `because` without `becauseArgs`) on `Dictionary`, `IDictionary` and `IReadOnlyDictionary`.
+- `Manual(reason)` for `ContainKeys`/`NotContainKeys`, `ContainValue(s)`/`NotContainValue(s)`, `becauseArgs`, chains and a used result (`.WhoseValue`).
 
 **Out of scope**
 
-- `Contain(key, value)` (blijft Manual in `fa.contain`), `HaveCount` op dictionaries.
-- Beheer van `using`-directives: de `Fixer` doet dat via `IFix`.
+- `Contain(key, value)` (stays Manual in `fa.contain`), `HaveCount` on dictionaries.
+- Management of `using` directives: the `Fixer` does that via `IFix`.
 
 ## Requirements
 
-- **REQ-1**: WHEN `dict.Should().ContainKey(k)` op een `Dictionary<,>` staat THE SYSTEM SHALL het herschrijven naar `dict.ShouldContainKey(k)` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ContainKey/dictionary.*.cs`).
-- **REQ-2**: WHEN het subject een `IDictionary<,>` is THE SYSTEM SHALL dezelfde herschrijving geven (proof `idictionary.*.cs`). Voor `IReadOnlyDictionary<,>` zie REQ-11 (TAAK-168: `ShouldContainKey` bestaat daar niet, CS0411).
-- **REQ-3**: WHEN `NotContainKey(k)` staat THE SYSTEM SHALL `ShouldNotContainKey(k)` geven (proof `not-contain-key.*.cs`).
-- **REQ-4**: WHEN een `because` zonder `becauseArgs` staat THE SYSTEM SHALL die als `customMessage` overnemen (proof `because.*.cs`).
-- **REQ-5**: WHEN de assertion de body van een void-lambda is THE SYSTEM SHALL het herschrijven (proof `lambda.*.cs`).
-- **REQ-6**: IF `becauseArgs` gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `because-args.*`).
-- **REQ-7**: IF het resultaat wordt gebruikt (`.And`, `.WhoseValue`) of de assertion een vervolg op een andere is THEN THE SYSTEM SHALL Manual geven (proofs `chain.*`, `which.*`, `and-chain.*`).
-- **REQ-8**: IF `ContainKeys`/`NotContainKeys` wordt gebruikt THEN THE SYSTEM SHALL Manual geven (proofs `keys.*`, `not-contain-keys.*`).
-- **REQ-9**: IF `ContainValue(s)`/`NotContainValue` wordt gebruikt THEN THE SYSTEM SHALL Manual geven, omdat Shouldly geen losse waarde-assertie kent (proofs `contain-value.*`, `contain-values.*`, `not-contain-value.*`).
-- **REQ-10**: IF het subject in een nullable-enabled context mogelijk null is THEN THE SYSTEM SHALL `x.ShouldNotBeNull().ShouldContainKey(k)` schrijven (TAAK-021: FluentAssertions accepteert een nullable subject, Shouldly's receiver niet; zonder dit CS8602/CS8604 in projecten met warnings-as-errors. `ShouldNotBeNull()` behoudt FA's falen op null) (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ContainKey/nullable.*`).
-- **REQ-11** (TAAK-168): WHEN het subject geen `IDictionary<,>` is maar een publieke `bool ContainsKey(key)` heeft (`IReadOnlyDictionary<,>`) THE SYSTEM SHALL `x.ContainsKey(k).ShouldBeTrue()` (`NotContainKey`: `ShouldBeFalse()`) geven, met `because` als `customMessage` (proofs `read-only.*`, `read-only-not-contain.*`). Gekozen boven `x.Keys.ShouldContain(k)`: `ContainsKey` behoudt de comparer van de dictionary en werkt voor elke implementatie.
-- **REQ-12** (TAAK-168): WHEN het subject geen `ContainsKey` maar wel een publieke `bool Contains(key)` heeft (`HttpHeaders`) THE SYSTEM SHALL `x.Contains(k).ShouldBeTrue()`/`ShouldBeFalse()` geven (proof `headers.*`).
-- **REQ-13** (TAAK-168): IF het subject geen van beide heeft (bv. `IEnumerable<KeyValuePair<,>>`) THEN THE SYSTEM SHALL Manual geven (proof `enumerable-pairs.*`).
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als `customMessage` geven (proof `because-args.after.cs`); benoemde argumenten of een niet-constante `because` blijven Manual. Vervangt REQ-6 voor dit geval.
+- **REQ-1**: WHEN `dict.Should().ContainKey(k)` is on a `Dictionary<,>` THE SYSTEM SHALL rewrite it to `dict.ShouldContainKey(k)` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ContainKey/dictionary.*.cs`).
+- **REQ-2**: WHEN the subject is an `IDictionary<,>` THE SYSTEM SHALL give the same rewrite (proof `idictionary.*.cs`). For `IReadOnlyDictionary<,>` see REQ-11 (TAAK-168: `ShouldContainKey` does not exist there, CS0411).
+- **REQ-3**: WHEN `NotContainKey(k)` is used THE SYSTEM SHALL give `ShouldNotContainKey(k)` (proof `not-contain-key.*.cs`).
+- **REQ-4**: WHEN there is a `because` without `becauseArgs` THE SYSTEM SHALL take it over as `customMessage` (proof `because.*.cs`).
+- **REQ-5**: WHEN the assertion is the body of a void lambda THE SYSTEM SHALL rewrite it (proof `lambda.*.cs`).
+- **REQ-6**: IF `becauseArgs` are used THEN THE SYSTEM SHALL give Manual (proof `because-args.*`).
+- **REQ-7**: IF the result is used (`.And`, `.WhoseValue`) or the assertion is a continuation of another THEN THE SYSTEM SHALL give Manual (proofs `chain.*`, `which.*`, `and-chain.*`).
+- **REQ-8**: IF `ContainKeys`/`NotContainKeys` is used THEN THE SYSTEM SHALL give Manual (proofs `keys.*`, `not-contain-keys.*`).
+- **REQ-9**: IF `ContainValue(s)`/`NotContainValue` is used THEN THE SYSTEM SHALL give Manual, because Shouldly has no separate value assertion (proofs `contain-value.*`, `contain-values.*`, `not-contain-value.*`).
+- **REQ-10**: IF the subject may be null in a nullable-enabled context THEN THE SYSTEM SHALL write `x.ShouldNotBeNull().ShouldContainKey(k)` (TAAK-021: FluentAssertions accepts a nullable subject, Shouldly's receiver does not; without this CS8602/CS8604 in projects with warnings-as-errors. `ShouldNotBeNull()` keeps FA's failure on null) (proof `src/Unshackle.Tests/Proofs/FluentAssertions/ContainKey/nullable.*`).
+- **REQ-11** (TAAK-168): WHEN the subject is not an `IDictionary<,>` but has a public `bool ContainsKey(key)` (`IReadOnlyDictionary<,>`) THE SYSTEM SHALL give `x.ContainsKey(k).ShouldBeTrue()` (`NotContainKey`: `ShouldBeFalse()`), with `because` as `customMessage` (proofs `read-only.*`, `read-only-not-contain.*`). Chosen over `x.Keys.ShouldContain(k)`: `ContainsKey` keeps the dictionary's comparer and works for every implementation.
+- **REQ-12** (TAAK-168): WHEN the subject has no `ContainsKey` but does have a public `bool Contains(key)` (`HttpHeaders`) THE SYSTEM SHALL give `x.Contains(k).ShouldBeTrue()`/`ShouldBeFalse()` (proof `headers.*`).
+- **REQ-13** (TAAK-168): IF the subject has neither (e.g. `IEnumerable<KeyValuePair<,>>`) THEN THE SYSTEM SHALL give Manual (proof `enumerable-pairs.*`).
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL give `string.Format(CultureInfo.InvariantCulture, because, args)` as `customMessage` (proof `because-args.after.cs`); named arguments or a non-constant `because` stay Manual. Replaces REQ-6 for this case.
 
 ## Assumptions
 
-- Shouldly 4.3.0 heeft `ShouldContainKey`/`ShouldNotContainKey` alleen voor `IDictionary<,>` (TAAK-168; eerder stond hier ten onrechte ook `IReadOnlyDictionary`). Bewezen door de compileercheck van de after-proofs.
-- FluentAssertions biedt `ContainKey` ook op `IReadOnlyDictionary`, `HttpHeaders` en elke `IEnumerable<KeyValuePair<,>>`, dus het patroon controleert het subjecttype (TAAK-168).
+- Shouldly 4.3.0 has `ShouldContainKey`/`ShouldNotContainKey` only for `IDictionary<,>` (TAAK-168; earlier this wrongly also said `IReadOnlyDictionary`). Proven by the compile check of the after proofs.
+- FluentAssertions also offers `ContainKey` on `IReadOnlyDictionary`, `HttpHeaders` and every `IEnumerable<KeyValuePair<,>>`, so the pattern checks the subject type (TAAK-168).
 
 ## Risks
 
-- `HttpHeaders.Contains` negeert hoofdletters, FA's `ContainKey` op headers niet: `ContainKey("x-a")` slaagt na de migratie ook voor `X-A` (gemeten met een probe, TAAK-168). Bedoeld gedrag voor headers; `NotContainKey` wordt er strenger door, nooit zwakker.
-- Foutmelding verandert ("Additional Info:" i.p.v. FA's because-voorvoegsel): gedocumenteerd verschil.
-- Een eigen type met een `ContainKey`-extension van FA op een andere interface valt buiten de proofs.
+- `HttpHeaders.Contains` ignores case, FA's `ContainKey` on headers does not: `ContainKey("x-a")` also passes for `X-A` after the migration (measured with a probe, TAAK-168). Intended behaviour for headers; `NotContainKey` becomes stricter through it, never weaker.
+- The error message changes ("Additional Info:" instead of FA's because prefix): a documented difference.
+- An own type with an FA `ContainKey` extension on another interface falls outside the proofs.
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [fa-contain-key-modellen.md](fa-contain-key-modellen.md).
+Class diagram, sequence and decision tree: [fa-contain-key-modellen.md](fa-contain-key-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

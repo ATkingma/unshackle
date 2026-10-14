@@ -18,44 +18,44 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-026.
+> Drawn up from TAAK-026.
 
 ## One-sentence summary
 
-mediatr.notification-handler: in klassen die `MediatR.INotificationHandler<T>` implementeren wordt `Task Handle(...)` `ValueTask Handle(...)` en `Task.CompletedTask` `ValueTask.CompletedTask`.
+mediatr.notification-handler: in classes that implement `MediatR.INotificationHandler<T>`, `Task Handle(...)` becomes `ValueTask Handle(...)` and `Task.CompletedTask` becomes `ValueTask.CompletedTask`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `Handle` via `MediatRSyntax.FindHandleMethods`; meerdere handlers per bestand.
-- `async` (blok of expression body): alleen het returntype. Niet-async: returntype en elke `Task.CompletedTask`.
+- `Handle` via `MediatRSyntax.FindHandleMethods`; several handlers per file.
+- `async` (block or expression body): only the return type. Non-async: return type and every `Task.CompletedTask`.
 
 **Out of scope**
 
-- Publisher-strategie (`TaskWhenAllPublisher`): hoort bij `mediatr.add-mediatr` (rij 5).
-- Andere `Task`s en expliciete interface-implementaties: Manual.
+- Publisher strategy (`TaskWhenAllPublisher`): belongs to `mediatr.add-mediatr` (row 5).
+- Other `Task`s and explicit interface implementations: Manual.
 
 ## Requirements
 
-- **REQ-1**: WHEN `Handle` `async Task` is THE SYSTEM SHALL alleen het returntype `ValueTask` maken (proofs `async`, `two-handlers`).
-- **REQ-2**: WHEN een niet-async `Handle` alleen `Task.CompletedTask` teruggeeft THE SYSTEM SHALL `ValueTask` + `ValueTask.CompletedTask` schrijven (proofs `completed-task`, `completed-task-expression`).
-- **REQ-3**: WHEN een bestand meerdere handlers voor één notification heeft THE SYSTEM SHALL elk herschrijven (proof `two-handlers`).
-- **REQ-4**: IF `Handle` een andere `Task` teruggeeft of expliciet geïmplementeerd is THEN THE SYSTEM SHALL Manual melden (proofs `other-return`, `explicit`).
-- **Uitbreiding TAAK-080**: WHEN de handler `INotificationHandler<T>` via een eigen marker-interface implementeert (`IAppEventHandler<T> : INotificationHandler<T>`) THE SYSTEM SHALL hem hetzelfde herschrijven (proof `edge-marker-interface`).
+- **REQ-1**: WHEN `Handle` is `async Task` THE SYSTEM SHALL only make the return type `ValueTask` (proofs `async`, `two-handlers`).
+- **REQ-2**: WHEN a non-async `Handle` only returns `Task.CompletedTask` THE SYSTEM SHALL write `ValueTask` + `ValueTask.CompletedTask` (proofs `completed-task`, `completed-task-expression`).
+- **REQ-3**: WHEN a file has several handlers for one notification THE SYSTEM SHALL rewrite each (proof `two-handlers`).
+- **REQ-4**: IF `Handle` returns another `Task` or is implemented explicitly THEN THE SYSTEM SHALL report Manual (proofs `other-return`, `explicit`).
+- **Extension TAAK-080**: WHEN the handler implements `INotificationHandler<T>` via an own marker interface (`IAppEventHandler<T> : INotificationHandler<T>`) THE SYSTEM SHALL rewrite it the same way (proof `edge-marker-interface`).
 
 ## Assumptions
 
-- Doel-framework .NET 5+ (`ValueTask.CompletedTask`).
+- Target framework .NET 5+ (`ValueTask.CompletedTask`).
 
 ## Risks
 
-- Geen bekende.
+- None known.
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [mediatr-notification-handler-modellen.md](mediatr-notification-handler-modellen.md).
+Class diagram, sequence and decision tree: [mediatr-notification-handler-modellen.md](mediatr-notification-handler-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

@@ -1,78 +1,78 @@
 ---
 name: taak-oppakken
-description: Hervatten van een bestaande taak na een accountwissel of nieuwe sessie. Gebruik wanneer de gebruiker zegt 'pak taak X op', 'ga verder met TAAK-003', of 'waar waren we gebleven'.
+description: Resume an existing task after an account switch or a new session. Use when the user says 'pick up task X' / 'pak taak X op', 'continue with TAAK-003' / 'ga verder met TAAK-003', or 'where were we' / 'waar waren we gebleven'.
 ---
 
-# Taak-Oppakken Skill
+# Task-Resume Skill
 
-Leest een bestaand taakbestand uit `claude/tasks/` en hervatten de taak precies bij de laatste stap.
+Reads an existing task file from `claude/tasks/` and resumes the task exactly at the last step.
 
-Project-root: `/mnt/dikkeschijf/documenten/Git/unshackle`
+Project root: `/mnt/dikkeschijf/documenten/Git/unshackle`
 
-## Stap 1: Vind het taakbestand
+## Step 1: Find the task file
 
-Als de gebruiker een nummer of naam noemt:
+If the user mentions a number or name:
 
 ```bash
 ls /mnt/dikkeschijf/documenten/Git/unshackle/claude/tasks/*.md   # actief; voltooid staat in archief/
 ```
 
-Als onduidelijk welke taak: toon de lijst en vraag welke.
+If it is unclear which task: show the list and ask which one.
 
-## Stap 2: Lees het taakbestand volledig
+## Step 2: Read the task file fully
 
 ```bash
 cat /mnt/dikkeschijf/documenten/Git/unshackle/claude/tasks/TAAK-<NNN>-<slug>.md
 ```
 
-Identificeer:
+Identify:
 
-- De **huidige stap** (gemarkeerd met `[→]`, of de eerste `[ ]` na alle `[x]`)
-- De **context** voor de volgende agent
-- **Gewijzigde bestanden** tot nu toe
+- The **current step** (marked with `[→]`, or the first `[ ]` after all `[x]`)
+- The **context** for the next agent
+- **Changed files** so far
 
-## Stap 3: Verifieer de huidige staat
+## Step 3: Verify the current state
 
-Lees de relevante bestanden die al gewijzigd zouden moeten zijn:
+Read the relevant files that should already have been changed:
 
 ```bash
 git -C /mnt/dikkeschijf/documenten/Git/unshackle log --oneline -5
 git -C /mnt/dikkeschijf/documenten/Git/unshackle status --short
 ```
 
-Controleer of de staat overeenkomt met wat het taakbestand beschrijft. Als er discrepanties zijn: meld dit en vraag bevestiging voordat je verdergaat.
+Check whether the state matches what the task file describes. If there are discrepancies: report them and ask for confirmation before continuing.
 
-## Stap 4: Markeer de huidige stap als in uitvoering
+## Step 4: Mark the current step as in progress
 
-Vervang `[ ]` van de huidige stap met `[→]` in het taakbestand.  
-Update de **Status**-regel: `stap <N>/<totaal> — in uitvoering`.  
-Voeg toe onder **Context**: welk account/model nu overneemt en wanneer.
+Replace `[ ]` of the current step with `[→]` in the task file.  
+Update the **Status** line: `step <N>/<total> — in progress`.  
+Add under **Context**: which account/model is taking over now, and when.
 
-## Stap 5: Voer de stap uit
+## Step 5: Carry out the step
 
-Ga aan de slag. Na afronding van elke stap:
+Get to work. After finishing each step:
 
-- Vervang `[→]` met `[x]`
-- Zet de volgende stap op `[→]`
-- Voeg gewijzigde bestanden toe aan de lijst
-- Update **Status**: `stap <N+1>/<totaal> — in uitvoering`
+- Replace `[→]` with `[x]`
+- Set the next step to `[→]`
+- Add changed files to the list
+- Update **Status**: `step <N+1>/<total> — in progress`
 
-## Stap 6: Bij taak voltooid
+## Step 6: When the task is done
 
-Vervang alle `[→]` met `[x]`, update Status naar `✅ voltooid — <datum>`.  
-Verplaats het bestand naar `claude/tasks/archief/` als die map bestaat, anders laat staan.
+Replace all `[→]` with `[x]`, update Status to `✅ done — <date>`.  
+Move the file to `claude/tasks/archief/` if that folder exists; otherwise leave it in place.
 
-## Stap 7: Bij vroegtijdig stoppen (account-wissel)
+## Step 7: When stopping early (account switch)
 
-Schrijf in de **Context**-sectie:
+Write in the **Context** section:
 
-- Wat er gedaan is in deze sessie
-- Wat de volgende stap is en wat daarvoor nodig is
-- Eventuele blokkades of openstaande vragen
+- What was done in this session
+- What the next step is and what it needs
+- Any blockers or open questions
 
-De volgende agent pakt op via `/taak-oppakken TAAK-<NNN>`.
+The next agent picks it up via `/taak-oppakken TAAK-<NNN>`.
 
-## Zie ook
+## See also
 
-- `.claude/skills/taak-start/SKILL.md` — nieuwe taak aanmaken
-- `claude/docs/agent-werkwijze.md` — regels voor taakbeheer
+- `.claude/skills/taak-start/SKILL.md` — create a new task
+- `claude/docs/agent-werkwijze.md` — rules for task management

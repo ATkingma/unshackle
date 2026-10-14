@@ -1,16 +1,16 @@
-# Beslissingen
+# Decisions
 
-## Codestijl
+## Code style
 
-Vastgelegd in `claude/docs/code-standaarden.md` (naamgeving, class vs record, async, foutafhandeling,
-patroon-ID's `fa.should-be`, design patterns volgens GoF/refactoring.guru). Afgedwongen via `.editorconfig`.
+Recorded in `claude/docs/code-standaarden.md` (naming, class vs record, async, error handling,
+pattern IDs `fa.should-be`, design patterns per GoF/refactoring.guru). Enforced via `.editorconfig`.
 
-## Nog te beslissen
+## Still to decide
 
-- Testnamen (opbouw `// Arrange // Act // Assert` ligt vast)
-- CLI-opties: definitieve namen en standaardwaarden
+- Test names (the `// Arrange // Act // Assert` structure is fixed)
+- CLI options: final names and default values
 
-## Zie ook
+## See also
 
-- `docs/projectinfo/README.md` — overzicht en C4-diagrammen
-- `claude/docs/code-standaarden.md` — codestijl
+- `docs/projectinfo/README.md` — overview and C4 diagrams
+- `claude/docs/code-standaarden.md` — code style

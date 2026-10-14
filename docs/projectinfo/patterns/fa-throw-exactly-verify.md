@@ -10,18 +10,18 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowExactlyPattern.cs` (claimt de nodes), herschrijving in `ThrowPattern`, `ThrowAsyncPattern`, `NotThrowPattern` en `ThrowMessage`; registratie in `FluentAssertionsFix.cs` (`s_assertions`, dus ook schakel van `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/ThrowExactly/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowExactlyPattern.cs` (claims the nodes), rewriting in `ThrowPattern`, `ThrowAsyncPattern`, `NotThrowPattern` and `ThrowMessage`; registration in `FluentAssertionsFix.cs` (`s_assertions`, so also a link of `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/ThrowExactly/`, run by `ProofTests`.
 
-| REQ | Oordeel | Bewijs |
+| REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Gehaald | `simple` |
-| REQ-2 | Gehaald | `because` |
-| REQ-3 | Gehaald | `message, async-message` |
-| REQ-4 | Gehaald | `async` |
-| REQ-5 | Gehaald | `aggregate-wait` |
-| REQ-6 | Gehaald (deels vervangen) | `assertion-scope` |
-| TAAK-097 | Gehaald | `because-args.after.cs` |
-| TAAK-096 | Gehaald | `value-used.after.cs` |
+| REQ-1 | Met | `simple` |
+| REQ-2 | Met | `because` |
+| REQ-3 | Met | `message, async-message` |
+| REQ-4 | Met | `async` |
+| REQ-5 | Met | `aggregate-wait` |
+| REQ-6 | Met (partly replaced) | `assertion-scope` |
+| TAAK-097 | Met | `because-args.after.cs` |
+| TAAK-096 | Met | `value-used.after.cs` |
 
 ## Deviations
 
@@ -37,7 +37,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowExactlyPattern.cs
 | Test | `dotnet test` | passed (515 tests) |
 | Sample | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | passed (38 tests) |
 
-## Zie ook
+## See also
 
 - [fa-throw-exactly-modellen.md](fa-throw-exactly-modellen.md)
 - `claude/docs/patroon-loop.md`

@@ -1,81 +1,81 @@
-# Modellen: fa.contain-key
+# Models: fa.contain-key
 
-Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainKeyPattern.cs`.
+Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainKeyPattern.cs`.
 
-## Figuur 1: klassen
+## Figure 1: classes
 
-**Figure 1.** `ContainKeyPattern`, zijn contract en de helpers; rechts de FluentAssertions-methoden die hij herkent en de Shouldly-methoden die hij maakt.
+**Figure 1.** `ContainKeyPattern`, its contract and the helpers; on the right the FluentAssertions methods it recognises and the Shouldly methods it creates.
 
 <!-- kingmadoc:diagram img/fa-contain-key-modellen-1.d2 -->
-![Figuur 1: klassen](img/fa-contain-key-modellen-1.png)
+![Figure 1: classes](img/fa-contain-key-modellen-1.png)
 
-| Element | Rol |
-| ------- | --- |
-| `FluentAssertionPattern` | Template Method: `Rewrite` doet scope, vorm, resultaat en argumenten en roept de hooks van het patroon aan |
-| `ContainKeyPattern` | Vindt de acht dictionary-methoden (`Find`), weigert meervoud en waarden in `RewriteBeforeArguments` en bouwt `ShouldContainKey`/`ShouldNotContainKey` (`RewriteAssertion`) |
-| `FluentAssertionsSyntax` | Gedeelde stappen: onderwerp, weggegooid resultaat, `because`-argumenten |
-| `PatternResult` | `Fixed` met de nieuwe aanroep, of `Manual(reden)` |
-| FA- en Shouldly-methoden | Alleen de enkelvoudige sleutel-assertions hebben een Shouldly-vorm |
+| Element | Role |
+| ------- | ---- |
+| `FluentAssertionPattern` | Template Method: `Rewrite` does scope, shape, result and arguments and calls the pattern's hooks |
+| `ContainKeyPattern` | Finds the eight dictionary methods (`Find`), refuses plurals and values in `RewriteBeforeArguments` and builds `ShouldContainKey`/`ShouldNotContainKey` (`RewriteAssertion`) |
+| `FluentAssertionsSyntax` | Shared steps: subject, discarded result, `because` arguments |
+| `PatternResult` | `Fixed` with the new call, or `Manual(reason)` |
+| FA and Shouldly methods | Only the single-key assertions have a Shouldly form |
 
-## Figuur 2: sequence
+## Figure 2: sequence
 
-**Figure 2.** Eén document: `Find` verzamelt de aanroepen, `FluentAssertionPattern.Rewrite` en de hooks van `ContainKeyPattern` beslissen per aanroep tussen `Fixed` en `Manual`.
+**Figure 2.** One document: `Find` collects the calls, `FluentAssertionPattern.Rewrite` and the hooks of `ContainKeyPattern` decide per call between `Fixed` and `Manual`.
 
 <!-- kingmadoc:diagram img/fa-contain-key-modellen-2.d2 -->
-![Figuur 2: sequence](img/fa-contain-key-modellen-2.png)
+![Figure 2: sequence](img/fa-contain-key-modellen-2.png)
 
-| Stap | Methode in de code | Wat gebeurt er |
-| ---- | ------------------ | -------------- |
-| Vinden | `Find` | `FindInvocations` met de acht namen |
-| Scope | `IsInsideAssertionScope` | In een niet-omgezette `AssertionScope` geeft Manual |
-| Subject | `GetSubject` | Moet `x.Should()` zijn, anders Manual |
-| Resultaat | `IsResultDiscarded` | Gebruikt resultaat (`.And`, `.WhoseValue`) geeft Manual |
-| Meervoud/waarden | `ContainKeyPattern.RewriteBeforeArguments` | `…Keys`, `…Value(s)` geven Manual vóór de argumentsplitsing (die `params` als becauseArgs zou zien) |
-| Argumenten | `TryGetArguments` | Sleutel en `because`; becauseArgs met constante `because` worden `string.Format(...)`, anders Manual |
-| Bouwen | `ContainKeyPattern.RewriteAssertion` | `NotNull(subject)` + `Should[Not]ContainKey(k[, because])` |
+| Step | Method in the code | What happens |
+| ---- | ------------------ | ------------ |
+| Find | `Find` | `FindInvocations` with the eight names |
+| Scope | `IsInsideAssertionScope` | In a non-converted `AssertionScope` gives Manual |
+| Subject | `GetSubject` | Must be `x.Should()`, otherwise Manual |
+| Result | `IsResultDiscarded` | A used result (`.And`, `.WhoseValue`) gives Manual |
+| Plurals/values | `ContainKeyPattern.RewriteBeforeArguments` | `…Keys`, `…Value(s)` give Manual before the argument split (which would see `params` as becauseArgs) |
+| Arguments | `TryGetArguments` | Key and `because`; becauseArgs with a constant `because` become `string.Format(...)`, otherwise Manual |
+| Build | `ContainKeyPattern.RewriteAssertion` | `NotNull(subject)` + `Should[Not]ContainKey(k[, because])` |
 
-## Figuur 3: beslisboom
+## Figure 3: decision tree
 
-**Figure 3.** Elke vraag in `FluentAssertionPattern.Rewrite`, `RewriteBeforeArguments` en `RewriteAssertion`, in de volgorde van de code; de bladeren zijn de Shouldly-vorm of de Manual-reden.
+**Figure 3.** Every question in `FluentAssertionPattern.Rewrite`, `RewriteBeforeArguments` and `RewriteAssertion`, in the order of the code; the leaves are the Shouldly form or the Manual reason.
 
 <!-- kingmadoc:diagram img/fa-contain-key-modellen-3.d2 -->
-![Figuur 3: beslisboom](img/fa-contain-key-modellen-3.png)
+![Figure 3: decision tree](img/fa-contain-key-modellen-3.png)
 
-| Blad | Voorwaarde | Proof (`Proofs/FluentAssertions/ContainKey/`) |
-| ---- | ---------- | --------------------------------------------- |
-| Fixed | losse `ContainKey`, `Dictionary` / `IReadOnlyDictionary` / `IDictionary` | `dictionary`, `read-only`, `idictionary`, `edge-nested-generic` |
+| Leaf | Condition | Proof (`Proofs/FluentAssertions/ContainKey/`) |
+| ---- | --------- | --------------------------------------------- |
+| Fixed | standalone `ContainKey`, `Dictionary` / `IReadOnlyDictionary` / `IDictionary` | `dictionary`, `read-only`, `idictionary`, `edge-nested-generic` |
 | Fixed | `NotContainKey` | `not-contain-key` |
-| Fixed | met `because` (ook becauseArgs, TAAK-097), in lambda | `because`, `because-args`, `lambda` |
+| Fixed | with `because` (also becauseArgs, TAAK-097), in a lambda | `because`, `because-args`, `lambda` |
 | Fixed | nullable subject: `x.ShouldNotBeNull().ShouldContainKey(k)` | `nullable` |
-| Manual "is not in the form" | na `.And` | `and-chain` |
+| Manual "is not in the form" | after `.And` | `and-chain` |
 | Manual "several keys" | `ContainKeys`, `NotContainKeys` | `keys`, `not-contain-keys` |
 | Manual "has no Shouldly equivalent" | `ContainValue(s)`, `NotContainValue` | `contain-value`, `contain-values`, `not-contain-value` |
 | Manual "is used" | `.And`, `.WhoseValue` | `chain`, `which` |
-| Manual "named arguments, or becauseArgs whose because is no constant format string" | benoemde argumenten of niet-constante `because` | geen proof |
-| Manual "Inside an AssertionScope" | scope die `fa.assertion-scope` niet omzet | `AssertionScope/` |
+| Manual "named arguments, or becauseArgs whose because is no constant format string" | named arguments or a non-constant `because` | no proof |
+| Manual "Inside an AssertionScope" | a scope that `fa.assertion-scope` does not convert | `AssertionScope/` |
 
-## Figuur 4: uitbreiding TAAK-168 (type-afhankelijke vorm)
+## Figure 4: extension TAAK-168 (type-dependent form)
 
-**Figure 4.** `RewriteAssertion` kijkt sinds TAAK-168 naar het subjecttype: Shouldly's `ShouldContainKey` bestaat alleen voor `IDictionary<,>`.
+**Figure 4.** Since TAAK-168 `RewriteAssertion` looks at the subject type: Shouldly's `ShouldContainKey` only exists for `IDictionary<,>`.
 
 ```mermaid
 flowchart TD
-    A["RewriteAssertion: subjecttype via GetTypeInfo"] --> B{"onbekend/fouttype of<br/>implementeert IDictionary&lt;,&gt;?"}
-    B -- ja --> C["Fixed: x.ShouldContainKey(k)<br/>proof: dictionary, idictionary, not-contain-key"]
-    B -- nee --> D{"FindLookup: publieke bool ContainsKey(key)<br/>op type, basis of interface?"}
-    D -- ja --> E["Fixed: x.ContainsKey(k).ShouldBeTrue()<br/>NotContainKey: ShouldBeFalse()<br/>proof: read-only, read-only-not-contain"]
-    D -- nee --> F{"publieke bool Contains(key)?"}
-    F -- ja --> G["Fixed: x.Contains(k).ShouldBeTrue()<br/>proof: headers"]
-    F -- nee --> H["Manual: has no ContainsKey/Contains(key) method<br/>proof: enumerable-pairs"]
+    A["RewriteAssertion: subject type via GetTypeInfo"] --> B{"unknown/error type or<br/>implements IDictionary&lt;,&gt;?"}
+    B -- yes --> C["Fixed: x.ShouldContainKey(k)<br/>proof: dictionary, idictionary, not-contain-key"]
+    B -- no --> D{"FindLookup: public bool ContainsKey(key)<br/>on type, base or interface?"}
+    D -- yes --> E["Fixed: x.ContainsKey(k).ShouldBeTrue()<br/>NotContainKey: ShouldBeFalse()<br/>proof: read-only, read-only-not-contain"]
+    D -- no --> F{"public bool Contains(key)?"}
+    F -- yes --> G["Fixed: x.Contains(k).ShouldBeTrue()<br/>proof: headers"]
+    F -- no --> H["Manual: has no ContainsKey/Contains(key) method<br/>proof: enumerable-pairs"]
 ```
 
-| Element | Rol |
-| ------- | --- |
-| `IsGenericDictionary` | Zoekt `System.Collections.Generic.IDictionary<TKey, TValue>` in het type en zijn interfaces |
-| `FindLookup` | Zoekt `ContainsKey`, dan `Contains` (één parameter, bool, publiek, niet-generiek) waarvan de parameter de sleutel impliciet accepteert |
-| `NotNullReceiver` | Zet `ShouldNotNull()` om een mogelijk-null subject, net als bij de andere receivers |
+| Element | Role |
+| ------- | ---- |
+| `IsGenericDictionary` | Looks for `System.Collections.Generic.IDictionary<TKey, TValue>` in the type and its interfaces |
+| `FindLookup` | Looks for `ContainsKey`, then `Contains` (one parameter, bool, public, non-generic) whose parameter implicitly accepts the key |
+| `NotNullReceiver` | Puts `ShouldNotBeNull()` around a possibly-null subject, as with the other receivers |
 
-## Zie ook
+## See also
 
 - [fa-contain-key-plan.md](fa-contain-key-plan.md)
 - [fa-contain-key-verify.md](fa-contain-key-verify.md)

@@ -1,61 +1,61 @@
-# TAAK-006 — Patroon fa.be-empty
+# TAAK-006 — Pattern fa.be-empty
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-11
-**Doel**: `x.Should().BeEmpty()` / `NotBeEmpty()` wordt `ShouldBeEmpty()` / `ShouldNotBeEmpty()`, met proofs, groen in `dotnet test`.
+**Status**: ✅ done
+**Created**: 2026-10-11
+**Goal**: `x.Should().BeEmpty()` / `NotBeEmpty()` becomes `ShouldBeEmpty()` / `ShouldNotBeEmpty()`, with proofs, green in `dotnet test`.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Rij 4 in `claude/tasks/patroon-queue.md`. Voorbeeld: TAAK-004 (zelfde vorm).
-- Sample-voorkomens: `OrderTests.cs:82` (`Lines.Should().NotBeEmpty()`), `:92` (`Lines.Should().BeEmpty()`), `:93` (`CustomerName.Should().BeEmpty()`, string).
+- Row 4 in `claude/tasks/patroon-queue.md`. Example: TAAK-004 (same shape).
+- Sample occurrences: `OrderTests.cs:82` (`Lines.Should().NotBeEmpty()`), `:92` (`Lines.Should().BeEmpty()`), `:93` (`CustomerName.Should().BeEmpty()`, string).
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-FA 7.2.2: `BeEmpty(because, becauseArgs)` / `NotBeEmpty(...)` bestaan op `StringAssertions`, `GenericCollectionAssertions<T>` (ook dictionaries, arrays) en geven een `AndConstraint`.
+FA 7.2.2: `BeEmpty(because, becauseArgs)` / `NotBeEmpty(...)` exist on `StringAssertions`, `GenericCollectionAssertions<T>` (also dictionaries, arrays) and return an `AndConstraint`.
 
-### Probleem
+### Problem
 
-Shouldly kent geen `becauseArgs`; FA geeft een constraint terug, `ShouldBeEmpty` niets.
+Shouldly has no `becauseArgs`; FA returns a constraint, `ShouldBeEmpty` returns nothing.
 
-### Nieuwe situatie
+### New situation
 
-`BeEmptyPattern` (ID `fa.be-empty`); losse assertions worden herschreven, anders `Manual(reden)`.
+`BeEmptyPattern` (ID `fa.be-empty`); standalone assertions are rewritten, otherwise `Manual(reason)`.
 
-### Verbetering
+### Improvement
 
-Eén patroon voor string, collecties en dictionaries.
+One pattern for strings, collections and dictionaries.
 
-## Keuzes
+## Choices
 
-| # | Keuze | Reden |
+| # | Choice | Reason |
 |---|---|---|
-| 1 | Eén pattern voor `BeEmpty` en `NotBeEmpty` | Identieke logica op de naam na (zoals `BeNullPattern`) |
-| 2 | Geen type-switch: Shouldly heeft `ShouldBeEmpty`/`ShouldNotBeEmpty` voor `string` en `IEnumerable<T>`, dictionaries vallen daaronder | Bewezen door de compileercheck op de `after`-proofs (string, List, Dictionary, IEnumerable, array) |
-| 3 | `because` zonder args → `customMessage`; met `becauseArgs`/benoemd → Manual | Zelfde regel als andere patronen |
-| 4 | Alleen herschrijven als resultaat genegeerd wordt en vorm `x.Should().…` is | `.And` vereist ketens splitsen; buiten scope |
-| 5 | `BeNullOrEmpty`/`NotBeNullOrEmpty` buiten scope | Andere semantiek (null toegestaan); eigen patroon, Shouldly `ShouldBeNullOrEmpty` |
-| 6 | Niet-generieke `IEnumerable` niet bewezen | Zeldzaam; eventueel later Manual |
-| 7 | Manual-proofs: `chain`, `value-used` → "is used"; `and-chain` → "is not in the form"; `because-args` → "becauseArgs" | `ProofTests` eist één reden per proof |
+| 1 | One pattern for `BeEmpty` and `NotBeEmpty` | Identical logic apart from the name (like `BeNullPattern`) |
+| 2 | No type switch: Shouldly has `ShouldBeEmpty`/`ShouldNotBeEmpty` for `string` and `IEnumerable<T>`, dictionaries fall under the latter | Proven by the compile check on the `after` proofs (string, List, Dictionary, IEnumerable, array) |
+| 3 | `because` without args → `customMessage`; with `becauseArgs`/named → Manual | Same rule as other patterns |
+| 4 | Only rewrite when the result is ignored and the shape is `x.Should().…` | `.And` requires splitting chains; out of scope |
+| 5 | `BeNullOrEmpty`/`NotBeNullOrEmpty` out of scope | Different semantics (null allowed); its own pattern, Shouldly `ShouldBeNullOrEmpty` |
+| 6 | Non-generic `IEnumerable` not proven | Rare; possibly Manual later |
+| 7 | Manual proofs: `chain`, `value-used` → "is used"; `and-chain` → "is not in the form"; `because-args` → "becauseArgs" | `ProofTests` requires one reason per proof |
 
-## Stappen
+## Steps
 
-- [x] 1. Claimen en taak aanmaken
-- [x] 2. Onderzoek en keuzes
-- [x] 3. KingmaDoc-plan (9 REQ)
-- [x] 4. `BeEmptyPattern` + registratie
+- [x] 1. Claim and create task
+- [x] 2. Research and choices
+- [x] 3. KingmaDoc plan (9 REQ)
+- [x] 4. `BeEmptyPattern` + registration
 - [x] 5. Proofs (11 in `BeEmpty/`)
-- [x] 6. Build/test groen (57 + 15 sample), verify, archiveren, rij `klaar`
+- [x] 6. Build/test green (57 + 15 sample), verify, archive, row `klaar`
 
-## Gewijzigde bestanden
+## Changed files
 
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEmptyPattern.cs` (nieuw)
-- `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` (1 regel)
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeEmptyPattern.cs` (new)
+- `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs` (1 line)
 - `src/Unshackle.Tests/Proofs/FluentAssertions/BeEmpty/`
-- `docs/projectinfo/patterns/fa-be-empty-{plan,verify}.md`, `docs/projectinfo/README.md` (rij)
+- `docs/projectinfo/patterns/fa-be-empty-{plan,verify}.md`, `docs/projectinfo/README.md` (row)
 
-## Zie ook
+## See also
 
 - `claude/tasks/patroon-queue.md`
 - `claude/tasks/archief/TAAK-004-fa-be-null.md`

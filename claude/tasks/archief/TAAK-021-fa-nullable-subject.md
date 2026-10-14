@@ -1,40 +1,40 @@
-# TAAK-021 — Nullable subject breekt build na fa.have-count en fa.contain (string)
+# TAAK-021 — Nullable subject breaks the build after fa.have-count and fa.contain (string)
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-11
-**Gevonden in**: TAAK-019 stap 1, casus microsoft/PowerApps-Tooling @ 630e6973
+**Status**: ✅ done
+**Created**: 2026-10-11
+**Found in**: TAAK-019 step 1, case microsoft/PowerApps-Tooling @ 630e6973
 
-## Probleem
+## Problem
 
-In een project met `<Nullable>enable</Nullable>` + warnings-as-errors levert de fix code op die niet bouwt. FluentAssertions' `Should()` accepteert een nullable subject; de Shouldly-vorm niet.
+In a project with `<Nullable>enable</Nullable>` + warnings-as-errors the fix produces code that does not build. FluentAssertions' `Should()` accepts a nullable subject; the Shouldly form does not.
 
-1. **fa.have-count** — `x.Should().HaveCount(n)` → `x.Count.ShouldBe(n)`. Is `x` nullable (`Dictionary<..>?`), dan CS8602.
-   Voorbeeld: `src/Persistence.Tests/PaYaml/Serialization/PaYamlSerializerTests.cs:150,156,195-197`
+1. **fa.have-count** — `x.Should().HaveCount(n)` → `x.Count.ShouldBe(n)`. If `x` is nullable (`Dictionary<..>?`), then CS8602.
+   Example: `src/Persistence.Tests/PaYaml/Serialization/PaYamlSerializerTests.cs:150,156,195-197`
    (`screen.Properties.Count.ShouldBe(...)`, `componentDefinition.Children.Count.ShouldBe(...)`).
-2. **fa.contain (string)** — `s.Should().Contain("x")` → `s.ShouldContain("x", Shouldly.Case.Sensitive)`. `ShouldContain(string actual, ...)` heeft een niet-nullable `actual`; bij `string?` (bv. `Exception.StackTrace`) CS8604.
-   Voorbeeld: `src/Persistence.Tests/Compression/PaArchiveTests.cs:335,389,390`.
+2. **fa.contain (string)** — `s.Should().Contain("x")` → `s.ShouldContain("x", Shouldly.Case.Sensitive)`. `ShouldContain(string actual, ...)` has a non-nullable `actual`; with `string?` (e.g. `Exception.StackTrace`) CS8604.
+   Example: `src/Persistence.Tests/Compression/PaArchiveTests.cs:335,389,390`.
 
-8 unieke bouwfouten in totaal (x3 target frameworks).
+8 unique build errors in total (x3 target frameworks).
 
-## Aanpak (voorstel)
+## Approach (proposal)
 
-Gebruik het semantische model: is het subject nullable-annotated (`NullableAnnotation.Annotated` / flow-state MaybeNull), herschrijf dan met `x.ShouldNotBeNull().Count.ShouldBe(n)` resp. `x.ShouldNotBeNull().ShouldContain(...)`; dat behoudt ook FA's falen op null. Alternatief: Manual met reden. Proof per geval in `src/Unshackle.Tests/Proofs/FluentAssertions/<Pattern>/` met nullable enable.
+Use the semantic model: if the subject is nullable-annotated (`NullableAnnotation.Annotated` / flow state MaybeNull), rewrite to `x.ShouldNotBeNull().Count.ShouldBe(n)` and `x.ShouldNotBeNull().ShouldContain(...)` respectively; that also preserves FA's failure on null. Alternative: Manual with a reason. A proof per case in `src/Unshackle.Tests/Proofs/FluentAssertions/<Pattern>/` with nullable enabled.
 
-## Stappen
+## Steps
 
-- [x] Proofs (before/after) met nullable subject voor beide patronen
-- [x] Fix in `HaveCountPattern.cs` en `ContainPattern.cs` (`src/Unshackle.Core/.../Patterns/`)
-- [x] Controle op andere patronen die het subject als niet-nullable argument doorgeven (be-empty, all-satisfy, contain-key, only-contain)
-- [ ] Casus PowerApps-Tooling opnieuw: Persistence.Tests bouwt (niet gedaan in deze sessie: hoort bij TAAK-019)
+- [x] Proofs (before/after) with a nullable subject for both patterns
+- [x] Fix in `HaveCountPattern.cs` and `ContainPattern.cs` (`src/Unshackle.Core/.../Patterns/`)
+- [x] Check other patterns that pass the subject as a non-nullable argument (be-empty, all-satisfy, contain-key, only-contain)
+- [ ] PowerApps-Tooling case again: Persistence.Tests builds (not done in this session: belongs to TAAK-019)
 
-## Keuzes
+## Choices
 
-- **ShouldNotBeNull-keten, geen Manual.** `FluentAssertionsSyntax.NotNull(subject, model)` zet `.ShouldNotBeNull()` voor de receiver als `GetTypeInfo(subject).Nullability.FlowState == MaybeNull`. Reden: het blijft automatisch, het gedrag blijft gelijk (FA faalt ook op null) en Shouldly's `ShouldNotBeNull` heeft `[NotNull]`/geeft `T` terug. Flow state i.p.v. annotatie: na een null-check of in een nullable-disabled project is de flow state niet MaybeNull, dus geen ruis.
-- **Toegepast in** have-count, contain en contain-key. Be-empty, only-contain en all-satisfy hebben een nullable proof zonder wijziging: Shouldly's `ShouldBeEmpty`/`ShouldNotBeEmpty` accepteren `IEnumerable<T>?` en markeren het subject daarna als niet-null, dus ook de `foreach`/`ShouldAllBe` erna waarschuwt niet.
-- **Bewaking**: `TestSolution.CompileErrors` telt nu ook CS8602/CS8604 mee, zodat elke after-proof met `#nullable enable` faalt op deze waarschuwingen (unittest `FluentAssertionsSyntaxTests`).
-- Niet gedaan: de have-count-tak met een niet-veilige receiver (haakjes) krijgt geen `ShouldNotBeNull`; zo'n expressie is zelden MaybeNull.
+- **ShouldNotBeNull chain, no Manual.** `FluentAssertionsSyntax.NotNull(subject, model)` puts `.ShouldNotBeNull()` before the receiver when `GetTypeInfo(subject).Nullability.FlowState == MaybeNull`. Reason: it stays automatic, the behaviour stays the same (FA also fails on null) and Shouldly's `ShouldNotBeNull` has `[NotNull]`/returns `T`. Flow state instead of annotation: after a null check or in a nullable-disabled project the flow state is not MaybeNull, so no noise.
+- **Applied in** have-count, contain and contain-key. Be-empty, only-contain and all-satisfy have a nullable proof without change: Shouldly's `ShouldBeEmpty`/`ShouldNotBeEmpty` accept `IEnumerable<T>?` and mark the subject as non-null afterwards, so the subsequent `foreach`/`ShouldAllBe` does not warn either.
+- **Guard**: `TestSolution.CompileErrors` now also counts CS8602/CS8604, so every after proof with `#nullable enable` fails on these warnings (unit test `FluentAssertionsSyntaxTests`).
+- Not done: the have-count branch with an unsafe receiver (parentheses) gets no `ShouldNotBeNull`; such an expression is rarely MaybeNull.
 
-## Zie ook
+## See also
 
-- `claude/tasks/TAAK-019-lancering.md` — casus-resultaten
+- `claude/tasks/TAAK-019-lancering.md` — case results
 - `docs/projectinfo/patterns/`

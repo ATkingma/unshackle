@@ -1,33 +1,33 @@
 # TAAK-158 — automapper.map-into
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-12
-**Doel**: rij 5 van `claude/tasks/automapper-queue.md`: `mapper.Map(src, dest)` → `src.MapInto(dest)` of Manual.
+**Status**: ✅ completed
+**Created**: 2026-10-12
+**Goal**: row 5 of `claude/tasks/automapper-queue.md`: `mapper.Map(src, dest)` → `src.MapInto(dest)` or Manual.
 
-## Onderzoek
+## Research
 
-- AutoMapper 14 `IMapper`: `Map<TSource, TDestination>(TSource, TDestination)` is de map-into-vorm; `Map<TSource, TDestination>(TSource, Action<...>)` heeft ook twee argumenten (opties) en hoort er niet bij. Herkenning: tweede parameter heeft het type van `TDestination`.
-- `Map(a, b)` geeft `b` terug; AutoMapper maakt een nieuw object als `b` null is en geeft bij een null-bron null terug.
-- `CreateMapPattern` meldde `Map(a, b)` als Manual ("map-into"); de Fixer fixt elk bestand tegen de originele solution, dus een `MapInto` uit een ander bestand bestaat nog niet voor het semantic model.
-- SampleShop heeft geen `Map(a, b)`.
+- AutoMapper 14 `IMapper`: `Map<TSource, TDestination>(TSource, TDestination)` is the map-into form; `Map<TSource, TDestination>(TSource, Action<...>)` also has two arguments (options) and does not belong to it. Recognition: the second parameter has the type of `TDestination`.
+- `Map(a, b)` returns `b`; AutoMapper creates a new object if `b` is null and returns null for a null source.
+- `CreateMapPattern` reported `Map(a, b)` as Manual ("map-into"); the Fixer fixes every file against the original solution, so a `MapInto` from another file does not exist yet for the semantic model.
+- SampleShop has no `Map(a, b)`.
 
-## Keuzes
+## Choices
 
-- `MapInto` wordt door `CreateMapPattern` geschreven, maar alleen voor maps die een `Map(a, b)` in de solution gebruikt: `CreateMapPattern` werd een `ISolutionPattern` (`RewriteAsync` → `MapIntoPattern.TargetsAsync`). Zo blijven alle bestaande proofs gelijk. `Rewrite` zonder solution schrijft geen `MapInto`.
-- `MapInto` staat na alle `ToB`-methoden: `MapCallPattern.GeneratedAsync` koppelt methode i aan CreateMap i (en gebruikt de sync `Rewrite`, dus ziet `MapInto` niet).
-- `MapInto` wijst dezelfde members toe als `ToB` en geeft `destination` terug, zodat een gebruikt resultaat werkt.
-- `MapIntoPattern` volgt `MapCallPattern` (bestaand → gegenereerd); `GeneratedAsync`, `HasNoSideEffects`, `NeedsParentheses`, `IsCollection` werden `internal` voor hergebruik.
-- Manual: ontvanger met bijwerkingen, `object`/`dynamic`, collectie, bron of doel MaybeNull, geen map, meerdere profiles, internal in ander project, eigen member `MapInto`.
-- Proof `CreateMap/map-into` verwijderd (CreateMapPattern vindt die aanroep niet meer); Manual-proofs in `Proofs/AutoMapper/MapInto/`, Fixed met profile in `_Combined/map-into-profile`; profile in ander bestand: `MapIntoPatternTests`.
+- `MapInto` is written by `CreateMapPattern`, but only for maps that a `Map(a, b)` in the solution uses: `CreateMapPattern` became an `ISolutionPattern` (`RewriteAsync` → `MapIntoPattern.TargetsAsync`). That way all existing proofs stay the same. `Rewrite` without a solution writes no `MapInto`.
+- `MapInto` comes after all `ToB` methods: `MapCallPattern.GeneratedAsync` links method i to CreateMap i (and uses the sync `Rewrite`, so it does not see `MapInto`).
+- `MapInto` assigns the same members as `ToB` and returns `destination`, so a used result works.
+- `MapIntoPattern` follows `MapCallPattern` (existing → generated); `GeneratedAsync`, `HasNoSideEffects`, `NeedsParentheses`, `IsCollection` became `internal` for reuse.
+- Manual: a receiver with side effects, `object`/`dynamic`, collection, source or destination MaybeNull, no map, several profiles, internal in another project, an own member `MapInto`.
+- Proof `CreateMap/map-into` removed (CreateMapPattern no longer finds that call); Manual proofs in `Proofs/AutoMapper/MapInto/`, Fixed with a profile in `_Combined/map-into-profile`; profile in another file: `MapIntoPatternTests`.
 
-## Stappen
+## Steps
 
-- [x] 1. Onderzoek.
-- [x] 2. `MapIntoPattern`, `CreateMapPattern.RewriteAsync`/MapInto, registratie.
-- [x] 3. Proofs, unittest, `proofs-doc.py`.
-- [x] 4. Plan, modellen, verify, README-rij.
+- [x] 1. Research.
+- [x] 2. `MapIntoPattern`, `CreateMapPattern.RewriteAsync`/MapInto, registration.
+- [x] 3. Proofs, unit test, `proofs-doc.py`.
+- [x] 4. Plan, models, verify, README row.
 
-## Zie ook
+## See also
 
 - `claude/tasks/automapper-queue.md`
 - `claude/tasks/archief/TAAK-157-automapper-map-call.md`

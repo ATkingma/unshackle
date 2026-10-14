@@ -1,40 +1,40 @@
-# TAAK-131 — MediatR: `using Mediator;` binnen een namespace wordt overschaduwd door eigen `*.Mediator`-namespace
+# TAAK-131 — MediatR: `using Mediator;` inside a namespace is shadowed by an own `*.Mediator` namespace
 
-**Status**: klaar (2026-10-11)
-**Aangemaakt**: 2026-10-11
-**Gevonden in**: `claude/tasks/CORPUSRUN-mediatr.md` (evolutionary-architecture hfst. 2)
+**Status**: done (2026-10-11)
+**Created**: 2026-10-11
+**Found in**: `claude/tasks/CORPUSRUN-mediatr.md` (evolutionary-architecture ch. 2)
 
-## Probleem
+## Problem
 
-Fitnet heeft `namespace EvolutionaryArchitecture.Fitnet.Common.Infrastructure.Mediator` en zet usings binnen de
-(file-scoped) namespace. Na de swap staat er `using Mediator;` in `...Common.Infrastructure.Events`; C# zoekt dat
-eerst relatief en vindt de eigen namespace. Gevolg: CS0246 `INotification`/`IPublisher` niet gevonden.
-Een projectnaam of map "Mediator" is in MediatR-projecten gewoon (`MediatorModule`, `Mediator/Behaviors`).
+Fitnet has `namespace EvolutionaryArchitecture.Fitnet.Common.Infrastructure.Mediator` and puts usings inside the
+(file-scoped) namespace. After the swap there is `using Mediator;` in `...Common.Infrastructure.Events`; C# looks that up
+relatively first and finds its own namespace. Consequence: CS0246 `INotification`/`IPublisher` not found.
+A project name or folder "Mediator" is common in MediatR projects (`MediatorModule`, `Mediator/Behaviors`).
 
-## Wat, waar, hoe
+## What, where, how
 
-- **Waar**: `UsingDirectives` (swap van `RemovedNamespaces` → `AddedNamespaces`).
-- **Hoe**: als `Mediator` vanuit de positie van de using naar iets anders dan de globale namespace bindt
-  (`model.LookupNamespacesAndTypes` / bestaat er een `*.Mediator`-namespace in de compilatie), `using global::Mediator;` schrijven.
+- **Where**: `UsingDirectives` (swap from `RemovedNamespaces` → `AddedNamespaces`).
+- **How**: if `Mediator` binds to something other than the global namespace from the position of the using
+  (`model.LookupNamespacesAndTypes` / does a `*.Mediator` namespace exist in the compilation), write `using global::Mediator;`.
 - Proof (pending): `src/Unshackle.Tests/Proofs/_Pending/MediatR/Usings/edge-namespace-shadow.*`.
 
-## Stappen
+## Steps
 
-- [x] Detectie + `global::`
-- [x] Proof uit `_Pending` terugzetten (proof-runner moet een map voor de usings-swap accepteren), groen
-- [x] `dotnet build` + `dotnet test` groen
+- [x] Detection + `global::`
+- [x] Move proof back out of `_Pending` (the proof runner must accept a folder for the usings swap), green
+- [x] `dotnet build` + `dotnet test` green
 
-## Resultaat
+## Result
 
-- `UsingDirectives.IsShadowed`: bij de swap in place (`using MediatR;` → `Mediator`) binnen een namespace-declaratie wordt
-  gekeken of een omvattende namespace (niet de globale) een lid met de eerste naamdeel heeft (`A.Infrastructure.Mediator`).
-  Dan wordt het `using global::Mediator;`. Nieuwe usings (geen swap) vallen onder TAAK-115 (dan bovenaan het bestand).
-- Proof verplaatst van `_Pending/MediatR/Usings/` naar `Proofs/MediatR/NotificationHandler/edge-namespace-shadow.*`
-  (een handler erbij, zodat het patroon een bevinding geeft; een aparte Usings-map kent de proof-runner niet).
-- Corpus: verse kopie evo2 (`scratchpad/v131/evo2`): 25 Fixed / 0 Manual, de CS0246's zijn weg. Build faalt nog op één
-  IDE0060 (`MediatorModule.AddMediator(…, Assembly assembly)`: de parameter is na de AddMediatR-rewrite ongebruikt) — apart.
+- `UsingDirectives.IsShadowed`: on the in-place swap (`using MediatR;` → `Mediator`) inside a namespace declaration it
+  checks whether an enclosing namespace (not the global one) has a member with the first name part (`A.Infrastructure.Mediator`).
+  Then it becomes `using global::Mediator;`. New usings (no swap) fall under TAAK-115 (then at the top of the file).
+- Proof moved from `_Pending/MediatR/Usings/` to `Proofs/MediatR/NotificationHandler/edge-namespace-shadow.*`
+  (with a handler added, so the pattern produces a finding; the proof runner does not know a separate Usings folder).
+- Corpus: fresh copy of evo2 (`scratchpad/v131/evo2`): 25 Fixed / 0 Manual, the CS0246s are gone. Build still fails on one
+  IDE0060 (`MediatorModule.AddMediator(…, Assembly assembly)`: the parameter is unused after the AddMediatR rewrite) — separate.
 
 
-## Zie ook
+## See also
 
 - `claude/tasks/CORPUSRUN-mediatr.md`

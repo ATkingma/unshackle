@@ -1,48 +1,48 @@
-# Modellen: mediatr.unsupported
+# Models: mediatr.unsupported
 
-Feiten uit `src/Unshackle.Core/Fixes/MediatR/Patterns/UnsupportedPattern.cs`.
+Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/UnsupportedPattern.cs`.
 
-## Figuur 1: klassen
+## Figure 1: classes
 
-**Figure 1.** `UnsupportedPattern`, de herkende MediatR-interfaces en de Mediator-tegenhangers uit het advies.
+**Figure 1.** `UnsupportedPattern`, the recognised MediatR interfaces and the Mediator counterparts from the advice.
 
 <!-- kingmadoc:diagram img/mediatr-unsupported-modellen-1.d2 -->
-![Figuur 1: klassen](img/mediatr-unsupported-modellen-1.png)
+![Figure 1: classes](img/mediatr-unsupported-modellen-1.png)
 
-| Element              | Rol                                                                  |
+| Element              | Role                                                                 |
 | -------------------- | -------------------------------------------------------------------- |
-| `UnsupportedPattern` | Vindt typedeclaraties met een MediatR-interface zonder tweeling      |
-| `s_advice`           | Metadata-naam → adviestekst (`IRequestExceptionAction`, `INotificationPublisher`) |
-| `s_noGeneric`        | Berichten en request-handlers die niet generiek mogen zijn           |
-| `PatternResult`      | Altijd `Manual(advies)`                                              |
+| `UnsupportedPattern` | Finds type declarations with a MediatR interface without a twin      |
+| `s_advice`           | Metadata name → advice text (`IRequestExceptionAction`, `INotificationPublisher`) |
+| `s_noGeneric`        | Messages and request handlers that must not be generic               |
+| `PatternResult`      | Always `Manual(advice)`                                              |
 
-## Figuur 2: sequence
+## Figure 2: sequence
 
-**Figure 2.** Van `Fixer` via `Find` en `Rewrite` naar `Manual`.
+**Figure 2.** From `Fixer` via `Find` and `Rewrite` to `Manual`.
 
 <!-- kingmadoc:diagram img/mediatr-unsupported-modellen-2.d2 -->
-![Figuur 2: sequence](img/mediatr-unsupported-modellen-2.png)
+![Figure 2: sequence](img/mediatr-unsupported-modellen-2.png)
 
-| Stap   | Methode in de code                        | Wat gebeurt er                               |
+| Step   | Method in the code                        | What happens                                 |
 | ------ | ----------------------------------------- | -------------------------------------------- |
-| Vinden | `Find` → `Advice` met `GetDeclaredSymbol` | Interface-declaraties overgeslagen; eigen `Interfaces` uit `MediatR*` voor `s_advice`, `AllInterfaces` voor generieke berichten |
-| Melden | `Rewrite` → `Advice`                      | `Manual` met de adviestekst                  |
+| Find   | `Find` → `Advice` with `GetDeclaredSymbol` | Interface declarations skipped; own `Interfaces` from `MediatR*` for `s_advice`, `AllInterfaces` for generic messages |
+| Report | `Rewrite` → `Advice`                      | `Manual` with the advice text                |
 
-## Figuur 3: beslisboom
+## Figure 3: decision tree
 
-**Figure 3.** Vragen van `Advice`.
+**Figure 3.** Questions of `Advice`.
 
 <!-- kingmadoc:diagram img/mediatr-unsupported-modellen-3.d2 -->
-![Figuur 3: beslisboom](img/mediatr-unsupported-modellen-3.png)
+![Figure 3: decision tree](img/mediatr-unsupported-modellen-3.png)
 
-| Blad                               | Voorwaarde                                             | Bewijs                   |
+| Leaf                               | Condition                                              | Evidence                 |
 | ---------------------------------- | ------------------------------------------------------ | ------------------------ |
-| Manual `MessageExceptionHandler`   | `IRequestExceptionAction` (zelf gedeclareerd)          | `exception-action`       |
+| Manual `MessageExceptionHandler`   | `IRequestExceptionAction` (declared itself)            | `exception-action`       |
 | Manual `NotificationPublisherType` | `INotificationPublisher`                               | `notification-publisher` |
-| Manual generieke berichten         | generiek type + bericht of request-handler (ook via basistype) | `generic-handler`, `derived-generic-message` |
-| niet gevonden                      | interface-declaratie of anders (pre/post-processor, exception handler en stream behavior zijn eigen patronen) | n.v.t.                   |
+| Manual generic messages            | a generic type + message or request handler (also via a base type) | `generic-handler`, `derived-generic-message` |
+| not found                          | an interface declaration or otherwise (pre/post processor, exception handler and stream behavior are patterns of their own) | n/a |
 
-## Zie ook
+## See also
 
 - [mediatr-unsupported-plan.md](mediatr-unsupported-plan.md)
 - [mediatr-unsupported-verify.md](mediatr-unsupported-verify.md)

@@ -1,49 +1,49 @@
 # TAAK-027 — mediatr.pipeline-behavior
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-11
-**Doel**: `IPipelineBehavior<TReq,TRes>` (MediatR 12.5.0) → Mediator 3.0.2 `IPipelineBehavior<TMessage,TResponse>`.
+**Status**: ✅ done
+**Created**: 2026-10-11
+**Goal**: `IPipelineBehavior<TReq,TRes>` (MediatR 12.5.0) → Mediator 3.0.2 `IPipelineBehavior<TMessage,TResponse>`.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Rij 4 in `claude/tasks/mediatr-queue.md`. Hergebruikt `MediatRSyntax` (TAAK-025).
-- Voorbeelden: `samples/SampleShop/SampleShop/Behaviors/LoggingBehavior.cs` (open, async), `ValidationBehavior.cs` (gesloten, `return next()`).
+- Row 4 in `claude/tasks/mediatr-queue.md`. Reuses `MediatRSyntax` (TAAK-025).
+- Examples: `samples/SampleShop/SampleShop/Behaviors/LoggingBehavior.cs` (open, async), `ValidationBehavior.cs` (closed, `return next()`).
 
-## Analyse
+## Analysis
 
-Signaturen gecontroleerd met reflectie op de echte assemblies (scratch-project met Mediator 3.0.2):
+Signatures checked with reflection on the real assemblies (scratch project with Mediator 3.0.2):
 
 - Mediator: `ValueTask<TResponse> Handle(TMessage, MessageHandlerDelegate<TMessage,TResponse>, CancellationToken)`, `TMessage : IMessage`; `MessageHandlerDelegate.Invoke(TMessage, CancellationToken)`.
-- MediatR 12.5: `Task<TResponse> Handle(TRequest, RequestHandlerDelegate<TResponse>, CancellationToken)`; `next()` en `next(token)` compileren beide (proof `next-token`).
+- MediatR 12.5: `Task<TResponse> Handle(TRequest, RequestHandlerDelegate<TResponse>, CancellationToken)`; `next()` and `next(token)` both compile (proof `next-token`).
 
-| Geval                                                   | Herschrijving                                                      |
+| Case                                                    | Rewrite                                                            |
 | ------------------------------------------------------- | ------------------------------------------------------------------ |
-| open behavior (request = typeparameter)                 | + `IMessage` in de constraint (voor `new()`), of nieuwe `where`    |
-| gesloten behavior                                       | geen constraint: het request-type wordt via de swap een `IMessage` |
-| `next()` / `next(token)`                                | `next(request, token)` met de parameternamen van `Handle`          |
-| niet-async, returns `next(...)`/`Task.FromResult`       | `ValueTask.FromResult`; `next(...)` geeft al een `ValueTask`       |
-| `next` opgeslagen/doorgegeven, andere return, expliciet | Manual                                                             |
+| open behavior (request = type parameter)                | + `IMessage` in the constraint (before `new()`), or a new `where`  |
+| closed behavior                                         | no constraint: the request type becomes an `IMessage` via the swap |
+| `next()` / `next(token)`                                | `next(request, token)` with the parameter names of `Handle`        |
+| non-async, returns `next(...)`/`Task.FromResult`        | `ValueTask.FromResult`; `next(...)` already returns a `ValueTask`  |
+| `next` stored/passed on, other return, explicit         | Manual                                                             |
 
-## Keuzes
+## Choices
 
-- **Pattern-node is het type, niet de methode**: de `IMessage`-constraint staat op de klasse. `FindHandleMethods` gebruikt nu `DescendantNodesAndSelf`, zodat hij ook met het type als root werkt (zelfde resultaat voor een compilation unit).
-- **`IPipelineBehavior\`2`in`SwappedTypes`**: anders houdt de basislijst `using MediatR`vast. Het pattern dekt het signatuurverschil; bij Manual houdt`RequestHandlerDelegate`de MediatR-using en het pakket vast (zelfde gedrag als de handler-patronen). Test`SwappedTypes_PipelineBehavior_IsNotSwapped...` verwijderd.
-- **Proof-runner draait de Mediator-source-generator** op elke MediatR-`after` (`ProofFix.AfterGenerators`, `TestReferences.MediatorGenerators`, `TestSolution.CompileErrors(..., generators)`). Het pakket `Mediator.SourceGenerator` staat in het testproject met `IncludeAssets="none"` (geen analyzer van het testproject zelf); de DLL's worden naar `Generators/` in de output gekopieerd en via `AnalyzerFileReference` + `AnalyzerLoader` geladen. Nodig voor rij 5 (`AddMediator` bestaat alleen door de generator), en het maakt alle MediatR-proofs strenger. `Microsoft.Extensions.DependencyInjection.Abstractions` zit nu in de MediatR- en Mediator-referenties.
+- **The pattern node is the type, not the method**: the `IMessage` constraint is on the class. `FindHandleMethods` now uses `DescendantNodesAndSelf`, so it also works with the type as root (same result for a compilation unit).
+- **`IPipelineBehavior\`2`in`SwappedTypes`**: otherwise the base list holds on to `using MediatR`. The pattern covers the signature difference; on Manual `RequestHandlerDelegate`keeps the MediatR using and the package (same behaviour as the handler patterns). Test`SwappedTypes_PipelineBehavior_IsNotSwapped...` removed.
+- **The proof runner runs the Mediator source generator** on every MediatR `after` (`ProofFix.AfterGenerators`, `TestReferences.MediatorGenerators`, `TestSolution.CompileErrors(..., generators)`). The `Mediator.SourceGenerator` package is in the test project with `IncludeAssets="none"` (no analyzer for the test project itself); the DLLs are copied to `Generators/` in the output and loaded via `AnalyzerFileReference` + `AnalyzerLoader`. Needed for row 5 (`AddMediator` only exists thanks to the generator), and it makes all MediatR proofs stricter. `Microsoft.Extensions.DependencyInjection.Abstractions` is now in the MediatR and Mediator references.
 
-## Stappen
+## Steps
 
-- [x] 1. Claim rij 4.
+- [x] 1. Claim row 4.
 - [x] 2. Plan `docs/projectinfo/patterns/mediatr-pipeline-behavior-plan.md` (approved).
-- [x] 3. `PipelineBehaviorPattern`, registratie + swap in `MediatRFix`.
+- [x] 3. `PipelineBehaviorPattern`, registration + swap in `MediatRFix`.
 - [x] 4. Proofs `open-async`, `no-constraint`, `new-constraint`, `closed`, `next-token`; Manual `next-stored`, `next-passed`, `explicit`.
-- [x] 5. Modellen, verify, README-rij, queue-rij.
+- [x] 5. Models, verify, README row, queue row.
 
-## Resultaat
+## Result
 
-- `dotnet build` 0 warnings, `dotnet test` 400/400, sample-tests 38/38.
+- `dotnet build` 0 warnings, `dotnet test` 400/400, sample tests 38/38.
 - Scan SampleShop: `mediatr.pipeline-behavior` 2 Fixed, 0 Manual.
 
-## Zie ook
+## See also
 
 - `claude/tasks/mediatr-queue.md`
 - `claude/tasks/archief/TAAK-028-mediatr-add-mediatr.md`

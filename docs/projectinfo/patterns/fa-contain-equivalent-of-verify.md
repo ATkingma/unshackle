@@ -4,20 +4,20 @@
 | ------------- | -------------------------------------------------------------- |
 | **Plan**      | [`docs/projectinfo/patterns/fa-contain-equivalent-of-plan.md`](fa-contain-equivalent-of-plan.md) |
 | **Status**    | Verified                                                       |
-| **Generated** | 2026-10-12 met de hand                                         |
+| **Generated** | 2026-10-12 by hand                                             |
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainEquivalentOfPattern.cs`, registratie in `FluentAssertionsFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/ContainEquivalentOf/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainEquivalentOfPattern.cs`, registration in `FluentAssertionsFix.cs`. Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/ContainEquivalentOf/`, run by `ProofTests`.
 
-| REQ | Oordeel | Bewijs |
+| REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Gehaald | `simple`, `strings`, `nullable-value` |
-| REQ-2 | Gehaald | `sealed-record`, `record-struct` |
-| REQ-3 | Gehaald | `because` |
-| REQ-4 | Gehaald | `nullable-subject` |
-| REQ-5 | Gehaald | `class`, `record-unsealed`, `record-list-member`, `dictionary`, `different-type` |
-| REQ-6 | Gehaald | `options`, `assertion-scope`, `which` |
+| REQ-1 | Met | `simple`, `strings`, `nullable-value` |
+| REQ-2 | Met | `sealed-record`, `record-struct` |
+| REQ-3 | Met | `because` |
+| REQ-4 | Met | `nullable-subject` |
+| REQ-5 | Met | `class`, `record-unsealed`, `record-list-member`, `dictionary`, `different-type` |
+| REQ-6 | Met | `options`, `assertion-scope`, `which` |
 
 ## Deviations
 
@@ -31,8 +31,8 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ContainEquivalentOfPat
 | --- | --- | --- |
 | Build | `dotnet build` | passed (0 warnings) |
 | Proofs | `dotnet test --project src/Unshackle.Tests -- --filter-class "*ProofTests"` | passed (668) |
-| Volledige suite | `dotnet test --project src/Unshackle.Tests` | 35 bekende CRLF-failures op schone main, verder groen |
+| Full suite | `dotnet test --project src/Unshackle.Tests` | 35 known CRLF failures on clean main, otherwise green |
 
-## Zie ook
+## See also
 
 - [fa-contain-equivalent-of-modellen.md](fa-contain-equivalent-of-modellen.md)

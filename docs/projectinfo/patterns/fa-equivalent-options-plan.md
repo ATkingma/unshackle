@@ -9,57 +9,57 @@ files_expected:
     - src/Unshackle.Tests/Proofs/FluentAssertions/EquivalentOptions/
 ---
 
-# Feature: fa.equivalent-options: BeEquivalentTo met options
+# Feature: fa.equivalent-options: BeEquivalentTo with options
 
 |               |                         |
 | ------------- | ----------------------- |
 | **Project**   | Unshackle               |
 | **Status**    | Approved                |
-| **Generated** | 2026-10-12 met de hand (kingmadoc ontbreekt) |
+| **Generated** | 2026-10-12 by hand (kingmadoc missing) |
 
-> Opgesteld uit TAAK-163.
+> Drawn up from TAAK-163.
 
 ## One-sentence summary
 
-`x.Should().BeEquivalentTo(y, o => o.Option())` wordt waar het exact kan `ShouldBe`/`ShouldBeEquivalentTo` (opties die niets veranderen vervallen, `WithStrictOrdering` op waarde-collecties wordt `ShouldBe(y)`), anders Manual met een reden per optie.
+`x.Should().BeEquivalentTo(y, o => o.Option())` becomes `ShouldBe`/`ShouldBeEquivalentTo` where that is exactly possible (options that change nothing are dropped, `WithStrictOrdering` on value collections becomes `ShouldBe(y)`), otherwise Manual with a reason per option.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `BeEquivalentTo(expected, Func<EquivalencyAssertionOptions<T>, ...> config, because, becauseArgs)` op object- en collectie-assertions.
-- Een inline lambda `o => o.A().B()`; de laatste `WithStrictOrdering`/`WithoutStrictOrdering` wint (zoals in FA).
+- `BeEquivalentTo(expected, Func<EquivalencyAssertionOptions<T>, ...> config, because, becauseArgs)` on object and collection assertions.
+- An inline lambda `o => o.A().B()`; the last `WithStrictOrdering`/`WithoutStrictOrdering` wins (as in FA).
 
 **Out of scope**
 
-- `NotBeEquivalentTo` met options (blijft Manual in `fa.be-equivalent-to-object`).
-- `StringAssertions.BeEquivalentTo(.., o => o.IgnoringCase())` (zit in `fa.be-equivalent-to-string`).
-- Opties in een blokbody, variabele of method group (Manual).
+- `NotBeEquivalentTo` with options (stays Manual in `fa.be-equivalent-to-object`).
+- `StringAssertions.BeEquivalentTo(.., o => o.IgnoringCase())` (lives in `fa.be-equivalent-to-string`).
+- Options in a block body, variable or method group (Manual).
 
 ## Requirements
 
-- **REQ-1**: WHEN `WithStrictOrdering()` (laatst geldend) op een collectie van waarden (leaf, sealed record, record struct of struct met alleen leaf-velden) met gelijk itemtype staat THE SYSTEM SHALL `x.ShouldBe(y)` geven, met `because`: `x.ShouldBe(y, ignoreOrder: false, because)` (proofs `strict-ordering`, `-lambda-parenthesized`, `-because`, `-because-args`, `-strings`, `-record`, `-record-struct`, `-struct`, `-with-missing-members`, `without-then-strict`).
-- **REQ-2**: WHEN alleen `WithoutStrictOrdering()`, `ExcludingMissingMembers()` of `ThrowingOnMissingMembers()` (of `WithStrictOrdering()` op een niet-collectie) staat THE SYSTEM SHALL de opties laten vervallen en de vorm van `fa.be-equivalent-to-object` geven: `ShouldBeEquivalentTo(y)` of `ShouldBe(y, ignoreOrder: true)` (proofs `without-strict-ordering`, `strict-then-without`, `strict-ordering-object`, `excluding-missing-members`, `throwing-on-missing-members`, `lenient-collection-ints`).
-- **REQ-3**: IF `WithStrictOrdering()` op een collectie met items die een class, niet-sealed of computed/collection-lid record zijn, of met verschillende itemtypes THEN THE SYSTEM SHALL Manual geven (proofs `strict-ordering-class`, `-record-unsealed`, `-record-computed`, `-record-list-member`, `-item-types`).
-- **REQ-4**: IF een lid-selectie-, vergelijkings-, type-, cyclus- of trace-optie (`Excluding`, `Including`, `Using`, `ComparingByValue`, `RespectingRuntimeTypes`, `WithTracing`, ...) THEN THE SYSTEM SHALL Manual geven met per optie een eigen reden die de optietekst noemt (proofs `excluding`, `excluding-with-strict`, `excluding-two`, `including`, `using-comparer`, `comparing-by-value`, `respecting-runtime-types`, `with-tracing`, `collection-excluding`).
-- **REQ-5**: IF `ExcludingMissingMembers()` bij verschillende compile-time types THEN THE SYSTEM SHALL Manual geven met die reden (proof `excluding-missing-members-other-type`).
-- **REQ-6**: IF de options geen inline lambda van de vorm `o => o.Optie(...)` zijn THEN THE SYSTEM SHALL Manual geven (proofs `block-body`, `options-variable`).
+- **REQ-1**: WHEN `WithStrictOrdering()` (last applicable) is on a collection of values (leaf, sealed record, record struct or struct with only leaf fields) with an equal item type THE SYSTEM SHALL give `x.ShouldBe(y)`, with `because`: `x.ShouldBe(y, ignoreOrder: false, because)` (proofs `strict-ordering`, `-lambda-parenthesized`, `-because`, `-because-args`, `-strings`, `-record`, `-record-struct`, `-struct`, `-with-missing-members`, `without-then-strict`).
+- **REQ-2**: WHEN only `WithoutStrictOrdering()`, `ExcludingMissingMembers()` or `ThrowingOnMissingMembers()` (or `WithStrictOrdering()` on a non-collection) is used THE SYSTEM SHALL drop the options and give the form of `fa.be-equivalent-to-object`: `ShouldBeEquivalentTo(y)` or `ShouldBe(y, ignoreOrder: true)` (proofs `without-strict-ordering`, `strict-then-without`, `strict-ordering-object`, `excluding-missing-members`, `throwing-on-missing-members`, `lenient-collection-ints`).
+- **REQ-3**: IF `WithStrictOrdering()` is on a collection with items that are a class, a non-sealed record or a record with a computed/collection member, or with different item types THEN THE SYSTEM SHALL give Manual (proofs `strict-ordering-class`, `-record-unsealed`, `-record-computed`, `-record-list-member`, `-item-types`).
+- **REQ-4**: IF a member selection, comparison, type, cycle or trace option (`Excluding`, `Including`, `Using`, `ComparingByValue`, `RespectingRuntimeTypes`, `WithTracing`, ...) is used THEN THE SYSTEM SHALL give Manual with a reason per option that names the option text (proofs `excluding`, `excluding-with-strict`, `excluding-two`, `including`, `using-comparer`, `comparing-by-value`, `respecting-runtime-types`, `with-tracing`, `collection-excluding`).
+- **REQ-5**: IF `ExcludingMissingMembers()` is used with different compile-time types THEN THE SYSTEM SHALL give Manual with that reason (proof `excluding-missing-members-other-type`).
+- **REQ-6**: IF the options are not an inline lambda of the form `o => o.Option(...)` THEN THE SYSTEM SHALL give Manual (proofs `block-body`, `options-variable`).
 
 ## Assumptions
 
-- Probe tegen FA 7.2.2 en Shouldly 4.3.0 (scratchpad `probe163`, 45 gevallen): voor leaf-collecties, sealed records, record structs en structs met leaf-leden geven `WithStrictOrdering` en `ShouldBe(y)` dezelfde uitkomst bij gelijk, andere volgorde, andere lengte, duplicaten, null-items, null-subject/-expectation, NaN, DateTime-kind en decimal-schaal.
-- `ExcludingMissingMembers`/`ThrowingOnMissingMembers` doen niets bij hetzelfde compile-time type (geprobeerd); `WithStrictOrdering` op een object zonder collecties ook niet (collecties geven in het basispatroon Manual).
+- Probe against FA 7.2.2 and Shouldly 4.3.0 (scratchpad `probe163`, 45 cases): for leaf collections, sealed records, record structs and structs with leaf members, `WithStrictOrdering` and `ShouldBe(y)` give the same outcome for equal, other order, other length, duplicates, null items, null subject/expectation, NaN, DateTime kind and decimal scale.
+- `ExcludingMissingMembers`/`ThrowingOnMissingMembers` do nothing with the same compile-time type (tried); `WithStrictOrdering` on an object without collections neither (collections give Manual in the base pattern).
 
 ## Risks
 
-- Een struct of record met een private auto-property, een berekende publieke property of een eigen `Equals` wordt bewust niet herkend (Manual): FA vergelijkt leden, `ShouldBe` vergelijkt met `Equals`.
-- `WithTracing` valt onder Manual omdat het de foutmelding verandert, niet de uitkomst.
+- A struct or record with a private auto-property, a computed public property or its own `Equals` is deliberately not recognised (Manual): FA compares members, `ShouldBe` compares with `Equals`.
+- `WithTracing` falls under Manual because it changes the error message, not the outcome.
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-equivalent-options-modellen.md](fa-equivalent-options-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-equivalent-options-modellen.md](fa-equivalent-options-modellen.md).
 
-## Zie ook
+## See also
 
 - [fa-equivalent-options-verify.md](fa-equivalent-options-verify.md)
 - [fa-be-equivalent-to-object-plan.md](fa-be-equivalent-to-object-plan.md)

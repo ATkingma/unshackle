@@ -1,20 +1,20 @@
-# Beslissing: Fixed of Manual
+# Decision: Fixed or Manual
 
-**Figure 1.** De gedeelde stappen die elk FluentAssertions-assertion-pattern doorloopt: `FluentAssertionPattern.Rewrite` (Template Method) doet ze met hulp van `FluentAssertionsSyntax` en roept daarna `RewriteAssertion` van het pattern aan. De exception-patterns (`Throw`, `ThrowAsync`, `NotThrow`, ...) implementeren `IPattern` zelf maar doen dezelfde stappen. De eigen controles per pattern; die staan in [patronen.md](patronen.md).
+**Figure 1.** The shared steps every FluentAssertions assertion pattern goes through: `FluentAssertionPattern.Rewrite` (Template Method) performs them with the help of `FluentAssertionsSyntax` and then calls the pattern's `RewriteAssertion`. The exception patterns (`Throw`, `ThrowAsync`, `NotThrow`, ...) implement `IPattern` themselves but perform the same steps. The pattern-specific checks are in [patronen.md](patronen.md).
 
 <!-- kingmadoc:diagram img/pattern-beslissing-1.d2 -->
-![Beslissing: Fixed of Manual](img/pattern-beslissing-1.png)
+![Decision: Fixed or Manual](img/pattern-beslissing-1.png)
 
-| Stap | Hulp in `FluentAssertionsSyntax` | Uitkomst bij falen |
-| ---- | -------------------------------- | ------------------ |
-| Scope | `IsInsideAssertionScope` | Manual: binnen een `AssertionScope` die `fa.assertion-scope` niet omzette |
-| Vorm | `GetSubject` | Manual: niet `x.Should().Methode(...)` |
-| Resultaat | `IsResultDiscarded` | Manual: Shouldly geeft niets terug (of het subject) |
-| Argumenten | `TryGetArguments` | Manual bij benoemde argumenten of `becauseArgs` met een niet-constante/onjuiste formatstring; anders wordt het `string.Format(CultureInfo.InvariantCulture, because, args)` (TAAK-097) |
-| Eigen controles | `RewriteAssertion` per pattern | Manual met patroon-eigen reden |
+| Step | Helper in `FluentAssertionsSyntax` | Outcome on failure |
+| ---- | ---------------------------------- | ------------------ |
+| Scope | `IsInsideAssertionScope` | Manual: inside an `AssertionScope` that `fa.assertion-scope` did not convert |
+| Form | `GetSubject` | Manual: not `x.Should().Methode(...)` |
+| Result | `IsResultDiscarded` | Manual: Shouldly returns nothing (or the subject) |
+| Arguments | `TryGetArguments` | Manual for named arguments or `becauseArgs` with a non-constant/invalid format string; otherwise it becomes `string.Format(CultureInfo.InvariantCulture, because, args)` (TAAK-097) |
+| Own checks | `RewriteAssertion` per pattern | Manual with a pattern-specific reason |
 
-## Zie ook
+## See also
 
-- [patronen.md](patronen.md) — de eigen controles per pattern
-- [fix-flow.md](fix-flow.md) — wat de Fixer met het resultaat doet
+- [patronen.md](patronen.md) — the pattern-specific checks
+- [fix-flow.md](fix-flow.md) — what the Fixer does with the result
 - [../README.md](../README.md)

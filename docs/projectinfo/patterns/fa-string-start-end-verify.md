@@ -10,17 +10,17 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/StringStartEndPattern.cs`; registratie in `FluentAssertionsFix.cs` (ook als schakel van `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/StringStartEnd/`, gedraaid door `ProofTests`.
+Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/StringStartEndPattern.cs`; registration in `FluentAssertionsFix.cs` (also as a link of `fa.and-chain`). Proofs: `src/Unshackle.Tests/Proofs/FluentAssertions/StringStartEnd/`, run by `ProofTests`.
 
-| REQ | Oordeel | Bewijs |
+| REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Gehaald | `simple` |
-| REQ-2 | Gehaald | `equivalent-of` |
-| REQ-3 | Gehaald | `because` |
-| REQ-4 | Gehaald | `null-or` |
-| REQ-5 | Gehaald | `nullable`, `edge-member-subject` |
-| REQ-6 | Gehaald (becauseArgs-deel vervangen) | `assertion-scope`, `and`, `collection` |
-| TAAK-097 | Gehaald | `because-args.after.cs` (`string.Format`) |
+| REQ-1 | Met | `simple` |
+| REQ-2 | Met | `equivalent-of` |
+| REQ-3 | Met | `because` |
+| REQ-4 | Met | `null-or` |
+| REQ-5 | Met | `nullable`, `edge-member-subject` |
+| REQ-6 | Met (becauseArgs part replaced) | `assertion-scope`, `and`, `collection` |
+| TAAK-097 | Met | `because-args.after.cs` (`string.Format`) |
 
 ## Deviations
 
@@ -36,7 +36,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/StringStartEndPattern.
 | Test | `dotnet test` | passed (432 tests) |
 | Sample | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | passed (38 tests) |
 
-## Zie ook
+## See also
 
 - [fa-string-start-end-modellen.md](fa-string-start-end-modellen.md)
 - `claude/docs/patroon-loop.md`

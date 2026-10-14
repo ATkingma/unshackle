@@ -1,52 +1,52 @@
-# TAAK-214 — MediatR: gegenereerde Mediator-typen breken kgrzybek-archtests (module-afhankelijkheid)
+# TAAK-214 — MediatR: generated Mediator types break kgrzybek's archtests (module dependency)
 
-**Status**: ✅ voltooid — legitiem gedragsverschil, geen codewijziging (beslissing gedocumenteerd)
-**Afgerond**: 2026-10-13
-**Aangemaakt**: 2026-10-13 (uit TAAK-213, corpus-ronde 6)
-**Doel**: kgrzybek `91c8ef2` na `fix --fix mediatr`: tests 246/287 → 246/287 (nu 242/287).
+**Status**: ✅ completed — legitimate behaviour difference, no code change (decision documented)
+**Finished**: 2026-10-13
+**Created**: 2026-10-13 (from TAAK-213, corpus round 6)
+**Goal**: kgrzybek `91c8ef2` after `fix --fix mediatr`: tests 246/287 → 246/287 (now 242/287).
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- `_results/r6/kgr/compare.json`: build ok, 4 regressies, alle in `CompanyName.MyMeetings.ArchTests.Modules.ModuleTests`:
-  `{Administration,Meetings,Payments,UserAccess}Module_DoesNotHave_Dependency_On_Other_Modules`, melding
+- `_results/r6/kgr/compare.json`: build ok, 4 regressions, all in `CompanyName.MyMeetings.ArchTests.Modules.ModuleTests`:
+  `{Administration,Meetings,Payments,UserAccess}Module_DoesNotHave_Dependency_On_Other_Modules`, message
   `But was: < <Mediator.Mediator>, <Mediator.Internals.ContainerMetadata> >`.
-- De test (`src/Tests/ArchTests/Modules/ModuleTests.cs`) neemt alle typen van de module-assemblies (behalve `INotificationHandler<>`-implementaties
-  en `*IntegrationEventHandler`) en eist geen afhankelijkheid op de namespaces van andere modules.
-- Vermoeden (niet geverifieerd): de generator van elke module-host scant alle verwezen assemblies, ook IntegrationEvents-contracten van andere
-  modules, en noemt die messages in de gegenereerde `Mediator`/`ContainerMetadata`. Onder MediatR bestond zo'n type niet.
-- Registrations staat niet in de lijst: daar beperkt TAAK-213 al `Assemblies`.
+- The test (`src/Tests/ArchTests/Modules/ModuleTests.cs`) takes all types of the module assemblies (except `INotificationHandler<>` implementations
+  and `*IntegrationEventHandler`) and requires no dependency on the namespaces of other modules.
+- Presumption (not verified): the generator of every module host scans all referenced assemblies, also IntegrationEvents contracts of other
+  modules, and names those messages in the generated `Mediator`/`ContainerMetadata`. Under MediatR no such type existed.
+- Registrations is not in the list: there TAAK-213 already limits `Assemblies`.
 
-## Stappen
+## Steps
 
-- [x] 1. Gegenereerde `Mediator.g.cs` van Administration.Infrastructure bekeken (`EmitCompilerGeneratedFiles`, r6-werkboom).
-- [x] 2. Optie `Assemblies` beperken uitgeprobeerd: verworpen (zie Probe).
-- [x] 3. Beslissing: legitiem verschil; bewijs met een aangepaste archtest in een kopie (geen r7 nodig: geen codewijziging).
+- [x] 1. Looked at the generated `Mediator.g.cs` of Administration.Infrastructure (`EmitCompilerGeneratedFiles`, r6 working tree).
+- [x] 2. Tried the option of limiting `Assemblies`: rejected (see Probe).
+- [x] 3. Decision: legitimate difference; proof with an adjusted archtest in a copy (no r7 needed: no code change).
 
-## Probe (r6-werkboom kgrzybek, Administration.Infrastructure)
+## Probe (r6 working tree kgrzybek, Administration.Infrastructure)
 
-- Vermoeden **bevestigd**. De gegenereerde code noemt typen uit andere modules: 43× `Modules.Meetings.IntegrationEvents`
-  (o.a. `MeetingGroupProposedIntegrationEvent`, `MemberCreatedIntegrationEvent`) en 15× `Modules.Registrations.IntegrationEvents`
-  (`NewUserRegisteredIntegrationEvent`). Daarnaast eigen Application/Domain/Infrastructure, BuildingBlocks.
-- Die events hebben handlers in Administration.Application (`MeetingGroupProposedIntegrationEventHandler`, `NewUserRegisteredIntegrationEventHandler`):
-  de generator moet ze noemen om ze te kunnen dispatchen (`Publish`-switch, `ContainerMetadata`-wrappers).
-- Met `Assemblies = [MediatorModule, Administration.Application]` (handmatig, daarna teruggezet): build ok en geen vreemde typen meer, maar ook
-  de domain events en integration events verdwijnen uit de `Publish`-switch. De `default`-tak doet dan **niets** (`ThrowInvalidNotification`
-  gooit alleen bij een niet-`INotification`): die handlers zouden stil niet meer draaien. Onder MediatR draaiden ze wel. **Verworpen.**
-- `GenerateTypesAsInternal` of `Namespace` helpen niet: NetArchTest bekijkt ook internal typen; het type blijft in de module-assembly.
+- Presumption **confirmed**. The generated code names types from other modules: 43× `Modules.Meetings.IntegrationEvents`
+  (e.g. `MeetingGroupProposedIntegrationEvent`, `MemberCreatedIntegrationEvent`) and 15× `Modules.Registrations.IntegrationEvents`
+  (`NewUserRegisteredIntegrationEvent`). Besides that its own Application/Domain/Infrastructure, BuildingBlocks.
+- Those events have handlers in Administration.Application (`MeetingGroupProposedIntegrationEventHandler`, `NewUserRegisteredIntegrationEventHandler`):
+  the generator must name them to be able to dispatch them (`Publish` switch, `ContainerMetadata` wrappers).
+- With `Assemblies = [MediatorModule, Administration.Application]` (by hand, reverted afterwards): build ok and no foreign types any more, but
+  the domain events and integration events also disappear from the `Publish` switch. The `default` branch then does **nothing** (`ThrowInvalidNotification`
+  only throws for a non-`INotification`): those handlers would silently no longer run. Under MediatR they did run. **Rejected.**
+- `GenerateTypesAsInternal` or `Namespace` do not help: NetArchTest also looks at internal types; the type stays in the module assembly.
 
-## Beslissing
+## Decision
 
-Legitiem gedragsverschil, geen fout in de migratie. De archtest kijkt naar alle typen in de module-assemblies en zondert
-`INotificationHandler<>`-implementaties al uit, juist omdat die van andere modules mogen afhangen. De door Mediator gegenereerde dispatcher
-(`Mediator.Mediator`, `Mediator.Internals.ContainerMetadata`) is hetzelfde soort afhankelijkheid, maar dan in gegenereerde code.
-Bewijs: met `.And().DoNotResideInNamespace("Mediator")` in de 4 tests (kopie in r6, teruggezet) slaagt `CompanyName.MyMeetings.ArchTests`
-8/8; daarmee is kgrzybek 246/287, gelijk aan de basis.
-Advies voor gebruikers: archtests die alle typen van een assembly bekijken, moeten de namespace `Mediator` uitzonderen.
-Unshackle meldt dit niet automatisch: zo'n waarschuwing is niet betrouwbaar af te leiden (welke test wat bekijkt staat niet in de code van de host).
-Update: sinds TAAK-240 geeft de fix wel een algemene waarschuwing zodra de solution NetArchTest/ArchUnitNET refereert.
+A legitimate behaviour difference, not an error in the migration. The archtest looks at all types in the module assemblies and already excludes
+`INotificationHandler<>` implementations, precisely because those may depend on other modules. The dispatcher generated by Mediator
+(`Mediator.Mediator`, `Mediator.Internals.ContainerMetadata`) is the same kind of dependency, but in generated code.
+Proof: with `.And().DoNotResideInNamespace("Mediator")` in the 4 tests (copy in r6, reverted) `CompanyName.MyMeetings.ArchTests` passes
+8/8; with that kgrzybek is 246/287, equal to the baseline.
+Advice for users: archtests that look at all types of an assembly must exclude the namespace `Mediator`.
+Unshackle does not report this automatically: such a warning cannot be derived reliably (which test looks at what is not in the host's code).
+Update: since TAAK-240 the fix does give a general warning as soon as the solution references NetArchTest/ArchUnitNET.
 
-## Zie ook
+## See also
 
 - `claude/tasks/archief/TAAK-213-mediatr-host-verwijst-naar-host.md`
-- `claude/tasks/CORPUSRUN-mediatr.md` — "Herhaling ronde 6"
+- `claude/tasks/CORPUSRUN-mediatr.md` — "Repeat round 6"
 - `claude/tasks/mediatr-queue.md`

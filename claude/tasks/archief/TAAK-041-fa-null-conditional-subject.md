@@ -1,59 +1,59 @@
-# TAAK-041 — Subject met `?.` wordt Manual "result is used"
+# TAAK-041 — A subject with `?.` becomes Manual "result is used"
 
-**Status**: ✅ voltooid (2026-10-11)
-**Aangemaakt**: 2026-10-11
-**Doel**: de pending proof(s) hieronder slagen en staan weer in `Proofs/FluentAssertions/`.
+**Status**: ✅ completed (2026-10-11)
+**Created**: 2026-10-11
+**Goal**: the pending proof(s) below pass and are back in `Proofs/FluentAssertions/`.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Gevonden bij het verzamelen van edge cases uit open-source projecten (`docs/projectinfo/architectuur/edge-cases.md`).
-- `uri?.Host.Should().BeNull();` geeft Manual "The result of BeNull() is used" terwijl het resultaat niet gebruikt wordt.
-- Proofs staan in `src/Unshackle.Tests/Proofs/_Pending/` (draaien niet, zie `ProofTests.PendingFolderName`). Het `.after.cs` is de gewenste uitkomst:
+- Found while collecting edge cases from open-source projects (`docs/projectinfo/architectuur/edge-cases.md`).
+- `uri?.Host.Should().BeNull();` gives Manual "The result of BeNull() is used" while the result is not used.
+- Proofs are in `src/Unshackle.Tests/Proofs/_Pending/` (do not run, see `ProofTests.PendingFolderName`). The `.after.cs` is the desired outcome:
 - `src/Unshackle.Tests/Proofs/_Pending/FluentAssertions/BeNull/edge-null-conditional.before.cs` + `.after.cs`
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-Bij `a?.B.Should().BeNull()` is de assertion-invocation onderdeel van de `WhenNotNull`-tak van een `ConditionalAccessExpressionSyntax`; de parent is dus geen `ExpressionStatementSyntax` en `IsResultDiscarded` geeft false.
+With `a?.B.Should().BeNull()` the assertion invocation is part of the `WhenNotNull` branch of a `ConditionalAccessExpressionSyntax`; the parent is therefore not an `ExpressionStatementSyntax` and `IsResultDiscarded` returns false.
 
-### Probleem
+### Problem
 
-Echte testcode in deze vorm wordt niet (correct) gemigreerd.
+Real test code in this form is not migrated (correctly).
 
-### Nieuwe situatie
+### New situation
 
-`uri?.Host.ShouldBeNull();` (de `?.` blijft; semantiek gelijk: bij null-receiver wordt niets gecontroleerd, net als in FA). Of bewust Manual met een eerlijke reden.
+`uri?.Host.ShouldBeNull();` (the `?.` stays; same semantics: with a null receiver nothing is checked, just like in FA). Or deliberately Manual with an honest reason.
 
-### Verbetering
+### Improvement
 
-Minder onnodige Manual-findings / geen kapotte build na migratie.
+Fewer needless Manual findings / no broken build after the migration.
 
-## Aanpak
+## Approach
 
-### Hoe
+### How
 
-Loop in `IsResultDiscarded` omhoog door `ConditionalAccessExpressionSyntax` (zolang de invocation in `WhenNotNull` zit) voordat de parent getest wordt. HaveCount heeft al een eigen `?.`-Manual (HaveCountPattern.cs:32); die laten staan.
+Walk up in `IsResultDiscarded` through `ConditionalAccessExpressionSyntax` (as long as the invocation is in `WhenNotNull`) before the parent is tested. HaveCount already has its own `?.` Manual (HaveCountPattern.cs:32); leave it.
 
-## Stappen
+## Steps
 
-- [x] 1. Proof(s) uit `_Pending/` terugzetten naar `Proofs/FluentAssertions/<Patroon>/`, zien falen.
-- [x] 2. Fix in de genoemde code; alle proofs (`--filter-class "*ProofTests"`) en `dotnet test` groen.
-- [x] 3. Verify-doc van het geraakte patroon bijwerken; taak archiveren.
+- [x] 1. Move the proof(s) from `_Pending/` back to `Proofs/FluentAssertions/<Pattern>/`, see them fail.
+- [x] 2. Fix in the code mentioned; all proofs (`--filter-class "*ProofTests"`) and `dotnet test` green.
+- [x] 3. Update the verify doc of the affected pattern; archive the task.
 
-## Risico's & randgevallen
+## Risks & edge cases
 
-| Risico | Mitigatie |
-| ------ | --------- |
-| Twijfel: FA en Shouldly slaan bij `?.` beide de check over; dat is al gebruikerscode-gedrag, geen nieuwe zwakte. | Alle proofs + CombinedProofTests draaien |
+| Risk | Mitigation |
+| ---- | ---------- |
+| Doubt: FA and Shouldly both skip the check with `?.`; that is already user-code behaviour, no new weakness. | Run all proofs + CombinedProofTests |
 
-## Gewijzigde bestanden
+## Changed files
 
-- `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` (`IsResultDiscarded`: `?.`-keten en void expression body)
+- `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` (`IsResultDiscarded`: `?.` chain and void expression body)
 - `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowAsyncPattern.cs` (ConfigureAwait)
-- proofs uit `_Pending/` verplaatst; verify-docs fa-should-be, fa-be-null, fa-not-throw, fa-throw-async
+- proofs moved out of `_Pending/`; verify docs fa-should-be, fa-be-null, fa-not-throw, fa-throw-async
 
-## Zie ook
+## See also
 
 - `claude/docs/INDEX.md`
 - `docs/projectinfo/architectuur/edge-cases.md`

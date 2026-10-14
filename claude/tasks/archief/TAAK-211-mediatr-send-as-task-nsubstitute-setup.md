@@ -1,45 +1,45 @@
-# TAAK-211 — `mediatr.send-as-task` herschrijft NSubstitute-setups (`mock.Send(...).Returns(...)`) tot `.AsTask().Returns(...)`
+# TAAK-211 — `mediatr.send-as-task` rewrites NSubstitute setups (`mock.Send(...).Returns(...)`) to `.AsTask().Returns(...)`
 
-**Status**: ✅ voltooid (2026-10-13)
-**Aangemaakt**: 2026-10-13 (uit corpus-ronde 3, `claude/tasks/CORPUSRUN-mediatr.md`)
-**Doel**: dotnet/eShop `59f1a6c` bouwt na `fix --fix mediatr` (nu 52 Fixed, 0 Manual, maar 12× NS1000 in `tests/Ordering.UnitTests`).
+**Status**: ✅ completed (2026-10-13)
+**Created**: 2026-10-13 (from corpus round 3, `claude/tasks/CORPUSRUN-mediatr.md`)
+**Goal**: dotnet/eShop `59f1a6c` builds after `fix --fix mediatr` (now 52 Fixed, 0 Manual, but 12× NS1000 in `tests/Ordering.UnitTests`).
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Ronde 3 (main `9189df4`, libman omzeild met `LibraryRestore=false`): eShop migreert volledig (0 Manual, `IdentifiedCommand<T,R>` → `IdentifiedCommandOf…`),
-  maar de build na de fix breekt stil: 12× `error NS1000: Member AsTask can not be intercepted` (NSubstitute.Analyzers, TWAE).
-- Voor: `_mediator.Send(Arg.Any<IRequest<bool>>(), default).Returns(Task.FromResult(true));` (`_mediator = Substitute.For<IMediator>()`).
-  Na: `_mediator.Send(Arg.Any<IRequest<bool>>(), default).AsTask().Returns(Task.FromResult(true));`
-  → `AsTask()` is een niet-virtuele `ValueTask`-methode; de setup configureert niets meer (NS1000, en zonder analyzer runtime fout/stille default).
-- Plekken: `tests/Ordering.UnitTests/Application/IdentifiedCommandHandlerTest.cs` (27, 49) en `OrdersWebApiTest.cs` (28, 43, 58, 74).
-  `await _mediator.Received().Send(...)` wordt terecht niet aangeraakt.
+- Round 3 (main `9189df4`, libman bypassed with `LibraryRestore=false`): eShop migrates fully (0 Manual, `IdentifiedCommand<T,R>` → `IdentifiedCommandOf…`),
+  but the build after the fix breaks silently: 12× `error NS1000: Member AsTask can not be intercepted` (NSubstitute.Analyzers, TWAE).
+- Before: `_mediator.Send(Arg.Any<IRequest<bool>>(), default).Returns(Task.FromResult(true));` (`_mediator = Substitute.For<IMediator>()`).
+  After: `_mediator.Send(Arg.Any<IRequest<bool>>(), default).AsTask().Returns(Task.FromResult(true));`
+  → `AsTask()` is a non-virtual `ValueTask` method; the setup no longer configures anything (NS1000, and without the analyzer a runtime error/silent default).
+- Places: `tests/Ordering.UnitTests/Application/IdentifiedCommandHandlerTest.cs` (27, 49) and `OrdersWebApiTest.cs` (28, 43, 58, 74).
+  `await _mediator.Received().Send(...)` is rightly left alone.
 
-## Nieuwe situatie (voorstel)
+## New situation (proposal)
 
-- `SendAsTaskPattern` slaat een `Send/Publish`-aanroep over waarvan het resultaat de ontvanger is van NSubstitute `Returns`/`ReturnsForAnyArgs`/`Throws*`
-  (of Moq `Setup`-lambda), en ook aanroepen binnen `Received()`/`DidNotReceive()`.
-- Het `Returns`-argument meeverhuizen: `Task.FromResult(x)` → `new ValueTask<T>(x)` (of `ValueTask.FromResult(x)`), `Task.CompletedTask` → `ValueTask.CompletedTask`;
-  onbekende vorm → Manual met reden.
+- `SendAsTaskPattern` skips a `Send/Publish` call whose result is the receiver of NSubstitute `Returns`/`ReturnsForAnyArgs`/`Throws*`
+  (or a Moq `Setup` lambda), and also calls inside `Received()`/`DidNotReceive()`.
+- Move the `Returns` argument along: `Task.FromResult(x)` → `new ValueTask<T>(x)` (or `ValueTask.FromResult(x)`), `Task.CompletedTask` → `ValueTask.CompletedTask`;
+  an unknown form → Manual with a reason.
 
-## Stappen
+## Steps
 
-- [x] 1. Proofs `SendAsTask/nsubstitute-returns` (eShop-vorm, `ReturnsForAnyArgs` met twee waarden en typeargument, gekwalificeerde `Task`,
-  `Publish(...).Returns(Task.CompletedTask)`, `Throws`, `Received().Send`) en `nsubstitute-returns-lambda` (Manual). Unittests `SendAsTaskPatternTests`.
-- [x] 2. `SendAsTaskPattern`: een `Send`/`Publish` die ontvanger is van NSubstitute `Returns`/`ReturnsForAnyArgs` → de setup-aanroep wordt de finding;
-  `Task.FromResult(x)` → `ValueTask.FromResult(x)`, `Task.CompletedTask` → `ValueTask.CompletedTask` (alleen bij niet-generieke return, dus `Publish`);
-  andere waarden → Manual. `Throws*` en een losse `Received()/DidNotReceive().Send(...)`-statement: ongemoeid.
+- [x] 1. Proofs `SendAsTask/nsubstitute-returns` (eShop form, `ReturnsForAnyArgs` with two values and a type argument, qualified `Task`,
+  `Publish(...).Returns(Task.CompletedTask)`, `Throws`, `Received().Send`) and `nsubstitute-returns-lambda` (Manual). Unit tests `SendAsTaskPatternTests`.
+- [x] 2. `SendAsTaskPattern`: a `Send`/`Publish` that is the receiver of NSubstitute `Returns`/`ReturnsForAnyArgs` → the setup call becomes the finding;
+  `Task.FromResult(x)` → `ValueTask.FromResult(x)`, `Task.CompletedTask` → `ValueTask.CompletedTask` (only with a non-generic return, so `Publish`);
+  other values → Manual. `Throws*` and a standalone `Received()/DidNotReceive().Send(...)` statement: untouched.
 - [x] 3. Docs: send-as-task plan/verify REQ-5/6.
-- [x] 4. Bewijs (`_results/r4/eshop`): 52 Fixed, 0 Manual, **build na fix ok** (was 12× NS1000); unit 32/32 → 32/32, 0 regressies
-  (6 functionele tests zonder Docker liepen na de fix verder tot de time-out en zijn rood, vóór de fix niet gehaald).
+- [x] 4. Proof (`_results/r4/eshop`): 52 Fixed, 0 Manual, **build after fix ok** (was 12× NS1000); unit 32/32 → 32/32, 0 regressions
+  (6 functional tests without Docker ran further until the time-out after the fix and are red; before the fix they were not reached).
 
-## Keuzes
+## Choices
 
-- `ValueTask.FromResult(x)` i.p.v. `new ValueTask<T>(x)`: behoudt een expliciet typeargument en de qualifier, geen type-naam nodig.
-- `Task.CompletedTask` op een void-`Send` → Manual: Mediator geeft daar `ValueTask<Unit>`.
-- Moq (`Setup(m => m.Send(...))`) valt buiten scope: geen corpusvoorkomen.
+- `ValueTask.FromResult(x)` instead of `new ValueTask<T>(x)`: keeps an explicit type argument and the qualifier, no type name needed.
+- `Task.CompletedTask` on a void `Send` → Manual: Mediator gives `ValueTask<Unit>` there.
+- Moq (`Setup(m => m.Send(...))`) is out of scope: no corpus occurrence.
 
-## Zie ook
+## See also
 
 - `src/Unshackle.Core/Fixes/MediatR/Patterns/SendAsTaskPattern.cs`
-- `claude/tasks/CORPUSRUN-mediatr.md` — "Herhaling ronde 3"
+- `claude/tasks/CORPUSRUN-mediatr.md` — "Repeat round 3"
 - `claude/tasks/mediatr-queue.md`

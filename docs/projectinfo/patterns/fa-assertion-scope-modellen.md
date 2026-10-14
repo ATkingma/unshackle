@@ -1,52 +1,52 @@
-# Modellen: fa.assertion-scope
+# Models: fa.assertion-scope
 
-Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AssertionScopePattern.cs` en `FluentAssertionsSyntax.IsInsideAssertionScope`.
+Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AssertionScopePattern.cs` and `FluentAssertionsSyntax.IsInsideAssertionScope`.
 
-## Figuur 1: klassen
+## Figure 1: classes
 
-**Figure 1.** `AssertionScopePattern`, zijn contract en de gedeelde check die alle FA-patronen gebruiken. Sinds TAAK-100 draait het patroon als eerste en zet een gewone scope om naar `ShouldSatisfyAllConditions`.
+**Figure 1.** `AssertionScopePattern`, its contract and the shared check that all FA patterns use. Since TAAK-100 the pattern runs first and converts a plain scope to `ShouldSatisfyAllConditions`.
 
 <!-- kingmadoc:diagram img/fa-assertion-scope-modellen-1.d2 -->
-![Figuur 1: klassen](img/fa-assertion-scope-modellen-1.png)
+![Figure 1: classes](img/fa-assertion-scope-modellen-1.png)
 
-| Element | Rol |
-| ------- | --- |
-| `AssertionScopePattern` | Vindt elke `new AssertionScope(...)` (`Find`: het `using`-statement, het blok van een `using var`, anders de creatie); `Rewrite` geeft `Fixed` via `IsPlain` + `TryConvert`, anders `Manual` |
-| `FluentAssertionsSyntax` | `IsAssertionScope(type)`, `IsInsideAssertionScope(node, model)`, `InsideAssertionScopeReason`; `IsFluentAssertions` en `IsSafeToEvaluateTwice` voor `TryConvert` |
-| Andere FA-patronen | Roepen `IsInsideAssertionScope` als eerste stap aan (`FluentAssertionPattern.Rewrite`, `AndChainPattern.Rewrite`, ...); herschrijven daarna de lambda's van een omgezette scope |
-| `PatternResult` | `Fixed(x.ShouldSatisfyAllConditions(...))` of `Manual(reden)` |
+| Element | Role |
+| ------- | ---- |
+| `AssertionScopePattern` | Finds every `new AssertionScope(...)` (`Find`: the `using` statement, the block of a `using var`, otherwise the creation); `Rewrite` gives `Fixed` via `IsPlain` + `TryConvert`, otherwise `Manual` |
+| `FluentAssertionsSyntax` | `IsAssertionScope(type)`, `IsInsideAssertionScope(node, model)`, `InsideAssertionScopeReason`; `IsFluentAssertions` and `IsSafeToEvaluateTwice` for `TryConvert` |
+| Other FA patterns | Call `IsInsideAssertionScope` as the first step (`FluentAssertionPattern.Rewrite`, `AndChainPattern.Rewrite`, ...); afterwards rewrite the lambdas of a converted scope |
+| `PatternResult` | `Fixed(x.ShouldSatisfyAllConditions(...))` or `Manual(reason)` |
 | `AssertionScope` | `FluentAssertions.Execution.AssertionScope` (sealed) |
 
-## Figuur 2: sequence
+## Figure 2: sequence
 
-**Figure 2.** Een omgezette scope (`Fixed`), en een scope die blijft staan met een assertion erbinnen (beide `Manual`).
+**Figure 2.** A converted scope (`Fixed`), and a scope that stays with an assertion inside it (both `Manual`).
 
 <!-- kingmadoc:diagram img/fa-assertion-scope-modellen-2.d2 -->
-![Figuur 2: sequence](img/fa-assertion-scope-modellen-2.png)
+![Figure 2: sequence](img/fa-assertion-scope-modellen-2.png)
 
-| Stap | Methode in de code | Wat gebeurt er |
-| ---- | ------------------ | -------------- |
-| Vinden | `AssertionScopePattern.Find` | Alle `BaseObjectCreationExpressionSyntax` met type `AssertionScope` |
-| Scope | `AssertionScopePattern.Rewrite` → `IsPlain`, `TryConvert` | Zonder argumenten en alleen FA-assertion-statements (geen `await`, ref-locals, scope-variabele): `x.ShouldSatisfyAllConditions(() => { a; }, ...)` met als `x` het eerste veilige subject; anders `Manual` met advies |
-| Assertion | `FluentAssertionPattern.Rewrite` (of `AndChainPattern.Rewrite`) → `IsInsideAssertionScope` | Voorouders aflopen: `using`-body of blok met eerdere `using var` |
-| Type | `SemanticModel.GetTypeInfo` | Declaratie- of expressietype moet `AssertionScope` zijn |
+| Step | Method in the code | What happens |
+| ---- | ------------------ | ------------ |
+| Find | `AssertionScopePattern.Find` | All `BaseObjectCreationExpressionSyntax` with type `AssertionScope` |
+| Scope | `AssertionScopePattern.Rewrite` → `IsPlain`, `TryConvert` | Without arguments and only FA assertion statements (no `await`, ref locals, scope variable): `x.ShouldSatisfyAllConditions(() => { a; }, ...)` with the first safe subject as `x`; otherwise `Manual` with advice |
+| Assertion | `FluentAssertionPattern.Rewrite` (or `AndChainPattern.Rewrite`) → `IsInsideAssertionScope` | Walk the ancestors: `using` body or block with an earlier `using var` |
+| Type | `SemanticModel.GetTypeInfo` | Declaration or expression type must be `AssertionScope` |
 
-## Figuur 3: beslisboom
+## Figure 3: decision tree
 
-**Figure 3.** Vragen van `AssertionScopePattern.Rewrite`, en daarna van `IsInsideAssertionScope` voor assertions in een scope die blijft staan.
+**Figure 3.** Questions of `AssertionScopePattern.Rewrite`, and then of `IsInsideAssertionScope` for assertions in a scope that stays.
 
 <!-- kingmadoc:diagram img/fa-assertion-scope-modellen-3.d2 -->
-![Figuur 3: beslisboom](img/fa-assertion-scope-modellen-3.png)
+![Figure 3: decision tree](img/fa-assertion-scope-modellen-3.png)
 
-| Blad | Voorwaarde | Bewijs |
-| ---- | ---------- | ------ |
-| Manual "Inside an AssertionScope" | body van een niet-omgezette `using (new AssertionScope())`, ook genest (proofs draaien alleen het ShouldBe-patroon) | `ShouldBe/assertion-scope-using-block`, `-nested` |
-| Manual "Inside an AssertionScope" | eerder in een omringend blok `using var` scope | `ShouldBe/assertion-scope-using-var` |
-| Normaal patroon | geen scope-voorouder | unittest `false`-gevallen |
-| Fixed `ShouldSatisfyAllConditions` | gewone scope met alleen FA-assertion-statements | `_Combined/scope-using-block`, `_Combined/scope-using-var` |
-| Manual "Shouldly has no scope" | context-string, `Discard()`/scope-variabele, ander statement, `await` | `AssertionScope/context`, `discard`, `other-statement`, `await` |
+| Leaf | Condition | Evidence |
+| ---- | --------- | -------- |
+| Manual "Inside an AssertionScope" | body of an unconverted `using (new AssertionScope())`, also nested (proofs run only the ShouldBe pattern) | `ShouldBe/assertion-scope-using-block`, `-nested` |
+| Manual "Inside an AssertionScope" | earlier `using var` scope in an enclosing block | `ShouldBe/assertion-scope-using-var` |
+| Normal pattern | no scope ancestor | unit test `false` cases |
+| Fixed `ShouldSatisfyAllConditions` | plain scope with only FA assertion statements | `_Combined/scope-using-block`, `_Combined/scope-using-var` |
+| Manual "Shouldly has no scope" | context string, `Discard()`/scope variable, other statement, `await` | `AssertionScope/context`, `discard`, `other-statement`, `await` |
 
-## Zie ook
+## See also
 
 - [fa-assertion-scope-plan.md](fa-assertion-scope-plan.md)
 - [fa-assertion-scope-verify.md](fa-assertion-scope-verify.md)

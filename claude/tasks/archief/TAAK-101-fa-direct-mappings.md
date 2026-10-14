@@ -1,27 +1,27 @@
-# TAAK-101 — Kleine mappings
+# TAAK-101 — Small mappings
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-11
-**Bron**: `claude/tasks/ANALYSE-fa-100.md` (acties 5–10)
+**Status**: ✅ Done
+**Created**: 2026-10-11
+**Source**: `claude/tasks/ANALYSE-fa-100.md` (actions 5–10)
 
-## Keuzes
+## Choices
 
-Nieuw patroon `DirectMappingPattern` (`fa.direct-mapping`), zie plan. `BePositive`/`BeNegative` bestonden al (`fa.be-greater-less`); nieuw: `BeNegative` op double/float → Manual (FA faalt op NaN, Shouldly niet).
+New pattern `DirectMappingPattern` (`fa.direct-mapping`), see plan. `BePositive`/`BeNegative` already existed (`fa.be-greater-less`); new: `BeNegative` on double/float → Manual (FA fails on NaN, Shouldly does not).
 
-## Bewijs
+## Evidence
 
-Zie plan; probe NaN: `double.NaN.Should().BeNegative()` faalt, `ShouldBeNegative()` slaagt.
-Probe-code: scratchpad `p096/` (FA 7.2.2 + Shouldly 4.3.0, reflectie op `Shouldly.dll`).
+See plan; NaN probe: `double.NaN.Should().BeNegative()` fails, `ShouldBeNegative()` passes.
+Probe code: scratchpad `p096/` (FA 7.2.2 + Shouldly 4.3.0, reflection on `Shouldly.dll`).
 
 ## Proofs
 
 DirectMapping/* (6 Fixed, 3 Manual), BeGreaterLess/negative-double (Manual)
 
-## Resultaat
+## Result
 
-`dotnet build`, `dotnet test` (621) en de SampleShop-tests (38) groen. Scan: `ANALYSE-fa-100.md` sectie "Na acties 5–10".
+`dotnet build`, `dotnet test` (621) and the SampleShop tests (38) green. Scan: `ANALYSE-fa-100.md` section "Na acties 5–10".
 
-## Zie ook
+## See also
 
 - `claude/tasks/ANALYSE-fa-100.md`
 - `docs/projectinfo/architectuur/proofs.md`

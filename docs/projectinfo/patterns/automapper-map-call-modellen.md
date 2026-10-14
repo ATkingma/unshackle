@@ -1,59 +1,59 @@
-# Modellen: automapper.map-call
+# Models: automapper.map-call
 
-Feiten uit `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapCallPattern.cs` en `CreateMapPattern.cs`.
+Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapCallPattern.cs` and `CreateMapPattern.cs`.
 
-> De figuren zijn als D2-bron aangemaakt in `img/`; `kingmadoc`/`d2` waren in deze omgeving niet beschikbaar, dus de PNG/SVG volgen bij de eerstvolgende `kingmadoc render`.
+> The figures were created as D2 sources in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
 
-## Figuur 1: klassen
+## Figure 1: classes
 
-**Figure 1.** `MapCallPattern` als `ISolutionPattern`, met `CreateMapPattern` voor de profiles.
+**Figure 1.** `MapCallPattern` as an `ISolutionPattern`, with `CreateMapPattern` for the profiles.
 
 <!-- kingmadoc:diagram img/automapper-map-call-modellen-1.d2 -->
-![Figuur 1: klassen](img/automapper-map-call-modellen-1.png)
+![Figure 1: classes](img/automapper-map-call-modellen-1.png)
 
-| Element            | Rol                                                                                                                       |
+| Element            | Role                                                                                                                      |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `MapCallPattern`   | Id `automapper.map-call`; `Find` via `IsMapCall`; `Rewrite` alleen met een bestaande `ToB`, `RewriteAsync` ook met profiles |
-| `IsMapCall`        | `Map` van AutoMapper met één argument en één of twee typeargumenten                                                       |
-| `CreateMapPattern` | `Rewrite` levert de gegenereerde extensieklasse; `Find` slaat `IsMapCall`-aanroepen over                                  |
-| `Check`            | Ontvanger, brontype, collectie, nullable-flow                                                                             |
-| `Existing`         | `ToB` in scope, of in de broncode van de compilatie (met `using`)                                                         |
-| `GeneratedAsync`   | Profiles in het project en zijn afhankelijkheden: methodenaam, namespace, internal                                        |
+| `MapCallPattern`   | Id `automapper.map-call`; `Find` via `IsMapCall`; `Rewrite` only with an existing `ToB`, `RewriteAsync` also with profiles |
+| `IsMapCall`        | AutoMapper's `Map` with one argument and one or two type arguments                                                        |
+| `CreateMapPattern` | `Rewrite` returns the generated extension class; `Find` skips `IsMapCall` calls                                           |
+| `Check`            | Receiver, source type, collection, nullable flow                                                                          |
+| `Existing`         | `ToB` in scope, or in the compilation's source code (with a `using`)                                                      |
+| `GeneratedAsync`   | Profiles in the project and its dependencies: method name, namespace, internal                                            |
 
-## Figuur 2: sequence
+## Figure 2: sequence
 
-**Figure 2.** Van `Fixer` via `Find` en `RewriteAsync` naar `Fixed` of `Manual`.
+**Figure 2.** From `Fixer` via `Find` and `RewriteAsync` to `Fixed` or `Manual`.
 
 <!-- kingmadoc:diagram img/automapper-map-call-modellen-2.d2 -->
-![Figuur 2: sequence](img/automapper-map-call-modellen-2.png)
+![Figure 2: sequence](img/automapper-map-call-modellen-2.png)
 
-| Stap      | Methode in de code                                | Wat gebeurt er                                             |
+| Step      | Method in the code                                | What happens                                               |
 | --------- | ------------------------------------------------- | ---------------------------------------------------------- |
-| Vinden    | `Find`, `IsMapCall`                               | `Map<B>(a)` / `Map<A, B>(a)` van AutoMapper                |
-| Toetsen   | `Check`                                           | Ontvanger zonder bijwerkingen, brontype, collectie, null   |
-| Bestaand  | `Existing`, `LookupSymbols`, `GetSymbolsWithName` | `ToB` die al bestaat (ook net gegenereerd in dit bestand)  |
-| Profiles  | `GeneratedAsync`, `CreateMapPattern.Rewrite`      | Welke `ToB` de fix schrijft en in welke namespace          |
-| Schrijven | `Fixed`                                           | `a.ToB()`, haakjes waar nodig, `using` als dat nodig is    |
+| Find      | `Find`, `IsMapCall`                               | AutoMapper's `Map<B>(a)` / `Map<A, B>(a)`                  |
+| Check     | `Check`                                           | Receiver without side effects, source type, collection, null |
+| Existing  | `Existing`, `LookupSymbols`, `GetSymbolsWithName` | A `ToB` that already exists (also just generated in this file) |
+| Profiles  | `GeneratedAsync`, `CreateMapPattern.Rewrite`      | Which `ToB` the fix writes and in which namespace          |
+| Write     | `Fixed`                                           | `a.ToB()`, parentheses where needed, `using` if needed     |
 
-## Figuur 3: beslisboom
+## Figure 3: decision tree
 
-**Figure 3.** De vragen van `RewriteAsync`.
+**Figure 3.** The questions of `RewriteAsync`.
 
 <!-- kingmadoc:diagram img/automapper-map-call-modellen-3.d2 -->
-![Figuur 3: beslisboom](img/automapper-map-call-modellen-3.png)
+![Figure 3: decision tree](img/automapper-map-call-modellen-3.png)
 
-| Blad                              | Voorwaarde                                   | Bewijs                                                               |
+| Leaf                              | Condition                                    | Evidence                                                             |
 | --------------------------------- | -------------------------------------------- | -------------------------------------------------------------------- |
-| Manual "not called as mapper.Map" | ontvanger is een aanroep of andere expressie | `receiver-call`                                                      |
-| Manual "no type of its own"       | bron is `object` of `dynamic`                | `object-source`                                                      |
-| Manual "maps a collection"        | bron of doel is een collectie                | `collection`                                                         |
-| Manual "may be null"              | flow-state van de bron is MaybeNull          | `maybe-null`                                                         |
-| Manual "No CreateMap"             | geen `ToB`, geen herschreven profile         | `unknown-map`, `manual-profile`                                      |
-| Manual "Several profiles"         | meer dan één profile mapt A naar B           | —                                                                    |
-| Manual "becomes internal"         | internal `ToB` in een ander project          | unittest                                                             |
-| Fixed (`a.ToB()`)                 | alles hierboven gehaald                      | `existing-method`, `map-call-profile`, `map-call-global`, unittests  |
+| Manual "not called as mapper.Map" | the receiver is a call or another expression | `receiver-call`                                                      |
+| Manual "no type of its own"       | the source is `object` or `dynamic`         | `object-source`                                                      |
+| Manual "maps a collection"        | source or destination is a collection        | `collection`                                                         |
+| Manual "may be null"              | flow state of the source is MaybeNull        | `maybe-null`                                                         |
+| Manual "No CreateMap"             | no `ToB`, no rewritten profile               | `unknown-map`, `manual-profile`                                      |
+| Manual "Several profiles"         | more than one profile maps A to B            | —                                                                    |
+| Manual "becomes internal"         | an internal `ToB` in another project         | unit test                                                            |
+| Fixed (`a.ToB()`)                 | everything above passed                      | `existing-method`, `map-call-profile`, `map-call-global`, unit tests |
 
-## Zie ook
+## See also
 
 - [automapper-map-call-plan.md](automapper-map-call-plan.md)
 - [automapper-map-call-verify.md](automapper-map-call-verify.md)

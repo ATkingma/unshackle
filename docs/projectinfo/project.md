@@ -1,45 +1,45 @@
-# Unshackle: projectidee
+# Unshackle: project idea
 
-## In één zin
-Een `dotnet tool` die .NET-code met Roslyn automatisch migreert weg van bibliotheken die
-commercieel zijn geworden. Eerst een rapport, dan een preview, dan pas wijzigen.
+## In one sentence
+A `dotnet tool` that uses Roslyn to automatically migrate .NET code away from libraries that
+have gone commercial. First a report, then a preview, only then changes.
 
-## Het probleem
-In 2025 stapten drie veelgebruikte .NET-bibliotheken over op een commerciële licentie:
+## The problem
+In 2025 three widely used .NET libraries switched to a commercial licence:
 
-| Bibliotheek | Laatste vrije versie | Daarna | Gangbaar alternatief |
+| Library | Last free version | After that | Common alternative |
 |---|---|---|---|
-| FluentAssertions | 7.2.2 (Apache-2.0) | vanaf 8: commercieel | Shouldly, AwesomeAssertions |
-| MediatR | 12.5.0 (Apache-2.0) | vanaf 13: RPL-1.5 of commercieel | Mediator (source-generated), gewone DI |
-| AutoMapper | 14.0.0 (MIT) | vanaf 15: RPL-1.5 of commercieel | Mapperly, handgeschreven mapping |
+| FluentAssertions | 7.2.2 (Apache-2.0) | from 8: commercial | Shouldly, AwesomeAssertions |
+| MediatR | 12.5.0 (Apache-2.0) | from 13: RPL-1.5 or commercial | Mediator (source-generated), plain DI |
+| AutoMapper | 14.0.0 (MIT) | from 15: RPL-1.5 or commercial | Mapperly, hand-written mapping |
 
-Teams kunnen de oude versie vastpinnen, maar krijgen dan geen updates meer. Wie migreert,
-moet honderden tot duizenden plekken aanpassen. Find-and-replace werkt niet, omdat de
-juiste herschrijving afhangt van types en overloads.
+Teams can pin the old version, but then get no more updates. Whoever migrates
+has to change hundreds to thousands of places. Find-and-replace does not work, because the
+right rewrite depends on types and overloads.
 
-Bewijs dat de behoefte er is:
-- [RoseMCP #334](https://github.com/AtomicBlom/RoseMCP/issues/334): 3.724 assertions in ~150 bestanden
-  naar Shouldly. "No tool rewrites a code pattern across a solution", dus het plan was een
-  Roslyn-script om daarna weg te gooien.
-- [Altinn/dialogporten #3024](https://github.com/Altinn/dialogporten/issues/3024): MassTransit,
-  FluentAssertions, AutoMapper en MediatR vervangen.
+Proof that the need exists:
+- [RoseMCP #334](https://github.com/AtomicBlom/RoseMCP/issues/334): 3,724 assertions in ~150 files
+  to Shouldly. "No tool rewrites a code pattern across a solution", so the plan was a
+  throwaway Roslyn script.
+- [Altinn/dialogporten #3024](https://github.com/Altinn/dialogporten/issues/3024): replacing MassTransit,
+  FluentAssertions, AutoMapper and MediatR.
 
-## Wat er al bestaat (onderzoek 10 oktober 2026)
-| Tool | Waarom het het gat niet dicht |
+## What already exists (research 10 October 2026)
+| Tool | Why it does not close the gap |
 |---|---|
-| [FluentAssertionsToShouldlyConverter](https://github.com/kmtchl/FluentAssertionsToShouldlyConverter) | Eén bibliotheek, lijst- en dictionary-checks vaak handwerk |
-| [Shouldly.FromFluentAssertions](https://github.com/galadril/Shouldly.FromFluentAssertions) | PowerShell, vervangt tekst en weet niks van types |
-| AutoMapperToMapperly (mark-new) | Alleen .NET Framework (volgens zoekresultaten) |
-| [AutoMap.Generator](https://github.com/Swevo/AutoMap.Generator) | Laat de AutoMapper-configuratie staan, `.ForMember` nog niet |
-| [NuGet License Gate](https://marketplace.visualstudio.com/items?itemName=ReadyStack.nuget-commercial-license-gate) | Waarschuwt alleen |
-| [RoseMCP](https://github.com/AtomicBlom/RoseMCP) `rose_replace_pattern` | Algemeen semantisch zoek-en-vervang in een MCP-server, zonder recepten |
-| OpenRewrite / Moderne | C#-recepten zijn betaald |
-| MediatR → Mediator | Niks geautomatiseerds gevonden |
+| [FluentAssertionsToShouldlyConverter](https://github.com/kmtchl/FluentAssertionsToShouldlyConverter) | One library, list and dictionary checks often manual work |
+| [Shouldly.FromFluentAssertions](https://github.com/galadril/Shouldly.FromFluentAssertions) | PowerShell, replaces text and knows nothing about types |
+| AutoMapperToMapperly (mark-new) | Only .NET Framework (according to search results) |
+| [AutoMap.Generator](https://github.com/Swevo/AutoMap.Generator) | Leaves the AutoMapper configuration in place, no `.ForMember` yet |
+| [NuGet License Gate](https://marketplace.visualstudio.com/items?itemName=ReadyStack.nuget-commercial-license-gate) | Only warns |
+| [RoseMCP](https://github.com/AtomicBlom/RoseMCP) `rose_replace_pattern` | General semantic search-and-replace in an MCP server, without recipes |
+| OpenRewrite / Moderne | C# recipes are paid |
+| MediatR → Mediator | Nothing automated found |
 
-**Het gat:** er bestaan losse scripts per bibliotheek, maar geen tool die meerdere bibliotheken
-aankan, naar types kijkt en vooraf rapporteert wat automatisch kan en wat niet.
+**The gap:** there are separate scripts per library, but no tool that handles several libraries,
+looks at types and reports up front what can be done automatically and what cannot.
 
-## Hoe het eruit moet zien
+## What it should look like
 ```
 dotnet tool install -g unshackle
 
@@ -49,7 +49,7 @@ unshackle fix  MijnApp.sln --fix fluentassertions
 unshackle list
 ```
 
-## Voorbeelden van herschrijvingen
+## Examples of rewrites
 
 **FluentAssertions → Shouldly**
 ```csharp
@@ -59,30 +59,30 @@ users.Should().HaveCount(3);                →  users.Count.ShouldBe(3);       
 name.Should().BeEquivalentTo("timme");      →  name.ShouldBe("timme", StringCompareShould.IgnoreCase);
 act.Should().Throw<ArgumentException>();    →  Should.Throw<ArgumentException>(act);
 ```
-Roslyn is hier nodig om twee redenen. Of `.Count` of `.Count()` goed is, hangt af van het type.
-En `BeEquivalentTo` op strings negeert hoofdletters. Met tekstvervanging worden tests ongemerkt strenger.
+Roslyn is needed here for two reasons. Whether `.Count` or `.Count()` is right depends on the type.
+And `BeEquivalentTo` on strings ignores case. With text replacement tests silently become stricter.
 
-**MediatR → Mediator**: `using MediatR` wordt `using Mediator`, `Task<T> Handle` wordt
-`ValueTask<T> Handle` (alleen bij methodes die de MediatR-interface implementeren), en
-`AddMediatR(...)` wordt `AddMediator()`.
+**MediatR → Mediator**: `using MediatR` becomes `using Mediator`, `Task<T> Handle` becomes
+`ValueTask<T> Handle` (only for methods that implement the MediatR interface), and
+`AddMediatR(...)` becomes `AddMediator()`.
 
-**AutoMapper → handgeschreven mapping**: elk `CreateMap<A, B>()` met `.ForMember` wordt een
-`ToDto()`-extensiemethode met alle properties uitgeschreven (ook de impliciet gemapte), en
-`_mapper.Map<B>(a)` wordt `a.ToDto()`. `ProjectTo<>` komt in het rapport als handwerk.
+**AutoMapper → hand-written mapping**: every `CreateMap<A, B>()` with `.ForMember` becomes a
+`ToDto()` extension method with all properties written out (also the implicitly mapped ones), and
+`_mapper.Map<B>(a)` becomes `a.ToDto()`. `ProjectTo<>` goes into the report as manual work.
 
 ## Roadmap
-Stand op 2026-10-13 (zie `claude/docs/overdracht.md` voor het lopende werk).
+State on 2026-10-14 (see `claude/docs/overdracht.md` for the ongoing work).
 
-| Stap | Doel | Stand |
+| Step | Goal | State |
 | --- | --- | --- |
-| 1 | Scan + rapport (CSV/JSON/Markdown), solution laden, aanroepen tellen | Klaar |
-| 2 | FluentAssertions → Shouldly: de 15 meest gebruikte assertions, `--dry-run` met diff | ~97%: corpusronde 4: 16/16 bouwt na de fix, 13/16 groen; regressies daarna opgelost (TAAK-220..223), alleen Akka DData blijft (bug in Akka, waarschuwing). Open: push + corpusronde 5 ([corpus.md](architectuur/corpus.md)) |
-| 3 | MediatR → Mediator: handlers, `ValueTask`, DI-registratie (behaviors → rapport) | 100%: 7 van 9 corpusprojecten volledig gemigreerd en groen; evo1/evo2 terecht Manual |
-| 4 | Lancering: README met GIF, NuGet, testen op een echt open-source project, post op r/dotnet | Inhoudelijk klaar (TAAK-019); wacht op de gebruiker (publiceren, post) |
-| 5 | AutoMapper → handgeschreven mapping (`ToB()`-extensies) | ~40%: patronen create-map, ignore, map-from, map-call, map-into, add-automapper klaar (TAAK-146, -155..159). Eerst verder uitwerken (rij 7 + veelgebruikte geavanceerde API's), daarna een grote corpusrun zoals bij FA/MediatR |
-| 6 | Later: de motor los beschikbaar maken als algemeen zoek-en-vervang (werktitel SharpGrep) | Niet begonnen |
+| 1 | Scan + report (CSV/JSON/Markdown), load solution, count calls | Done |
+| 2 | FluentAssertions → Shouldly: the 15 most used assertions, `--dry-run` with diff | ~97%: corpus round 4: 16/16 build after the fix, 13/16 green; regressions solved afterwards (TAAK-220..223), only Akka DData remains (bug in Akka, warning). Open: corpus round 5 ([corpus.md](architectuur/corpus.md)) |
+| 3 | MediatR → Mediator: handlers, `ValueTask`, DI registration (behaviors → report) | 100%: 7 of 9 corpus projects fully migrated and green; evo1/evo2 rightly Manual |
+| 4 | Launch: README with GIF, NuGet, testing on a real open-source project, post on r/dotnet | Done in substance (TAAK-019); waiting on the user (publishing, post) |
+| 5 | AutoMapper → hand-written mapping (`ToB()` extensions) | ~40%: patterns create-map, ignore, map-from, map-call, map-into, add-automapper done (TAAK-146, -155..159). First work it out further (row 7 + frequently used advanced APIs), then a large corpus run as for FA/MediatR |
+| 6 | Later: make the engine available separately as a general search-and-replace (working title SharpGrep) | Not started |
 
-## Risico's
-- **De hype zakt weg.** Daarom de motor generiek houden (zie stap 6).
-- **Kleine verschillen in gedrag.** Daarom altijd eerst een rapport en `--dry-run`, en na de fix de tests van de gebruiker draaien.
-- **Anderen komen met losse converters.** Snelheid telt.
+## Risks
+- **The hype fades.** Hence keep the engine generic (see step 6).
+- **Small differences in behaviour.** Hence always a report and `--dry-run` first, and run the user's tests after the fix.
+- **Others come out with separate converters.** Speed matters.

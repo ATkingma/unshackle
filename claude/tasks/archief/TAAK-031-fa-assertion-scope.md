@@ -1,78 +1,78 @@
-# TAAK-031 — FA-assertions binnen `AssertionScope` niet stil herschrijven
+# TAAK-031 — Do not silently rewrite FA assertions inside an `AssertionScope`
 
-**Status**: ✅ voltooid (2026-10-11)
-**Aangemaakt**: 2026-10-11
-**Doel**: een assertion binnen `using (new AssertionScope())` wordt nooit meer stil `Fixed`; de scope-semantiek (alle fouten verzamelen) blijft behouden of wordt als `Manual` gemeld.
+**Status**: ✅ completed (2026-10-11)
+**Created**: 2026-10-11
+**Goal**: an assertion inside `using (new AssertionScope())` is never silently `Fixed` again; the scope semantics (collect all failures) are kept or reported as `Manual`.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Gevonden in TAAK-030: `samples/SampleShop/SampleShop.Advanced.Tests/AdvancedAssertionTests.cs` r83-88.
-- Scan 2026-10-11: r85 (`fa.should-be`), r86 (`fa.have-count`), r87 (`fa.be-greater-less`, `BePositive`) worden `Fixed`; de `using (new AssertionScope())` zelf wordt niet gezien.
-- Gedeelde helpers staan in `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` (`GetSubject`, `IsResultDiscarded`, `TryGetArguments`). Contracten (`Abstractions/`, `Models/`, `Fixer`) niet wijzigen.
+- Found in TAAK-030: `samples/SampleShop/SampleShop.Advanced.Tests/AdvancedAssertionTests.cs` lines 83-88.
+- Scan 2026-10-11: line 85 (`fa.should-be`), 86 (`fa.have-count`), 87 (`fa.be-greater-less`, `BePositive`) become `Fixed`; the `using (new AssertionScope())` itself is not seen.
+- Shared helpers are in `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` (`GetSubject`, `IsResultDiscarded`, `TryGetArguments`). Do not change contracts (`Abstractions/`, `Models/`, `Fixer`).
 
-## Analyse
+## Analysis
 
-### Huidige situatie
+### Current situation
 
-Elk patroon kijkt alleen naar de eigen invocation. Een `AssertionScope` eromheen (ook `using var scope = new AssertionScope();` of `new AssertionScope("context")`) wordt genegeerd.
+Every pattern only looks at its own invocation. An `AssertionScope` around it (also `using var scope = new AssertionScope();` or `new AssertionScope("context")`) is ignored.
 
-### Probleem
+### Problem
 
-- Na de fix stopt de test bij de eerste falende `ShouldBe`; FA meldde alle fouten tegelijk. Gedrag verandert stil, wat de belofte "Fixed = gelijkwaardig" breekt.
-- De `using FluentAssertions.Execution;` en de scope blijven staan, dus FA blijft in het project hangen zonder dat de gebruiker weet waarom.
+- After the fix the test stops at the first failing `ShouldBe`; FA reported all failures at once. Behaviour changes silently, which breaks the promise "Fixed = equivalent".
+- The `using FluentAssertions.Execution;` and the scope stay, so FA stays in the project without the user knowing why.
 
-### Nieuwe situatie
+### New situation
 
-Elke FA-assertion waarvan een voorouder (statement-block) onder een `AssertionScope`-using valt, krijgt `Manual("Inside an AssertionScope: ...")`. Een apart patroon `fa.assertion-scope` meldt de scope zelf als `Manual` met advies `ShouldSatisfyAllConditions`.
+Every FA assertion with an ancestor (statement block) under an `AssertionScope` using gets `Manual("Inside an AssertionScope: ...")`. A separate pattern `fa.assertion-scope` reports the scope itself as `Manual` with the advice `ShouldSatisfyAllConditions`.
 
-### Verbetering
+### Improvement
 
-Geen stille gedragswijziging meer; de gebruiker ziet in het rapport precies welke scopes handwerk vragen.
+No more silent behaviour change; the user sees in the report exactly which scopes need manual work.
 
-## Aanpak
+## Approach
 
-### Wat
+### What
 
-1. Helper `FluentAssertionsSyntax.IsInsideAssertionScope(SyntaxNode, SemanticModel)`: loopt de voorouders af naar `UsingStatementSyntax` met `new AssertionScope(...)` en naar `LocalDeclarationStatementSyntax` met `using` (geldig tot einde blok, dus alleen statements ná de declaratie). Type via het semantisch model (`FluentAssertions.Execution.AssertionScope`), niet op naam.
-2. Alle patronen in `Patterns/` roepen de helper als eerste check aan → `Manual`.
-3. Nieuw patroon `AssertionScopePattern` (`fa.assertion-scope`): vindt `new AssertionScope(...)` en geeft altijd `Manual` met de suggestie.
+1. Helper `FluentAssertionsSyntax.IsInsideAssertionScope(SyntaxNode, SemanticModel)`: walks the ancestors to a `UsingStatementSyntax` with `new AssertionScope(...)` and to a `LocalDeclarationStatementSyntax` with `using` (valid until the end of the block, so only statements after the declaration). Type via the semantic model (`FluentAssertions.Execution.AssertionScope`), not by name.
+2. All patterns in `Patterns/` call the helper as the first check → `Manual`.
+3. New pattern `AssertionScopePattern` (`fa.assertion-scope`): finds `new AssertionScope(...)` and always returns `Manual` with the suggestion.
 
-### Waar
+### Where
 
 - `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs`
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/*.cs` (alle 14 patronen + `ThrowMessage.cs` indien nodig)
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AssertionScopePattern.cs` (nieuw) + regel in `FluentAssertionsFix.cs`
-- `src/Unshackle.Tests/Proofs/FluentAssertions/AssertionScope/` + KingmaDoc `docs/projectinfo/patterns/fa-assertion-scope-{plan,verify,modellen}.md` + README-rij
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/*.cs` (all 14 patterns + `ThrowMessage.cs` if needed)
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AssertionScopePattern.cs` (new) + a line in `FluentAssertionsFix.cs`
+- `src/Unshackle.Tests/Proofs/FluentAssertions/AssertionScope/` + KingmaDoc `docs/projectinfo/patterns/fa-assertion-scope-{plan,verify,modellen}.md` + README row
 
-### Hoe
+### How
 
-Eén gedeelde check in plaats van per patroon eigen logica (DRY, één plek voor `using var`-randgevallen). Proofs: `using (...)`-blok, `using var`, scope met context-string, assertion vóór `using var` (moet wél Fixed blijven).
+One shared check instead of per-pattern logic (DRY, one place for the `using var` edge cases). Proofs: `using (...)` block, `using var`, scope with a context string, assertion before `using var` (must stay Fixed).
 
-### Waarom deze aanpak
+### Why this approach
 
-Optie B, automatisch herschrijven naar `x.ShouldSatisfyAllConditions(() => ..., () => ...)`, is afgewezen voor nu: Shouldly heeft die API (`ShouldSatisfyAllConditions` in 4.3.0, bevestigd in `Shouldly.dll`), maar die verwacht één subject of losse lambdas, scopes bevatten vaak ook niet-assertion-statements, geneste scopes en `scope.Discard()`/`AddReportable`. Manual is veilig; een herschrijving kan later als eigen patroon voor het simpele geval (blok met alleen assertion-statements).
+Option B, rewriting automatically to `x.ShouldSatisfyAllConditions(() => ..., () => ...)`, is rejected for now: Shouldly has that API (`ShouldSatisfyAllConditions` in 4.3.0, confirmed in `Shouldly.dll`), but it expects one subject or separate lambdas, and scopes often also contain non-assertion statements, nested scopes and `scope.Discard()`/`AddReportable`. Manual is safe; a rewrite can come later as its own pattern for the simple case (a block with only assertion statements).
 
-## Stappen
+## Steps
 
-- [x] 1. Helper + unittests (`using`-blok, `using var`, geneste scope, assertion buiten scope)
-- [x] 2. Alle patronen laten afvragen; bestaande proofs blijven groen
+- [x] 1. Helper + unit tests (`using` block, `using var`, nested scope, assertion outside the scope)
+- [x] 2. Have all patterns ask; existing proofs stay green
 - [x] 3. `AssertionScopePattern` + proofs + KingmaDoc
-- [x] 4. Scan op SampleShop: r85-87 `Manual`; `dotnet build`, `dotnet test`, sample-tests groen
+- [x] 4. Scan on SampleShop: lines 85-87 `Manual`; `dotnet build`, `dotnet test`, sample tests green
 
-## Risico's & randgevallen
+## Risks & edge cases
 
-- `using var scope` geldt tot einde blok: alleen statements na de declaratie in hetzelfde blok en dieper.
-- Lambdas binnen de scope (bijv. `act` die later wordt uitgevoerd) vallen syntactisch binnen de scope; Manual is dan te voorzichtig, maar veilig.
-- Custom scope-subklassen: check met `InheritsFrom`/`SymbolEqualityComparer` op `AssertionScope`.
+- `using var scope` applies until the end of the block: only statements after the declaration in the same block and deeper.
+- Lambdas inside the scope (e.g. `act` that is executed later) fall syntactically inside the scope; Manual is then too cautious, but safe.
+- Custom scope subclasses: check with `InheritsFrom`/`SymbolEqualityComparer` on `AssertionScope`.
 
-## Keuzes (uitvoering)
+## Choices (execution)
 
-- Subklassen vervallen: `AssertionScope` is `sealed` in FA 7.2.2 (CS0509); `IsAssertionScope` vergelijkt exact type.
-- "Assertion vóór `using var` blijft Fixed" als unittest, niet als proof: de after zou nog `AssertionScope` bevatten en niet tegen alleen Shouldly compileren.
-- Integratietest SampleShop ongewijzigd: assertions zijn ruim (`>= 20` Fixed) en blijven groen.
+- Subclasses are moot: `AssertionScope` is `sealed` in FA 7.2.2 (CS0509); `IsAssertionScope` compares the exact type.
+- "Assertion before `using var` stays Fixed" as a unit test, not as a proof: the after would still contain `AssertionScope` and would not compile against Shouldly alone.
+- SampleShop integration test unchanged: the assertions are loose (`>= 20` Fixed) and stay green.
 
-## Zie ook
+## See also
 
-- `claude/tasks/archief/TAAK-030-sampleshop-uitbreiden.md` (vondst)
+- `claude/tasks/archief/TAAK-030-sampleshop-uitbreiden.md` (finding)
 - `claude/tasks/patroon-queue.md`
 - `docs/projectinfo/architectuur/core.md`

@@ -9,7 +9,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/FluentAssertions/Order/
 ---
 
-# Feature: fa.order: BeInAscendingOrder/BeInDescendingOrder wordt ShouldBeInOrder
+# Feature: fa.order: BeInAscendingOrder/BeInDescendingOrder becomes ShouldBeInOrder
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -17,43 +17,43 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-12              |
 
-> Opgesteld uit TAAK-162.
+> Drawn up from TAAK-162.
 
 ## One-sentence summary
 
-`x.Should().BeInAscendingOrder(p => p.K)` wordt `x.Select(p => p.K).ShouldBeInOrder(SortDirection.Ascending)` (en `Descending`); zonder selector zonder `Select`; een string-sleutel krijgt `StringComparer.Ordinal`.
+`x.Should().BeInAscendingOrder(p => p.K)` becomes `x.Select(p => p.K).ShouldBeInOrder(SortDirection.Ascending)` (and `Descending`); without a selector without `Select`; a string key gets `StringComparer.Ordinal`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `BeInAscendingOrder` en `BeInDescendingOrder` met geen argumenten of een selector-lambda, met optionele `because`.
+- `BeInAscendingOrder` and `BeInDescendingOrder` with no arguments or a selector lambda, with an optional `because`.
 
 **Out of scope**
 
-- Overloads met `IComparer<T>`, `Func<T,T,int>` of selector plus comparer (Manual).
+- Overloads with `IComparer<T>`, `Func<T,T,int>` or selector plus comparer (Manual).
 - `NotBeIn...Order`, `ThenBeIn...Order`, `BeInOrder(SortOrder)`.
 
 ## Requirements
 
-- **REQ-1**: WHEN `x.Should().BeInAscendingOrder(p => p.K)` of `BeInDescendingOrder(...)` als statement staat THE SYSTEM SHALL `x.Select(p => p.K).ShouldBeInOrder(SortDirection.<richting>)` geven en `using System.Linq` toevoegen (proofs `selector-ascending`, `selector-descending`).
-- **REQ-2**: WHEN er geen selector is THE SYSTEM SHALL `x.ShouldBeInOrder(SortDirection.<richting>)` geven (proof `no-selector`).
-- **REQ-3**: WHEN `because` staat THE SYSTEM SHALL die als derde argument geven na een `null`-comparer, bij becauseArgs via `string.Format(InvariantCulture, ...)` (proofs `because`, `because-args`).
-- **REQ-4**: WHEN de sleutel (of het element) een `string` is THE SYSTEM SHALL `System.StringComparer.Ordinal` als comparer meegeven (proofs `string-key`, `string-elements`, `string-because`).
-- **REQ-5**: WHEN het subject in een nullable context MaybeNull is THE SYSTEM SHALL `ShouldNotBeNull()` ervoor zetten (proof `nullable`).
-- **REQ-6**: IF een comparer, comparison-delegate, selector plus comparer, of een selector die geen lambda is THEN THE SYSTEM SHALL Manual geven (proofs `comparer`, `comparison`, `selector-comparer`, `expression-variable`).
-- **REQ-7**: IF in een AssertionScope of het resultaat wordt gebruikt THEN THE SYSTEM SHALL Manual geven (proofs `assertion-scope`, `result-used`).
+- **REQ-1**: WHEN `x.Should().BeInAscendingOrder(p => p.K)` or `BeInDescendingOrder(...)` is a statement THE SYSTEM SHALL give `x.Select(p => p.K).ShouldBeInOrder(SortDirection.<direction>)` and add `using System.Linq` (proofs `selector-ascending`, `selector-descending`).
+- **REQ-2**: WHEN there is no selector THE SYSTEM SHALL give `x.ShouldBeInOrder(SortDirection.<direction>)` (proof `no-selector`).
+- **REQ-3**: WHEN there is a `because` THE SYSTEM SHALL give it as the third argument after a `null` comparer, with becauseArgs via `string.Format(InvariantCulture, ...)` (proofs `because`, `because-args`).
+- **REQ-4**: WHEN the key (or the element) is a `string` THE SYSTEM SHALL pass `System.StringComparer.Ordinal` as the comparer (proofs `string-key`, `string-elements`, `string-because`).
+- **REQ-5**: WHEN the subject is MaybeNull in a nullable context THE SYSTEM SHALL put `ShouldNotBeNull()` before it (proof `nullable`).
+- **REQ-6**: IF a comparer, comparison delegate, selector plus comparer, or a selector that is not a lambda THEN THE SYSTEM SHALL give Manual (proofs `comparer`, `comparison`, `selector-comparer`, `expression-variable`).
+- **REQ-7**: IF inside an AssertionScope or the result is used THEN THE SYSTEM SHALL give Manual (proofs `assertion-scope`, `result-used`).
 
 ## Assumptions
 
-- Probe (Shouldly 4.3.0 tegen FA 7.2.2): gelijke buren, lege en 1-element-reeksen, null-elementen vooraan en een null-subject (beide falen) gedragen zich gelijk.
-- Probe: FA vergelijkt strings ordinaal (`"a","B"` faalt, `"Z","Å"` slaagt); Shouldly's standaard is cultuurgevoelig. Daarom de Ordinal-comparer. Tuples met strings en andere typen gebruiken bij beide de standaardcomparer.
+- Probe (Shouldly 4.3.0 against FA 7.2.2): equal neighbours, empty and 1-element sequences, null elements at the front and a null subject (both fail) behave the same.
+- Probe: FA compares strings ordinally (`"a","B"` fails, `"Z","Å"` passes); Shouldly's default is culture-sensitive. Hence the Ordinal comparer. Tuples with strings and other types use the default comparer in both.
 
 ## Risks
 
-- Een sleutel die intern strings vergelijkt via een eigen `IComparable` is bij beide gelijk; alleen een kale `string` wordt gecorrigeerd.
-- Een null-subject geeft bij Shouldly een `NullReferenceException`/`ArgumentNullException` in plaats van een assertion; de test faalt in beide gevallen.
+- A key that compares strings internally via its own `IComparable` is equal in both; only a bare `string` is corrected.
+- A null subject gives a `NullReferenceException`/`ArgumentNullException` in Shouldly instead of an assertion; the test fails in both cases.
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-order-modellen.md](fa-order-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-order-modellen.md](fa-order-modellen.md).

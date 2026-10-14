@@ -1,44 +1,44 @@
-# TAAK-011 — Patroon fa.not-throw
+# TAAK-011 — Pattern fa.not-throw
 
-**Status**: ✅ voltooid
-**Aangemaakt**: 2026-10-11
-**Doel**: `act.Should().NotThrow()` wordt `Should.NotThrow(act)`, met proofs, groen in `dotnet test`.
+**Status**: ✅ done
+**Created**: 2026-10-11
+**Goal**: `act.Should().NotThrow()` becomes `Should.NotThrow(act)`, with proofs, green in `dotnet test`.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Rij 8 in `claude/tasks/patroon-queue.md`. Sample: `MappingTests.cs:14`. Voorbeeld: TAAK-008 (`fa.throw`).
+- Row 8 in `claude/tasks/patroon-queue.md`. Sample: `MappingTests.cs:14`. Example: TAAK-008 (`fa.throw`).
 
-## Analyse
+## Analysis
 
-FA 7.2.2: `NotThrow(because, args)` op `ActionAssertions`/`FunctionAssertions<T>` (`.Which` = waarde), `NotThrow<T>`, `NotThrowAfter`. Shouldly 4.3.0: `Should.NotThrow(Action[, customMessage])` en generieke `NotThrow<T>(Func<T>[, customMessage])`.
+FA 7.2.2: `NotThrow(because, args)` on `ActionAssertions`/`FunctionAssertions<T>` (`.Which` = value), `NotThrow<T>`, `NotThrowAfter`. Shouldly 4.3.0: `Should.NotThrow(Action[, customMessage])` and generic `NotThrow<T>(Func<T>[, customMessage])`.
 
-## Keuzes
+## Choices
 
-| # | Keuze | Reden |
+| # | Choice | Reason |
 |---|---|---|
-| 1 | Subject: elke parameterloze `Action`/`Func<T>`, ook waardetypen | Shouldly's `NotThrow<T>(Func<T>)` is generiek (anders dan `Throw`) |
-| 2 | `NotThrow<T>()` → Manual | FA verbiedt alleen type T; Shouldly verbiedt elke exception |
-| 3 | `NotThrowAfter` → Manual | Wacht en pollt; geen equivalent |
-| 4 | Resultaat gebruikt (`.Which`, `.And`, variabele) → Manual | Shouldly geeft de waarde terug, maar de vorm verschilt; later mogelijk |
-| 5 | `Invoking`, becauseArgs → Manual | Zelfde als `fa.throw` |
-| 6 | `NotThrowAsync` buiten scope; `Func<Task>.Should().NotThrow()` compileert niet in FA | Async hoort bij de async-patronen; geen guard nodig |
-| 7 | `ThrowPattern` onaangeroerd; kleine duplicatie van subject-controle | Opdracht; gedeelde helper kan later |
+| 1 | Subject: any parameterless `Action`/`Func<T>`, including value types | Shouldly's `NotThrow<T>(Func<T>)` is generic (unlike `Throw`) |
+| 2 | `NotThrow<T>()` → Manual | FA only forbids type T; Shouldly forbids any exception |
+| 3 | `NotThrowAfter` → Manual | Waits and polls; no equivalent |
+| 4 | Result used (`.Which`, `.And`, variable) → Manual | Shouldly returns the value, but the shape differs; possibly later |
+| 5 | `Invoking`, becauseArgs → Manual | Same as `fa.throw` |
+| 6 | `NotThrowAsync` out of scope; `Func<Task>.Should().NotThrow()` does not compile in FA | Async belongs with the async patterns; no guard needed |
+| 7 | `ThrowPattern` left untouched; small duplication of the subject check | Assignment; a shared helper can come later |
 
-## Stappen
+## Steps
 
-- [x] 1. Claimen en taak aanmaken
-- [x] 2. Onderzoek en keuzes
-- [x] 3. KingmaDoc-plan (8 REQ)
-- [x] 4. `NotThrowPattern` + registratie
+- [x] 1. Claim and create task
+- [x] 2. Research and choices
+- [x] 3. KingmaDoc plan (8 REQ)
+- [x] 4. `NotThrowPattern` + registration
 - [x] 5. Proofs (10 cases in `NotThrow/`)
-- [x] 6. Build/test groen (108 + 15 sample), verify, archiveren, rij `klaar`
+- [x] 6. Build/test green (108 + 15 sample), verify, archive, row `klaar`
 
-## Gewijzigde bestanden
+## Changed files
 
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotThrowPattern.cs` (nieuw), `FluentAssertionsFix.cs` (1 regel)
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotThrowPattern.cs` (new), `FluentAssertionsFix.cs` (1 line)
 - `src/Unshackle.Tests/Proofs/FluentAssertions/NotThrow/`
-- `docs/projectinfo/patterns/fa-not-throw-{plan,verify}.md`, `docs/projectinfo/README.md` (rij)
+- `docs/projectinfo/patterns/fa-not-throw-{plan,verify}.md`, `docs/projectinfo/README.md` (row)
 
-## Zie ook
+## See also
 
 - `claude/tasks/archief/TAAK-008-fa-throw.md`

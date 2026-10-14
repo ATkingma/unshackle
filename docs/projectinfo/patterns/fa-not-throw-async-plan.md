@@ -17,47 +17,47 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-094 (actie uit `claude/tasks/ANALYSE-fa-100.md`).
+> Drawn up from TAAK-094 (action from `claude/tasks/ANALYSE-fa-100.md`).
 
 ## One-sentence summary
 
-`await act.Should().NotThrowAsync()` wordt `await Should.NotThrowAsync(act)`, met `because` en `.ConfigureAwait(..)`.
+`await act.Should().NotThrowAsync()` becomes `await Should.NotThrowAsync(act)`, with `because` and `.ConfigureAwait(..)`.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `await act.Should().NotThrowAsync([because])` als statement, ook met `.ConfigureAwait(..)`.
-- Subject `Func<Task>` of `Func<Task<T>>` met T een referentietype.
+- `await act.Should().NotThrowAsync([because])` as a statement, also with `.ConfigureAwait(..)`.
+- Subject `Func<Task>` or `Func<Task<T>>` with T a reference type.
 
 **Out of scope**
 
-- `NotThrowAsync<T>()`, `NotThrowAfterAsync`, niet-awaited of gebruikt resultaat, `Func<Task<int>>`, `FluentActions.Awaiting`, AssertionScope: Manual. (becauseArgs: zie Uitbreiding TAAK-097.)
+- `NotThrowAsync<T>()`, `NotThrowAfterAsync`, a non-awaited or used result, `Func<Task<int>>`, `FluentActions.Awaiting`, AssertionScope: Manual. (becauseArgs: see Extension TAAK-097.)
 
 ## Requirements
 
-- **REQ-1**: WHEN `await act.Should().NotThrowAsync()` een statement is THE SYSTEM SHALL `await Should.NotThrowAsync(act)` geven (proof `simple, lambda, reference-result`).
-- **REQ-2**: WHEN `because` zonder becauseArgs staat THE SYSTEM SHALL die als customMessage meegeven (proof `because`).
-- **REQ-3**: WHEN `.ConfigureAwait(x)` volgt THE SYSTEM SHALL die op `Should.NotThrowAsync` houden (proof `configure-await`).
-- **REQ-4**: IF generiek, niet-awaited, resultaat gebruikt, waarde-Task, FA-subject of AssertionScope THEN THE SYSTEM SHALL Manual geven (proof `generic, not-awaited, result-used, value-result, awaiting, assertion-scope`).
-- **Uitbreiding TAAK-173**: WHEN het subject `x.Awaiting(s => …)` of `FluentActions.Awaiting(d)` is THE SYSTEM SHALL de actie bouwen zoals `fa.invoking` (`ThrowSyntax.TryGetAction`: stabiele receiver, lambda/method group/delegate-variabele) en `await Should.NotThrowAsync(() => …)` geven; een geschreven lambda mag een `Task<T>` met waardetype teruggeven (proofs `awaiting`, `awaiting-receiver`, `fluent-actions-lambda`, `awaiting-value-result`); een receiver met bijwerkingen blijft Manual (`awaiting-side-effect`). Vervangt het FA-subject-deel van REQ-4.
-- **Uitbreiding TAAK-097**: WHEN `becauseArgs` bij een constante, formatteerbare `because` staan THE SYSTEM SHALL `string.Format(CultureInfo.InvariantCulture, because, args)` als customMessage geven (Fixed, proof `because-args`); benoemde argumenten of een niet-constante `because` blijven Manual.
+- **REQ-1**: WHEN `await act.Should().NotThrowAsync()` is a statement THE SYSTEM SHALL give `await Should.NotThrowAsync(act)` (proof `simple, lambda, reference-result`).
+- **REQ-2**: WHEN there is a `because` without becauseArgs THE SYSTEM SHALL pass it as customMessage (proof `because`).
+- **REQ-3**: WHEN `.ConfigureAwait(x)` follows THE SYSTEM SHALL keep it on `Should.NotThrowAsync` (proof `configure-await`).
+- **REQ-4**: IF generic, not awaited, result used, value Task, FA subject or AssertionScope THEN THE SYSTEM SHALL give Manual (proof `generic, not-awaited, result-used, value-result, awaiting, assertion-scope`).
+- **Extension TAAK-173**: WHEN the subject is `x.Awaiting(s => …)` or `FluentActions.Awaiting(d)` THE SYSTEM SHALL build the action like `fa.invoking` (`ThrowSyntax.TryGetAction`: stable receiver, lambda/method group/delegate variable) and give `await Should.NotThrowAsync(() => …)`; a written lambda may return a `Task<T>` with a value type (proofs `awaiting`, `awaiting-receiver`, `fluent-actions-lambda`, `awaiting-value-result`); a receiver with side effects stays Manual (`awaiting-side-effect`). Replaces the FA-subject part of REQ-4.
+- **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL give `string.Format(CultureInfo.InvariantCulture, because, args)` as customMessage (Fixed, proof `because-args`); named arguments or a non-constant `because` stay Manual.
 
 ## Assumptions
 
-- Probe (FA 7.2.2 + Shouldly 4.3.0): beide slagen bij een voltooide taak en falen bij een synchrone throw, een async throw en een AggregateException (Shouldly gooit bij een synchrone throw de originele exceptie; de test is rood in beide).
-- Daarom is de AggregateException-heuristiek van `ThrowMessage.MayThrowAggregate` hier niet nodig: NotThrow faalt op elke exceptie.
-- Shouldly 4.3.0 (reflectie): `Should.NotThrowAsync(Func<Task>, string?)` en `(Task, string?)`.
+- Probe (FA 7.2.2 + Shouldly 4.3.0): both pass with a completed task and fail with a synchronous throw, an async throw and an AggregateException (Shouldly throws the original exception on a synchronous throw; the test is red in both).
+- Therefore the AggregateException heuristic of `ThrowMessage.MayThrowAggregate` is not needed here: NotThrow fails on every exception.
+- Shouldly 4.3.0 (reflection): `Should.NotThrowAsync(Func<Task>, string?)` and `(Task, string?)`.
 
 ## Risks
 
-- Foutmelding bij een synchrone throw is de originele exceptie i.p.v. een assertion-melding.
+- The error message on a synchronous throw is the original exception instead of an assertion message.
 
-## Modellen
+## Models
 
-Klassendiagram, sequencediagram en beslisboom: [fa-not-throw-async-modellen.md](fa-not-throw-async-modellen.md).
+Class diagram, sequence diagram and decision tree: [fa-not-throw-async-modellen.md](fa-not-throw-async-modellen.md).
 
-## Zie ook
+## See also
 
 - [fa-not-throw-async-verify.md](fa-not-throw-async-verify.md)
 - `claude/tasks/archief/TAAK-094-fa-not-throw-async.md`

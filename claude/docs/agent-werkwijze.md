@@ -1,120 +1,120 @@
-# Agent-werkwijze — regels voor documentatie en taakbeheer
+# Agent workflow — rules for documentation and task management
 
-Regels die **alle agents** in dit project volgen voor taakbeheer, cross-referenties en documentsplitsing.
+Rules that **all agents** in this project follow for task management, cross-references and document splitting.
 
-Zie `claude/docs/INDEX.md` voor de volledige documentatie-index.
-
----
-
-## 1. Taakbeheer
-
-Gebruik het taaksysteem (`claude/tasks/`) voor elke taak die:
-
-- meer dan één sessie kan duren
-- mogelijk midden in de taak van account of model wisselt
-- meerdere aaneengesloten stappen heeft
-
-| Actie                          | Skill             | Bestand                                  |
-| ------------------------------ | ----------------- | ---------------------------------------- |
-| Nieuwe taak                    | `/taak-start`     | `claude/tasks/TAAK-<NNN>-<slug>.md`      |
-| Taak met analyse en redenering | `/taak-specifiek` | idem                                     |
-| Taak hervatten                 | `/taak-oppakken`  | idem; voltooid → `claude/tasks/archief/` |
-
-### Stap-statussen
-
-| Markering | Betekenis                                   |
-| --------- | ------------------------------------------- |
-| `[ ]`     | Nog te doen                                 |
-| `[→]`     | In uitvoering (huidige stap)                |
-| `[x]`     | Klaar                                       |
-| `[!]`     | Geblokkeerd — reden staat in context-sectie |
-
-### Bij vroegtijdig stoppen
-
-Schrijf altijd in de **Context**-sectie: wat gedaan is, wat nog openstaat, welke bestanden gewijzigd zijn, en eventuele blokkades.
+See `claude/docs/INDEX.md` for the full documentation index.
 
 ---
 
-## 2. Cross-referenties
+## 1. Task management
 
-Elke keer dat een agent documentatie schrijft of bijwerkt, **moeten** cross-referenties gelegd worden.
+Use the task system (`claude/tasks/`) for every task that:
 
-- Nieuw document → toevoegen aan `claude/docs/INDEX.md`
-- Document beschrijft iets dat een skill gebruikt → `## Zie ook` in die skill
-- Verwijzing naar code → exact pad (`src/Unshackle.Core/Fixer.cs`)
-- Skill aangemaakt of uitgebreid → verwijzing in `INDEX.md`
+- may take more than one session
+- may switch account or model halfway through
+- has several consecutive steps
 
-### Formaat `## Zie ook` (onderaan elk document of skill)
+| Action                           | Skill             | File                                    |
+| -------------------------------- | ----------------- | --------------------------------------- |
+| New task                         | `/taak-start`     | `claude/tasks/TAAK-<NNN>-<slug>.md`     |
+| Task with analysis and reasoning | `/taak-specifiek` | same                                    |
+| Resume task                      | `/taak-oppakken`  | same; done → `claude/tasks/archief/`    |
+
+### Step statuses
+
+| Marker | Meaning                                       |
+| ------ | --------------------------------------------- |
+| `[ ]`  | To do                                         |
+| `[→]`  | In progress (current step)                    |
+| `[x]`  | Done                                          |
+| `[!]`  | Blocked — reason is in the context section    |
+
+### When stopping early
+
+Always write in the **Context** section: what was done, what is still open, which files were changed, and any blockers.
+
+---
+
+## 2. Cross-references
+
+Every time an agent writes or updates documentation, cross-references **must** be added.
+
+- New document → add to `claude/docs/INDEX.md`
+- Document describes something a skill uses → `## See also` in that skill
+- Reference to code → exact path (`src/Unshackle.Core/Fixer.cs`)
+- Skill created or extended → reference in `INDEX.md`
+
+### Format of `## See also` (at the bottom of every document or skill)
 
 ```markdown
-## Zie ook
+## See also
 
 - `claude/docs/INDEX.md` — volledige documentatie-index
 - `docs/projectinfo/architectuur/testen.md` — proofs en types
 - `src/Unshackle.Core/Fixer.cs` — implementatie
 ```
 
-Regels:
+Rules:
 
-- Altijd **relatieve paden** vanaf de project-root
-- **Geen decoratieve links**: alleen als het een toekomstige agent tokens scheelt
-
----
-
-## 3. Documentsplitsing
-
-| Type              | Overweeg splitsen | Hard maximum  |
-| ----------------- | ----------------- | ------------- |
-| CLAUDE.md (root)  | > 80 regels       | 120 regels    |
-| claude/docs/\*.md | > 100 regels      | 150 regels    |
-| Skill SKILL.md    | > 80 regels       | 120 regels    |
-| Implementatieplan | > 200 regels      | splits altijd |
-
-Hoe splitsen:
-
-1. Nieuw bestand op de meest logische plek (zie `INDEX.md`)
-2. Origineel: korte samenvatting + `Zie claude/docs/<onderwerp>.md voor de volledige uitleg.`
-3. Nieuw bestand toevoegen aan `INDEX.md`
-4. `## Zie ook` in het nieuwe bestand dat terugverwijst
-
-Niet splitsen: korte stukken die altijd samen gelezen worden, `## Zie ook`-secties, taakbestanden (die groeien bewust).
+- Always **relative paths** from the project root
+- **No decorative links**: only if it saves a future agent tokens
 
 ---
 
-## 4. Gedragsregels
+## 3. Document splitting
 
-### Communicatie
+| Type                | Consider splitting | Hard maximum  |
+| ------------------- | ------------------ | ------------- |
+| CLAUDE.md (root)    | > 80 lines         | 120 lines     |
+| claude/docs/\*.md   | > 100 lines        | 150 lines     |
+| Skill SKILL.md      | > 80 lines         | 120 lines     |
+| Implementation plan | > 200 lines        | always split  |
 
-- Nederlands met de gebruiker; code, namen en commitberichten in het Engels
-- Geen bullet points bij korte antwoorden of afwijzingen: gebruik proza
-- Zegt de gebruiker dat het klaar is of "stop", vraag dan niet of je nog iets kunt doen
+How to split:
 
-### Geheugen en context
+1. New file in the most logical place (see `INDEX.md`)
+2. Original: short summary + `Zie claude/docs/<onderwerp>.md voor de volledige uitleg.`
+3. Add the new file to `INDEX.md`
+4. `## See also` in the new file that refers back
 
-- Haal **geen oude taakcontext op** tenzij de gebruiker ernaar verwijst
-
-### Token-efficiëntie
-
-- `grep`/`find` **vóór** `Read` als je één regel of patroon zoekt
-- Geen samenvatting van wat je net deed: de gebruiker ziet de diff
-- Geen uitgebreide uitleg van net geschreven code tenzij gevraagd
+Do not split: short pieces that are always read together, `## See also` sections, task files (they grow on purpose).
 
 ---
 
-## 5. Documentatie aanmaken — checklist
+## 4. Behavior rules
 
-- [ ] Al ergens gedocumenteerd? (check `INDEX.md` eerst)
-- [ ] Juiste locatie (root `CLAUDE.md` / `docs/projectinfo/` / `claude/docs/`)?
-- [ ] `## Zie ook` toegevoegd?
-- [ ] `INDEX.md` bijgewerkt?
-- [ ] Skills bijgewerkt die dit onderwerp raken?
-- [ ] Binnen de splitsingsdrempel?
+### Communication
 
-## 6. Main blijft groen — harde regel
+- Dutch with the user; code, names and commit messages in English
+- No bullet points in short answers or refusals: use prose
+- If the user says it is done or "stop", do not ask whether there is anything else you can do
 
-Er wordt **nooit** naar `main` gepusht of gemerged als er ook maar één test faalt, oud of nieuw.
+### Memory and context
 
-Vóór elke push of merge naar `main`, lokaal en allemaal groen:
+- **Do not retrieve old task context** unless the user refers to it
+
+### Token efficiency
+
+- `grep`/`find` **before** `Read` when you are looking for one line or pattern
+- No summary of what you just did: the user sees the diff
+- No lengthy explanation of code you just wrote unless asked
+
+---
+
+## 5. Creating documentation — checklist
+
+- [ ] Already documented somewhere? (check `INDEX.md` first)
+- [ ] Right location (root `CLAUDE.md` / `docs/projectinfo/` / `claude/docs/`)?
+- [ ] `## See also` added?
+- [ ] `INDEX.md` updated?
+- [ ] Skills that touch this topic updated?
+- [ ] Within the splitting threshold?
+
+## 6. Main stays green — hard rule
+
+**Never** push or merge to `main` if even a single test fails, old or new.
+
+Before every push or merge to `main`, locally and all green:
 
 ```bash
 dotnet build
@@ -122,13 +122,18 @@ dotnet test
 dotnet test --solution samples/SampleShop/SampleShop.slnx
 ```
 
-- Faalt er iets: niet pushen. Eerst de oorzaak oplossen, ook als de fout in een test zit die je niet zelf raakte.
-- Een test overslaan, verwijderen of afzwakken om groen te worden mag niet zonder akkoord van de gebruiker.
-- Dezelfde stappen draaien in CI (`.github/workflows/ci.yml`). GitHub dwingt dit nog niet af (privé-repo zonder
-  Pro), dus deze regel is de bewaking.
+- If anything fails: do not push. Fix the cause first, even if the failure is in a test you did not touch yourself.
+- Skipping, deleting or weakening a test to get green is not allowed without the user's approval.
+- The same steps run in CI (`.github/workflows/ci.yml`). GitHub does not enforce this yet (private repo without
+  Pro), so this rule is the safeguard.
+- **Only push what demonstrably works, even if it is only part of the work** (user decision 2026-10-13). Better to push a small, finished and green piece
+  than a large piece part of which is doubtful; keep half-finished features behind Manual or out of the pattern list so CI stays green.
+- **CI is the yardstick, not the local run.** Green locally on Windows does not prove CI (Linux) is green. After every push: `gh run watch` /
+  `gh run list -L 1` until the run is done. Red → fix immediately (or revert the commit) before any other work, and tell the user.
+  Before a push, also check that the previous CI run on `main` was green; if main is already red, fix *that* first.
 
-## Zie ook
+## See also
 
-- `claude/docs/INDEX.md` — documentatie-index
-- `.claude/skills/taak-start/SKILL.md` — taak aanmaken
-- `.claude/skills/taak-oppakken/SKILL.md` — taak hervatten
+- `claude/docs/INDEX.md` — documentation index
+- `.claude/skills/taak-start/SKILL.md` — create a task
+- `.claude/skills/taak-oppakken/SKILL.md` — resume a task

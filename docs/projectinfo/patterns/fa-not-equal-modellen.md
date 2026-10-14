@@ -1,8 +1,8 @@
-# Modellen: fa.not-equal
+# Models: fa.not-equal
 
-`x.Should().NotEqual(y)` wordt `x.ShouldNotBe(y)`. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotEqualPattern.cs`. Diagrammen met de hand in Mermaid (kingmadoc/d2 ontbreken).
+`x.Should().NotEqual(y)` becomes `x.ShouldNotBe(y)`. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotEqualPattern.cs`. Diagrams by hand in Mermaid (kingmadoc/d2 missing).
 
-**Figure 1.** Klassen rond `NotEqualPattern`.
+**Figure 1.** Classes around `NotEqualPattern`.
 
 ```mermaid
 classDiagram
@@ -14,14 +14,14 @@ classDiagram
     PatternResult <|-- ManualResult
 ```
 
-| Element | Pad | Rol |
+| Element | Path | Role |
 | --- | --- | --- |
-| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: scope, vorm, resultaat, because(-args) |
-| `NotEqualPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotEqualPattern.cs` | Dit patroon, Id `fa.not-equal` |
+| `FluentAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionPattern.cs` | Template Method: scope, shape, result, because(-args) |
+| `NotEqualPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotEqualPattern.cs` | This pattern, Id `fa.not-equal` |
 | `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs` | `FindInvocations`, `Invoke` |
-| `PatternResult` e.a. | `src/Unshackle.Core/Models/` | Uitkomst |
+| `PatternResult` etc. | `src/Unshackle.Core/Models/` | Outcome |
 
-**Figure 2.** Volgorde.
+**Figure 2.** Sequence.
 
 ```mermaid
 sequenceDiagram
@@ -34,37 +34,37 @@ sequenceDiagram
     NotEqualPattern-->>Fixer: Fixed / Manual
 ```
 
-| Stap | Plek | Wat gebeurt er |
+| Step | Place | What happens |
 | --- | --- | --- |
-| Find | `NotEqualPattern.Find` | Alle `NotEqual`-aanroepen op FA |
-| Controle | `RewriteBeforeArguments` | Dictionary-overload → Manual |
-| Herschrijven | `RewriteAssertion` | `ShouldNotBe`, evt. met `IEnumerable<T>` |
+| Find | `NotEqualPattern.Find` | All `NotEqual` calls on FA |
+| Check | `RewriteBeforeArguments` | Dictionary overload → Manual |
+| Rewrite | `RewriteAssertion` | `ShouldNotBe`, possibly with `IEnumerable<T>` |
 
-**Figure 3.** Beslisboom.
+**Figure 3.** Decision tree.
 
 ```mermaid
 flowchart TD
-    A{In AssertionScope?} -- ja --> M1[Manual: assertion-scope]
-    A -- nee --> B{Resultaat gebruikt?}
-    B -- ja --> M2[Manual: result-used]
-    B -- nee --> C{Op Generic/StringCollectionAssertions?}
-    C -- nee --> M3[Manual: dictionary]
-    C -- ja --> N{Subject bewezen niet-null?}
-    N -- nee --> G[ShouldNotBeNull ervoor: nullable, same-type]
-    N -- ja --> D{Types subject en argument gelijk?}
+    A{In AssertionScope?} -- yes --> M1[Manual: assertion-scope]
+    A -- no --> B{Result used?}
+    B -- yes --> M2[Manual: result-used]
+    B -- no --> C{On Generic/StringCollectionAssertions?}
+    C -- no --> M3[Manual: dictionary]
+    C -- yes --> N{Subject proven non-null?}
+    N -- no --> G[ShouldNotBeNull before it: nullable, same-type]
+    N -- yes --> D{Types of subject and argument equal?}
     G --> D
-    D -- ja --> F1["x.ShouldNotBe(y)"]
-    D -- nee --> F2["x.ShouldNotBe IEnumerable T (y)"]
+    D -- yes --> F1["x.ShouldNotBe(y)"]
+    D -- no --> F2["x.ShouldNotBe IEnumerable T (y)"]
 ```
 
-| Vraag | Uitkomst | Proof |
+| Question | Outcome | Proof |
 | --- | --- | --- |
 | AssertionScope? | Manual | `assertion-scope` |
-| Resultaat gebruikt? | Manual | `result-used` |
-| Collection-assertions? | Anders Manual | `dictionary` |
-| Types gelijk? | `ShouldNotBe(y)` of met `IEnumerable<T>` | `same-type`, `interface-type`, `string-collection`, `because`, `because-args`, `nullable` / `different-type`, `array-literal` |
+| Result used? | Manual | `result-used` |
+| Collection assertions? | Otherwise Manual | `dictionary` |
+| Types equal? | `ShouldNotBe(y)` or with `IEnumerable<T>` | `same-type`, `interface-type`, `string-collection`, `because`, `because-args`, `nullable` / `different-type`, `array-literal` |
 
-## Zie ook
+## See also
 
 - [fa-not-equal-plan.md](fa-not-equal-plan.md)
 - [fa-not-equal-verify.md](fa-not-equal-verify.md)

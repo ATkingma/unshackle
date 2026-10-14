@@ -3,25 +3,25 @@
 |               |                                              |
 | ------------- | -------------------------------------------- |
 | **Plan**      | [`mediatr-request-processor-caller-plan.md`](mediatr-request-processor-caller-plan.md) |
-| **Status**    | Verified (proofs); corpusbewijs op jason nog niet gedraaid |
-| **Generated** | 2026-10-12 (met de hand, kingmadoc ontbreekt) |
+| **Status**    | Verified (proofs); corpus evidence on jason not yet run |
+| **Generated** | 2026-10-12 (by hand, kingmadoc missing) |
 
 ## Requirements
 
-| REQ   | Oordeel | Bewijs |
-| ----- | ------- | ------ |
-| REQ-1 | Gehaald | `Proofs/MediatR/_Combined/request-processor-callers` (`new`, `var`, doeltype-`new`, `IRequest<int>` en `IRequest`; `after` compileert tegen Mediator 3.0.2 mét generator) |
-| REQ-2 | Gehaald | idem, pre- en post-processor |
-| REQ-3 | Gehaald | `RequestProcessorCaller/result-used`, `through-interface` |
-| REQ-4 | Gehaald | `RequestProcessorCaller/unknown-response` |
+| REQ   | Verdict | Evidence |
+| ----- | ------- | -------- |
+| REQ-1 | Met | `Proofs/MediatR/_Combined/request-processor-callers` (`new`, `var`, target-typed `new`, `IRequest<int>` and `IRequest`; `after` compiles against Mediator 3.0.2 with generator) |
+| REQ-2 | Met | same, pre- and post-processor |
+| REQ-3 | Met | `RequestProcessorCaller/result-used`, `through-interface` |
+| REQ-4 | Met | `RequestProcessorCaller/unknown-response` |
 
 ## Deviations
 
-- Het jason-corpus staat niet in deze omgeving (`<corpus>/corpus-mediatr/jason` ontbreekt); de `_Combined`-proof bootst `RequestLoggerTests` na.
-- Verwijzingen buiten een `AddMediatR`-lambda die een generieke klasse met `typeof(P<>)` noemen zijn Manual (open argument).
-- `Process`-aanroepen over projectgrenzen volgen uit de semantische modellen van de solution; er is geen aparte meerprojectproof.
+- The jason corpus is not in this environment (`<corpus>/corpus-mediatr/jason` is missing); the `_Combined` proof replicates `RequestLoggerTests`.
+- References outside an `AddMediatR` lambda that name a generic class with `typeof(P<>)` are Manual (open argument).
+- `Process` calls across project boundaries follow from the solution's semantic models; there is no separate multi-project proof.
 
-## Zie ook
+## See also
 
 - [mediatr-request-processor-caller-plan.md](mediatr-request-processor-caller-plan.md)
 - `claude/tasks/CORPUSRUN-mediatr.md`

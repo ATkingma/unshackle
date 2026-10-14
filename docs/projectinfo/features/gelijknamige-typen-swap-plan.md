@@ -15,7 +15,7 @@ files_expected:
     - src/Unshackle.Tests/DataAccess/Projects/XmlProjectFileStoreTests.cs
 ---
 
-# Feature: gelijknamige typen in de namespace-swap
+# Feature: same-named types in the namespace swap
 
 |               |                         |
 | ------------- | ----------------------- |
@@ -23,49 +23,49 @@ files_expected:
 | **Status**    | Approved                |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-024 (blokkade van TAAK-023).
+> Drawn up from TAAK-024 (blocker of TAAK-023).
 
 ## One-sentence summary
 
-`IFix.SwappedTypes` noemt typen die in de nieuwe namespace een gelijknamige tweeling hebben; verwijzingen ernaar houden de
-oude `using` en het oude pakket niet meer vast, zodat `using MediatR;` → `using Mediator;` wisselt en het pakket weggaat.
+`IFix.SwappedTypes` lists types that have a same-named twin in the new namespace; references to them no longer hold on to the
+old `using` and the old package, so `using MediatR;` → `using Mediator;` swaps and the package goes away.
 
 ## Scope (in / out)
 
 **In scope**
 
-- `IFix.SwappedTypes` (default leeg, `Namespace.MetadataName`), gevuld door `MediatRFix`.
-- `UsingDirectives.UsedNamespaces` en `ProjectPackages.UsesAssemblyAsync` slaan symbolen van die typen (en hun leden) over.
-- `Fixer` wisselt de using ook in een bestand zonder patroon-wijziging als alleen swapped typen de oude namespace gebruiken.
-- `PackageMigration.AlsoRemovedPackages` (`MediatR.Contracts`): mee verwijderd uit `<PackageReference>`/`<PackageVersion>`.
+- `IFix.SwappedTypes` (empty by default, `Namespace.MetadataName`), filled by `MediatRFix`.
+- `UsingDirectives.UsedNamespaces` and `ProjectPackages.UsesAssemblyAsync` skip symbols of those types (and their members).
+- `Fixer` also swaps the using in a file without a pattern change if only swapped types use the old namespace.
+- `PackageMigration.AlsoRemovedPackages` (`MediatR.Contracts`): also removed from `<PackageReference>`/`<PackageVersion>`.
 
 **Out of scope**
 
-- Patronen (`Handle` → `ValueTask`, TAAK-023). `IPipelineBehavior` (andere delegate en `IMessage`-constraint: eigen patroon).
+- Patterns (`Handle` → `ValueTask`, TAAK-023). `IPipelineBehavior` (different delegate and `IMessage` constraint: its own pattern).
 
 ## Requirements
 
-- **REQ-1**: WHEN een bestand alleen swapped typen van de oude namespace gebruikt THE SYSTEM SHALL de using in place wisselen, ook zonder patroon-wijziging.
-- **REQ-2**: WHEN een project alleen nog swapped typen van het oude pakket gebruikt THE SYSTEM SHALL het pakket verwijderen (`KeepRemovedPackage = false`).
-- **REQ-3**: WHEN een ander type van de oude namespace nog gebruikt wordt THE SYSTEM SHALL using en pakket laten staan.
-- **REQ-4**: WHEN `AlsoRemovedPackages` direct gerefereerd wordt THE SYSTEM SHALL die referentie (en `PackageVersion`) verwijderen.
-- **REQ-5**: WHEN de FluentAssertions-fix draait THE SYSTEM SHALL zich gedragen als voorheen (lege lijst).
+- **REQ-1**: WHEN a file only uses swapped types of the old namespace THE SYSTEM SHALL swap the using in place, even without a pattern change.
+- **REQ-2**: WHEN a project only uses swapped types of the old package THE SYSTEM SHALL remove the package (`KeepRemovedPackage = false`).
+- **REQ-3**: WHEN another type of the old namespace is still used THE SYSTEM SHALL leave the using and package in place.
+- **REQ-4**: WHEN `AlsoRemovedPackages` is referenced directly THE SYSTEM SHALL remove that reference (and `PackageVersion`).
+- **REQ-5**: WHEN the FluentAssertions fix runs THE SYSTEM SHALL behave as before (empty list).
 
 ## Assumptions
 
-- Lijst geverifieerd in de echte assemblies (MediatR 12.5.0 + MediatR.Contracts, Mediator.Abstractions 3.0.2): `IBaseRequest`, `IRequest`, `IRequest\`1`, `IRequestHandler\`1/\`2`, `INotification`, `INotificationHandler\`1`, `ISender`, `IPublisher`, `IMediator`, `Unit` bestaan in beide.
-- Methodesignaturen verschillen (`Task` vs `ValueTask`); dat lossen patronen op, niet de swap.
+- List verified in the real assemblies (MediatR 12.5.0 + MediatR.Contracts, Mediator.Abstractions 3.0.2): `IBaseRequest`, `IRequest`, `IRequest\`1`, `IRequestHandler\`1/\`2`, `INotification`, `INotificationHandler\`1`, `ISender`, `IPublisher`, `IMediator`, `Unit` exist in both.
+- Method signatures differ (`Task` vs `ValueTask`); patterns solve that, not the swap.
 
 ## Risks
 
-- Bestand zonder wijziging krijgt ten onrechte `using Mediator;` → alleen wisselen als er een ongebruikte oude using is (`HasUnusedRemovedUsingAsync`).
-- Contracts-project zonder `MediatR`: wordt nu ook gemigreerd (match op elk te verwijderen pakket) en krijgt de toegevoegde pakketten.
+- A file without changes wrongly gets `using Mediator;` → only swap if there is an unused old using (`HasUnusedRemovedUsingAsync`).
+- Contracts project without `MediatR`: is now also migrated (match on every package to remove) and gets the added packages.
 
 ## Open questions
 
-- Geen.
+- None.
 
-## Zie ook
+## See also
 
 - [gelijknamige-typen-swap-verify.md](gelijknamige-typen-swap-verify.md)
 - [mediatr-fix-plan.md](mediatr-fix-plan.md)

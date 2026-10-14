@@ -1,53 +1,53 @@
-# Modellen: fa.custom-assertion
+# Models: fa.custom-assertion
 
-Eigen assertions op een FluentAssertions-type (`result.Should().BeFailure()`) worden Manual, gegroepeerd per extensie. Feiten uit `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/CustomAssertionPattern.cs`, `ReportRow.FromAll` en `SpectreConsoleView.ShowSummary`.
+Own assertions on a FluentAssertions type (`result.Should().BeFailure()`) become Manual, grouped per extension. Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/CustomAssertionPattern.cs`, `ReportRow.FromAll` and `SpectreConsoleView.ShowSummary`.
 
-**Figure 1.** Klassen rond `CustomAssertionPattern`: hij implementeert `IPattern` direct (niet `FluentAssertionPattern`), levert alleen `ManualResult`, en rapport en console groeperen via `Group`. Weggelaten: `Fixer`, `IFix` en de rapportschrijvers (zie [../modellen/klassen.md](../modellen/klassen.md)).
+**Figure 1.** Classes around `CustomAssertionPattern`: it implements `IPattern` directly (not `FluentAssertionPattern`), only returns `ManualResult`, and report and console group via `Group`. Left out: `Fixer`, `IFix` and the report writers (see [../modellen/klassen.md](../modellen/klassen.md)).
 
 <!-- kingmadoc:diagram img/fa-custom-assertion-modellen-1.d2 -->
-![Modellen: fa.custom-assertion](img/fa-custom-assertion-modellen-1.png)
+![Models: fa.custom-assertion](img/fa-custom-assertion-modellen-1.png)
 
-| Element                  | Pad                                                                            | Rol                                                                                 |
+| Element                  | Path                                                                           | Role                                                                                |
 | ------------------------ | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| `IPattern`               | `src/Unshackle.Core/Abstractions/IPattern.cs`                                  | Contract: `Find` en `Rewrite`                                                       |
-| `CustomAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/CustomAssertionPattern.cs` | Dit patroon, Id `fa.custom-assertion`; `Group` bundelt de Manual-findings per reden |
+| `IPattern`               | `src/Unshackle.Core/Abstractions/IPattern.cs`                                  | Contract: `Find` and `Rewrite`                                                       |
+| `CustomAssertionPattern` | `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/CustomAssertionPattern.cs` | This pattern, Id `fa.custom-assertion`; `Group` bundles the Manual findings per reason |
 | `FluentAssertionsSyntax` | `src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsSyntax.cs`          | `IsFluentAssertions(symbol)`                                                        |
-| `ReportRow`              | `src/Unshackle.DataAccess/Reports/ReportRow.cs`                                | `FromAll`: één rij per extensie met aantal                                          |
-| `SpectreConsoleView`     | `src/Unshackle.Interface/Output/SpectreConsoleView.cs`                         | `ShowSummary`: aantal en reden per extensie                                         |
+| `ReportRow`              | `src/Unshackle.DataAccess/Reports/ReportRow.cs`                                | `FromAll`: one row per extension with a count                                       |
+| `SpectreConsoleView`     | `src/Unshackle.Interface/Output/SpectreConsoleView.cs`                         | `ShowSummary`: count and reason per extension                                       |
 
-**Figure 2.** `Fixer` roept `Find` en per node `Rewrite` aan, dat altijd `Manual` levert; daarna groeperen console en rapport de findings via `Group`. Weggelaten: het verzamelen van de findings door de `Fixer`.
+**Figure 2.** `Fixer` calls `Find` and `Rewrite` per node, which always returns `Manual`; then console and report group the findings via `Group`. Left out: collecting the findings by the `Fixer`.
 
 <!-- kingmadoc:diagram img/fa-custom-assertion-modellen-2.d2 -->
-![Modellen: fa.custom-assertion](img/fa-custom-assertion-modellen-2.png)
+![Models: fa.custom-assertion](img/fa-custom-assertion-modellen-2.png)
 
-| Stap    | Plek                             | Wat gebeurt er                                                                                             |
+| Step    | Place                            | What happens                                                                                               |
 | ------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Find    | `CustomAssertionPattern.Find`    | Invocations met member access waarvoor `IsCustomAssertion` geldt                                           |
-| Rewrite | `CustomAssertionPattern.Rewrite` | Manual "Custom assertion `Type.M` (bestand): ..."; de reden is gelijk voor elke aanroep van één methode |
-| Console | `SpectreConsoleView.ShowSummary` | `Group(findings)`, aflopend op aantal, één advieskop                                                       |
-| Rapport | `ReportRow.FromAll`              | `Group(all)`: één rij (bij de eerste aanroep) met aantal; overige aanroepen vallen weg                     |
+| Find    | `CustomAssertionPattern.Find`    | Invocations with member access for which `IsCustomAssertion` holds                                         |
+| Rewrite | `CustomAssertionPattern.Rewrite` | Manual "Custom assertion `Type.M` (file): ..."; the reason is the same for every call of one method       |
+| Console | `SpectreConsoleView.ShowSummary` | `Group(findings)`, descending by count, one advice header                                                  |
+| Report  | `ReportRow.FromAll`              | `Group(all)`: one row (at the first call) with a count; other calls drop out                               |
 
-**Figure 3.** Beslisboom van `Find` (`IsCustomAssertion`) en `Rewrite`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/CustomAssertion/` (`<naam>.before.cs` met `.manual.txt`).
+**Figure 3.** Decision tree of `Find` (`IsCustomAssertion`) and `Rewrite`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/CustomAssertion/` (`<name>.before.cs` with `.manual.txt`).
 
 <!-- kingmadoc:diagram img/fa-custom-assertion-modellen-3.d2 -->
-![Modellen: fa.custom-assertion](img/fa-custom-assertion-modellen-3.png)
+![Models: fa.custom-assertion](img/fa-custom-assertion-modellen-3.png)
 
-| Vraag                                                                 | Bij nee                                          | Proof                 |
+| Question                                                              | If no                                            | Proof                 |
 | --------------------------------------------------------------------- | ------------------------------------------------ | --------------------- |
-| Invocation met member access?                                         | geen match                                       | -                     |
-| M niet zelf uit FluentAssertions?                                     | geen match (FA-methoden doen de andere patronen) | alle andere FA-proofs |
-| Receiver of declarerend type (of basistype) is FA-type `*Assertions`? | geen match                                       | -                     |
+| Invocation with member access?                                        | no match                                         | -                     |
+| M not itself from FluentAssertions?                                   | no match (the other patterns handle FA methods)  | all other FA proofs   |
+| Receiver or declaring type (or base type) is an FA type `*Assertions`? | no match                                        | -                     |
 
-| Voorwaarde                                                                        | Uitkomst                                              | Proofs               |
+| Condition                                                                         | Outcome                                               | Proofs               |
 | --------------------------------------------------------------------------------- | ----------------------------------------------------- | -------------------- |
-| Extensiemethode op een FA-assertions-type                                         | Manual: Custom assertion `ResultAssertions.BeFailure` | `extension`          |
-| Instance-methode van een subklasse                                                | Manual: Custom assertion `OrderAssertions.BeShipped`  | `subclass`           |
-| In een `AssertionScope` (scope wordt niet omgezet: de aanroep is geen FA-methode) | Manual met dezelfde custom-reden                      | `in-assertion-scope` |
+| Extension method on an FA assertions type                                         | Manual: Custom assertion `ResultAssertions.BeFailure` | `extension`          |
+| Instance method of a subclass                                                     | Manual: Custom assertion `OrderAssertions.BeShipped`  | `subclass`           |
+| In an `AssertionScope` (the scope is not converted: the call is not an FA method) | Manual with the same custom reason                    | `in-assertion-scope` |
 
-## Zie ook
+## See also
 
 - [fa-custom-assertion-plan.md](fa-custom-assertion-plan.md) - plan
-- [fa-custom-assertion-verify.md](fa-custom-assertion-verify.md) - verificatie
-- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/CustomAssertionPattern.cs` - het patroon
-- `src/Unshackle.Tests/Proofs/FluentAssertions/CustomAssertion/` - de proofs
+- [fa-custom-assertion-verify.md](fa-custom-assertion-verify.md) - verification
+- `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/CustomAssertionPattern.cs` - the pattern
+- `src/Unshackle.Tests/Proofs/FluentAssertions/CustomAssertion/` - the proofs
 - [../README.md](../README.md)

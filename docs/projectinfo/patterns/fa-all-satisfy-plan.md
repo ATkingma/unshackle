@@ -8,7 +8,7 @@ files_expected:
   - src/Unshackle.Core/Fixes/FluentAssertions/FluentAssertionsFix.cs
   - src/Unshackle.Tests/Proofs/FluentAssertions/AllSatisfy/
 ---
-# Feature: fa.all-satisfy: x.Should().AllSatisfy(a => ...) wordt een controle op leegte plus een foreach
+# Feature: fa.all-satisfy: x.Should().AllSatisfy(a => ...) becomes an emptiness check plus a foreach
 
 | | |
 |---|---|
@@ -16,55 +16,55 @@ files_expected:
 | **Status** | Approved |
 | **Generated** | 2026-10-11 by KingmaDoc |
 
-> Opgesteld uit TAAK-014.
+> Drafted from TAAK-014.
 
 ## One-sentence summary
 
-fa.all-satisfy: `x.Should().AllSatisfy(a => body)` wordt `x.ShouldNotBeEmpty(); foreach (var a in x) { body }`, omdat `AllSatisfy` een `Action<T>` met assertions neemt en Shouldly's `ShouldAllBe` alleen een bool-predicate; onveilige vormen worden Manual.
+fa.all-satisfy: `x.Should().AllSatisfy(a => body)` becomes `x.ShouldNotBeEmpty(); foreach (var a in x) { body }`, because `AllSatisfy` takes an `Action<T>` with assertions while Shouldly's `ShouldAllBe` only takes a bool predicate; unsafe forms become Manual.
 
 ## Scope (in / out)
 
 **In scope**
 
-- Losse `x.Should().AllSatisfy(lambda)` als statement, met een inline lambda met één parameter (expressie- of blok-body, ook met getypeerde parameter), direct in een blok; een subject met bijwerkingen wordt eerst gehoist (TAAK-098).
-- `Manual(reden)` voor `because`/`becauseArgs`, methodgroep, `return` in de body, async lambda, resultaat gebruikt, `.And`-vervolg en een statement buiten een blok.
+- A standalone `x.Should().AllSatisfy(lambda)` as a statement, with an inline lambda with one parameter (expression or block body, also with a typed parameter), directly in a block; a subject with side effects is hoisted first (TAAK-098).
+- `Manual(reason)` for `because`/`becauseArgs`, method group, `return` in the body, async lambda, result used, `.And` continuation and a statement outside a block.
 
 **Out of scope**
 
-- Herschrijven van de assertions in de body: dat doen de andere patterns (dit pattern staat vooraan in `FluentAssertionsFix`, zodat de body als losse statements nog door die patterns wordt gezien).
-- `SatisfyRespectively`, `OnlyContain` (eigen patronen).
+- Rewriting the assertions in the body: the other patterns do that (this pattern is first in `FluentAssertionsFix`, so those patterns still see the body as separate statements).
+- `SatisfyRespectively`, `OnlyContain` (own patterns).
 
 ## Requirements
 
-- **REQ-1**: WHEN `x.Should().AllSatisfy(i => body)` als statement staat THE SYSTEM SHALL het vervangen door `x.ShouldNotBeEmpty();` en `foreach (var i in x) { body; }` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/AllSatisfy/simple.*.cs`).
-- **REQ-2**: WHEN de lambda een blok is THE SYSTEM SHALL het blok als loop-body overnemen met de juiste inspringing (proof `block.*.cs`).
-- **REQ-3**: WHEN de lambda-parameter een type heeft THE SYSTEM SHALL dat type in de `foreach` gebruiken (proof `typed-parameter.*.cs`).
-- **REQ-4**: WHEN het subject een member access is THE SYSTEM SHALL het herschrijven (proof `member-subject.*.cs`).
-- **REQ-5**: IF de assertion een `because` heeft THEN THE SYSTEM SHALL Manual geven, omdat het bericht niet in de loop kan (proof `because.*`).
-- **REQ-6**: IF `becauseArgs` of named arguments gebruikt worden THEN THE SYSTEM SHALL Manual geven (proof `because-args.*`).
-- **REQ-7**: IF het argument geen inline lambda is (methodgroep) THEN THE SYSTEM SHALL Manual geven (proof `method-group.*`).
-- **REQ-8**: IF de body een `return` bevat, of de lambda async is THEN THE SYSTEM SHALL Manual geven (proofs `return.*`, `async.*`).
-- **REQ-9** (vervangen door REQ-13): IF het subject geen naam of member access is THEN THE SYSTEM SHALL Manual geven, omdat het twee keer geëvalueerd zou worden (proof `subject-call.*`).
-- **REQ-10**: IF het resultaat gebruikt wordt of de assertion op `.And` volgt THEN THE SYSTEM SHALL Manual geven (proofs `used.*`, `and-chain.*`).
-- **REQ-11**: IF het statement niet direct in een blok staat THEN THE SYSTEM SHALL Manual geven (proof `not-in-block.*`).
-- **REQ-12**: WHEN de body een FluentAssertions-assertion bevat (sample `OrderHandlerTests`) THE SYSTEM SHALL na de hele Fix een compileerbare loop met een Shouldly-assertion opleveren (integratietest op `samples/`, handmatig gecontroleerd met `fix` op een kopie).
-- **REQ-13** (Uitbreiding TAAK-098): WHEN het subject niet veilig twee keer te evalueren is (bv. een aanroep) en het statement direct in een blok staat THE SYSTEM SHALL het subject hoisten naar `var subject = x;` voor `ShouldNotBeEmpty()` en de loop, i.p.v. Manual (vervangt REQ-9; proof `subject-call.*.cs`).
+- **REQ-1**: WHEN `x.Should().AllSatisfy(i => body)` is a statement THE SYSTEM SHALL replace it with `x.ShouldNotBeEmpty();` and `foreach (var i in x) { body; }` (proof `src/Unshackle.Tests/Proofs/FluentAssertions/AllSatisfy/simple.*.cs`).
+- **REQ-2**: WHEN the lambda is a block THE SYSTEM SHALL take over the block as the loop body with the correct indentation (proof `block.*.cs`).
+- **REQ-3**: WHEN the lambda parameter has a type THE SYSTEM SHALL use that type in the `foreach` (proof `typed-parameter.*.cs`).
+- **REQ-4**: WHEN the subject is a member access THE SYSTEM SHALL rewrite it (proof `member-subject.*.cs`).
+- **REQ-5**: IF the assertion has a `because` THEN THE SYSTEM SHALL give Manual, because the message cannot go into the loop (proof `because.*`).
+- **REQ-6**: IF `becauseArgs` or named arguments are used THEN THE SYSTEM SHALL give Manual (proof `because-args.*`).
+- **REQ-7**: IF the argument is not an inline lambda (method group) THEN THE SYSTEM SHALL give Manual (proof `method-group.*`).
+- **REQ-8**: IF the body contains a `return`, or the lambda is async THEN THE SYSTEM SHALL give Manual (proofs `return.*`, `async.*`).
+- **REQ-9** (replaced by REQ-13): IF the subject is not a name or member access THEN THE SYSTEM SHALL give Manual, because it would be evaluated twice (proof `subject-call.*`).
+- **REQ-10**: IF the result is used or the assertion follows `.And` THEN THE SYSTEM SHALL give Manual (proofs `used.*`, `and-chain.*`).
+- **REQ-11**: IF the statement is not directly in a block THEN THE SYSTEM SHALL give Manual (proof `not-in-block.*`).
+- **REQ-12**: WHEN the body contains a FluentAssertions assertion (sample `OrderHandlerTests`) THE SYSTEM SHALL produce, after the whole Fix, a compilable loop with a Shouldly assertion (integration test on `samples/`, checked manually with `fix` on a copy).
+- **REQ-13** (Extension TAAK-098): WHEN the subject is not safe to evaluate twice (e.g. a call) and the statement is directly in a block THE SYSTEM SHALL hoist the subject to `var subject = x;` before `ShouldNotBeEmpty()` and the loop, instead of Manual (replaces REQ-9; proof `subject-call.*.cs`).
 
 ## Assumptions
 
-- FluentAssertions 7.2.2 faalt op een lege en op een `null` collectie (getest); `ShouldNotBeEmpty()` voor de loop behoudt dat.
-- Een `foreach` stopt bij de eerste mislukte assertion; FA verzamelt alle mislukte elementen in één melding. Gedocumenteerd verschil.
-- Property getters in het subject zijn puur (zelfde aanname als `fa.be-greater-less`).
+- FluentAssertions 7.2.2 fails on an empty and on a `null` collection (tested); `ShouldNotBeEmpty()` before the loop preserves that.
+- A `foreach` stops at the first failed assertion; FA collects all failed elements into one message. Documented difference.
+- Property getters in the subject are pure (same assumption as `fa.be-greater-less`).
 
 ## Risks
 
-- Foutmelding verandert (eerste fout i.p.v. alle fouten per index).
-- Een body met nog niet herschreven FluentAssertions-assertions (Manual elders) blijft FA-code in de loop.
+- The failure message changes (first failure instead of all failures per index).
+- A body with FluentAssertions assertions that are not yet rewritten (Manual elsewhere) leaves FA code in the loop.
 
-## Modellen
+## Models
 
-Klassendiagram, sequence en beslisboom: [fa-all-satisfy-modellen.md](fa-all-satisfy-modellen.md).
+Class diagram, sequence and decision tree: [fa-all-satisfy-modellen.md](fa-all-satisfy-modellen.md).
 
 ## Open questions
 
-- Geen.
+- None.

@@ -1,43 +1,43 @@
-# TAAK-198 — Conflict-Manual bij eigen `Should*`-extensies verkleinen (Akka: 3 449 findings)
+# TAAK-198 — Shrink the conflict Manual for own `Should*` extensions (Akka: 3,449 findings)
 
-**Status**: ✅ voltooid (2026-10-13)
-**Aangemaakt**: 2026-10-13 (TAAK-174 stap 3, Akka-herhaling)
-**Doel**: bestanden met een eigen `ShouldBe`/`ShouldBeTrue` in scope (Akka.TestKit) toch grotendeels migreren, zonder CS0121 en zonder volledig gekwalificeerde Shouldly-aanroepen.
+**Status**: ✅ completed (2026-10-13)
+**Created**: 2026-10-13 (TAAK-174 step 3, Akka repeat)
+**Goal**: still migrate most of the files with their own `ShouldBe`/`ShouldBeTrue` in scope (Akka.TestKit), without CS0121 and without fully qualified Shouldly calls.
 
-## Context voor de volgende agent
+## Context for the next agent
 
-- Na TAAK-174 bouwt Akka.NET (`23a8566`) groen, maar de prijs is hoog: **3 449 van 5 126 Manuals** zijn "Not rewritten: Shouldly.… is ambiguous with Akka.TestKit.AkkaSpecExtensions.… once Shouldly is imported (CS0121)". Fixed daalde van 8 488 (kapotte build) naar 5 463.
-- Verdeling van die reden: `ShouldBe` 2 018, `ShouldBeTrue` 1 114, `ShouldBeFalse` 172, `ShouldBeGreater…` 104, rest klein.
-- De conflictcheck markeert het **hele bestand** Manual, ook de calls waarvan de Shouldly-naam niet botst (bijv. `Throw` → `Should.Throw`, `Contain` → `ShouldContain`).
-- Volledig gekwalificeerde aanroepen (`Shouldly.ShouldBeTestExtensions.ShouldBe(x, y)`) zijn in TAAK-174 bewust afgewezen.
+- After TAAK-174 Akka.NET (`23a8566`) builds green, but the price is high: **3,449 of 5,126 Manuals** are "Not rewritten: Shouldly.… is ambiguous with Akka.TestKit.AkkaSpecExtensions.… once Shouldly is imported (CS0121)". Fixed dropped from 8,488 (broken build) to 5,463.
+- Distribution of that reason: `ShouldBe` 2,018, `ShouldBeTrue` 1,114, `ShouldBeFalse` 172, `ShouldBeGreater…` 104, rest small.
+- The conflict check marks the **whole file** Manual, also the calls whose Shouldly name does not clash (e.g. `Throw` → `Should.Throw`, `Contain` → `ShouldContain`).
+- Fully qualified calls (`Shouldly.ShouldBeTestExtensions.ShouldBe(x, y)`) were deliberately rejected in TAAK-174.
 
-## Analyse
+## Analysis
 
-### Mogelijke aanpakken
+### Possible approaches
 
-1. **Gerichte `using static`**: in plaats van `using Shouldly;` alleen de Shouldly-klassen importeren die geen botsende namen bevatten (`using static Shouldly.ShouldThrowExtensions;` e.d.; `Should` als type via `using Should = Shouldly.Should;`). Calls die op een botsende naam uitkomen blijven Manual; de rest wordt Fixed. Let op: `using static` brengt alle extensies van die klasse binnen, dus per klasse controleren.
-2. **Eigen extensie hergebruiken**: als de eigen methode semantisch hetzelfde doet (Akka `ShouldBe<T>(T, T, string)` = gelijkheid, `ShouldBeTrue(bool, string)`), `x.Should().Be(y)` herschrijven naar de eigen `x.ShouldBe(y)` zonder Shouldly-import. Vergt een whitelist of een semantische check (signatuur + naam); risico op ander gedrag (berichten, `IEquatable`).
-3. Per bestand: alleen Manual als minstens één herschreven call een botsende naam nodig heeft (nu: zodra er een botsende extensie in scope is?) — eerst nagaan wat de huidige check precies doet in `UsingDirectives.cs`/Fixer.
+1. **Targeted `using static`**: instead of `using Shouldly;` only import the Shouldly classes that contain no clashing names (`using static Shouldly.ShouldThrowExtensions;` etc.; `Should` as a type via `using Should = Shouldly.Should;`). Calls that end up on a clashing name stay Manual; the rest becomes Fixed. Note: `using static` brings in all extensions of that class, so check per class.
+2. **Reuse the own extension**: if the own method does semantically the same (Akka `ShouldBe<T>(T, T, string)` = equality, `ShouldBeTrue(bool, string)`), rewrite `x.Should().Be(y)` to the own `x.ShouldBe(y)` without a Shouldly import. Requires a whitelist or a semantic check (signature + name); risk of different behaviour (messages, `IEquatable`).
+3. Per file: only Manual if at least one rewritten call needs a clashing name (now: as soon as a clashing extension is in scope?) — first check what the current check does exactly in `UsingDirectives.cs`/Fixer.
 
-### Overige foutcodes uit de eerste Akka-run
+### Other error codes from the first Akka run
 
-De 8× CS8130, 8× CS0119, 6× CS1061 en 6× CS0452 uit de eerste run zijn na TAAK-174 verdwenen (build 0 fouten). Het opgeslagen `build1.log` van die run bevat ze niet meer per regel, dus de exacte plekken zijn niet te herleiden; ze zaten vrijwel zeker in bestanden die nu Manual zijn (gevolgfouten van dezelfde dubbelzinnigheid, bijv. inferentie bij deconstructie en methodgroepen). Als aanpak 1 of 2 die bestanden weer migreert, opnieuw op deze codes letten.
+The 8× CS8130, 8× CS0119, 6× CS1061 and 6× CS0452 from the first run disappeared after TAAK-174 (build 0 errors). The saved `build1.log` of that run no longer contains them per line, so the exact places cannot be traced; they were almost certainly in files that are now Manual (follow-up errors of the same ambiguity, e.g. inference with deconstruction and method groups). If approach 1 or 2 migrates those files again, watch for these codes again.
 
-## Stappen
+## Steps
 
-- [x] 1. Huidige conflictcheck lezen (`Fixer.cs`, `UsingDirectives.AmbiguityWithAddedAsync`: na de rewrite, op het herschreven document; één dubbelzinnige call → hele bestand teruggedraaid) en bepalen waar per call ingegrepen kan worden.
-- [x] 2. Unittests: bestand met eigen `ShouldBe` + FA-calls die wel/niet botsen.
-- [x] 3. Aanpak 1 (gerichte imports) implementeren; aanpak 2 alleen na overleg met de gebruiker.
-- [x] 4. Bewijs: Akka-herhaling bouwt groen, Fixed stijgt, 0 testregressies; let op CS8130/CS0119/CS1061/CS0452.
+- [x] 1. Read the current conflict check (`Fixer.cs`, `UsingDirectives.AmbiguityWithAddedAsync`: after the rewrite, on the rewritten document; one ambiguous call → the whole file rolled back) and determine where to intervene per call.
+- [x] 2. Unit tests: file with an own `ShouldBe` + FA calls that do/do not clash.
+- [x] 3. Implement approach 1 (targeted imports); approach 2 only after consulting the user.
+- [x] 4. Proof: the Akka repeat builds green, Fixed rises, 0 test regressions; watch for CS8130/CS0119/CS1061/CS0452.
 
-## Resultaat
+## Result
 
-- Gekozen: aanpak 1 (gerichte imports), datagedreven. Pas als de bestaande check (TAAK-174/199) een conflict vindt, draait `Fixer.FixWithTargetedImportsAsync`: geen `using Shouldly;` maar `using static` per gebruikte Shouldly-klasse plus een alias per genoemd type (`using Should = Shouldly.Should;`). Rondes: CS0121 → die klasse blijft weg en die naam wordt geblokkeerd; misbinding → naam geblokkeerd; een herschrijving die een geblokkeerde naam aanroept wordt per call Manual (`Fixer.BlockedCall`) en blijft FA. Controle zonder de globale model-using; komt er een andere compileerfout bij, dan de oude terugval per bestand. Aanpak 2 niet gedaan.
-- Code: `Fixer.cs` (`FixFileAsync` uit de lus gehaald, `FilePass`), `UsingDirectives.cs` (`ConflictsWithAddedAsync`, `AddedUsageAsync`, `AddTargetedImports`, `ErrorCountAsync`), `AddedConflict`, `AddedUsage`.
-- Tests: 3 nieuwe in `AmbiguousAddedNamespaceTests` (gemengd bestand, namespace-variant, terugval bij botsende alias); proof `Proofs/FluentAssertions/BeTrueFalse/own-shouldbe-in-scope.*`. 1066 tests groen.
-- Akka (`23a8566`, schoon, restore, fix, build): Fixed 5 463 → **6 016**, Manual 5 518 → **4 649**; conflict-Manuals 3 449 → 2 943 (nu per call: `ShouldBe` 1 832, `ShouldBeTrue` 506, `ShouldBeOfType` 252 (klasse weggelaten), `ShouldBeFalse` 146 …). 584 bestanden geschreven (was 431). Build **0 fouten** (geen CS8130/CS0119/CS1061/CS0452). Tests gelijk aan de eerdere logs (`t2-akka`, `t2-ddata`, t1): Akka.Tests 1553/0 gefaald, Akka.TestKit.Tests 337/0, DData 201/1 gefaald — dezelfde bekende `ReplicatorMessageSerializerSpec` (TAAK-200, waarschuwing). 0 regressies.
+- Chosen: approach 1 (targeted imports), data-driven. Only when the existing check (TAAK-174/199) finds a conflict does `Fixer.FixWithTargetedImportsAsync` run: no `using Shouldly;` but a `using static` per used Shouldly class plus an alias per named type (`using Should = Shouldly.Should;`). Rounds: CS0121 → that class stays out and that name is blocked; misbinding → name blocked; a rewrite that calls a blocked name becomes Manual per call (`Fixer.BlockedCall`) and stays FA. Check without the global model using; if another compile error appears, the old per-file fallback. Approach 2 not done.
+- Code: `Fixer.cs` (`FixFileAsync` taken out of the loop, `FilePass`), `UsingDirectives.cs` (`ConflictsWithAddedAsync`, `AddedUsageAsync`, `AddTargetedImports`, `ErrorCountAsync`), `AddedConflict`, `AddedUsage`.
+- Tests: 3 new in `AmbiguousAddedNamespaceTests` (mixed file, namespace variant, fallback on a clashing alias); proof `Proofs/FluentAssertions/BeTrueFalse/own-shouldbe-in-scope.*`. 1066 tests green.
+- Akka (`23a8566`, clean, restore, fix, build): Fixed 5,463 → **6,016**, Manual 5,518 → **4,649**; conflict Manuals 3,449 → 2,943 (now per call: `ShouldBe` 1,832, `ShouldBeTrue` 506, `ShouldBeOfType` 252 (class left out), `ShouldBeFalse` 146 …). 584 files written (was 431). Build **0 errors** (no CS8130/CS0119/CS1061/CS0452). Tests equal to the earlier logs (`t2-akka`, `t2-ddata`, t1): Akka.Tests 1553/0 failed, Akka.TestKit.Tests 337/0, DData 201/1 failed — the same known `ReplicatorMessageSerializerSpec` (TAAK-200, warning). 0 regressions.
 
-## Zie ook
+## See also
 
 - `claude/tasks/archief/TAAK-174-shouldly-dubbelzinnig-met-eigen-shouldbe.md`
 - `claude/tasks/CORPUSRUN-fa.md`

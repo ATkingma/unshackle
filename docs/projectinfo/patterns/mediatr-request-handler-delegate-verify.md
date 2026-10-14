@@ -3,27 +3,27 @@
 |               |                                              |
 | ------------- | -------------------------------------------- |
 | **Plan**      | [`mediatr-request-handler-delegate-plan.md`](mediatr-request-handler-delegate-plan.md) |
-| **Status**    | Verified (proofs en unittests); corpusbewijs op amantin nog niet gedraaid |
-| **Generated** | 2026-10-12 (met de hand, kingmadoc ontbreekt) |
+| **Status**    | Verified (proofs and unit tests); corpus evidence on amantin not yet run |
+| **Generated** | 2026-10-12 (by hand, kingmadoc missing) |
 
 ## Requirements
 
-| REQ   | Oordeel | Bewijs |
-| ----- | ------- | ------ |
-| REQ-1 | Gehaald | `Proofs/MediatR/_Combined/request-handler-delegate` (`CombinedProofTests.CombinedMediatR_Before_BecomesAfter`; `after` compileert tegen Mediator 3.0.2 mét generator) |
-| REQ-2 | Gehaald | `RequestHandlerDelegate/lambda`, `parameter`, `invoke-call`, `callback-returns` |
-| REQ-3 | Gehaald | `RequestHandlerDelegate/no-handle-call` |
-| REQ-5 | Gehaald | `Proofs/MediatR/_Combined/request-handler-delegate-shared-field` (before compileert tegen MediatR 12.5, after tegen Mediator 3.0.2 met generator; nabootsing van amantin `AuthorizationBehaviorTests`) |
-| REQ-4 | Gehaald | `FixerProjectFileTests.FixAsync_CodeStillUsesPackageWithoutFinding_ReportsManualOnThatLine` en `..._ReportsNoUnmatchedUse` |
+| REQ   | Verdict | Evidence |
+| ----- | ------- | -------- |
+| REQ-1 | Met | `Proofs/MediatR/_Combined/request-handler-delegate` (`CombinedProofTests.CombinedMediatR_Before_BecomesAfter`; `after` compiles against Mediator 3.0.2 with generator) |
+| REQ-2 | Met | `RequestHandlerDelegate/lambda`, `parameter`, `invoke-call`, `callback-returns` |
+| REQ-3 | Met | `RequestHandlerDelegate/no-handle-call` |
+| REQ-5 | Met | `Proofs/MediatR/_Combined/request-handler-delegate-shared-field` (before compiles against MediatR 12.5, after against Mediator 3.0.2 with generator; replica of amantin `AuthorizationBehaviorTests`) |
+| REQ-4 | Met | `FixerProjectFileTests.FixAsync_CodeStillUsesPackageWithoutFinding_ReportsManualOnThatLine` and `..._ReportsNoUnmatchedUse` |
 
 ## Deviations
 
-- MediatR 12.5's `RequestHandlerDelegate<T>` heeft een optionele `CancellationToken`; `Invoke(token)` houdt die als tweede argument.
-- Het vangnet slaat bestanden over waar al een Manual-finding staat (anders ruis per cascade-Manual); `FixerProjectFileTests.FixAsync_CodeStillUsesPackage_KeepsItAndReportsManual` filtert daarom op `project-file`.
-- Lambda's als `next` (`behavior.Handle(cmd, () => ..., ct)`) zijn niet gedekt: geen symboolverwijzing, dus ook geen vangnetrij.
-- Stap 4 van TAAK-180 (harnas op amantin: 0 Manual, build, 85/85) is niet gedraaid: het corpusproject staat niet in deze omgeving. Nabootsing: de `_Combined`-proof.
+- MediatR 12.5's `RequestHandlerDelegate<T>` has an optional `CancellationToken`; `Invoke(token)` keeps it as the second argument.
+- The safety net skips files that already have a Manual finding (otherwise noise per cascade Manual); `FixerProjectFileTests.FixAsync_CodeStillUsesPackage_KeepsItAndReportsManual` therefore filters on `project-file`.
+- Lambdas as `next` (`behavior.Handle(cmd, () => ..., ct)`) are not covered: no symbol reference, so no safety-net row either.
+- Step 4 of TAAK-180 (harness on amantin: 0 Manual, build, 85/85) has not been run: the corpus project is not in this environment. Replica: the `_Combined` proof.
 
-## Zie ook
+## See also
 
 - [mediatr-request-handler-delegate-plan.md](mediatr-request-handler-delegate-plan.md)
 - `claude/tasks/CORPUSRUN-mediatr.md` — run 2026-10-12

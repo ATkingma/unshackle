@@ -1,57 +1,57 @@
-# Modellen: automapper.for-member-map-from
+# Models: automapper.for-member-map-from
 
-Feiten uit `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberMapFromPattern.cs` en `CreateMapPattern.cs`.
+Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ForMemberMapFromPattern.cs` and `CreateMapPattern.cs`.
 
-> De figuren zijn als D2-bron aangemaakt in `img/`; `kingmadoc`/`d2` waren in deze omgeving niet beschikbaar, dus de PNG/SVG volgen bij de eerstvolgende `kingmadoc render`.
+> The figures were created as D2 sources in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
 
-## Figuur 1: klassen
+## Figure 1: classes
 
-**Figure 1.** `ForMemberMapFromPattern` naast `ForMemberIgnorePattern`, beide subklassen van `CreateMapPattern`.
+**Figure 1.** `ForMemberMapFromPattern` next to `ForMemberIgnorePattern`, both subclasses of `CreateMapPattern`.
 
 <!-- kingmadoc:diagram img/automapper-for-member-map-from-modellen-1.d2 -->
-![Figuur 1: klassen](img/automapper-for-member-map-from-modellen-1.png)
+![Figure 1: classes](img/automapper-for-member-map-from-modellen-1.png)
 
-| Element                   | Rol                                                                                                        |
+| Element                   | Role                                                                                                       |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `ForMemberMapFromPattern` | Id `automapper.for-member-map-from`; `Find` claimt elk profile met een `ForMember(.., o => o.MapFrom(..))` |
-| `CreateMapPattern`        | Gedeelde `Rewrite`; `Find` voor profiles zonder Ignore/MapFrom en voor `Map`/`ProjectTo`                   |
-| `ForMemberOption`         | Herkent `d => d.X` met `o.Ignore()` (MapFrom null) of `o.MapFrom(s => expr)` (de lambda)                   |
-| `TryParseMap`             | Pelt de `.ForMember`-schakels af; verzamelt `options` (naam naar lambda of null); dubbele naam is geen match |
-| `Problem`                 | Per lid van B: genegeerd, MapFrom, of bronlid met zelfde naam en type; levert `(naam, waarde)`             |
-| `MapFromProblem`          | Toetst de expressie en vervangt `s` door `source`                                                          |
+| `ForMemberMapFromPattern` | Id `automapper.for-member-map-from`; `Find` claims every profile with a `ForMember(.., o => o.MapFrom(..))` |
+| `CreateMapPattern`        | Shared `Rewrite`; `Find` for profiles without Ignore/MapFrom and for `Map`/`ProjectTo`                     |
+| `ForMemberOption`         | Recognises `d => d.X` with `o.Ignore()` (MapFrom null) or `o.MapFrom(s => expr)` (the lambda)              |
+| `TryParseMap`             | Peels off the `.ForMember` links; collects `options` (name to lambda or null); a duplicate name is no match |
+| `Problem`                 | Per member of B: ignored, MapFrom, or a source member with the same name and type; returns `(name, value)` |
+| `MapFromProblem`          | Checks the expression and replaces `s` with `source`                                                       |
 
-## Figuur 2: sequence
+## Figure 2: sequence
 
-**Figure 2.** Van `Fixer` via `Find` en `Rewrite` naar `Fixed` of `Manual`.
+**Figure 2.** From `Fixer` via `Find` and `Rewrite` to `Fixed` or `Manual`.
 
 <!-- kingmadoc:diagram img/automapper-for-member-map-from-modellen-2.d2 -->
-![Figuur 2: sequence](img/automapper-for-member-map-from-modellen-2.png)
+![Figure 2: sequence](img/automapper-for-member-map-from-modellen-2.png)
 
-| Stap      | Methode in de code                                               | Wat gebeurt er                                           |
+| Step      | Method in the code                                               | What happens                                             |
 | --------- | ---------------------------------------------------------------- | -------------------------------------------------------- |
-| Vinden    | `Find`, `IsProfileWithMaps`, `UsesForMember`, `IsMapFromCall`    | Profiles met minstens één `MapFrom`-aanroep              |
-| Parsen    | `TryParseMap`, `ForMemberOption`, `GetSymbolInfo`                | `CreateMap<A, B>()` plus de opties per lid               |
-| Toetsen   | `Problem`, `MapFromProblem`, `GetTypeInfo`, `ClassifyConversion` | Leden, expressie (namen, null-veiligheid, type, collectie) |
-| Schrijven | `Extensions`, `ReplaceNode`                                      | Constructor leeg, `<Profile>Extensions` met `X = expr`   |
+| Find      | `Find`, `IsProfileWithMaps`, `UsesForMember`, `IsMapFromCall`    | Profiles with at least one `MapFrom` call                |
+| Parse     | `TryParseMap`, `ForMemberOption`, `GetSymbolInfo`                | `CreateMap<A, B>()` plus the options per member          |
+| Check     | `Problem`, `MapFromProblem`, `GetTypeInfo`, `ClassifyConversion` | Members, expression (names, null safety, type, collection) |
+| Write     | `Extensions`, `ReplaceNode`                                      | Constructor empty, `<Profile>Extensions` with `X = expr` |
 
-## Figuur 3: beslisboom
+## Figure 3: decision tree
 
-**Figure 3.** De vragen van `Rewrite` die bij MapFrom horen (de overige staan in de create-map- en ignore-modellen).
+**Figure 3.** The questions of `Rewrite` that belong to MapFrom (the others are in the create-map and ignore models).
 
 <!-- kingmadoc:diagram img/automapper-for-member-map-from-modellen-3.d2 -->
-![Figuur 3: beslisboom](img/automapper-for-member-map-from-modellen-3.png)
+![Figure 3: decision tree](img/automapper-for-member-map-from-modellen-3.png)
 
-| Blad                           | Voorwaarde                                                   | Bewijs                                     |
+| Leaf                           | Condition                                                    | Evidence                                   |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------ |
-| Manual "without options"       | resolver-lambda, stringnaam, generiek, X dubbel              | `resolver-form`, unittest                  |
-| Manual "no public setter"      | X heeft geen publieke setter                                 | unittest                                   |
-| Manual "not available outside" | expressie gebruikt een instantielid van het profiel          | `outside-profile`                          |
-| Manual "which may be null"     | ontvanger is geen `s`/type en niet NotNull                   | `null-deref`, unittest                     |
-| Manual "AutoMapper converts"   | type expressie ongelijk aan type X (buiten numeriek/nullable) | `conversion`                               |
-| Manual "is a collection"       | X is een collectie                                           | `collection`                               |
-| Fixed (`X = expr`)             | alles hierboven gehaald                                      | `simple`, `ignore-and-nullable`, unittests |
+| Manual "without options"       | resolver lambda, string name, generic, X twice               | `resolver-form`, unit test                 |
+| Manual "no public setter"      | X has no public setter                                       | unit test                                  |
+| Manual "not available outside" | the expression uses an instance member of the profile        | `outside-profile`                          |
+| Manual "which may be null"     | the receiver is not `s`/a type and not NotNull               | `null-deref`, unit test                    |
+| Manual "AutoMapper converts"   | type of the expression unequal to the type of X (apart from numeric/nullable) | `conversion`              |
+| Manual "is a collection"       | X is a collection                                            | `collection`                               |
+| Fixed (`X = expr`)             | everything above passed                                      | `simple`, `ignore-and-nullable`, unit tests |
 
-## Zie ook
+## See also
 
 - [automapper-for-member-map-from-plan.md](automapper-for-member-map-from-plan.md)
 - [automapper-for-member-map-from-verify.md](automapper-for-member-map-from-verify.md)

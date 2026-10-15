@@ -231,6 +231,51 @@ public class MapCallPatternTests
         report.Findings.ShouldContain(f => f.PatternId == "automapper.map-call" && f.Result is ManualResult && ((ManualResult)f.Result).Reason.StartsWith(reason, StringComparison.Ordinal));
     }
 
+    // Map<B> passed as a method group becomes a lambda over the generated method; a shape that is not rewritten is Manual and so
+    // keeps the CreateMap (TAAK-267: a method group left behind fails at run time with a missing type map).
+    [Theory]
+    [InlineData("orders.Select(mapper.Map<Shop.Mapping.OrderDto>).ToList()", "orders.Select(source => source.ToOrderDto()).ToList()", null)]
+    [InlineData("orders.Select(mapper.Map<Shop.Mapping.Order, Shop.Mapping.OrderDto>).ToList()", "orders.Select(source => source.ToOrderDto()).ToList()", null)]
+    [InlineData("orders.Zip(targets, mapper.Map).ToList()", null, "passed as a method group in a form this fix does not rewrite")]
+    [InlineData("orders.Select<Shop.Mapping.Order?, Shop.Mapping.OrderDto?>(mapper.Map<Shop.Mapping.OrderDto?>).ToList()", null, "may be null")]
+    public async Task FixAsync_MapMethodGroup_BecomesLambdaOrManual(string call, string? expected, string? manual)
+    {
+        // Arrange
+        var workspace = new AdhocWorkspace();
+        var project = ProjectId.CreateNewId();
+        string service = $$"""
+            #nullable enable
+            using System.Collections.Generic;
+            using System.Linq;
+            using AutoMapper;
+
+            namespace Shop.Orders;
+
+            public class OrderService
+            {
+                internal object Get(IMapper mapper, List<Shop.Mapping.Order> orders, Shop.Mapping.OrderDto[] targets) => {{call}};
+            }
+            """;
+        Solution solution = AddProject(workspace.CurrentSolution, project, "Shop")
+            .AddDocument(DocumentId.CreateNewId(project), "Profile.cs", Profile.Replace("ACCESS", "public", StringComparison.Ordinal), filePath: "Profile.cs")
+            .AddDocument(DocumentId.CreateNewId(project), "Service.cs", service, filePath: "Service.cs");
+
+        // Act
+        FixReport report = await new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        if (manual is null)
+        {
+            report.Findings.ShouldAllBe(f => f.Result is FixedResult);
+            (await TextAsync(report.Solution, "Service.cs")).ShouldContain(expected!);
+        }
+        else
+        {
+            report.Findings.ShouldContain(f => f.PatternId == "automapper.map-call" && f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains(manual));
+            (await TextAsync(report.Solution, "Profile.cs")).ShouldContain("CreateMap<Order, OrderDto>();");
+        }
+    }
+
     private static Solution AddProject(Solution solution, ProjectId id, string name) =>
         solution.AddProject(id, name, name, LanguageNames.CSharp)
             .WithProjectCompilationOptions(id, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))

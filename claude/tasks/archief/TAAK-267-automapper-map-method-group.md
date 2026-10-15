@@ -1,6 +1,6 @@
 # TAAK-267 — AutoMapper: `Map<T>` used as a method group
 
-**Status**: open
+**Status**: done (2026-10-15)
 **Created**: 2026-10-14
 **Found by**: TAAK-258 after-fix round (eshoponweb, 5 test regressions)
 
@@ -21,6 +21,12 @@ This is the worst failure mode (silent runtime break): a `Map` reference that is
   If that is too much for now, Manual (which then blocks the CreateMap rewrites per the all-or-nothing rule) is an acceptable first step.
 - Proof: `src/Unshackle.Tests/Proofs/_Pending/AutoMapper/MapCall/method-group.{before,after}.cs`; move it to `Proofs/AutoMapper/MapCall/` when done.
 - Rerun eshoponweb with `claude/tools/corpus-am.sh one after eshoponweb eShopOnWeb.sln` (base is in `<corpus>/corpus-automapper/_results/base/eshoponweb`).
+
+## Result
+
+- `MapCallPattern` finds `Map`/`ProjectTo` method groups; `Map<B>`/`Map<A, B>` with one source becomes `source => source.ToB()`, every other shape is Manual (blocks the CreateMaps).
+- Proofs `MapCall/method-group`, `MapCall/method-group-two-parameters` (manual), `_Combined/method-group-map-call`; unit test `FixAsync_MapMethodGroup_BecomesLambdaOrManual`.
+- The eshoponweb corpus rerun is still to be done with the next after-fix round (TAAK-258).
 
 ## See also
 

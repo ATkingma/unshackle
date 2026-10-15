@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
@@ -22,13 +23,26 @@ public class MapCallPattern : ISolutionPattern
     public string Description =>
         "mapper.Map<B>(a) → a.ToB(), calling the extension method of CreateMap<A, B>; Map<List<B>>(items) → items.Select(x => x.ToB()).ToList(); unknown maps are Manual";
 
+    // Also every Map or ProjectTo of AutoMapper used as a method group (items.Select(mapper.Map<B>), TAAK-267): left alone it would still
+    // run after its CreateMap is gone, so it is either rewritten to a lambda or Manual (which blocks the whole fix).
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        root.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => IsMapCall(i, model));
+        root.DescendantNodes().Where(n => n is InvocationExpressionSyntax i ? IsMapCall(i, model) : IsMethodGroup(n, model));
 
     // Without the solution only an extension method the code already has counts.
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
         ArgumentNullException.ThrowIfNull(model);
+        if (node is not InvocationExpressionSyntax)
+        {
+            if (CheckGroup((ExpressionSyntax)node, model, out ITypeSymbol? groupSource, out ITypeSymbol? groupDestination) is string groupProblem)
+            {
+                return PatternResult.Manual(groupProblem);
+            }
+
+            ExpressionSyntax parameter = SyntaxFactory.IdentifierName(ParameterName(node, model));
+            return Lambda(parameter, Existing(node, model, groupSource!, groupDestination!, parameter, conditional: false) ?? PatternResult.Manual(NoMap(groupSource!, groupDestination!)));
+        }
+
         if (Check((InvocationExpressionSyntax)node, model, out ExpressionSyntax? source, out ITypeSymbol? sourceType, out ITypeSymbol? destination, out Kind kind)
             is string problem)
         {
@@ -45,6 +59,17 @@ public class MapCallPattern : ISolutionPattern
         ArgumentNullException.ThrowIfNull(node);
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(solution);
+        if (node is not InvocationExpressionSyntax)
+        {
+            if (CheckGroup((ExpressionSyntax)node, model, out ITypeSymbol? groupSource, out ITypeSymbol? groupDestination) is string groupProblem)
+            {
+                return PatternResult.Manual(groupProblem);
+            }
+
+            ExpressionSyntax parameter = SyntaxFactory.IdentifierName(ParameterName(node, model));
+            return Lambda(parameter, await SingleAsync(node, model, solution, parameter, groupSource!, groupDestination!, conditional: false, cancellationToken));
+        }
+
         if (Check((InvocationExpressionSyntax)node, model, out ExpressionSyntax? source, out ITypeSymbol? sourceType, out ITypeSymbol? destination, out Kind kind)
             is string problem)
         {
@@ -56,7 +81,13 @@ public class MapCallPattern : ISolutionPattern
             return Collection((InvocationExpressionSyntax)node, model, await NestedMaps.FromAsync(model, solution, cancellationToken), source!, sourceType!, destination!);
         }
 
-        bool conditional = kind == Kind.Conditional;
+        return await SingleAsync(node, model, solution, source!, sourceType!, destination!, kind == Kind.Conditional, cancellationToken);
+    }
+
+    // source.ToB() through the method that exists or the one a profile of the solution gets; Manual when there is none (or several).
+    private static async Task<PatternResult> SingleAsync(SyntaxNode node, SemanticModel model, Solution solution, ExpressionSyntax source, ITypeSymbol sourceType,
+        ITypeSymbol destination, bool conditional, CancellationToken cancellationToken)
+    {
         if (Existing(node, model, sourceType!, destination!, source!, conditional) is { } existing)
         {
             return existing;
@@ -98,7 +129,82 @@ public class MapCallPattern : ISolutionPattern
         && (info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is IMethodSymbol { Name: "Map", TypeArguments.Length: 1 or 2, Parameters.Length: 1 } method
         && method.ContainingAssembly?.Name == AutoMapperAssembly;
 
-    // Why the call cannot become source.ToB(), or null with the source expression and the types of the map.
+    // A reference to Map or ProjectTo of AutoMapper that is not called: mapper.Map<B> (or Map<B> inside a mapper) passed as a delegate.
+    // nameof(mapper.Map) runs nothing and is left alone.
+    internal static bool IsMethodGroup(SyntaxNode node, SemanticModel model)
+    {
+        if (node is not (MemberAccessExpressionSyntax or SimpleNameSyntax) || node.Parent is MemberAccessExpressionSyntax { Name: var name } && name == node
+            || node.Parent is MemberBindingExpressionSyntax || node.Parent is InvocationExpressionSyntax { Expression: var called } && called == node
+            || node.Ancestors().OfType<InvocationExpressionSyntax>().Any(i => i.Expression is IdentifierNameSyntax { Identifier.ValueText: "nameof" }))
+        {
+            return false;
+        }
+
+        IMethodSymbol? method = model.GetOperation(node) is IMethodReferenceOperation reference ? reference.Method
+            : model.GetSymbolInfo(node) is var info ? (info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) as IMethodSymbol : null;
+        return method is { Name: "Map" or "ProjectTo" } && method.ContainingAssembly?.Name == AutoMapperAssembly;
+    }
+
+    // Why the method group cannot become x => x.ToB(), or null with the types of the map: only Map<B> or Map<A, B> with one parameter,
+    // converted to a delegate that takes the source.
+    private static string? CheckGroup(ExpressionSyntax group, SemanticModel model, out ITypeSymbol? sourceType, out ITypeSymbol? destination)
+    {
+        sourceType = null;
+        destination = null;
+        if (model.GetOperation(group) is not IMethodReferenceOperation { Method: { Name: "Map", TypeArguments.Length: 1 or 2, Parameters.Length: 1 } method } reference
+            || reference.Parent is not IDelegateCreationOperation { Type: INamedTypeSymbol { DelegateInvokeMethod: { Parameters: [{ } parameter] } } })
+        {
+            return "Map (or ProjectTo) is passed as a method group in a form this fix does not rewrite (only Map<B> with one source does); write a lambda by hand, e.g. x => x.To…().";
+        }
+
+        if (group is MemberAccessExpressionSyntax { Expression: var receiver } && !HasNoSideEffects(receiver))
+        {
+            return "Map is passed as a method group of something other than a plain field, property or variable; migrate it by hand.";
+        }
+
+        if (group.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Type.IsVar: true } } })
+        {
+            return "Map is assigned as a method group to a var; a lambda has no type of its own there; migrate it by hand.";
+        }
+
+        destination = method.TypeArguments[^1];
+        sourceType = method.TypeArguments.Length == 2 ? method.TypeArguments[0] : parameter.Type;
+        if (sourceType is { TypeKind: TypeKind.Error or TypeKind.Dynamic or TypeKind.TypeParameter } || sourceType.SpecialType == SpecialType.System_Object)
+        {
+            return "The source of the Map method group has no type of its own (object, dynamic or a type parameter); AutoMapper picks the map at run time.";
+        }
+
+        if (IsCollection(sourceType) || IsCollection(destination))
+        {
+            return $"Map to {destination.ToDisplayString()} is passed as a method group over a collection; write the Select by hand.";
+        }
+
+        if (parameter.Type.NullableAnnotation == NullableAnnotation.Annotated || destination.NullableAnnotation == NullableAnnotation.Annotated)
+        {
+            return $"The source of the Map method group may be null: AutoMapper returns null, {sourceType.Name}.To{destination.Name}() throws; check for null and migrate it by hand.";
+        }
+
+        return null;
+    }
+
+    // The lambda parameter: source, or a name that is not taken where the method group is.
+    private static string ParameterName(SyntaxNode node, SemanticModel model)
+    {
+        string name = "source";
+        for (int i = 2; model.LookupSymbols(node.SpanStart, name: name).Any(); i++)
+        {
+            name = "source" + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        return name;
+    }
+
+    // x.ToB() of the rewrite inside x => x.ToB().
+    private static PatternResult Lambda(ExpressionSyntax parameter, PatternResult result) => result is FixedResult { NewNodes: [ExpressionSyntax body] } fixedResult
+        ? PatternResult.Fixed(SyntaxFactory.ParseExpression($"{parameter} => {body.NormalizeWhitespace()}"), fixedResult.RequiredNamespaces)
+        : result;
+
+    // Why the call cannot become source.ToB(),or null with the source expression and the types of the map.
     private static string? Check(InvocationExpressionSyntax invocation, SemanticModel model, out ExpressionSyntax? source, out ITypeSymbol? sourceType,
         out ITypeSymbol? destination, out Kind kind)
     {

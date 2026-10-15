@@ -32,6 +32,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapCallPattern.cs`, `CreateM
 - "Several profiles" has no proof or test; only code review.
 - `CombinedProofTests` got an AutoMapper theory: a Fixed proof with only `MapCallPattern` does not compile without the profile rewrite.
 - PNG/SVG of the models not rendered (no `kingmadoc`/`d2`); the D2 sources are there.
+- TAAK-267: method groups of `Map` are found too (REQ-12); `nameof(mapper.Map)` is left alone. The full-fix proof from `_Pending` went to `_Combined/method-group-map-call`, since a MapCall-only proof keeps the profile.
 
 ## Validation results
 

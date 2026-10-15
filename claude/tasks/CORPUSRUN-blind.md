@@ -52,6 +52,26 @@ Tool `23c0f28`, run 2026-10-15.
 - **AutoMapper**: safe (0 regressions, nothing wrongly rewritten) but on unseen code it migrated nothing; cycles and `ReverseMap`/unflattening are common in real profiles.
 - Nothing was rewritten wrongly in a way that tests passed but behaviour changed, as far as the tests and review show. Launch claim: "FA → Shouldly: production-ready; MediatR and AutoMapper: safe, report the spots to fix by hand." Round 2 after TAAK-269/270.
 
+## Round 2 (after TAAK-269/270)
+
+Tool `12f86c0` (fixes merged), then `d1f33bf` (two fixes after round 2). Only the three affected repos rerun.
+
+| Repo | Tool | Fixed / Manual | Tests before → after | Regressions | Outcome |
+| --- | --- | --- | --- | ---: | --- |
+| ogooreck | `12f86c0` | 23 / 9 | — | — | build fails: 12× CS8600, `((object)result)` on a `T` that may be null → fixed in `d1f33bf` with `(object?)` |
+| miru | `12f86c0` | 97 / 0 | — | — | build fails: MSG0007, `AddMediatR` in a generic method scans `TAssemblyOfType`; Mediator's generator needs compile-time assemblies → Manual in `d1f33bf` |
+| fiapgames | `12f86c0` | 0 / 32 | 91/91 → 91/91 | 0 | still blocked: `UsuarioModel.Nome { get; private set; }` (justified Manual) |
+| ogooreck | `d1f33bf` | 23 / 9 | 20/20 → 20/20 | 0 | migrated, green |
+| miru | `d1f33bf` | 0 / 98 | 415/474 → 429/474 ¹ | 0 | blocked (justified): generic `AddMediatR` must move to the host by hand |
+
+¹ Database-dependent tests; their count of failures varies between runs, none is a regression.
+
+### Conclusion after round 2
+
+- **FluentAssertions**: 3/3 unseen repos migrated and green, 0 regressions.
+- **MediatR**: 1/3 fully migrated; the other two are blocked by Manual findings that are justified (direct `MediatR.Mediator` use, `AddMediatR` in a generic library method). Round 2 also showed that a Fixed rewrite (the expression-to-block lambda of TAAK-270) can break the generator; caught by the build, now Manual.
+- **AutoMapper**: 0/3 migrated, all blocked by justified Manual findings (cycles, unflattening, private setters); 0 regressions.
+
 ## See also
 
 - `claude/tasks/TAAK-268-blind-validation-round.md`

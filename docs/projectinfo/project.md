@@ -79,7 +79,7 @@ State on 2026-10-14 (see `claude/docs/overdracht.md` for the ongoing work).
 | 2 | FluentAssertions → Shouldly: the 15 most used assertions, `--dry-run` with diff | 100%: corpus round 5 (2026-10-14): 16/16 solutions build after the fix, 0 regressions apart from Akka DData (bug in Akka, reported as a warning, TAAK-200). See `claude/tasks/CORPUSRUN-fa.md` |
 | 3 | MediatR → Mediator: handlers, `ValueTask`, DI registration (behaviors → report) | 100%: 7 of 9 corpus projects fully migrated and green; evo1/evo2 rightly Manual |
 | 4 | Launch: README with GIF, NuGet, testing on a real open-source project, post on r/dotnet | Done in substance (TAAK-019); waiting on the user (publishing, post) |
-| 5 | AutoMapper → hand-written mapping (`ToB()` extensions) | ~85%: all pattern rows of `claude/tasks/automapper-queue.md` done (TAAK-146, -155..159, -244..257). Left: the large corpus run on the 20-repo survey corpus (row 16, TAAK-258) and its regressions |
+| 5 | AutoMapper → hand-written mapping (`ToB()` extensions) | 100%: all rows of `claude/tasks/automapper-queue.md` done (TAAK-146, -155..159, -244..267); corpus run on the 14 usable survey repos with 0 regressions (TAAK-258) |
 
 ## Risks
 - **The hype fades.** Hence keep the engine generic (a separate general search-and-replace was considered and dropped from the roadmap, 2026-10-14).

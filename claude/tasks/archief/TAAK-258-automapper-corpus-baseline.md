@@ -1,6 +1,6 @@
 # TAAK-258 — AutoMapper corpus run: harness and baseline (row 16, preparation)
 
-**Status**: partially done (after-fix round on 6 of 14 repos; follow-up TAAK-267)
+**Status**: done (2026-10-15: after-fix round on all 14 usable repos, 0 regressions)
 **Created**: 2026-10-14
 
 ## Goal
@@ -17,8 +17,9 @@ so the after-fix round can run as soon as the fix migrates more than the occasio
 ## Open
 
 - [x] After-fix round with main 756e2ec on 6 of 14 repos (altinnauth, cats, dasblog, devarch, eshoponweb, jason): one regression source (eshoponweb, TAAK-267)
-- [ ] After-fix round on the other 8 usable repos (stopped early at the user request)
-- [ ] Optional: solution filters for bitwarden, gnomeshade, lancommander, ombi (skip the front-end/Rust project)
+- [x] After-fix round on all 14 usable repos with main d496488 (TAAK-267 included): 0 regressions, see `CORPUSRUN-automapper.md`
+- [x] Harness: `after` builds before the fix (source generators, letterbook) and keeps `node_modules/**/bin` when cleaning (jhipster `ng build`)
+- [ ] Optional, not needed for row 16: solution filters for bitwarden, gnomeshade, lancommander, ombi (skip the front-end/Rust project)
 - [x] `neozhu` solution name: `CleanArchitecture.Blazor.sln` in `claude/tools/corpus-am-list.txt`
 
 ## See also

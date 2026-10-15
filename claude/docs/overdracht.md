@@ -1,4 +1,4 @@
-# Handover (updated 2026-10-14)
+# Handover (updated 2026-10-15)
 
 Read this first if you are taking over this session. Then `CLAUDE.md` and `claude/docs/INDEX.md`.
 
@@ -17,16 +17,15 @@ member options, flattening, unsupported (TAAK-245..257). The `/loop` was stopped
 do not build (npm/cargo/yarn); `claude/tasks/CORPUSRUN-automapper.md`), TAAK-259 (`Map` on collections, maybe-null sources), TAAK-261
 (destination members without a source left out like AutoMapper), TAAK-260 (Map/ProjectTo reasons name the real blocker).
 
-**Next for the next agent (AutoMapper to 100%):**
-1. Rescan done on Linux (TAAK-262, main `6d7e3c9`): 1 Fixed / 1361 Manual, top blockers in `claude/tasks/CORPUSRUN-automapper.md` ("Rescan on Linux").
-   The corpus now lives on Linux under `<corpus>/corpus-automapper/` (on this Linux machine on the large data disk) (clones in `src/`, results in `_results/`), harness in the repo:
-   `claude/tools/corpus-am.sh` (`clone`, `base|scan|after`, `list`, `summary`; never use `/tmp`, it is RAM). The Windows harness notes are obsolete.
-2. Fix the biggest blockers (TAAK-260 table): kavita (one map `BookmarkSeriesPair` → `BookmarkDto` blocks 146), jhipster (Condition/ForPath on a
-   reverse map, 89), dasblog (several constructors), letterbook, cats, skoruba (generic maps), the `IMapFrom<T>` convention (personalasst).
-3. Then the after-fix round with tests (`corpus-am.sh after`), 0 regressions → AutoMapper 100%, then the launch together with the user.
+**AutoMapper is at 100% (2026-10-15):** TAAK-267 (`Map<T>` as method group, the eshoponweb regression) on main `d496488`, CI green, 1495 tests.
+After-fix round TAAK-258 complete on Windows (corpus `<corpus>/corpus-automapper/`, harness `tools/corpus-am.sh` there, the Linux port in
+`claude/tools/corpus-am.sh`): all 14 usable repos 0 regressions, eshoponweb fully migrated (4 Fixed). See `claude/tasks/CORPUSRUN-automapper.md`.
+Remaining Manual is the all-or-nothing rule per solution plus root blockers in user code (duplicate maps, private constructors, cycles).
+
+**Next:** the launch (TAAK-019) together with the user. Optional: more Fixed per corpus repo by narrowing all-or-nothing per profile.
 Way of working: 2–3 sub-agents on effort low, each in a worktree; the main session merges one by one, then worktree check + push.
 
-**Roadmap:** 1 Scan 100% · 2 FA 100% · 3 MediatR 100% · 4 Launch ~80% (together with the user after AutoMapper) · 5 AutoMapper ~85% (corpus run left).
+**Roadmap:** 1 Scan 100% · 2 FA 100% · 3 MediatR 100% · 4 Launch ~80% (together with the user after AutoMapper) · 5 AutoMapper 100%.
 
 **Corpus status:** FA round 5 full: 16/16 builds, 0 regressions (Akka: only TAAK-200).
 MediatR round 6: jason, ardalis, amantin, nadirbad, eShopOnWeb, dotnet/eShop, kgrzybek migrated.

@@ -11,7 +11,7 @@
 # Sources in $CORPUS/src/<name> are untrusted clones: only restore/build/test and the tool run on them. A fresh copy
 # (no .git/bin/obj/node_modules) is made per run in $CORPUS/work/<mode>-<name> and deleted afterwards.
 # base  = restore, build, test x2.  scan = restore, build, `scan --fix automapper --report`.
-# after = restore, `fix --fix automapper --force`, clean bin/obj, restore, build (fails: stop), test, compare with _results/base.
+# after = restore, build, `fix --fix automapper --force`, clean bin/obj, restore, build (fails: stop), test, compare with _results/base.
 set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
 CORPUS=${CORPUS:?set CORPUS to the corpus root, e.g. <disk>/unshackle-corpus/corpus-automapper (never /tmp)}
@@ -68,8 +68,9 @@ XML
     TO=3600
     step scan dotnet "$TOOL" scan "$SLN" --fix automapper --report "$D/report.json" ;;
   after)
+    step build0 dotnet build "$SLN" $P --no-restore || true  # source generators must run before types resolve
     step fix dotnet "$TOOL" fix "$SLN" --fix automapper --force --report "$D/report.json" || { status "fix-fails"; return; }
-    find . -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +
+    find . -name node_modules -prune -o -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +  # keep node_modules/**/bin (npm tools)
     step restore1 dotnet restore "$SLN" $P || { status "restore-after-fix-fails"; return; }
     step build1 dotnet build "$SLN" $P --no-restore || {
       grep -oE 'error [A-Z]+[0-9]+' "$L/build1.log" | sort | uniq -c | sort -rn > "$D/build1-errors.txt"

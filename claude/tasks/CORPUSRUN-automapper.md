@@ -99,7 +99,7 @@ these unblock the cascade in reasons 1 and 5–8.
 
 ## See also
 
-- `claude/tasks/TAAK-258-automapper-corpus-baseline.md`
+- `claude/tasks/archief/TAAK-258-automapper-corpus-baseline.md`
 - `claude/tasks/automapper-queue.md` (row 16)
 - `docs/projectinfo/architectuur/corpus-automapper.md`
 - `claude/tasks/CORPUSRUN-fa.md`
@@ -193,3 +193,34 @@ Manual reasons; top reasons are unchanged from the TAAK-262 rescan above (all-or
 
 Resume: `CORPUS=<corpus>/corpus-automapper TOOL=.../tool-756e2ec/unshackle.dll bash claude/tools/corpus-am.sh one base|after <name> <sln>`
 for the repos marked "not run".
+
+## After-fix round with main d496488 (TAAK-258 complete, 2026-10-15)
+
+Windows, tool `<corpus>/corpus-automapper/_results/tool-d496488/` (TAAK-267 included), base results from the Windows
+baseline (2026-10-14). All 14 repos with a usable baseline; bitwarden, gnomeshade, lancommander and ombi have no baseline
+(front-end/Rust build step) and are left out. **Result: 0 regressions on all 14.**
+
+| Repo | Fixed / Manual | tests before → after (pass/total) | regressions | flaky / missing (as in the baseline runs) |
+| --- | --- | --- | ---: | --- |
+| altinnauth | 0 / 14 | 249/534 → 249/534 | 0 | – |
+| cats | 0 / 137 | 309/309 → 309/309 | 0 | – |
+| dasblog | 0 / 54 | 51/70 → 51/70 | 0 | – |
+| devarch | 0 / 4 | 37/37 → 37/37 | 0 | – |
+| eshoponweb | **4 / 0** | 74/74 → 74/74 | 0 | – (the TAAK-267 regression is gone) |
+| jason | 0 / 13 | 39/41 → 39/41 | 0 | – |
+| jhipster | 0 / 126 | 146/146 → 146/146 | 0 | – |
+| kavita | 0 / 169 | 3305/3326 → 3305/3326 | 0 | 28 / 14 |
+| letterbook | 0 / 156 | 537/616 → 537/616 | 0 | 130 / 64 |
+| neozhu | 0 / 58 | 13/42 → 13/42 | 0 | – |
+| nop | 0 / 5 | 1051/1060 → 1051/1060 | 0 | 1 / 0 |
+| personalasst | 0 / 52 | 131/131 → 131/131 | 0 | – |
+| skoruba | 0 / 120 | 272/272 → 272/272 | 0 | – |
+| xipona | 0 / 47 | 969/1193 → 969/1193 | 0 | 32 / 16 |
+
+Flaky/missing only occur in repos where the fix changed nothing (0 Fixed): tests that differ between the two baseline runs
+or carry generated names. The low Fixed count is the all-or-nothing rule per solution; the remaining root blockers are
+user-code shapes a mapping method cannot reproduce safely, e.g. kavita (two profiles map `Series` → `SeriesDto`, the order
+decides), letterbook (`Mention` only has a private parameterless constructor), lancommander (`Server` ↔ `Game` cycle).
+
+Harness fixes in this round (`claude/tools/corpus-am.sh`): `after` builds before the fix (letterbook needs its source
+generator output to resolve types) and keeps `node_modules/**/bin` when cleaning `bin`/`obj` (jhipster `ng build` broke).

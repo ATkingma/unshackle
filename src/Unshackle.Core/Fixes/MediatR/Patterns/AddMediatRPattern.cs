@@ -149,6 +149,22 @@ public class AddMediatRPattern : ISolutionPattern
             }
         }
 
+        // The generator reads the configuration at compile time: an assembly named by a type parameter (AddMediatR in a generic
+        // method, Miru's PipelineRegistry) is only known at run time (MSG0007).
+        if (dropped.SelectMany(d => d.DescendantNodesAndSelf())
+            .SelectMany(n => n switch
+            {
+                TypeOfExpressionSyntax t => [t.Type],
+                GenericNameSyntax g => g.TypeArgumentList.Arguments,
+                _ => (IEnumerable<TypeSyntax>)[],
+            })
+            .FirstOrDefault(t => model.GetTypeInfo(t).Type is ITypeParameterSymbol) is TypeSyntax typeParameter)
+        {
+            return PatternResult.Manual(
+                $"AddMediatR scans the assembly of type parameter '{typeParameter}': Mediator's source generator needs the assemblies at compile time (MSG0007). "
+                + "Call AddMediator once in the host project (with Mediator.SourceGenerator) instead of in this generic method.");
+        }
+
         // Mediator's generator only sees this project and its references, and its code only reaches public handlers there (TAAK-144).
         if (CallerAssemblyParameter(dropped, model, IsVisibleOutside) is string parameter)
         {

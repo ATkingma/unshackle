@@ -6,6 +6,6 @@ public class GenericCase
 {
     public void Test<T>(T result)
     {
-        ((object)result).ShouldBeNull();
+        ((object?)result).ShouldBeNull();
     }
 }

@@ -17,6 +17,7 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`, registra
 | REQ-1 | Met | `behaviors`                         |
 | REQ-2 | Met | `expression`                        |
 | REQ-2b | Met | `expression-several`               |
+| REQ-2c | Met | `generic-type-parameter` (Manual: scan of a type parameter's assembly, MSG0007 in Miru, blind round 2) |
 | REQ-3 | Met | `unknown-call`, `behavior-lifetime` |
 | REQ-4 | Met | own publisher (no proof; `publisher` is Fixed since TAAK-060) |
 | REQ-5 | Met | `no-lambda`                         |

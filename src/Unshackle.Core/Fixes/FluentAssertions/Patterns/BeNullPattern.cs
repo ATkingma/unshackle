@@ -19,12 +19,13 @@ public class BeNullPattern : FluentAssertionPattern
     protected override PatternResult RewriteAssertion(AssertionContext context)
     {
         ExpressionSyntax subject = context.Subject.WithoutTrailingTrivia();
-        // A type parameter without a class constraint has the same CS0452 problem and is boxed as well.
-        if (context.Model.GetTypeInfo(context.Subject).Type is { IsValueType: true, OriginalDefinition.SpecialType: not SpecialType.System_Nullable_T }
-            or ITypeParameterSymbol { IsReferenceType: false })
+        ITypeSymbol? type = context.Model.GetTypeInfo(context.Subject).Type;
+        // A type parameter without a class constraint has the same CS0452 problem and is boxed as well, to object? (it may be null: CS8600).
+        if (type is { IsValueType: true, OriginalDefinition.SpecialType: not SpecialType.System_Nullable_T } or ITypeParameterSymbol { IsReferenceType: false })
         {
+            TypeSyntax boxed = SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.ObjectKeyword));
             subject = SyntaxFactory.ParenthesizedExpression(SyntaxFactory.CastExpression(
-                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.ObjectKeyword)), subject.WithoutTrivia())).WithTriviaFrom(subject);
+                type is ITypeParameterSymbol ? SyntaxFactory.NullableType(boxed) : boxed, subject.WithoutTrivia())).WithTriviaFrom(subject);
         }
 
         return PatternResult.Fixed(FluentAssertionsSyntax.Invoke(subject, context.Name == "BeNull" ? "ShouldBeNull" : "ShouldNotBeNull", context.Because));

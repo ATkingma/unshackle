@@ -25,4 +25,4 @@ In 5 of the 6 MediatR/AutoMapper repos of the blind round the tool changed nothi
 ## See also
 
 - `claude/tasks/CORPUSRUN-blind.md`
-- `claude/tasks/TAAK-268-blind-validation-round.md`
+- `claude/tasks/archief/TAAK-268-blind-validation-round.md`

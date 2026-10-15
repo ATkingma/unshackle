@@ -72,7 +72,38 @@ Tool `12f86c0` (fixes merged), then `d1f33bf` (two fixes after round 2). Only th
 - **MediatR**: 1/3 fully migrated; the other two are blocked by Manual findings that are justified (direct `MediatR.Mediator` use, `AddMediatR` in a generic library method). Round 2 also showed that a Fixed rewrite (the expression-to-block lambda of TAAK-270) can break the generator; caught by the build, now Manual.
 - **AutoMapper**: 0/3 migrated, all blocked by justified Manual findings (cycles, unflattening, private setters); 0 regressions.
 
+## Round 3 (9 more unseen repos, all 18 rerun)
+
+Picked 2026-10-15 before the run, none on the exclusion list (`corpus-blind-repos.txt`, "round 3"). Replaced before the tool ran on them: nsdepcop (baseline build fails, NsDepCop.Analyzer roslyn4.0 variant) → beardgame/utilities. dennisdoomen/packageguard was rejected because it now uses FA 8.
+
+Tool `d1f33bf` for all 18; found one defect (mediatrsample), fixed in `c73b78c` and the affected repos rerun twice (runs `r4a`, `r4b`).
+
+| Repo | Fix | Fixed / Manual | Tests before → after | Regressions | Outcome |
+| --- | --- | --- | --- | ---: | --- |
+| pathlib | fluentassertions | 7 / 0 | 177/184 → 177/184 | 0 | migrated, green (7 fail in baseline) |
+| buildenator | fluentassertions | 66 / 318 | 127/127 → 127/127 | 0 | migrated where safe, green |
+| bearded (beardgame/utilities) | fluentassertions | 375 / 80 | 1294/1294 → 1294/1294 | 0 | migrated, green (two runs) |
+| mediatrsample | mediatr | 25 / 0 | 14/21 → 14/21 | 0 | `d1f33bf`: build fails (CS1061, `handler.Handle(...)` in an FA `ThrowAsync` lambda became `ValueTask`) → `c73b78c` adds `.AsTask()`: migrated, green (two runs) |
+| cashflow | mediatr | 6 / 0 | 0 tests | — | migrated, builds (no tests in the repo) |
+| starter | mediatr | 0 / 11 | 45/49 → 45/49 | 0 | blocked (Manual) |
+| bookstore | automapper | 33 / 0 | 592/595 → 592/595 | 0 | migrated; run `r4b` showed 1 different failing test, run `r4a` none: flaky shared test database |
+| restapi | automapper | 0 / 6 | 45/45 → 43–44/45 | 0 ¹ | blocked; no file changed |
+| baseapi | automapper | 0 / 7 | 0/9 → 0/9 | 0 | blocked (all 9 tests fail in baseline) |
+| (round 1–2 repos, 9) | | unchanged | unchanged | 0 | same results as round 2 |
+
+¹ The tool changed no file in restapi, yet 1–2 integration tests fail differently per run (EF tracking conflict in a shared in-memory database): flaky, not a regression.
+
+## Final conclusion (18 unseen repos)
+
+| Fix | Migrated and green | Blocked by justified Manual | Regressions |
+| --- | --- | --- | ---: |
+| FluentAssertions | 6/6 (skunkdeco, ogooreck, xrepo, pathlib, buildenator, bearded) | 0 | 0 |
+| MediatR | 3/6 (realworld, mediatrsample, cashflow) | 3 (fullcart, miru, starter) | 0 |
+| AutoMapper | 1/6 (bookstore) | 5 (culinary, msb, fiapgames, restapi, baseapi) | 0 |
+
+Every defect the blind rounds found (CS0452, CS8600, MSG0007, CS1061) broke the build, never a test silently: the build after `fix` is the safety net, and each defect is now fixed with a proof.
+
 ## See also
 
-- `claude/tasks/TAAK-268-blind-validation-round.md`
+- `claude/tasks/archief/TAAK-268-blind-validation-round.md`
 - `claude/tasks/CORPUSRUN-automapper.md`

@@ -1,6 +1,6 @@
 # TAAK-268 — Blind validation round: 3 unseen projects per fix
 
-**Status**: round 1 done (steps 1–7); round 2 after TAAK-269/270
+**Status**: done — 3 rounds, 18 unseen repos, 0 regressions; every defect found is fixed (see `CORPUSRUN-blind.md`)
 **Created**: 2026-10-15
 **Goal**: every fix (fluentassertions, mediatr, automapper) has run on 3 open-source projects that played no part in developing it: 0 regressions, and every Fixed and Manual finding has been checked by hand.
 

@@ -18,11 +18,7 @@ public class RequestHandlerPattern : IPattern
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
         var method = (MethodDeclarationSyntax)node;
-        if (MediatRSyntax.RejectExplicit(method, "rename the interface and return type by hand.") is { } explicitHandle)
-        {
-            return explicitHandle;
-        }
-
+        // An explicit IRequestHandler<,>.Handle keeps its specifier: Mediator's interface has the same name and a Handle(request, token) of the same shape.
         TypeSyntax? returnType = method.ReturnType is GenericNameSyntax or QualifiedNameSyntax { Right: GenericNameSyntax }
             ? MediatRSyntax.ToValueTask(method.ReturnType)
             : null;

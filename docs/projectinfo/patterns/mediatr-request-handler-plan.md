@@ -33,7 +33,7 @@ mediatr.request-handler: in classes that implement `MediatR.IRequestHandler<TReq
 **Out of scope**
 
 - `IRequestHandler<TReq>` (void), notification handlers, pipeline behaviors: own patterns (rows 2–4).
-- `Task.Run`, passed-through `Task`s, explicit interface implementations: Manual.
+- `Task.Run`, passed-through `Task`s: Manual. An explicit `IRequestHandler<,>.Handle` keeps its specifier and only gets the `ValueTask<T>` return type (TAAK-270).
 
 ## Requirements
 
@@ -42,7 +42,7 @@ mediatr.request-handler: in classes that implement `MediatR.IRequestHandler<TReq
 - **REQ-3**: WHEN every `return` in the body is `Task.FromResult(...)`, also with a type argument THE SYSTEM SHALL make them all `ValueTask.FromResult(...)` (proof `from-result-block`).
 - **REQ-4**: WHEN the handler is generic THE SYSTEM SHALL rewrite it the same way (proof `generic`).
 - **REQ-5**: WHEN the `CancellationToken` parameter has a different name THE SYSTEM SHALL leave the parameters untouched (proof `token-name`).
-- **REQ-6**: IF a non-async `Handle` returns something other than `Task.FromResult`, or `Handle` is implemented explicitly THEN THE SYSTEM SHALL report Manual (proofs `other-return`, `explicit`).
+- **REQ-6**: IF a non-async `Handle` returns something other than `Task.FromResult`, THEN THE SYSTEM SHALL report Manual (proof `other-return`). **REQ-7**: WHEN `Handle` is an explicit interface implementation THE SYSTEM SHALL rewrite it like an implicit one, keeping `IRequestHandler<,>.` (proofs `explicit`, `explicit-async`).
 - **REQ-7**: WHEN a non-async `Handle` (e.g. a decorator) returns `inner.Handle(...)` of an `IRequestHandler<,>` (or an own derived interface) THE SYSTEM SHALL leave that return untouched: after the swap the inner handler itself returns a `ValueTask<T>` (proof `decorator-inner-handle`, TAAK-212; was CS1503 in kgrzybek).
 - **Extension TAAK-080**: WHEN the handler implements `IRequestHandler<,>` via an own marker interface (`IAppQueryHandler<TQ, TR> : IRequestHandler<TQ, TR>`) THE SYSTEM SHALL rewrite it the same way (`MediatRSyntax.FindHandleMethods` looks at `AllInterfaces`; proof `edge-marker-interface`).
 

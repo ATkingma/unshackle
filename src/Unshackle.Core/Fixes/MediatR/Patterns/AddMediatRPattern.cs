@@ -201,17 +201,13 @@ public class AddMediatRPattern : ISolutionPattern
 
         assignments.AddRange(host.Assignments.Select(a => $"{config}.{a.Property} = {a.Value}"));
 
-        LambdaExpressionSyntax? rewritten = lambda.Block is { } body
+        LambdaExpressionSyntax rewritten = lambda.Block is { } body
             ? body.Statements.Count == 0 && assignments.Count == 1
                 ? lambda.WithBlock(null).WithExpressionBody(SyntaxFactory.ParseExpression(assignments[0]).WithTriviaFrom(body))
                 : lambda.WithBlock(body.WithStatements(BlockStatements(body, assignments)))
             : assignments.Count == 1
                 ? lambda.WithExpressionBody(SyntaxFactory.ParseExpression(assignments[0]).WithTriviaFrom(lambda.Body))
-                : null;
-        if (rewritten is null)
-        {
-            return PatternResult.Manual("Several settings in an AddMediatR expression lambda; write AddMediator(cfg => { ... }) by hand.");
-        }
+                : ExpressionToBlock(lambda, assignments);
 
         InvocationExpressionSyntax addMediator = invocation
             .WithExpression(member.WithName(SyntaxFactory.IdentifierName("AddMediator").WithTriviaFrom(member.Name)))
@@ -359,6 +355,19 @@ public class AddMediatRPattern : ISolutionPattern
             [.. assignments.Select(a => SyntaxFactory.ParseStatement(a + ";").WithLeadingTrivia(indentation).WithTrailingTrivia(endOfLine))];
         statements[0] = statements[0].WithLeadingTrivia(comments.Concat(indentation));
         return [.. statements];
+    }
+
+    // cfg => cfg.A(...) with several settings left: the lambda becomes a block at the indentation of the line it starts on.
+    private static LambdaExpressionSyntax ExpressionToBlock(LambdaExpressionSyntax lambda, List<string> assignments)
+    {
+        string line = lambda.SyntaxTree.GetText().Lines.GetLineFromPosition(lambda.SpanStart).ToString();
+        string indent = line[..(line.Length - line.TrimStart().Length)];
+        SyntaxTrivia endOfLine = lambda.SyntaxTree.GetRoot().DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia)) is { RawKind: not 0 } found ? found : SyntaxFactory.LineFeed;
+        BlockSyntax block = SyntaxFactory.Block(
+            SyntaxFactory.Token(SyntaxKind.OpenBraceToken).WithLeadingTrivia(SyntaxFactory.Whitespace(indent)).WithTrailingTrivia(endOfLine),
+            [.. assignments.Select(a => SyntaxFactory.ParseStatement(a + ";").WithLeadingTrivia(SyntaxFactory.Whitespace(indent + "    ")).WithTrailingTrivia(endOfLine))],
+            SyntaxFactory.Token(SyntaxKind.CloseBraceToken).WithLeadingTrivia(SyntaxFactory.Whitespace(indent)));
+        return lambda.WithArrowToken(lambda.ArrowToken.WithTrailingTrivia(endOfLine)).WithExpressionBody(null).WithBlock(block);
     }
 
     private static bool IsComment(SyntaxTrivia trivia) =>

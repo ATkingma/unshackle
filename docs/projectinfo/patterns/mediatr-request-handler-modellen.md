@@ -40,7 +40,7 @@ Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerPattern.cs` 
 
 | Leaf                                       | Condition                                        | Proof                                                                   |
 | ------------------------------------------ | ------------------------------------------------ | ----------------------------------------------------------------------- |
-| Manual "explicit interface implementation" | `Task<T> IRequestHandler<A,B>.Handle`            | `RequestHandler/explicit`                                               |
+| Rewritten, specifier kept                  | `Task<T> IRequestHandler<A,B>.Handle`            | `RequestHandler/explicit`, `explicit-async`                             |
 | Manual "does not return Task<T>"           | return type not in the form `Task<T>` (e.g. alias) | no proof (cannot compile with MediatR without alias)                  |
 | `ValueTask<T>`, body unchanged             | `async`                                          | `RequestHandler/async`, `RequestHandler/token-name`                     |
 | `ValueTask<T>` + `ValueTask.FromResult`    | non-async, all returns `Task.FromResult`         | `RequestHandler/from-result-expression`, `from-result-block`, `generic` |

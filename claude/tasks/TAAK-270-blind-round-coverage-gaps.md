@@ -17,8 +17,8 @@ In 5 of the 6 MediatR/AutoMapper repos of the blind round the tool changed nothi
 
 ## Steps
 
-1. [ ] miru: `mediatr.add-mediatr` for an expression lambda with several settings (`cfg => cfg.A().B()`), with proof.
-2. [ ] miru: explicit `IRequestHandler<,>.Handle` → implicit `ValueTask<T> Handle`, with proof (or a sharper Manual reason).
+1. [x] miru: `mediatr.add-mediatr`: an expression lambda that ends up with several settings is now rewritten to a block body (proof `AddMediatR/expression-several`). Miru's real shape is a single `cfg => cfg.RegisterServicesFromAssemblyContaining<T>()`; the dropped scan plus lifetime/host settings give several assignments (no chain).
+2. [x] miru: explicit `IRequestHandler<,>.Handle` is now rewritten to `ValueTask<T>`, keeping the explicit specifier (same Handle shape in Mediator; proofs `RequestHandler/explicit`, `explicit-async`). The other patterns still call `RejectExplicit` and stay Manual.
 3. [ ] fiapgames: find out why `PromocaoProfile` is not rewritten; task per cause.
 4. [ ] Report: show per run "N findings blocked by M Manual", so a user sees the few spots to fix by hand.
 

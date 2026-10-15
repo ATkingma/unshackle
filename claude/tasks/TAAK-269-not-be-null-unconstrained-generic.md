@@ -9,9 +9,13 @@ Ogooreck (`src/Ogooreck/API/ApiSpecificationExtensions.cs:315`, `HttpResponseMes
 
 ## Steps
 
-1. [ ] Proof: `NotBeNull()` / `BeNull()` on an unconstrained `T`, on `T : struct`, on `T : notnull`.
-2. [ ] `BeNullPattern`: when the subject's type is a type parameter without a `class` constraint, rewrite to `((object?)x).ShouldNotBeNull()` (boxing keeps the null check semantics of FA) or Manual; prefer the cast if the proof compiles and behaves the same.
+1. [x] Proof: `NotBeNull()` / `BeNull()` on an unconstrained `T`; `T : class` keeps the plain form (`T : struct` is covered by the existing struct path).
+2. [x] `BeNullPattern`: when the subject's type is a type parameter without a `class` constraint, rewrite to `((object?)x).ShouldNotBeNull()` (boxing keeps the null check semantics of FA) or Manual; prefer the cast if the proof compiles and behaves the same.
 3. [ ] Proof: harness `after` on ogooreck (`claude/tools/corpus-blind-list.txt`) builds, 0 regressions. Round 2 of TAAK-268.
+
+## Report
+
+Steps 1-2 done. `BeNullPattern` now also boxes (`((object)x).ShouldNotBeNull()`) when the subject type is a type parameter that is not reference-type constrained. Proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/BeNull/`: `generic-not-be-null.*`, `generic-be-null.*`, `generic-class-constraint.*` (plain form). `dotnet build` clean, `dotnet test` 1498/1498. Step 3 (ogooreck harness run) not done.
 
 ## See also
 

@@ -23,6 +23,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeNullPattern.cs`; reg
 | REQ-6 | Replaced | By Extension TAAK-097: `because-args` is now Fixed |
 | REQ-7 | Met | `chain.*` (`.And`), `value-used.*` (variabele) |
 | REQ-8 | Met | `and-chain.before.cs` / `and-chain.manual.txt` |
+| Extension TAAK-269 | Met | `generic-*.before.cs` / `generic-*.after.cs`: unconstrained `T` is boxed (`((object)x).ShouldNotBeNull()`, CS0452); `T : class` stays plain (`generic-class-constraint.*`) |
 | Extension TAAK-097 | Met | `because-args.before.cs` / `because-args.after.cs` (`string.Format(...)`) |
 | Extension TAAK-100 | Met | Gedeelde check in `FluentAssertionPattern.Rewrite`; proofs in `AssertionScope/` |
 

@@ -116,6 +116,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/CORPUSRUN-automapper.md` | AutoMapper corpus run: harness, baseline 14/18 repos (7851 tests), scan 1 Fixed / 1373 Manual, top Manual reasons |
 | `claude/tasks/archief/TAAK-258-automapper-corpus-baseline.md` | TAAK-258 — AutoMapper corpus baseline, harness and after-fix round (14 of 14 repos, 0 regressions) |
 | `claude/tasks/archief/TAAK-267-automapper-map-method-group.md` | TAAK-267 — AutoMapper `Map<T>` as method group is missed (eshoponweb runtime regression) |
+| `claude/tasks/TAAK-268-blind-validation-round.md` | TAAK-268 — Blind validation round: 3 unseen open-source projects per fix, 0 regressions + manual review |
 | `claude/tasks/archief/TAAK-262-automapper-corpus-linux.md` | TAAK-262 — AutoMapper corpus on Linux: clones, `claude/tools/corpus-am.sh`, rescan |
 | `claude/tasks/CORPUSRUN-mediatr.md` | MediatR corpus runs: from 0/9 to 7/9 fully migrated (rounds 1–6), blockers and actions |
 | `claude/tasks/REGRESSIE-corpus.md` | Regression run per test: 8/10 identical; Polly → TAAK-140 |

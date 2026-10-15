@@ -71,7 +71,7 @@ And `BeEquivalentTo` on strings ignores case. With text replacement tests silent
 `_mapper.Map<B>(a)` becomes `a.ToDto()`. `ProjectTo<>` goes into the report as manual work.
 
 ## Roadmap
-State on 2026-10-14 (see `claude/docs/overdracht.md` for the ongoing work).
+State on 2026-10-15 (see `claude/docs/overdracht.md` for the ongoing work).
 
 | Step | Goal | State |
 | --- | --- | --- |
@@ -80,6 +80,15 @@ State on 2026-10-14 (see `claude/docs/overdracht.md` for the ongoing work).
 | 3 | MediatR → Mediator: handlers, `ValueTask`, DI registration (behaviors → report) | 100%: 7 of 9 corpus projects fully migrated and green; evo1/evo2 rightly Manual |
 | 4 | Launch: README with GIF, NuGet, testing on a real open-source project, post on r/dotnet | Done in substance (TAAK-019); waiting on the user (publishing, post) |
 | 5 | AutoMapper → hand-written mapping (`ToB()` extensions) | 100%: all rows of `claude/tasks/automapper-queue.md` done (TAAK-146, -155..159, -244..267); corpus run on the 14 usable survey repos with 0 regressions (TAAK-258) |
+| 6 | Blind validation: 3 unseen open-source projects per fix, tool frozen, every finding reviewed by hand | In progress (TAAK-268): baseline 7/9 ok; ctwapi and omnikeeper do not build upstream and are being replaced. See `claude/tasks/CORPUSRUN-blind.md` |
+
+### Conclusion
+
+All three migrations are feature-complete for the patterns in their queues, and every corpus round ended with 0 regressions.
+Those corpora were also used to develop the patterns, so the numbers overstate quality on code the tool has never seen.
+The launch (step 4) should therefore quote the blind round (step 6), not the development corpora: only when that round
+also shows 0 regressions and a hand review finds no wrong rewrites is the tool ready to publish. Defects found there
+become their own tasks and a second blind round.
 
 ## Risks
 - **The hype fades.** Hence keep the engine generic (a separate general search-and-replace was considered and dropped from the roadmap, 2026-10-14).

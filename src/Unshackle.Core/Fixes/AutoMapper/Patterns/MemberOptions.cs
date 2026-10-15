@@ -19,6 +19,9 @@ public class MemberOptions
     /// <summary>Destination member A → the members B of ForPath(d => d.A.B, ...) with their MapFrom lambdas, in source order.</summary>
     public Dictionary<string, List<(string Member, SimpleLambdaExpressionSyntax MapFrom)>> Paths { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>Constructor parameter name → the lambda of its ForCtorParam(name, o => o.MapFrom(s => expr)) (TAAK-270).</summary>
+    public Dictionary<string, SimpleLambdaExpressionSyntax> CtorParams { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>The map's ConstructUsing call (TAAK-266), read by <see cref="CreateMapPattern"/>; null without one.</summary>
     public InvocationExpressionSyntax? ConstructUsing { get; set; }
 
@@ -28,7 +31,7 @@ public class MemberOptions
     /// <summary>Whether any ForPath was read, also one of a single member (which went into the MapFrom options).</summary>
     public bool HasForPath { get; private set; }
 
-    public bool IsEmpty => Conditions.Count == 0 && Paths.Count == 0;
+    public bool IsEmpty => Conditions.Count == 0 && Paths.Count == 0 && CtorParams.Count == 0;
 
     /// <summary>All lambdas, keyed by a description of the member they belong to (for the checks that a lambda can move).</summary>
     public Dictionary<string, SimpleLambdaExpressionSyntax?> Lambdas()
@@ -37,6 +40,11 @@ public class MemberOptions
         foreach ((string member, SimpleLambdaExpressionSyntax? condition) in Conditions)
         {
             lambdas["Condition of " + member] = condition;
+        }
+
+        foreach ((string parameter, SimpleLambdaExpressionSyntax ctorParam) in CtorParams)
+        {
+            lambdas["ForCtorParam " + parameter] = ctorParam;
         }
 
         foreach ((string member, List<(string Member, SimpleLambdaExpressionSyntax MapFrom)> path) in Paths)
@@ -136,6 +144,22 @@ public class MemberOptions
         return kind == "ForMember" && path.Count == 1 && condition is not null
             && (mapFrom is null || options.TryAdd(path[0], mapFrom))
             && Conditions.TryAdd(path[0], condition);
+    }
+
+    /// <summary>
+    /// Reads ForCtorParam("name", o => o.MapFrom(s => expr)) into <see cref="CtorParams"/>; false for any other form (a name that is no
+    /// string literal, another option, a block lambda, the same parameter twice).
+    /// </summary>
+    public bool TryParseCtorParam(InvocationExpressionSyntax call, SemanticModel model)
+    {
+        ArgumentNullException.ThrowIfNull(call);
+        ArgumentNullException.ThrowIfNull(model);
+        return call.ArgumentList.Arguments is [{ Expression: LiteralExpressionSyntax { RawKind: (int)SyntaxKind.StringLiteralExpression } name },
+                { Expression: SimpleLambdaExpressionSyntax { Parameter.Identifier.ValueText: var o, Body: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax receiver, Name.Identifier.ValueText: "MapFrom" }, ArgumentList.Arguments: [{ Expression: SimpleLambdaExpressionSyntax { Body: ExpressionSyntax } mapFrom }] } mapFromCall } }]
+            && receiver.Identifier.ValueText == o
+            && model.GetSymbolInfo(call).Symbol is IMethodSymbol { Name: "ForCtorParam", ContainingAssembly.Name: AutoMapperAssembly }
+            && model.GetSymbolInfo(mapFromCall).Symbol is IMethodSymbol { Name: "MapFrom", ContainingAssembly.Name: AutoMapperAssembly }
+            && CtorParams.TryAdd(name.Token.ValueText, mapFrom);
     }
 
     // The members of `d => d.A.B` (outermost first), or null when the body is not such a path from the parameter.

@@ -1,10 +1,12 @@
 # name solution fix -- TAAK-268 blind round (repos: corpus-blind-repos.txt)
 skunkdeco RandomSkunk.DependencyInjection.Decorator.sln fluentassertions
 ogooreck src/Ogooreck.sln fluentassertions
-omnikeeper backend/omnikeeper.sln fluentassertions
+# replaced: omnikeeper backend/omnikeeper.sln fluentassertions
 realworld Conduit.sln mediatr
 fullcart FullCart.API.sln mediatr
 miru Miru.sln mediatr
 culinary CulinaryCode.sln automapper
-ctwapi CtwApi.sln automapper
+# replaced: ctwapi CtwApi.sln automapper
 msb MSB-Application.sln automapper
+xrepo xrepo.sln fluentassertions
+fiapgames FiapCloudGames.sln automapper

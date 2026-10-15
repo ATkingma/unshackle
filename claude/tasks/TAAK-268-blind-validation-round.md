@@ -1,6 +1,6 @@
 # TAAK-268 — Blind validation round: 3 unseen projects per fix
 
-**Status**: step 4/7 — base runs in progress
+**Status**: round 1 done (steps 1–7); round 2 after TAAK-269/270
 **Created**: 2026-10-15
 **Goal**: every fix (fluentassertions, mediatr, automapper) has run on 3 open-source projects that played no part in developing it: 0 regressions, and every Fixed and Manual finding has been checked by hand.
 
@@ -57,10 +57,10 @@ Reusing the existing harness keeps the numbers comparable with earlier rounds. P
 - [x] 1. `corpus-am.sh`: `FIX` env var + `fix` column in the list; check with one AutoMapper repo that the outcome is unchanged
 - [x] 2. Select 3 repos per fix (criteria above, exclusion list), record why each was picked; the user may veto
 - [x] 3. Publish the tool from the current main sha into `<corpus>/corpus-blind/_results/tool-<sha>/`
-- [ ] 4. `clone` + `base` for all 9; replace a repo whose baseline does not build (record why)
-- [ ] 5. `scan` + `after` for all 9; summary table in `CORPUSRUN-blind.md`
-- [ ] 6. Manual review of Fixed and Manual per repo; one TAAK per defect (regression, wrong rewrite, unjustified Manual)
-- [ ] 7. Report to the user: per fix Fixed/Manual/regressions + review verdict; update `overdracht.md` and `INDEX.md`
+- [x] 4. `clone` + `base` for all 9; replace a repo whose baseline does not build (record why)
+- [x] 5. `scan` + `after` for all 9; summary table in `CORPUSRUN-blind.md`
+- [x] 6. Manual review of Fixed and Manual per repo; one TAAK per defect (regression, wrong rewrite, unjustified Manual)
+- [x] 7. Report to the user: per fix Fixed/Manual/regressions + review verdict; update `overdracht.md` and `INDEX.md`
 
 ## Risks & edge cases
 

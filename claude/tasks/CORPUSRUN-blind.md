@@ -12,17 +12,45 @@ Picked from GitHub code search (`gh search code 'Include="<Library>" Version="<m
 | --- | --- | --- | --- | --- |
 | skunkdeco | bfriesen/RandomSkunk.DependencyInjection.Decorator | fluentassertions | small (38 kB) | Library with one test project; FA 6; multi-target incl. net461/netstandard |
 | ogooreck | oskardudycz/Ogooreck | fluentassertions | medium | API-testing library (128 stars); FA 6 across multi-targeted test projects |
-| omnikeeper | max-bytes/omnikeeper | fluentassertions | large (9 test projects) | Real application backend; net6/net7 |
+| ~~omnikeeper~~ | max-bytes/omnikeeper | fluentassertions | large | Replaced: restore fails upstream (NU1201, plugins on net6 reference a newer `Omnikeeper.Base`) |
+| xrepo | andyalm/xrepo | fluentassertions | medium (3.5 MB) | Replacement for omnikeeper: CLI tool with an FA 6 test project |
 | realworld | minhlong149/realworld-aspnetcore | mediatr | small | RealWorld (Conduit) API with MediatR 12 handlers and a test project |
 | fullcart | AmrElshaer/FullCart | mediatr | medium (35 files use MediatR) | Clean-architecture shop; MediatR 12 |
 | miru | MiruFx/Miru | mediatr | large (8 test projects) | Web framework built on MediatR; net5–net9 |
 | culinary | culinary-code/backend | automapper | small | API with AutoMapper 13 profiles and a test project |
-| ctwapi | Coflnet/CtwApi | automapper | small | AutoMapper 13 in an API with tests |
+| ~~ctwapi~~ | Coflnet/CtwApi | automapper | small | Replaced: build fails upstream (test project misses the `Coflnet` reference, CS0246) |
+| fiapgames | thaynnaraluciano/fiap-cloud-games | automapper | small | Replacement for ctwapi: CQRS API with AutoMapper 13 and 2 test projects |
 | msb | Robnoir/MSB | automapper | large (106 files) | Application using AutoMapper 13 (and MediatR); one test project |
 
 ## Results
 
-_(base, scan and after per repo: filled in during steps 4–5)_
+Tool `23c0f28`, run 2026-10-15.
+
+| Repo | Fix | Fixed | Manual | Tests before → after | Regressions | Outcome |
+| --- | --- | ---: | ---: | --- | ---: | --- |
+| skunkdeco | fluentassertions | 110 | 14 | 26/26 → 26/26 | 0 | migrated, green |
+| ogooreck | fluentassertions | 23 | 9 | 20/20 → — | — | **build fails after fix**: 12× CS0452 (TAAK-269) |
+| xrepo | fluentassertions | 122 | 9 | 71/71 → 71/71 | 0 | migrated, green |
+| realworld | mediatr | 10 | 0 | 10/10 → 10/10 | 0 | fully migrated, green |
+| fullcart | mediatr | 0 | 33 | 9/9 → 9/9 | 0 | blocked: 2 justified Manual block 31 findings (TAAK-270) |
+| miru | mediatr | 0 | 99 | 415/474 → 414/474 ¹ | 0 | blocked: 4 Manual, could be migrated (TAAK-270) |
+| culinary | automapper | 0 | 46 | 149/149 → 149/149 | 0 | blocked: cycle, null sources |
+| msb | automapper | 0 | 33 | 156/156 → 156/156 | 0 | blocked: cycle, unflattening |
+| fiapgames | automapper | 0 | 32 | 91/91 → 91/91 | 0 | blocked: one profile (TAAK-270) |
+
+¹ Miru: 59 tests need a database and fail in both baseline runs; one more is flaky (compare marks it flaky, not a regression). The tool changed no file.
+
+## Review (step 6)
+
+- **Fixed rewrites (FA, 265; MediatR, 10)**: covered by green test suites in skunkdeco, xrepo and realworld. One defect: `NotBeNull()` on an unconstrained type parameter (ogooreck) → TAAK-269. FA Manual reasons sampled (`Be` on `FluentAssertions.Types`, `.And`/`.Which` used, `.And` on another subject, `BeEquivalentTo` on non-plain types): all justified.
+- **Manual (MediatR/AutoMapper)**: the all-or-nothing rule is right (a partial migration breaks at runtime), but on unseen code it means 5 of 6 repos get no change at all. Blockers per repo and verdict in TAAK-270; cycles, null sources and unflattening are justified.
+
+## Conclusion
+
+- **FluentAssertions**: ready on unseen code, apart from one build break (TAAK-269). 2 of 3 repos fully green, 0 regressions.
+- **MediatR**: correct where it runs (realworld, 0 regressions), but coverage is limited: 2 of 3 repos blocked by a handful of Manual findings.
+- **AutoMapper**: safe (0 regressions, nothing wrongly rewritten) but on unseen code it migrated nothing; cycles and `ReverseMap`/unflattening are common in real profiles.
+- Nothing was rewritten wrongly in a way that tests passed but behaviour changed, as far as the tests and review show. Launch claim: "FA → Shouldly: production-ready; MediatR and AutoMapper: safe, report the spots to fix by hand." Round 2 after TAAK-269/270.
 
 ## See also
 

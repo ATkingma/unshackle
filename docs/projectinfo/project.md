@@ -80,7 +80,7 @@ State on 2026-10-15 (see `claude/docs/overdracht.md` for the ongoing work).
 | 3 | MediatR → Mediator: handlers, `ValueTask`, DI registration (behaviors → report) | 100%: 7 of 9 corpus projects fully migrated and green; evo1/evo2 rightly Manual |
 | 4 | Launch: README with GIF, NuGet, testing on a real open-source project, post on r/dotnet | Done in substance (TAAK-019); waiting on the user (publishing, post) |
 | 5 | AutoMapper → hand-written mapping (`ToB()` extensions) | 100%: all rows of `claude/tasks/automapper-queue.md` done (TAAK-146, -155..159, -244..267); corpus run on the 14 usable survey repos with 0 regressions (TAAK-258) |
-| 6 | Blind validation: 3 unseen open-source projects per fix, tool frozen, every finding reviewed by hand | In progress (TAAK-268): baseline 7/9 ok; ctwapi and omnikeeper do not build upstream and are being replaced. See `claude/tasks/CORPUSRUN-blind.md` |
+| 6 | Blind validation: 3 unseen open-source projects per fix, tool frozen, every finding reviewed by hand | Round 1 done (TAAK-268): FA 2/3 green, 1 build break (TAAK-269); MediatR 1/3 migrated, 2 blocked; AutoMapper 0/3 migrated (blocked, safe). 0 regressions. Round 2 after TAAK-269/270. See `claude/tasks/CORPUSRUN-blind.md` |
 
 ### Conclusion
 

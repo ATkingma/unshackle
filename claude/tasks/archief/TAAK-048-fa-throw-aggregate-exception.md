@@ -36,7 +36,7 @@ Typical in code that uses `Task.Wait()`/`.Result` or `Parallel.ForEach`. Consequ
 
 ## See also
 
-- `claude/tasks/TAAK-046-semantische-audit.md`
+- `claude/tasks/archief/TAAK-046-semantische-audit.md`
 
 ## User decision (2026-10-11)
 

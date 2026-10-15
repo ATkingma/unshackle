@@ -36,4 +36,4 @@ Gevolg: een FA-test die groen was (bv. multiline-melding op Windows) wordt rood 
 
 ## Zie ook
 
-- `claude/tasks/TAAK-046-semantische-audit.md`
+- `claude/tasks/archief/TAAK-046-semantische-audit.md`

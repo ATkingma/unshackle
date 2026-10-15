@@ -37,4 +37,4 @@ Probe: a nested derived member and both derived with a different extra member: F
 
 ## See also
 
-- `claude/tasks/TAAK-046-semantische-audit.md`
+- `claude/tasks/archief/TAAK-046-semantische-audit.md`

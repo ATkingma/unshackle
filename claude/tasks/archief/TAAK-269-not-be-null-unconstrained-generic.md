@@ -1,6 +1,6 @@
 # TAAK-269 — `NotBeNull()` on an unconstrained type parameter breaks the build (CS0452)
 
-**Status**: open
+**Status**: done (fixed in `204fcd4`, `object?` in `d1f33bf`; ogooreck green in blind round 2)
 **Created**: 2026-10-15 (blind round, `claude/tasks/CORPUSRUN-blind.md`, ogooreck)
 
 ## Context
@@ -11,7 +11,7 @@ Ogooreck (`src/Ogooreck/API/ApiSpecificationExtensions.cs:315`, `HttpResponseMes
 
 1. [x] Proof: `NotBeNull()` / `BeNull()` on an unconstrained `T`; `T : class` keeps the plain form (`T : struct` is covered by the existing struct path).
 2. [x] `BeNullPattern`: when the subject's type is a type parameter without a `class` constraint, rewrite to `((object?)x).ShouldNotBeNull()` (boxing keeps the null check semantics of FA) or Manual; prefer the cast if the proof compiles and behaves the same.
-3. [ ] Proof: harness `after` on ogooreck (`claude/tools/corpus-blind-list.txt`) builds, 0 regressions. Round 2 of TAAK-268.
+3. [x] Proof: harness `after` on ogooreck (`claude/tools/corpus-blind-list.txt`) builds, 0 regressions. Round 2 of TAAK-268.
 
 ## Report
 

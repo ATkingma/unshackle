@@ -1,5 +1,6 @@
 using System.Globalization;
 using Spectre.Console;
+using Unshackle.Core;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.FluentAssertions.Patterns;
 using Unshackle.Core.Models;
@@ -8,6 +9,8 @@ namespace Unshackle.Interface.Output;
 
 public class SpectreConsoleView : IConsoleView
 {
+    private const int MaxBlockersShown = 10;
+
     private readonly IAnsiConsole _out;
     private readonly IAnsiConsole _error;
 
@@ -52,6 +55,23 @@ public class SpectreConsoleView : IConsoleView
             foreach (IGrouping<string, Finding> group in custom)
             {
                 _out.WriteLine(ConsoleText.Sanitize($"{group.Count(),6}x {group.Key}"));
+            }
+        }
+
+        // A few Manual findings can hold back a whole migration (all or nothing): name them, so the user knows where to start.
+        int blocked = findings.Count(f => f.Result is ManualResult m && m.Reason.StartsWith(Fixer.NotRewrittenPrefix, StringComparison.Ordinal));
+        List<Finding> blockers = [.. findings.Where(f => f.Result is ManualResult m && !m.Reason.StartsWith(Fixer.NotRewrittenPrefix, StringComparison.Ordinal))];
+        if (blocked > 0 && blockers.Count > 0)
+        {
+            _out.WriteLine(ConsoleText.Sanitize($"{blocked} findings wait on these {blockers.Count} manual ones; fix them first, then run again:"));
+            foreach (Finding blocker in blockers.Take(MaxBlockersShown))
+            {
+                _out.WriteLine(ConsoleText.Sanitize($"  {blocker.FilePath}:{blocker.Line} {blocker.PatternId}: {((ManualResult)blocker.Result).Reason}"));
+            }
+
+            if (blockers.Count > MaxBlockersShown)
+            {
+                _out.WriteLine($"  ... and {blockers.Count - MaxBlockersShown} more (see --report).");
             }
         }
 

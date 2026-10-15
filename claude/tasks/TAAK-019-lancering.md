@@ -1,6 +1,6 @@
 # TAAK-019 — Launch FluentAssertions → Shouldly (roadmap step 4)
 
-**Status**: case done (steps 2+3); launch was waiting on TAAK-021 (case did not build yet)
+**Status**: everything on our side done (2026-10-15): NuGet metadata + version 0.1.0 (pack and install checked), README (quick start, demo diff, blind-round results, limitations), reddit draft. Waiting on the user: make the repo public + branch protection, `NUGET_API_KEY` secret, tag `v0.1.0`, post. No GIF: no terminal recorder installed (vhs/asciinema); the README shows a real dry-run diff instead.
 **Created**: 2026-10-11
 **Goal**: Unshackle 0.1 is public on GitHub and NuGet, proven on a real open-source project, with a README that shows in 30 seconds what it does.
 
@@ -9,7 +9,7 @@
 - Roadmap state 2026-10-11: step 1 done, step 2 ~90% (TAAK-017 project files, TAAK-018 collaboration test), steps 3/5/6 not started yet. User decision: **launch first, then MediatR** (PROJECT.md: "Speed matters").
 - The tool works: `unshackle list|scan|fix` (`--dry-run`, `--force`, `--report`), `dotnet pack` + `dotnet tool install` tested (TAAK-005, `0.1.0-preview` in `src/Unshackle.Interface/Unshackle.Interface.csproj`). The README already has a Usage section (PowerShell + bash).
 - Repo `ATkingma/unshackle` is **private**: branch protection and issues for outsiders only work once it is public.
-- `.vibe-wise/` (personal learning notes) is in the repo; agree with the user before making it public (probably to `.gitignore` + out of the history, or simply removed).
+- `.vibe-wise/` (personal learning notes): removed from the index and added to `.gitignore` (2026-10-15). Still in the git history; rewriting it needs a force push, only with the user's approval.
 
 ## Analysis
 

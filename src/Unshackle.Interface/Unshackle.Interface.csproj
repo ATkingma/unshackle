@@ -5,8 +5,19 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>unshackle</ToolCommandName>
     <PackageId>Unshackle</PackageId>
-    <Version>0.1.0-preview</Version>
+    <Version>0.1.0</Version>
+    <Authors>Timme Kingma</Authors>
+    <Description>Migrates .NET code away from libraries that went commercial: FluentAssertions → Shouldly, MediatR → Mediator, AutoMapper → hand-written mappings. Roslyn-based, with a report and --dry-run; what it cannot rewrite safely is reported as manual work.</Description>
+    <PackageTags>fluentassertions;shouldly;mediatr;mediator;automapper;migration;roslyn;dotnet-tool</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/ATkingma/unshackle</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ATkingma/unshackle</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Unshackle.Core\Unshackle.Core.csproj" />
     <ProjectReference Include="..\Unshackle.DataAccess\Unshackle.DataAccess.csproj" />

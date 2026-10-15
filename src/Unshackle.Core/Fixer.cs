@@ -11,6 +11,9 @@ namespace Unshackle.Core;
 
 public class Fixer : IFixer
 {
+    /// <summary>Start of the reason of a finding that is not rewritten because other findings are Manual.</summary>
+    public const string NotRewrittenPrefix = "Not rewritten: ";
+
     // Rows for project files have no pattern; this id groups them in the summary and the report.
     public const string ProjectFilePatternId = "project-file";
 
@@ -229,7 +232,7 @@ public class Fixer : IFixer
         {
             if (findings[i].Result is FixedResult)
             {
-                findings[i] = CreateFinding(findings[i], PatternResult.Manual($"Not rewritten: {c.Reason}"));
+                findings[i] = CreateFinding(findings[i], PatternResult.Manual($"{NotRewrittenPrefix}{c.Reason}"));
             }
         }
 
@@ -463,7 +466,7 @@ public class Fixer : IFixer
     }
 
     private static Finding NotApplied(Finding finding) => CreateFinding(finding, PatternResult.Manual(
-        "Not rewritten: this fix changes nothing while other findings are Manual (a partial migration would break at run time). " +
+        NotRewrittenPrefix + "this fix changes nothing while other findings are Manual (a partial migration would break at run time). " +
         "Fix the manual findings and run the fix again."));
 
     private static Finding CreateFinding(Finding finding, PatternResult result) => new()
@@ -518,7 +521,7 @@ public class Fixer : IFixer
             {
                 if (findings[i].Result is FixedResult && filePaths.Contains(findings[i].FilePath))
                 {
-                    findings[i] = CreateFinding(findings[i], PatternResult.Manual($"Not rewritten: {reason}"));
+                    findings[i] = CreateFinding(findings[i], PatternResult.Manual($"{NotRewrittenPrefix}{reason}"));
                 }
             }
 
@@ -668,7 +671,7 @@ public class Fixer : IFixer
             PatternResult result = await RewriteAsync(pattern, node, model, solution, cancellationToken);
             if (BlockedCall(result, blocked) is string reason)
             {
-                result = PatternResult.Manual($"Not rewritten: {reason}");
+                result = PatternResult.Manual($"{NotRewrittenPrefix}{reason}");
             }
 
             (newRoot, PatternResult reported) = result switch

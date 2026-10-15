@@ -61,7 +61,7 @@ Tasks to `archief/` → `git add -A` → commit → checks on the commit in a se
 ## Known open issues
 
 - Decision trees of some patterns have >12 arrows (not split).
-- `.vibe-wise/` (learning notes) is in the repo; agree on this before making it public.
+- `.vibe-wise/` (learning notes) is local only: removed from the index and in `.gitignore` (2026-10-15); still in the git history.
 - Repo is private: GitHub does not enforce branch protection (no Pro).
 
 ## See also

@@ -10,3 +10,14 @@ culinary culinary-code/backend c496853552c490c147e897391fc9f028aa8268d8
 msb Robnoir/MSB 6cdbadb73890104a5ae49c42f363c7357c4f64a3
 xrepo andyalm/xrepo 0176bc1076b09b6b27d8859ccfaf771142e6c9f8
 fiapgames thaynnaraluciano/fiap-cloud-games a004dc91d355b05050b80d1d0f020455b831423d
+# round 3, picked 2026-10-15 before any run
+pathlib nemec/pathlib 2c37dfd010c49c37fc37911f6471de75eb2f18df
+# replaced (baseline build fails: NsDepCop.Analyzer roslyn4.0 variant, 1498 errors): nsdepcop realvizu/NsDepCop 77ad67c3c641036781bf12c3b0d2d13a1c73c4fd
+buildenator pmrogala/Buildenator b3e89e14392326b7eb03c5fe4e3253fbf31f7abe
+mediatrsample madslundt/NetCoreMediatrSample e752c85c675822668386a59fa5cc7f763530106c
+cashflow huysentruitw/cash-flow e2bba3807ac66eaa65299ef6f359b5b6d2666db6
+starter youssefbennour/AspNetCore.Starter 784d23eda909cbb27a439e571a90d9260e1a0a59
+restapi taorodrigueswork/rest-api 703c1f918828a37a3734b88d08d43831b9d15927
+bookstore XmyriyCat/Api-Book-Store b3b5874d37d5ef09132f631bb3d1ac8b11208e4d
+baseapi DanielStott/BaseApi 0b390cbe6f2629e925b1c61f8f09966046b39ca5
+bearded beardgame/utilities f7fc3976959ab3f01290b5ab67dfd3aacda79ed1

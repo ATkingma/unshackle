@@ -24,7 +24,7 @@ public class SendAsTaskPattern : IPattern
     public string Id => "mediatr.send-as-task";
 
     public string Description =>
-        "Send/Publish whose result is used as a Task (not awaited directly) → .AsTask(); Mediator returns ValueTask. "
+        "Send/Publish, or a direct handler.Handle(...), whose result is used as a Task (not awaited directly) → .AsTask(); Mediator returns ValueTask. "
         + "An NSubstitute setup mock.Send(...).Returns(Task.FromResult(x)) → .Returns(ValueTask.FromResult(x))";
 
     // CreateStream returns IAsyncEnumerable in both libraries, so only Send and Publish change.
@@ -32,6 +32,17 @@ public class SendAsTaskPattern : IPattern
     {
         foreach (InvocationExpressionSyntax invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
+            if (IsHandlerHandle(invocation, model))
+            {
+                // handler.Handle(...) called directly (a unit test): the handler pattern makes it return a ValueTask too (TAAK-268 round 3).
+                if (!IsAwaited(invocation) && Setup(invocation, model) is null && !IsReceivedCheck(invocation, model))
+                {
+                    yield return invocation;
+                }
+
+                continue;
+            }
+
             if (invocation.Expression is not (MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Send" or "Publish" } or MemberBindingExpressionSyntax { Name.Identifier.ValueText: "Send" or "Publish" })
                 || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: "MediatR" }
                 || IsAwaited(invocation) || IsReceivedCheck(invocation, model))
@@ -75,6 +86,17 @@ public class SendAsTaskPattern : IPattern
                     invocation.WithoutTrivia(),
                     SyntaxFactory.IdentifierName("AsTask"))).WithTriviaFrom(invocation));
     }
+
+    // Handle of an own request or notification handler that returns Task or Task<T>: the handler patterns turn it into ValueTask.
+    private static bool IsHandlerHandle(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Handle" }
+        && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { ReturnType: INamedTypeSymbol { Name: "Task" } returnType } method
+        && returnType.ContainingNamespace.ToDisplayString() == "System.Threading.Tasks"
+        && method.ContainingType.Locations.Any(l => l.IsInSource)
+        && method.ContainingType.AllInterfaces.Any(i =>
+            i.MetadataName is "IRequestHandler`1" or "IRequestHandler`2" or "INotificationHandler`1"
+            && i.ContainingNamespace.ToDisplayString() == "MediatR"
+            && i.GetMembers("Handle").Any(m => SymbolEqualityComparer.Default.Equals(method.ContainingType.FindImplementationForInterfaceMember(m), method.OriginalDefinition)));
 
     // await x and await x.ConfigureAwait(...) work the same on a ValueTask.
     private static bool IsAwaited(InvocationExpressionSyntax invocation) => invocation.Parent switch

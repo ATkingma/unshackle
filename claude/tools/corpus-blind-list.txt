@@ -10,3 +10,14 @@ culinary CulinaryCode.sln automapper
 msb MSB-Application.sln automapper
 xrepo xrepo.sln fluentassertions
 fiapgames FiapCloudGames.sln automapper
+# round 3
+pathlib PathLib.sln fluentassertions
+# replaced: nsdepcop source/NsDepCop.sln fluentassertions
+buildenator Buildenator.sln fluentassertions
+mediatrsample SampleApplication.sln mediatr
+cashflow CashFlow.sln mediatr
+starter Softylines.AspNetCore.Starter.sln mediatr
+restapi API/API.sln automapper
+bookstore BookStore.API/BookStore.API.sln automapper
+baseapi BaseApi.sln automapper
+bearded Bearded.Utilities.sln fluentassertions

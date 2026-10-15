@@ -85,5 +85,6 @@ public class MediatRFix : IFix
         ],
     };
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern(), new RequestHandlerDelegatePattern(), new PipelineBehaviorPattern(), new StreamPipelineBehaviorPattern(), new RequestProcessorCallerPattern(), new RequestProcessorPattern(), new ExceptionHandlerPattern(), new AddMediatRPattern(), new BehaviorDiRegistrationPattern(), new AutofacMediatorModulePattern(), new SendAsTaskPattern(), new GenericDecoratorPattern(), new GenericRequestPattern(), new GenericNotificationPattern(), new MediatorImplementationPattern(), new UnsupportedPattern(), new InternalHandlerAccessPattern()];
+    // SendAsTask first: it must see a direct handler.Handle(...) while the handler in the same file still returns Task.
+    public IReadOnlyList<IPattern> Patterns { get; } = [new SendAsTaskPattern(), new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern(), new RequestHandlerDelegatePattern(), new PipelineBehaviorPattern(), new StreamPipelineBehaviorPattern(), new RequestProcessorCallerPattern(), new RequestProcessorPattern(), new ExceptionHandlerPattern(), new AddMediatRPattern(), new BehaviorDiRegistrationPattern(), new AutofacMediatorModulePattern(), new GenericDecoratorPattern(), new GenericRequestPattern(), new GenericNotificationPattern(), new MediatorImplementationPattern(), new UnsupportedPattern(), new InternalHandlerAccessPattern()];
 }

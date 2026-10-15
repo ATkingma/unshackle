@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "automapper-constructor"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12]
 files_expected:
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs
     - src/Unshackle.Tests/Proofs/AutoMapper/CreateMap/
@@ -43,12 +43,13 @@ See the Evidence table in `claude/tasks/archief/TAAK-251-automapper-constructor.
 | REQ-3 | Destination members whose name equals a constructor parameter name ignoring case are not assigned again; other settable members follow the existing member rules (object initializer after the arguments; `Ignore()` and `MapFrom` on them work as before). |
 | REQ-4 | Manual when the destination has no public constructor, or its only constructor is not public (TAAK-251); several constructors: see REQ-8. |
 | REQ-5 | Manual per parameter: no source member (AutoMapper flattens, uses the default or throws), several members differing in case, a ref/out/params parameter, a type AutoMapper converts without a built-in conversion (`MemberConversions`), a `ForMember` on the member the parameter fills. |
-| REQ-6 | `ForCtorParam` stays Manual (the chain is not a `CreateMap<A, B>()` without options); `ConstructUsing` see REQ-9. |
+| REQ-6 | `ForCtorParam` other than REQ-12 stays Manual (the chain is not a `CreateMap<A, B>()` without options); `ConstructUsing` see REQ-9. |
 | REQ-7 | A map that `Map(source, destination)` needs as `MapInto` and that uses a constructor (or `ConstructUsing`) is Manual; `Map<B>(a)` becomes `a.ToB()` as before. |
 | REQ-8 | Several constructors (TAAK-266): the constructor AutoMapper 14 takes is the one with the most parameters it can resolve (a source member of the same name in any case, or a default value), over a parameterless one, any accessibility, the first declared on a tie; a public or internal choice gives `new(args)`, a parameterless one `new()`. Manual when no constructor resolves, when a candidate parameter may be filled by flattening or a Get method, matches several members, is configured by a `ForMember`, when the choice is private or protected, or when tied constructors are declared in different files. |
 | REQ-9 | `ConstructUsing(s => expression)` (a one-parameter lambda with an expression body that uses only the parameter, static members and types) makes the destination through the expression, then all members are mapped as without it: `new T(args) { ... }` when the expression is a plain `new` without initializer or no member remains, else a block body `T destination = expression; destination.X = ...; return destination;`. Manual for a `ResolutionContext` lambda, a block body, a method group or generic form, a profile constructor parameter, field or private member, `ConstructUsing` after `ReverseMap`, and with a Condition or ForPath. |
 | REQ-10 | `MaxDepth(n)` with a constant n of 2 or more is dropped on a map that copies nested objects or collections when no cycle exists (cycles stay Manual in `MemberValues`) and no `ProjectTo` uses the map; `MaxDepth(1)`, a non-constant argument, a `ReverseMap` or `PreserveReferences` stay Manual. |
 | REQ-11 | A profile with several constructors stays Manual, with a reason that names the constructor holding the maps and the parameters or fields its lambdas read (a service the caller hands in, which a static `ToB` cannot reach). |
+| REQ-12 | `ForCtorParam("p", o => o.MapFrom(s => expr))` (TAAK-270) fills the argument of parameter `p` (any case) with `expr` by the `MapFrom` rules (null-safe chain, conversions; measured on AutoMapper 14.0.0: null-safe like a member's `MapFrom`). Manual when `p` is no parameter of the chosen constructor, when the map is a `ReverseMap` (not measured), has `ConstructUsing` or a parameterless destination, a `ForMember` configures `p` too, or (several constructors) `p` has no single same-named source member, since a `ForCtorParam` may change which constructor AutoMapper picks. |
 
 ## Design
 
@@ -58,7 +59,7 @@ See the Evidence table in `claude/tasks/archief/TAAK-251-automapper-constructor.
 
 ## Out of scope
 
-- `ForCtorParam` (mostly test code): a follow-up can reuse `MapFromProblem`. `ConstructUsing` on the reverse map, with a `ResolutionContext`, or reading the profile's services.
+- `ForCtorParam` with another option than `MapFrom`, or next to `ReverseMap`. `ConstructUsing` on the reverse map, with a `ResolutionContext`, or reading the profile's services.
 - Optional parameters without a source member (AutoMapper passes the default value; they count as resolvable for the choice but the rewrite stays Manual).
 - Struct destinations with constructors (unchanged: a struct always has `new()`).
 

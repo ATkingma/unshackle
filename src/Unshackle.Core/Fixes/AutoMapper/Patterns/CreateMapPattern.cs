@@ -180,6 +180,12 @@ public class CreateMapPattern : ISolutionPattern
                 return PatternResult.Manual($"ProjectTo<{destinationType.Name}> uses CreateMap<{sourceType.Name}, {destinationType.Name}>, which has a Condition or ForPath; write the projection by hand.");
             }
 
+            if (reverseOptions is not null && (extra.CtorParams.Count > 0 || reverseExtra.CtorParams.Count > 0))
+            {
+                // Not measured (TAAK-270): whether ReverseMap carries a ForCtorParam over.
+                return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: ForCtorParam next to ReverseMap is not migrated; write the mapping methods by hand.");
+            }
+
             if (reverseOptions is not null && resolverCalls.Count > 0)
             {
                 return PatternResult.Manual($"CreateMap<{sourceType.Name}, {destinationType.Name}>: ReverseMap next to a value resolver or a MapFrom lambda with more parameters (AutoMapper does not reverse those); write the mapping methods by hand.");
@@ -509,7 +515,7 @@ public class CreateMapPattern : ISolutionPattern
                 return constructProblem;
             }
         }
-        else if (destination.TypeKind == TypeKind.Class && ConstructorChoice(named, source, readable, model, out constructor) is string choiceProblem)
+        else if (destination.TypeKind == TypeKind.Class && ConstructorChoice(named, source, readable, model, extra?.CtorParams, out constructor) is string choiceProblem)
         {
             return choiceProblem;
         }
@@ -529,7 +535,12 @@ public class CreateMapPattern : ISolutionPattern
             }
         }
 
-        if ((constructor is not null || constructUsing is not null) && extra is { IsEmpty: false })
+        if (extra is { CtorParams.Count: > 0 } && constructor is null)
+        {
+            return $"ForCtorParam configures a constructor parameter, but {destination.Name} is made through ConstructUsing or its parameterless constructor";
+        }
+
+        if ((constructor is not null || constructUsing is not null) && extra is { Conditions.Count: > 0 } or { Paths.Count: > 0 })
         {
             return $"{destination.Name} is created through its constructor or ConstructUsing, which may set a member a Condition or ForPath keeps or fills (TAAK-255)";
         }
@@ -545,7 +556,7 @@ public class CreateMapPattern : ISolutionPattern
             return $"{destination.Name} is made through a constructor and ForMember uses a value converter; write the mapping method by hand";
         }
 
-        if (constructor is not null && ConstructorProblem(constructor, source, destination, options, readable, values, out creation, ref copied) is string constructorProblem)
+        if (constructor is not null && ConstructorProblem(constructor, source, destination, options, readable, values, extra?.CtorParams, model, profileType, out creation, ref copied) is string constructorProblem)
         {
             return constructorProblem;
         }
@@ -737,7 +748,7 @@ public class CreateMapPattern : ISolutionPattern
     // and whatever its accessibility (private ones too); it throws when none can be resolved. Why that choice cannot be frozen into one new(...) call, or null
     // with the chosen constructor (null: the public parameterless one, `new()`).
     private static string? ConstructorChoice(INamedTypeSymbol destination, ITypeSymbol source,
-        List<ISymbol> readable, SemanticModel model, out IMethodSymbol? chosen)
+        List<ISymbol> readable, SemanticModel model, Dictionary<string, SimpleLambdaExpressionSyntax>? ctorParams, out IMethodSymbol? chosen)
     {
         chosen = null;
         // The record copy constructor does not count.
@@ -776,6 +787,11 @@ public class CreateMapPattern : ISolutionPattern
                 if (matches > 1)
                 {
                     return $"the constructor parameter {parameter.Name} of {destination.Name} matches several members of {source.Name}";
+                }
+
+                if (matches != 1 && ctorParams?.ContainsKey(parameter.Name) == true)
+                {
+                    return $"{destination.Name} has several constructors and ForCtorParam fills the parameter {parameter.Name}, which has no single member of that name in {source.Name}; which constructor AutoMapper picks is not decided here";
                 }
 
                 if (matches == 0 && MayFlatten(parameter.Name, source))
@@ -1027,7 +1043,8 @@ public class CreateMapPattern : ISolutionPattern
     // Why the single constructor cannot be called as new(source.X, ...), or null with that call in creation. AutoMapper fills each parameter
     // from the source member of the same name in any case (measured, TAAK-251); a parameter without one gets its default value or makes Map throw.
     private static string? ConstructorProblem(IMethodSymbol constructor, ITypeSymbol source, ITypeSymbol destination,
-        Dictionary<string, SimpleLambdaExpressionSyntax?> options, List<ISymbol> readable, MemberValues values, out string creation, ref string? copied)
+        Dictionary<string, SimpleLambdaExpressionSyntax?> options, List<ISymbol> readable, MemberValues values,
+        Dictionary<string, SimpleLambdaExpressionSyntax>? ctorParams, SemanticModel model, INamedTypeSymbol? profileType, out string creation, ref string? copied)
     {
         creation = "";
         List<string> arguments = [];
@@ -1041,6 +1058,20 @@ public class CreateMapPattern : ISolutionPattern
             if (options.Keys.FirstOrDefault(k => string.Equals(k, parameter.Name, StringComparison.OrdinalIgnoreCase)) is { } configured)
             {
                 return $"ForMember configures {configured}, which the constructor parameter {parameter.Name} of {destination.Name} fills (AutoMapper may apply it to the parameter)";
+            }
+
+            if (ctorParams?.TryGetValue(parameter.Name, out SimpleLambdaExpressionSyntax? ctorLambda) == true)
+            {
+                // Measured (TAAK-270, AutoMapper 14.0.0): the MapFrom of ForCtorParam is null-safe like a member's MapFrom.
+                if (MapFromProblem("ForCtorParam " + parameter.Name, ctorLambda, model, profileType, parameter.Type, destination, values, nullSafe: true, out string fromParameter,
+                    out bool parameterCopies, out _, out _, out _) is string ctorProblem)
+                {
+                    return ctorProblem;
+                }
+
+                arguments.Add(fromParameter);
+                copied ??= parameterCopies ? parameter.Name : null;
+                continue;
             }
 
             List<ISymbol> matches = [.. readable.Where(m => string.Equals(m.Name, parameter.Name, StringComparison.OrdinalIgnoreCase))];
@@ -1064,6 +1095,11 @@ public class CreateMapPattern : ISolutionPattern
 
             arguments.Add(argument);
             copied ??= copy ? parameter.Name : null;
+        }
+
+        if (ctorParams?.Keys.FirstOrDefault(k => !constructor.Parameters.Any(p => string.Equals(p.Name, k, StringComparison.OrdinalIgnoreCase))) is { } unknown)
+        {
+            return $"ForCtorParam names {unknown}, which is no parameter of the constructor AutoMapper uses for {destination.Name}";
         }
 
         creation = $"new({string.Join(", ", arguments)})";
@@ -1498,7 +1534,7 @@ public class CreateMapPattern : ISolutionPattern
     {
         // Options without effect on the hand-written method (TAAK-257) are skipped; MaxDepth and PreserveReferences are checked in Rewrite.
         while (expression is { Expression: MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax skipped } access } forMember
-            && (access.Name.Identifier.ValueText is "ForMember" or "ForPath" || UnsupportedOptions.IsDoNotValidate(forMember, model) || UnsupportedOptions.IsDepthOption(forMember, model)
+            && (access.Name.Identifier.ValueText is "ForMember" or "ForPath" or "ForCtorParam" || UnsupportedOptions.IsDoNotValidate(forMember, model) || UnsupportedOptions.IsDepthOption(forMember, model)
                 || IsConstructUsing(forMember, model)))
         {
             if (IsConstructUsing(forMember, model))
@@ -1510,6 +1546,18 @@ public class CreateMapPattern : ISolutionPattern
                 }
 
                 extra.ConstructUsing = forMember;
+                expression = skipped;
+                continue;
+            }
+
+            if (access.Name.Identifier.ValueText == "ForCtorParam")
+            {
+                // Read in ConstructorProblem (TAAK-270); any other form of it is no plain map.
+                if (!extra.TryParseCtorParam(forMember, model))
+                {
+                    return false;
+                }
+
                 expression = skipped;
                 continue;
             }

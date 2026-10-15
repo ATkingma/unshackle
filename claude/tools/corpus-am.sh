@@ -1,33 +1,35 @@
 #!/bin/bash
 # AutoMapper corpus harness (Linux). Port of the Windows corpus-am.sh, based on corpus-regression.sh.
 #
-#   corpus-am.sh clone                          # shallow-clone claude/tools/corpus-am-repos.txt into $CORPUS/src (skips existing)
-#   corpus-am.sh one  <base|scan|after> <name> <sln relative path>
-#   corpus-am.sh list <base|scan|after> <file>  # lines "name sln"; '#' = comment; max $JOBS (2) at once
+#   corpus-am.sh clone                          # shallow-clone $REPOS (default claude/tools/corpus-am-repos.txt) into $CORPUS/src (skips existing)
+#   corpus-am.sh one  <base|scan|after> <name> <sln relative path> [fix]
+#   corpus-am.sh list <base|scan|after> <file>  # lines "name sln [fix]"; '#' = comment; max $JOBS (2) at once
 #   corpus-am.sh summary <base|scan|after>
 #
 # Env: CORPUS (required: the corpus root on a large disk; never /tmp: tmpfs in RAM), TOOL (published unshackle.dll),
-# JOBS, TEST_TIMEOUT (s, default 3600), EXTRA (extra msbuild args), NOLOCK=1 (delete packages.lock.json in the copy; needed for bitwarden).
+# FIX (default fix id when a line has none; default automapper), REPOS, JOBS, TEST_TIMEOUT (s, default 3600), EXTRA (extra msbuild args), NOLOCK=1 (delete packages.lock.json in the copy; needed for bitwarden).
 # Sources in $CORPUS/src/<name> are untrusted clones: only restore/build/test and the tool run on them. A fresh copy
 # (no .git/bin/obj/node_modules) is made per run in $CORPUS/work/<mode>-<name> and deleted afterwards.
-# base  = restore, build, test x2.  scan = restore, build, `scan --fix automapper --report`.
-# after = restore, build, `fix --fix automapper --force`, clean bin/obj, restore, build (fails: stop), test, compare with _results/base.
+# base  = restore, build, test x2.  scan = restore, build, `scan --fix $FIX --report`.
+# after = restore, build, `fix --fix $FIX --force`, clean bin/obj, restore, build (fails: stop), test, compare with _results/base.
 set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
 CORPUS=${CORPUS:?set CORPUS to the corpus root, e.g. <disk>/unshackle-corpus/corpus-automapper (never /tmp)}
 JOBS=${JOBS:-2}
 TEST_TIMEOUT=${TEST_TIMEOUT:-3600}
 EXTRA=${EXTRA:-}
+FIX=${FIX:-automapper}
+REPOS=${REPOS:-$HERE/corpus-am-repos.txt}
 PY="python3 -I $HERE/corpus-regression.py"
 R=$CORPUS/_results
 P="-p:NuGetAudit=false -p:AllowMissingPrunePackageData=true -p:SkipNSwag=True -p:WarningsNotAsErrors=NU1507 $EXTRA"
 mkdir -p "$CORPUS/tmp" "$CORPUS/work" "$R"
-export CORPUS JOBS TEST_TIMEOUT EXTRA TOOL=${TOOL:-}
+export CORPUS JOBS TEST_TIMEOUT EXTRA FIX REPOS TOOL=${TOOL:-}
 export TEMP=$CORPUS/tmp TMP=$CORPUS/tmp TMPDIR=$CORPUS/tmp
 export DOCKER_HOST=tcp://127.0.0.1:1 DOTNET_CLI_TELEMETRY_OPTOUT=1 MSBUILDDISABLENODEREUSE=1 DOTNET_ROLL_FORWARD=Major
 
 clone() {
-  grep -vE '^\s*(#|$)' "$HERE/corpus-am-repos.txt" | while read -r N REPO REF; do
+  grep -vE '^\s*(#|$)' "$REPOS" | while read -r N REPO REF; do
     [ -e "$CORPUS/src/$N" ] && { echo "skip $N"; continue; }
     # abbreviated shas cannot be fetched: resolve to the full sha (tags pass through)
     FULL=$(gh api "repos/$REPO/commits/$REF" --jq .sha 2>/dev/null || echo "$REF")
@@ -37,7 +39,7 @@ clone() {
 }
 
 one() {
-  local M=$1 N=$2 SLN=$3
+  local M=$1 N=$2 SLN=$3 F=${4:-$FIX}
   local SRC=$CORPUS/src/$N D=$R/$M/$N W=$CORPUS/work/$M-$N T0=$(date +%s)
   local L=$D/logs
   rm -rf "$D" "$W"; mkdir -p "$W" "$L"
@@ -66,10 +68,10 @@ XML
     # a partial build (npm/cargo/yarn project fails) still lets the scan run on the rest of the solution
     step build0 dotnet build "$SLN" $P --no-restore || echo "build-partial" > "$D/build.txt"
     TO=3600
-    step scan dotnet "$TOOL" scan "$SLN" --fix automapper --report "$D/report.json" ;;
+    step scan dotnet "$TOOL" scan "$SLN" --fix "$F" --report "$D/report.json" ;;
   after)
     step build0 dotnet build "$SLN" $P --no-restore || true  # source generators must run before types resolve
-    step fix dotnet "$TOOL" fix "$SLN" --fix automapper --force --report "$D/report.json" || { status "fix-fails"; return; }
+    step fix dotnet "$TOOL" fix "$SLN" --fix "$F" --force --report "$D/report.json" || { status "fix-fails"; return; }
     find . -name node_modules -prune -o -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +  # keep node_modules/**/bin (npm tools)
     step restore1 dotnet restore "$SLN" $P || { status "restore-after-fix-fails"; return; }
     step build1 dotnet build "$SLN" $P --no-restore || {

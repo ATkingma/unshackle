@@ -1,6 +1,6 @@
 # TAAK-268 — Blind validation round: 3 unseen projects per fix
 
-**Status**: step 1/7 — not started
+**Status**: step 4/7 — base runs in progress
 **Created**: 2026-10-15
 **Goal**: every fix (fluentassertions, mediatr, automapper) has run on 3 open-source projects that played no part in developing it: 0 regressions, and every Fixed and Manual finding has been checked by hand.
 
@@ -54,9 +54,9 @@ Reusing the existing harness keeps the numbers comparable with earlier rounds. P
 
 ## Steps
 
-- [ ] 1. `corpus-am.sh`: `FIX` env var + `fix` column in the list; check with one AutoMapper repo that the outcome is unchanged
-- [ ] 2. Select 3 repos per fix (criteria above, exclusion list), record why each was picked; the user may veto
-- [ ] 3. Publish the tool from the current main sha into `<corpus>/corpus-blind/_results/tool-<sha>/`
+- [x] 1. `corpus-am.sh`: `FIX` env var + `fix` column in the list; check with one AutoMapper repo that the outcome is unchanged
+- [x] 2. Select 3 repos per fix (criteria above, exclusion list), record why each was picked; the user may veto
+- [x] 3. Publish the tool from the current main sha into `<corpus>/corpus-blind/_results/tool-<sha>/`
 - [ ] 4. `clone` + `base` for all 9; replace a repo whose baseline does not build (record why)
 - [ ] 5. `scan` + `after` for all 9; summary table in `CORPUSRUN-blind.md`
 - [ ] 6. Manual review of Fixed and Manual per repo; one TAAK per defect (regression, wrong rewrite, unjustified Manual)
@@ -74,7 +74,9 @@ Reusing the existing harness keeps the numbers comparable with earlier rounds. P
 
 ## Changed files
 
-_(filled in during execution)_
+- `claude/tools/corpus-am.sh` — `FIX`/`REPOS` env vars and an optional fix column (step 1; checked: scan of `jason` with the old and new script and the same tool gives a byte-identical report)
+- `claude/tools/corpus-blind-repos.txt`, `claude/tools/corpus-blind-list.txt` (step 2)
+- `claude/tasks/CORPUSRUN-blind.md`
 
 ## See also
 

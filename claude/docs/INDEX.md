@@ -114,6 +114,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-118-gedeeld-pakketbestand-niet-geladen-projecten.md` | ✅ TAAK-118 — A shared `Directory.*.props` keeps the old package if a non-migrated project on disk still uses it |
 | `claude/tasks/CORPUSRUN-fa.md` | FA corpus runs; round 4: 16/16 build, 13/16 green, regressions → TAAK-220..222; round 5: Akka/Steeltoe/LiteDB 0 new regressions |
 | `claude/tasks/CORPUSRUN-automapper.md` | AutoMapper corpus run: harness, baseline 14/18 repos (7851 tests), scan 1 Fixed / 1373 Manual, top Manual reasons |
+| `claude/tasks/CORPUSRUN-blind.md` | Blind validation round (TAAK-268): 3 unseen repos per fix, selection and results |
 | `claude/tasks/archief/TAAK-258-automapper-corpus-baseline.md` | TAAK-258 — AutoMapper corpus baseline, harness and after-fix round (14 of 14 repos, 0 regressions) |
 | `claude/tasks/archief/TAAK-267-automapper-map-method-group.md` | TAAK-267 — AutoMapper `Map<T>` as method group is missed (eshoponweb runtime regression) |
 | `claude/tasks/TAAK-268-blind-validation-round.md` | TAAK-268 — Blind validation round: 3 unseen open-source projects per fix, 0 regressions + manual review |

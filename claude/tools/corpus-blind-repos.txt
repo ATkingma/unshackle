@@ -1,0 +1,10 @@
+# name repo ref(full sha) -- TAAK-268 blind round; picked 2026-10-15 before any run
+skunkdeco bfriesen/RandomSkunk.DependencyInjection.Decorator a3ae32a8b3a06f16347654e6c41adfb43fcd8752
+ogooreck oskardudycz/Ogooreck 710b85c935656fbaea085bb3fb5563235c332528
+omnikeeper max-bytes/omnikeeper cf7090952451effac66894511986ac4aae1d165a
+realworld minhlong149/realworld-aspnetcore 47d2c5bc71994955af7c88a2c938e03978f63bb4
+fullcart AmrElshaer/FullCart 71c9860b6574fec09ea56cd0ff2a9f11ba230313
+miru MiruFx/Miru affd4e810844d01c7e9492064028d421db445bd6
+culinary culinary-code/backend c496853552c490c147e897391fc9f028aa8268d8
+ctwapi Coflnet/CtwApi 9ae8da17d99981952686d2ac5398d9e7999b8d98
+msb Robnoir/MSB 6cdbadb73890104a5ae49c42f363c7357c4f64a3

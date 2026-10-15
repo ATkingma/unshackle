@@ -19,7 +19,8 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerPattern.cs`, regi
 | REQ-3 | Met     | `from-result-block` (also `Task.FromResult<int>(...)`) |
 | REQ-4 | Met     | `generic`                                             |
 | REQ-5 | Met     | `token-name`                                          |
-| REQ-6 | Met     | `other-return`, `explicit`                            |
+| REQ-6 | Met     | `other-return`                                        |
+| REQ-7 | Met     | `explicit`, `explicit-async`                          |
 | REQ-7 | Met     | `decorator-inner-handle` (TAAK-212)                   |
 | Extension TAAK-080 | Met | `edge-marker-interface` |
 

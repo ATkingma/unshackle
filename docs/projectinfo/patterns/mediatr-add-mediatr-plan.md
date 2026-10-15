@@ -39,7 +39,7 @@ mediatr.add-mediatr: `services.AddMediatR(cfg => { ... })` becomes `services.Add
 ## Requirements
 
 - **REQ-1**: WHEN `AddMediatR` gets a block lambda with registration, lifetime and behaviors THE SYSTEM SHALL write `AddMediator` with `ServiceLifetime` and `PipelineBehaviors` (proof `behaviors`).
-- **REQ-2**: WHEN the lambda contains only registration (expression body) THE SYSTEM SHALL write `cfg => cfg.ServiceLifetime = ServiceLifetime.Transient` (proof `expression`).
+- **REQ-2**: WHEN the lambda contains only registration (expression body) THE SYSTEM SHALL write `cfg => cfg.ServiceLifetime = ServiceLifetime.Transient` (proof `expression`). **REQ-2b**: WHEN an expression-bodied lambda needs several assignments THE SYSTEM SHALL turn it into a block body (proof `expression-several`, TAAK-270).
 - **REQ-3**: IF a `cfg` call has no direct counterpart (including a behavior with a lifetime) THEN THE SYSTEM SHALL report Manual with the name of the call (proofs `unknown-call`, `behavior-lifetime`).
 - **REQ-4**: IF an assignment is anything other than `cfg.Lifetime = ServiceLifetime.X` THEN THE SYSTEM SHALL report Manual (proof `publisher`).
 - **REQ-5**: IF `AddMediatR` gets no lambda THEN THE SYSTEM SHALL report Manual (proof `no-lambda`).

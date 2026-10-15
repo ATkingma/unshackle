@@ -45,8 +45,7 @@ Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`.
 | Manual "not a list of cfg calls"              | block with other statements            | no proof                            |
 | Manual "cfg.X(...) has no direct equivalent"  | unknown call or lifetime argument      | `unknown-call`, `behavior-lifetime` |
 | Manual "'...' has no direct equivalent"       | other assignment/expression (own publisher) | no proof                       |
-| Manual "several settings in an expression lambda" | expression body with more than one assignment | no proof                 |
-| `AddMediator(cfg => ...)`                     | everything known                       | `behaviors`, `expression`, `empty`, `processors`, `publisher`, `edge-publisher-qualified`, `edge-assemblies`, `edge-service-type-behavior`, `generic-handlers` |
+| `AddMediator(cfg => ...)`                     | everything known                       | `behaviors`, `expression`, `expression-several`, `empty`, `processors`, `publisher`, `edge-publisher-qualified`, `edge-assemblies`, `edge-service-type-behavior`, `generic-handlers` |
 
 ## See also
 

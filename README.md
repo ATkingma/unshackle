@@ -27,16 +27,18 @@ Requires the .NET 10 SDK (the solution you migrate may target any framework the 
 ```bash
 dotnet tool install --global Unshackle
 
-cd MyApp
-git status                         # fix refuses to write on uncommitted changes
-dotnet restore MyApp.sln           # the library types must be known
+cd MyApp                                          # the folder with your .sln/.slnx; commit your work first
+dotnet restore
 
-unshackle scan MyApp.sln --fix fluentassertions            # what would change, writes nothing
-unshackle fix  MyApp.sln --fix fluentassertions --dry-run  # show the diff, writes nothing
-unshackle fix  MyApp.sln --fix fluentassertions --report report.md
+unshackle scan --fix fluentassertions             # what would change, writes nothing
+unshackle fix  --fix fluentassertions --dry-run   # show the diff, writes nothing
+unshackle fix  --fix fluentassertions --report report.md
 
-dotnet build && dotnet test        # always check the result with your own tests
+dotnet build && dotnet test                       # always check the result with your own tests
 ```
+
+**Full guide**: [docs/usage.md](https://github.com/ATkingma/unshackle/blob/main/docs/usage.md) (install, workflow, options, reports,
+CI, troubleshooting). **All supported patterns**: [docs/patterns.md](https://github.com/ATkingma/unshackle/blob/main/docs/patterns.md).
 
 `--fix` is `fluentassertions`, `mediatr` or `automapper` (`unshackle list` shows every pattern). Run one library at a time and
 commit in between, so each step is easy to review and revert.

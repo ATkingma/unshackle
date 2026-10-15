@@ -45,7 +45,7 @@ public static class Cli
         var fix = new FixCommand(scan, projectFiles, new GitSourceControl(), view);
         var list = new ListCommand(fixes, view);
 
-        RootCommand root = CreateRootCommand(fixes, reportWriters, scan, fix, list);
+        RootCommand root = CreateRootCommand(fixes, reportWriters, scan, fix, list, view);
         ParseResult parseResult = root.Parse(args);
         int exitCode = await parseResult.InvokeAsync(cancellationToken: cancellationToken);
         // System.CommandLine prints parse errors with exit code 1; scripts get 2 to tell them apart from load errors.
@@ -57,9 +57,14 @@ public static class Cli
         IReadOnlyList<IReportWriter> reportWriters,
         ScanCommand scan,
         FixCommand fix,
-        ListCommand list)
+        ListCommand list,
+        IConsoleView view)
     {
-        var solution = new Argument<string>("solution") { Description = "Path to a .sln, .slnx or project file." };
+        var solution = new Argument<string?>("solution")
+        {
+            Description = "Path to a .sln, .slnx or project file. Default: the only solution in the current directory.",
+            Arity = ArgumentArity.ZeroOrOne,
+        };
         var fixOption = new Option<string>("--fix") { Description = "The fix to run, see 'unshackle list'.", Required = true };
         fixOption.AcceptOnlyFromAmong([.. fixes.Select(f => f.Id)]);
         var report = new Option<string?>("--report")
@@ -73,16 +78,33 @@ public static class Cli
         {
             solution, fixOption, report, force,
         };
-        scanCommand.SetAction((r, ct) => scan.ExecuteAsync(
-            r.GetRequiredValue(solution), r.GetRequiredValue(fixOption), r.GetValue(report), r.GetValue(force), ct));
+        scanCommand.SetAction((r, ct) => WithSolution(view, r.GetValue(solution), path => scan.ExecuteAsync(
+            path, r.GetRequiredValue(fixOption), r.GetValue(report), r.GetValue(force), ct)));
 
         var fixCommand = new Command("fix", "Run a fix and write the changes.") { solution, fixOption, report, dryRun, force };
-        fixCommand.SetAction((r, ct) => fix.ExecuteAsync(
-            r.GetRequiredValue(solution), r.GetRequiredValue(fixOption), r.GetValue(report), r.GetValue(dryRun), r.GetValue(force), ct));
+        fixCommand.SetAction((r, ct) => WithSolution(view, r.GetValue(solution), path => fix.ExecuteAsync(
+            path, r.GetRequiredValue(fixOption), r.GetValue(report), r.GetValue(dryRun), r.GetValue(force), ct)));
 
-        var listCommand = new Command("list", "Show every fix and its patterns.");
-        listCommand.SetAction(_ => list.Execute());
+        var markdown = new Option<bool>("--markdown") { Description = "Print the patterns as a Markdown table (docs/patterns.md is made with this)." };
+        var listCommand = new Command("list", "Show every fix and its patterns.") { markdown };
+        listCommand.SetAction(r => list.Execute(r.GetValue(markdown)));
 
         return new RootCommand("Migrate .NET code away from libraries that went commercial.") { scanCommand, fixCommand, listCommand };
+    }
+
+    private static Task<int> WithSolution(IConsoleView view, string? given, Func<string, Task<int>> run)
+    {
+        string path;
+        try
+        {
+            path = SolutionLocator.Resolve(given, Directory.GetCurrentDirectory());
+        }
+        catch (CommandException ex)
+        {
+            view.ShowError(ex.Message);
+            return Task.FromResult(ex.ExitCode);
+        }
+
+        return run(path);
     }
 }

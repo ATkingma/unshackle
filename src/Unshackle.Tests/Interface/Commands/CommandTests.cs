@@ -55,7 +55,7 @@ public class CommandTests
         var command = new ListCommand([fix], _view);
 
         // Act
-        int exitCode = command.Execute();
+        int exitCode = command.Execute(markdown: false);
 
         // Assert
         exitCode.ShouldBe(ExitCodes.Ok);

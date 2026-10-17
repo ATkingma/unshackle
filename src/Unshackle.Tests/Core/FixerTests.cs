@@ -338,6 +338,38 @@ public class FixerTests
     }
 
     [Fact]
+    public async Task FixAsync_TwoKeptGlobalUsings_AddsNewOneOnce()
+    {
+        // Arrange
+        string code = "global using System.Collections;\nglobal " + Code.Replace("Foo();", "Foo(); _ = new StringBuilder();", StringComparison.Ordinal);
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        var fixer = new Fixer([CreateFix(pattern, removed: ["System.Collections", "System.Text"], added: ["System.IO"])]);
+
+        // Act
+        FixReport report = await FixAsync(fixer, code);
+
+        // Assert
+        string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        text.ShouldStartWith("global using System.Collections;\nglobal using System.IO;\nglobal using System.Text;\n\npublic class C");
+    }
+
+    [Fact]
+    public async Task FixAsync_AddedGlobalUsingAlreadyThere_DoesNotAddItAgain()
+    {
+        // Arrange
+        string code = "global using System.IO;\nglobal " + Code;
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        var fixer = new Fixer([CreateFix(pattern, removed: ["System.Text"], added: ["System.IO"])]);
+
+        // Act
+        FixReport report = await FixAsync(fixer, code);
+
+        // Assert
+        string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        text.ShouldStartWith("global using System.IO;\n\npublic class C");
+    }
+
+    [Fact]
     public async Task FixAsync_InactiveIfBranch_KeepsRemovedUsingAndReportsManual()
     {
         // Arrange

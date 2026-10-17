@@ -534,8 +534,9 @@ internal static class UsingDirectives
             : [];
 
     // Swaps each global using for the added namespaces in place, or (keep) puts them right after it.
+    // A namespace already in imported (the project's global usings so far) is not added again (CS0105, TAAK-278); added ones go into it.
     public static CompilationUnitSyntax SwapGlobalUsings(
-        CompilationUnitSyntax root, IReadOnlyCollection<UsingDirectiveSyntax> globals, IReadOnlyList<string> addedNamespaces, bool keep)
+        CompilationUnitSyntax root, IReadOnlyCollection<UsingDirectiveSyntax> globals, IReadOnlyList<string> addedNamespaces, bool keep, ISet<string> imported)
     {
         var usings = new List<UsingDirectiveSyntax>();
         foreach (UsingDirectiveSyntax directive in root.Usings)
@@ -552,14 +553,13 @@ internal static class UsingDirectives
             }
 
             // Only the first replacement keeps the leading trivia, so comments are not duplicated.
-            usings.AddRange(addedNamespaces.Select((ns, i) =>
+            usings.AddRange(addedNamespaces.Where(imported.Add).Select((ns, i) =>
             {
                 UsingDirectiveSyntax swapped = directive.WithName(SyntaxFactory.ParseName(ns).WithTriviaFrom(directive.Name!));
                 return keep || i > 0 ? swapped.WithLeadingTrivia() : swapped;
             }));
         }
 
-        // shortcut: two global usings of removed namespaces would import the added ones twice (a warning); fine until seen in real code.
         return root.WithUsings([.. usings]);
     }
 
@@ -617,7 +617,7 @@ internal static class UsingDirectives
     // The Fixer's own document (see Fixer.AddReferences) imports for the model only: it is no using the files have (TAAK-116).
     public const string AddedUsingsPath = "Unshackle.AddedUsings.g.cs";
 
-    private static IEnumerable<UsingDirectiveSyntax> GlobalUsings(Compilation compilation, CancellationToken cancellationToken) =>
+    public static IEnumerable<UsingDirectiveSyntax> GlobalUsings(Compilation compilation, CancellationToken cancellationToken) =>
         compilation.SyntaxTrees
             .Where(t => t.FilePath != AddedUsingsPath)
             .Select(t => t.GetRoot(cancellationToken))

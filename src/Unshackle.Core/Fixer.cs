@@ -585,6 +585,7 @@ public class Fixer : IFixer
             }
 
             HashSet<string> reported = new(StringComparer.Ordinal);
+            Dictionary<ProjectId, HashSet<string>> imported = [];
             foreach (Document document in project.SelectMany(id => solution.GetProject(id)!.Documents).Where(d => !notUtf8.Contains(d.FilePath ?? d.Id.Id.ToString())))
             {
                 SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken))!;
@@ -594,7 +595,16 @@ public class Fixer : IFixer
                     continue;
                 }
 
-                solution = solution.WithDocumentSyntaxRoot(document.Id, UsingDirectives.SwapGlobalUsings((CompilationUnitSyntax)root, globals, fix.AddedNamespaces, keep));
+                if (!imported.TryGetValue(document.Project.Id, out HashSet<string>? projectImports))
+                {
+                    Compilation compilation = (await document.Project.GetCompilationAsync(cancellationToken))!;
+                    projectImports = [.. UsingDirectives.GlobalUsings(compilation, cancellationToken).Where(u => u.Alias is null && u.StaticKeyword.IsKind(SyntaxKind.None))
+                        .Select(u => u.Name!.ToString())];
+                    imported[document.Project.Id] = projectImports;
+                }
+
+                solution = solution.WithDocumentSyntaxRoot(
+                    document.Id, UsingDirectives.SwapGlobalUsings((CompilationUnitSyntax)root, globals, fix.AddedNamespaces, keep, projectImports));
                 string filePath = document.FilePath ?? document.Name;
                 if (keep && reported.Add(filePath))
                 {

@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1014 proofs (excluding `_Pending`).
+Total: 1018 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -638,12 +638,15 @@ Total: 1014 proofs (excluding `_Pending`).
 | `which` | Fixed | `var only = x.Should().ContainSingle().Which; var big = x.Should().ContainSingle(d => d.Price > 5m, "big").Whic…` → `var only = x.ShouldHaveSingleItem(); var big = x.Where(d => d.Price > 5m).ShouldHaveSingleItem("big");` |
 | `which-chain` | Fixed | `decimal price = x.Should().ContainSingle().Which.Price;` → `decimal price = x.ShouldHaveSingleItem().Price;` |
 
-### CustomAssertion (4)
+### CustomAssertion (7)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `class-in-assertion-scope` | Manual | `first.Should().BeDelivered();` — reason: no automatic Shouldly form because |
 | `extension` | Manual | `result.Should().BeFailure();` — reason: Custom assertion `ResultAssertions.BeFailure` |
+| `given-then` | Manual | `invoice.Should().BePaid();` — reason: no automatic Shouldly form because BePaid: `Execute.Assertion.Given.ForCondition.FailWith` is not ForCondition |
 | `in-assertion-scope` | Manual | `result.Should().BeFailure();` — reason: Custom assertion `ScopedResultAssertions.BeFailure` |
+| `reference-type` | Fixed | `public static class OrderAssertionExtensions public static OrderAssertions Should(this Order instance) => new(…` → `public static class OrderAssertions public static void ShouldBeCancelled(this Order subject, string customMess…` |
 | `should-extension` | Manual | `order.Should().BeCancelled("it was refused");` — reason: Custom assertion `CancelOrderAssertions.BeCancelled` |
 | `subclass` | Manual |  — reason: Custom assertion `OrderAssertions.BeShipped` |
 
@@ -1122,13 +1125,14 @@ Total: 1014 proofs (excluding `_Pending`).
 | `steeltoe-arithmetic` | Fixed | `public TimeSpan Test(bool slow) => slow ? 1.Minutes() + 30.Seconds() : 250.Milliseconds();` → `public TimeSpan Test(bool slow) => slow ? TimeSpan.FromMinutes(1) + TimeSpan.FromSeconds(30) : TimeSpan.FromMi…` |
 | `steeltoe-assert-argument` | Fixed | `httpClient.Timeout.Should().Be(30.Seconds());` → `httpClient.Timeout.Should().Be(TimeSpan.FromSeconds(30));` |
 
-### _Combined (14)
+### _Combined (15)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `akka-own-kit-mixed` | Fixed | `reply.Should().NotBeNull(); members.Should().Contain("node-1");` → `reply.ShouldNotBeNull(); members.ShouldContain("node-1");` |
 | `all-satisfy-be` | Fixed | `orders.Should().AllSatisfy(o => o.Total.Should().Be(20m));` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
 | `all-satisfy-other` | Fixed | `orders.Should().AllSatisfy(o => o.Note.Should().NotBeNull();` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
+| `custom-assertion-class` | Fixed | `// Custom assertion extension: user code built on FluentAssertions' extension model. public static class Order…` → `public static class OrderAssertions public static void ShouldBeCancelled(this Order subject, string customMess…` |
 | `lambda-overload-one-run` | Fixed | `ctx.Should().Be(context); maybe2.HasValue.Should().BeTrue();` → `ctx.ShouldBe(context); maybe2.HasValue.ShouldBeTrue();` |
 | `litedb-bson-assertions` | Fixed | `docs.Length.Should().BeOneOf(1, 101); first.Should().BeOneOf("owner1", "owner2");` → `docs.Length.ShouldBeOneOf(1, 101); first.ShouldBeOneOf("owner1", "owner2");` |
 | `manual-and-fixed` | Fixed | `y.Should().Be(1); y.Should().Be(2);` → `y.ShouldBe(1); y.ShouldBe(2);` |

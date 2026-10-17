@@ -10,12 +10,13 @@ all-or-nothing rule per solution, not from the number of Manual findings.
 
 | #   | Task     | What                                                                                    | Depends on | Status |
 | --- | -------- | --------------------------------------------------------------------------------------- | ---------- | ------ |
-| 1   | TAAK-271 | Analyse every Manual finding in the 8 blocked repos (+ SampleShop)                      | —          | open   |
+| 1   | TAAK-271 | Analyse every Manual finding in the 8 blocked repos (+ SampleShop)                      | —          | done   |
 | 2   | TAAK-272 | AutoMapper partial migration: migrate what is safe, keep AutoMapper for the rest        | 271        | open   |
 | 3   | TAAK-273 | AutoMapper specific blockers: cycles, unflattening, null sources, private setters       | 271, 272   | open   |
 | 4   | TAAK-274 | MediatR partial migration per request type (MediatR and Mediator side by side)          | 271        | open   |
 | 5   | TAAK-275 | FluentAssertions: custom assertion classes → Shouldly                                   | 271        | open   |
 | 6   | TAAK-276 | Blind corpus round(s): 0 regressions, measure Manual before/after; README/NuGet numbers | 272–275    | open   |
+| 7   | TAAK-277 | FluentAssertions residual Manual patterns (proposed by TAAK-271; inventory first)       | 271, 275   | open   |
 
 Statuses: `open` · `in progress (agent)` · `done` · `blocked (reason)`.
 

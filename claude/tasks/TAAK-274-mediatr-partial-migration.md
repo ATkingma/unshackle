@@ -23,6 +23,14 @@ Per message type one owner: its handler(s), behaviors that apply to it, and ever
 3. Rewrite only migratable message types; namespace aliases where both libraries are used in one file.
 4. miru: decide whether moving a generic `AddMediatR` to the host can be done with proof; otherwise principally manual (state why).
 
+## Scope from TAAK-271 (measured)
+
+- **fullcart** (2 roots, 31 blocked): `services.AddScoped<IMediator, Mediator>()` and Scrutor `Decorate(typeof(INotificationHandler<>), typeof(DispatchingIntegrationEventDecorator<>))`. Solvable only as partial migration: requests/queries (with their `IPipelineBehavior` registrations) move to Mediator, **notifications and their decorator stay on MediatR**. Classes that use both `Send` and `Publish` need both interfaces.
+- **starter** (1 root, 10 blocked): `Starter.Common` and `Starter` both grant `InternalsVisibleTo` to `Starter.IntegrationTests`, and the test project calls `AddMediatR`. Probe (two Mediator hosts + ISV to a project that calls `AddMediator()`): CS0121, also with `options.Namespace`; builds when that project does not call `AddMediator`. Solvable by project-level partial migration: keep `Starter.Common` and the test project on MediatR, migrate the messages of `Starter` only.
+- **miru** (2 roots, 96 blocked): **principally manual**. `AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TAssemblyOfType>())` is a framework API scanning its users' assemblies; Mediator's generator needs them at compile time (MSG0007). Even per message type every handler is reached through that call. Keep the reason text of `mediatr.add-mediatr` and add "the library's users register their own handlers". Step 4 of the approach below is therefore decided: state, do not attempt.
+- SampleShop `CountQuery<T>` (generic message + generic handler): principally manual (no generic messages in Mediator; monomorphising changes the public type surface). 0 of 8 blocked repos.
+- Unit of ownership: message type **and project** (a project that cannot host the generator, as in starter, keeps its types on MediatR).
+
 ## Steps
 
 - [ ] 1. KingmaDoc plan (feature `mediatr-partial-migration`) after reading TAAK-271

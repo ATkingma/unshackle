@@ -47,7 +47,7 @@ CI: `.github/workflows/ci.yml` runs build, tests and the sample tests on every P
 
 ## Architecture in brief
 
-- `Interface → Core ← DataAccess`, `Interface → DataAccess`. **Core references no other project.** New I/O belongs in DataAccess, behind an interface from Core; `Interface/Program.cs` is the composition root.
+- `Interface → Core ← DataAccess`, `Interface → DataAccess`. **Core references no other project.** New I/O belongs in DataAccess, behind an interface from Core; `Interface/Cli.cs` is the composition root (`Program.cs` only calls it).
 - Core: `Fixer` → `IFix` (one per library) → `IPattern` (`Find` + `Rewrite`). A pattern never throws; if a rewrite fails, it returns `Manual(reason)` for the report.
 - One test project `src/Unshackle.Tests`: unit (`Core/`, `DataAccess/`, `Interface/`), `Proofs/`, and `Integration/` (runs on `samples/` via MSBuild, slow). `samples/` is "user code": its own props and `.editorconfig`, not in `Unshackle.slnx`, not subject to our code standards.
 - Every new pattern gets proofs in `src/Unshackle.Tests/Proofs/<Fix>/<Pattern>/` (`*.before.cs` + `*.after.cs` or `*.manual.txt`). `Proofs/` is not compiled; `before` must compile against the old library, `after` against the new one.

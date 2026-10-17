@@ -87,7 +87,7 @@ internal static class ProjectPackages
         _ => false,
     };
 
-    // True when any document binds a name to a type or member of the assemblies, swapped types aside. Using directives do not count:
+    // True when any document binds a name to a type or member of the assemblies, swapped types aside (unless written from global::, TAAK-274). Using directives do not count:
     // the global usings MSBuild generates from <Using Include> would otherwise always keep the package. Except a using that
     // inactive #if code may need, a global using the fixer kept, or an unbound x.Should() (TAAK-110): that code would break without the package.
     private static async Task<bool> UsesAssemblyAsync(
@@ -147,6 +147,6 @@ internal static class ProjectPackages
             .OfType<SimpleNameSyntax>()
             .Select(n => (Name: n, Symbol: model.GetSymbolInfo(n, cancellationToken).Symbol))
             .Where(u => u.Symbol is not null and not INamespaceSymbol && u.Symbol.ContainingAssembly?.Name is string name && assemblyNames.Contains(name)
-                && !UsingDirectives.IsSwapped(u.Symbol, swappedTypes))
+                && (!UsingDirectives.IsSwapped(u.Symbol, swappedTypes) || UsingDirectives.IsGlobalQualified(u.Name)))
             .Select(u => (u.Name, u.Symbol!));
 }

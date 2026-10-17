@@ -577,6 +577,24 @@ internal static class UsingDirectives
                 || UsedNamespaces(root, model, swappedTypes, cancellationToken).Overlaps(removedNamespaces));
     }
 
+    // A name written from global:: (global::MediatR.IMediator, global::MediatR.Unit.Value): it needs no using, and a using swap
+    // does not move it. A partial migration pins the code that stays on the old library that way (TAAK-274).
+    public static bool IsGlobalQualified(SimpleNameSyntax name)
+    {
+        SyntaxNode? left = name.Parent switch
+        {
+            QualifiedNameSyntax qualified when qualified.Right == name => qualified.Left,
+            MemberAccessExpressionSyntax member when member.Name == name => member.Expression,
+            _ => null,
+        };
+        while (left is QualifiedNameSyntax or MemberAccessExpressionSyntax)
+        {
+            left = left is QualifiedNameSyntax q ? q.Left : ((MemberAccessExpressionSyntax)left).Expression;
+        }
+
+        return left is AliasQualifiedNameSyntax { Alias.Identifier.ValueText: "global" };
+    }
+
     // A swapped type, or a member of one: its twin in the added namespace takes over after the using swap.
     public static bool IsSwapped(ISymbol symbol, IReadOnlyCollection<string> swappedTypes)
     {
@@ -645,6 +663,7 @@ internal static class UsingDirectives
         CompilationUnitSyntax root, SemanticModel model, IReadOnlyCollection<string> swappedTypes, CancellationToken cancellationToken) =>
         [.. root.DescendantNodes(n => n is not UsingDirectiveSyntax)
             .OfType<SimpleNameSyntax>()
+            .Where(n => !IsGlobalQualified(n))
             .Select(n => model.GetSymbolInfo(n, cancellationToken).Symbol)
             .Where(s => s is not null and not INamespaceSymbol && !IsSwapped(s, swappedTypes))
             .Select(s => s!.ContainingNamespace?.ToDisplayString() ?? string.Empty)];

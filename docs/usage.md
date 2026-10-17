@@ -73,10 +73,10 @@ fixed some of them is safe: code that is already migrated is left alone.
 | `--fix <id>`      | scan, fix | Required: `fluentassertions`, `mediatr` or `automapper`.                                          |
 | `--report <file>` | scan, fix | Writes every finding to `.md`, `.csv` or `.json` (format from the extension).                     |
 | `--dry-run`       | fix       | Prints the diff per file, writes nothing.                                                         |
-| `--force`         | scan, fix | Writes even when the git working tree is dirty or there is no git; overwrites an existing report. |
+| `--force`         | scan, fix | `fix`: writes even when the git working tree is dirty or there is no git. Both: overwrites an existing report. |
 
 **Exit codes**: `0` done (also when there are Manual findings), `1` the solution could not be loaded or written, or `fix`
-refused because of uncommitted changes, `2` invalid arguments (unknown fix, no or several solutions found).
+refused because of uncommitted changes, `2` invalid arguments (unknown fix or report extension, no or several solutions found).
 
 ## 5. Reading the result
 

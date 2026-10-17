@@ -19,7 +19,7 @@ Interface ──► Core ◄── DataAccess
 - **Core knows no other project.** Whatever Core needs from outside, Core defines as an
   interface (`ISolutionStore`, `IReportWriter`).
 - **DataAccess implements those interfaces.**
-- **Interface wires everything together** in `Program.cs` (composition root). A second interface, such as
+- **Interface wires everything together** in `Cli.cs` (composition root; `Program.cs` only calls it). A second interface, such as
   web or a VS Code extension, can be added later without changing Core or DataAccess.
 
 ## Build settings

@@ -64,7 +64,7 @@ nothing, because a half-migrated app breaks at run time), the summary lists exac
 Measured on 18 open-source solutions the tool had never seen (none was used to develop it), with their own test suites run before and
 after the fix ([details](https://github.com/ATkingma/unshackle/blob/main/claude/tasks/CORPUSRUN-blind.md)):
 
-| Fix | Fully migrated, all tests green | Stopped with manual findings | Test regressions |
+| Fix | Fully migrated, no new test failures | Stopped with manual findings | Test regressions |
 |---|---|---|---|
 | FluentAssertions → Shouldly | 6 of 6 | 0 | 0 |
 | MediatR → Mediator | 3 of 6 | 3 | 0 |

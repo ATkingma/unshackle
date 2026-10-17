@@ -11,7 +11,7 @@ Unshackle grows by real-world code. If it misses something in your codebase, ope
 
 ## Missing pattern
 
-Supported patterns are listed in [docs/projectinfo/modellen/patronen.md](projectinfo/modellen/patronen.md).
+Supported patterns are listed in [patterns.md](patterns.md).
 Check there first, then include:
 
 1. **The smallest compilable before-snippet**, with the declared types. The right rewrite often depends on the

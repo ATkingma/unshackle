@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1000 proofs (excluding `_Pending`).
+Total: 1014 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -34,7 +34,7 @@ Total: 1000 proofs (excluding `_Pending`).
 | `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check: the map at Test.cs:27 is not in a profile constructor this fix rewrites |
 | `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
-### CreateMap (110)
+### CreateMap (114)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -93,7 +93,11 @@ Total: 1000 proofs (excluding `_Pending`).
 | `flattening-nullable` | Fixed | `CreateMap<Annotation, AnnotationDto>();` → `public static class AnnotationProfileExtensions {` |
 | `flattening-nullable-conversion` | Manual | `CreateMap<Order, OrderDto>();` — reason: OrderDto.CustomerAge: Customer.Age is Int32 and may meet a null object; AutoMapper's value for the long? member is not measured |
 | `for-all-members` | Manual | `CreateMap<Order, OrderDto>().ForAllMembers(o => o.Condition((s, d, member) => member != null));` — reason: ForAllMembers applies an option to every member |
-| `for-ctor-param` | Manual | `CreateMap<Order, OrderDto>()` — reason: ForCtorParam maps a constructor parameter |
+| `for-ctor-param` | Fixed | `CreateMap<Order, OrderDto>() .ForCtorParam("Title", o => o.MapFrom(s => s.Name));` → `public static class OrderProfileExtensions {` |
+| `for-ctor-param-nested-null` | Fixed | `CreateMap<Order, OrderDto>() .ForCtorParam("customerName", o => o.MapFrom(s => s.Customer!.Name));` → `public static class OrderProfileExtensions {` |
+| `for-ctor-param-reverse-map` | Manual | `CreateMap<Order, OrderDto>()` — reason: ForCtorParam next to ReverseMap is not migrated |
+| `for-ctor-param-several` | Fixed | `CreateMap<CreateSale, SaleModel>() .ForCtorParam("nome", opt => opt.MapFrom(src => src.Nome))` → `public static class SaleProfileExtensions {` |
+| `for-ctor-param-unknown` | Manual | `CreateMap<Order, OrderDto>()` — reason: ForCtorParam names Missing, which is no parameter of the constructor |
 | `for-path` | Fixed | `CreateMap<IngredientLine, RecipeIngredient>() .ForPath(x => x.Ingredient.Name, opt => opt.MapFrom(src => src.N…` → `public static class OrderProfileExtensions {` |
 | `for-path-deep` | Manual | `CreateMap<CustomerForm, Customer>()` — reason: ForPath to Address.Country.Code goes more than one object deep |
 | `for-path-member` | Fixed | `CreateMap<Activity, ActivityDto>() .ForPath(dest => dest.Heading, opt => opt.MapFrom(src => src.Title));` → `public static class OrderProfileExtensions {` |
@@ -188,7 +192,7 @@ Total: 1000 proofs (excluding `_Pending`).
 | `reverse-pre-condition-map-from` | Fixed | `CreateMap<Person, PersonDto>() .ForMember(dto => dto.Alias, opt => opt.MapFrom(person => person.Nickname))` → `public static class OrderProfileExtensions {` |
 | `simple` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Total, o => o.MapFrom(s => s.Price * s.Quantity))` → `public static class OrderProfileExtensions {` |
 
-### MapCall (8)
+### MapCall (10)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -196,6 +200,8 @@ Total: 1000 proofs (excluding `_Pending`).
 | `manual-profile` | Manual | `CreateMap<Order, OrderDto>().BeforeMap((s, d) => d.Id = 1);` — reason: CreateMap<Order, OrderDto> is in profile OrderProfile, which this fix does not rewrite: |
 | `maybe-null` | Manual |  — reason: may be null |
 | `maybe-null-target` | Fixed | `public OrderDto? Find(Order? order) => _mapper.Map<OrderDto?>(order); return _mapper.Map<OrderDto>(order);` → `public OrderDto? Find(Order? order) => order?.ToOrderDto(); return order?.ToOrderDto();` |
+| `method-group` | Fixed | `public List<OrderDto> List(IEnumerable<Order> orders) => orders.Select(_mapper.Map<OrderDto>).ToList();` → `public List<OrderDto> List(IEnumerable<Order> orders) => orders.Select(source => source.ToOrderDto()).ToList()…` |
+| `method-group-two-parameters` | Manual | `CreateMap<Order, OrderDto>();` — reason: passed as a method group in a form this fix does not rewrite |
 | `object-source` | Manual |  — reason: no type of its own |
 | `receiver-call` | Manual |  — reason: not called as mapper.Map on a plain field |
 | `several-profiles` | Manual | `// Kavita: CreateMap<Series, SeriesDto> in AutoMapperProfiles and again in AutoMapperSeriesProfile.` — reason: Several profiles map Series to SeriesDto; AutoMapper uses the one registered last |
@@ -234,7 +240,7 @@ Total: 1000 proofs (excluding `_Pending`).
 | `member-resolver` | Fixed | `CreateMap<Post, NoteObject>() .ForMember(d => d.MediaType, opt => opt.MapFrom<MediaTypeResolver, Content?>(s =…` → `public static class PostProfileExtensions {` |
 | `resolver-class` | Fixed | `CreateMap<ToDoList, ListDto>() .ForMember(x => x.IsShared, opt => opt.MapFrom<IsSharedResolver>())` → `public static class ToDoProfileExtensions {` |
 
-### _Combined (21)
+### _Combined (22)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -251,6 +257,7 @@ Total: 1000 proofs (excluding `_Pending`).
 | `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
 | `may-be-null-profile` | Fixed | `CreateMap<BookmarkPair, BookmarkDto>() .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Bookmark.Id))` → `} public static class AppProfilesExtensions` |
 | `member-list-map-call` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Destination); public Mapping.OrderDto Get(Mapping.Order order) => _mappe…` → `} public static class OrderProfileExtensions` |
+| `method-group-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public List<OrderDto> List(IEnumerable<Order> orders) => orders.Select(_mapper.M…` → `} public static class OrderProfileExtensions` |
 | `nested-map-call` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `} public static class OrderProfileExtensions` |
 | `nested-profile-map-call` | Fixed | `CreateMap<CustomerDto,AddEditCustomerCommand>(MemberList.None); CreateMap<AddEditCustomerCommand,Customer>(Mem…` → `} }` |
 | `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
@@ -462,7 +469,7 @@ Total: 1000 proofs (excluding `_Pending`).
 | `value-type-differs` | Manual | `score.Should<int>().BeGreaterThan(5);` — reason: differs from subject type |
 | `value-used` | Manual | `var c = x.Should().BeGreaterThan(1);` — reason: is used |
 
-### BeNull (16)
+### BeNull (19)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -477,6 +484,9 @@ Total: 1000 proofs (excluding `_Pending`).
 | `edge-not-null-and` | Manual | `text.Should().NotBeNull().And.Be("a");` — reason: is used |
 | `edge-null-conditional` | Fixed | `uri?.Host.Should().BeNull();` → `uri?.Host.ShouldBeNull();` |
 | `edge-null-forgiving` | Fixed | `text!.Should().NotBeNull();` → `text!.ShouldNotBeNull();` |
+| `generic-be-null` | Fixed | `result.Should().BeNull();` → `((object?)result).ShouldBeNull();` |
+| `generic-class-constraint` | Fixed | `result.Should().NotBeNull();` → `result.ShouldNotBeNull();` |
+| `generic-not-be-null` | Fixed | `result.Should().NotBeNull();` → `((object?)result).ShouldNotBeNull();` |
 | `lambda` | Fixed | `Action act = () => text.Should().BeNull();` → `Action act = () => text.ShouldBeNull();` |
 | `not-be-null` | Fixed | `item.Should().NotBeNull();` → `item.ShouldNotBeNull();` |
 | `nullable-value` | Fixed | `number.Should().BeNull(); flag.Should().NotBeNull("why");` → `number.ShouldBeNull(); flag.ShouldNotBeNull("why");` |
@@ -1133,7 +1143,7 @@ Total: 1000 proofs (excluding `_Pending`).
 
 ## MediatR
 
-### AddMediatR (14)
+### AddMediatR (16)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1146,7 +1156,9 @@ Total: 1000 proofs (excluding `_Pending`).
 | `edge-service-type-behavior` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `empty` | Fixed | `services.AddMediatR(cfg => { });` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient);` |
 | `expression` | Fixed | `services.AddMediatR(options => options.RegisterServicesFromAssembly(typeof(Registration).Assembly));` → `services.AddMediator(options => options.ServiceLifetime = ServiceLifetime.Transient);` |
+| `expression-several` | Fixed | `services.AddMediatR(cfg => cfg.AddOpenBehavior(typeof(LoggingBehavior<,>)));` → `services.AddMediator(cfg => {` |
 | `generic-handlers` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
+| `generic-type-parameter` | Manual | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TAssemblyOfType>());` — reason: type parameter |
 | `no-lambda` | Manual | `services.AddMediatR(configuration);` — reason: AddMediatR is not called as services.AddMediatR(cfg => ...) |
 | `processors` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => // logging` |
 | `publisher` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
@@ -1244,7 +1256,7 @@ Total: 1000 proofs (excluding `_Pending`).
 | `no-constraint` | Fixed | `public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken canc…` → `where TRequest : IMessage public ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest…` |
 | `open-async` | Fixed | `where TRequest : notnull public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRespons…` → `where TRequest : notnull, IMessage public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDe…` |
 
-### RequestHandler (18)
+### RequestHandler (19)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1258,7 +1270,8 @@ Total: 1000 proofs (excluding `_Pending`).
 | `edge-own-command-name-global` | Fixed | `global using MediatR; public async Task<int> Handle(Ping request, CancellationToken cancellationToken)` → `global using Mediator; public async ValueTask<int> Handle(Ping request, CancellationToken cancellationToken)` |
 | `edge-primary-ctor` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => Task.FromResult(request.Id + cl…` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) => ValueTask.FromResult(reque…` |
 | `eshop-early-return` | Fixed | `public async Task<bool> Handle(CancelOrderCommand command, CancellationToken cancellationToken)` → `public async ValueTask<bool> Handle(CancelOrderCommand command, CancellationToken cancellationToken)` |
-| `explicit` | Manual | `Task<int> IRequestHandler<Query, int>.Handle(Query request, CancellationToken cancellationToken) =>` — reason: explicit interface implementation |
+| `explicit` | Fixed | `Task<int> IRequestHandler<Query, int>.Handle(Query request, CancellationToken cancellationToken) => Task.FromR…` → `ValueTask<int> IRequestHandler<Query, int>.Handle(Query request, CancellationToken cancellationToken) => Value…` |
+| `explicit-async` | Fixed | `async Task<Job> IRequestHandler<Job, Job>.Handle(Job request, CancellationToken ct)` → `async ValueTask<Job> IRequestHandler<Job, Job>.Handle(Job request, CancellationToken ct)` |
 | `from-result-block` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) return Task.FromResult(0);` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) return ValueTask.FromResult(0…` |
 | `from-result-expression` | Fixed | `public Task<int> Handle(Query request, CancellationToken cancellationToken) => Task.FromResult(request.Id);` → `public ValueTask<int> Handle(Query request, CancellationToken cancellationToken) => ValueTask.FromResult(reque…` |
 | `generic` | Fixed | `public Task<T> Handle(Wrapped<T> request, CancellationToken ct) => Task.FromResult(request.Value);` → `public ValueTask<T> Handle(Wrapped<T> request, CancellationToken ct) => ValueTask.FromResult(request.Value);` |
@@ -1337,7 +1350,7 @@ Total: 1000 proofs (excluding `_Pending`).
 | `other-return` | Manual | `public Task Handle(Command request, CancellationToken cancellationToken) =>` — reason: not Task.CompletedTask |
 | `throw-at-end` | Fixed | `public async Task Handle(Command request, CancellationToken cancellationToken)` → `public async ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken)` |
 
-### _Combined (11)
+### _Combined (12)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1346,6 +1359,7 @@ Total: 1000 proofs (excluding `_Pending`).
 | `generic-decorator-marker-without-using` | Fixed | `where TCommand : ICommand public class CreateMeetingCommand : ICommand` → `where TCommand : global::App.ICommand public class CreateMeetingCommand : global::App.ICommand` |
 | `generic-decorators-kgrzybek` | Fixed | `public class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : ICommand` → `public abstract class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : global::Proofs.…` |
 | `generic-notification-nadirbad` | Fixed | `public class DomainEventNotification<TDomainEvent> : INotification public Task Handle(DomainEventNotification<…` → `public abstract class DomainEventNotification<TDomainEvent> : INotification public class DomainEventNotificati…` |
+| `handler-handle-direct` | Fixed | `public Task<int> Handle(GetUser request, CancellationToken cancellationToken) => Task.FromResult(request.Id); …` → `public ValueTask<int> Handle(GetUser request, CancellationToken cancellationToken) => ValueTask.FromResult(req…` |
 | `host-references-host` | Fixed | `public Task Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Task.CompletedTask; bu…` → `public ValueTask<Unit> Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Unit.ValueT…` |
 | `identified-command-eshop` | Fixed | `public class IdentifiedCommand<T, R> : IRequest<R> public async Task<R> Handle(IdentifiedCommand<T, R> message…` → `public abstract class IdentifiedCommand<T, R> : IRequest<R> }` |
 | `internal-message-access` | Fixed | `public Task Handle(CancelMeetingCommand request, CancellationToken cancellationToken) => Task.CompletedTask; b…` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyMeetings.Modules.Meetings.Infrastructure")] p…` |

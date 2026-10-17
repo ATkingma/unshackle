@@ -1,6 +1,6 @@
 # Patterns: FluentAssertions to Shouldly
 
-Overview of the 31 FluentAssertions patterns, in 6 groups (one figure per group). Each pattern has a plan, models and verify in [../patterns/](../patterns/); the details and all Manual cases are there. All assertion patterns first go through the shared checks of [pattern-beslissing.md](pattern-beslissing.md). Execution order: see [Order](#order).
+Overview of the first 31 FluentAssertions patterns (the current full list is generated in [../../patterns.md](../../patterns.md)), in 6 groups (one figure per group). Each pattern has a plan, models and verify in [../patterns/](../patterns/); the details and all Manual cases are there. All assertion patterns first go through the shared checks of [pattern-beslissing.md](pattern-beslissing.md). Execution order: see [Order](#order).
 
 ## Values, booleans, null, empty, identity
 

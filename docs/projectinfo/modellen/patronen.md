@@ -91,7 +91,7 @@ Overview of the first 31 FluentAssertions patterns (the current full list is gen
 | --- | --- | --- | --- | --- | --- |
 | `fa.assertion-scope` | `AssertionScopePattern` | `using (new AssertionScope()) { a; b; }` | `x.ShouldSatisfyAllConditions(() => { a; }, () => { b; })` | context string, other statements, await | [plan](../patterns/fa-assertion-scope-plan.md), [models](../patterns/fa-assertion-scope-modellen.md) |
 | `fa.and-chain` | `AndChainPattern` | `x.Should().A().And.B()` | `x.ShouldA(); x.ShouldB(); (subject met bijwerkingen: var subject = x;)` | link Manual or unknown, not in a block | [plan](../patterns/fa-and-chain-plan.md), [models](../patterns/fa-and-chain-modellen.md) |
-| `fa.custom-assertion` | `CustomAssertionPattern` | `x.Should().MijnEigenAssertion()` | `altijd Manual, gegroepeerd per extensie` | always | [plan](../patterns/fa-custom-assertion-plan.md), [models](../patterns/fa-custom-assertion-modellen.md) |
+| `fa.custom-assertion` | `CustomAssertionPattern` | `x.Should().BeCancelled()` on an own `ReferenceTypeAssertions` class | `x.ShouldBeCancelled()` + the class as Shouldly extensions; else Manual, grouped per extension | when class, `Should()` and every call convert | [plan](../patterns/fa-custom-assertion-plan.md), [models](../patterns/fa-custom-assertion-modellen.md) |
 
 ## Order
 

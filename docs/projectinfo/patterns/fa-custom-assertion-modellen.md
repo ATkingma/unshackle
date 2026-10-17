@@ -44,6 +44,23 @@ Own assertions on a FluentAssertions type (`result.Should().BeFailure()`) become
 | Instance method of a subclass                                                     | Manual: Custom assertion `OrderAssertions.BeShipped`  | `subclass`           |
 | In an `AssertionScope` (the scope is not converted: the call is not an FA method) | Manual with the same custom reason                    | `in-assertion-scope` |
 
+## Conversion path (TAAK-275)
+
+Figures 1-3 show the Manual path. Since TAAK-275 the pattern is an `ISolutionFinder`/`ISolutionPattern` and converts plain `ReferenceTypeAssertions` classes; the diagrams are not redrawn yet.
+
+| Element | Path | Role |
+| --- | --- | --- |
+| `CustomAssertionPlans` | `src/Unshackle.Core/Fixes/FluentAssertions/CustomAssertionPlans.cs` | One decision per class per solution snapshot: shape, every mention (SymbolFinder), every `Should()` use, Shouldly name clash, inactive `#if` code, at least one call |
+| `CustomAssertionAnalyzer` | `src/Unshackle.Core/Fixes/FluentAssertions/CustomAssertionAnalyzer.cs` | Shape check and the extension class text (`CustomAssertionShape`) |
+| `CustomAssertionChain` | `src/Unshackle.Core/Fixes/FluentAssertions/CustomAssertionChain.cs` | `x.Should().A().And.B()` as subject and links |
+
+| Found node | Rewrite when the plan converts | Otherwise |
+| --- | --- | --- |
+| The assertions class | static class of `ShouldFoo` extensions (`using Shouldly`) | not found |
+| Its `Should()` extension (or holder class with only that member) | removed | not found |
+| A call `x.Should().Foo(...)` | `x.ShouldFoo(values, because)` | Manual "Custom assertion `C.Foo` (file): no automatic Shouldly form because ..." |
+| An `.And` chain statement | one statement per link; x hoisted when not safe to evaluate twice | same Manual |
+
 ## See also
 
 - [fa-custom-assertion-plan.md](fa-custom-assertion-plan.md) - plan

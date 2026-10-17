@@ -22,7 +22,7 @@ Built in TAAK-005 (`src/Unshackle.DataAccess/Reports/`):
 
 ## Own assertion extensions grouped (TAAK-091)
 
-- `fa.custom-assertion` gives, per call of an own extension on an FA assertions type, a Manual with the same reason
+- `fa.custom-assertion` gives, per call of an own extension on an FA assertions type that it cannot convert (TAAK-275 converts plain `ReferenceTypeAssertions` classes), a Manual with the same reason
   per extension ("Custom assertion `ResultAssertions.BeFailure` (ResultAssertions.cs): rewrite … once; its calls can stay").
 - `ReportRow.FromAll` (all three formats) turns those into one row per extension: the first call, with the reason
   prefixed by "N call(s), first here.". Other findings stay one row per finding. Consequence: whoever counts Manual rows

@@ -1,10 +1,11 @@
+using Microsoft.CodeAnalysis;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.MediatR.Patterns;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.MediatR;
 
-public class MediatRFix : IFix
+public class MediatRFix : IFix, IPartialFix
 {
     // The version our proofs compile every rewrite against (Directory.Packages.props): latest stable, MIT.
     public const string MediatorVersion = "3.0.2";
@@ -17,6 +18,14 @@ public class MediatRFix : IFix
 
     // Half a migration builds but fails at run time (behaviors rewritten while AddMediatR stays): any Manual finding leaves the solution as it is.
     public bool AllOrNothing => true;
+
+    // TAAK-274: instead of nothing, the code tied to the Manual findings stays on MediatR and the rest moves (MediatROwners).
+    public Task<PartialPlan?> PlanPartialAsync(Solution solution, IReadOnlyList<Finding> roots, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(solution);
+        ArgumentNullException.ThrowIfNull(roots);
+        return MediatROwners.PlanAsync(solution, roots, VendoredPackages, cancellationToken);
+    }
 
     // Ardalis.SharedKernel builds on MediatR and has no Mediator version with the same API: its source goes in instead (TAAK-194).
     public IReadOnlyList<VendoredPackage> VendoredPackages { get; } = [ArdalisSharedKernel.Package];

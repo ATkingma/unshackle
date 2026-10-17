@@ -29,6 +29,13 @@ public class Fixer : IFixer
     // TAAK-198: each round of targeted imports can only add conflicts; real files settle in two or three.
     private const int MaxTargetedRounds = 8;
 
+    // TAAK-274: each partial round can only keep more; a plan that does not settle in a few rounds falls back to all-or-nothing.
+    private const int MaxPartialRounds = 4;
+
+    private const string KeptPackageReason = " is still used in this project, so its package and global usings stay. ";
+
+    private const string KeptSharedPackageReason = " is not migrated but still uses ";
+
     // Start of the usings row for old code in an inactive #if branch; a later pass over another target framework replaces it (TAAK-223).
     private const string InactiveBranchReason = "Code in an inactive #if branch is not migrated";
 
@@ -58,7 +65,132 @@ public class Fixer : IFixer
         IFix fix = _fixes.FirstOrDefault(f => string.Equals(f.Id, request.FixId, StringComparison.OrdinalIgnoreCase))
             ?? throw new ArgumentException($"Unknown fix '{request.FixId}'.", nameof(request));
 
-        var findings = new List<Finding>();
+        FixReport full = await RunAsync(fix, solution, [], cancellationToken);
+        if (!fix.AllOrNothing || !full.Findings.Any(f => f.Result is ManualResult))
+        {
+            return full;
+        }
+
+        // TAAK-274: the code tied to the Manual findings stays on the old library, the rest moves; otherwise nothing changes.
+        if (fix is IPartialFix partial && await RunPartialAsync(fix, partial, solution, full, cancellationToken) is FixReport partialReport)
+        {
+            return partialReport;
+        }
+
+        return new FixReport { Solution = solution, Findings = [.. full.Findings.Select(f => f.Result is FixedResult ? NotApplied(f) : f)], ProjectFileChanges = [] };
+    }
+
+    // Plans a partial run from the Manual findings, runs it, and plans again with every new blocking Manual finding as an extra
+    // root. Null when the fix finds no safe plan or the plan does not settle.
+    private async Task<FixReport?> RunPartialAsync(IFix fix, IPartialFix partial, Solution solution, FixReport firstRun, CancellationToken cancellationToken)
+    {
+        List<Finding> roots = [];
+        foreach (Finding finding in firstRun.Findings.Where(f => f.Result is ManualResult manual && !manual.Reason.StartsWith(NotRewrittenPrefix, StringComparison.Ordinal) && !IsKeptPackageRow(f)))
+        {
+            roots.Add(finding.PatternId == UnmatchedPatternId ? await InOriginalAsync(finding, solution, firstRun.Solution, cancellationToken) : finding);
+        }
+
+        for (int round = 0; round < MaxPartialRounds; round++)
+        {
+            if (await partial.PlanPartialAsync(solution, roots, cancellationToken) is not PartialPlan plan)
+            {
+                return null;
+            }
+
+            FixReport report = await RunAsync(fix, plan.Solution, plan.Findings, cancellationToken);
+            if (!await KeepsKeptCodeAsync(plan.Solution, report.Solution, cancellationToken))
+            {
+                return null;
+            }
+
+            List<Finding> blocking = [.. report.Findings.Where(f => f.Result is ManualResult && !plan.Findings.Contains(f) && !IsKeptPackageRow(f))];
+            if (blocking.Count == 0)
+            {
+                return report;
+            }
+
+            int known = roots.Count;
+            roots.AddRange(blocking.Where(b => !roots.Any(r => r.FilePath == b.FilePath && r.Line == b.Line)));
+            if (roots.Count == known)
+            {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    // Every outermost kept node of the plan is still in the fixed file, in order and with the same text: no pattern or using step
+    // rewrote code that stays on the old library.
+    private static async Task<bool> KeepsKeptCodeAsync(Solution planned, Solution fixedSolution, CancellationToken cancellationToken)
+    {
+        foreach (Document document in planned.Projects.SelectMany(p => p.Documents))
+        {
+            SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken))!;
+            if (!root.ContainsAnnotations || fixedSolution.GetDocument(document.Id) is not Document fixedDocument)
+            {
+                continue;
+            }
+
+            string text = (await fixedDocument.GetTextAsync(cancellationToken)).ToString();
+            int position = 0;
+            foreach (SyntaxNode kept in root.GetAnnotatedNodes(PartialPlan.KeptAnnotationKind)
+                .Where(n => !n.Ancestors().Any(a => a.HasAnnotations(PartialPlan.KeptAnnotationKind))).OrderBy(n => n.SpanStart))
+            {
+                int found = text.IndexOf(kept.ToString(), position, StringComparison.Ordinal);
+                if (found < 0)
+                {
+                    return false;
+                }
+
+                position = found + kept.Span.Length;
+            }
+        }
+
+        return true;
+    }
+
+    // An unmatched-use row has its line in the fixed file (added usings move it down): the plan needs the line in the original. The
+    // code it points at was not rewritten, so the same line is in the original, near the same number.
+    private static async Task<Finding> InOriginalAsync(Finding finding, Solution original, Solution fixedSolution, CancellationToken cancellationToken)
+    {
+        if (finding.Line < 1 || original.GetDocumentIdsWithFilePath(finding.FilePath).FirstOrDefault() is not DocumentId id
+            || fixedSolution.GetDocument(id) is not Document fixedDocument)
+        {
+            return finding;
+        }
+
+        TextLineCollection before = (await original.GetDocument(id)!.GetTextAsync(cancellationToken)).Lines;
+        TextLineCollection after = (await fixedDocument.GetTextAsync(cancellationToken)).Lines;
+        if (finding.Line > after.Count)
+        {
+            return finding;
+        }
+
+        string line = after[finding.Line - 1].ToString().Trim();
+        for (int distance = 0; distance < Math.Max(before.Count, after.Count); distance++)
+        {
+            foreach (int candidate in (int[])[finding.Line - 1 - distance, finding.Line - 1 + distance])
+            {
+                if (candidate >= 0 && candidate < before.Count && before[candidate].ToString().Trim() == line)
+                {
+                    return new Finding { FilePath = finding.FilePath, Line = candidate + 1, FixId = finding.FixId, PatternId = finding.PatternId, Result = finding.Result };
+                }
+            }
+        }
+
+        return finding;
+    }
+
+    // The project-file rows that kept code causes: the old package stays next to the new one.
+    private static bool IsKeptPackageRow(Finding finding) =>
+        finding.PatternId == ProjectFilePatternId && finding.Result is ManualResult { Reason: var reason }
+        && (reason.Contains(KeptPackageReason, StringComparison.Ordinal) || reason.Contains(KeptSharedPackageReason, StringComparison.Ordinal));
+
+    // One run of the fix over the solution; seed findings come first in the report (the rows of a partial plan).
+    private async Task<FixReport> RunAsync(IFix fix, Solution solution, IReadOnlyList<Finding> seed, CancellationToken cancellationToken)
+    {
+        var findings = new List<Finding>(seed);
         Solution original = solution;
         Solution baseline = AddReferences(original, fix.AddedReferences, fix.AddedNamespaces);
         HashSet<string> swappedTypes = [.. fix.SwappedTypes];
@@ -151,12 +283,6 @@ public class Fixer : IFixer
         }
 
         projectFileChanges = [.. vendored.Files, .. projectFileChanges];
-
-        if (fix.AllOrNothing && findings.Any(f => f.Result is ManualResult))
-        {
-            return new FixReport { Solution = original, Findings = [.. findings.Select(f => f.Result is FixedResult ? NotApplied(f) : f)], ProjectFileChanges = [] };
-        }
-
         return new FixReport { Solution = solution, Findings = findings, ProjectFileChanges = projectFileChanges };
     }
 
@@ -530,8 +656,7 @@ public class Fixer : IFixer
         }
 
         findings.AddRange(migrations.Where(m => m.KeepRemovedPackage).Select(m => CreateProjectFinding(m.ProjectPath, fix,
-            PatternResult.Manual($"{package.RemovedPackage} is still used in this project, so its package and global usings stay. " +
-                "Fix the manual findings and run the fix again."))));
+            PatternResult.Manual($"{package.RemovedPackage}{KeptPackageReason}Fix the manual findings and run the fix again."))));
         // The project-file row alone says that something is left, not where. A file with a Manual finding already has its explanation.
         HashSet<string> removed = [package.RemovedPackage, .. package.AlsoRemovedPackages];
         HashSet<string> explained = [.. findings.Where(f => f.Result is ManualResult).Select(f => f.FilePath)];
@@ -548,7 +673,7 @@ public class Fixer : IFixer
         }
 
         findings.AddRange(changes.Select(c => CreateProjectFinding(c.FilePath, fix, c.KeptRemovedPackageFor is string user
-            ? PatternResult.Manual($"{user} is not migrated but still uses {package.RemovedPackage}, so this shared file keeps it next to the new package. " +
+            ? PatternResult.Manual($"{user}{KeptSharedPackageReason}{package.RemovedPackage}, so this shared file keeps it next to the new package. " +
                 "Migrate that project and run the fix again.")
             : PatternResult.Fixed(Array.Empty<SyntaxNode>()))));
         return (solution, changes);
@@ -657,6 +782,12 @@ public class Fixer : IFixer
         {
             findings.Add(CreateFinding(filePath, 0, fix, pattern, InternalError(pattern, ex)));
             return root;
+        }
+
+        // TAAK-274: code a partial plan keeps goes to no pattern (RunPartialAsync checks afterwards that it is still there as it was).
+        if (root.ContainsAnnotations)
+        {
+            nodes.RemoveAll(n => n.AncestorsAndSelf().Any(a => a.HasAnnotations(PartialPlan.KeptAnnotationKind)));
         }
 
         if (nodes.Count == 0)

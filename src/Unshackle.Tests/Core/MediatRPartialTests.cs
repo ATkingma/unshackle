@@ -1,5 +1,8 @@
+using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Shouldly;
 using Unshackle.Core;
@@ -171,7 +174,7 @@ public class MediatRPartialTests
 
         """;
 
-    private static readonly string s_directory = Path.Combine(AppContext.BaseDirectory, "Proofs", "MediatR", "_Partial");
+    private static readonly string s_directory = Path.Combine(AppContext.BaseDirectory, "Proofs", "MediatR", CombinedProofTests.FolderName, "Partial");
 
     private static readonly IReadOnlyList<MetadataReference> s_both = [.. TestReferences.MediatR.Concat(TestReferences.Mediator).DistinctBy(r => r.Display)];
 
@@ -274,10 +277,150 @@ public class MediatRPartialTests
         report.Findings.ShouldNotContain(f => f.Result is FixedResult);
     }
 
+    // Behaviour, not only text: the partly migrated app sends through Mediator (with the behavior) and publishes through MediatR
+    // (with the decorator), and logs exactly what the original logs.
+    [Fact]
+    public async Task FixAsync_PartlyMigratedApp_RunsLikeTheOriginal()
+    {
+        // Arrange
+        string before = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using MediatR;
+            using Microsoft.Extensions.DependencyInjection;
+
+            namespace Probe;
+
+            public static class Log
+            {
+                public static List<string> Lines { get; } = [];
+            }
+
+            public record GetBrand(int Id) : IRequest<string>;
+
+            public class GetBrandHandler : IRequestHandler<GetBrand, string>
+            {
+                public Task<string> Handle(GetBrand request, CancellationToken cancellationToken)
+                {
+                    Log.Lines.Add("handle " + request.Id);
+                    return Task.FromResult("brand " + request.Id);
+                }
+            }
+
+            public class Audit<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+                where TRequest : notnull
+            {
+                public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+                {
+                    Log.Lines.Add("before");
+                    TResponse response = await next();
+                    Log.Lines.Add("after");
+                    return response;
+                }
+            }
+
+            public interface IDomainEvent : INotification;
+
+            public record OrderPlaced(int Id) : IDomainEvent;
+
+            public class OrderPlacedHandler : INotificationHandler<OrderPlaced>
+            {
+                public Task Handle(OrderPlaced notification, CancellationToken cancellationToken)
+                {
+                    Log.Lines.Add("placed " + notification.Id);
+                    return Task.CompletedTask;
+                }
+            }
+
+            public class Dispatching<TNotification> : INotificationHandler<TNotification>
+                where TNotification : INotification
+            {
+                private readonly INotificationHandler<TNotification> _inner;
+
+                public Dispatching(INotificationHandler<TNotification> inner)
+                {
+                    _inner = inner;
+                }
+
+                public Task Handle(TNotification notification, CancellationToken cancellationToken)
+                {
+                    Log.Lines.Add("dispatch");
+                    return _inner.Handle(notification, cancellationToken);
+                }
+            }
+
+            public class BrandController
+            {
+                private readonly IMediator _mediator;
+
+                public BrandController(IMediator mediator)
+                {
+                    _mediator = mediator;
+                }
+
+                public Task<string> Get(int id) => _mediator.Send(new GetBrand(id));
+            }
+
+            public class Dispatcher
+            {
+                private readonly IMediator _publisher;
+
+                public Dispatcher(IMediator publisher)
+                {
+                    _publisher = publisher;
+                }
+
+                public Task Dispatch(IDomainEvent domainEvent) => _publisher.Publish(domainEvent);
+            }
+
+            public static class DependencyInjection
+            {
+                public static IServiceCollection AddApplication(this IServiceCollection services)
+                {
+                    services.AddScoped<IMediator, Mediator>();
+                    services.AddScoped(typeof(IPipelineBehavior<,>), typeof(Audit<,>));
+                    services.AddTransient<IRequestHandler<GetBrand, string>, GetBrandHandler>();
+                    services.AddTransient<OrderPlacedHandler>();
+                    services.AddTransient<INotificationHandler<OrderPlaced>>(sp => new Dispatching<OrderPlaced>(sp.GetRequiredService<OrderPlacedHandler>()));
+                    services.AddScoped<BrandController>();
+                    services.AddScoped<Dispatcher>();
+                    return services;
+                }
+            }
+
+            public static class Program
+            {
+                public static async Task<string> RunAsync()
+                {
+                    using ServiceProvider provider = new ServiceCollection().AddApplication().BuildServiceProvider();
+                    using IServiceScope scope = provider.CreateScope();
+                    string brand = await scope.ServiceProvider.GetRequiredService<BrandController>().Get(7);
+                    await scope.ServiceProvider.GetRequiredService<Dispatcher>().Dispatch(new OrderPlaced(3));
+                    return brand + "|" + string.Join(",", Log.Lines);
+                }
+            }
+
+            """;
+        var fixer = new Fixer([new MediatRFix()]);
+
+        // Act
+        FixReport report = await fixer.FixAsync(TestSolution.Create(before, TestReferences.MediatR), new FixRequest { FixId = "mediatr" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        string after = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        report.Findings.ShouldContain(f => f.PatternId == MediatROwners.KeptPatternId, "a partial migration");
+        after.ShouldContain("global::MediatR.INotificationHandler<OrderPlaced>");
+        after.ShouldContain("services.AddMediator(");
+        string original = await RunAsync("Before", before, TestReferences.MediatR, []);
+        original.ShouldBe("brand 7|before,handle 7,after,dispatch,placed 3");
+        (await RunAsync("After", after, s_both, TestReferences.MediatorGenerators)).ShouldBe(original);
+    }
+
     public static TheoryData<string> Cases() =>
         [.. Directory.EnumerateFiles(s_directory, "*.before.cs").Select(p => Path.GetFileName(p)[..^".before.cs".Length]).Order(StringComparer.Ordinal)];
 
-    // Proofs/MediatR/_Partial: the root comes from a pattern (no project files), the rest of the case moves to Mediator.
+    // Proofs/MediatR/_Combined/Partial: the root comes from a pattern (no project files), the rest of the case moves to Mediator.
     [Theory]
     [MemberData(nameof(Cases))]
     public async Task FixAsync_PartialProof_BecomesAfter(string name)
@@ -303,6 +446,23 @@ public class MediatRPartialTests
         (projects
             ? TestProjects.CompileErrors(actual, s_both, TestReferences.MediatorGenerators)
             : TestSolution.CompileErrors(actual, s_both, TestReferences.MediatorGenerators)).ShouldBeEmpty("after must compile against MediatR and Mediator");
+    }
+
+    // Compiles the code (with the generators), loads it and returns what Program.RunAsync() returns.
+    private static async Task<string> RunAsync(string name, string code, IEnumerable<MetadataReference> references, IEnumerable<ISourceGenerator> generators)
+    {
+        Compilation compilation = CSharpCompilation.Create(
+            name,
+            [CSharpSyntaxTree.ParseText(code)],
+            [.. references, MetadataReference.CreateFromFile(typeof(ServiceProvider).Assembly.Location)],
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        CSharpGeneratorDriver.Create([.. generators]).RunGeneratorsAndUpdateCompilation(compilation, out compilation, out _, TestContext.Current.CancellationToken);
+        using var image = new MemoryStream();
+        EmitResult emitted = compilation.Emit(image, cancellationToken: TestContext.Current.CancellationToken);
+        emitted.Success.ShouldBeTrue(string.Join("\n", emitted.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)));
+        var assembly = Assembly.Load(image.ToArray());
+        Func<Task<string>> run = assembly.GetType("Probe.Program")!.GetMethod("RunAsync")!.CreateDelegate<Func<Task<string>>>();
+        return await run();
     }
 
     private static async Task<string> TextAsync(FixReport report) =>

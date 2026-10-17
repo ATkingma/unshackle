@@ -11,6 +11,8 @@ files_expected:
     - src/Unshackle.Core/ProjectPackages.cs
     - src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs
     - src/Unshackle.Core/Fixes/MediatR/MediatROwners.cs
+    - src/Unshackle.Core/Fixes/MediatR/MediatROwner.cs
+    - src/Unshackle.Core/Fixes/MediatR/MediatROwnerGraph.cs
     - src/Unshackle.Tests/Core/MediatRPartialTests.cs
 ---
 
@@ -123,5 +125,5 @@ sequenceDiagram
 
 ## See also
 
-- `claude/tasks/TAAK-274-mediatr-partial-migration.md`, `claude/tasks/archief/TAAK-271-analyse-manual-blockers.md`
-- [mediatr-fix-plan.md](mediatr-fix-plan.md)
+- `claude/tasks/archief/TAAK-274-mediatr-partial-migration.md`, `claude/tasks/archief/TAAK-271-analyse-manual-blockers.md`
+- [mediatr-partial-migration-verify.md](mediatr-partial-migration-verify.md), [mediatr-fix-plan.md](mediatr-fix-plan.md)

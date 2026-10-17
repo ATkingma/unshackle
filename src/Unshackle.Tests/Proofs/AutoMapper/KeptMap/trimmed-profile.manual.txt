@@ -1,0 +1,1 @@
+Stays on AutoMapper: CreateMap<Invoice, InvoiceDto> stays in the profile, the rest of it is migrated: 'CreateMap<Invoice, InvoiceDto>().BeforeMap((s, d) => d.Id = 1);' in Profile ShopProfile: BeforeMap

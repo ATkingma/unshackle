@@ -86,8 +86,8 @@ Manual map no longer blocks the rest of the solution.
 - **REQ-5**: WHEN a `Map` call's source or destination type is unknown THE SYSTEM SHALL keep every pair it may reach (all pairs
   when the destination is unknown).
 - **REQ-6**: WHEN a call uses a kept pair THE SYSTEM SHALL leave the call on `IMapper` and say why the pair stays.
-- **REQ-7**: WHEN every `Map`/`ProjectTo` call through a class's private `IMapper` field is rewritten THE SYSTEM SHALL remove the
-  field, its constructor parameter and assignment, and the argument at every `new` call of that constructor.
+- **REQ-7** _(deferred, see verify)_: WHEN every `Map`/`ProjectTo` call through a class's private `IMapper` field is rewritten THE
+  SYSTEM SHALL remove the field, its constructor parameter and assignment, and the argument at every `new` call of that constructor.
 - **REQ-8**: WHEN a test passes a mocked `IMapper` into a class THE SYSTEM SHALL keep that class's calls (and their pairs) on
   AutoMapper and never rewrite a mock set-up.
 - **REQ-9**: WHEN no `IMapper` reference is left after the clean-up THE SYSTEM SHALL remove `AddAutoMapper`; otherwise it stays.

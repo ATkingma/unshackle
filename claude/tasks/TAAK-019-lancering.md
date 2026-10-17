@@ -68,14 +68,14 @@ The real case first: if it fails, you want to know before the public launch.
 
 ## Steps
 
-- [ ] 1. Wait until TAAK-017 + TAAK-018 are pushed (checks green)
+- [x] 1. Wait until TAAK-017 + TAAK-018 are pushed (checks green)
 - [x] 2. Real case: scan/fix/build/test on an open-source project, record the results here
 - [x] 3. Record pattern errors found as issues/tasks (do not fix them in this task)
-- [ ] 4. NuGet metadata + release workflow (`v*` tag), check `dotnet pack` locally
-- [ ] 5. README: GIF, case numbers, supported patterns, limitations
+- [x] 4. NuGet metadata + release workflow (`v*` tag), check `dotnet pack` locally
+- [x] 5. README: GIF, case numbers, supported patterns, limitations
 - [ ] 6. With the user: sort out `.vibe-wise/`, make the repo public, enable branch protection
 - [ ] 7. Tag release `v0.1.0` (the user sets `NUGET_API_KEY`), test installation from nuget.org
-- [ ] 8. Draft r/dotnet post; the user posts it
+- [ ] 8. Draft r/dotnet post (draft ready, see the status line); the user posts it
 
 ## Risks & edge cases
 

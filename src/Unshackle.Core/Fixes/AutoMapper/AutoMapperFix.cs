@@ -1,4 +1,5 @@
 using Unshackle.Core.Abstractions;
+using Unshackle.Core.Models;
 using Unshackle.Core.Fixes.AutoMapper.Patterns;
 
 namespace Unshackle.Core.Fixes.AutoMapper;
@@ -13,12 +14,16 @@ public class AutoMapperFix : IFix
 
     public IReadOnlyList<string> AddedNamespaces { get; } = [];
 
-    // A CreateMap rewritten while mapper.Map still runs fails at run time (missing type map): any Manual finding leaves the solution as it is.
+    // A CreateMap rewritten while mapper.Map still runs fails at run time (missing type map): a Manual finding leaves the solution as it is,
+    // unless it is a map, call or registration the plan keeps on AutoMapper (TAAK-272, see MapOwners).
     public bool AllOrNothing => true;
+
+    public bool AllowsPartial(Finding finding) =>
+        finding.Result is ManualResult { Reason: var reason } && reason.StartsWith(MapOwners.KeptPrefix, StringComparison.Ordinal);
 
     // No Package yet: every migrated Profile stays (empty) and keeps AutoMapper referenced; the package goes once the
     // Profile, Map and AddAutoMapper rows of claude/tasks/automapper-queue.md can remove all of it (TAAK-159: AddAutoMapper
     // goes only without IMapper users; the emptied Profiles still keep the package).
-    public IReadOnlyList<IPattern> Patterns { get; } = [new CreateMapPattern(), new ForMemberIgnorePattern(), new ForMemberMapFromPattern(), new ValueResolverPattern(), new MapCallPattern(), new MapIntoPattern(), new ProjectToPattern(), new AddAutoMapperPattern(),
+    public IReadOnlyList<IPattern> Patterns { get; } = [new CreateMapPattern(), new ForMemberIgnorePattern(), new ForMemberMapFromPattern(), new ValueResolverPattern(), new KeptMapPattern(), new MapCallPattern(), new MapIntoPattern(), new ProjectToPattern(), new AddAutoMapperPattern(),
         new ConfigurationTestPattern()];
 }

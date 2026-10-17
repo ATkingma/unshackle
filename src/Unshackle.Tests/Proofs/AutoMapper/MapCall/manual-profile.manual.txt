@@ -1,1 +1,1 @@
-CreateMap<Order, OrderDto> is in profile OrderProfile, which this fix does not rewrite: 
+the map Order → OrderDto stays on AutoMapper ('CreateMap<Order, OrderDto>().BeforeMap((s, d) => d.Id = 1);' in Profile OrderProfile: BeforeMap runs code before the members are set

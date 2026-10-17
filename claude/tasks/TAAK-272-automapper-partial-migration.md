@@ -1,6 +1,6 @@
 # TAAK-272 — AutoMapper partial migration
 
-**Status**: step 3/6 — in progress
+**Status**: step 4/6 — in progress
 **Created**: 2026-10-17
 **Branch**: `worktree-agent-a50ecf5da4db68373` (worktree `.claude/worktrees/agent-a50ecf5da4db68373` of the main checkout)
 **Goal**: one Manual map no longer blocks a whole solution: every map that can be migrated with proof is migrated, the rest keeps running on AutoMapper 14 (free), and the app still builds and passes its own tests.
@@ -56,8 +56,12 @@ Closure per pair: a pair is migrated only if it and every pair it depends on are
   pairs through `ToB()`/`ToA()` (ReverseMap) give the same JSON as the original; a call left on `IMapper` for a removed pair throws
   `AutoMapperMappingException`; a kept map without its nested `CreateMap` fails the configuration check and throws at run time (an
   extension method does not help); a kept `Include<Dog, DogDto>` needs `CreateMap<Dog, DogDto>`; an emptied profile is valid.
-- [→] 3. Dependency graph + closure (unit tests)
-- [ ] 4. Rewrite/trim/registration/project-file changes + proofs (`_Combined` mixed cases)
+- [x] 3. Dependency graph + closure (unit tests): `MapOwners` (plan, cached per solution apart from the file being fixed, built under an
+  `AsyncLocal` so the patterns it runs see the growing plan), statement-level problems in `CreateMapPattern.Rewrite` (`problems` list,
+  trimmed constructor), kept pairs left out of `NestedMaps.FromAsync` and `MapCallPattern.GeneratedAsync`, `KeptCallAsync` in the call
+  patterns, `IFix.AllowsPartial` + `KeptPrefix`, `KeptMapPattern`; `MapOwnersTests` (6). Deferred: `MapperCleanupPattern` (REQ-7) —
+  `AddAutoMapper` and the `IMapper` fields simply stay (safe: the registration works with trimmed or emptied profiles).
+- [→] 4. Rewrite/trim/registration/project-file changes + proofs (`_Combined` mixed cases)
 - [ ] 5. Corpus `after` on the 5 blocked repos + the 14 earlier AutoMapper repos: 0 regressions; Fixed/Manual before/after
 - [ ] 6. Verify, models, docs (README limitations), commit
 

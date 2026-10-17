@@ -208,7 +208,7 @@ public class MapCallPatternTests
 
     // No generated method: the reason names what blocks the map, the Manual profile or a CreateMap outside a profile constructor (TAAK-260).
     [Theory]
-    [InlineData("AllowNullCollections = true; CreateMap<Order, OrderDto>();", "CreateMap<Order, OrderDto> is in profile OrderProfile, which this fix does not rewrite: ")]
+    [InlineData("AllowNullCollections = true; CreateMap<Order, OrderDto>();", "Profile OrderProfile: 'AllowNullCollections = true;'")]
     [InlineData("} public void Mapping(Profile profile) { profile.CreateMap<Order, OrderDto>();",
         "CreateMap<Order, OrderDto> is in OrderProfile.Mapping, outside a Profile constructor")]
     [InlineData("} public void Mapping(Profile profile) { profile.CreateMap(typeof(Order), typeof(OrderDto));",
@@ -228,7 +228,8 @@ public class MapCallPatternTests
         FixReport report = await new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
 
         // Assert
-        report.Findings.ShouldContain(f => f.PatternId == "automapper.map-call" && f.Result is ManualResult && ((ManualResult)f.Result).Reason.StartsWith(reason, StringComparison.Ordinal));
+        // Since TAAK-272 the call stays on IMapper with its map; the reason of the map is quoted.
+        report.Findings.ShouldContain(f => f.PatternId == "automapper.map-call" && f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains(reason, StringComparison.Ordinal));
     }
 
     // Map<B> passed as a method group becomes a lambda over the generated method; a shape that is not rewritten is Manual and so

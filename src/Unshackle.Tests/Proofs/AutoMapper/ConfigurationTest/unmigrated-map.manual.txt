@@ -1,1 +1,1 @@
-AssertConfigurationIsValid still has maps to check: the map at Test.cs:27 is not in a profile constructor this fix rewrites
+AssertConfigurationIsValid still has maps to check (the map at Test.cs:27 is not in a profile constructor this fix rewrites)

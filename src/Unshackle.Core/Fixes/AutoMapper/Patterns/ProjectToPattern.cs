@@ -37,6 +37,11 @@ public class ProjectToPattern : ISolutionPattern
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(solution);
         var invocation = (InvocationExpressionSyntax)node;
+        if (await MapOwners.KeptCallAsync(node, model, solution, cancellationToken) is { } kept)
+        {
+            return kept;
+        }
+
         if (Check(invocation, model, out ExpressionSyntax? query, out ITypeSymbol? source, out ITypeSymbol? destination, out List<(string Name, ExpressionSyntax Value)> parameters) is string problem)
         {
             return PatternResult.Manual(problem);

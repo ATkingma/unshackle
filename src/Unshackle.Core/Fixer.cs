@@ -152,7 +152,7 @@ public class Fixer : IFixer
 
         projectFileChanges = [.. vendored.Files, .. projectFileChanges];
 
-        if (fix.AllOrNothing && findings.Any(f => f.Result is ManualResult))
+        if (fix.AllOrNothing && findings.Any(f => f.Result is ManualResult && !fix.AllowsPartial(f)))
         {
             return new FixReport { Solution = original, Findings = [.. findings.Select(f => f.Result is FixedResult ? NotApplied(f) : f)], ProjectFileChanges = [] };
         }

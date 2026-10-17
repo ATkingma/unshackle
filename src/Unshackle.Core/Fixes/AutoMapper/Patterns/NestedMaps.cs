@@ -7,7 +7,8 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 
 /// <summary>
 /// Every CreateMap&lt;A, B&gt; in a profile the profile patterns rewrite, in the project of a profile and (with the solution) the projects it
-/// depends on, by type pair. The fix is all-or-nothing, so a map found here is either written as ToB or nothing is applied at all.
+/// depends on, by type pair. With the solution the maps that stay on AutoMapper (<see cref="MapOwners"/>) are left out; any other Manual
+/// finding still undoes the whole fix, so a map found here is either written as ToB or nothing is applied at all.
 /// </summary>
 public class NestedMaps
 {
@@ -50,10 +51,17 @@ public class NestedMaps
             model.Compilation.SyntaxTrees.Select(t => NullSettingIn(t, model.Compilation.GetSemanticModel(t))).FirstOrDefault(s => s is not null));
     }
 
-    public static Task<NestedMaps> FromAsync(SemanticModel model, Solution solution, CancellationToken cancellationToken) =>
-        solution.GetDocument(model.SyntaxTree)?.Project is { } own
-            ? s_cache.GetValue(solution, _ => new()).GetOrAdd(own.Id, _ => BuildAsync(model.Compilation, solution, own.Id, cancellationToken))
-            : Task.FromResult(From(model));
+    // Without the maps that stay on AutoMapper (TAAK-272): a member of such a pair has no ToY() to call.
+    public static async Task<NestedMaps> FromAsync(SemanticModel model, Solution solution, CancellationToken cancellationToken)
+    {
+        NestedMaps all = solution.GetDocument(model.SyntaxTree)?.Project is { } own
+            ? await s_cache.GetValue(solution, _ => new()).GetOrAdd(own.Id, _ => BuildAsync(model.Compilation, solution, own.Id, cancellationToken))
+            : From(model);
+        MapOwners owners = await MapOwners.ForAsync(solution, model, cancellationToken);
+        return owners.IsEmpty
+            ? all
+            : new NestedMaps(all._maps.Where(m => owners.Reason(m.Key.Source, m.Key.Destination) is null).ToDictionary(), all._configured, all.NullSetting);
+    }
 
     public IReadOnlyList<NestedMap> Find(ITypeSymbol source, ITypeSymbol destination) =>
         _maps.TryGetValue((Key(source), Key(destination)), out List<NestedMap>? found) ? found : [];

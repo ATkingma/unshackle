@@ -269,7 +269,8 @@ public class ProjectToPatternTests
     [Fact]
     public async Task FixAsync_SameMapInTwoProfiles_NamesTheMeasuredAutoMapperBehaviour()
     {
-        // Arrange: AutoMapper 14 uses the map registered last and does not throw (only AssertConfigurationIsValid does); the order is not known here.
+        // Arrange: AutoMapper 14 uses the map registered last and does not throw (only AssertConfigurationIsValid does); the order is not known here,
+        // so the pair stays on AutoMapper (TAAK-272).
         string twice = Profile.ReplaceLineEndings("\n") + "\n\npublic class SecondProfile : Profile\n{\n    public SecondProfile()\n    {\n        CreateMap<Order, OrderDto>();\n    }\n}\n";
         Solution solution = Create(("Profile.cs", twice), ("Queries.cs", Queries));
 
@@ -277,7 +278,7 @@ public class ProjectToPatternTests
         FixReport report = await new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
 
         // Assert
-        report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains("Several profiles map Order to OrderDto; AutoMapper uses the one registered last"),
+        report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains("this call keeps using IMapper: the map Order → OrderDto stays on AutoMapper"),
             string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
         (await TextAsync(report.Solution, "Queries.cs")).ShouldContain("ProjectTo<Shop.Mapping.OrderDto>");
     }

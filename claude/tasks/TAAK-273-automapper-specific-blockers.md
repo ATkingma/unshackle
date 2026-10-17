@@ -42,4 +42,4 @@ _(filled in during execution)_
 
 ## See also
 
-- `claude/tasks/manual-reduction-queue.md`, `claude/tasks/TAAK-272-automapper-partial-migration.md`
+- `claude/tasks/manual-reduction-queue.md`, `claude/tasks/archief/TAAK-272-automapper-partial-migration.md`

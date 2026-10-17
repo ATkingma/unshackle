@@ -67,4 +67,4 @@ as Manual with the reason the plan (`MapOwners`) keeps that map on AutoMapper; t
 
 ## See also
 
-- [verify](automapper-kept-map-verify.md), `claude/tasks/TAAK-272-automapper-partial-migration.md`
+- [verify](automapper-kept-map-verify.md), `claude/tasks/archief/TAAK-272-automapper-partial-migration.md`

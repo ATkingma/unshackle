@@ -120,6 +120,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/CORPUSRUN-blind.md` | Blind validation round (TAAK-268): 3 unseen repos per fix, selection and results |
 | `claude/tasks/archief/TAAK-269-not-be-null-unconstrained-generic.md` | TAAK-269 — `NotBeNull()` on unconstrained `T` → CS0452 (ogooreck) |
 | `claude/tasks/archief/TAAK-270-blind-round-coverage-gaps.md` | TAAK-270 — blind round: Manual findings that block MediatR/AutoMapper migrations |
+| `claude/tasks/archief/TAAK-272-automapper-partial-migration.md` | ✅ TAAK-272 — AutoMapper partial migration per CreateMap pair (MapOwners plan, automapper.kept-map) |
 | `claude/tasks/archief/TAAK-271-analyse-manual-blockers.md` | TAAK-271 — root-cause table of every Manual finding in the 8 blocked repos + SampleShop, solvable vs principally manual |
 | `claude/tasks/archief/TAAK-258-automapper-corpus-baseline.md` | TAAK-258 — AutoMapper corpus baseline, harness and after-fix round (14 of 14 repos, 0 regressions) |
 | `claude/tasks/archief/TAAK-267-automapper-map-method-group.md` | TAAK-267 — AutoMapper `Map<T>` as method group is missed (eshoponweb runtime regression) |

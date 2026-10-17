@@ -63,7 +63,7 @@ Closure per pair: a pair is migrated only if it and every pair it depends on are
   `AddAutoMapper` and the `IMapper` fields simply stay (safe: the registration works with trimmed or emptied profiles).
 - [→] 4. Rewrite/trim/registration/project-file changes + proofs (`_Combined` mixed cases)
 - [ ] 5. Corpus `after` on the 5 blocked repos + the 14 earlier AutoMapper repos: 0 regressions; Fixed/Manual before/after
-- [ ] 6. Verify, models, docs (README limitations), commit
+- [x] 6. Verify, models, docs (README limitations), commit
 
 ## Risks & edge cases
 
@@ -73,9 +73,30 @@ Closure per pair: a pair is migrated only if it and every pair it depends on are
 | `AssertConfigurationIsValid` fails on a trimmed profile                                      | Probe + proof; keep the test, trim consistently                              |
 | Nested map split across owners                                                               | Closure includes all dependencies                                            |
 
+## Result (step 5)
+
+Tool of this branch vs. the tool of 5b07976, `<corpus>/t272` (src/base symlinked from corpus-blind and corpus-automapper; base rerun for 7 AutoMapper repos):
+
+| Repo | Fixed / Manual before | Fixed / Manual after | Tests before → after | Regressions |
+| --- | --- | --- | --- | ---: |
+| fiapgames | 0 / 32 | **25 / 9** | 91/91 → 91/91 | 0 |
+| baseapi | 0 / 7 | **5 / 3** | 0/9 → 0/9 (all fail in baseline) | 0 |
+| msb | 0 / 33 | **1 / 33** | 156/156 → 156/156 | 0 |
+| culinary | 0 / 46 | 0 / 46 (all kept: null sources, cycle, `Mock<IMapper>` stubs, closure) | 149/149 → 149/149 | 0 |
+| restapi | 0 / 6 | 0 / 9 (all kept; 3 more kept rows) | 45/45 → 45/45 | 0 |
+| bookstore | 33 / 0 | 33 / 0 | ok | 0 |
+| altinnauth, dasblog, devarch, eshoponweb, jason, jhipster, kavita, letterbook, neozhu, nop, personalasst, skoruba | unchanged (eshoponweb 4 / 0, dasblog 0 / 54 → 0 / 61) | | ok, compare green | 0 |
+| xipona | 0 / 47 | 0 / 47 | build after fix fails (CS1061 `AddDomainEventHandlers`, a source generator after bin/obj clean on Linux); the tool changes no file (checked with git on a fresh copy) | — |
+
 ## Changed files
 
-_(filled in during execution)_
+- Core: `Abstractions/IFix.cs` (`AllowsPartial`), `Fixer.cs` (one condition), `Fixes/AutoMapper/AutoMapperFix.cs`, `Patterns/MapOwners.cs` (new),
+  `Patterns/KeptMapPattern.cs` (new), `CreateMapPattern.cs`, `NestedMaps.cs`, `MapCallPattern.cs`, `MapIntoPattern.cs`, `ProjectToPattern.cs`,
+  `AddAutoMapperPattern.cs`, `ConfigurationTestPattern.cs`
+- Tests: `Core/MapOwnersTests.cs` (new), `CombinedProofTests.cs`, `MapCallPatternTests.cs`, `ProjectToPatternTests.cs`, proofs `_Combined/partial-*`,
+  `KeptMap/trimmed-profile`, three updated `.manual.txt`
+- Docs: feature models/verify, `automapper-kept-map-*`, `docs/projectinfo/README.md`, `docs/patterns.md`, `README.md`, `claude/docs/INDEX.md`
+- Follow-up: REQ-7 `IMapper` clean-up (not done).
 
 ## See also
 

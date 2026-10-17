@@ -122,5 +122,5 @@ See [automapper-partial-migration-modellen.md](automapper-partial-migration-mode
 
 ## See also
 
-- `claude/tasks/TAAK-272-automapper-partial-migration.md`, `claude/tasks/archief/TAAK-271-analyse-manual-blockers.md`
+- `claude/tasks/archief/TAAK-272-automapper-partial-migration.md`, `claude/tasks/archief/TAAK-271-analyse-manual-blockers.md`
 - [automapper-partial-migration-verify.md](automapper-partial-migration-verify.md)

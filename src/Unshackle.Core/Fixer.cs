@@ -36,6 +36,8 @@ public class Fixer : IFixer
 
     private const string KeptSharedPackageReason = " is not migrated but still uses ";
 
+    private const string KeptGlobalUsingReason = "The project still uses ";
+
     // Start of the usings row for old code in an inactive #if branch; a later pass over another target framework replaces it (TAAK-223).
     private const string InactiveBranchReason = "Code in an inactive #if branch is not migrated";
 
@@ -85,7 +87,9 @@ public class Fixer : IFixer
     private async Task<FixReport?> RunPartialAsync(IFix fix, IPartialFix partial, Solution solution, FixReport firstRun, CancellationToken cancellationToken)
     {
         List<Finding> roots = [];
-        foreach (Finding finding in firstRun.Findings.Where(f => f.Result is ManualResult manual && !manual.Reason.StartsWith(NotRewrittenPrefix, StringComparison.Ordinal) && !IsKeptPackageRow(f)))
+        // Rows that only say the old library stays somewhere are no roots; in a partial run a kept global using is (it would clash).
+        foreach (Finding finding in firstRun.Findings.Where(f => f.Result is ManualResult manual && !manual.Reason.StartsWith(NotRewrittenPrefix, StringComparison.Ordinal)
+            && !IsKeptPackageRow(f) && !(f.PatternId == UsingsPatternId && manual.Reason.StartsWith(KeptGlobalUsingReason, StringComparison.Ordinal))))
         {
             roots.Add(finding.PatternId == UnmatchedPatternId ? await InOriginalAsync(finding, solution, firstRun.Solution, cancellationToken) : finding);
         }
@@ -724,7 +728,7 @@ public class Fixer : IFixer
                 if (keep && reported.Add(filePath))
                 {
                     findings.AddRange(globals.Select(g => CreateUsingsFinding(filePath, g.GetLocation().GetLineSpan().StartLinePosition.Line + 1, fix,
-                        PatternResult.Manual($"The project still uses {g.Name} (or has inactive #if code), so its global using stays next to the new one. " +
+                        PatternResult.Manual($"{KeptGlobalUsingReason}{g.Name} (or has inactive #if code), so its global using stays next to the new one. " +
                             "Fix the manual findings and run the fix again."))));
                 }
             }

@@ -153,7 +153,7 @@ internal static class MediatROwners
                 return null;
             }
 
-            List<TextChange> changes = await QualifyAsync(document, found, keptKeys, cancellationToken);
+            List<TextChange> changes = Qualify(found, keptKeys);
             if (host.Path == path)
             {
                 if (Registration(root, host) is not TextChange registration)
@@ -397,32 +397,13 @@ internal static class MediatROwners
     private static SyntaxNode? MemberOf(SyntaxNode node) =>
         node.Ancestors().FirstOrDefault(a => a is MemberDeclarationSyntax and not BaseNamespaceDeclarationSyntax);
 
-    // global::MediatR.X for every kept reference to a MediatR type, so the using swap leaves it alone. Only where something
-    // moves next to it, the project has a global using of MediatR, or MediatR's Mediator class would clash with namespace Mediator.
-    private static async Task<List<TextChange>> QualifyAsync(
-        Document document, List<(SimpleNameSyntax Name, ISymbol Symbol, string Owner)> found, HashSet<string> keptKeys,
-        CancellationToken cancellationToken)
+    // global::MediatR.X for every kept reference to a MediatR type: the using swap is the whole migration of a swapped type
+    // (INotification), so an unqualified kept name would move along with it.
+    private static List<TextChange> Qualify(List<(SimpleNameSyntax Name, ISymbol Symbol, string Owner)> found, HashSet<string> keptKeys)
     {
-        List<(SimpleNameSyntax Name, ISymbol Symbol, string Owner)> types =
-            [.. found.Where(r => r.Symbol is INamedTypeSymbol && r.Name is not IdentifierNameSyntax { IsVar: true })];
-        bool needed = types.Any(r => !keptKeys.Contains(r.Owner)) || types.Any(r => r.Symbol is INamedTypeSymbol { Name: "Mediator", TypeKind: TypeKind.Class });
-        if (!needed)
-        {
-            foreach (Document other in document.Project.Documents)
-            {
-                SyntaxNode otherRoot = (await other.GetSyntaxRootAsync(cancellationToken))!;
-                needed |= UsingDirectives.RemovedGlobalUsings(otherRoot, other.FilePath, ["MediatR", "MediatR.NotificationPublishers", "MediatR.Pipeline"]).Any();
-            }
-        }
-
         List<TextChange> changes = [];
-        if (!needed)
-        {
-            return changes;
-        }
-
         HashSet<int> positions = [];
-        foreach ((SimpleNameSyntax name, ISymbol symbol, _) in types.Where(r => keptKeys.Contains(r.Owner)))
+        foreach ((SimpleNameSyntax name, ISymbol symbol, _) in found.Where(r => r.Symbol is INamedTypeSymbol && r.Name is not IdentifierNameSyntax { IsVar: true } && keptKeys.Contains(r.Owner)))
         {
             if (UsingDirectives.IsGlobalQualified(name))
             {
@@ -517,7 +498,7 @@ internal static class MediatROwners
             }
 
             string why = rootOf.TryGetValue(graph.Find(owner.Key), out Finding? root)
-                ? $"it is tied to {root.FilePath}:{root.Line}, which cannot be migrated"
+                ? $"it is tied to {Path.GetFileName(root.FilePath)}:{root.Line}, which cannot be migrated"
                 : "MediatR's own registration stays for the code that cannot be migrated";
             rows.Add(new Finding
             {

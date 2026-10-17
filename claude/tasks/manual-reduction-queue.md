@@ -11,7 +11,7 @@ all-or-nothing rule per solution, not from the number of Manual findings.
 | #   | Task     | What                                                                                    | Depends on | Status |
 | --- | -------- | --------------------------------------------------------------------------------------- | ---------- | ------ |
 | 1   | TAAK-271 | Analyse every Manual finding in the 8 blocked repos (+ SampleShop)                      | —          | done   |
-| 2   | TAAK-272 | AutoMapper partial migration: migrate what is safe, keep AutoMapper for the rest        | 271        | in progress (agent)   |
+| 2   | TAAK-272 | AutoMapper partial migration: migrate what is safe, keep AutoMapper for the rest        | 271        | done (SampleShop FA Manual 19 → 9) |
 | 3   | TAAK-273 | AutoMapper specific blockers: cycles, unflattening, null sources, private setters       | 271, 272   | open   |
 | 4   | TAAK-274 | MediatR partial migration per request type (MediatR and Mediator side by side)          | 271        | in progress (agent)   |
 | 5   | TAAK-275 | FluentAssertions: custom assertion classes → Shouldly                                   | 271        | in progress (agent)   |

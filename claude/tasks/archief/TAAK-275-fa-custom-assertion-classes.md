@@ -1,6 +1,6 @@
 # TAAK-275 — FluentAssertions: custom assertion classes → Shouldly
 
-**Status**: step 5/5 — in progress (agent)
+**Status**: done (2026-10-17), not merged: branch worktree-agent-a8433c56bf106c4f6
 **Branch**: worktree-agent-a8433c56bf106c4f6 (worktree `.claude/worktrees/agent-a8433c56bf106c4f6`)
 **Created**: 2026-10-17
 **Goal**: user-written FA assertion classes (`ReferenceTypeAssertions<T, TSelf>` subclasses with `Execute.Assertion.ForCondition(...).FailWith(...)`, plus their `Should()` extension) are rewritten to Shouldly-style extension methods with the same pass/fail behaviour, so their call sites and the project file can migrate too.
@@ -23,11 +23,11 @@
 
 ## Steps
 
-- [ ] 1. KingmaDoc plan (pattern `fa.custom-assertion`) after reading TAAK-271
+- [x] 1. KingmaDoc plan (the existing fa-custom-assertion plan extended with REQ-6..10) (pattern `fa.custom-assertion`) after reading TAAK-271
 - [x] 2. Probe: construct inventory + FA behaviour (probe program outside the repo; results below)
 - [x] 3. Rewrite + proofs (incl. `_Combined` with call sites and project file) + unit tests
 - [x] 4. Corpus: FA repos with custom assertions, `after` 0 regressions; SampleShop Manual count before/after
-- [ ] 5. Verify, models, commit
+- [x] 5. Verify, models, commit (build, 1517 tests, sample tests 38/38, pattern-docs hook green)
 
 ## Progress (WIP)
 
@@ -37,6 +37,10 @@ Design: `CustomAssertionPattern` becomes ISolutionFinder/ISolutionPattern placed
 
 Done (step 3): pattern is ISolutionFinder/ISolutionPattern, first in FluentAssertionsFix.Patterns (plans are computed on the unchanged baseline; cache per Solution snapshot via ConditionalWeakTable). Class → static extension class, holder of `Should()` removed (or only the method), calls rewritten, `.And` chains split (FA links stay for the later patterns). Extra plan check: a method name in inactive `#if` code blocks the class. `FluentAssertions.Primitives` added to RemovedNamespaces. Proofs: CustomAssertion/reference-type (after), given-then + class-in-assertion-scope (manual), _Combined/custom-assertion-class. All 1517 tests green.
 Next (old list): `CustomAssertionPlans` (cache + usage scan), pattern changes, `FluentAssertionsFix` (order, add `FluentAssertions.Primitives` to RemovedNamespaces), build, proofs, unit tests, SampleShop before/after, corpus (`/mnt/dikkeschijf/unshackle-corpus`, FA repos with custom assertions: fresults, powerapps, steeltoe, bearded, evo), KingmaDoc plan/models/verify, archive.
+
+## Result
+
+SampleShop FA Manual 19 → 9 (all 11 OrderAssertions findings gone; the rest is TAAK-277). Corpus: no regressions (PowerApps identical; evolutionary ch. 4 gets one extra `usings` row and one extra duplicate `global using Shouldly`, a bug that already exists on main and is reported separately). Docs: fa-custom-assertion plan/models/verify, patronen.md, rapportage.md, README row, patterns.md.
 
 ## Corpus results (step 4)
 

@@ -116,7 +116,7 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `fa.only-contain` | [plan](patterns/fa-only-contain-plan.md) | [models](patterns/fa-only-contain-modellen.md) | [verify](patterns/fa-only-contain-verify.md) | TAAK-015 |
 | `fa.all-satisfy` | [plan](patterns/fa-all-satisfy-plan.md) | [models](patterns/fa-all-satisfy-modellen.md) | [verify](patterns/fa-all-satisfy-verify.md) | TAAK-014 |
 | `fa.assertion-scope` | [plan](patterns/fa-assertion-scope-plan.md) | [models](patterns/fa-assertion-scope-modellen.md) | [verify](patterns/fa-assertion-scope-verify.md) | TAAK-031 |
-| `fa.custom-assertion` | [plan](patterns/fa-custom-assertion-plan.md) | [models](patterns/fa-custom-assertion-modellen.md) | [verify](patterns/fa-custom-assertion-verify.md) | TAAK-091 |
+| `fa.custom-assertion` | [plan](patterns/fa-custom-assertion-plan.md) | [models](patterns/fa-custom-assertion-modellen.md) | [verify](patterns/fa-custom-assertion-verify.md) | TAAK-091, TAAK-275 |
 | `fa.catch-assertion-exception` | [plan](patterns/fa-catch-assertion-exception-plan.md) | [models](patterns/fa-catch-assertion-exception-modellen.md) | [verify](patterns/fa-catch-assertion-exception-verify.md) | TAAK-140 |
 | `fa.timespan-extensions` | [plan](patterns/fa-timespan-extensions-plan.md) | [models](patterns/fa-timespan-extensions-modellen.md) | [verify](patterns/fa-timespan-extensions-verify.md) | TAAK-224 |
 | `fa.not-be` | [plan](patterns/fa-not-be-plan.md) | [models](patterns/fa-not-be-modellen.md) | [verify](patterns/fa-not-be-verify.md) | TAAK-032 |

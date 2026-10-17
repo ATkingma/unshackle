@@ -6,11 +6,10 @@ on:
 
 permissions:
   contents: read
-  id-token: write # NuGet Trusted Publishing: short-lived key via OIDC, no stored secret
 
 jobs:
-  release:
-    name: Pack and publish
+  build:
+    name: Build, test and pack
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,11 +27,34 @@ jobs:
       - name: Pack
         run: dotnet pack src/Unshackle.Interface -c Release -o artifacts -p:Version=${GITHUB_REF_NAME#v}
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nupkg
+          path: artifacts/*.nupkg
+          if-no-files-found: error
+
+  publish:
+    name: Publish to NuGet
+    needs: build
+    runs-on: ubuntu-latest
+    # Only this job can request a NuGet key; it runs no build or package code, only login and push.
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nupkg
+          path: artifacts
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
       - name: NuGet login (Trusted Publishing)
         id: login
-        uses: NuGet/login@v1
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: ATkingma
 
-      - name: Publish to NuGet
+      - name: Push
         run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate

@@ -173,6 +173,7 @@ public class CustomAssertionPlans
             return "no Should() extension that creates it was found in the solution";
         }
 
+        int uses = 0;
         string subject = ((INamedTypeSymbol)symbol.BaseType!).TypeArguments[0].WithNullableAnnotation(NullableAnnotation.None).ToDisplayString();
         foreach ((MethodDeclarationSyntax method, Document document) in candidates)
         {
@@ -200,6 +201,7 @@ public class CustomAssertionPlans
                         return "Should() is used other than as x.Should()";
                     }
 
+                    uses++;
                     var plan = new CustomAssertionPlan { ClassName = symbol.Name, Shape = shape };
                     string? reason = CustomAssertionChain.TryParse(call, useModel, out CustomAssertionChain? chain) ?? CheckUsage(chain!, useModel, plan);
                     if (reason is not null)
@@ -211,6 +213,7 @@ public class CustomAssertionPlans
             }
         }
 
-        return null;
+        // Without a call here it may be a library for other solutions, whose calls would break.
+        return uses == 0 ? "no x.Should() call in the solution uses it (it may serve other solutions)" : null;
     }
 }

@@ -1,6 +1,6 @@
 # TAAK-275 — FluentAssertions: custom assertion classes → Shouldly
 
-**Status**: step 4/5 — in progress (agent)
+**Status**: step 5/5 — in progress (agent)
 **Branch**: worktree-agent-a8433c56bf106c4f6 (worktree `.claude/worktrees/agent-a8433c56bf106c4f6`)
 **Created**: 2026-10-17
 **Goal**: user-written FA assertion classes (`ReferenceTypeAssertions<T, TSelf>` subclasses with `Execute.Assertion.ForCondition(...).FailWith(...)`, plus their `Should()` extension) are rewritten to Shouldly-style extension methods with the same pass/fail behaviour, so their call sites and the project file can migrate too.
@@ -26,7 +26,7 @@
 - [ ] 1. KingmaDoc plan (pattern `fa.custom-assertion`) after reading TAAK-271
 - [x] 2. Probe: construct inventory + FA behaviour (probe program outside the repo; results below)
 - [x] 3. Rewrite + proofs (incl. `_Combined` with call sites and project file) + unit tests
-- [ ] 4. Corpus: FA repos with custom assertions, `after` 0 regressions; SampleShop Manual count before/after
+- [x] 4. Corpus: FA repos with custom assertions, `after` 0 regressions; SampleShop Manual count before/after
 - [ ] 5. Verify, models, commit
 
 ## Progress (WIP)
@@ -37,6 +37,18 @@ Design: `CustomAssertionPattern` becomes ISolutionFinder/ISolutionPattern placed
 
 Done (step 3): pattern is ISolutionFinder/ISolutionPattern, first in FluentAssertionsFix.Patterns (plans are computed on the unchanged baseline; cache per Solution snapshot via ConditionalWeakTable). Class → static extension class, holder of `Should()` removed (or only the method), calls rewritten, `.And` chains split (FA links stay for the later patterns). Extra plan check: a method name in inactive `#if` code blocks the class. `FluentAssertions.Primitives` added to RemovedNamespaces. Proofs: CustomAssertion/reference-type (after), given-then + class-in-assertion-scope (manual), _Combined/custom-assertion-class. All 1517 tests green.
 Next (old list): `CustomAssertionPlans` (cache + usage scan), pattern changes, `FluentAssertionsFix` (order, add `FluentAssertions.Primitives` to RemovedNamespaces), build, proofs, unit tests, SampleShop before/after, corpus (`/mnt/dikkeschijf/unshackle-corpus`, FA repos with custom assertions: fresults, powerapps, steeltoe, bearded, evo), KingmaDoc plan/models/verify, archive.
+
+## Corpus results (step 4)
+
+Setup: `/mnt/dikkeschijf/unshackle-corpus/t275` (`run.sh`: restore, then `fix --fix fluentassertions --force` with the CLI of main 08794cb (`bin-main`) and of this branch (`bin-new`) on separate copies; `DOTNET_ROLL_FORWARD=Major`).
+
+| Solution | Manual main → branch | Output diff main vs branch | Build/tests after |
+| --- | --- | --- | --- |
+| SampleShop | 19 → 9 (76 → 80 fixed) | OrderAssertions.cs and its call sites converted | builds, 38/38 → 38/38 |
+| PowerApps-Tooling (PASopa.sln) | 32 → 32 | identical | not built (identical output) |
+| evolutionary ch. 4 Fitnet.Common | +1 (`usings` row for the now removed FluentAssertions.Primitives) | GlobalUsings.cs gets one more `global using Shouldly;` | red on main already: CS0105 duplicate `global using Shouldly` (pre-existing bug, separate task suggested); the ErrorOr class has no `x.Should()` call in its solution, so it stays Manual |
+
+Not run: FluentResults (no pristine copy offline; its classes return AndWhichConstraint or call operator objects, so they stay Manual by design), Steeltoe (the copy holds only sources; its class asserts with nested `Subject.Value.Should()`, also Manual by design). SampleShop's remaining 9: 7 unrelated FA findings (TAAK-277) + 2 project files kept by them.
 
 ## Changed files
 

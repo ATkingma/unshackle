@@ -1,13 +1,23 @@
 # TAAK-273 — AutoMapper specific blockers: cycles, unflattening, null sources, private setters
 
-**Status**: step 1/5 — not started (waits for TAAK-271, ideally after TAAK-272)
+**Status**: step 3/5 — in progress
 **Created**: 2026-10-17
+**Branch**: `worktree-agent-a3adf49382715b2e3` (worktree `.claude/worktrees/agent-a3adf49382715b2e3`)
 **Goal**: the AutoMapper causes found in the blind corpus become Fixed wherever AutoMapper's behaviour can be reproduced exactly, each with probe + proofs; the rest gets a precise "principally manual" reason.
 
 ## Context for the next agent
 
 - Causes from `claude/tasks/CORPUSRUN-blind.md`: culinary (cycle, null sources), msb (cycle, unflattening), fiapgames (`UsuarioModel.Nome { get; private set; }`), restapi/baseapi (see TAAK-271 table).
 - Proof rules: `claude/tasks/manual-reduction-queue.md`.
+- 2026-10-17: picked up by an agent in a worktree. Corpus dir `<corpus>/t273` (tool-before = main `41db520`, scan-before running via `run-before.sh`; base results linked from t272/corpus-blind).
+- Probe (step 2): `<corpus>/t273/probe` (AutoMapper 14.0.0), output in `output.txt`:
+  destination-only cycle (msb shape) maps, `Box.Order` null, shared source box → **two** destination copies (no reference preservation);
+  real cycle `Node.Children` keeps the self reference and maps a shared leaf of a tree to **one** instance; msb `ShelfDto.WarehouseName` reverse → `Warehouse` null,
+  forward `WarehouseName` null; control `Order2Dto.CustomerName` reverse creates `Customer{Name}`; `Map<B>(null)` / `Map<A,B>(null)` → null; private setter written.
+- Decisions: private setters → principally manual reason (no corpus case meets the constructor rule: fiapgames' constructor also sets `Ativo`, the
+  `Atualizar` map writes the private `Id`); restapi/msb broken mappings → reason text says principally manual. Plans: REQs added to the plans of
+  nested-maps (11), reverse-map (11), map-call (13, 14), create-map (9, 10), convert-using (9), configuration-test (11).
+- SampleShop: Customer→CustomerDto stays on AutoMapper anyway (`AfterMap`, out of scope), so the configuration test stays (maps remain).
 
 ## Approach (per cause, measure first)
 
@@ -30,9 +40,9 @@
 
 ## Steps
 
-- [ ] 1. KingmaDoc plan per touched pattern; read TAAK-271 for counts
-- [ ] 2. Probe programs per cause (AutoMapper 14.0.0)
-- [ ] 3. Implementation + proofs + unit tests per cause
+- [x] 1. KingmaDoc plan per touched pattern; read TAAK-271 for counts
+- [x] 2. Probe programs per cause (AutoMapper 14.0.0)
+- [→] 3. Implementation + proofs + unit tests per cause
 - [ ] 4. Corpus scan/after on culinary, msb, fiapgames, restapi, baseapi: 0 regressions
 - [ ] 5. Verify, models, commit
 

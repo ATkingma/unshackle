@@ -15,6 +15,11 @@
 2. Rewrite target: `public static void ShouldBeCancelled(this Order order, string? customMessage = null)` that throws `ShouldAssertException` with an equivalent message; call sites `x.Should().BeCancelled()` → `x.ShouldBeCancelled()`; `.And` chains split as `fa.and-chain`.
 3. Only constructs whose pass/fail behaviour is provably the same are Fixed (the message text may differ, as with all Shouldly rewrites); anything else (custom `Subject` state, `Given` pipelines with side effects) stays Manual with a precise reason.
 
+## Scope from TAAK-271 (measured)
+
+- Correction to the context: the 19 SampleShop FA Manual findings split into **11** caused by `OrderAssertions` (7 `unmatched-use` on `ReferenceTypeAssertions`, `AndConstraint`, `Execute`, `AssertionScope.BecauseOf/ForCondition/FailWith`; 1 `fa.custom-assertion`; 1 `.And` chain containing `BeCancelled`; 2 project-file/usings leftovers) and **8** unrelated ones. Only the 11 belong here; the 8 go to TAAK-277.
+- The blind corpus has no custom assertion class among its Manual causes of the 8 blocked repos (those are MediatR/AutoMapper); FA repos in `CORPUSRUN-blind.md` were not part of TAAK-271. Look for custom assertions in the FA corpus (`CORPUSRUN-fa.md`) in step 2 of this task before investing.
+
 ## Steps
 
 - [ ] 1. KingmaDoc plan (pattern `fa.custom-assertion`) after reading TAAK-271

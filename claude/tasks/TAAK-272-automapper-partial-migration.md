@@ -27,6 +27,13 @@ Closure per pair: a pair is migrated only if it and every pair it depends on are
 3. Rewrite only the closure; remove only its `CreateMap` lines; keep profiles/registration when non-empty; project file keeps AutoMapper when maps remain.
 4. Report: findings outside the closure say "kept on AutoMapper because …" (not a blocker anymore).
 
+## Scope from TAAK-271 (measured)
+
+- **Granularity is one `CreateMap` pair, not a `Profile` class.** Culinary keeps 26 maps in one `MappingProfile`; today one Manual map makes every call say "in profile MappingProfile, which this fix does not rewrite".
+- **New: `IMapper` clean-up** (7 of the 22 roots: fiapgames 5, culinary 1, msb 1; SampleShop 1). When every `Map`/`ProjectTo` call of a class is rewritten, remove the `IMapper` field, constructor parameter and the arguments at the callers, so `AddAutoMapper` can go. Tests that set up `Mock<IMapper>` (culinary) stay hand work: report them as such.
+- The principally manual roots (msb `Map<OrderModel>(AddOrderDto)` without a map, restapi `List<DayEntity>` → `List<int>`, baseapi private setters without constructor) must only keep **their** pair on AutoMapper, not the whole solution.
+- Depends on 273 for most of the corpus gain: after partial migration only A1-A3, A5 remain as blockers for the migratable remainder.
+
 ## Steps
 
 - [ ] 1. KingmaDoc plan (feature `automapper-partial-migration`) after reading TAAK-271
@@ -50,4 +57,4 @@ _(filled in during execution)_
 
 ## See also
 
-- `claude/tasks/manual-reduction-queue.md`, `claude/tasks/TAAK-271-analyse-manual-blockers.md`
+- `claude/tasks/manual-reduction-queue.md`, `claude/tasks/archief/TAAK-271-analyse-manual-blockers.md`

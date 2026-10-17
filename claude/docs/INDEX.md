@@ -120,6 +120,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/CORPUSRUN-blind.md` | Blind validation round (TAAK-268): 3 unseen repos per fix, selection and results |
 | `claude/tasks/archief/TAAK-269-not-be-null-unconstrained-generic.md` | TAAK-269 — `NotBeNull()` on unconstrained `T` → CS0452 (ogooreck) |
 | `claude/tasks/archief/TAAK-270-blind-round-coverage-gaps.md` | TAAK-270 — blind round: Manual findings that block MediatR/AutoMapper migrations |
+| `claude/tasks/archief/TAAK-271-analyse-manual-blockers.md` | TAAK-271 — root-cause table of every Manual finding in the 8 blocked repos + SampleShop, solvable vs principally manual |
 | `claude/tasks/archief/TAAK-258-automapper-corpus-baseline.md` | TAAK-258 — AutoMapper corpus baseline, harness and after-fix round (14 of 14 repos, 0 regressions) |
 | `claude/tasks/archief/TAAK-267-automapper-map-method-group.md` | TAAK-267 — AutoMapper `Map<T>` as method group is missed (eshoponweb runtime regression) |
 | `claude/tasks/archief/TAAK-268-blind-validation-round.md` | TAAK-268 — Blind validation round: 3 unseen open-source projects per fix, 0 regressions + manual review |
@@ -137,7 +138,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-144-mediatr-evo2-naamconflict-generator.md` | ✅ evo2: own `ICommand` vs `Mediator.ICommand` (full name), shared/internal registration → Manual |
 | `claude/tasks/archief/TAAK-147-mediatr-restpunten-144.md` | ✅ Generator only with a real `AddMediatR`, global using on name conflict, `InternalsVisibleTo` → Manual |
 | `claude/tasks/archief/TAAK-148-mediatr-friend-echte-aanroep.md` | ✅ `InternalsVisibleTo` only Manual on a real call from another project (`ISolutionPattern`) |
-| `claude/tasks/manual-reduction-queue.md` | Manual-reduction queue after 0.1.0 (TAAK-271..276): analysis, partial migration AutoMapper/MediatR, FA custom assertions, blind round |
+| `claude/tasks/manual-reduction-queue.md` | Manual-reduction queue after 0.1.0 (TAAK-271..277): analysis, partial migration AutoMapper/MediatR, FA custom assertions, blind round |
 | `claude/tasks/patroon-queue.md` | Queue of FA → Shouldly patterns: which pattern, which task, status (round 2: rows 15-34) |
 | `claude/tasks/mediatr-queue.md` | Queue of MediatR → Mediator patterns; infrastructure in TAAK-020 |
 | `claude/tasks/automapper-queue.md` | Queue of AutoMapper → hand-written mapping (proposal, by frequency) |

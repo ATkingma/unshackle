@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write # NuGet Trusted Publishing: short-lived key via OIDC, no stored secret
 
 jobs:
   release:
@@ -27,7 +28,11 @@ jobs:
       - name: Pack
         run: dotnet pack src/Unshackle.Interface -c Release -o artifacts -p:Version=${GITHUB_REF_NAME#v}
 
+      - name: NuGet login (Trusted Publishing)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ATkingma
+
       - name: Publish to NuGet
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        run: dotnet nuget push "artifacts/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate

@@ -74,7 +74,7 @@ The real case first: if it fails, you want to know before the public launch.
 - [x] 4. NuGet metadata + release workflow (`v*` tag), check `dotnet pack` locally
 - [x] 5. README: GIF, case numbers, supported patterns, limitations
 - [ ] 6. With the user: sort out `.vibe-wise/`, make the repo public, enable branch protection
-- [ ] 7. Tag release `v0.1.0` (the user sets `NUGET_API_KEY`), test installation from nuget.org
+- [ ] 7. Tag release `v0.1.0` (publishing via NuGet Trusted Publishing, policy `unshackle-release` on nuget.org for `ATkingma/unshackle` `release.yml`; no API key), test installation from nuget.org
 - [ ] 8. Draft r/dotnet post (draft ready, see the status line); the user posts it
 
 ## Risks & edge cases

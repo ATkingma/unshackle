@@ -24,6 +24,18 @@ Remaining Manual is the all-or-nothing rule per solution plus root blockers in u
 
 **Next (2026-10-17):** manual reduction with proof, `claude/tasks/manual-reduction-queue.md` (TAAK-271..276).
 
+**Running agents (2026-10-17), work lives in their worktree branches until merged:**
+
+| Task | Branch | Worktree |
+| --- | --- | --- |
+| TAAK-272 | `worktree-agent-a50ecf5da4db68373` | `.claude/worktrees/agent-a50ecf5da4db68373` |
+| TAAK-274 | `worktree-agent-a69be07f29be9cc9b` | `.claude/worktrees/agent-a69be07f29be9cc9b` |
+| TAAK-275 | `worktree-agent-a8433c56bf106c4f6` | `.claude/worktrees/agent-a8433c56bf106c4f6` |
+
+Each agent updates its task file after every step and commits it as a WIP commit in its branch. If an agent is gone:
+read the task file **in that branch** (`git show <branch>:claude/tasks/TAAK-NNN-….md`), continue in that worktree with
+`/taak-oppakken TAAK-NNN`, then merge one by one (worktree check, push, CI green).
+
 **Released (2026-10-17):** Unshackle 0.1.0 on nuget.org (TAAK-019). Left: the user posts the reddit draft. Repo public; branch protection on `main` (admins push directly, others via PR with green "Build and test").
 Way of working: 2–3 sub-agents on effort low, each in a worktree; the main session merges one by one, then worktree check + push.
 

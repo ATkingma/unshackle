@@ -35,6 +35,16 @@ Always write in the **Context** section: what was done, what is still open, whic
 
 ---
 
+
+### Agents in a worktree: record progress per step
+
+An agent that works in its own worktree updates its task file after **every** finished step (and before every long
+corpus run): status line, `[x]`/`[→]`, and under "Context for the next agent" what is done, the next step, changed
+files, where results are (`<corpus>/…`) and open questions. It commits that immediately in its branch as a WIP commit
+and puts its branch name and worktree path at the top of the task. Then anyone can resume it with `/taak-oppakken`.
+
+---
+
 ## 2. Cross-references
 
 Every time an agent writes or updates documentation, cross-references **must** be added.

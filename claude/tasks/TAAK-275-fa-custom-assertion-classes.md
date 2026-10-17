@@ -1,6 +1,7 @@
 # TAAK-275 — FluentAssertions: custom assertion classes → Shouldly
 
-**Status**: step 1/5 — not started (waits for TAAK-271)
+**Status**: step 3/5 — in progress (agent)
+**Branch**: worktree-agent-a8433c56bf106c4f6 (worktree `.claude/worktrees/agent-a8433c56bf106c4f6`)
 **Created**: 2026-10-17
 **Goal**: user-written FA assertion classes (`ReferenceTypeAssertions<T, TSelf>` subclasses with `Execute.Assertion.ForCondition(...).FailWith(...)`, plus their `Should()` extension) are rewritten to Shouldly-style extension methods with the same pass/fail behaviour, so their call sites and the project file can migrate too.
 
@@ -23,14 +24,23 @@
 ## Steps
 
 - [ ] 1. KingmaDoc plan (pattern `fa.custom-assertion`) after reading TAAK-271
-- [ ] 2. Probe: construct inventory + FA behaviour
-- [ ] 3. Rewrite + proofs (incl. `_Combined` with call sites and project file) + unit tests
+- [x] 2. Probe: construct inventory + FA behaviour (probe program outside the repo; results below)
+- [→] 3. Rewrite + proofs (incl. `_Combined` with call sites and project file) + unit tests
 - [ ] 4. Corpus: FA repos with custom assertions, `after` 0 regressions; SampleShop Manual count before/after
 - [ ] 5. Verify, models, commit
 
+## Progress (WIP)
+
+Probe results (FA 7.2.2): ForCondition(true) passes, false makes FailWith throw; FailWith args are evaluated even on pass (a throwing arg throws); `because` shows only via `{reason}`; first failure throws outside an AssertionScope (inside it collects); `{context}` default is "object"; unknown placeholders are dropped, `{{` is a literal brace; Given/Then and `.Then` chains are lazy; null Subject throws NRE in both.
+
+Design: `CustomAssertionPattern` becomes ISolutionFinder/ISolutionPattern placed before `AndChainPattern`; per class one cached `CustomAssertionPlan` (shape analysis + solution-wide usage scan via SymbolFinder) so class, `Should()` extension and calls all convert or none do. Chains with `.And` are split per link into statements (custom link -> `x.ShouldFoo(...)`, FA link stays `x.Should().Bar()` for the other patterns).
+
+Done: `CustomAssertionShape/Analyzer/Chain/Plan.cs` written (not yet compiled).
+Next: `CustomAssertionPlans` (cache + usage scan), pattern changes, `FluentAssertionsFix` (order, add `FluentAssertions.Primitives` to RemovedNamespaces), build, proofs, unit tests, SampleShop before/after, corpus (`/mnt/dikkeschijf/unshackle-corpus`, FA repos with custom assertions: fresults, powerapps, steeltoe, bearded, evo), KingmaDoc plan/models/verify, archive.
+
 ## Changed files
 
-_(filled in during execution)_
+- src/Unshackle.Core/Fixes/FluentAssertions/CustomAssertion{Shape,Analyzer,Chain,Plan}.cs (new)
 
 ## See also
 

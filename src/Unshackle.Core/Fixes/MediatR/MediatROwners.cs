@@ -116,7 +116,7 @@ internal static class MediatROwners
 
         // MediatR stays registered for the kept code (its hand-written registration); Mediator gets a registration of its own.
         List<MediatROwner> runtime = [.. graph.Owners.Values.Where(o => o.NamesRuntime)];
-        if (graph.Owners.Values.Any(o => o.CallsAddMediatR) || runtime.Count == 0)
+        if (graph.Owners.Values.Any(o => o.CallsAddMediatR) || runtime.FirstOrDefault(o => o.NamesMediatorClass) is not MediatROwner host)
         {
             // shortcut: splitting an AddMediatR(cfg => ...) into a kept and a moving registration is not built (TAAK-274 scope).
             return null;
@@ -129,9 +129,17 @@ internal static class MediatROwners
             return null;
         }
 
+        // Mediator's generator registers the handlers that move, but only those its host project can see (itself and what it references).
+        List<ProjectId> hosts = [.. solution.Projects.Where(p => p.Documents.Any(d => d.FilePath == host.Path)).Select(p => p.Id)];
+        HashSet<string> visible = [.. hosts.Concat(hosts.SelectMany(solution.GetProjectDependencyGraph().GetProjectsThatThisProjectTransitivelyDependsOn))
+            .SelectMany(id => solution.GetProject(id)!.Documents).Select(d => d.FilePath).OfType<string>()];
+        if (graph.Owners.Values.Any(o => o.IsHandler && !kept.Contains(graph.Find(o.Key)) && !visible.Contains(o.Path)))
+        {
+            return null;
+        }
+
         Solution planned = solution;
         HashSet<string> keptKeys = [.. keptOwners.Select(o => o.Key)];
-        MediatROwner host = runtime[0];
         foreach (Document document in solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents))
         {
             if (!references.TryGetValue(document.Id, out List<(SimpleNameSyntax Name, ISymbol Symbol, string Owner)>? found))
@@ -207,6 +215,11 @@ internal static class MediatROwners
                     graph.AddMessage(MediatROwnerGraph.Key(path, declaration), kind);
                 }
 
+                if (type.TypeKind == TypeKind.Class && type.AllInterfaces.Any(i => IsMediatR(i) && i.Name.EndsWith("Handler", StringComparison.Ordinal)))
+                {
+                    graph.Owner(path, declaration).IsHandler = true;
+                }
+
                 foreach (SyntaxReference other in type.DeclaringSyntaxReferences)
                 {
                     graph.Union(MediatROwnerGraph.Key(path, declaration), MediatROwnerGraph.Key(other.SyntaxTree.FilePath, other.GetSyntax(cancellationToken)));
@@ -249,7 +262,10 @@ internal static class MediatROwners
                 found.Add((name, symbol, owner.Key));
                 owner.NamesMediatR = true;
                 owner.CallsAddMediatR |= symbol is IMethodSymbol { Name: "AddMediatR" };
-                owner.NamesRuntime |= symbol is INamedTypeSymbol { Name: "Mediator", TypeKind: TypeKind.Class };
+                owner.NamesMediatorClass |= symbol is INamedTypeSymbol { Name: "Mediator", TypeKind: TypeKind.Class };
+                owner.NamesRuntime |= owner.NamesMediatorClass
+                    || (symbol is INamedTypeSymbol { Name: "IMediator" or "ISender" or "IPublisher" } && ownerNode is StatementSyntax or GlobalStatementSyntax
+                        && name.Ancestors().Any(a => a is TypeArgumentListSyntax or TypeOfExpressionSyntax));
                 LinkMediatR(graph, name, symbol, owner.Key, model, cancellationToken);
             }
             else

@@ -20,9 +20,16 @@ internal class MediatROwner
     // Names a MediatR type or member itself (not only a symbol that does).
     public bool NamesMediatR { get; set; }
 
+    // A handler (or behavior, processor) class: Mediator's generator must see it from the project that calls AddMediator.
+    public bool IsHandler { get; set; }
+
     // Calls services.AddMediatR(...).
     public bool CallsAddMediatR { get; set; }
 
     // Names MediatR's own Mediator class: the hand-written MediatR registration.
+    public bool NamesMediatorClass { get; set; }
+
+    // Part of MediatR's runtime: the Mediator class, or IMediator/ISender/IPublisher as a type argument or typeof in a statement
+    // (services.AddTransient<ISender>(sp => sp.GetRequiredService<IMediator>())). It stays while anything stays.
     public bool NamesRuntime { get; set; }
 }

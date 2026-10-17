@@ -171,6 +171,8 @@ public class MediatRPartialTests
 
         """;
 
+    private static readonly string s_directory = Path.Combine(AppContext.BaseDirectory, "Proofs", "MediatR", "_Partial");
+
     private static readonly IReadOnlyList<MetadataReference> s_both = [.. TestReferences.MediatR.Concat(TestReferences.Mediator).DistinctBy(r => r.Display)];
 
     private readonly IProjectFileStore _projectFiles = Substitute.For<IProjectFileStore>();
@@ -218,6 +220,89 @@ public class MediatRPartialTests
         // Assert
        (await TextAsync(report)).ShouldBe(code);
         report.Findings.ShouldNotContain(f => f.Result is FixedResult);
+    }
+
+    [Fact]
+    public async Task FixAsync_HandlerOutsideTheRegisteringProject_ChangesNothing()
+    {
+        // Arrange: MediatR is registered in Core, the handler that would move lives in App, which Core does not reference:
+        // Mediator's generator in Core would not see it.
+        string before = """
+            // @project Core
+            using MediatR;
+            using Microsoft.Extensions.DependencyInjection;
+
+            namespace Shop.Core;
+
+            public record GetBrand(int Id) : IRequest<string>;
+
+            public static class Registration
+            {
+                public static void Add(IServiceCollection services)
+                {
+                    services.AddScoped<IMediator, Mediator>();
+                }
+            }
+            // @project App -> Core
+            using System.Threading;
+            using System.Threading.Tasks;
+            using MediatR;
+            using Shop.Core;
+
+            namespace Shop.App;
+
+            public class GetBrandHandler : IRequestHandler<GetBrand, string>
+            {
+                public Task<string> Handle(GetBrand request, CancellationToken cancellationToken) => Task.FromResult("brand");
+            }
+
+            public record Count<T>() : IRequest<int>;
+
+            public class CountHandler<T> : IRequestHandler<Count<T>, int>
+            {
+                public Task<int> Handle(Count<T> request, CancellationToken cancellationToken) => Task.FromResult(1);
+            }
+
+            """;
+        var fixer = new Fixer([new MediatRFix()]);
+
+        // Act
+        FixReport report = await fixer.FixAsync(TestProjects.Create(before, TestReferences.MediatR), new FixRequest { FixId = "mediatr" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        (await TestProjects.GetTextAsync(report.Solution, before, TestContext.Current.CancellationToken)).ShouldBe(before);
+        report.Findings.ShouldNotContain(f => f.Result is FixedResult);
+    }
+
+    public static TheoryData<string> Cases() =>
+        [.. Directory.EnumerateFiles(s_directory, "*.before.cs").Select(p => Path.GetFileName(p)[..^".before.cs".Length]).Order(StringComparer.Ordinal)];
+
+    // Proofs/MediatR/_Partial: the root comes from a pattern (no project files), the rest of the case moves to Mediator.
+    [Theory]
+    [MemberData(nameof(Cases))]
+    public async Task FixAsync_PartialProof_BecomesAfter(string name)
+    {
+        // Arrange
+        string before = (await File.ReadAllTextAsync(Path.Combine(s_directory, name + ".before.cs"), TestContext.Current.CancellationToken)).ReplaceLineEndings("\n");
+        string expected = (await File.ReadAllTextAsync(Path.Combine(s_directory, name + ".after.cs"), TestContext.Current.CancellationToken)).ReplaceLineEndings("\n");
+        bool projects = TestProjects.IsMultiProject(before);
+        (projects ? TestProjects.CompileErrors(before, TestReferences.MediatR) : TestSolution.CompileErrors(before, TestReferences.MediatR))
+            .ShouldBeEmpty("before must compile against MediatR");
+        var fixer = new Fixer([new MediatRFix()]);
+        Solution solution = projects ? TestProjects.Create(before, TestReferences.MediatR) : TestSolution.Create(before, TestReferences.MediatR);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "mediatr" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        string actual = projects
+            ? await TestProjects.GetTextAsync(report.Solution, before, TestContext.Current.CancellationToken)
+            : await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        report.Findings.ShouldContain(f => f.PatternId == MediatROwners.KeptPatternId, "a partial migration");
+        actual.ShouldBe(expected);
+        (projects
+            ? TestProjects.CompileErrors(actual, s_both, TestReferences.MediatorGenerators)
+            : TestSolution.CompileErrors(actual, s_both, TestReferences.MediatorGenerators)).ShouldBeEmpty("after must compile against MediatR and Mediator");
     }
 
     private static async Task<string> TextAsync(FixReport report) =>

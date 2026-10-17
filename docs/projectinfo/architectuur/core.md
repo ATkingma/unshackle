@@ -178,6 +178,21 @@ With `--dry-run` we only show the diff; otherwise `ISolutionStore` writes the ch
   model using (`ConflictsWithAddedAsync`, plus: no more compile errors than the original). If nothing grows any more or another
   error appears (e.g. an own type `Should` clashing with the alias), the per-file fallback above follows.
 
+## Partial migration of an all-or-nothing fix (TAAK-274)
+
+- An `AllOrNothing` fix (MediatR) with Manual findings that also implements `IPartialFix` gets a second chance: the Fixer passes
+  the original solution and the root findings (Manual, minus "Not rewritten: …" and the rows that only say the package or a
+  global using stays; an `unmatched-use` row gets its line in the original file) to `PlanPartialAsync`. The fix returns a
+  `PartialPlan`: a solution in which the code that stays is annotated (`PartialPlan.KeptAnnotationKind`), plus the rows that
+  report it. The Fixer runs again on that solution; patterns never see an annotated node.
+- A partial run is accepted when it has no Manual finding besides the plan rows and the "package stays" project-file rows,
+  and every kept node is still in the fixed file with the same text. A new Manual finding becomes an extra root and the fix
+  plans again (at most 4 rounds); otherwise the all-or-nothing result stands.
+- MediatR's plan (`Fixes/MediatR/MediatROwners.cs`, union-find in `MediatROwnerGraph.cs`): see
+  [features/mediatr-partial-migration-plan.md](../features/mediatr-partial-migration-plan.md). Kept references become
+  `global::MediatR.X`; such a name needs no using (`UsingDirectives.IsGlobalQualified`) and keeps the package in its project
+  even for a swapped type (`ProjectPackages`).
+
 ## SOLID in brief
 
 | Principle | How                                                                                                                       |

@@ -87,6 +87,10 @@ The console shows one row per pattern with the number of **Fixed** and **Manual*
   needs a decision only you can make.
 - **"N findings wait on these M manual ones"**: for MediatR and AutoMapper the migration is all or nothing (a half-migrated app
   breaks at run time). When a few Manual findings block the rest, the summary lists exactly those: fix them, run `fix` again.
+- **MediatR, partly migrated**: before giving up, MediatR tries a partial migration: the code tied to the Manual findings (handlers, senders,
+  registrations) stays on MediatR, written as `global::MediatR.X`, and the rest moves to Mediator; both stay registered
+  side by side. Every kept place gets a Manual row "Stays on MediatR next to Mediator". When that cannot be done safely
+  (for example `AddMediatR(...)` itself has to stay), nothing changes, as in the previous point.
 
 The report has one row per finding: `File, Line, Fix, Pattern, Status, Reason`. Open `report.md` in your editor or import the
 `.csv` in a spreadsheet to work through the Manual ones.

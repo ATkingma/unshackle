@@ -27,7 +27,7 @@ public class FluentAssertionsFix : IFix
 
     public IReadOnlyList<MetadataReference> AddedReferences { get; }
 
-    public IReadOnlyList<string> RemovedNamespaces { get; } = ["FluentAssertions", "FluentAssertions.Execution", "FluentAssertions.Extensions"];
+    public IReadOnlyList<string> RemovedNamespaces { get; } = ["FluentAssertions", "FluentAssertions.Execution", "FluentAssertions.Extensions", "FluentAssertions.Primitives"];
 
     public IReadOnlyList<string> AddedNamespaces { get; } = ["Shouldly"];
 
@@ -75,14 +75,16 @@ public class FluentAssertionsFix : IFix
 
     public IReadOnlyList<IPattern> Patterns { get; } =
     [
-        // First: a scope of only assertions becomes ShouldSatisfyAllConditions, whose lambdas the patterns below rewrite.
+        // Very first, on the unchanged baseline the class plans are computed from: own assertion classes and their calls,
+        // whose .And chains it splits so the FluentAssertions links reach AndChainPattern and the assertion patterns.
+        new CustomAssertionPattern(),
+        // Then: a scope of only assertions becomes ShouldSatisfyAllConditions, whose lambdas the patterns below rewrite.
         new AssertionScopePattern(),
         // Then: its loop body keeps the FluentAssertions assertions, which the patterns below then rewrite as statements.
         new AllSatisfyPattern(),
         // Before the assertion patterns, which report a link after .And as Manual.
         new AndChainPattern(s_assertions),
         .. s_assertions,
-        new CustomAssertionPattern(),
         // Catch sites of the assertion exception, e.g. a retry helper around assertions (TAAK-140).
         new CatchAssertionExceptionPattern(),
         // No assertion: 5.Seconds() and 1.March(2020) from FluentAssertions.Extensions (TAAK-224).

@@ -122,10 +122,10 @@ public class CombinedProofTests
         var fix = new FluentAssertionsFix();
 
         // Act
-        string[] first = [.. fix.Patterns.Take(2).Select(p => p.Id)];
+        string[] first = [.. fix.Patterns.Take(3).Select(p => p.Id)];
 
         // Assert
-        first.ShouldBe(["fa.assertion-scope", "fa.all-satisfy"], "AllSatisfy copies its lambda body into a foreach with FluentAssertions code still in it; "
+        first.ShouldBe(["fa.custom-assertion", "fa.assertion-scope", "fa.all-satisfy"], "Own assertion classes are planned on the unchanged baseline. AllSatisfy copies its lambda body into a foreach with FluentAssertions code still in it; "
             + "the patterns after it rewrite those statements. Placed later, the loop body would stay FluentAssertions code.");
     }
 

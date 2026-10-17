@@ -165,7 +165,7 @@ public static class CustomAssertionAnalyzer
             return ("it is not a public, non-generic, non-async instance method with a block body", []);
         }
 
-        IReadOnlyList<ParameterSyntax> parameters = method.ParameterList.Parameters;
+        SeparatedSyntaxList<ParameterSyntax> parameters = method.ParameterList.Parameters;
         bool hasBecause = parameters is [.., { Identifier.ValueText: "because" }, { Identifier.ValueText: "becauseArgs" }];
         if (!hasBecause && parameters.Any(p => p.Identifier.ValueText is "because" or "becauseArgs"))
         {
@@ -313,7 +313,7 @@ public static class CustomAssertionAnalyzer
         foreach ((string name, InvocationExpressionSyntax invocation) in calls)
         {
             var method = (IMethodSymbol)model.GetSymbolInfo(invocation).Symbol!;
-            IReadOnlyList<ArgumentSyntax> arguments = invocation.ArgumentList.Arguments;
+            SeparatedSyntaxList<ArgumentSyntax> arguments = invocation.ArgumentList.Arguments;
             if (arguments.Any(a => a.NameColon is not null))
             {
                 return $"{name}(...) with named arguments";
@@ -458,7 +458,7 @@ public static class CustomAssertionAnalyzer
                     ? qualified
                     : identifier);
             }
-            else if (symbol is not null
+            else if (symbol is not (null or IParameterSymbol or ILocalSymbol or IRangeVariableSymbol)
                 && (SymbolEqualityComparer.Default.Equals(symbol.ContainingType, assertions)
                     || FluentAssertionsSyntax.IsFluentAssertions(symbol)
                     || FluentAssertionsSyntax.IsFluentAssertions(symbol.ContainingType)))
@@ -480,7 +480,7 @@ public static class CustomAssertionAnalyzer
     // The interpolated string for a FailWith format: {context:name} is the name, {reason} the because text, {n} argument n.
     // Placeholders FluentAssertions fills in another way (escaped braces, format specifiers, names) have no counterpart here.
     private static bool FormatMessage(
-        string format, IReadOnlyList<string> arguments, string reason, string defaultContext, out string message, out string? failure)
+        string format, List<string> arguments, string reason, string defaultContext, out string message, out string? failure)
     {
         message = string.Empty;
         failure = null;

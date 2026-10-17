@@ -12,6 +12,7 @@ How to run a fix: [usage.md](usage.md). The tables below are generated (`unshack
 
 | Pattern | What it does |
 | --- | --- |
+| `fa.custom-assertion` | x.Should().BeCancelled() on an own ReferenceTypeAssertions class → x.ShouldBeCancelled(); other custom assertions → Manual, grouped |
 | `fa.assertion-scope` | using (new AssertionScope()) { a; b; } → x.ShouldSatisfyAllConditions(() => a, () => b); otherwise Manual |
 | `fa.all-satisfy` | x.Should().AllSatisfy(a => ...) → x.ShouldNotBeEmpty(); foreach (var a in x) { ... } |
 | `fa.and-chain` | x.Should().A().And.B() → x.ShouldA(); x.ShouldB(); |
@@ -47,7 +48,6 @@ How to run a fix: [usage.md](usage.md). The tables below are generated (`unshack
 | `fa.not-throw-async` | await act.Should().NotThrowAsync() → await Should.NotThrowAsync(act); x.Awaiting(s => s.M()) → () => x.M() |
 | `fa.match` | s.Should().MatchRegex(r) → s.ShouldMatch(r), Match("SO-*") → s.ShouldMatch(@"(?s)\ASO-.*$") |
 | `fa.direct-mapping` | BeOneOf → ShouldBeOneOf, BeSubsetOf → ShouldBeSubsetOf, OnlyHaveUniqueItems → ShouldBeUnique, HaveValue/NotHaveValue → ShouldNotBeNull/ShouldBeNull |
-| `fa.custom-assertion` | x.Should().MyOwnAssertion() → Manual, grouped per custom assertion |
 | `fa.catch-assertion-exception` | catch (AssertionFailedException) / e is XunitException → also catches ShouldAssertException |
 | `fa.timespan-extensions` | 5.Seconds() / 200.Milliseconds() → TimeSpan.FromSeconds(5) / TimeSpan.FromMilliseconds(200); 1.March(2020) → new DateTime(2020, 3, 1); 1.March(2020).At(12, 30) → new DateTime(2020, 3, 1, 12, 30) |
 

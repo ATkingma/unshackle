@@ -1,6 +1,6 @@
 # TAAK-275 — FluentAssertions: custom assertion classes → Shouldly
 
-**Status**: step 3/5 — in progress (agent)
+**Status**: step 4/5 — in progress (agent)
 **Branch**: worktree-agent-a8433c56bf106c4f6 (worktree `.claude/worktrees/agent-a8433c56bf106c4f6`)
 **Created**: 2026-10-17
 **Goal**: user-written FA assertion classes (`ReferenceTypeAssertions<T, TSelf>` subclasses with `Execute.Assertion.ForCondition(...).FailWith(...)`, plus their `Should()` extension) are rewritten to Shouldly-style extension methods with the same pass/fail behaviour, so their call sites and the project file can migrate too.
@@ -25,7 +25,7 @@
 
 - [ ] 1. KingmaDoc plan (pattern `fa.custom-assertion`) after reading TAAK-271
 - [x] 2. Probe: construct inventory + FA behaviour (probe program outside the repo; results below)
-- [→] 3. Rewrite + proofs (incl. `_Combined` with call sites and project file) + unit tests
+- [x] 3. Rewrite + proofs (incl. `_Combined` with call sites and project file) + unit tests
 - [ ] 4. Corpus: FA repos with custom assertions, `after` 0 regressions; SampleShop Manual count before/after
 - [ ] 5. Verify, models, commit
 
@@ -35,12 +35,15 @@ Probe results (FA 7.2.2): ForCondition(true) passes, false makes FailWith throw;
 
 Design: `CustomAssertionPattern` becomes ISolutionFinder/ISolutionPattern placed before `AndChainPattern`; per class one cached `CustomAssertionPlan` (shape analysis + solution-wide usage scan via SymbolFinder) so class, `Should()` extension and calls all convert or none do. Chains with `.And` are split per link into statements (custom link -> `x.ShouldFoo(...)`, FA link stays `x.Should().Bar()` for the other patterns).
 
-Done: `CustomAssertionShape/Analyzer/Chain/Plan.cs` written (not yet compiled).
-Next: `CustomAssertionPlans` (cache + usage scan), pattern changes, `FluentAssertionsFix` (order, add `FluentAssertions.Primitives` to RemovedNamespaces), build, proofs, unit tests, SampleShop before/after, corpus (`/mnt/dikkeschijf/unshackle-corpus`, FA repos with custom assertions: fresults, powerapps, steeltoe, bearded, evo), KingmaDoc plan/models/verify, archive.
+Done (step 3): pattern is ISolutionFinder/ISolutionPattern, first in FluentAssertionsFix.Patterns (plans are computed on the unchanged baseline; cache per Solution snapshot via ConditionalWeakTable). Class → static extension class, holder of `Should()` removed (or only the method), calls rewritten, `.And` chains split (FA links stay for the later patterns). Extra plan check: a method name in inactive `#if` code blocks the class. `FluentAssertions.Primitives` added to RemovedNamespaces. Proofs: CustomAssertion/reference-type (after), given-then + class-in-assertion-scope (manual), _Combined/custom-assertion-class. All 1517 tests green.
+Next (old list): `CustomAssertionPlans` (cache + usage scan), pattern changes, `FluentAssertionsFix` (order, add `FluentAssertions.Primitives` to RemovedNamespaces), build, proofs, unit tests, SampleShop before/after, corpus (`/mnt/dikkeschijf/unshackle-corpus`, FA repos with custom assertions: fresults, powerapps, steeltoe, bearded, evo), KingmaDoc plan/models/verify, archive.
 
 ## Changed files
 
-- src/Unshackle.Core/Fixes/FluentAssertions/CustomAssertion{Shape,Analyzer,Chain,Plan}.cs (new)
+- src/Unshackle.Core/Fixes/FluentAssertions/CustomAssertion{Shape,Analyzer,Chain,Plan,Plans}.cs (new)
+- src/Unshackle.Core/Fixes/FluentAssertions/Patterns/CustomAssertionPattern.cs, FluentAssertionsFix.cs
+- src/Unshackle.Tests/Proofs/FluentAssertions/CustomAssertion/{reference-type,given-then,class-in-assertion-scope}.*, _Combined/custom-assertion-class.*
+- src/Unshackle.Tests/CombinedProofTests.cs (pattern order), docs/patterns.md
 
 ## See also
 

@@ -1,6 +1,6 @@
 # TAAK-019 — Launch FluentAssertions → Shouldly (roadmap step 4)
 
-**Status**: everything on our side done (2026-10-15): NuGet metadata + version 0.1.0 (pack and install checked), README (quick start, demo diff, blind-round results, limitations), reddit draft. Waiting on the user: make the repo public + branch protection, `NUGET_API_KEY` secret, tag `v0.1.0`, post. No GIF: no terminal recorder installed (vhs/asciinema); the README shows a real dry-run diff instead.
+**Status**: 0.1.0 released on nuget.org 2026-10-17 (tag `v0.1.0`, release run green, Trusted Publishing; install from nuget.org checked). Repo public, branch protection on `main` (PR + "Build and test", no force push; admins may push directly), `.vibe-wise/` removed from history. Left: step 8, the user posts the reddit draft.
 **Created**: 2026-10-11
 **Goal**: Unshackle 0.1 is public on GitHub and NuGet, proven on a real open-source project, with a README that shows in 30 seconds what it does.
 
@@ -73,8 +73,8 @@ The real case first: if it fails, you want to know before the public launch.
 - [x] 3. Record pattern errors found as issues/tasks (do not fix them in this task)
 - [x] 4. NuGet metadata + release workflow (`v*` tag), check `dotnet pack` locally
 - [x] 5. README: GIF, case numbers, supported patterns, limitations
-- [ ] 6. With the user: sort out `.vibe-wise/`, make the repo public, enable branch protection
-- [ ] 7. Tag release `v0.1.0` (publishing via NuGet Trusted Publishing, policy `unshackle-release` on nuget.org for `ATkingma/unshackle` `release.yml`; no API key), test installation from nuget.org
+- [x] 6. With the user: sort out `.vibe-wise/`, make the repo public, enable branch protection
+- [x] 7. Tag release `v0.1.0` (publishing via NuGet Trusted Publishing, policy `unshackle-release` on nuget.org for `ATkingma/unshackle` `release.yml`; no API key), test installation from nuget.org
 - [ ] 8. Draft r/dotnet post (draft ready, see the status line); the user posts it
 
 ## Risks & edge cases

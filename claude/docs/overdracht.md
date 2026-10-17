@@ -22,7 +22,7 @@ After-fix round TAAK-258 complete on Windows (corpus `<corpus>/corpus-automapper
 `claude/tools/corpus-am.sh`): all 14 usable repos 0 regressions, eshoponweb fully migrated (4 Fixed). See `claude/tasks/CORPUSRUN-automapper.md`.
 Remaining Manual is the all-or-nothing rule per solution plus root blockers in user code (duplicate maps, private constructors, cycles).
 
-**Next:** the launch (TAAK-019) together with the user. Optional: more Fixed per corpus repo by narrowing all-or-nothing per profile.
+**Released (2026-10-17):** Unshackle 0.1.0 on nuget.org (TAAK-019). Left: the user posts the reddit draft. Repo public; branch protection on `main` (admins push directly, others via PR with green "Build and test").
 Way of working: 2–3 sub-agents on effort low, each in a worktree; the main session merges one by one, then worktree check + push.
 
 **Roadmap:** 1 Scan 100% · 2 FA 100% · 3 MediatR 100% · 4 Launch ~80% (together with the user after AutoMapper) · 5 AutoMapper 100%.

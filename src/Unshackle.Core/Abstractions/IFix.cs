@@ -55,6 +55,12 @@ public interface IFix
     bool AllOrNothing => false;
 
     /// <summary>
+    /// With <see cref="AllOrNothing"/>: whether this Manual finding is a planned part of a partial migration (code that safely stays on the old
+    /// library) instead of a reason to leave the solution as it is. False (the default): every Manual finding undoes the fix.
+    /// </summary>
+    bool AllowsPartial(Finding finding) => false;
+
+    /// <summary>
     /// Packages that build on the old library and have no version for the new one with the same API: the solution gets their
     /// source, migrated, in the project all their users reference, and loses the package (TAAK-194). Empty (the default): none.
     /// </summary>

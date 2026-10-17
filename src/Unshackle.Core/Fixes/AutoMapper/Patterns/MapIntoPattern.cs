@@ -36,6 +36,11 @@ public class MapIntoPattern : ISolutionPattern
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(solution);
         var invocation = (InvocationExpressionSyntax)node;
+        if (await MapOwners.KeptCallAsync(node, model, solution, cancellationToken) is { } kept)
+        {
+            return kept;
+        }
+
         if (Check(invocation, model, out ITypeSymbol? sourceType, out ITypeSymbol? destination) is string problem)
         {
             return PatternResult.Manual(problem);

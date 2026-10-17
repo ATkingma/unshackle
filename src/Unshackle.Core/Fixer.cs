@@ -68,7 +68,7 @@ public class Fixer : IFixer
             ?? throw new ArgumentException($"Unknown fix '{request.FixId}'.", nameof(request));
 
         FixReport full = await RunAsync(fix, solution, [], cancellationToken);
-        if (!fix.AllOrNothing || !full.Findings.Any(f => f.Result is ManualResult))
+        if (!fix.AllOrNothing || !full.Findings.Any(f => f.Result is ManualResult && !fix.AllowsPartial(f)))
         {
             return full;
         }

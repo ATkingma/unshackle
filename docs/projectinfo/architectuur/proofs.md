@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1020 proofs (excluding `_Pending`).
+Total: 1024 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -16,7 +16,7 @@ Total: 1020 proofs (excluding `_Pending`).
 | --- | --- | --- |
 | `mapper-injected` | Manual |  — reason: IMapper is still used |
 | `parameter` | Fixed | `services.AddAutoMapper(profiles);` → `_ = profiles;` |
-| `result-used` | Manual |  — reason: The result of AddAutoMapper is used |
+| `result-used` | Manual |  — reason: the result of AddAutoMapper is used |
 | `simple` | Fixed | `services.AddAutoMapper(typeof(OrderProfile).Assembly);` →  |
 
 ### ConfigurationTest (10)
@@ -31,7 +31,7 @@ Total: 1020 proofs (excluding `_Pending`).
 | `settings` | Manual |  — reason: 'options.AllowNullCollections = true' is not an AddProfile or AddMaps call |
 | `setup-mapper` | Fixed | `private IMapper _mapper; [SetUp]` →  |
 | `side-effect-receiver` | Manual |  — reason: 'Configure().AssertConfigurationIsValid()' does more than check the configuration |
-| `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check: the map at Test.cs:27 is not in a profile constructor this fix rewrites |
+| `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check (the map at Test.cs:27 is not in a profile constructor this fix rewrites) |
 | `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
 ### CreateMap (114)
@@ -192,12 +192,18 @@ Total: 1020 proofs (excluding `_Pending`).
 | `reverse-pre-condition-map-from` | Fixed | `CreateMap<Person, PersonDto>() .ForMember(dto => dto.Alias, opt => opt.MapFrom(person => person.Nickname))` → `public static class OrderProfileExtensions {` |
 | `simple` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Total, o => o.MapFrom(s => s.Price * s.Quantity))` → `public static class OrderProfileExtensions {` |
 
+### KeptMap (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `trimmed-profile` | Manual | `CreateMap<Invoice, InvoiceDto>().BeforeMap((s, d) => d.Id = 1);` — reason: Stays on AutoMapper: CreateMap<Invoice, InvoiceDto> stays in the profile, the rest of it is migrated: 'CreateMap<Invoice, InvoiceDto>().BeforeMap((s, d) => d.Id = 1);' in Profile ShopProfile: BeforeMap |
+
 ### MapCall (10)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `existing-method` | Fixed | `public OrderDto Get(Order order) => _mapper.Map<OrderDto>(order); public OrderDto First(Order[] orders) => thi…` → `public OrderDto Get(Order order) => order.ToOrderDto(); public OrderDto First(Order[] orders) => orders[0].ToO…` |
-| `manual-profile` | Manual | `CreateMap<Order, OrderDto>().BeforeMap((s, d) => d.Id = 1);` — reason: CreateMap<Order, OrderDto> is in profile OrderProfile, which this fix does not rewrite: |
+| `manual-profile` | Manual | `CreateMap<Order, OrderDto>().BeforeMap((s, d) => d.Id = 1);` — reason: the map Order → OrderDto stays on AutoMapper ('CreateMap<Order, OrderDto>().BeforeMap((s, d) => d.Id = 1);' in Profile OrderProfile: BeforeMap runs code before the members are set |
 | `maybe-null` | Manual |  — reason: may be null |
 | `maybe-null-target` | Fixed | `public OrderDto? Find(Order? order) => _mapper.Map<OrderDto?>(order); return _mapper.Map<OrderDto>(order);` → `public OrderDto? Find(Order? order) => order?.ToOrderDto(); return order?.ToOrderDto();` |
 | `method-group` | Fixed | `public List<OrderDto> List(IEnumerable<Order> orders) => orders.Select(_mapper.Map<OrderDto>).ToList();` → `public List<OrderDto> List(IEnumerable<Order> orders) => orders.Select(source => source.ToOrderDto()).ToList()…` |
@@ -240,7 +246,7 @@ Total: 1020 proofs (excluding `_Pending`).
 | `member-resolver` | Fixed | `CreateMap<Post, NoteObject>() .ForMember(d => d.MediaType, opt => opt.MapFrom<MediaTypeResolver, Content?>(s =…` → `public static class PostProfileExtensions {` |
 | `resolver-class` | Fixed | `CreateMap<ToDoList, ListDto>() .ForMember(x => x.IsShared, opt => opt.MapFrom<IsSharedResolver>())` → `public static class ToDoProfileExtensions {` |
 
-### _Combined (22)
+### _Combined (25)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -262,6 +268,9 @@ Total: 1020 proofs (excluding `_Pending`).
 | `nested-profile-map-call` | Fixed | `CreateMap<CustomerDto,AddEditCustomerCommand>(MemberList.None); CreateMap<AddEditCustomerCommand,Customer>(Mem…` → `} }` |
 | `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
 | `nested-profiles-nested-map` | Fixed | `CreateMap<TodoList, TodoListDto>(); CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority,` → `} public static class TodoListDtoMappingExtensions` |
+| `partial-closure` | Fixed | `CreateMap<Customer, CustomerDto>(); public CustomerDto Customer(Customer customer) => _mapper.Map<CustomerDto>…` → `} public static class ShopProfileExtensions` |
+| `partial-statement` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Order(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class ShopProfileExtensions` |
+| `partial-untyped-source` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Order(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class ShopProfileExtensions` |
 | `project-to-query` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} public static class OrderProfileExtensions` |
 | `projection-parameters` | Fixed | `int userId = 0; // Placeholder, will be replaced at runtime CreateMap<Series, SeriesDto>()` → `} public static class SeriesProfileExtensions` |
 | `reverse-map-call` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} }` |

@@ -49,7 +49,16 @@ public class ConfigurationTestPattern : ISolutionPattern
             return PatternResult.Manual(problem);
         }
 
-        return Remove(ChecksConfiguration(node, model) ? await UnmigratedMapAsync(solution, model, cancellationToken) : null);
+        // While maps stay on AutoMapper (TAAK-272) the checks and test mappers stay too: the trimmed profiles still pass the check (probe), and a
+        // test mapper may still serve Map calls that stay.
+        if (!(await MapOwners.ForAsync(solution, model, cancellationToken)).IsEmpty)
+        {
+            return PatternResult.Manual($"{MapOwners.KeptPrefix}maps of the solution stay on AutoMapper, so this configuration check or test mapper stays as it is.");
+        }
+
+        return ChecksConfiguration(node, model) && await UnmigratedMapAsync(solution, model, cancellationToken) is string unmigrated
+            ? PatternResult.Manual($"{MapOwners.KeptPrefix}AssertConfigurationIsValid still has maps to check (the map at {unmigrated} is not in a profile constructor this fix rewrites), so it stays.")
+            : Remove(null);
     }
 
     // Why a reported configuration or check stays, or null for a node that can go.

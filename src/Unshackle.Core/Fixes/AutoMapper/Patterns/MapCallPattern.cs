@@ -59,6 +59,11 @@ public class MapCallPattern : ISolutionPattern
         ArgumentNullException.ThrowIfNull(node);
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(solution);
+        if (await MapOwners.KeptCallAsync(node, model, solution, cancellationToken) is { } kept)
+        {
+            return kept;
+        }
+
         if (node is not InvocationExpressionSyntax)
         {
             if (CheckGroup((ExpressionSyntax)node, model, out ITypeSymbol? groupSource, out ITypeSymbol? groupDestination) is string groupProblem)
@@ -389,6 +394,7 @@ public class MapCallPattern : ISolutionPattern
             ? solution.GetProjectDependencyGraph().GetProjectsThatThisProjectTransitivelyDependsOn(callProject.Id).Append(callProject.Id).Select(solution.GetProject).OfType<Project>()
             : solution.Projects;
         List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)> found = [];
+        MapOwners owners = await MapOwners.ForAsync(solution, model, cancellationToken);
         foreach (Project project in projects.Where(p => p.Language == LanguageNames.CSharp))
         {
             foreach (Document document in project.Documents)
@@ -416,7 +422,9 @@ public class MapCallPattern : ISolutionPattern
                     {
                         InvocationExpressionSyntax? createMap = statement.DescendantNodes().OfType<InvocationExpressionSyntax>()
                             .LastOrDefault(c => c.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap" });
-                        if (createMap is not null && profileModel.GetSymbolInfo(createMap, cancellationToken).Symbol is IMethodSymbol { TypeArguments: [{ } from, { } to] })
+                        // A map that stays on AutoMapper keeps its statement and gets no method (TAAK-272).
+                        if (createMap is not null && profileModel.GetSymbolInfo(createMap, cancellationToken).Symbol is IMethodSymbol { TypeArguments: [{ } from, { } to] }
+                            && owners.Reason(from, to) is null)
                         {
                             pairs.Add((from, to));
                             if (CreateMapPattern.HasReverseMap(createMap))

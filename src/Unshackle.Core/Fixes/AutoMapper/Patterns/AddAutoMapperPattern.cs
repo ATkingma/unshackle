@@ -71,14 +71,15 @@ public class AddAutoMapperPattern : ISolutionPattern
     {
         if (node is not ExpressionStatementSyntax statement)
         {
-            return PatternResult.Manual("The result of AddAutoMapper is used (not a statement on its own); remove the registration by hand.");
+            return PatternResult.Manual(MapOwners.KeptPrefix + "the result of AddAutoMapper is used (not a statement on its own), so the registration stays; remove it by hand.");
         }
 
         if (user is not null)
         {
+            // Safe to keep (TAAK-272): the registration still works with trimmed or emptied profiles.
             return PatternResult.Manual(
-                $"IMapper is still used ({user}): without AddAutoMapper it no longer resolves from DI. "
-                + "Remove the IMapper fields, constructor parameters and lookups (and their arguments at the callers), then run the fix again.");
+                $"{MapOwners.KeptPrefix}IMapper is still used ({user}), so AddAutoMapper stays (without it IMapper no longer resolves from DI). "
+                + "To remove it, remove the IMapper fields, constructor parameters and lookups (and their arguments at the callers), then run the fix again.");
         }
 
         // "_ = p;" keeps the signature and its callers intact when a parameter was only passed to AddAutoMapper (IDE0060).

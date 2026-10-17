@@ -89,7 +89,7 @@ Totals over the 22 roots: **17 solvable** (A1 2, A2 1, A3 3, A4 7, A5 fiapgames 
 ## Changed files
 
 - `claude/tasks/TAAK-271-analyse-manual-blockers.md` (moved to `archief/`)
-- `claude/tasks/TAAK-272-automapper-partial-migration.md`, `TAAK-273-automapper-specific-blockers.md`, `TAAK-274-mediatr-partial-migration.md`, `TAAK-275-fa-custom-assertion-classes.md`: scope from this analysis
+- `claude/tasks/archief/TAAK-272-automapper-partial-migration.md`, `TAAK-273-automapper-specific-blockers.md`, `TAAK-274-mediatr-partial-migration.md`, `TAAK-275-fa-custom-assertion-classes.md`: scope from this analysis
 - `claude/tasks/TAAK-277-fa-residual-manual.md`: new
 - `claude/tasks/manual-reduction-queue.md`, `claude/docs/INDEX.md`
 

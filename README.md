@@ -56,8 +56,10 @@ What `fix --dry-run` shows (from `samples/SampleShop`):
 +   order.Lines.ShouldNotContain(i => i == null);
 ```
 
-Then a summary per pattern (`Fixed` / `Manual`). When a few manual findings hold back the rest (MediatR and AutoMapper migrate all or
-nothing, because a half-migrated app breaks at run time), the summary lists exactly those, so you know where to start.
+Then a summary per pattern (`Fixed` / `Manual`). When a few manual findings hold back the rest (MediatR migrates all or nothing,
+because a half-migrated app breaks at run time), the summary lists exactly those, so you know where to start. AutoMapper migrates
+per map: a map it cannot rewrite stays on AutoMapper, together with the maps it depends on and the calls that use it, and the
+rest is migrated (reported as `Stays on AutoMapper: …`).
 
 ## How well does it work?
 
@@ -73,7 +75,9 @@ after the fix ([details](https://github.com/ATkingma/unshackle/blob/main/claude/
 ## Known limitations
 
 - **AutoMapper**: only mappings that are provably the same as hand-written code are rewritten. Cycles, `ReverseMap` with unflattening,
-  private setters, resolvers and converters are reported as manual work. On real projects this usually leaves work for you.
+  private setters, resolvers and converters stay on AutoMapper (with their dependent maps and calls), so the package, the profiles and
+  `AddAutoMapper` stay too; injected `IMapper` fields are not removed yet. A test that configures its own `MapperConfiguration` with
+  maps still blocks the whole fix.
 - **MediatR**: `AddMediatR` in a shared or generic library method, direct use of `MediatR.Mediator` and some decorators are manual:
   Mediator's source generator must see the handlers at compile time, in the host project.
 - **FluentAssertions**: custom assertion classes, `BeEquivalentTo` with options and `.Which`/`.And` chains on another subject are manual.

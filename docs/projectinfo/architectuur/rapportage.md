@@ -7,7 +7,7 @@ Markdown cells are HTML-encoded and `\`, `|`, `` ` `` and line breaks are escape
 ```csv
 File,Line,Fix,Pattern,Status,Reason
 tests/UserTests.cs,14,fluentassertions,fa.should-be,Fixed,
-tests/OrderTests.cs,8,fluentassertions,fa.have-count,Manual,Dictionary: controleer of Count of Keys bedoeld is
+tests/OrderTests.cs,8,fluentassertions,fa.have-count,Manual,Dictionary: check whether Count or Keys is meant
 ```
 
 Built in TAAK-005 (`src/Unshackle.DataAccess/Reports/`):

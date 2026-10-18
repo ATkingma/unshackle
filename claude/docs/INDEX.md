@@ -123,6 +123,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-272-automapper-partial-migration.md` | ✅ TAAK-272 — AutoMapper partial migration per CreateMap pair (MapOwners plan, automapper.kept-map) |
 | `claude/tasks/archief/TAAK-271-analyse-manual-blockers.md` | TAAK-271 — root-cause table of every Manual finding in the 8 blocked repos + SampleShop, solvable vs principally manual |
 | `claude/tasks/archief/TAAK-274-mediatr-partial-migration.md` | TAAK-274 — MediatR partial migration: code tied to Manual findings stays on MediatR (`global::MediatR.X`), the rest moves to Mediator |
+| `claude/tasks/archief/TAAK-279-automapper-mocked-imapper.md` | ✅ TAAK-279 — AutoMapper: a mocked `IMapper` keeps only its class under test on AutoMapper (shared pairs: `CreateMap` stays, `ToB()` for other call sites) |
 | `claude/tasks/archief/TAAK-258-automapper-corpus-baseline.md` | TAAK-258 — AutoMapper corpus baseline, harness and after-fix round (14 of 14 repos, 0 regressions) |
 | `claude/tasks/archief/TAAK-267-automapper-map-method-group.md` | TAAK-267 — AutoMapper `Map<T>` as method group is missed (eshoponweb runtime regression) |
 | `claude/tasks/archief/TAAK-268-blind-validation-round.md` | TAAK-268 — Blind validation round: 3 unseen open-source projects per fix, 0 regressions + manual review |

@@ -45,6 +45,8 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapCallPattern.cs`, `CreateM
 | Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | passed (38/38)                                                                                                                                                                          |
 | Lint    | _none_                                                      | _not run_: no lint command configured                                                                                                                                                 |
 
+- TAAK-279 (REQ-15): verified in [automapper-mocked-imapper-verify](../features/automapper-mocked-imapper-verify.md) (unit tests, proofs, corpus 0 regressions).
+
 ## See also
 
 - [automapper-map-call-plan.md](automapper-map-call-plan.md)

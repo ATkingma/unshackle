@@ -106,4 +106,4 @@ call site of that pair outside the class under test is migrated, while the class
 ## See also
 
 - [verify](automapper-mocked-imapper-verify.md), [automapper-partial-migration](automapper-partial-migration-plan.md)
-- `claude/tasks/TAAK-279-automapper-mocked-imapper.md`
+- `claude/tasks/archief/TAAK-279-automapper-mocked-imapper.md`

@@ -1,6 +1,6 @@
 # TAAK-279 — AutoMapper: mocked IMapper no longer keeps whole map pairs on AutoMapper
 
-**Status**: step 5/6 — in progress
+**Status**: ✅ done — 2026-10-18
 **Created**: 2026-10-18
 **Branch**: `worktree-agent-a1ab1bc6d7ec0994b` (worktree `.claude/worktrees/agent-a1ab1bc6d7ec0994b`)
 **Goal**: a test that stubs `IMapper` (Moq/NSubstitute/FakeItEasy) only keeps **its class under test** on AutoMapper; every other call site of the same map pair migrates, with proof that the app and its own tests behave the same.
@@ -59,8 +59,8 @@ Determining "class under test": the type whose constructor receives the mocked `
 - [x] 2. KingmaDoc plan + design decision with evidence
 - [x] 3. Implementation + unit tests
 - [x] 4. Proofs (`MapCall`, `_Combined`)
-- [→] 5. Corpus `after`: 0 regressions, before/after numbers
-- [ ] 6. Verify, models, docs, archive
+- [x] 5. Corpus `after`: 0 regressions, before/after numbers
+- [x] 6. Verify, models, docs, archive
 
 ## Risks & edge cases
 
@@ -77,7 +77,20 @@ baseapi 5/3; AutoMapper corpus unchanged from earlier rounds (eshoponweb 4/0, th
 First scan with the step-4 tool showed culinary `GroceryManager` migrated: its test constructs it with a Moq mock that stubs nothing
 (a loose mock returns null), so the rule was widened: **every class a test constructs with a mocked `IMapper` keeps all its Map calls**
 (their pairs are shared). Scan after (final tool): culinary 2/70 (profile + PreferenceManager), msb 8/29, fiapgames 25/9, restapi 0/9,
-baseapi 5/3. `run-after.sh` (scan am + after blind) running with the final tool.
+baseapi 5/3.
+
+| Repo | Scan before (fixed/manual) | Scan after | After mode (fix → build → tests) |
+| --- | --- | --- | --- |
+| culinary | 0 / 46 | 2 / 70 | ok, 149/149 = base, 0 regressions |
+| msb | 3 / 32 | 8 / 29 | ok, 156/156 = base, 0 regressions |
+| fiapgames | 25 / 9 | 25 / 9 | ok, 91/91 = base, 0 regressions |
+| restapi | 0 / 9 | 0 / 9 | ok, 45/45 = base, 0 regressions |
+| baseapi | 5 / 3 | 5 / 3 | ok, 0/9 both (fail in this environment), 0 regressions |
+| 14 AutoMapper corpus repos | eshoponweb 4/0, others 0 Fixed | identical findings | not rerun: same rewrites as the earlier rounds |
+
+The AutoMapper corpus scan first showed 105 internal errors in kavita: `GetDeclaredSymbol` throws on a C# 14 `extension` block.
+Fixed (`MapOwners.TypeOf`, unit test); kavita rescanned: findings identical to before. Culinary's Manual count grows because its
+profile is now rewritten and `automapper.kept-map` reports each kept `CreateMap`. Results: `<corpus>/t279/{blind,am}/_results`.
 
 ## Changed files
 
@@ -89,6 +102,7 @@ baseapi 5/3. `run-after.sh` (scan am + after blind) running with the final tool.
 - Proofs `_Combined/partial-mocked-class-under-test` (stubbed class keeps `IMapper`, other class migrates), `MapCall/mocked-class-under-test` (manual);
   `Helpers/TestReferences.cs`: NSubstitute in the AutoMapper references so a proof can stub `IMapper`
 - Docs: `features/automapper-mocked-imapper-modellen.md`, REQs in plans of map-call (15), kept-map (4), create-map (11), partial-migration REQ-8 note, README limitation, INDEX, docs README
+- `docs/projectinfo/features/automapper-mocked-imapper-verify.md`; pattern verify notes (map-call, kept-map, create-map)
 - Mock set-up reason now says the class under test keeps calling `IMapper` for the stubbed maps (no longer "and so do the maps it stubs")
 
 ## See also

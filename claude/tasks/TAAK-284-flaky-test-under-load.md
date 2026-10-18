@@ -8,6 +8,7 @@
 
 - Three full runs on an idle machine: 1571/1571 green each time (`<corpus>/flaky/run1..3`). CI green on every push.
 - Both failures happened while agents ran corpus builds (high CPU/RAM). Suspects: integration tests that build/test a copy of `samples/SampleShop` (`src/Unshackle.Tests/Integration/`), timeouts, or shared temp folders.
+- **Likely cause found (2026-10-18):** two `verify-head.sh` runs (an agent and the main session) shared the folder `<scratch>/verify-head`; the second run deleted the first one's worktree while its tests ran. The script now uses a unique `mktemp` folder per run. If no failure occurs again, close this task.
 - `claude/tools/verify-head.sh` now keeps an xUnit TRX report and prints the failing test names on failure.
 
 ## Steps

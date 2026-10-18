@@ -69,12 +69,13 @@ measured again plus 18 new ones (tool at commit `db05908`):
 
 | Fix | Repos | Fully migrated | Partly migrated (old library stays for the rest) | Stopped, nothing rewritten | Build broken after fix | Test regressions |
 |---|---|---|---|---|---|---|
-| FluentAssertions → Shouldly | 12 | 4 | 6 | 0 | 2 | 0 |
+| FluentAssertions → Shouldly | 12 | 5 | 7 | 0 | 0 | 0 |
 | MediatR → Mediator | 12 | 6 | 1 | 5 | 0 | 0 |
 | AutoMapper → mappings | 12 | 1 | 9 | 2 | 0 | 0 |
 
-"Build broken" are four known bugs (open tasks TAAK-280..283, mostly preprocessor directives and `required` members): the build after `fix` caught
-all of them, no test changed silently. On the 31 repos that build after the fix, no test regressed.
+The first run of this round found four bugs that broke the build after `fix` (preprocessor directives, `required` members, a leftover
+FluentAssertions sub-namespace); the build caught all of them, no test changed silently. All four are fixed with proofs and the five
+affected repos were measured again: they build, and on all 36 repos no test regressed.
 Where only part of a solution was migrated the report lists the rest as Manual, with the reason.
 
 ## Known limitations

@@ -152,8 +152,8 @@ Selection (2026-10-18, before any `after` run): `gh search code 'Include="<Libra
 | asuna          | luisfb/asuna-full-text-search @ `292bf1b`        | fluentassertions | 48 / 0         | 20/21 → 20/21        | **full**                                                                                                      |
 | mihome         | sergey-brutsky/mi-home @ `680f841`               | fluentassertions | 319 / 15       | 448/448 → 448/448    | partial (`Invoking` on non-trivial receivers, `.And` chains)                                                  |
 | catalogapi     | daohainam/catalog-api @ `2396e35`                | fluentassertions | 222 / 4        | 44/54 → 44/54        | partial (`BeEquivalentTo` on a list, `ThrowAsync` on another delegate)                                        |
-| opentws        | OpenTWS/opentws-dotnet @ `a3ecb8e`               | fluentassertions | 118 / 0        | 17/53 (baseline)     | **build breaks**: `using FluentAssertions.Common;` stays (CS0246) → TAAK-283                                  |
-| serilogmem     | serilog-contrib/SerilogSinksInMemory @ `86b7743` | fluentassertions | 46 / 388       | 570 (baseline)       | **build breaks**: `#if`/`#else` around a removed using, stray `#endif` (CS1028) → TAAK-281                    |
+| opentws        | OpenTWS/opentws-dotnet @ `a3ecb8e`               | fluentassertions | 118 / 0        | 17/56 → 17/56        | **full** (TAAK-283 fixed: unused `using FluentAssertions.Common;` removed; was a build break)                 |
+| serilogmem     | serilog-contrib/SerilogSinksInMemory @ `86b7743` | fluentassertions | 17 / 399       | 570/570 → 570/570    | partial (TAAK-281 fixed; it is an FA extension library, 378 `unmatched-use`; was a build break)               |
 | brewabear      | RieBi/BrewABear @ `d3199fb`                      | mediatr          | 23 / 0         | 33/33 → 33/33        | **full**                                                                                                      |
 | dddbankingapi  | Ace2489/ddd-Banking-API @ `135bb36`              | mediatr          | 11 / 0         | 62/64 → 62/64        | **full**                                                                                                      |
 | netcorebase    | nruizneiman/netcore-base @ `1b28112`             | mediatr          | 12 / 0         | 45/46 → 45/46        | **full**                                                                                                      |
@@ -171,7 +171,7 @@ Spares that were cloned and baselined but not used (pinned in `corpus-blind-repo
 
 | Fix              | Full | Partial | Blocked (justified Manual) | Build breaks after fix                |  Test regressions |
 | ---------------- | ---- | ------- | -------------------------- | ------------------------------------- | ----------------: |
-| FluentAssertions | 2    | 2       | 0                          | 2 (opentws, serilogmem)               | 0 where it builds |
+| FluentAssertions | 3    | 3       | 0                          | 0 (opentws, serilogmem fixed: TAAK-281/283) | 0 |
 | MediatR          | 3    | 0       | 3                          | 0                                     |                 0 |
 | AutoMapper       | 0    | 5       | 1                          | 0 (3 fixed by TAAK-280/282, see below) | 0                 |
 
@@ -182,13 +182,13 @@ All five new failures are build breaks after `fix` (the build is the safety net:
 | Task     | Defect                                                                                | Repos                  | Proof                                                             |
 | -------- | ------------------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------- |
 | TAAK-280 | `#region` around removed `CreateMap` statements leaves unbalanced directives (CS1028) | assistiva              | `Proofs/AutoMapper/_Combined/region-directives` (fixed)           |
-| TAAK-281 | FA using inside `#if`/`#else` removed with its directives, stray `#endif` (CS1028)    | serilogmem             | `Proofs/FluentAssertions/_Combined/_Pending/using-in-conditional` |
+| TAAK-281 | FA using inside `#if`/`#else` removed with its directives, stray `#endif` (CS1028). **Fixed**; also a `#if` inside a rewritten chain and a file linked into a project without Shouldly | serilogmem | `Proofs/FluentAssertions/_Combined/using-in-conditional`, `directives-in-chain` |
 | TAAK-282 | Generated `new() { ... }` omits `required` destination members (CS9035)               | encryptednotes, estore | `Proofs/AutoMapper/_Combined/required-members` (fixed)            |
-| TAAK-283 | `using FluentAssertions.Common;` stays after the package is removed (CS0246)          | opentws                | `Proofs/FluentAssertions/_Combined/_Pending/using-sub-namespace`  |
+| TAAK-283 | `using FluentAssertions.Common;` stays after the package is removed (CS0246). **Fixed**  | opentws                | `Proofs/FluentAssertions/_Combined/using-sub-namespace`           |
 
 **Rerun for TAAK-280 and TAAK-282** (tool from branch `worktree-agent-a7fb36f3b60c1eb0d`, published to `_results/tool-a7fb36f/`, harness `after` mode, results `_results/after/{assistiva,encryptednotes,estore}`): all three build after `fix` and have **0 regressions** (assistiva 14/16 → 14/16, encryptednotes 85/85 → 85/85, estore 45/46 → 45/46; same Fixed/Manual as before, the Manual findings are planned `Stays on AutoMapper` keeps). Fix TAAK-282 measured first against AutoMapper 14.0.0: an unmapped `required` member stays at `default` without an error, so the generated initializer names it as `= default`; a `required` member with an initializer or set by a constructor keeps that value in AutoMapper, so that profile is Manual.
 
-Because the break hides later errors, the repos are not yet known to be green after these fixes; a rerun after TAAK-280..283 is needed before claiming them. Also noted: serilogmem is itself a FluentAssertions extension library (third-party `Should()` extensions), where a Shouldly migration is not meaningful.
+Re-measured after the TAAK-281/283 fixes (tool = branch `worktree-agent-a703fd17d0ed2c1c1`): serilogmem and opentws build and have 0 test regressions ([verify](../../docs/projectinfo/features/using-removal-edge-cases-verify.md)). Because the break hides later errors, the repos are not yet known to be green after these fixes; a rerun after TAAK-280..283 is needed before claiming them. Also noted: serilogmem is itself a FluentAssertions extension library (third-party `Should()` extensions), where a Shouldly migration is not meaningful.
 
 ### Conclusion of round 5
 
@@ -198,5 +198,5 @@ Because the break hides later errors, the repos are not yet known to be green af
 ## See also
 
 - `claude/tasks/archief/TAAK-268-blind-validation-round.md`
-- `claude/tasks/TAAK-276-blind-round-after-manual-reduction.md`, `claude/tasks/archief/TAAK-280-region-directives.md`, `claude/tasks/archief/TAAK-282-required-members.md`, `claude/tasks/TAAK-283-using-sub-namespace.md`
+- `claude/tasks/TAAK-276-blind-round-after-manual-reduction.md`, `claude/tasks/archief/TAAK-280-region-directives.md`, `TAAK-281-using-in-conditional.md`, `TAAK-282-required-members.md`, `TAAK-283-using-sub-namespace.md`
 - `claude/tasks/CORPUSRUN-automapper.md`

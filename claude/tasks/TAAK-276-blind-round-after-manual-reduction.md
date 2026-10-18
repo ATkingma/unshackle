@@ -22,6 +22,9 @@
 - Tool published from main `db05908` into `<corpus>/corpus-blind/_results/tool-db05908/`; previous `after` results moved to `_results/after-r4-old`.
 - Step 1 run: `scratchpad` script calls `corpus-am.sh list after claude/tools/corpus-blind-list.txt` (JOBS=2, results in `<corpus>/corpus-blind/_results/after/`, log `_results/run18.log`).
 
+- Step 1 DONE (tool `db05908`, 2026-10-18): all 18 `ok`, 0 build breaks, 0 real regressions. bookstore showed 1-2 "regressions" (OrderLine/Book `Update...Return_Ok` NotFound); a fresh untouched baseline run fails the same OrderLine test, so it is the known flaky shared test database. Results in `<corpus>/corpus-blind/_results/after/` (`summary`: `corpus-am.sh summary after`); copies `after-bookstore-run1`, `base-bookstore-orig`.
+- Next: step 2 (select 6 new repos per library; candidate lists were gathered with `gh search code`, excluded against all CORPUSRUN/REGRESSIE files).
+
 ## Changed files
 
 _(filled in during execution)_

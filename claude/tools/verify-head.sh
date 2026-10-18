@@ -14,6 +14,8 @@ trap 'git -C "$repo" worktree remove --force "$dir"; rm -rf "$results"' EXIT
 cd "$dir"
 # Local machine paths must never reach the public repo (write <corpus>/... or repo-relative paths).
 if git grep -nE '/(home|mnt)/[A-Za-z]' -- ':!claude/tools/verify-head.sh'; then echo "local paths found"; exit 1; fi
+# A merge conflict committed by accident must never reach main.
+if git grep -nE '^(<<<<<<<|>>>>>>>) ' ; then echo "conflict markers found"; exit 1; fi
 dotnet build -v q
 if ! dotnet test -- --max-threads 4 --report-xunit-trx --results-directory "$results"; then
   # Name the failing tests (a flaky one has failed under load before, TAAK-284).

@@ -24,6 +24,8 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `AutoM
 | REQ-8 | Met | `unmatched-member`, `ForMemberIgnore/unmatched` (Fixed); `unmatched-asserted`, `private-setter`, `get-only-collection` (Manual); unit tests `Rewrite_MemberAutoMapperDoesNotWrite_LeftOut` |
 | REQ-9 | Met | `private-setter` (reason says principally manual) (TAAK-273) |
 | REQ-10 | Met | `broken-conversion` (TAAK-273) |
+| REQ-12 | Met | `_Combined/required-members`, `_Combined/project-to-required`; unit tests `Rewrite_RequiredMember*`; probe against AutoMapper 14.0.0 (TAAK-282): unmapped required members stay `default`, an initializer or constructor value stays |
+| REQ-13 | Met | `_Combined/region-directives`; unit test `Rewrite_DirectivesAroundCreateMap_StayBalancedOrManual` (TAAK-280) |
 
 End-to-end test of SampleShop (copy in `<corpus>/t146/`): 0 Fixed, 10 Manual (8× `Map`, 2 profiles with options), 0 files changed (AllOrNothing); the copy builds and 38/38 tests are green.
 

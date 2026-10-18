@@ -1,3 +1,4 @@
+#nullable enable
 using AutoMapper;
 
 namespace Shop;
@@ -23,6 +24,15 @@ public class NoteProfile : Profile
 {
     public NoteProfile()
     {
-        CreateMap<NoteDto, NoteEntity>();
     }
+}
+
+public static class NoteProfileExtensions
+{
+    public static NoteEntity ToNoteEntity(this NoteDto source) => new()
+    {
+        Title = source.Title,
+        UserId = default!,
+        Id = default,
+    };
 }

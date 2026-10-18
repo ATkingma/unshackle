@@ -48,6 +48,10 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` an
 | Manual "no member with the same name ... AssertConfigurationIsValid" | an unmatched member while the solution calls `AssertConfigurationIsValid` (since TAAK-256 flattening, `GetX()` and case are rewritten) | `unmatched-asserted` |
 | Manual "AutoMapper converts" | another type without a CreateMap of its own (since TAAK-245 nested maps and lists/arrays are rewritten, see [automapper-nested-maps-modellen.md](automapper-nested-maps-modellen.md)) | `conversion-operator`, `nested-no-map` (`conversion` is rewritten since TAAK-247, see [automapper-conversions-modellen.md](automapper-conversions-modellen.md)) |
 | Manual "non-public setter" / "get-only collection" | the source has the member and AutoMapper writes the private setter or fills the collection (TAAK-261) | `private-setter`, `get-only-collection` |
+| Required member named `= default` (TAAK-282)    | a `required` destination member nothing maps, no initializer, no constructor declared on the type | `_Combined/required-members`, `_Combined/project-to-required` |
+| Manual "is required and nothing maps it"         | that member has an initializer or the type has a constructor (AutoMapper keeps the value) | unit tests `Rewrite_RequiredMemberAutoMapperKeepsAValueOf_ReportsManual` |
+| Stray `#region`/`#endregion` dropped (TAAK-280)  | removed maps carried one half of a pair (`ProfileDirectives.Repair`) | `_Combined/region-directives` |
+| Manual "conditional compilation"                 | a removed map sat inside `#if`                | unit test `Rewrite_DirectivesAroundCreateMap_StayBalancedOrManual` |
 | Fixed                                            | all of the above no                        | `simple`, `internal-types` |
 
 ## See also

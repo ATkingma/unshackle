@@ -453,8 +453,13 @@ public class CreateMapPattern : ISolutionPattern
             }
         }
 
+        if (ProfileDirectives.Repair(kept.Count == 0 ? Emptied(constructor) : Trimmed(constructor, kept, model), out ConstructorDeclarationSyntax rewritten) is string directiveProblem)
+        {
+            return PatternResult.Manual(directiveProblem);
+        }
+
         return PatternResult.Fixed([
-            anchor.ReplaceNode(constructor, kept.Count == 0 ? Emptied(constructor) : Trimmed(constructor, kept, model)),
+            anchor.ReplaceNode(constructor, rewritten),
             Extensions(anchor, className, isInternal ? "internal" : "public", maps, withProjection, captured)], [.. namespaces.Order(StringComparer.Ordinal)]);
     }
 
@@ -833,6 +838,27 @@ public class CreateMapPattern : ISolutionPattern
             // ProjectTo reads a flattened path without null checks (TAAK-252: the query has none).
             read?.Add(new ProjectionMember { Name = target.Name, Value = plain, From = plainType, To = to });
             copied ??= copy ? target.Name : null;
+        }
+
+        // Measured (TAAK-282, AutoMapper 14.0.0): a required member nothing maps stays at its default (AutoMapper does not enforce `required`),
+        // but the compiler rejects a creation that does not name it (CS9035). Naming it as default is the same only while the new object holds
+        // the default there anyway.
+        foreach (ISymbol target in destinationMembers.Where(m => m is IPropertySymbol { IsRequired: true } or IFieldSymbol { IsRequired: true, IsReadOnly: false }))
+        {
+            if (members.Any(m => m.Name == target.Name))
+            {
+                continue;
+            }
+
+            if (!KeepsDefault(target, destination))
+            {
+                return $"{destination.Name}.{target.Name} is required and nothing maps it, but it has an initializer or {destination.Name} has a constructor that may set it, which AutoMapper keeps; the creation must name it by hand";
+            }
+
+            ITypeSymbol type = target is IPropertySymbol requiredProperty ? requiredProperty.Type : ((IFieldSymbol)target).Type;
+            string unset = values.NullableWarnings && type.IsReferenceType && type.NullableAnnotation != NullableAnnotation.Annotated ? "default!" : "default";
+            members.Add((target.Name, unset));
+            read?.Add(new ProjectionMember { Name = target.Name, Value = unset, From = type, To = type });
         }
 
         if (constructUsing is not null)

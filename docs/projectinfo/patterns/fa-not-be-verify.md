@@ -24,6 +24,8 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/NotBePattern.cs`; regi
 | REQ-8 | Met | `chain.*`                      |
 | Extension TAAK-097 | Met | `because-args.after.cs` (`string.Format(CultureInfo.InvariantCulture, ...)`) |
 
+Extension TAAK-277: Met, `NotBe/type.*`; probe against FA 7.2.2.
+
 ## Deviations
 
 | #   | Area | Plan says              | Code does                                                                  | Impact |

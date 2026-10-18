@@ -62,6 +62,8 @@ fa.have-count: x.Should().HaveCount(n) becomes, depending on the type, x.Count.S
 - **Extension TAAK-095**: WHEN `HaveCountGreaterThan`/`…OrEqualTo`/`HaveCountLessThan`/`…OrEqualTo` (also the `…GreaterOrEqualTo`/`…LessOrEqualTo` aliases) is used THE SYSTEM SHALL give the same count receiver with `ShouldBeGreaterThan`/`…OrEqualTo`/`ShouldBeLessThan`/`…OrEqualTo` (proofs `count-comparisons`, `count-comparison-because-args`). Probe: boundary n-1, n, n+1 equal.
 - **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL give `string.Format(CultureInfo.InvariantCulture, because, args)` as customMessage (Fixed, proofs `because-args`, `count-comparison-because-args`); named arguments or a non-constant `because` stay Manual. Since the Template Method, the shared checks (AssertionScope, shape, result, becauseArgs) live in `FluentAssertionPattern.Rewrite`; `HaveCountPattern` implements `RewriteAssertion` and uses `FluentAssertionsSyntax.NotNullReceiver` (parentheses and `ShouldNotBeNull()`) instead of its own `IsSafeReceiver`.
 
+- **Extension TAAK-277**: WHEN the subject is a Dictionary or IReadOnlyDictionary THE SYSTEM SHALL produce `x.Count.ShouldBe(n)` (FA counts pairs; probed at n-1, n, n+1; proof `HaveCount/dictionary.*`); this replaces the earlier Manual "Count or Keys?".
+
 ## Assumptions
 
 - _(inferred)_ Built on the existing stack: C#, Roslyn, Shouldly 4.3.0 as target, FluentAssertions 7.2.2 as source.

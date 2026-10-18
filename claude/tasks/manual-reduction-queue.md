@@ -16,7 +16,7 @@ all-or-nothing rule per solution, not from the number of Manual findings.
 | 4   | TAAK-274 | MediatR partial migration per request type (MediatR and Mediator side by side)          | 271        | done (fullcart migrates partly; starter/miru stay: their root is `AddMediatR`) |
 | 5   | TAAK-275 | FluentAssertions: custom assertion classes → Shouldly                                   | 271        | done   |
 | 6   | TAAK-276 | Blind corpus round(s): 0 regressions, measure Manual before/after; README/NuGet numbers | 272–275    | open   |
-| 7   | TAAK-277 | FluentAssertions residual Manual patterns (proposed by TAAK-271; inventory first)       | 271, 275   | in progress (agent) |
+| 7   | TAAK-277 | FluentAssertions residual Manual patterns (proposed by TAAK-271; inventory first)       | 271, 275   | done   |
 
 Statuses: `open` · `in progress (agent)` · `done` · `blocked (reason)`.
 

@@ -39,6 +39,19 @@ TAAK-220/221/222 → Manual (AggregateException unwrapping, cancelled task, meta
 
 **Way of working that worked:** parallel agents with strictly separated files (MediatR code / FA patterns / `Fixer.cs`+`UsingDirectives.cs`),
 reserve task numbers per agent in advance, `TEMP`/`TMP` on a `D:` folder, never kill other people's dotnet processes, one commit+push after all agents.
+
+## Round 6 blockers (2026-10-18 evening, machine shut down mid-work)
+
+**On main (`b3781a7`+, CI green):** TAAK-287 (FA `Func<V>` Throw subjects, `fa.invoking-local`), TAAK-284 (flaky test: one `AdhocWorkspace` per test solution), TAAK-286 (`MapperConfiguration` lambdas as map classes), TAAK-285 (cp1252/Latin-1 files migrated byte-exact; Moq `Setup(..Send..)` fixes; projectpulse 0/176 → 78/0). `verify-head.sh` now also fails on committed conflict markers.
+
+**Open, WIP on unpushed branches (worktrees under `.claude/worktrees/`), resume with `/taak-oppakken`:**
+
+- TAAK-288 — `worktree-agent-a4ddfa0b990b7a5bb` @ `8bdb648`. Step 2: lambda + Moq `RequestHandlerDelegate` rewrite built; 2 new `_Combined` proofs fail (tool output ≠ hand-written after). Autofac (fullcart) answer still open. Progress in the task file.
+- TAAK-289 — `worktree-agent-a61f15fbd8fdc5ded` @ `2105675`. New `automapper.unused-imapper` + `MapperCleanup` built (9 unit tests); pi22317 and assistiva fix-run clean, 0 regressions. Open: regenerate pattern list (`PatternDocTests` fails), KingmaDoc docs/README row, harness `after` on all 6 repos, verify. Review the dropped `GetService<IMapper>()` null-guard assumption (task file).
+- TAAK-290 — `worktree-agent-a372e1b0de035cb2f` @ `5055f35`. Starter judged principally manual (run-time assembly scan, friend `IVT`); reason order changed. Corpus rerun ended `fix-fails`/`restore-fails` on all 11 repos — investigate logs in `<corpus>/corpus-t290/_results/after/*/logs` first; no verify yet.
+- TAAK-291 — not started; do it last (models touched by the others).
+  Release 0.2.0 is proposed to the user only after all of these are done.
+
 ## Local environment (Windows, obsolete: the corpus work moved to Linux, TAAK-262)
 
 - This machine blocks starting `.exe` files from `%TEMP%` ("Access is denied"). The two `SampleShopTests` integration tests that build and test a fixed copy therefore fail locally.

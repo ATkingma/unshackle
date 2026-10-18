@@ -46,7 +46,7 @@ public class SampleShopTests
         string[] rows = await File.ReadAllLinesAsync(report, cancellationToken);
         rows[0].ShouldBe("File,Line,Fix,Pattern,Status,Reason");
         rows.ShouldContain("SampleShop.Tests/OrderTests.cs,24,fluentassertions,fa.should-be,Fixed,");
-        rows.ShouldContain(r => r.StartsWith("SampleShop.Tests/RepositoryTests.cs,16,fluentassertions,fa.have-count,Manual,", StringComparison.Ordinal));
+        rows.ShouldContain("SampleShop.Tests/RepositoryTests.cs,16,fluentassertions,fa.have-count,Fixed,");
         rows.Count(r => r.Contains(",Fixed,", StringComparison.Ordinal)).ShouldBeGreaterThanOrEqualTo(20);
         afterScan.ShouldBe(original);
 
@@ -60,7 +60,7 @@ public class SampleShopTests
         afterFix.ShouldContain("using Shouldly;");
     }
 
-    // fix keeps FluentAssertions while the one manual finding uses it; after that is fixed by hand, a second fix removes it.
+    // SampleShop.Tests migrates completely in the first fix (dictionary HaveCount included); SampleShop.Advanced.Tests keeps its manual findings.
     [Fact]
     public async Task FixTwice_SampleShopCopy_MigratesProjectFilesAndBuildsAndTests()
     {
@@ -74,7 +74,6 @@ public class SampleShopTests
         string solution = Path.Combine(samples, "SampleShop", "SampleShop.slnx");
         string testProject = Path.Combine(samples, "SampleShop", "SampleShop.Tests", "SampleShop.Tests.csproj");
         string advancedProject = Path.Combine(samples, "SampleShop", "SampleShop.Advanced.Tests", "SampleShop.Advanced.Tests.csproj");
-        string repositoryTests = Path.Combine(samples, "SampleShop", "SampleShop.Tests", "RepositoryTests.cs");
         string report = Path.Combine(directory.Path, "r.csv");
         await DotnetAsync(cancellationToken, "restore", solution);
 
@@ -83,20 +82,15 @@ public class SampleShopTests
         string[] firstRows = await File.ReadAllLinesAsync(report, cancellationToken);
         string afterFirst = await File.ReadAllTextAsync(testProject, cancellationToken);
         await DotnetAsync(cancellationToken, "build", solution);
-        string code = await File.ReadAllTextAsync(repositoryTests, cancellationToken);
-        await File.WriteAllTextAsync(
-            repositoryTests,
-            code.Replace("repository.All.Should().HaveCount(1);", "repository.All.Count.ShouldBe(1);", StringComparison.Ordinal),
-            cancellationToken);
         int secondExit = await Cli.RunAsync(["fix", solution, "--fix", "fluentassertions", "--force"], cancellationToken);
 
         // Assert
         firstExit.ShouldBe(ExitCodes.Ok);
-        firstRows.ShouldContain(r => r.StartsWith("SampleShop.Tests/SampleShop.Tests.csproj,0,fluentassertions,project-file,Manual,", StringComparison.Ordinal));
+        firstRows.ShouldContain(r => r.StartsWith("SampleShop.Advanced.Tests/SampleShop.Advanced.Tests.csproj,0,fluentassertions,project-file,Manual,", StringComparison.Ordinal));
         firstRows.ShouldContain("SampleShop.Tests/SampleShop.Tests.csproj,0,fluentassertions,project-file,Fixed,");
         firstRows.ShouldContain("../Directory.Packages.props,0,fluentassertions,project-file,Fixed,");
-        afterFirst.ShouldContain("<PackageReference Include=\"FluentAssertions\" />");
-        afterFirst.ShouldContain("<PackageReference Include=\"Shouldly\" />");
+        afterFirst.ShouldNotContain("FluentAssertions");
+        afterFirst.ShouldContain("<Using Include=\"Shouldly\" />");
 
         secondExit.ShouldBe(ExitCodes.Ok);
         string afterSecond = await File.ReadAllTextAsync(testProject, cancellationToken);

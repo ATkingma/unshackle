@@ -19,7 +19,6 @@ public class VendoredPackagesTests
     private const string InfrastructureCode = "using Ardalis.SharedKernel; namespace App; public class Data(IDomainEventDispatcher dispatcher) { }";
 
     private readonly IProjectFileStore _projectFiles = Substitute.For<IProjectFileStore>();
-    private static readonly AdhocWorkspace s_workspace = new();
 
     public VendoredPackagesTests()
     {
@@ -30,7 +29,7 @@ public class VendoredPackagesTests
     public async Task FixAsync_UsersShareOneProject_PutsSourceThereAndSwapsThePackage()
     {
         // Arrange
-        Solution solution = s_workspace.CurrentSolution;
+        Solution solution = TestSolution.NewEmpty();
         (solution, ProjectId core) = AddProject(solution, "Core", CoreCode);
         (solution, ProjectId useCases) = AddProject(solution, "UseCases", UseCasesCode, core);
         (solution, _) = AddProject(solution, "Infrastructure", InfrastructureCode, core, useCases);
@@ -55,7 +54,7 @@ public class VendoredPackagesTests
     public async Task FixAsync_UsersShareNoProject_ReportsManual()
     {
         // Arrange
-        Solution solution = s_workspace.CurrentSolution;
+        Solution solution = TestSolution.NewEmpty();
         (solution, _) = AddProject(solution, "Core", CoreCode);
         (solution, _) = AddProject(solution, "Infrastructure", InfrastructureCode);
         var fixer = new Fixer([new MediatRFix()], _projectFiles);

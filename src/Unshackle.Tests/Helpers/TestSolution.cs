@@ -8,12 +8,13 @@ public static class TestSolution
 {
     public const string FileName = "Test.cs";
 
-    private static readonly AdhocWorkspace s_workspace = new();
+    // A solution with an id of its own: MapOwners caches its plan per SolutionId, so tests that run in parallel must never share one (TAAK-284).
+    public static Solution NewEmpty() => new AdhocWorkspace().CurrentSolution;
 
     public static Solution Create(string code, IEnumerable<MetadataReference> references)
     {
         var projectId = ProjectId.CreateNewId();
-        return s_workspace.CurrentSolution
+        return NewEmpty()
             .AddProject(projectId, "Test", "Test", LanguageNames.CSharp)
             .WithProjectCompilationOptions(projectId, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
             .AddMetadataReferences(projectId, references)

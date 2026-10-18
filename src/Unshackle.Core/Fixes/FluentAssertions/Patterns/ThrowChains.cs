@@ -261,9 +261,10 @@ internal static class ThrowChains
         }
 
         ExpressionSyntax exception;
+        StatementSyntax? hoisted = null;
         if (chain.Origin is InvocationExpressionSyntax throwCall)
         {
-            if (Start(chain, throwCall, model) is not { } start)
+            if (Start(chain, throwCall, model, out hoisted) is not { } start)
             {
                 return StartFailure(chain, throwCall, model);
             }
@@ -283,6 +284,11 @@ internal static class ThrowChains
         }
 
         var statements = new List<StatementSyntax>();
+        if (hoisted is not null)
+        {
+            statements.Add(hoisted);
+        }
+
         ExpressionSyntax? last = null;
         int hoists = 0;
         for (int i = 0; i < chain.Steps.Count; i++)
@@ -377,18 +383,19 @@ internal static class ThrowChains
 
     // `Should.Throw<T>(action[, because])` (`.ShouldBeOfType<T>()` for ThrowExactly), or the awaited ThrowAsync form; null
     // when StartFailure has the reason.
-    private static ExpressionSyntax? Start(ThrowChain chain, InvocationExpressionSyntax throwCall, SemanticModel model) =>
-        StartOrReason(chain, throwCall, model, out ExpressionSyntax? start, out _) ? start : null;
+    private static ExpressionSyntax? Start(ThrowChain chain, InvocationExpressionSyntax throwCall, SemanticModel model, out StatementSyntax? hoisted) =>
+        StartOrReason(chain, throwCall, model, out ExpressionSyntax? start, out hoisted, out _) ? start : null;
 
     private static PatternResult StartFailure(ThrowChain chain, InvocationExpressionSyntax throwCall, SemanticModel model)
     {
-        StartOrReason(chain, throwCall, model, out _, out string reason);
+        StartOrReason(chain, throwCall, model, out _, out _, out string reason);
         return PatternResult.Manual(reason);
     }
 
-    private static bool StartOrReason(ThrowChain chain, InvocationExpressionSyntax throwCall, SemanticModel model, out ExpressionSyntax? start, out string reason)
+    private static bool StartOrReason(ThrowChain chain, InvocationExpressionSyntax throwCall, SemanticModel model, out ExpressionSyntax? start, out StatementSyntax? hoisted, out string reason)
     {
         start = null;
+        hoisted = null;
         reason = string.Empty;
         var name = (SimpleNameSyntax)((MemberAccessExpressionSyntax)throwCall.Expression).Name;
         bool async = AsyncNames.Contains(name.Identifier.ValueText);
@@ -454,10 +461,34 @@ internal static class ThrowChains
                 : invoke.ReturnsVoid || invoke.ReturnType.IsReferenceType;
             if (!accepted)
             {
-                reason = async
-                    ? "The subject is not a Func<Task> or a Func<Task<T>> with T a reference type, the only delegates Should.ThrowAsync accepts."
-                    : "The subject is not an Action or a Func returning a reference type, the only delegates Should.Throw accepts.";
-                return false;
+                // A method group or variable of Func<V> (V a value type or an unconstrained T) is no Func<object?>, but a lambda that calls
+                // it is: the call result converts (boxing) and is dropped, as FluentAssertions drops it (probed, TAAK-287).
+                bool wrappable = async
+                    ? invoke.ReturnType is INamedTypeSymbol { Name: "Task", ContainingNamespace.Name: "Tasks", TypeArguments: [_] }
+                    : !invoke.ReturnsVoid && !invoke.ReturnsByRef && !invoke.ReturnsByRefReadonly && invoke.ReturnType is not IPointerTypeSymbol && !invoke.ReturnType.IsRefLikeType;
+                if (!wrappable || model.GetTypeInfo(subject).Nullability.FlowState == NullableFlowState.MaybeNull)
+                {
+                    reason = async
+                        ? "The subject is not a Func<Task> or a Func<Task<T>> with T a reference type, the only delegates Should.ThrowAsync accepts."
+                        : "The subject is not an Action or a Func returning a reference type, the only delegates Should.Throw accepts.";
+                    return false;
+                }
+
+                // A subject that may run twice or out of order (a call) goes into a local first: FluentAssertions evaluates it once, before the check.
+                ExpressionSyntax callee = subject.WithoutTrivia();
+                if (!FluentAssertionsSyntax.IsSafeToEvaluateTwice(subject, model))
+                {
+                    if (!FluentAssertionsSyntax.TryGetSplittableStatement(NodeOf(chain), out _))
+                    {
+                        reason = FluentAssertionsSyntax.NotSplittableReason;
+                        return false;
+                    }
+
+                    (hoisted, IdentifierNameSyntax local) = FluentAssertionsSyntax.Hoist(subject, model);
+                    callee = local;
+                }
+
+                action = SyntaxFactory.ParseExpression($"() => {(FluentAssertionsSyntax.IsSafeReceiver(callee) ? callee : SyntaxFactory.ParenthesizedExpression(callee))}()");
             }
         }
 

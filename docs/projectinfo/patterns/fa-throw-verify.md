@@ -30,6 +30,7 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ThrowPattern.cs`; regi
 | ThrowExactly | Met | `ThrowExactly/*.after.cs` |
 | TAAK-097 | Met | `because-args.after.cs`, `message-because-args.after.cs` |
 | TAAK-096 | Met | `value-used.after.cs`, `edge-which-message.after.cs`; Manual: `chain`, `edge-inner-exception` |
+| TAAK-287 | Met | `Throw/value-func`, `value-func-call`, `value-func-generic` (Fixed), `value-func-nullable` (Manual); `ThrowAsync/value-func`, `value-func-call` |
 | Invoking | Met | `Invoking/simple`, `func`, `throw-exactly` (Fixed); `Invoking/side-effect-receiver`, `value-type`, `method-group` (Manual) |
 | AggregateException | Met | `aggregate-wait`, `aggregate-method-group` (Manual); `aggregate-expected`, `aggregate-get-result` (Fixed) |
 | Line endings | Met | `message-line-break`, `edge-multiline-message` (Fixed); `message-contains-line-break` (Manual) |

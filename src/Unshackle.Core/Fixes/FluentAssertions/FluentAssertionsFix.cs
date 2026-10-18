@@ -90,6 +90,8 @@ public class FluentAssertionsFix : IFix
         new AllSatisfyPattern(),
         // `_ = x.Should()...;` becomes a plain statement, which the patterns below treat as a discarded result.
         new DiscardAssignmentPattern(),
+        // `var act = x.Invoking(...)` becomes a delegate local, so the Throw patterns below see a delegate subject.
+        new InvokingLocalPattern(),
         // Before the assertion patterns, which report a link after .And as Manual.
         new AndChainPattern(s_assertions),
         .. s_assertions,

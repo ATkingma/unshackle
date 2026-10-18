@@ -1,6 +1,6 @@
 # TAAK-287 — FluentAssertions residual Manual, round 2 (inventory first)
 
-**Status**: step 2/4 done (implementation); step 3 (corpus after) next
+**Status**: step 3/4 done (corpus after); step 4 (verify) next
 **Branch**: `worktree-agent-a6a00e1539f53e94e` (worktree `.claude/worktrees/agent-a6a00e1539f53e94e`; not pushed)
 **Created**: 2026-10-18
 **Goal**: remove this blocker with proof, or state precisely why it is principally manual.
@@ -35,11 +35,26 @@ Manual findings by root cause (rows without `project-file`):
 
 Probes for the two done causes (FA 7.2.2): `Func<int>.Should().Throw<E>()` fails exactly when the func does not throw; a call as subject runs once (probe in `<corpus>/probe287`).
 
+## Corpus after (tool = this branch, `<corpus>/corpus-blind/_results/t287/tool-new`, harness `after`)
+
+| Repo        | Fixed / Manual before | Fixed / Manual after | Tests before → after | Regressions |
+| ----------- | --------------------- | -------------------- | -------------------- | ----------: |
+| mihome      | 319 / 15              | 328 / 6              | 448/448 → 448/448    | 0 |
+| catalogapi  | 222 / 4               | 223 / 2              | 44/54 → 44/54        | 0 |
+| ogooreck    | 23 / 9                | 23 / 9               | 20/20 → 20/20        | 0 |
+| xrepo       | 122 / 9               | 122 / 9              | 71/71 → 71/71        | 0 |
+| buildenator | 623 / 46              | 623 / 46             | 127/127 → 127/127 ¹  | 0 |
+| bearded     | 375 / 80              | 383 / 72             | 1294/1294 → 1294/1294 | 0 |
+
+¹ Display names of generated-data tests differ per run (same pass count, not regressions), as in round 5. All six build after `fix`.
+
+Remaining Manual are the principally manual causes in the inventory table (exception type checks, used results, equivalency options, `ContainInOrder`, property receivers) plus the open small ones.
+
 ## Steps
 
 - [x] 1. Measure on the corpus repo(s) and probe the old library; KingmaDoc plan for touched patterns/features
 - [x] 2. Implementation + unit tests + proofs (`_Combined` where patterns cooperate)
-- [ ] 3. Corpus `after` on mihome, catalogapi, buildenator, bearded, ogooreck, xrepo: build green, 0 regressions; before/after numbers here and in CORPUSRUN-blind.md
+- [x] 3. Corpus `after` on mihome, catalogapi, buildenator, bearded, ogooreck, xrepo: build green, 0 regressions; before/after numbers here and in CORPUSRUN-blind.md
 - [ ] 4. Verify, models, docs; `claude/tools/verify-head.sh` → `VERIFY OK`
 
 ## See also

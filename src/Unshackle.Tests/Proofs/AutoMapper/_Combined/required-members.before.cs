@@ -1,3 +1,4 @@
+#nullable enable
 using AutoMapper;
 
 namespace Shop;
@@ -23,16 +24,6 @@ public class NoteProfile : Profile
 {
     public NoteProfile()
     {
+        CreateMap<NoteDto, NoteEntity>();
     }
-}
-
-public static class NoteProfileExtensions
-{
-    // AutoMapper leaves an unmapped required member at default: the initializer must still name it.
-    public static NoteEntity ToNoteEntity(this NoteDto source) => new()
-    {
-        Title = source.Title,
-        Id = default,
-        UserId = default!,
-    };
 }

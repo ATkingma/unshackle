@@ -140,10 +140,9 @@ public class NestedMaps
         foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => CreateMapPattern.IsProfileWithMaps(c, model)))
         {
             List<(TypeSyntax Destination, ITypeSymbol From, ITypeSymbol To, bool Converts, bool Plain)> found = [];
-            foreach (InvocationExpressionSyntax createMap in profile.Members.OfType<ConstructorDeclarationSyntax>().SelectMany(c => c.DescendantNodes())
-                .OfType<InvocationExpressionSyntax>())
+            foreach (InvocationExpressionSyntax createMap in CreateMapPattern.MapStatements(profile, model).SelectMany(s => s.DescendantNodesAndSelf()).OfType<InvocationExpressionSyntax>())
             {
-                if (createMap.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
+                if ((createMap.Expression is MemberAccessExpressionSyntax { Name: var written } ? written : createMap.Expression) is GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                     && model.GetSymbolInfo(createMap).Symbol is IMethodSymbol { ContainingAssembly.Name: "AutoMapper", TypeArguments: [{ } from, { } to] })
                 {
                     bool plain = IsPlain(createMap);
@@ -175,7 +174,7 @@ public class NestedMaps
     private static void AddRewritten(Dictionary<(string Source, string Destination), List<NestedMap>> maps, SyntaxNode root, SemanticModel model, ProjectId? project)
     {
         HashSet<string> extensions = [.. root.DescendantNodes().OfType<ClassDeclarationSyntax>()
-            .Where(c => model.GetDeclaredSymbol(c) is INamedTypeSymbol type && CreateMapPattern.IsProfile(type)).Select(CreateMapPattern.ExtensionsName)];
+            .Where(c => model.GetDeclaredSymbol(c) is INamedTypeSymbol type && (CreateMapPattern.IsProfile(type) || CreateMapPattern.HoldsConfiguration(c, model))).Select(CreateMapPattern.ExtensionsName)];
         if (extensions.Count == 0)
         {
             return;

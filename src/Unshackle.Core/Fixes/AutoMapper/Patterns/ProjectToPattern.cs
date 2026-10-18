@@ -306,8 +306,8 @@ public class ProjectToPattern : ISolutionPattern
 
             foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => CreateMapPattern.IsProfileWithMaps(c, profileModel)))
             {
-                if (profile.Members.OfType<ConstructorDeclarationSyntax>().SelectMany(c => c.DescendantNodes()).OfType<InvocationExpressionSyntax>()
-                    .Any(c => c.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap" }
+                if (CreateMapPattern.MapStatements(profile, profileModel).SelectMany(s => s.DescendantNodesAndSelf()).OfType<InvocationExpressionSyntax>()
+                    .Any(c => (c.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap" } or MemberAccessExpressionSyntax { Name: GenericNameSyntax { Identifier.ValueText: "CreateMap" } })
                         && profileModel.GetSymbolInfo(c, cancellationToken).Symbol is IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly, TypeArguments: [{ } from, { } to] }
                         && MapIntoPattern.Key(from, to) == key))
                 {

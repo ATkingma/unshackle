@@ -49,9 +49,7 @@ internal static class MapBlockers
                 .Where(i => Maps(i, mapModel, sourceName, destinationName, cancellationToken)))
             {
                 ClassDeclarationSyntax? profile = createMap.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
-                bool inConstructor = createMap.Ancestors().OfType<BaseMethodDeclarationSyntax>().FirstOrDefault() is ConstructorDeclarationSyntax
-                    && createMap.Ancestors().OfType<AnonymousFunctionExpressionSyntax>().FirstOrDefault() is null;
-                if (profile is not null && inConstructor && CreateMapPattern.IsProfileWithMaps(profile, mapModel))
+                if (profile is not null && CreateMapPattern.IsProfileWithMaps(profile, mapModel) && CreateMapPattern.IsInMapStatements(createMap, profile, mapModel))
                 {
                     if (await CreateMapPattern.RewriteMethodsAsync(profile, mapModel, solution, cancellationToken) is ManualResult { Reason: var reason })
                     {

@@ -417,12 +417,12 @@ public class MapCallPattern : ISolutionPattern
 
                     // One generated method per CreateMap statement (or expression body), in the same order, followed by the reverse one for a ReverseMap.
                     List<MethodDeclarationSyntax> methods = [.. extensions.Members.OfType<MethodDeclarationSyntax>()];
-                    IReadOnlyList<SyntaxNode> statements = CreateMapPattern.MapStatements(profile.Members.OfType<ConstructorDeclarationSyntax>().Single());
+                    IReadOnlyList<SyntaxNode> statements = CreateMapPattern.MapStatements(profile, profileModel);
                     List<(ITypeSymbol From, ITypeSymbol To)> pairs = [];
                     foreach (SyntaxNode statement in statements)
                     {
-                        InvocationExpressionSyntax? createMap = statement.DescendantNodes().OfType<InvocationExpressionSyntax>()
-                            .LastOrDefault(c => c.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap" });
+                        InvocationExpressionSyntax? createMap = statement.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>()
+                            .LastOrDefault(c => c.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap" } or MemberAccessExpressionSyntax { Name: GenericNameSyntax { Identifier.ValueText: "CreateMap" } });
                         // A map that stays on AutoMapper keeps its statement and gets no method (TAAK-272).
                         if (createMap is not null && profileModel.GetSymbolInfo(createMap, cancellationToken).Symbol is IMethodSymbol { TypeArguments: [{ } from, { } to] }
                             && owners.Reason(from, to) is null)

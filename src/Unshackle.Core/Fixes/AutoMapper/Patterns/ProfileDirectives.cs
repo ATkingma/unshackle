@@ -12,10 +12,15 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 internal static class ProfileDirectives
 {
     // Null with the repaired constructor, or why the conditional compilation around the removed maps must stay Manual.
-    public static string? Repair(ConstructorDeclarationSyntax constructor, out ConstructorDeclarationSyntax repaired)
+    public static string? Repair(ConstructorDeclarationSyntax constructor, out ConstructorDeclarationSyntax repaired) => Repair(constructor, constructor.Body, out repaired);
+
+    // The same for the lambda of a MapperConfiguration (TAAK-286).
+    public static string? Repair(LambdaExpressionSyntax lambda, out LambdaExpressionSyntax repaired) => Repair(lambda, lambda.Body as BlockSyntax, out repaired);
+
+    private static string? Repair<T>(T owner, BlockSyntax? body, out T repaired) where T : SyntaxNode
     {
-        repaired = constructor;
-        if (constructor.Body is not { } body)
+        repaired = owner;
+        if (body is null)
         {
             return null;
         }
@@ -52,8 +57,8 @@ internal static class ProfileDirectives
             return "a CreateMap sits inside conditional compilation (#if), so the mapping method would exist in every build configuration; write it by hand";
         }
 
-        repaired = constructor.ReplaceTokens(
-            constructor.Body.DescendantTokens().Where(token => token.LeadingTrivia.Any(stray.Contains)),
+        repaired = owner.ReplaceTokens(
+            body.DescendantTokens().Where(token => token.LeadingTrivia.Any(stray.Contains)),
             (token, _) => token.WithLeadingTrivia(WithoutStray(token.LeadingTrivia, stray)));
         return null;
     }

@@ -201,13 +201,19 @@ public class Fixer : IFixer
         // A file that is not UTF-8 stays as it is, with one Manual row (TAAK-167). It still names the old library, so its
         // project keeps the package (the project-file cascade below) and the rest of the solution is migrated.
         HashSet<string> notUtf8 = await NotUtf8FilesAsync(solution, cancellationToken);
+        // A file shared with a project that can reach neither the old nor the new library is not migrated either (below).
+        HashSet<string> unreachable = await UnreachableFilesAsync(solution, fix, cancellationToken);
+        notUtf8.UnionWith(unreachable);
         // Only a file that names the old library needs the row; another one is left alone without noise.
         foreach (string path in notUtf8.Order(StringComparer.Ordinal))
         {
             Document document = solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents).First(d => d.FilePath == path);
             if (await UsingDirectives.NamesRemovedNamespaceAsync(document, fix.RemovedNamespaces, cancellationToken))
             {
-                findings.Add(CreateFinding(path, 0, fix, EncodingPatternId, PatternResult.Manual(
+                findings.Add(CreateFinding(path, 0, fix, EncodingPatternId, unreachable.Contains(path) ? PatternResult.Manual(
+                    "The file is also compiled by a project that references neither the old nor the new library (a linked file, e.g. for another " +
+                    "assertion library), so a rewrite would not build there. It is not migrated and its other projects keep the old package. " +
+                    "Migrate it by hand.") : PatternResult.Manual(
                     "The file is not UTF-8 (it would be corrupted when written back), so it is not migrated and its project keeps the old package. " +
                     "Convert it to UTF-8 and run the fix again, or migrate it by hand.")));
             }
@@ -749,6 +755,32 @@ public class Fixer : IFixer
 
     // Roslyn reads a file with a BOM or valid UTF-8 as UTF-8, and anything else (Latin-1, UTF-16) with that other encoding.
     // Text without an encoding (made in memory) is written as UTF-8.
+    // Files that one project can migrate (it references the old library) but another project compiles without any reference to the old
+    // or the new one (TAAK-281, serilogmem): its project file gets no new package, so the migrated file would not build there.
+    private static async Task<HashSet<string>> UnreachableFilesAsync(Solution solution, IFix fix, CancellationToken cancellationToken)
+    {
+        if (fix.Package is not PackageMigration package)
+        {
+            return [];
+        }
+
+        HashSet<string> old = [package.RemovedPackage, .. package.AlsoRemovedPackages];
+        HashSet<string> added = [.. package.AddedPackages.Select(p => p.Name)];
+        var reach = new Dictionary<ProjectId, (bool Old, bool Neither)>();
+        foreach (Project project in solution.Projects.Where(p => p.Language == LanguageNames.CSharp))
+        {
+            Compilation? compilation = await project.GetCompilationAsync(cancellationToken);
+            string[] names = compilation is null ? [] : [.. compilation.ReferencedAssemblyNames.Select(a => a.Name)];
+            reach[project.Id] = (names.Any(old.Contains), !names.Any(old.Contains) && !names.Any(added.Contains));
+        }
+
+        return [.. solution.Projects.Where(p => p.Language == LanguageNames.CSharp)
+            .SelectMany(p => p.Documents.Where(d => d.FilePath is not null).Select(d => (Path: d.FilePath!, Project: p.Id)))
+            .GroupBy(d => d.Path, StringComparer.Ordinal)
+            .Where(g => g.Any(d => reach[d.Project].Old) && g.Any(d => reach[d.Project].Neither))
+            .Select(g => g.Key)];
+    }
+
     private static async Task<HashSet<string>> NotUtf8FilesAsync(Solution solution, CancellationToken cancellationToken)
     {
         HashSet<string> paths = new(StringComparer.Ordinal);

@@ -1,6 +1,6 @@
 # TAAK-279 — AutoMapper: mocked IMapper no longer keeps whole map pairs on AutoMapper
 
-**Status**: step 3/6 — in progress
+**Status**: step 4/6 — in progress
 **Created**: 2026-10-18
 **Branch**: `worktree-agent-a1ab1bc6d7ec0994b` (worktree `.claude/worktrees/agent-a1ab1bc6d7ec0994b`)
 **Goal**: a test that stubs `IMapper` (Moq/NSubstitute/FakeItEasy) only keeps **its class under test** on AutoMapper; every other call site of the same map pair migrates, with proof that the app and its own tests behave the same.
@@ -57,8 +57,8 @@ Determining "class under test": the type whose constructor receives the mocked `
 
 - [x] 1. Probe: classes under mocked tests vs other call sites (counts per repo)
 - [x] 2. KingmaDoc plan + design decision with evidence
-- [→] 3. Implementation + unit tests
-- [ ] 4. Proofs (`MapCall`, `_Combined`)
+- [x] 3. Implementation + unit tests
+- [→] 4. Proofs (`MapCall`, `_Combined`)
 - [ ] 5. Corpus `after`: 0 regressions, before/after numbers
 - [ ] 6. Verify, models, docs, archive
 
@@ -73,6 +73,10 @@ Determining "class under test": the type whose constructor receives the mocked `
 ## Changed files
 
 - `docs/projectinfo/features/automapper-mocked-imapper-plan.md` (plan: option A chosen, option B rejected by measurement)
+- `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapOwners.cs`: shared pairs (`_shared`, `Shared`, `ShareCall`, `Share`, closure in `Close`),
+  classes under test (`ClassesUnderTest`, `MockVariable`, `CloseUnderTest`, `UnderTestReason`)
+- `CreateMapPattern.cs` (a shared statement stays next to its generated methods), `KeptMapPattern.cs` (shared reason)
+- `src/Unshackle.Tests/Core/MapOwnersTests.cs`: 4 tests (shared, no construction, IMapper handed on, reached maps)
 
 ## See also
 

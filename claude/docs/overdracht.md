@@ -47,6 +47,8 @@ reserve task numbers per agent in advance, `TEMP`/`TMP` on a `D:` folder, never 
 
 ## Push procedure
 
+**Use `claude/tools/verify-head.sh <scratch-dir>` and push only with `&&` after it** (it stops on the first failing exit code; never judge by grepped output, which hides the exit code: on 2026-10-18 a push went out with 1 failing (flaky) test that way).
+
 Tasks to `archief/` → `git add -A` → commit → checks on the commit in a separate worktree, checked out with LF like CI
 (`git -c core.autocrlf=false worktree add --detach <map buiten %TEMP%> HEAD`; with the global `autocrlf=true`, 15 tests fail on CRLF) (`dotnet build`, `dotnet test`,
 `dotnet test --solution samples/SampleShop/SampleShop.slnx`, docs check) → everything green → `git push origin main`. Anything red → do not push, report it

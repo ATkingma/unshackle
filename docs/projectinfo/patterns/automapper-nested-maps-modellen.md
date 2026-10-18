@@ -31,7 +31,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `
 | Index    | `NestedMaps.FromAsync`, `AddCompilation`, `AddProfiles` | Maps of the own project, projects depended on, and rewritten `<Profile>Extensions` in the same file |
 | Settings | `NestedMaps.NullSettingIn`                              | An assignment to `AllowNullCollections`/`AllowNullDestinationValues` anywhere in the solution |
 | Member   | `CreateMapPattern.Problem`/`MapFromProblem` → `MemberValues.Problem` | The value per destination member                               |
-| Nested   | `MemberValues.Nested`, `LookupSymbols`, `Reaches`       | One map, callable, no member of that name, no cycle; the using it needs     |
+| Nested   | `MemberValues.Nested`, `LookupSymbols`, `ReachesMapped` | One map, callable, no member of that name, no cycle through mapped members (TAAK-273; options fall back to `Reaches`); the using it needs |
 | MapInto  | `CreateMapPattern.Rewrite`                              | A map with a copied member that needs `MapInto` is Manual                    |
 | Write    | `Extensions`, `PatternResult.Fixed(nodes, namespaces)`  | `System.Linq` and the other profile's namespace as required usings          |
 

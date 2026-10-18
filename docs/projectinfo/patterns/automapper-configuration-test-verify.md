@@ -24,6 +24,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ConfigurationTestPattern.cs`
 | REQ-8  | Met     | `ConfigurationTest/unmigrated-map`, `FixAsync_MapInReferencedProject_ChecksBeforeRemoving` (both cases)   |
 | REQ-9  | Met     | `ConfigurationTest/side-effect-receiver`, `Rewrite_AssertAsExpressionBody_ReportsManual`                  |
 | REQ-10 | Met     | `Find_MapperPassedOn_FindsNothing` (three forms)                                                         |
+| REQ-11 | Met (narrowed) | unit test `FixAsync_ActionCheckWhileMapsStay_ReportsKept`; removal of the `Action`/`NotThrow` pair not built (TAAK-273, see plan) |
 
 ## Deviations
 

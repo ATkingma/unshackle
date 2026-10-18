@@ -56,7 +56,7 @@ Like nested maps and conversions this is a capability of the shared profile rewr
 - **REQ-5**: WHEN another map has a member or element of a converter map's pair THE SYSTEM SHALL call `source.X.ToB()` without `?.` (proofs `CreateMap/convert-using-lambda`, `CreateMap/convert-using-type-converter`, unit test `Rewrite_ConverterInNullableContext_CallsItWithoutNullCheck`).
 - **REQ-6**: WHEN a `Map<B>(a)` call uses a converter map THE SYSTEM SHALL rewrite it to `a.ToB()` (proof `_Combined/convert-using-map-call`).
 - **REQ-7**: IF the converter reads the destination or the `ResolutionContext`, has constructor parameters, implements `Convert` explicitly, is not a repeatable instance, has a block body, names its member with a string, or is combined with `ForMember` THEN THE SYSTEM SHALL report Manual (proofs `CreateMap/convert-using-context`, `CreateMap/convert-using-service`, unit test `Rewrite_ConvertUsingNotWritable_ReportsManual`).
-- **REQ-8**: IF the method name is already a member of the source type THEN THE SYSTEM SHALL report Manual (unit test `Rewrite_ConvertUsingNotWritable_ReportsManual`, `A, string`).
+- **REQ-8** (*superseded for `string` by REQ-9*): IF the method name is already a member of the source type THEN THE SYSTEM SHALL report Manual (unit test `Rewrite_ConvertUsingNotWritable_ReportsManual`, `A, string`).
 - **REQ-9** (TAAK-273): WHEN the destination is `string` THE SYSTEM SHALL name the method `ToMappedString` instead of `ToString` (every type already has `object.ToString()`, so `x.ToString()` would never call the extension); `Map<string>(a)` calls and nested members use the same name (proof `_Combined/convert-using-string`).
 
 ## Assumptions

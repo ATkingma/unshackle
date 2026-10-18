@@ -21,7 +21,8 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/Converters.cs`, `CreateMapPa
 | REQ-5 | Met     | `CreateMap/convert-using-lambda`, `CreateMap/convert-using-type-converter`, unit test `Rewrite_ConverterInNullableContext_CallsItWithoutNullCheck` |
 | REQ-6 | Met     | `_Combined/convert-using-map-call`                                                                        |
 | REQ-7 | Met     | `CreateMap/convert-using-context`, `CreateMap/convert-using-service`, unit test `Rewrite_ConvertUsingNotWritable_ReportsManual` (11 cases) |
-| REQ-8 | Met     | unit test `Rewrite_ConvertUsingNotWritable_ReportsManual` (`CreateMap<A, string>`)                       |
+| REQ-8 | Superseded for `string` by REQ-9 | other names: code review (the `CreateMap<A, string>` case of `Rewrite_ConvertUsingNotWritable_ReportsManual` moved to REQ-9)                       |
+| REQ-9 | Met | `_Combined/convert-using-string` (`ToMappedString` from the profile, a nested member and `Map<string>`), unit test `Rewrite_ConvertUsingToString_WritesToMappedString` (TAAK-273) |
 
 ## Deviations
 

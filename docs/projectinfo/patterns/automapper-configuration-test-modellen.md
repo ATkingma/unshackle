@@ -49,7 +49,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ConfigurationTestPatter
 | Declaration, assignments, field removed  | variable built here from profiles, only checked or mapped with            | `ConfigurationTest/setup-mapper`, `validity-test`, `_Combined/configuration-test-fixture`   |
 | Not reported                             | profile-only configuration or mapper passed on; injected `IMapper`        | unit test `Find_MapperPassedOn_FindsNothing`                                               |
 | Manual: new MapperConfiguration stays    | settings, inline maps, method group, profile from a referenced assembly   | `ConfigurationTest/inline-create-map`, `settings`, `method-group`, unit test `Rewrite_ProfileFromReferencedAssembly_ReportsManual` |
-| Manual: AssertConfigurationIsValid stays | side effects, or not a statement of its own                               | `ConfigurationTest/side-effect-receiver`, unit test `Rewrite_AssertAsExpressionBody_ReportsManual` |
+| Manual: AssertConfigurationIsValid stays | side effects, or not a statement of its own (while maps stay: the kept reason first, TAAK-273) | `ConfigurationTest/side-effect-receiver`, unit test `Rewrite_AssertAsExpressionBody_ReportsManual` |
 | Manual: still has maps to check          | a CreateMap outside a profile constructor or `[AutoMap]` remains           | `ConfigurationTest/unmigrated-map`, unit test `FixAsync_MapInReferencedProject_ChecksBeforeRemoving` |
 
 ## See also

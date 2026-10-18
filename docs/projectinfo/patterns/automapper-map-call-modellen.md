@@ -47,7 +47,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapCallPattern.cs` and 
 | Manual "not called as mapper.Map" | the receiver is a call or another expression | `receiver-call`                                                      |
 | Manual "no type of its own"       | the source is `object` or `dynamic`         | `object-source`                                                      |
 | Fixed `Select(x => x.ToB())`      | collection whose element map is rewritten (TAAK-259) | `_Combined/collection-map-call`                              |
-| Fixed `a?.ToB()` / Manual "may be null" | source MaybeNull; target allows null or not (TAAK-259) | `maybe-null-target`, `maybe-null`                    |
+| Fixed `a?.ToB()` / `a?.ToB()!` / Manual "may be null" | source MaybeNull; target allows null (`?.`) or not (`?.…!`, TAAK-273); struct destination Manual | `maybe-null-target`, `maybe-null`, `maybe-null-struct` |
 | Manual "No CreateMap"             | no `ToB`, no rewritten profile               | `unknown-map`, `manual-profile`                                      |
 | Manual "Several profiles"         | more than one profile maps A to B            | —                                                                    |
 | Manual "becomes internal"         | an internal `ToB` in another project         | unit test                                                            |

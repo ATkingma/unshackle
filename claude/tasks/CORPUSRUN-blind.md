@@ -192,7 +192,7 @@ All five new failures are build breaks after `fix` (the build is the safety net:
 
 Re-measured after the TAAK-281/283 fixes (tool = branch `worktree-agent-a703fd17d0ed2c1c1`): serilogmem and opentws build and have 0 test regressions ([verify](../../docs/projectinfo/features/using-removal-edge-cases-verify.md)). Because the break hides later errors, the repos are not yet known to be green after these fixes; a rerun after TAAK-280..283 is needed before claiming them. Also noted: serilogmem is itself a FluentAssertions extension library (third-party `Should()` extensions), where a Shouldly migration is not meaningful.
 
-**Recheck for TAAK-287 (branch `worktree-agent-a6a00e1539f53e94e`, 2026-10-18):** `Func<V>` subjects of Throw/ThrowAsync and `var act = x.Invoking(...)` locals are migrated now. Fixed / Manual: mihome 319/15 → 328/6, catalogapi 222/4 → 223/2, bearded 375/80 → 383/72; ogooreck, xrepo, buildenator unchanged. All six build, tests unchanged (448/448, 44/54, 20/20, 71/71, 127/127, 1294/1294), **0 regressions**. Details: `claude/tasks/TAAK-287-fa-residual-round-2.md`.
+**Recheck for TAAK-287 (branch `worktree-agent-a6a00e1539f53e94e`, 2026-10-18):** `Func<V>` subjects of Throw/ThrowAsync and `var act = x.Invoking(...)` locals are migrated now. Fixed / Manual: mihome 319/15 → 328/6, catalogapi 222/4 → 223/2, bearded 375/80 → 383/72; ogooreck, xrepo, buildenator unchanged. All six build, tests unchanged (448/448, 44/54, 20/20, 71/71, 127/127, 1294/1294), **0 regressions**. Details: `claude/tasks/archief/TAAK-287-fa-residual-round-2.md`.
 
 ### Conclusion of round 5
 

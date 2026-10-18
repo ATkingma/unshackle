@@ -11,7 +11,12 @@ cd "$dir"
 # Local machine paths must never reach the public repo (write <corpus>/... or repo-relative paths).
 if git grep -nE '/(home|mnt)/[A-Za-z]' -- ':!claude/tools/verify-head.sh'; then echo "local paths found"; exit 1; fi
 dotnet build -v q
-dotnet test -- --max-threads 4
+results="${1}/verify-head-results"; rm -rf "$results"
+if ! dotnet test -- --max-threads 4 --report-xunit-trx --results-directory "$results"; then
+  # Name the failing tests (a flaky one has failed under load before, TAAK-284).
+  grep -ho 'testName="[^"]*" [^>]*outcome="Failed"' "$results"/*.trx | sed 's/ .*//' || true
+  exit 1
+fi
 dotnet test --solution samples/SampleShop/SampleShop.slnx
 echo '{}' | bash .claude/hooks/check-pattern-docs.sh subagent-stop | grep -q . && { echo "pattern docs missing"; exit 1; }
 echo "VERIFY OK: $(git rev-parse --short HEAD)"

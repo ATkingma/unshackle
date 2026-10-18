@@ -16,6 +16,7 @@ How to run a fix: [usage.md](usage.md). The tables below are generated (`unshack
 | `fa.assertion-scope` | using (new AssertionScope()) { a; b; } → x.ShouldSatisfyAllConditions(() => a, () => b); otherwise Manual |
 | `fa.all-satisfy` | x.Should().AllSatisfy(a => ...) → x.ShouldNotBeEmpty(); foreach (var a in x) { ... } |
 | `fa.discard-assignment` | _ = x.Should().Be(y); → x.Should().Be(y); (then rewritten by the assertion patterns) |
+| `fa.invoking-local` | var act = x.Invoking(s => s.M()); → Action act = () => x.M(); (then rewritten by the Throw/NotThrow patterns) |
 | `fa.and-chain` | x.Should().A().And.B() → x.ShouldA(); x.ShouldB(); |
 | `fa.should-be` | x.Should().Be(y) → x.ShouldBe(y) |
 | `fa.not-be` | x.Should().NotBe(y) → x.ShouldNotBe(y) |

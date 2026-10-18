@@ -150,15 +150,19 @@ internal class MapOwners
 
     // The classes the test of a mock set-up hands its mock to: a new C(...) in the same file with the mock (Moq: mock.Object), or a variable
     // assigned from it, as an IMapper argument. Empty when the mock reaches the code another way (a fixture, a base class, DI): then the pair stays.
-    internal static List<INamedTypeSymbol> ClassesUnderTest(SyntaxNode call, SemanticModel model)
-    {
-        if (call is not InvocationExpressionSyntax invocation || MockVariable(invocation, model) is not { } mock)
-        {
-            return [];
-        }
+    internal static List<INamedTypeSymbol> ClassesUnderTest(SyntaxNode call, SemanticModel model) =>
+        call is InvocationExpressionSyntax invocation && MockVariable(invocation, model) is { } mock
+            ? Constructed(call.SyntaxTree.GetRoot(), model, new HashSet<ISymbol>(SymbolEqualityComparer.Default) { mock })
+            : [];
 
-        SyntaxNode root = call.SyntaxTree.GetRoot();
-        HashSet<ISymbol> mocks = new(SymbolEqualityComparer.Default) { mock };
+    // Every class a file constructs with a mocked IMapper (new Mock<IMapper>(), Substitute.For<IMapper>(), A.Fake<IMapper>(), or a variable
+    // holding one), stubbed or not: a loose mock answers a Map it does not stub with null, so those calls must stay on IMapper too.
+    internal static List<INamedTypeSymbol> MockedClasses(SyntaxNode root, SemanticModel model) =>
+        Constructed(root, model, new HashSet<ISymbol>(SymbolEqualityComparer.Default));
+
+    // The types of new C(...) in the file with a mock (one of mocks, a variable assigned from one, or a mock created in place) as an IMapper argument.
+    private static List<INamedTypeSymbol> Constructed(SyntaxNode root, SemanticModel model, HashSet<ISymbol> mocks)
+    {
         int count;
         do
         {
@@ -183,9 +187,13 @@ internal class MapOwners
             .Where(c => c.ArgumentList?.Arguments.Any(a => IsMock(a.Expression) && IsMapper(model.GetTypeInfo(a.Expression).Type)) == true)
             .Select(c => model.GetTypeInfo(c).Type).OfType<INamedTypeSymbol>().Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)];
 
-        bool IsMock(ExpressionSyntax expression) =>
-            model.GetSymbolInfo(expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Object" } moq ? moq.Expression : expression).Symbol is { } symbol
-            && mocks.Contains(symbol);
+        bool IsMock(ExpressionSyntax expression)
+        {
+            ExpressionSyntax mock = expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Object" } moq ? moq.Expression : expression;
+            return (model.GetSymbolInfo(mock).Symbol is { } symbol && mocks.Contains(symbol))
+                || (mock is BaseObjectCreationExpressionSyntax or InvocationExpressionSyntax && IsMockApi(model.GetSymbolInfo(mock).Symbol)
+                    && model.GetTypeInfo(mock).Type is { } type && (IsMapper(type) || type is INamedTypeSymbol { Name: "Mock", TypeArguments: [{ } mocked] } && IsMapper(mocked)));
+        }
     }
 
     // The variable (local, field, property) that holds the mock of a set-up: m => m.Map(...) inside mock.Setup(...), mock.Received().Map(...),
@@ -333,6 +341,11 @@ internal class MapOwners
 
         List<MapNode> all = [.. profiles.SelectMany(p => p.Nodes)];
         Dictionary<SyntaxNode, List<INamedTypeSymbol>> stubs = [];
+        foreach ((SyntaxNode root, SemanticModel model) in sources.Where(s => s.Root.ToString().Contains("IMapper", StringComparison.Ordinal)))
+        {
+            MockedClasses(root, model).ForEach(c => owners._underTest.UnionWith(WithBases(c)));
+        }
+
         foreach ((SyntaxNode call, SemanticModel model, _) in calls.Where(c => IsMockSetUp(c.Call, c.Model)))
         {
             stubs[call] = ClassesUnderTest(call, model);

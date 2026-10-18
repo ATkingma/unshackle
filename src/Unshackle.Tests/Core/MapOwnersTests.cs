@@ -220,6 +220,34 @@ public class MapOwnersTests
         Reasons(report).ShouldContain(r => r.Contains("ShopService is a class under test (a test hands it a mocked IMapper), so it keeps calling IMapper", StringComparison.Ordinal));
     }
 
+    // REQ-2: a class constructed with a mock that stubs nothing still runs its Map calls on the mock (a loose mock answers null): it keeps IMapper.
+    [Fact]
+    public async Task FixAsync_MockWithoutSetUp_KeepsItsClassOnIMapper()
+    {
+        // Arrange
+        string profile = Profile.Replace("CreateMap<Customer, CustomerDto>().BeforeMap((s, d) => d.Id = 1);", "CreateMap<Customer, CustomerDto>();", StringComparison.Ordinal);
+        const string Test = """
+            using AutoMapper;
+            using NSubstitute;
+
+            namespace Shop;
+
+            public class ShopServiceTests
+            {
+                public CustomerDto Customer() => new ShopService(Substitute.For<IMapper>()).Customer(new Customer());
+            }
+            """;
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", profile), ("Service.cs", Service), ("Other.cs", OtherService), ("Test.cs", Test));
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        (await TextAsync(report.Solution, "Service.cs")).ShouldContain("_mapper.Map<CustomerDto>(customer)");
+        (await TextAsync(report.Solution, "Other.cs")).ShouldContain("customer.ToCustomerDto()");
+        (await TextAsync(report.Solution, "Profile.cs")).ShouldContain("CreateMap<Customer, CustomerDto>();");
+    }
+
     // REQ-4: a test that never constructs its class under test (a fixture or DI does) proves nothing: the pair stays everywhere.
     [Fact]
     public async Task FixAsync_MockedMapWithoutConstruction_KeepsThePairEverywhere()

@@ -8,6 +8,8 @@ rm -rf "$dir"; git -C "$repo" worktree prune
 git -C "$repo" -c core.autocrlf=false worktree add -q --detach "$dir" HEAD
 trap 'git -C "$repo" worktree remove --force "$dir"' EXIT
 cd "$dir"
+# Local machine paths must never reach the public repo (write <corpus>/... or repo-relative paths).
+if git grep -nE '/(home|mnt)/[A-Za-z]' -- ':!claude/tools/verify-head.sh'; then echo "local paths found"; exit 1; fi
 dotnet build -v q
 dotnet test -- --max-threads 4
 dotnet test --solution samples/SampleShop/SampleShop.slnx

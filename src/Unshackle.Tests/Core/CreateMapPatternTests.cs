@@ -665,6 +665,87 @@ public class CreateMapPatternTests
         result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("constructor (IS s) and read _s, s");
     }
 
+    // Measured (TAAK-282, AutoMapper 14.0.0): a required member nothing maps stays at default (it throws nothing); the creation must still name it.
+    [Theory]
+    [InlineData("public class B { public int Id { get; set; } public required int Level { get; set; } }", "Level = default,")]
+    [InlineData("public class B { public int Id { get; set; } public required string Name { get; set; } }", "Name = default,")]
+    [InlineData("public class B { public int Id { get; set; } public required int? Level { get; set; } }", "Level = default,")]
+    [InlineData("public class B { public int Id { get; set; } public required int Level; }", "Level = default,")]
+    public void Rewrite_RequiredMemberWithoutSource_NamesItAsDefault(string destination, string expected)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile("public class A { public int Id { get; set; } } " + destination
+            + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>(); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        string written = result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString();
+        written.ShouldContain("Id = source.Id");
+        written.ShouldContain(expected);
+    }
+
+    [Fact]
+    public void Rewrite_RequiredReferenceMemberInNullableContext_SuppressesTheWarning()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile("#nullable enable\n public class A { public int Id { get; set; } } public class B { public int Id { get; set; } public required string Name { get; set; } }"
+            + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>(); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString().ShouldContain("Name = default!,");
+    }
+
+    // Measured (TAAK-282): AutoMapper keeps what the initializer or the constructor gave a required member; `= default` would overwrite it.
+    [Theory]
+    [InlineData("public class B { public int Id { get; set; } public required int Level { get; set; } = 5; }", "has an initializer or B has a constructor")]
+    [InlineData("public class B { public B() { Level = 9; } public int Id { get; set; } public required int Level { get; set; } }", "has an initializer or B has a constructor")]
+    public void Rewrite_RequiredMemberAutoMapperKeepsAValueOf_ReportsManual(string destination, string reason)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile("public class A { public int Id { get; set; } } " + destination
+            + " public class P : AutoMapper.Profile { public P() { CreateMap<A, B>(); } }");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain(reason);
+    }
+
+    // TAAK-280: a #region/#endregion pair that straddles a removed CreateMap loses a half; the other half goes too. An #if around a map stays Manual.
+    [Theory]
+    [InlineData("#region R\n CreateMap<A, B>();\n #endregion\n", true)]
+    [InlineData("#region R\n CreateMap<A, B>();\n #endregion\n #region S\n #endregion\n", true)]
+    [InlineData("#if !DEBUG\n CreateMap<A, B>();\n #endif\n", false)]
+    public void Rewrite_DirectivesAroundCreateMap_StayBalancedOrManual(string body, bool fixedResult)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile("public class A { public int Id { get; set; } } public class B { public int Id { get; set; } }"
+            + $" public class P : AutoMapper.Profile {{ public P() {{\n{body}}} }}");
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        if (fixedResult)
+        {
+            CSharpSyntaxTree.ParseText(result.ShouldBeOfType<FixedResult>().NewNodes[0].ToFullString(), cancellationToken: TestContext.Current.CancellationToken).GetDiagnostics(TestContext.Current.CancellationToken).ShouldBeEmpty();
+        }
+        else
+        {
+            result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("conditional compilation");
+        }
+    }
+
     private static (SyntaxNode Root, SemanticModel Model) Compile(string code)
     {
         SyntaxTree tree = CSharpSyntaxTree.ParseText(code);

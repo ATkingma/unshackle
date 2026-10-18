@@ -856,7 +856,9 @@ public class CreateMapPattern : ISolutionPattern
             }
 
             ITypeSymbol type = target is IPropertySymbol requiredProperty ? requiredProperty.Type : ((IFieldSymbol)target).Type;
-            members.Add((target.Name, values.NullableWarnings && type.IsReferenceType && type.NullableAnnotation != NullableAnnotation.Annotated ? "default!" : "default"));
+            string unset = values.NullableWarnings && type.IsReferenceType && type.NullableAnnotation != NullableAnnotation.Annotated ? "default!" : "default";
+            members.Add((target.Name, unset));
+            read?.Add(new ProjectionMember { Name = target.Name, Value = unset, From = type, To = type });
         }
 
         if (constructUsing is not null)

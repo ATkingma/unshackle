@@ -361,7 +361,7 @@ public class MapCallPattern : ISolutionPattern
     private static PatternResult? Existing(SyntaxNode node, SemanticModel model, ITypeSymbol sourceType, ITypeSymbol destination, ExpressionSyntax source,
         Kind kind)
     {
-        string name = "To" + destination.Name;
+        string name = CreateMapPattern.MethodName(destination.Name);
         List<IMethodSymbol> visible = [.. model.LookupSymbols(node.SpanStart, sourceType, name, includeReducedExtensionMethods: true)
             .OfType<IMethodSymbol>().Where(m => m.Parameters.All(p => p.IsOptional) && SymbolEqualityComparer.Default.Equals(m.ReturnType, destination))];
         if (visible is [{ ReducedFrom: not null }])

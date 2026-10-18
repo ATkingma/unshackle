@@ -160,6 +160,41 @@ public class ConfigurationTestPatternTests
         }
     }
 
+    // TAAK-273: while a map stays on AutoMapper a check stays in any form, also inside Action act = () => ...; the reason says it is kept.
+    [Fact]
+    public async Task FixAsync_ActionCheckWhileMapsStay_ReportsKept()
+    {
+        // Arrange
+        string profile = Profile.Replace("CreateMap<Order, OrderDto>();", "CreateMap<Order, OrderDto>().AfterMap((s, d) => { });", StringComparison.Ordinal);
+        const string tests = """
+            using System;
+            using AutoMapper;
+
+            namespace Shop.Tests;
+
+            public class MappingTests
+            {
+                public void ConfigurationIsValid(IMapper mapper)
+                {
+                    Action act = () => mapper.ConfigurationProvider.AssertConfigurationIsValid();
+                    act();
+                }
+            }
+            """;
+        var workspace = new AdhocWorkspace();
+        var project = ProjectId.CreateNewId();
+        Solution solution = AddProject(workspace.CurrentSolution, project, "Shop")
+            .AddDocument(DocumentId.CreateNewId(project), "Profile.cs", profile, filePath: "Profile.cs")
+            .AddDocument(DocumentId.CreateNewId(project), "Tests.cs", tests, filePath: "Tests.cs");
+
+        // Act
+        FixReport report = await new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.Single(f => f.PatternId == "automapper.configuration-test").Result.ShouldBeOfType<ManualResult>().Reason
+            .ShouldStartWith("Stays on AutoMapper: maps of the solution stay on AutoMapper");
+    }
+
     // An AssertConfigurationIsValid that is not a statement of its own (here the body of a non-test method) stays Manual.
     [Fact]
     public void Rewrite_AssertAsExpressionBody_ReportsManual()

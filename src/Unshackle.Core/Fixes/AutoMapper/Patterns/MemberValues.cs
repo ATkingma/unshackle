@@ -293,8 +293,6 @@ public class MemberValues
     internal static string Receiver(string value) =>
         MapCallPattern.NeedsParentheses(SyntaxFactory.ParseExpression(value)) ? $"({value})" : value;
 
-    // Whether target is reachable from type through public members, type arguments and array elements: a map from type would
-    // then call the map to target again. Types of the framework are not searched (they hold no DTOs).
     // Whether mapping source into destination can come back to outer the way AutoMapper recurses: only through destination members (and
     // constructor parameters) that have a source counterpart (measured, TAAK-273: a destination-only cycle is never executed, and AutoMapper then
     // keeps no references either). A map with options, a member it cannot pair and a collection of another kind fall back to Reaches.
@@ -393,6 +391,8 @@ public class MemberValues
             HashCode.Combine(SymbolEqualityComparer.Default.GetHashCode(obj.Item1), SymbolEqualityComparer.Default.GetHashCode(obj.Item2));
     }
 
+    // Whether target is reachable from type through public members, type arguments and array elements: a map from type would
+    // then call the map to target again. Types of the framework are not searched (they hold no DTOs).
     private static bool Reaches(ITypeSymbol type, ITypeSymbol target)
     {
         HashSet<ITypeSymbol> seen = new(SymbolEqualityComparer.Default);

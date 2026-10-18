@@ -1781,9 +1781,9 @@ public class CreateMapPattern : ISolutionPattern
     };
 
     // ToB for CreateMap<A, B>: the last name of the destination type as written.
-    // A keyword (a ConvertUsing to int, string, ...) gets the .NET name: ToInt32, ToString.
+    // A keyword (a ConvertUsing to int, string, ...) gets the .NET name: ToInt32; string gets ToMappedString (see MethodName(string)).
     internal static string MethodName(TypeSyntax destination) =>
-        "To" + destination switch
+        MethodName(destination switch
         {
             GenericNameSyntax generic => generic.Identifier.ValueText,
             PredefinedTypeSyntax predefined => predefined.Keyword.ValueText switch
@@ -1793,7 +1793,10 @@ public class CreateMapPattern : ISolutionPattern
                 "string" => "String", _ => "Object",
             },
             _ => destination.ToString().Split('.')[^1],
-        };
+        });
+
+    // Every type has ToString(), which a call would bind before an extension method ToString (TAAK-273, SampleShop Money → string).
+    internal static string MethodName(string destination) => destination == "String" ? "ToMappedString" : "To" + destination;
 
     // The static class goes right after the profile (the outermost type around a nested one), with its indentation and line endings.
     private static MemberDeclarationSyntax Extensions(TypeDeclarationSyntax anchor, string className, string access,

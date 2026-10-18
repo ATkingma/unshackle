@@ -1,6 +1,6 @@
 # TAAK-273 — AutoMapper specific blockers: cycles, unflattening, null sources, private setters
 
-**Status**: step 3/5 — in progress
+**Status**: step 4/5 — in progress
 **Created**: 2026-10-17
 **Branch**: `worktree-agent-a3adf49382715b2e3` (worktree `.claude/worktrees/agent-a3adf49382715b2e3`)
 **Goal**: the AutoMapper causes found in the blind corpus become Fixed wherever AutoMapper's behaviour can be reproduced exactly, each with probe + proofs; the rest gets a precise "principally manual" reason.
@@ -17,6 +17,19 @@
 - Decisions: private setters → principally manual reason (no corpus case meets the constructor rule: fiapgames' constructor also sets `Ativo`, the
   `Atualizar` map writes the private `Id`); restapi/msb broken mappings → reason text says principally manual. Plans: REQs added to the plans of
   nested-maps (11), reverse-map (11), map-call (13, 14), create-map (9, 10), convert-using (9), configuration-test (11).
+- 2026-10-18: resumed by a new agent (Claude Opus) in the same worktree. Found: `676d26b` (saved after the session end) compiled; 4 tests failed
+  (unfinished `reverse-prefix-not-flattened.after.cs` = copy of before, `private-setter.manual.txt` split over two lines, and the maybe-null unit
+  test still expecting Manual). Fixed those, then finished step 3:
+  - **Cycle**: `MemberValues.ReachesMapped` follows only members with a source counterpart (plain maps; options fall back to `Reaches`); proofs
+    `_Combined/cycle-destination-only` (Fixed), `_Combined/partial-cycle-source` and `CreateMap/nested-cycle` (real cycle stays).
+  - **Unflattening**: reverse prefix only counts when the forward map really flattens (path ≥ 2); proofs `reverse-prefix-not-flattened` (Fixed), `reverse-unflatten` (Manual).
+  - **Null source**: `Map<B>(maybeNull)` where null is not allowed → `x?.ToB()!` (AutoMapper returned null there too); value-type destination stays Manual (not measured). Proofs `MapCall/maybe-null`, `maybe-null-struct`.
+  - **Private setters**: principally manual, reason says so (no corpus case meets the constructor rule).
+  - **Money→string**: `CreateMapPattern.MethodName` gives `ToMappedString` for a string destination (every type has `ToString()`); `MapCallPattern` uses the same name. Proof `_Combined/convert-using-string`, unit test.
+  - **Configuration test in `Action`**: while maps stay on AutoMapper, a check in any form now reports the kept reason (`Stays on AutoMapper: …`) instead of
+    "not a statement of its own". Removing the `Action act = …; act.Should().NotThrow();` pair once no maps remain is **not implemented**: SampleShop keeps
+    maps (AfterMap) and resolves its mapper from DI, and no corpus repo has the form, so there is nothing to measure it on (shortcut, revisit when a repo needs it).
+  - **Broken source mappings** (restapi `List<DayEntity>`→`List<int>`, msb `Map<OrderModel>(AddOrderDto)`): reasons say "principally" (`MemberValues.NoMap`, `MapCallPattern.NoMapAnywhere`); proofs `broken-conversion`, `unknown-map`.
 - SampleShop: Customer→CustomerDto stays on AutoMapper anyway (`AfterMap`, out of scope), so the configuration test stays (maps remain).
 
 ## Approach (per cause, measure first)
@@ -42,13 +55,18 @@
 
 - [x] 1. KingmaDoc plan per touched pattern; read TAAK-271 for counts
 - [x] 2. Probe programs per cause (AutoMapper 14.0.0)
-- [→] 3. Implementation + proofs + unit tests per cause
-- [ ] 4. Corpus scan/after on culinary, msb, fiapgames, restapi, baseapi: 0 regressions
+- [x] 3. Implementation + proofs + unit tests per cause
+- [→] 4. Corpus scan/after on culinary, msb, fiapgames, restapi, baseapi: 0 regressions
 - [ ] 5. Verify, models, commit
 
 ## Changed files
 
-_(filled in during execution)_
+- `src/Unshackle.Core/Fixes/AutoMapper/Patterns/`: `MemberValues.cs` (ReachesMapped, NoBuiltInConversion), `NestedMap.cs`/`NestedMaps.cs` (Plain),
+  `CreateMapPattern.cs` (unflatten rule, private-setter reason, MethodName → ToMappedString), `MapCallPattern.cs` (Kind.Suppressed, NoMapAnywhere),
+  `ConfigurationTestPattern.cs` (kept reason first for checks)
+- `src/Unshackle.Tests/Core/`: `MapCallPatternTests.cs`, `CreateMapPatternTests.cs`, `ConfigurationTestPatternTests.cs`
+- Proofs: `CreateMap/{broken-conversion,private-setter,reverse-prefix-not-flattened,reverse-unflatten}`, `MapCall/{maybe-null,maybe-null-struct,unknown-map}`,
+  `_Combined/{cycle-destination-only,partial-cycle-source,convert-using-string}`
 
 ## See also
 

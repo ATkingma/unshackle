@@ -29,6 +29,20 @@ public class ShelfMapping : Profile
 {
     public ShelfMapping()
     {
-        CreateMap<ShelfModel, ShelfDto>().ReverseMap();
     }
+}
+
+public static class ShelfMappingExtensions
+{
+    public static ShelfDto ToShelfDto(this ShelfModel source) => new()
+    {
+        ShelfId = source.ShelfId,
+        WarehouseId = source.WarehouseId,
+    };
+
+    public static ShelfModel ToShelfModel(this ShelfDto source) => new()
+    {
+        ShelfId = source.ShelfId,
+        WarehouseId = source.WarehouseId,
+    };
 }

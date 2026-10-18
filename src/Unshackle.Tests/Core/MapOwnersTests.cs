@@ -248,6 +248,34 @@ public class MapOwnersTests
         (await TextAsync(report.Solution, "Profile.cs")).ShouldContain("CreateMap<Customer, CustomerDto>();");
     }
 
+    // A C# 14 extension block is a type declaration without a type symbol of its own (GetDeclaredSymbol throws, kavita): no internal error.
+    [Fact]
+    public async Task FixAsync_MapCallInAnExtensionBlock_HasNoInternalError()
+    {
+        // Arrange
+        const string Extensions = """
+            using AutoMapper;
+
+            namespace Shop;
+
+            public static class MapperExtensions
+            {
+                extension(IMapper mapper)
+                {
+                    public OrderDto ToDto(Order order) => mapper.Map<OrderDto>(order);
+                }
+            }
+            """;
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", Profile), ("Service.cs", Service), ("Extensions.cs", Extensions), ("Test.cs", MockedTest));
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        Reasons(report).ShouldNotContain(r => r.StartsWith("Internal error", StringComparison.Ordinal));
+        (await TextAsync(report.Solution, "Extensions.cs")).ShouldContain("order.ToOrderDto()");
+    }
+
     // REQ-4: a test that never constructs its class under test (a fixture or DI does) proves nothing: the pair stays everywhere.
     [Fact]
     public async Task FixAsync_MockedMapWithoutConstruction_KeepsThePairEverywhere()

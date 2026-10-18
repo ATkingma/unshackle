@@ -215,6 +215,10 @@ internal class MapOwners
         return receiver is not null && model.GetSymbolInfo(receiver).Symbol is { } symbol and (ILocalSymbol or IFieldSymbol or IPropertySymbol) ? symbol : null;
     }
 
+    // The type a declaration declares; null for a C# 14 extension block, for which GetDeclaredSymbol throws (measured on kavita).
+    private static INamedTypeSymbol? TypeOf(TypeDeclarationSyntax declaration, SemanticModel model) =>
+        declaration is ExtensionBlockDeclarationSyntax ? null : model.GetDeclaredSymbol(declaration) as INamedTypeSymbol;
+
     private static bool IsMapper(ITypeSymbol? type) =>
         type is not null && type.AllInterfaces.Append(type).Any(t => t is { Name: "IMapper", ContainingAssembly.Name: AutoMapperAssembly });
 
@@ -416,7 +420,7 @@ internal class MapOwners
 
     // The innermost type around the call that is a class under test (or a type it hands its IMapper to), or null.
     private INamedTypeSymbol? ClassUnderTest(SyntaxNode call, SemanticModel model) =>
-        call.Ancestors().OfType<TypeDeclarationSyntax>().Select(t => model.GetDeclaredSymbol(t) as INamedTypeSymbol)
+        call.Ancestors().OfType<TypeDeclarationSyntax>().Select(t => TypeOf(t, model))
             .FirstOrDefault(t => t is not null && _underTest.Contains(Key(t.OriginalDefinition)));
 
     // The classes under test also cover every type they hand an IMapper to (a constructor or method argument), whose calls run the stub too.
@@ -429,7 +433,7 @@ internal class MapOwners
             foreach ((SyntaxNode root, SemanticModel model) in sources)
             {
                 foreach (TypeDeclarationSyntax type in root.DescendantNodes().OfType<TypeDeclarationSyntax>()
-                    .Where(t => model.GetDeclaredSymbol(t) is INamedTypeSymbol symbol && _underTest.Contains(Key(symbol.OriginalDefinition))))
+                    .Where(t => TypeOf(t, model) is { } symbol && _underTest.Contains(Key(symbol.OriginalDefinition))))
                 {
                     foreach (SyntaxNode node in type.DescendantNodes())
                     {

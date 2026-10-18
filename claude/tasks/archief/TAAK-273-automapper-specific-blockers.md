@@ -1,6 +1,6 @@
 # TAAK-273 — AutoMapper specific blockers: cycles, unflattening, null sources, private setters
 
-**Status**: step 4/5 — in progress
+**Status**: done (2026-10-18)
 **Created**: 2026-10-17
 **Branch**: `worktree-agent-a3adf49382715b2e3` (worktree `.claude/worktrees/agent-a3adf49382715b2e3`)
 **Goal**: the AutoMapper causes found in the blind corpus become Fixed wherever AutoMapper's behaviour can be reproduced exactly, each with probe + proofs; the rest gets a precise "principally manual" reason.
@@ -56,8 +56,8 @@
 - [x] 1. KingmaDoc plan per touched pattern; read TAAK-271 for counts
 - [x] 2. Probe programs per cause (AutoMapper 14.0.0)
 - [x] 3. Implementation + proofs + unit tests per cause
-- [→] 4. Corpus scan/after on culinary, msb, fiapgames, restapi, baseapi: 0 regressions
-- [ ] 5. Verify, models, commit
+- [x] 4. Corpus scan/after on culinary, msb, fiapgames, restapi, baseapi: 0 regressions
+- [x] 5. Verify, models, commit
 
 ## Changed files
 
@@ -67,6 +67,21 @@
 - `src/Unshackle.Tests/Core/`: `MapCallPatternTests.cs`, `CreateMapPatternTests.cs`, `ConfigurationTestPatternTests.cs`
 - Proofs: `CreateMap/{broken-conversion,private-setter,reverse-prefix-not-flattened,reverse-unflatten}`, `MapCall/{maybe-null,maybe-null-struct,unknown-map}`,
   `_Combined/{cycle-destination-only,partial-cycle-source,convert-using-string}`
+
+## Corpus result (step 4)
+
+Tool-before = main `41db520` (`<corpus>/t273/blind-b`), tool-after = this branch (`<corpus>/t273/blind`, `run-after.sh`); base = corpus-blind base.
+
+| Repo      | Scan before (fixed/manual) | Scan after | After mode (fix → build → tests)         | Remaining root reason                                                |
+| --------- | -------------------------- | ---------- | ---------------------------------------- | -------------------------------------------------------------------- |
+| culinary  | 0 / 46                     | 0 / 46     | ok, 149/149 = base, 0 regressions        | null source gone; every map is now kept only because a test mocks `IMapper` |
+| msb       | 1 / 33                     | 3 / 32     | ok, 156/156 = base, 0 regressions        | cycle and unflattening gone; `OrderDto→OrderModel` kept via the mock-stubbed `BoxDto→BoxModel`; `Map<OrderModel>(AddOrderDto)` broken (principal) |
+| fiapgames | 25 / 9                     | 25 / 9     | ok, 91/91 = base, 0 regressions          | private setters (principal)                                          |
+| restapi   | 0 / 9                      | 0 / 9      | ok, 45/45 = base, 0 regressions          | `List<DayEntity>`→`List<int>` broken (principal)                     |
+| baseapi   | 5 / 3                      | 5 / 3      | ok, 0/9 both in base and after (its tests fail in this environment), 0 regressions | private setter without constructor (principal)   |
+
+Counts barely move because the remaining keeps are "stubbed by a mock set-up of IMapper in a test" (TAAK-272 rule, out of scope here);
+every TAAK-273 cause is either gone from the reasons or now says it is principally manual.
 
 ## See also
 

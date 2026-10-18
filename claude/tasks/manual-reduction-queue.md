@@ -12,7 +12,7 @@ all-or-nothing rule per solution, not from the number of Manual findings.
 | --- | -------- | --------------------------------------------------------------------------------------- | ---------- | ------ |
 | 1   | TAAK-271 | Analyse every Manual finding in the 8 blocked repos (+ SampleShop)                      | —          | done   |
 | 2   | TAAK-272 | AutoMapper partial migration: migrate what is safe, keep AutoMapper for the rest        | 271        | done   |
-| 3   | TAAK-273 | AutoMapper specific blockers: cycles, unflattening, null sources, private setters       | 271, 272   | in progress (agent) |
+| 3   | TAAK-273 | AutoMapper specific blockers: cycles, unflattening, null sources, private setters       | 271, 272   | done (cycles, unflattening, null source, ToMappedString fixed; private setters and broken mappings principally manual; remaining keeps are mock stubs) |
 | 4   | TAAK-274 | MediatR partial migration per request type (MediatR and Mediator side by side)          | 271        | done (fullcart migrates partly; starter/miru stay: their root is `AddMediatR`) |
 | 5   | TAAK-275 | FluentAssertions: custom assertion classes → Shouldly                                   | 271        | done   |
 | 6   | TAAK-276 | Blind corpus round(s): 0 regressions, measure Manual before/after; README/NuGet numbers | 272–275    | open   |

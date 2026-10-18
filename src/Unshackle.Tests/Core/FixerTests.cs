@@ -323,6 +323,23 @@ public class FixerTests
         (await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken)).ShouldBe(code);
     }
 
+    [Theory]
+    [InlineData("#region R\n            1\n", false)]
+    [InlineData("#region R\n            1\n#endregion\n", true)]
+    public async Task FixAsync_FixedNodeHasRegionInside_FixesOnlyWhenThePairGoesTogether(string arguments, bool fixedExpected)
+    {
+        // Arrange (TAAK-280/281): dropping a whole #region/#endregion pair is safe, dropping one half leaves the other behind (CS1028)
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        var fixer = new Fixer([CreateFix(pattern)]);
+        string code = "public class C\n{\n    public void M()\n    {\n        Foo(\n" + arguments + "            );\n    }\n\n    private static void Foo(int x) { }\n}\n";
+
+        // Act
+        FixReport report = await FixAsync(fixer, code);
+
+        // Assert
+        report.Findings.ShouldContain(f => (f.Result is FixedResult) == fixedExpected);
+    }
+
     [Fact]
     public async Task FixAsync_UnusedUsingOfRemovedSubNamespace_IsRemoved()
     {

@@ -909,7 +909,10 @@ public class Fixer : IFixer
         }
 
         // A directive inside the node that the rewrite drops would leave its partner behind (#if gone, #endif stays: CS1028, TAAK-281).
-        if (InnerDirectives(current) > result.NewNodes.Sum(InnerDirectives))
+        // #region/#endregion may only go as a pair (TAAK-280 repairs AutoMapper profiles that way).
+        int DroppedDirectives(Func<SyntaxTrivia, bool> kind) => InnerDirectives(current, kind) - result.NewNodes.Sum(n => InnerDirectives(n, kind));
+        if (DroppedDirectives(t => !IsRegionDirective(t)) > 0
+            || DroppedDirectives(t => t.IsKind(SyntaxKind.RegionDirectiveTrivia)) != DroppedDirectives(t => t.IsKind(SyntaxKind.EndRegionDirectiveTrivia)))
         {
             return (root, PatternResult.Manual("Not rewritten: the code has #if/#else/#region directives inside it, which a rewrite would break apart. Migrate it by hand."));
         }
@@ -925,11 +928,14 @@ public class Fixer : IFixer
     }
 
     // Directives and disabled text inside the node, not those in front of it (they stay with the node's position).
-    private static int InnerDirectives(SyntaxNode node)
+    private static int InnerDirectives(SyntaxNode node, Func<SyntaxTrivia, bool> kind)
     {
         SyntaxToken first = node.GetFirstToken();
-        return node.DescendantTrivia().Count(t => (t.IsDirective || t.IsKind(SyntaxKind.DisabledTextTrivia)) && !(t.Token == first && t.Span.End <= first.SpanStart));
+        return node.DescendantTrivia().Count(t => (t.IsDirective || t.IsKind(SyntaxKind.DisabledTextTrivia)) && kind(t) && !(t.Token == first && t.Span.End <= first.SpanStart));
     }
+
+    private static bool IsRegionDirective(SyntaxTrivia trivia) =>
+        trivia.IsKind(SyntaxKind.RegionDirectiveTrivia) || trivia.IsKind(SyntaxKind.EndRegionDirectiveTrivia);
 
     private static SyntaxNode ReplaceWithTrivia(SyntaxNode root, SyntaxNode current, IReadOnlyList<SyntaxNode> newNodes)
     {

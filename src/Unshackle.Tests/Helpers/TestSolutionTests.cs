@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using Shouldly;
 using Xunit;
 
@@ -10,8 +11,8 @@ public class TestSolutionTests
     public void NewEmpty_CalledTwice_GivesDifferentSolutionIds()
     {
         // Act
-        var first = TestSolution.NewEmpty();
-        var second = TestSolution.NewEmpty();
+        Solution first = TestSolution.NewEmpty();
+        Solution second = TestSolution.NewEmpty();
 
         // Assert
         first.Id.ShouldNotBe(second.Id);

@@ -1,6 +1,6 @@
 # TAAK-284 — Find the test that fails only under load
 
-**Status**: step 3/3 — fix written, proving it
+**Status**: step 3/3 — fix proven, final verify-head run
 **Branch**: worktree-agent-a3891483d818cf3a5 (worktree `.claude/worktrees/agent-a3891483d818cf3a5`)
 **Created**: 2026-10-18
 **Goal**: name and fix (or isolate) the test that failed once in `dotnet test` on 2026-10-18 (twice: 1 of 1558, 1 of 1571) while corpus builds ran in parallel, and passed in every rerun.
@@ -14,13 +14,14 @@
 
 - **Reproduced (2026-10-18)**: `dotnet test --no-build -- --max-threads 4` with 32 busy loops added: `CombinedProofTests.CombinedAutoMapper_Before_BecomesAfter(partial-mocked-class-under-test)` failed (`ReportService.Line` kept `_mapper.Map` instead of `ToCustomerDto()`). Baseline 1 failure in the first 3 runs (`<corpus>/flaky284/run*.log`).
 - **Root cause**: `TestSolution`, `TestProjects` and `VendoredPackagesTests` each used one static `AdhocWorkspace`, so every test solution had the same `SolutionId`. `MapOwners` caches its plan per `SolutionId` (`s_cache`), so parallel AutoMapper tests overwrote each other's cache entry. A test whose entry was replaced mid-Fixer-run rebuilt its plan from the already-rewritten solution and got a different set of kept maps. Timing dependent, hence only under load. Production is unaffected (a real solution has a unique id).
+- **Proof**: before the fix 2 of 4 runs failed under load; after it 6 of 6 runs green under the same load (`<corpus>/flaky284/after/`).
 - **Fix**: `TestSolution.NewEmpty()` (a fresh `AdhocWorkspace` per solution) used by all three; regression test `TestSolutionTests`.
 
 ## Steps
 
 - [x] 1. On the next failure, take the test name from `verify-head.sh` output (or its `verify-head-results/*.trx`)
 - [x] 2. Reproduce under load (e.g. run the test while a corpus build runs); find the cause
-- [ ] 3. Fix (timeout, isolation, unique temp dir) with proof, or mark it with a trait and document why
+- [x] 3. Fix (timeout, isolation, unique temp dir) with proof, or mark it with a trait and document why
 
 ## See also
 

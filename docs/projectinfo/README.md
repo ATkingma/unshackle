@@ -98,6 +98,7 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | Pattern ID | Plan | Models | Verification | Task |
 | ---------- | ---- | ------ | ------------ | ---- |
 | `fa.should-be` | [plan](patterns/fa-should-be-plan.md) | [models](patterns/fa-should-be-modellen.md) | [verify](patterns/fa-should-be-verify.md) | TAAK-001 |
+| `fa.discard-assignment` | [plan](patterns/fa-discard-assignment-plan.md) | [models](patterns/fa-discard-assignment-modellen.md) | [verify](patterns/fa-discard-assignment-verify.md) | TAAK-277 |
 | `fa.have-count` | [plan](patterns/fa-have-count-plan.md) | [models](patterns/fa-have-count-modellen.md) | [verify](patterns/fa-have-count-verify.md) | TAAK-002 |
 | `fa.be-true-false` | [plan](patterns/fa-be-true-false-plan.md) | [models](patterns/fa-be-true-false-modellen.md) | [verify](patterns/fa-be-true-false-verify.md) | TAAK-003 |
 | `fa.be-null` | [plan](patterns/fa-be-null-plan.md) | [models](patterns/fa-be-null-modellen.md) | [verify](patterns/fa-be-null-verify.md) | TAAK-004 |

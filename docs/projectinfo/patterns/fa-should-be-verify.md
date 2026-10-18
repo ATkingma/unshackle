@@ -33,6 +33,8 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/ShouldBePattern.cs`; r
 | TAAK-200 | Met (warning) | `EqualsOrderWarning` in `ShouldBePattern` (also `NotBePattern`): Fixed with `Warning` for an own `Equals` or two unknown runtime types; unit tests `ShouldBeEqualsOrderTests` (5 with, 5 without a warning), proof `own-equals.*`. Probe Akka DData: `a.Equals(e)=True`, `e.Equals(a)=False`. |
 | TAAK-198 | Met | Fallback per call: `own-shouldbe-in-namespace.manual.txt` stays Manual (the only call is `ShouldBe`); mixed files in `AmbiguousAddedNamespaceTests` (`ShouldBe` stays FA, the rest via `using static`). |
 
+Extension TAAK-277: Met, `ShouldBe/type.*`, `ShouldBe/edge-named-because.*`; probe against FA 7.2.2.
+
 ## Deviations
 
 | #   | Area         | Plan says                                              | Code does                                                                                       | Impact |

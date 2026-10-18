@@ -82,6 +82,8 @@ public class FluentAssertionsFix : IFix
         new AssertionScopePattern(),
         // Then: its loop body keeps the FluentAssertions assertions, which the patterns below then rewrite as statements.
         new AllSatisfyPattern(),
+        // `_ = x.Should()...;` becomes a plain statement, which the patterns below treat as a discarded result.
+        new DiscardAssignmentPattern(),
         // Before the assertion patterns, which report a link after .And as Manual.
         new AndChainPattern(s_assertions),
         .. s_assertions,

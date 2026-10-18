@@ -34,6 +34,8 @@ Code: `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/HaveCountPattern.cs`; 
 | Extension TAAK-095 | Met | `count-comparisons.*`, `count-comparison-because-args.*` |
 | Extension TAAK-097 | Met | `because-args.after.cs`, `count-comparison-because-args.after.cs` (`string.Format(CultureInfo.InvariantCulture, ...)`) |
 
+Extension TAAK-277: Met, `HaveCount/dictionary.after.cs`; probe program against FA 7.2.2 (same pass/fail at n-1, n, n+1 for Dictionary and IReadOnlyDictionary).
+
 ## Deviations
 
 | #   | Area         | Plan says                                                         | Code does                                                                                                     | Impact |

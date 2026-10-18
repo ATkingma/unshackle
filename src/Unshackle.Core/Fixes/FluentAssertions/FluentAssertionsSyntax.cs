@@ -219,7 +219,7 @@ public static class FluentAssertionsSyntax
 
     // Splits the arguments into the value arguments (in order) and the `because` argument, which maps to Shouldly's
     // customMessage. becauseArgs become `string.Format(CultureInfo.InvariantCulture, because, args)`: FluentAssertions formats
-    // with the invariant culture too (probed under nl-NL). False for named arguments, or becauseArgs with a because that is
+    // with the invariant culture too (probed under nl-NL). False for named arguments other than a constant `because:`, or becauseArgs with a because that is
     // no constant or does not format: FluentAssertions swallows that FormatException, string.Format would throw it.
     public static bool TryGetArguments(
         InvocationExpressionSyntax assertion,
@@ -230,7 +230,9 @@ public static class FluentAssertionsSyntax
         var valueList = new List<ArgumentSyntax>();
         values = valueList;
         because = null;
-        if (assertion.ArgumentList.Arguments.Any(a => a.NameColon is not null)
+        // A named `because:` with a constant moves without changing evaluation order; any other name stays Manual.
+        if (assertion.ArgumentList.Arguments.Any(a => a.NameColon is not null
+                && (a.NameColon.Name.Identifier.ValueText != "because" || !model.GetConstantValue(a.Expression).HasValue))
             || model.GetOperation(assertion) is not IInvocationOperation operation)
         {
             return false;
@@ -253,7 +255,7 @@ public static class FluentAssertionsSyntax
                 case (_, _) when argument.Syntax is not ArgumentSyntax: // the receiver of an extension method call
                     break;
                 case (_, "because"):
-                    because = (ArgumentSyntax)argument.Syntax;
+                    because = ((ArgumentSyntax)argument.Syntax).WithNameColon(null);
                     break;
                 default:
                     valueList.Add((ArgumentSyntax)argument.Syntax);

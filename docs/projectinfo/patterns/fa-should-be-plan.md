@@ -57,6 +57,8 @@ fa.should-be: x.Should().Be(y) becomes x.ShouldBe(y), keeping the because argume
 - **Extension TAAK-199**: IF a rewritten `ShouldBe` (or other Shouldly extension) after the rewrite does not bind to Shouldly but to an own method (e.g. an own `ShouldBe<T>` in the enclosing namespace, which without ambiguity wins over `using Shouldly;`, such as `Akka.TestKit.AkkaSpecExtensions.ShouldBe`) THEN THE SYSTEM SHALL leave the file unchanged and give Manual "binds to <type>.<method> instead of Shouldly" (proof `own-shouldbe-in-namespace.*`; check `UsingDirectives.MisboundAddedCallAsync` in the `Fixer`, next to the CS0121 check of TAAK-174).
 - **Extension TAAK-198**: the fallback of TAAK-174/199 no longer applies per file but per call: a `ShouldBe` that would clash or bind wrongly stays FA (Manual with the same reason), the rest of the file is migrated with targeted `using static` imports (see `fa-be-true-false-plan.md` and `architectuur/core.md`). Only if those imports break something else does the whole file stay as it is.
 
+- **Extension TAAK-277**: WHEN `Be<T>()`/`Be(typeof(T))` is called on TypeAssertions THE SYSTEM SHALL produce `ShouldBe(typeof(T))` (probed: same, base, interface, open generic, null; proof `ShouldBe/type.*`). A constant named `because:` is moved to the positional customMessage (proof `ShouldBe/edge-named-because.*`).
+
 ## Assumptions
 
 - _(inferred)_ Built on the existing stack: C#, Roslyn, Shouldly 4.3.0 as target, FluentAssertions 7.2.2 as source.

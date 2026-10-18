@@ -50,11 +50,8 @@ public class HaveCountPattern : FluentAssertionPattern
         ExpressionSyntax receiver = FluentAssertionsSyntax.NotNullReceiver(subject, model);
         string[] namespaces = [];
         ExpressionSyntax count;
-        if (Implements(type, "IDictionary", "IReadOnlyDictionary"))
-        {
-            return PatternResult.Manual("Dictionary: check whether Count or Keys is meant.");
-        }
-        else if (type is IArrayTypeSymbol || HasIntProperty(type, "Length") && !HasIntProperty(type, "Count"))
+        // A dictionary counts its pairs, as FluentAssertions does (probed: Dictionary and IReadOnlyDictionary at n-1, n, n+1).
+        if (type is IArrayTypeSymbol || HasIntProperty(type, "Length") && !HasIntProperty(type, "Count"))
         {
             count = Member(receiver, "Length");
         }

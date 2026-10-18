@@ -46,6 +46,8 @@ fa.not-be: `x.Should().NotBe(y[, because])` becomes `x.ShouldNotBe(y[, because])
 - **REQ-8**: IF the result is used (`.And`) THEN THE SYSTEM SHALL give Manual (proof `chain.*`).
 - **Extension TAAK-097**: WHEN `becauseArgs` accompany a constant, formattable `because` THE SYSTEM SHALL pass `string.Format(CultureInfo.InvariantCulture, because, args)` as customMessage (Fixed, proof `because-args`); named arguments or a non-constant `because` remain Manual. REQ-7 therefore only applies to the comparer.
 
+- **Extension TAAK-277**: WHEN `NotBe<T>()`/`NotBe(typeof(T))` is called on TypeAssertions THE SYSTEM SHALL produce `ShouldNotBe(typeof(T))` (probed; proof `NotBe/type.*`).
+
 ## Assumptions
 
 - Shouldly 4.3.0 has `ShouldNotBe<T>(this T actual, T expected, string? customMessage = null)`; T is inferred from both sides, just like `ShouldBe`.

@@ -63,14 +63,19 @@ rest is migrated (reported as `Stays on AutoMapper: …`).
 
 ## How well does it work?
 
-Measured on 18 open-source solutions the tool had never seen (none was used to develop it), with their own test suites run before and
-after the fix ([details](https://github.com/ATkingma/unshackle/blob/main/claude/tasks/CORPUSRUN-blind.md)):
+Measured on open-source solutions the tool had never seen (none was used to develop it), with their own test suites run before and
+after the fix ([details](https://github.com/ATkingma/unshackle/blob/main/claude/tasks/CORPUSRUN-blind.md)). Latest round: 18 repos
+measured again plus 18 new ones (tool at commit `db05908`):
 
-| Fix | Fully migrated, no new test failures | Stopped with manual findings | Test regressions |
-|---|---|---|---|
-| FluentAssertions → Shouldly | 6 of 6 | 0 | 0 |
-| MediatR → Mediator | 3 of 6 | 3 | 0 |
-| AutoMapper → mappings | 1 of 6 | 5 | 0 |
+| Fix | Repos | Fully migrated | Partly migrated (old library stays for the rest) | Stopped, nothing rewritten | Build broken after fix | Test regressions |
+|---|---|---|---|---|---|---|
+| FluentAssertions → Shouldly | 12 | 4 | 6 | 0 | 2 | 0 |
+| MediatR → Mediator | 12 | 6 | 1 | 5 | 0 | 0 |
+| AutoMapper → mappings | 12 | 1 | 6 | 2 | 3 | 0 |
+
+"Build broken" are four known bugs (open tasks TAAK-280..283, mostly preprocessor directives and `required` members): the build after `fix` caught
+all of them, no test changed silently. On the 31 repos that build after the fix, no test regressed.
+Where only part of a solution was migrated the report lists the rest as Manual, with the reason.
 
 ## Known limitations
 

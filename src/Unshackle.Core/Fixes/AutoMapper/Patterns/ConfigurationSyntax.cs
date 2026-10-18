@@ -58,6 +58,12 @@ internal static class ConfigurationSyntax
             return $"it is built from {Short(creation.ArgumentList?.ToString() ?? "()")}, not from a lambda that only adds profiles";
         }
 
+        // A map class (TAAK-286): CreateMapPattern rewrites its maps and the map calls follow them.
+        if (creation.FirstAncestorOrSelf<ClassDeclarationSyntax>() is { } owner && CreateMapPattern.ConfigurationLambdas(owner, model).Contains(lambda))
+        {
+            return null;
+        }
+
         return lambda.Body switch
         {
             ExpressionSyntax expression => ProfileCallProblem(expression, parameter, model),

@@ -167,6 +167,8 @@ Selection (2026-10-18, before any `after` run): `gh search code 'Include="<Libra
 | encryptednotes | ExtendedGuru4883/EncryptedNotes @ `9a06174`      | automapper       | 10 / 6         | 85/85 → 85/85        | partial (mocked `IMapper` classes keep their maps); was **build breaks** (`required`, CS9035), fixed in TAAK-282, rerun 0 regressions                                              |
 | estore         | ngckinhluan/eStore @ `917363b`                   | automapper       | 10 / 22        | 45/46 → 45/46        | partial (mocked `IMapper` classes keep their maps); was **build breaks** (`required`, CS9035), fixed in TAAK-282, rerun 0 regressions                                              |
 
+**TAAK-286 (2026-10-18):** hospitalappt with a `MapperConfiguration` field initializer treated as a map class: 0 / 32 → 6 / 35 Fixed/Manual, tests 8/8 → 8/8, 0 regressions; the rest is `ReverseMap` with unflattening or an unmapped source member (follow-up in TAAK-286).
+
 Spares that were cloned and baselined but not used (pinned in `corpus-blind-repos.txt`): valid8r, notepadapi, rideshare, dpollvsa, lynx, blogapi, ecommercecloth, flowerinventor, alphabet.
 
 | Fix              | Full | Partial | Blocked (justified Manual) | Build breaks after fix                |  Test regressions |

@@ -114,7 +114,7 @@ internal class MapOwners
     // a statement without one (a captured variable, a setting).
     internal static (ITypeSymbol From, ITypeSymbol To, bool Reverse)? StatementPair(SyntaxNode statement, SemanticModel model)
     {
-        ExpressionSyntax? expression = (statement as ExpressionStatementSyntax)?.Expression ?? (statement as ArrowExpressionClauseSyntax)?.Expression;
+        ExpressionSyntax? expression = (statement as ExpressionStatementSyntax)?.Expression ?? (statement as ArrowExpressionClauseSyntax)?.Expression ?? statement as ExpressionSyntax;
         while (expression is InvocationExpressionSyntax invocation)
         {
             if (invocation.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap" } or MemberAccessExpressionSyntax { Name: GenericNameSyntax { Identifier.ValueText: "CreateMap" } })
@@ -326,7 +326,7 @@ internal class MapOwners
             foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => CreateMapPattern.IsProfileWithMaps(c, model)))
             {
                 List<MapNode> nodes = [];
-                foreach (SyntaxNode statement in profile.Members.OfType<ConstructorDeclarationSyntax>().SelectMany(CreateMapPattern.MapStatements))
+                foreach (SyntaxNode statement in CreateMapPattern.MapStatements(profile, model))
                 {
                     if (StatementPair(statement, model) is var (from, to, reverse))
                     {

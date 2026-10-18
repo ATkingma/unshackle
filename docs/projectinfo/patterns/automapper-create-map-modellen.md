@@ -52,6 +52,8 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` an
 | Manual "is required and nothing maps it"         | that member has an initializer or the type has a constructor (AutoMapper keeps the value) | unit tests `Rewrite_RequiredMemberAutoMapperKeepsAValueOf_ReportsManual` |
 | Stray `#region`/`#endregion` dropped (TAAK-280)  | removed maps carried one half of a pair (`ProfileDirectives.Repair`) | `_Combined/region-directives` |
 | Manual "conditional compilation"                 | a removed map sat inside `#if`                | unit test `Rewrite_DirectivesAroundCreateMap_StayBalancedOrManual` |
+| Map class `MapperConfiguration` lambda (TAAK-286) | a class whose one `new MapperConfiguration(cfg => ...)` only calls `cfg.CreateMap` | `_Combined/configuration-maps-map-call` |
+| Manual "builds several MapperConfiguration"      | two such lambdas in one class                 | unit test `FixAsync_TwoConfigurationsWithMaps_StaysManual` |
 | Fixed                                            | all of the above no                        | `simple`, `internal-types` |
 
 ## See also

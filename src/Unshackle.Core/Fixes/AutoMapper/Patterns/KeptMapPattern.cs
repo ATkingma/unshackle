@@ -23,7 +23,7 @@ public class KeptMapPattern : ISolutionPattern
         HashSet<string> extensions = [.. root.DescendantNodes().OfType<ClassDeclarationSyntax>().Select(c => c.Identifier.ValueText)];
         return root.DescendantNodes().OfType<ClassDeclarationSyntax>()
             .Where(c => CreateMapPattern.IsProfileWithMaps(c, model) && extensions.Contains(CreateMapPattern.ExtensionsName(c)))
-            .SelectMany(c => c.Members.OfType<ConstructorDeclarationSyntax>().SelectMany(CreateMapPattern.MapStatements))
+            .SelectMany(c => CreateMapPattern.MapStatements(c, model))
             .Where(s => MapOwners.StatementPair(s, model) is not null);
     }
 

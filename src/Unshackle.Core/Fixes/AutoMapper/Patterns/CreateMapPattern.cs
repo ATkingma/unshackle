@@ -162,10 +162,29 @@ public class CreateMapPattern : ISolutionPattern
             return PatternResult.Manual($"Profile {profile.Identifier} is partial (another part can add maps or members they use); write its mapping methods by hand.");
         }
 
-        if (profile.Members.OfType<ConstructorDeclarationSyntax>().ToList() is not [{ } constructor])
+        // A Profile keeps its maps in the constructor; any other class in the lambda of its one `new MapperConfiguration(cfg => ...)` (TAAK-286).
+        ConstructorDeclarationSyntax? constructor = null;
+        LambdaExpressionSyntax? lambda = null;
+        if (profileType is not null && IsProfile(profileType))
         {
-            return PatternResult.Manual(SeveralConstructorsReason(profile, model));
+            if (profile.Members.OfType<ConstructorDeclarationSyntax>().ToList() is not [{ } only])
+            {
+                return PatternResult.Manual(SeveralConstructorsReason(profile, model));
+            }
+
+            constructor = only;
         }
+        else if (ConfigurationLambdas(profile, model) is not [{ } single])
+        {
+            return PatternResult.Manual($"{profile.Identifier} builds several MapperConfiguration objects with CreateMap statements (which maps exist depends on the one that is used); write their mapping methods by hand.");
+        }
+        else
+        {
+            lambda = single;
+        }
+
+        IParameterSymbol? configuration = lambda is null ? null : LambdaParameter(lambda, model);
+        string owner = lambda is null ? $"Profile {profile.Identifier}" : $"the MapperConfiguration in {profile.Identifier}";
 
         List<(TypeSyntax Source, TypeSyntax Destination, List<(string Name, string Value)> Members, bool MapInto, string Creation)> maps = [];
         bool isInternal = false;
@@ -178,7 +197,7 @@ public class CreateMapPattern : ISolutionPattern
         List<CapturedLocal> captured = [];
         List<SyntaxNode> kept = [];
         string? keptReason = null;
-        foreach (SyntaxNode statement in MapStatements(constructor))
+        foreach (SyntaxNode statement in lambda is null ? MapStatements(constructor!) : LambdaStatements(lambda))
         {
             if (CapturedLocal.TryParse(statement, model) is { } local)
             {
@@ -229,15 +248,15 @@ public class CreateMapPattern : ISolutionPattern
             if (!TryParseMap(statement, model, out InvocationExpressionSyntax? invocation, out Dictionary<string, SimpleLambdaExpressionSyntax?>? options,
                     out Dictionary<string, SimpleLambdaExpressionSyntax?>? reverseOptions, out Dictionary<string, InvocationExpressionSyntax> resolverCalls,
                     out InvocationExpressionSyntax? convertUsing, out Dictionary<string, InvocationExpressionSyntax> converters, out MemberOptions extra, out MemberOptions reverseExtra)
-                || invocation.Expression is not GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
+                || CreateMapName(invocation, configuration, model) is not GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                 || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly } method)
             {
                 string written = string.Join(' ', statement.ToString().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
                 return extra.Unsupported is { } unsupported
-                    ? $"{unsupported}; migrate Profile {profile.Identifier} by hand."
+                    ? $"{unsupported}; migrate {owner} by hand."
                     : UnsupportedOptions.Reason(statement, model) is string advice
-                        ? $"'{written}' in Profile {profile.Identifier}: {advice} (automapper.unsupported)."
-                        : $"'{written}' is not a CreateMap<A, B>() without options; migrate Profile {profile.Identifier} by hand.";
+                        ? $"'{written}' in {owner}: {advice} (automapper.unsupported)."
+                        : $"'{written}' is not a CreateMap<A, B>() without options; migrate {owner} by hand.";
             }
 
             ITypeSymbol sourceType = method.TypeArguments[0];
@@ -386,7 +405,7 @@ public class CreateMapPattern : ISolutionPattern
             if (pairs.Contains(key) || (reverseOptions is not null && (pairs.Contains(reverseKey) || key == reverseKey)))
             {
                 // Two maps for one type pair (a ReverseMap and its own CreateMap<B, A>) would be two methods with the same signature.
-                return $"Profile {profile.Identifier} maps {sourceType.Name} and {destinationType.Name} the same way twice (ReverseMap and a CreateMap of its own?); write the mapping methods by hand.";
+                return $"{char.ToUpperInvariant(owner[0])}{owner[1..]} maps {sourceType.Name} and {destinationType.Name} the same way twice (ReverseMap and a CreateMap of its own?); write the mapping methods by hand.";
             }
 
             // Only a statement without a problem adds its methods: with a plan (TAAK-272) one with a problem stays in the profile.
@@ -453,13 +472,27 @@ public class CreateMapPattern : ISolutionPattern
             }
         }
 
-        if (ProfileDirectives.Repair(kept.Count == 0 ? Emptied(constructor) : Trimmed(constructor, kept, model), out ConstructorDeclarationSyntax rewritten) is string directiveProblem)
+        SyntaxNode original = (SyntaxNode?)constructor ?? lambda!;
+        SyntaxNode rewritten;
+        string? directiveProblem;
+        if (lambda is null)
+        {
+            directiveProblem = ProfileDirectives.Repair(kept.Count == 0 ? Emptied(constructor!) : Trimmed(constructor!, kept, model), out ConstructorDeclarationSyntax repairedConstructor);
+            rewritten = repairedConstructor;
+        }
+        else
+        {
+            directiveProblem = ProfileDirectives.Repair(kept.Count == 0 ? Emptied(lambda) : Trimmed(lambda, kept), out LambdaExpressionSyntax repairedLambda);
+            rewritten = repairedLambda;
+        }
+
+        if (directiveProblem is not null)
         {
             return PatternResult.Manual(directiveProblem);
         }
 
         return PatternResult.Fixed([
-            anchor.ReplaceNode(constructor, rewritten),
+            anchor.ReplaceNode(original, rewritten),
             Extensions(anchor, className, isInternal ? "internal" : "public", maps, withProjection, captured)], [.. namespaces.Order(StringComparer.Ordinal)]);
     }
 
@@ -523,6 +556,17 @@ public class CreateMapPattern : ISolutionPattern
             : constructor.WithParameterList(constructor.ParameterList.WithoutTrailingTrivia());
         return headed.WithExpressionBody(null).WithSemicolonToken(default).WithBody(block);
     }
+
+    // The lambda of a MapperConfiguration without its maps (TAAK-286): an empty block.
+    private static LambdaExpressionSyntax Emptied(LambdaExpressionSyntax lambda) =>
+        lambda.Body is BlockSyntax block
+            ? lambda.WithBody(block.WithStatements([]))
+            : lambda.WithBody(SyntaxFactory.Block().WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken).WithTrailingTrivia(SyntaxFactory.Space))
+                .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken).WithTrailingTrivia(lambda.Body.GetTrailingTrivia())));
+
+    // The lambda with only the maps that stay on AutoMapper (an expression body that stays is left as it is).
+    private static LambdaExpressionSyntax Trimmed(LambdaExpressionSyntax lambda, List<SyntaxNode> kept) =>
+        lambda.Body is BlockSyntax block ? lambda.WithBody(block.WithStatements([.. block.Statements.Where(kept.Contains)])) : lambda;
 
     // The constructor with only the maps that stay on AutoMapper (TAAK-272), and the captured variables they read.
     private static ConstructorDeclarationSyntax Trimmed(ConstructorDeclarationSyntax constructor, List<SyntaxNode> kept, SemanticModel model)
@@ -1561,9 +1605,82 @@ public class CreateMapPattern : ISolutionPattern
     // Find reports a nested profile at its outermost type: the rewrite replaces that type, so the extension class can go next to it.
     protected static SyntaxNode Anchor(SyntaxNode node) => node is ClassDeclarationSyntax c ? c.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().Last() : node;
 
+    // A Profile with maps in a constructor, or (TAAK-286) a class whose `new MapperConfiguration(cfg => ...)` lambda holds CreateMap statements.
     protected internal static bool IsProfileWithMaps(ClassDeclarationSyntax c, SemanticModel model) =>
-        model.GetDeclaredSymbol(c) is INamedTypeSymbol type && IsProfile(type)
-        && c.Members.OfType<ConstructorDeclarationSyntax>().Any(ctor => ctor.Body is { Statements.Count: > 0 } || ctor.ExpressionBody is not null);
+        model.GetDeclaredSymbol(c) is INamedTypeSymbol type
+        && (IsProfile(type)
+            ? c.Members.OfType<ConstructorDeclarationSyntax>().Any(ctor => ctor.Body is { Statements.Count: > 0 } || ctor.ExpressionBody is not null)
+            : ConfigurationLambdas(c, model).Count > 0);
+
+    // The lambdas of `new MapperConfiguration(cfg => ...)` / `new(cfg => ...)` in the class itself (not in a nested type) that call cfg.CreateMap<A, B>(). Syntax
+    // first: this runs for every class of every file.
+    internal static List<LambdaExpressionSyntax> ConfigurationLambdas(ClassDeclarationSyntax c, SemanticModel model)
+    {
+        List<LambdaExpressionSyntax> found = [];
+        foreach (BaseObjectCreationExpressionSyntax creation in c.DescendantNodes(n => n == c || n is not BaseTypeDeclarationSyntax).OfType<BaseObjectCreationExpressionSyntax>())
+        {
+            if (creation.ArgumentList?.Arguments is [{ Expression: LambdaExpressionSyntax lambda }]
+                && lambda.DescendantNodes().OfType<GenericNameSyntax>().Any(n => n.Identifier.ValueText == "CreateMap" && n.Parent is MemberAccessExpressionSyntax)
+                && creation.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent.Parent: FieldDeclarationSyntax } or PropertyDeclarationSyntax } // built once; a local or direct use is the configuration test's business
+                && OnlyCreatesMaps(lambda)
+                && ConfigurationSyntax.IsConfiguration(creation, model) && LambdaParameter(lambda, model) is not null)
+            {
+                found.Add(lambda);
+            }
+        }
+
+        return found;
+    }
+
+    // Settings, AddProfile and the like on cfg stay as they are (Manual in ConfigurationTestPattern); only a lambda that does nothing but CreateMap is a map class.
+    private static bool OnlyCreatesMaps(LambdaExpressionSyntax lambda) =>
+        (lambda switch { SimpleLambdaExpressionSyntax simple => simple.Parameter.Identifier.ValueText, ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: [{ } only] } => only.Identifier.ValueText, _ => null }) is { } name
+        && lambda.DescendantNodes().OfType<IdentifierNameSyntax>().Where(i => i.Identifier.ValueText == name)
+            .All(i => i.Parent is MemberAccessExpressionSyntax { Name: GenericNameSyntax { Identifier.ValueText: "CreateMap" or "CreateProjection" } });
+
+    // Whether the class builds a MapperConfiguration from a lambda, also one without maps left (a rewritten one).
+    internal static bool HoldsConfiguration(ClassDeclarationSyntax c, SemanticModel model) =>
+        c.DescendantNodes(n => n == c || n is not BaseTypeDeclarationSyntax).OfType<BaseObjectCreationExpressionSyntax>()
+            .Any(creation => creation.ArgumentList?.Arguments is [{ Expression: LambdaExpressionSyntax }] && ConfigurationSyntax.IsConfiguration(creation, model));
+
+    // cfg of `cfg => ...` (the one parameter of Action<IMapperConfigurationExpression>).
+    internal static IParameterSymbol? LambdaParameter(LambdaExpressionSyntax lambda, SemanticModel model) => lambda switch
+    {
+        SimpleLambdaExpressionSyntax simple => model.GetDeclaredSymbol(simple.Parameter),
+        ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: [{ } only] } => model.GetDeclaredSymbol(only),
+        _ => null,
+    };
+
+    // The statements of a MapperConfiguration lambda: its block's, or the expression of `cfg => cfg.CreateMap<A, B>()`.
+    internal static IReadOnlyList<SyntaxNode> LambdaStatements(LambdaExpressionSyntax lambda) =>
+        lambda.Body is BlockSyntax block ? block.Statements : lambda.Body is ExpressionSyntax expression ? [expression] : [];
+
+    // The map statements of a class that IsProfileWithMaps: its Profile constructors', or its MapperConfiguration lambda's.
+    internal static IReadOnlyList<SyntaxNode> MapStatements(ClassDeclarationSyntax profile, SemanticModel model) =>
+        model.GetDeclaredSymbol(profile) is INamedTypeSymbol type && IsProfile(type)
+            ? [.. profile.Members.OfType<ConstructorDeclarationSyntax>().SelectMany(MapStatements)]
+            : [.. ConfigurationLambdas(profile, model).SelectMany(LambdaStatements)];
+
+    // The `CreateMap<A, B>` name of a call: implicit in a Profile (parameter null), or on the parameter of the MapperConfiguration lambda.
+    internal static SimpleNameSyntax? CreateMapName(InvocationExpressionSyntax call, IParameterSymbol? parameter, SemanticModel model) => call.Expression switch
+    {
+        GenericNameSyntax name when parameter is null => name,
+        MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax receiver, Name: GenericNameSyntax name }
+            when parameter is not null && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(receiver).Symbol, parameter) => name,
+        _ => null,
+    };
+
+    // Whether a CreateMap call is one of the map statements of its class (a Profile constructor's, or a MapperConfiguration lambda's), as opposed to a map elsewhere.
+    internal static bool IsInMapStatements(InvocationExpressionSyntax createMap, ClassDeclarationSyntax profile, SemanticModel model)
+    {
+        if (model.GetDeclaredSymbol(profile) is INamedTypeSymbol type && IsProfile(type))
+        {
+            return createMap.Ancestors().OfType<BaseMethodDeclarationSyntax>().FirstOrDefault() is ConstructorDeclarationSyntax
+                && createMap.Ancestors().OfType<AnonymousFunctionExpressionSyntax>().FirstOrDefault() is null;
+        }
+
+        return ConfigurationLambdas(profile, model).Any(l => l.Span.Contains(createMap.Span));
+    }
 
     // Syntactic: whether a ForMember(..., o => o.Ignore()) (ignore) or ForMember(..., o => o.MapFrom(s => expr)) sits in the profile,
     // so exactly one pattern claims it: MapFrom before Ignore before plain CreateMap.
@@ -1592,7 +1709,7 @@ public class CreateMapPattern : ISolutionPattern
         resolvers = [];
         convertUsing = null;
         converters = [];
-        if (((statement as ExpressionStatementSyntax)?.Expression ?? (statement as ArrowExpressionClauseSyntax)?.Expression) is not InvocationExpressionSyntax expression)
+        if (((statement as ExpressionStatementSyntax)?.Expression ?? (statement as ArrowExpressionClauseSyntax)?.Expression ?? statement as ExpressionSyntax) is not InvocationExpressionSyntax expression)
         {
             return false;
         }
@@ -1602,7 +1719,7 @@ public class CreateMapPattern : ISolutionPattern
         {
             convertUsing = expression;
             createMap = typeMap;
-            return typeMap.Expression is GenericNameSyntax
+            return typeMap.Expression is GenericNameSyntax or MemberAccessExpressionSyntax { Name: GenericNameSyntax }
                 && (typeMap.ArgumentList.Arguments is [] || (typeMap.ArgumentList.Arguments is [{ } typeMapList] && IsMemberList(typeMapList, model)));
         }
 

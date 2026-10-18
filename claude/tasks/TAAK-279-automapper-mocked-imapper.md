@@ -1,7 +1,8 @@
 # TAAK-279 — AutoMapper: mocked IMapper no longer keeps whole map pairs on AutoMapper
 
-**Status**: step 1/6 — not started
+**Status**: step 2/6 — in progress
 **Created**: 2026-10-18
+**Branch**: `worktree-agent-a1ab1bc6d7ec0994b` (worktree `.claude/worktrees/agent-a1ab1bc6d7ec0994b`)
 **Goal**: a test that stubs `IMapper` (Moq/NSubstitute/FakeItEasy) only keeps **its class under test** on AutoMapper; every other call site of the same map pair migrates, with proof that the app and its own tests behave the same.
 
 ## Context for the next agent
@@ -9,6 +10,28 @@
 - TAAK-273 (archived) measured that after TAAK-272/273 most remaining AutoMapper Manual in the blind corpus is caused by mock set-ups of `IMapper` (culinary 0 Fixed / 46 Manual, fiapgames, msb).
 - Today (`src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapOwners.cs`, `IsMockSetUp`, reason "a mock set-up of IMapper in a test stays as it is, and so do the maps it stubs"): a stubbed pair keeps its `CreateMap` **and every call site** of that pair on AutoMapper.
 - Proof rules: `claude/tasks/manual-reduction-queue.md`.
+- 2026-10-18: picked up by an agent (Claude Opus) in the worktree above. Corpus dir `<corpus>/t279` (`tool-before` = main `4392e29`,
+  `run-before.sh` scans the five blocked repos (`five.txt`) and the 14 usable AutoMapper corpus repos (`am.txt`) into `blind-b`/`am-b`;
+  `base` results are linked from corpus-blind / corpus-automapper).
+
+## Measurement (step 1)
+
+Counted on the sources (`<corpus>/corpus-blind/src`, `<corpus>/corpus-automapper/src`): mocks of `IMapper`, the class whose
+constructor receives the mock (`new C(..., mock.Object)` in the test), and the call sites of the stubbed pairs elsewhere.
+
+| Repo | Test classes mocking `IMapper` | Classes under test (constructor gets the mock) | Map calls in them | Call sites of stubbed pairs in other classes |
+| --- | ---: | --- | ---: | --- |
+| culinary | 5 | AccountManager, GroceryManager, MealPlannerManager, RecipeManager, ReviewManager | 21 | PreferenceManager:32 (`Preference → PreferenceDto` list, stubbed in AccountManagerTests:183) |
+| msb | 6 | AddBoxCommandHandler, AddShelfCommandHandler, AddAddressCommandHandler, BoxController, WarehouseController (AddOrderCommandHandlerTests: construction commented out → unresolvable) | 9 | OrderController:108 (`BoxDto → BoxModel`); OrderController:78 (`OrderModel → OrderDto`) waits on `BoxDto → BoxModel` |
+| fiapgames | 0 | — | — | — (its 9 Manual are principal: private setters) |
+| restapi, baseapi | 0 | — | — | — |
+| AutoMapper corpus (14) | dasblog 1 (ombi: commented out) | dasblog BlogPostViewModelCreator | 1 | dasblog BlogPostController:158 (same pair; its profile has several constructors, so it stays for that reason anyway) |
+
+What the mocked tests check (option B): culinary `Assert.Equal(expectedAccount, result.Value)` on a canned DTO whose `AccountId` is set
+while the source is `new Account()` (a real mapping gives `Guid.Empty` and another instance), and 5× `Verify(m => m.Map<…>(…), Times.Once)`;
+msb `Assert.Equal(warehouseDto, returnedWarehouseDto)` on the canned instance. A real mapping would fail or remove these checks, so
+**option B does not keep the tests' meaning** → option A. The gain is the call sites outside the classes under test (culinary 1, msb 1–2,
+dasblog 0–1); the stubbed `CreateMap`s stay while their class under test calls `IMapper`, so no repo becomes AutoMapper-free.
 
 ## Analysis
 
@@ -32,8 +55,8 @@ Determining "class under test": the type whose constructor receives the mocked `
 
 ## Steps
 
-- [ ] 1. Probe: classes under mocked tests vs other call sites (counts per repo)
-- [ ] 2. KingmaDoc plan + design decision with evidence
+- [x] 1. Probe: classes under mocked tests vs other call sites (counts per repo)
+- [→] 2. KingmaDoc plan + design decision with evidence
 - [ ] 3. Implementation + unit tests
 - [ ] 4. Proofs (`MapCall`, `_Combined`)
 - [ ] 5. Corpus `after`: 0 regressions, before/after numbers

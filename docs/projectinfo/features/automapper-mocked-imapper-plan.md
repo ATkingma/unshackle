@@ -67,9 +67,11 @@ call site of that pair outside the class under test is migrated, while the class
 
 - **REQ-1**: WHEN a mock set-up of `IMapper` stubs pair A→B AND its test constructs class C with that mock THE SYSTEM SHALL keep
   `CreateMap<A, B>` in the profile and also generate `ToB()` for it.
-- **REQ-2**: WHEN class C (or a base type of C, or a type C hands its `IMapper` to) calls `Map` of a shared pair THE SYSTEM SHALL leave
-  the call on `IMapper` and name the class under test in the reason.
-- **REQ-3**: WHEN any other class calls `Map` of a shared pair THE SYSTEM SHALL rewrite the call to `ToB()`.
+- **REQ-2**: WHEN class C (or a base type of C, or a type C hands its `IMapper` to) calls `Map`, stubbed or not, THE SYSTEM SHALL leave
+  the call on `IMapper`, share its pair, and name the class under test in the reason. Measured in the culinary scan: `GroceryManager` is
+  constructed with a Moq mock that stubs nothing; a loose mock answers its `Map` with null, so migrating those calls would change what its
+  test sees.
+- **REQ-3**: WHEN any other class calls `Map` of a shared pair THE SYSTEM SHALL rewrite the call to `ToB()` (as for any migrated pair).
 - **REQ-4**: WHEN the class under test of a stub cannot be found in the test file THE SYSTEM SHALL keep the pair on AutoMapper everywhere
   (as before).
 - **REQ-5**: WHEN a shared map may map a member through another map THE SYSTEM SHALL keep that `CreateMap` in the profile too (shared);

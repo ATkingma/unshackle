@@ -31,10 +31,10 @@ Test: test file
 Calls: call patterns
 Owners -> Test: "ClassesUnderTest(set-up): mock variable, aliases, new C(mock)"
 Owners -> Owners: "_underTest += C and its bases; CloseUnderTest (IMapper arguments)"
-Owners -> Owners: "fixpoint loop: set-up with classes → ShareCall(pair); without → KeepCall (as before)"
+Owners -> Owners: "fixpoint loop: set-up with classes → ShareCall(pair); without → KeepCall (as before); any call in a class under test → ShareCall"
 Owners -> Owners: "Close: a shared node shares its reverse and every reached map that is not kept"
 Calls -> Owners: "KeptCallAsync(call)"
-Owners -> Calls: "kept pair → Manual; shared pair in a class under test → Manual; else null (rewrite to ToB())"
+Owners -> Calls: "kept pair → Manual; any call in a class under test → Manual; else null (rewrite to ToB())"
 ```
 
 ## Figure 3: decision tree (one Map call of pair A → B)
@@ -43,7 +43,7 @@ Owners -> Calls: "kept pair → Manual; shared pair in a class under test → Ma
 direction: down
 q1: "mock set-up itself?"
 q2: "A → B kept (Reason)?"
-q3: "A → B shared AND call inside a class under test?"
+q3: "call inside a class under test?"
 m1: "Manual: set-up stays"
 m2: "Manual: call keeps IMapper (kept reason)"
 m3: "Manual: call keeps IMapper (class under test)"

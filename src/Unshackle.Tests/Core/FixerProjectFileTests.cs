@@ -199,15 +199,14 @@ public class FixerProjectFileTests
         IPattern rewriting = CreateRewritingPattern();
         fix.Patterns.Returns([rewriting]);
         var fixer = new Fixer([fix], _projectFiles);
-        string latin1Code = StillUsesFluentAssertions + " // café";
-
+        string utf16Code = StillUsesFluentAssertions + " // café";
 
         // Act
-        FixReport report = await FixAsync(fixer, TestReferences.FluentAssertions, ("A.cs", StillUsesFluentAssertions, Encoding.UTF8), ("L.cs", latin1Code, Encoding.Latin1));
+        FixReport report = await FixAsync(fixer, TestReferences.FluentAssertions, ("A.cs", StillUsesFluentAssertions, Encoding.UTF8), ("L.cs", utf16Code, Encoding.Unicode));
 
         // Assert
         Dictionary<string, string> texts = await TextsAsync(report);
-        texts["L.cs"].ShouldBe(latin1Code);
+        texts["L.cs"].ShouldBe(utf16Code);
         texts["A.cs"].ShouldContain("System.Console.WriteLine()");
         Finding encoding = report.Findings.Single(f => f.PatternId == Fixer.EncodingPatternId);
         encoding.FilePath.ShouldBe("/repo/Tests/L.cs");
@@ -216,6 +215,23 @@ public class FixerProjectFileTests
         report.Findings.ShouldNotContain(f => f.PatternId == "test.pattern" && f.FilePath.EndsWith("L.cs", StringComparison.Ordinal));
         // The file still uses the old library, so the project keeps the package.
         await _projectFiles.Received(1).EditAsync(Arg.Is<IEnumerable<ProjectMigration>>(m => m.Single().KeepRemovedPackage), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task FixAsync_FileInLatin1_IsMigratedLikeAnyOther()
+    {
+        // Arrange
+        IFix fix = CreateFix(s_package);
+        IPattern rewriting = CreateRewritingPattern();
+        fix.Patterns.Returns([rewriting]);
+        var fixer = new Fixer([fix], _projectFiles);
+
+        // Act
+        FixReport report = await FixAsync(fixer, TestReferences.FluentAssertions, ("L.cs", StillUsesFluentAssertions + " // café", Encoding.Latin1));
+
+        // Assert
+        (await TextsAsync(report))["L.cs"].ShouldContain("System.Console.WriteLine()");
+        report.Findings.ShouldNotContain(f => f.PatternId == Fixer.EncodingPatternId);
     }
 
     [Fact]

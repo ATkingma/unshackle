@@ -23,7 +23,8 @@ public class Fixer : IFixer
     // Rows for code that still names the removed package while no pattern found it: the place the user has to migrate by hand.
     public const string UnmatchedPatternId = "unmatched-use";
 
-    // Rows for a source file that is not UTF-8: writing it back as UTF-8 would corrupt its characters, so it is left alone.
+    // Rows for a source file that is neither UTF-8 nor Latin-1 (e.g. UTF-16): writing it back as UTF-8 would corrupt it, so it is left alone.
+    // A non-UTF-8 single-byte file is loaded as Latin-1 and written back byte-exact, so it is migrated like any other (TAAK-285).
     public const string EncodingPatternId = "encoding";
 
     // TAAK-198: each round of targeted imports can only add conflicts; real files settle in two or three.
@@ -786,7 +787,7 @@ public class Fixer : IFixer
         HashSet<string> paths = new(StringComparer.Ordinal);
         foreach (Document document in solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents))
         {
-            if (document.FilePath is not null && (await document.GetTextAsync(cancellationToken)).Encoding is { } encoding and not UTF8Encoding)
+            if (document.FilePath is not null && (await document.GetTextAsync(cancellationToken)).Encoding is { } encoding and not UTF8Encoding && encoding.CodePage != Encoding.Latin1.CodePage)
             {
                 paths.Add(document.FilePath);
             }

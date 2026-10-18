@@ -152,13 +152,14 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
     // Roslyn decodes a file that is not valid UTF-8 with the system ANSI code page. On Windows that is 1252; on Linux and macOS
     // it is UTF-8 itself, so a Latin-1 file loads as UTF-8 with replacement characters and the fixer would rewrite it (TAAK-167,
     // red CI). Such a file gets its text as Latin-1, so every platform reports it as not UTF-8. Only a text with a replacement
-    // character can be one, which keeps the extra read to those files.
+    // character can be one, which keeps the extra read to those files. Windows hands such a file out as its ANSI code page (single byte)
+    // and gets the same Latin-1 text. Latin-1 maps bytes and characters one to one, so XmlProjectFileStore writes the file back byte-exact (TAAK-285).
     private async Task<Solution> MarkNotUtf8FilesAsync(Solution solution, CancellationToken cancellationToken)
     {
         foreach (Document document in solution.Projects.SelectMany(p => p.Documents).ToList())
         {
             SourceText text = await document.GetTextAsync(cancellationToken);
-            if (document.FilePath is null || text.Encoding is not UTF8Encoding || !text.ToString().Contains('�', StringComparison.Ordinal))
+            if (document.FilePath is null || (text.Encoding is UTF8Encoding ? !text.ToString().Contains('�', StringComparison.Ordinal) : text.Encoding is not { IsSingleByte: true }))
             {
                 continue;
             }

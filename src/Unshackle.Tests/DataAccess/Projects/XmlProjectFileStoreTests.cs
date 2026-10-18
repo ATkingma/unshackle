@@ -666,6 +666,22 @@ public class XmlProjectFileStoreTests
         _fileSystem.File.ReadAllBytes(Project).ShouldBe(latin1);
     }
 
+    // TAAK-285: a source file that is not UTF-8 is loaded as Latin-1 and written back byte-exact (projectpulse: an em dash in cp1252).
+    [Fact]
+    public async Task SaveAsync_SourceFileNotUtf8_WritesLatin1BackByteExact()
+    {
+        // Arrange
+        const string Source = "/repo/src/Tests/File.cs";
+        _fileSystem.AddFile(Source, new MockFileData([0x2F, 0x2F, 0x20, 0x97, 0x0A, 0x61]));
+        var store = new XmlProjectFileStore(_fileSystem);
+
+        // Act
+        await store.SaveAsync([new ProjectFileChange { FilePath = Source, OldText = "// \u0097\na", NewText = "// \u0097\nb" }], TestContext.Current.CancellationToken);
+
+        // Assert
+        _fileSystem.File.ReadAllBytes(Source).ShouldBe([0x2F, 0x2F, 0x20, 0x97, 0x0A, 0x62]);
+    }
+
     [Fact]
     public async Task EditAsync_UnloadedProjectUsesCentralPackage_KeepsVersionNextToNewOne()
     {

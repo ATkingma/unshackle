@@ -6,7 +6,11 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
+<<<<<<< HEAD
 Total: 1045 proofs (excluding `_Pending`).
+=======
+Total: 1047 proofs (excluding `_Pending`).
+>>>>>>> worktree-agent-ade469fda0960cfbe
 
 ## AutoMapper
 
@@ -251,7 +255,11 @@ Total: 1045 proofs (excluding `_Pending`).
 | `member-resolver` | Fixed | `CreateMap<Post, NoteObject>() .ForMember(d => d.MediaType, opt => opt.MapFrom<MediaTypeResolver, Content?>(s =…` → `public static class PostProfileExtensions {` |
 | `resolver-class` | Fixed | `CreateMap<ToDoList, ListDto>() .ForMember(x => x.IsShared, opt => opt.MapFrom<IsSharedResolver>())` → `public static class ToDoProfileExtensions {` |
 
+<<<<<<< HEAD
 ### _Combined (33)
+=======
+### _Combined (32)
+>>>>>>> worktree-agent-ade469fda0960cfbe
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1182,7 +1190,7 @@ Total: 1045 proofs (excluding `_Pending`).
 
 ## MediatR
 
-### AddMediatR (16)
+### AddMediatR (17)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1191,6 +1199,7 @@ Total: 1045 proofs (excluding `_Pending`).
 | `edge-assemblies` | Fixed | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` → `_ = handlers; services.AddMediator(configuration => configuration.ServiceLifetime = ServiceLifetime.Transient)…` |
 | `edge-assemblies-friend` | Fixed | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` → `_ = handlers; services.AddMediator(configuration => configuration.ServiceLifetime = ServiceLifetime.Transient)…` |
 | `edge-assemblies-public` | Manual | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` — reason: AddMediatR scans the assembly passed in 'handlers' of a public method |
+| `edge-assemblies-typeof` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies( typeof(Startup).Assembly,` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient);` |
 | `edge-publisher-qualified` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `edge-service-type-behavior` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `empty` | Fixed | `services.AddMediatR(cfg => { });` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient);` |
@@ -1347,11 +1356,13 @@ Total: 1045 proofs (excluding `_Pending`).
 | `through-interface` | Manual |  — reason: is called through the MediatR interface |
 | `unknown-response` | Manual |  — reason: the response type of T is unknown |
 
-### SendAsTask (6)
+### SendAsTask (8)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `eshop-mediator-extension` | Fixed | `List<Task> tasks = domainEvents.Select(domainEvent => mediator.Publish(domainEvent)).ToList();` → `List<Task> tasks = domainEvents.Select(domainEvent => mediator.Publish(domainEvent).AsTask()).ToList();` |
+| `expression-tree` | Fixed | `public Task<int> RunAsync(IMediator mediator) => mediator.Send(new Ping(), CancellationToken.None);` → `public Task<int> RunAsync(IMediator mediator) => mediator.Send(new Ping(), CancellationToken.None).AsTask();` |
+| `moq-setup-returns` | Fixed | `mock.Setup(m => m.Send(new Ping(), CancellationToken.None)).Returns(Task.FromResult(1)); mock.Setup(m => m.Sen…` → `mock.Setup(m => m.Send(new Ping(), CancellationToken.None)).Returns(ValueTask.FromResult(1)); mock.Setup(m => …` |
 | `nsubstitute-returns` | Fixed | `_mediator.Send(Arg.Any<IRequest<bool>>(), default).Returns(Task.FromResult(true)); _mediator.Send(Arg.Any<Quer…` → `_mediator.Send(Arg.Any<IRequest<bool>>(), default).Returns(ValueTask.FromResult(true)); _mediator.Send(Arg.Any…` |
 | `nsubstitute-returns-lambda` | Manual |  — reason: set up on an NSubstitute mock |
 | `null-conditional` | Manual |  — reason: called with ?. |

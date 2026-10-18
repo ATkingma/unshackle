@@ -50,6 +50,17 @@ public class SendAsTaskPattern : IPattern
                 continue;
             }
 
+            if (IsInExpressionTree(invocation, model))
+            {
+                // Moq: mock.Setup(m => m.Send(x)).Returns(Task.FromResult(v)); the call stays, the configured value follows the new return type.
+                if (MoqReturns(invocation, model) is InvocationExpressionSyntax moqReturns)
+                {
+                    yield return moqReturns;
+                }
+
+                continue;
+            }
+
             if (Setup(invocation, model) is InvocationExpressionSyntax setup)
             {
                 if (s_returns.Contains(SetupName(setup)))
@@ -107,6 +118,22 @@ public class SendAsTaskPattern : IPattern
         _ => false,
     };
 
+    // Moq: mock.Setup(m => m.Send(x)).ReturnsAsync(v). The call is only described there, never run, and .AsTask() would not be a mockable member (TAAK-285);
+    // Moq's ReturnsAsync/ThrowsAsync accept the ValueTask-returning member as is.
+    private static bool IsInExpressionTree(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        invocation.Ancestors().OfType<LambdaExpressionSyntax>().Any(l =>
+            model.GetTypeInfo(l).ConvertedType is INamedTypeSymbol { Name: "Expression", ContainingNamespace: { } ns } && ns.ToDisplayString() == "System.Linq.Expressions");
+
+    // The Moq `.Returns(...)` that follows `Setup(m => <invocation>)`; null for anything else (ReturnsAsync, Verify, ...).
+    private static InvocationExpressionSyntax? MoqReturns(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        invocation.Parent is LambdaExpressionSyntax { Parent: ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Setup" }, Parent: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Returns", Parent: InvocationExpressionSyntax returns } } setup } }
+        && IsMoq(setup, model) && IsMoq(returns, model)
+            ? returns
+            : null;
+
+    private static bool IsMoq(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        model.GetSymbolInfo(invocation).Symbol is IMethodSymbol method && method.ContainingNamespace.ToDisplayString() is "Moq" or "Moq.Language"; // Returns lives in Moq.Language
+
     private static bool IsReceivedCheck(InvocationExpressionSyntax invocation, SemanticModel model) =>
         invocation.Parent is ExpressionStatementSyntax
         && invocation.Expression is MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: var check } } received }
@@ -133,6 +160,11 @@ public class SendAsTaskPattern : IPattern
     private static PatternResult RewriteReturns(InvocationExpressionSyntax setup, SemanticModel model)
     {
         var call = (InvocationExpressionSyntax)((MemberAccessExpressionSyntax)setup.Expression).Expression;
+        if (call.ArgumentList.Arguments is [{ Expression: LambdaExpressionSyntax { Body: InvocationExpressionSyntax body } }])
+        {
+            call = body; // Moq: Setup(m => m.Send(x)).Returns(...)
+        }
+
         bool generic = model.GetSymbolInfo(call).Symbol is IMethodSymbol { ReturnType: INamedTypeSymbol { IsGenericType: true } };
         var values = new Dictionary<ExpressionSyntax, ExpressionSyntax>();
         foreach (ArgumentSyntax argument in setup.ArgumentList.Arguments)
@@ -157,7 +189,7 @@ public class SendAsTaskPattern : IPattern
     {
         switch (expression)
         {
-            case InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "FromResult" } fromResult } when generic && IsTask(fromResult.Expression, model):
+            case InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "FromResult" } fromResult } when (generic || IsUnitResult(expression, model)) && IsTask(fromResult.Expression, model):
                 return expression.ReplaceNode(fromResult.Expression, ValueTask(fromResult.Expression));
             case MemberAccessExpressionSyntax { Name.Identifier.ValueText: "CompletedTask" } completed when !generic && IsTask(completed.Expression, model):
                 return expression.ReplaceNode(completed.Expression, ValueTask(completed.Expression));
@@ -165,6 +197,11 @@ public class SendAsTaskPattern : IPattern
                 return null;
         }
     }
+
+    // A void request's Send is a plain Task in MediatR but ValueTask<Unit> in Mediator, so Task.FromResult(Unit.Value) is its ValueTask.FromResult(Unit.Value) (TAAK-285).
+    private static bool IsUnitResult(ExpressionSyntax expression, SemanticModel model) =>
+        expression is InvocationExpressionSyntax { ArgumentList.Arguments: [{ Expression: var value }] }
+        && model.GetTypeInfo(value).Type is INamedTypeSymbol { Name: "Unit", ContainingNamespace: { } ns } && ns.ToDisplayString() == "MediatR";
 
     private static bool IsTask(ExpressionSyntax expression, SemanticModel model) =>
         expression is IdentifierNameSyntax or QualifiedNameSyntax or AliasQualifiedNameSyntax or MemberAccessExpressionSyntax

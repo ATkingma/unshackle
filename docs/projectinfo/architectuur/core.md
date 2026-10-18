@@ -81,7 +81,7 @@ With `--dry-run` we only show the diff; otherwise `ISolutionStore` writes the ch
   (REVIEW-B H1/H2): first **all** files are checked (unchanged since loading, UTF-8), only then written
   (temp file + move), and on an error halfway the files already written are restored. Implementation: `MsBuildSolutionStore`.
   A file that is not valid UTF-8 gets its text as Latin-1 on every platform (Roslyn falls back to UTF-8 on Linux/macOS),
-  so the Fixer reports it as not UTF-8 everywhere (TAAK-167).
+  so the store marks it as Latin-1 on every platform and `SaveAsync` writes it back byte-exact (TAAK-167, TAAK-285).
 - `IReportWriter`: `Extension` + `WriteAsync(path, findings, ct)`. See `rapportage.md`.
 - `ISourceControl`: `HasUncommittedChangesAsync(directory, ct)`; `fix` refuses on a dirty working tree unless `--force`.
   No git repository, no git, or a git error gives `InvalidOperationException` (never "clean"); `fix` then also refuses

@@ -9,13 +9,11 @@ public static class TestProjects
 {
     public const string Marker = "// @project ";
 
-    private static readonly AdhocWorkspace s_workspace = new();
-
     public static bool IsMultiProject(string code) => code.StartsWith(Marker, StringComparison.Ordinal);
 
     public static Solution Create(string code, IEnumerable<MetadataReference> references)
     {
-        Solution solution = s_workspace.CurrentSolution;
+        Solution solution = TestSolution.NewEmpty();
         Dictionary<string, ProjectId> ids = new(StringComparer.Ordinal);
         foreach ((string Name, IReadOnlyList<string> References, string Header, string Code) section in Parse(code))
         {

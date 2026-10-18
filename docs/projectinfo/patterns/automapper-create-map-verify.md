@@ -42,7 +42,7 @@ TAAK-261 measurement (AutoMapper 14.0.0, `CreateMap<S, D>()`): a destination mem
 | Check   | Command                                                     | Result                                  |
 | ------- | ----------------------------------------------------------- | --------------------------------------- |
 | Build   | `dotnet build`                                              | passed (0 warnings)                     |
-| Tests   | `dotnet test`                                               | 716/716 green                           |
+| Tests   | `dotnet test`                                               | 1583/1583 green (TAAK-286)             |
 | Samples | `dotnet test --solution samples/SampleShop/SampleShop.slnx` | 38/38 green                             |
 | Lint    | _none_                                                      | _not run_: no lint command configured   |
 

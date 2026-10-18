@@ -57,6 +57,7 @@ automapper.configuration-test: once the profiles are hand-written `ToB` methods,
 - **REQ-8**: IF a `CreateMap` outside a profile constructor (or an `[AutoMap]`) remains in the project or a project it depends on THEN THE SYSTEM SHALL report a removal that contains a check as Manual (proof `ConfigurationTest/unmigrated-map`, unit test `FixAsync_MapInReferencedProject_ChecksBeforeRemoving`).
 - **REQ-9**: IF the check has side effects or is not a statement of its own THEN THE SYSTEM SHALL report Manual (proof `ConfigurationTest/side-effect-receiver`, unit test `Rewrite_AssertAsExpressionBody_ReportsManual`).
 - **REQ-10**: WHEN a profile-only configuration or its mapper is passed on, or an `IMapper` is injected THE SYSTEM SHALL report nothing (unit test `Find_MapperPassedOn_FindsNothing`).
+- **REQ-11** (TAAK-273): WHILE maps stay on AutoMapper THE SYSTEM SHALL report a check in any form (also `Action act = () => <check>;`) with the kept reason (`Stays on AutoMapper: …`) instead of "not a statement of its own" (unit test `FixAsync_ActionCheckWhileMapsStay_ReportsKept`). Removing an `Action act = …; act.Should().NotThrow();` pair once no map remains is not built: no corpus repo has the form and SampleShop keeps maps.
 
 ## Assumptions
 

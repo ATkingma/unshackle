@@ -165,13 +165,13 @@ public class MapCallPatternTests
         text.ShouldContain("using Shop.Mapping;");
     }
 
-    // A maybe-null source becomes source?.ToB() only where null may go (TAAK-259).
+    // A maybe-null source becomes source?.ToB() where null may go (TAAK-259), and source?.ToB()! elsewhere: AutoMapper returned null there too (TAAK-273).
     [Theory]
     [InlineData("Shop.Mapping.OrderDto? Get(IMapper mapper, Shop.Mapping.Order? order) => mapper.Map<Shop.Mapping.OrderDto>(order);", "=> order?.ToOrderDto();")]
     [InlineData("Shop.Mapping.OrderDto? Get(IMapper mapper, Shop.Mapping.Order? order) { Shop.Mapping.OrderDto? dto = mapper.Map<Shop.Mapping.OrderDto>(order); return dto; }", "dto = order?.ToOrderDto();")]
-    [InlineData("Shop.Mapping.OrderDto Get(IMapper mapper, Shop.Mapping.Order? order) => mapper.Map<Shop.Mapping.OrderDto>(order);", null)]
-    [InlineData("Shop.Mapping.OrderDto Get(IMapper mapper, Shop.Mapping.Order? order) { var dto = mapper.Map<Shop.Mapping.OrderDto>(order); return dto; }", null)]
-    public async Task FixAsync_MaybeNullSource_ConditionalOnlyWhereNullAllowed(string method, string? expected)
+    [InlineData("Shop.Mapping.OrderDto Get(IMapper mapper, Shop.Mapping.Order? order) => mapper.Map<Shop.Mapping.OrderDto>(order);", "=> order?.ToOrderDto()!;")]
+    [InlineData("Shop.Mapping.OrderDto Get(IMapper mapper, Shop.Mapping.Order? order) { var dto = mapper.Map<Shop.Mapping.OrderDto>(order); return dto; }", "var dto = order?.ToOrderDto()!;")]
+    public async Task FixAsync_MaybeNullSource_Conditional(string method, string expected)
     {
         // Arrange
         var workspace = new AdhocWorkspace();
@@ -195,15 +195,8 @@ public class MapCallPatternTests
         FixReport report = await new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
 
         // Assert
-        if (expected is null)
-        {
-            report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains("may be null", StringComparison.Ordinal));
-        }
-        else
-        {
-            report.Findings.ShouldAllBe(f => f.Result is FixedResult);
-            (await TextAsync(report.Solution, "Service.cs")).ShouldContain(expected);
-        }
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult);
+        (await TextAsync(report.Solution, "Service.cs")).ShouldContain(expected);
     }
 
     // No generated method: the reason names what blocks the map, the Manual profile or a CreateMap outside a profile constructor (TAAK-260).

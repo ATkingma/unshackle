@@ -768,7 +768,7 @@ public class CreateMapPattern : ISolutionPattern
                 // (clears it, adds the source items); a get-only member of another type (an array, a string, an object) it leaves alone.
                 if (MayFlatten(target.Name, source) && target is IPropertySymbol { SetMethod: not null })
                 {
-                    return $"{destination.Name}.{target.Name} has a non-public setter, which AutoMapper writes from {source.Name}";
+                    return $"{destination.Name}.{target.Name} has a non-public setter, which AutoMapper writes from {source.Name} through reflection; a mapping method cannot write it (principally manual unless the type gets a public setter)";
                 }
 
                 if (MayFlatten(target.Name, source) && IsFilledCollection(target is IPropertySymbol gp ? gp.Type : ((IFieldSymbol)target).Type))
@@ -1258,8 +1258,11 @@ public class CreateMapPattern : ISolutionPattern
                 continue;
             }
 
+            // Measured (TAAK-273): only a member the forward map flattens (a path of two or more members) is unflattened; a mere name prefix
+            // (ShelfDto.WarehouseName next to ShelfModel.Warehouse without a Name) is not.
             if (!sourceMembers.Any(m => string.Equals(m.Name, member.Name, StringComparison.OrdinalIgnoreCase))
-                && sourceMembers.FirstOrDefault(m => member.Name.Length > m.Name.Length && member.Name.StartsWith(m.Name, StringComparison.OrdinalIgnoreCase)) is { } prefix)
+                && sourceMembers.FirstOrDefault(m => member.Name.Length > m.Name.Length && member.Name.StartsWith(m.Name, StringComparison.OrdinalIgnoreCase)) is { } prefix
+                && (Flattening.Problem(source, destination, member.Name, out IReadOnlyList<ISymbol> path) is not null || path.Count > 1))
             {
                 return $"{destination.Name}.{member.Name} may be unflattened into {source.Name}.{prefix.Name} by AutoMapper";
             }
@@ -1778,9 +1781,9 @@ public class CreateMapPattern : ISolutionPattern
     };
 
     // ToB for CreateMap<A, B>: the last name of the destination type as written.
-    // A keyword (a ConvertUsing to int, string, ...) gets the .NET name: ToInt32, ToString.
+    // A keyword (a ConvertUsing to int, string, ...) gets the .NET name: ToInt32; string gets ToMappedString (see MethodName(string)).
     internal static string MethodName(TypeSyntax destination) =>
-        "To" + destination switch
+        MethodName(destination switch
         {
             GenericNameSyntax generic => generic.Identifier.ValueText,
             PredefinedTypeSyntax predefined => predefined.Keyword.ValueText switch
@@ -1790,7 +1793,10 @@ public class CreateMapPattern : ISolutionPattern
                 "string" => "String", _ => "Object",
             },
             _ => destination.ToString().Split('.')[^1],
-        };
+        });
+
+    // Every type has ToString(), which a call would bind before an extension method ToString (TAAK-273, SampleShop Money → string).
+    internal static string MethodName(string destination) => destination == "String" ? "ToMappedString" : "To" + destination;
 
     // The static class goes right after the profile (the outermost type around a nested one), with its indentation and line endings.
     private static MemberDeclarationSyntax Extensions(TypeDeclarationSyntax anchor, string className, string access,

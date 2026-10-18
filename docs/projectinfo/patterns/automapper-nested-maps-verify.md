@@ -24,6 +24,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `Membe
 | REQ-8  | Met     | `CreateMap/nested-no-map`, `CreateMap/nested-several`, `CreateMap/nested-cycle`, unit test `FixAsync_NestedMapInternalInOtherProject_ReportsManual` |
 | REQ-9  | Met     | `CreateMap/collection-dictionary`, unit test `Rewrite_BeforeCSharp12_FallsBackToNewEmptyCollections`                           |
 | REQ-10 | Met     | unit test `FixAsync_MapIntoWithNestedMember_ReportsManual`, `_Combined/nested-map-call`                                       |
+| REQ-11 | Met | `_Combined/cycle-destination-only` (Fixed), `_Combined/partial-cycle-source` and `CreateMap/nested-cycle` (real cycle stays); corpus msb (TAAK-273) |
 
 ## Deviations
 

@@ -32,7 +32,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/Converters.cs`, `Create
 | Manual "reads the destination" / "uses the ResolutionContext" | lambda or `Convert` uses that parameter          | `CreateMap/convert-using-context`, unit test `Rewrite_ConvertUsingNotWritable_ReportsManual` |
 | Manual "has constructor parameters"         | generic converter with a constructor parameter                    | `CreateMap/convert-using-service`          |
 | Manual "explicitly" / "not in this project" / "ambiguous" | the call cannot be written or checked               | unit test `Rewrite_ConvertUsingNotWritable_ReportsManual` |
-| Manual "already has a member"               | `ToString` etc. on the source type                                | unit test (`CreateMap<A, string>`)         |
+| Manual "already has a member"               | a method name the source type already has (a `string` destination gets `ToMappedString`, TAAK-273) | code review; `_Combined/convert-using-string` |
 | Manual "Map(source, destination) runs ConvertUsing" | the map needs `MapInto`                                   | code (`CreateMapPattern.Rewrite`)          |
 | Fixed `=> body`                             | expression lambda                                                 | `CreateMap/convert-using-lambda`, `_Combined/convert-using-map-call` |
 | Fixed `=> new C().Convert(source, null, null)` | type converter                                                 | `CreateMap/convert-using-type-converter`   |

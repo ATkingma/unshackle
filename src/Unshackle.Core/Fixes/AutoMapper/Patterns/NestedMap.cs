@@ -17,4 +17,7 @@ public class NestedMap
 
     // A ConvertUsing map: AutoMapper calls the converter with a null source too, so a member calls it without ?. (TAAK-253).
     public required bool Converts { get; init; }
+
+    // A CreateMap without options (or with only ReverseMap()): the members AutoMapper maps follow from the names alone (TAAK-273 cycle check).
+    public required bool Plain { get; init; }
 }

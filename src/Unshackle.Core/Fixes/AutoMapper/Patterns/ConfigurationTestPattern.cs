@@ -44,16 +44,22 @@ public class ConfigurationTestPattern : ISolutionPattern
         ArgumentNullException.ThrowIfNull(node);
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(solution);
-        if (Problem(node, model) is string problem)
+        string? problem = Problem(node, model);
+        if (problem is not null && node is not InvocationExpressionSyntax)
         {
             return PatternResult.Manual(problem);
         }
 
         // While maps stay on AutoMapper (TAAK-272) the checks and test mappers stay too: the trimmed profiles still pass the check (probe), and a
-        // test mapper may still serve Map calls that stay.
+        // test mapper may still serve Map calls that stay. A check in any form (also inside Action act = () => ..., TAAK-273) then stays as it is.
         if (!(await MapOwners.ForAsync(solution, model, cancellationToken)).IsEmpty)
         {
             return PatternResult.Manual($"{MapOwners.KeptPrefix}maps of the solution stay on AutoMapper, so this configuration check or test mapper stays as it is.");
+        }
+
+        if (problem is not null)
+        {
+            return PatternResult.Manual(problem);
         }
 
         return ChecksConfiguration(node, model) && await UnmigratedMapAsync(solution, model, cancellationToken) is string unmigrated

@@ -351,7 +351,6 @@ public class CreateMapPatternTests
     [InlineData("CreateMap<A, B>().ConvertUsing<C>();", "public class C : ITypeConverter<A, B> { public B Convert(A s, B d, ResolutionContext c) => d; }", "C.Convert reads the destination")]
     [InlineData("CreateMap<A, B>().ConvertUsing<C>();", "public class C : ITypeConverter<A, B> { B ITypeConverter<A, B>.Convert(A s, B d, ResolutionContext c) => new B(); }", "implements ITypeConverter explicitly")]
     [InlineData("CreateMap<A, B>().ConvertUsing(new C(1));", "public class C : ITypeConverter<A, B> { public C(int x) { } public B Convert(A s, B d, ResolutionContext c) => new B(); }", "is not new C() or a static field")]
-    [InlineData("CreateMap<A, string>().ConvertUsing(s => s.Name);", "", "A already has a member ToString")]
     [InlineData("CreateMap<A, B>().ForMember(d => d.Name, o => o.ConvertUsing(new V())).ConvertUsing(s => new B());", "public class V : IValueConverter<string, string> { public string Convert(string s, ResolutionContext c) => s; }", "is not a CreateMap<A, B>() without options")]
     [InlineData("CreateMap<A, B>().ForMember(d => d.Name, o => o.ConvertUsing(new V(), \"Name\"));", "public class V : IValueConverter<string, string> { public string Convert(string s, ResolutionContext c) => s; }", "names its source member with a string")]
     [InlineData("CreateMap<A, B>().ForMember(d => d.Name, o => o.ConvertUsing(new V()));", "public class V : IValueConverter<string, string> { public string Convert(string s, ResolutionContext c) => c.Mapper.Map<string>(s); }", "V.Convert uses the ResolutionContext")]
@@ -372,6 +371,25 @@ public class CreateMapPatternTests
 
         // Assert
         result.ShouldBeOfType<ManualResult>().Reason.ShouldContain(reason);
+    }
+
+    // TAAK-273: every type has ToString(), so a map to string gets ToMappedString, which a call does bind.
+    [Fact]
+    public void Rewrite_ConvertUsingToString_WritesToMappedString()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Compile("""
+            using AutoMapper;
+            public class A { public string Name { get; set; } }
+            public class P : Profile { public P() { CreateMap<A, string>().ConvertUsing(s => s.Name); } }
+            """);
+        var pattern = new CreateMapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).ShouldHaveSingleItem(), model);
+
+        // Assert
+        result.ShouldBeOfType<FixedResult>().NewNodes[1].ToFullString().ShouldContain("public static string ToMappedString(this A source) => source.Name;");
     }
 
     // Several Convert overloads would make Convert(source, null, null) ambiguous: a typed default picks the implementation of the map's pair.

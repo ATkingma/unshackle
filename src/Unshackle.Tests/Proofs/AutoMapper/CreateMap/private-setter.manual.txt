@@ -1,1 +1,1 @@
-WebHookSettings.WebHookId has a non-public setter, which AutoMapper writes from WebHookViewModel
+has a non-public setter, which AutoMapper writes from WebHookViewModel through reflection; a mapping method cannot write it (principally manual

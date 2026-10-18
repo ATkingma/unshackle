@@ -22,6 +22,8 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `AutoM
 | REQ-6 | Met | `constructor`, unittest abstract                                              |
 | REQ-7 | Met | `map-into`                                                                    |
 | REQ-8 | Met | `unmatched-member`, `ForMemberIgnore/unmatched` (Fixed); `unmatched-asserted`, `private-setter`, `get-only-collection` (Manual); unit tests `Rewrite_MemberAutoMapperDoesNotWrite_LeftOut` |
+| REQ-9 | Met | `private-setter` (reason says principally manual) (TAAK-273) |
+| REQ-10 | Met | `broken-conversion` (TAAK-273) |
 
 End-to-end test of SampleShop (copy in `<corpus>/t146/`): 0 Fixed, 10 Manual (8× `Map`, 2 profiles with options), 0 files changed (AllOrNothing); the copy builds and 38/38 tests are green.
 

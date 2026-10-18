@@ -1,0 +1,1 @@
+OrderDto.CustomerName may be unflattened into Order.Customer by AutoMapper

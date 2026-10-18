@@ -155,7 +155,8 @@ public class MapOwnersTests
         (await TextAsync(report.Solution, "Test.cs")).ShouldContain("mapper.Map<CustomerDto>(Arg.Any<Customer>()).Returns(new CustomerDto());");
         string service = await TextAsync(report.Solution, "Service.cs");
         service.ShouldContain("_mapper.Map<CustomerDto>(customer)");
-        service.ShouldContain("order.ToOrderDto()");
+        // TAAK-279: the class under test keeps IMapper for its maps that are not stubbed too (a loose mock answers them with null).
+        service.ShouldContain("_mapper.Map<OrderDto>(order)");
         (await TextAsync(report.Solution, "Profile.cs")).ShouldContain("CreateMap<Customer, CustomerDto>();");
     }
 
@@ -211,11 +212,12 @@ public class MapOwnersTests
         string text = await TextAsync(report.Solution, "Profile.cs");
         text.ShouldContain("CreateMap<Customer, CustomerDto>();");
         text.ShouldContain("public static CustomerDto ToCustomerDto(this Customer source)");
-        text.ShouldNotContain("CreateMap<Order, OrderDto>();");
+        // ShopService also calls Map<OrderDto> (not stubbed): it keeps IMapper for it, so that map is shared too.
+        text.ShouldContain("public static OrderDto ToOrderDto(this Order source)");
         (await TextAsync(report.Solution, "Service.cs")).ShouldContain("_mapper.Map<CustomerDto>(customer)");
         (await TextAsync(report.Solution, "Other.cs")).ShouldContain("customer.ToCustomerDto()");
         (await TextAsync(report.Solution, "Test.cs")).ShouldBe(MockedTest);
-        Reasons(report).ShouldContain(r => r.Contains("ShopService is a class under test whose mocked IMapper stubs the map Customer → CustomerDto", StringComparison.Ordinal));
+        Reasons(report).ShouldContain(r => r.Contains("ShopService is a class under test (a test hands it a mocked IMapper), so it keeps calling IMapper", StringComparison.Ordinal));
     }
 
     // REQ-4: a test that never constructs its class under test (a fixture or DI does) proves nothing: the pair stays everywhere.

@@ -364,6 +364,12 @@ internal class MapOwners
                     continue;
                 }
 
+                if (pattern is not null && owners.ClassUnderTest(call, model) is { } owner)
+                {
+                    owners.ShareCall(call, model, $"{owner.Name} keeps calling IMapper for it (a test hands it a mocked IMapper, {Where(call)}); every other call site uses the generated method");
+                    continue;
+                }
+
                 string? reason = IsMockSetUp(call, model) ? "it is stubbed by a mock set-up of IMapper in a test that does not construct its class under test itself"
                     : pattern is null ? "a ProjectTo or Map with options at " + Where(call) + " is not migrated (automapper.unsupported)"
                     : await pattern.RewriteAsync(call, model, solution, cancellationToken) is ManualResult { Reason: var manual } && !manual.StartsWith(KeptPrefix, StringComparison.Ordinal)
@@ -388,18 +394,17 @@ internal class MapOwners
         CallPairs(call, model).Select(p => Reason(p.Source, p.Destination) is string reason ? $"the map {Name(p.Source)} → {Name(p.Destination)} stays on AutoMapper ({reason})" : null)
             .FirstOrDefault(r => r is not null);
 
-    // Why a call of a shared pair stays: it sits in a class under test (or a type that class hands its IMapper to), whose test stubs the call.
-    private string? UnderTestReason(SyntaxNode call, SemanticModel model)
-    {
-        if (call.Ancestors().OfType<TypeDeclarationSyntax>().Select(t => model.GetDeclaredSymbol(t) as INamedTypeSymbol).FirstOrDefault(t => t is not null && _underTest.Contains(Key(t.OriginalDefinition))) is not { } owner)
-        {
-            return null;
-        }
+    // Why a call stays: it sits in a class under test (or a type that class hands its IMapper to). Its test runs it on the mock, stubbed or
+    // not (a loose mock returns null for a map it does not stub), so every Map call there keeps IMapper and its pair stays shared.
+    private string? UnderTestReason(SyntaxNode call, SemanticModel model) =>
+        ClassUnderTest(call, model) is { } owner
+            ? $"{owner.Name} is a class under test (a test hands it a mocked IMapper), so it keeps calling IMapper; other classes call the generated method"
+            : null;
 
-        return CallPairs(call, model).Where(p => p.Source is not null && p.Destination is not null && Shared(p.Source, p.Destination) is not null)
-            .Select(p => $"{owner.Name} is a class under test whose mocked IMapper stubs the map {Name(p.Source)} → {Name(p.Destination)} ({Shared(p.Source!, p.Destination!)})")
-            .FirstOrDefault();
-    }
+    // The innermost type around the call that is a class under test (or a type it hands its IMapper to), or null.
+    private INamedTypeSymbol? ClassUnderTest(SyntaxNode call, SemanticModel model) =>
+        call.Ancestors().OfType<TypeDeclarationSyntax>().Select(t => model.GetDeclaredSymbol(t) as INamedTypeSymbol)
+            .FirstOrDefault(t => t is not null && _underTest.Contains(Key(t.OriginalDefinition)));
 
     // The classes under test also cover every type they hand an IMapper to (a constructor or method argument), whose calls run the stub too.
     private void CloseUnderTest(List<(SyntaxNode Root, SemanticModel Model)> sources)

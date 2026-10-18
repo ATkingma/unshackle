@@ -48,6 +48,7 @@ as Manual with the reason the plan (`MapOwners`) keeps that map on AutoMapper; t
   plan keeps the pair (proof `trimmed-profile`).
 - **REQ-2**: THE SYSTEM SHALL change no code.
 - **REQ-3**: THE SYSTEM SHALL start the reason with `Stays on AutoMapper: ` so the finding is a planned keep, not a blocker.
+- **REQ-4** (TAAK-279): WHEN a statement stays because a class under test keeps calling `IMapper` for its map (a shared pair, which also has its `ToB()`) THE SYSTEM SHALL say so in the reason ([automapper-mocked-imapper](../features/automapper-mocked-imapper-plan.md)).
 
 ## Assumptions
 

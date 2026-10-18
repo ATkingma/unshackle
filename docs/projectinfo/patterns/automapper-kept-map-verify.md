@@ -24,6 +24,8 @@
 
 - PNG/SVG of the models not rendered (no `kingmadoc`/`d2`); the D2 sources are there.
 
+- TAAK-279 (REQ-4): verified in [automapper-mocked-imapper-verify](../features/automapper-mocked-imapper-verify.md) (unit tests, proofs, corpus 0 regressions).
+
 ## See also
 
 - [plan](automapper-kept-map-plan.md), [modellen](automapper-kept-map-modellen.md)

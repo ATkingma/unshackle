@@ -147,7 +147,6 @@ public class MapOwnersTests
             }
             """;
         Solution solution = Create(("Types.cs", Types), ("Profile.cs", profile), ("Service.cs", Service), ("Test.cs", Test));
-        solution = solution.AddMetadataReference(solution.ProjectIds[0], MetadataReference.CreateFromFile(typeof(NSubstitute.Substitute).Assembly.Location));
 
         // Act
         FixReport report = await FixAsync(solution);
@@ -156,8 +155,181 @@ public class MapOwnersTests
         (await TextAsync(report.Solution, "Test.cs")).ShouldContain("mapper.Map<CustomerDto>(Arg.Any<Customer>()).Returns(new CustomerDto());");
         string service = await TextAsync(report.Solution, "Service.cs");
         service.ShouldContain("_mapper.Map<CustomerDto>(customer)");
-        service.ShouldContain("order.ToOrderDto()");
+        // TAAK-279: the class under test keeps IMapper for its maps that are not stubbed too (a loose mock answers them with null).
+        service.ShouldContain("_mapper.Map<OrderDto>(order)");
         (await TextAsync(report.Solution, "Profile.cs")).ShouldContain("CreateMap<Customer, CustomerDto>();");
+    }
+
+    private const string MockedTest = """
+        using AutoMapper;
+        using NSubstitute;
+
+        namespace Shop;
+
+        public class ShopServiceTests
+        {
+            private readonly IMapper _mapper = Substitute.For<IMapper>();
+
+            public CustomerDto Customer()
+            {
+                _mapper.Map<CustomerDto>(Arg.Any<Customer>()).Returns(new CustomerDto());
+                return new ShopService(_mapper).Customer(new Customer());
+            }
+        }
+        """;
+
+    private const string OtherService = """
+        using AutoMapper;
+
+        namespace Shop;
+
+        public class ReportService
+        {
+            private readonly IMapper _mapper;
+
+            public ReportService(IMapper mapper)
+            {
+                _mapper = mapper;
+            }
+
+            public CustomerDto Customer(Customer customer) => _mapper.Map<CustomerDto>(customer);
+        }
+        """;
+
+    // TAAK-279 REQ-1–3: the stubbed map is shared: CreateMap stays for the class under test (ShopService), ToB() is generated, and a class no
+    // test hands the mock to (ReportService) is migrated.
+    [Fact]
+    public async Task FixAsync_MockedMap_KeepsOnlyTheClassUnderTestOnIMapper()
+    {
+        // Arrange
+        string profile = Profile.Replace("CreateMap<Customer, CustomerDto>().BeforeMap((s, d) => d.Id = 1);", "CreateMap<Customer, CustomerDto>();", StringComparison.Ordinal);
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", profile), ("Service.cs", Service), ("Other.cs", OtherService), ("Test.cs", MockedTest));
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        string text = await TextAsync(report.Solution, "Profile.cs");
+        text.ShouldContain("CreateMap<Customer, CustomerDto>();");
+        text.ShouldContain("public static CustomerDto ToCustomerDto(this Customer source)");
+        // ShopService also calls Map<OrderDto> (not stubbed): it keeps IMapper for it, so that map is shared too.
+        text.ShouldContain("public static OrderDto ToOrderDto(this Order source)");
+        (await TextAsync(report.Solution, "Service.cs")).ShouldContain("_mapper.Map<CustomerDto>(customer)");
+        (await TextAsync(report.Solution, "Other.cs")).ShouldContain("customer.ToCustomerDto()");
+        (await TextAsync(report.Solution, "Test.cs")).ShouldBe(MockedTest);
+        Reasons(report).ShouldContain(r => r.Contains("ShopService is a class under test (a test hands it a mocked IMapper), so it keeps calling IMapper", StringComparison.Ordinal));
+    }
+
+    // REQ-2: a class constructed with a mock that stubs nothing still runs its Map calls on the mock (a loose mock answers null): it keeps IMapper.
+    [Fact]
+    public async Task FixAsync_MockWithoutSetUp_KeepsItsClassOnIMapper()
+    {
+        // Arrange
+        string profile = Profile.Replace("CreateMap<Customer, CustomerDto>().BeforeMap((s, d) => d.Id = 1);", "CreateMap<Customer, CustomerDto>();", StringComparison.Ordinal);
+        const string Test = """
+            using AutoMapper;
+            using NSubstitute;
+
+            namespace Shop;
+
+            public class ShopServiceTests
+            {
+                public CustomerDto Customer() => new ShopService(Substitute.For<IMapper>()).Customer(new Customer());
+            }
+            """;
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", profile), ("Service.cs", Service), ("Other.cs", OtherService), ("Test.cs", Test));
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        (await TextAsync(report.Solution, "Service.cs")).ShouldContain("_mapper.Map<CustomerDto>(customer)");
+        (await TextAsync(report.Solution, "Other.cs")).ShouldContain("customer.ToCustomerDto()");
+        (await TextAsync(report.Solution, "Profile.cs")).ShouldContain("CreateMap<Customer, CustomerDto>();");
+    }
+
+    // A C# 14 extension block is a type declaration without a type symbol of its own (GetDeclaredSymbol throws, kavita): no internal error.
+    [Fact]
+    public async Task FixAsync_MapCallInAnExtensionBlock_HasNoInternalError()
+    {
+        // Arrange
+        const string Extensions = """
+            using AutoMapper;
+
+            namespace Shop;
+
+            public static class MapperExtensions
+            {
+                extension(IMapper mapper)
+                {
+                    public OrderDto ToDto(Order order) => mapper.Map<OrderDto>(order);
+                }
+            }
+            """;
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", Profile), ("Service.cs", Service), ("Extensions.cs", Extensions), ("Test.cs", MockedTest));
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        Reasons(report).ShouldNotContain(r => r.StartsWith("Internal error", StringComparison.Ordinal));
+        (await TextAsync(report.Solution, "Extensions.cs")).ShouldContain("order.ToOrderDto()");
+    }
+
+    // REQ-4: a test that never constructs its class under test (a fixture or DI does) proves nothing: the pair stays everywhere.
+    [Fact]
+    public async Task FixAsync_MockedMapWithoutConstruction_KeepsThePairEverywhere()
+    {
+        // Arrange
+        string profile = Profile.Replace("CreateMap<Customer, CustomerDto>().BeforeMap((s, d) => d.Id = 1);", "CreateMap<Customer, CustomerDto>();", StringComparison.Ordinal);
+        string test = MockedTest.Replace("return new ShopService(_mapper).Customer(new Customer());", "return new CustomerDto();", StringComparison.Ordinal);
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", profile), ("Service.cs", Service), ("Other.cs", OtherService), ("Test.cs", test));
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        (await TextAsync(report.Solution, "Profile.cs")).ShouldNotContain("ToCustomerDto");
+        (await TextAsync(report.Solution, "Other.cs")).ShouldContain("_mapper.Map<CustomerDto>(customer)");
+    }
+
+    // REQ-2: a class the class under test hands its IMapper to runs the stub too, so it keeps IMapper.
+    [Fact]
+    public async Task FixAsync_ClassUnderTestHandsItsMapperOn_KeepsThatClassOnIMapper()
+    {
+        // Arrange
+        string profile = Profile.Replace("CreateMap<Customer, CustomerDto>().BeforeMap((s, d) => d.Id = 1);", "CreateMap<Customer, CustomerDto>();", StringComparison.Ordinal);
+        string service = Service.Replace("public CustomerDto Customer(Customer customer) => _mapper.Map<CustomerDto>(customer);",
+            "public CustomerDto Customer(Customer customer) => new ReportService(_mapper).Customer(customer);", StringComparison.Ordinal);
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", profile), ("Service.cs", service), ("Other.cs", OtherService), ("Test.cs", MockedTest));
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        (await TextAsync(report.Solution, "Other.cs")).ShouldContain("_mapper.Map<CustomerDto>(customer)");
+        (await TextAsync(report.Solution, "Profile.cs")).ShouldContain("CreateMap<Customer, CustomerDto>();");
+    }
+
+    // REQ-5: a shared map keeps the map AutoMapper runs for its member in the profile, next to that member's generated ToY().
+    [Fact]
+    public async Task FixAsync_SharedMap_KeepsTheMapsItReachesInTheProfile()
+    {
+        // Arrange
+        string test = MockedTest.Replace("_mapper.Map<CustomerDto>(Arg.Any<Customer>()).Returns(new CustomerDto());", "_mapper.Map<OrderDto>(Arg.Any<Order>()).Returns(new OrderDto());", StringComparison.Ordinal)
+            .Replace("public CustomerDto Customer()", "public OrderDto Order()", StringComparison.Ordinal)
+            .Replace("return new ShopService(_mapper).Customer(new Customer());", "return new ShopService(_mapper).Order(new Order());", StringComparison.Ordinal);
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", Profile), ("Service.cs", Service), ("Test.cs", test));
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        string text = await TextAsync(report.Solution, "Profile.cs");
+        text.ShouldContain("CreateMap<Order, OrderDto>();");
+        text.ShouldContain("CreateMap<Line, LineDto>();");
+        text.ShouldContain("public static LineDto ToLineDto(this Line source)");
+        (await TextAsync(report.Solution, "Service.cs")).ShouldContain("_mapper.Map<OrderDto>(order)");
     }
 
     // REQ-11: a Manual finding that is not a planned keep (here a test configuration with maps of its own) still leaves everything as it was.

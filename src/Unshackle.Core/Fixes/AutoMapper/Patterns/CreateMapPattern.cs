@@ -209,6 +209,12 @@ public class CreateMapPattern : ISolutionPattern
                 namespaces.Clear();
                 namespaces.UnionWith(namespacesBefore);
             }
+            else if (MapOwners.StatementPair(statement, model) is var (sharedFrom, sharedTo, reverse)
+                && (owners.Shared(sharedFrom, sharedTo) ?? (reverse ? owners.Shared(sharedTo, sharedFrom) : null)) is not null)
+            {
+                // A class under test keeps calling IMapper for this map (TAAK-279): the statement stays next to its generated methods.
+                kept.Add(statement);
+            }
         }
 
         if (maps.Count == 0 && keptReason is not null)

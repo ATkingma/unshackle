@@ -14,6 +14,8 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// and when its own rewrite would call the ToY() of a pair that stays. The set only grows until it is stable (a fixpoint), so every
 /// pattern, whichever file it fixes, reaches the same decision. Measured (probe of TAAK-272, AutoMapper 14.0.0): a trimmed profile behaves
 /// as before for the maps it keeps and passes AssertConfigurationIsValid, as long as the maps those reach stay too.
+/// A pair stubbed by a mock set-up of IMapper whose test hands the mock to a class it constructs (the class under test) is shared
+/// (TAAK-279): its CreateMap stays for that class, which keeps calling IMapper, and its ToB() is generated for every other call site.
 /// </summary>
 internal class MapOwners
 {
@@ -31,6 +33,8 @@ internal class MapOwners
 
     private readonly Dictionary<string, string> _pairs = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _destinations = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _shared = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _underTest = new(StringComparer.Ordinal);
     private string? _all;
 
     /// <summary>The plan without a solution: nothing stays.</summary>
@@ -41,7 +45,7 @@ internal class MapOwners
 
     public bool IsEmpty => Count == 0;
 
-    private int Count => _pairs.Count + _destinations.Count + (_all is null ? 0 : 1);
+    private int Count => _pairs.Count + _destinations.Count + _shared.Count + (_all is null ? 0 : 1);
 
     /// <summary>
     /// The plan of the solution. The Fixer fixes one file at a time against the original solution, so a plan built for a solution that differs
@@ -79,13 +83,19 @@ internal class MapOwners
         MapOwners owners = await ForAsync(solution, model, cancellationToken);
         if (IsMockSetUp(call, model))
         {
-            return PatternResult.Manual($"{KeptPrefix}a mock set-up of IMapper in a test stays as it is, and so do the maps it stubs (the class under test keeps calling IMapper).");
+            return PatternResult.Manual($"{KeptPrefix}a mock set-up of IMapper in a test stays as it is: the class under test it is handed to keeps calling IMapper for the maps it stubs (other classes use the generated methods once the test constructs that class itself).");
         }
 
-        return owners.CallReason(call, model) is string reason
+        return (owners.CallReason(call, model) ?? owners.UnderTestReason(call, model)) is string reason
             ? PatternResult.Manual($"{KeptPrefix}this call keeps using IMapper: {reason}")
             : null;
     }
+
+    /// <summary>
+    /// Why the CreateMap of a pair that is migrated stays in the profile as well (a class under test keeps calling IMapper for it, TAAK-279),
+    /// or null. A pair that stays on AutoMapper altogether answers <see cref="Reason(ITypeSymbol?, ITypeSymbol?)"/> instead.
+    /// </summary>
+    public string? Shared(ITypeSymbol from, ITypeSymbol to) => Reason(from, to) is null ? Shared(Key(from), Key(to)) : null;
 
     /// <summary>Why the pair stays on AutoMapper, or null when it is migrated. An unknown type (null, object, a type parameter) only stays with everything.</summary>
     public string? Reason(ITypeSymbol? source, ITypeSymbol? destination) =>
@@ -137,6 +147,89 @@ internal class MapOwners
     }
 
     private static bool IsMockApi(ISymbol? symbol) => symbol?.ContainingAssembly?.Name is { } name && s_mockAssemblies.Contains(name, StringComparer.Ordinal);
+
+    // The classes the test of a mock set-up hands its mock to: a new C(...) in the same file with the mock (Moq: mock.Object), or a variable
+    // assigned from it, as an IMapper argument. Empty when the mock reaches the code another way (a fixture, a base class, DI): then the pair stays.
+    internal static List<INamedTypeSymbol> ClassesUnderTest(SyntaxNode call, SemanticModel model) =>
+        call is InvocationExpressionSyntax invocation && MockVariable(invocation, model) is { } mock
+            ? Constructed(call.SyntaxTree.GetRoot(), model, new HashSet<ISymbol>(SymbolEqualityComparer.Default) { mock })
+            : [];
+
+    // Every class a file constructs with a mocked IMapper (new Mock<IMapper>(), Substitute.For<IMapper>(), A.Fake<IMapper>(), or a variable
+    // holding one), stubbed or not: a loose mock answers a Map it does not stub with null, so those calls must stay on IMapper too.
+    internal static List<INamedTypeSymbol> MockedClasses(SyntaxNode root, SemanticModel model) =>
+        Constructed(root, model, new HashSet<ISymbol>(SymbolEqualityComparer.Default));
+
+    // The types of new C(...) in the file with a mock (one of mocks, a variable assigned from one, or a mock created in place) as an IMapper argument.
+    private static List<INamedTypeSymbol> Constructed(SyntaxNode root, SemanticModel model, HashSet<ISymbol> mocks)
+    {
+        int count;
+        do
+        {
+            count = mocks.Count;
+            foreach (SyntaxNode node in root.DescendantNodes())
+            {
+                ISymbol? alias = node switch
+                {
+                    AssignmentExpressionSyntax assignment when IsMock(assignment.Right) => model.GetSymbolInfo(assignment.Left).Symbol,
+                    VariableDeclaratorSyntax { Initializer.Value: { } value } declarator when IsMock(value) => model.GetDeclaredSymbol(declarator),
+                    _ => null,
+                };
+                if (alias is ILocalSymbol or IFieldSymbol or IPropertySymbol)
+                {
+                    mocks.Add(alias);
+                }
+            }
+        }
+        while (mocks.Count != count);
+
+        return [.. root.DescendantNodes().OfType<BaseObjectCreationExpressionSyntax>()
+            .Where(c => c.ArgumentList?.Arguments.Any(a => IsMock(a.Expression) && IsMapper(model.GetTypeInfo(a.Expression).Type)) == true)
+            .Select(c => model.GetTypeInfo(c).Type).OfType<INamedTypeSymbol>().Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)];
+
+        bool IsMock(ExpressionSyntax expression)
+        {
+            ExpressionSyntax mock = expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Object" } moq ? moq.Expression : expression;
+            return (model.GetSymbolInfo(mock).Symbol is { } symbol && mocks.Contains(symbol))
+                || (mock is BaseObjectCreationExpressionSyntax or InvocationExpressionSyntax && IsMockApi(model.GetSymbolInfo(mock).Symbol)
+                    && model.GetTypeInfo(mock).Type is { } type && (IsMapper(type) || type is INamedTypeSymbol { Name: "Mock", TypeArguments: [{ } mocked] } && IsMapper(mocked)));
+        }
+    }
+
+    // The variable (local, field, property) that holds the mock of a set-up: m => m.Map(...) inside mock.Setup(...), mock.Received().Map(...),
+    // or mock.Map(...) itself (NSubstitute, FakeItEasy).
+    private static ISymbol? MockVariable(InvocationExpressionSyntax invocation, SemanticModel model)
+    {
+        ExpressionSyntax? receiver = (invocation.Expression as MemberAccessExpressionSyntax)?.Expression;
+        if (receiver is not null && model.GetSymbolInfo(receiver).Symbol is IParameterSymbol { ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.AnonymousFunction } })
+        {
+            receiver = invocation.Ancestors().OfType<LambdaExpressionSyntax>().FirstOrDefault()?.Parent is ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax setUp } }
+                ? setUp.Expression
+                : null;
+        }
+        else if (receiver is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax received } && IsMockApi(model.GetSymbolInfo(receiver).Symbol))
+        {
+            receiver = received.Expression;
+        }
+
+        return receiver is not null && model.GetSymbolInfo(receiver).Symbol is { } symbol and (ILocalSymbol or IFieldSymbol or IPropertySymbol) ? symbol : null;
+    }
+
+    // The type a declaration declares; null for a C# 14 extension block, for which GetDeclaredSymbol throws (measured on kavita).
+    private static INamedTypeSymbol? TypeOf(TypeDeclarationSyntax declaration, SemanticModel model) =>
+        declaration is ExtensionBlockDeclarationSyntax ? null : model.GetDeclaredSymbol(declaration) as INamedTypeSymbol;
+
+    private static bool IsMapper(ITypeSymbol? type) =>
+        type is not null && type.AllInterfaces.Append(type).Any(t => t is { Name: "IMapper", ContainingAssembly.Name: AutoMapperAssembly });
+
+    // A type and its base types, by Key of the definition: a call in a base type runs on the instance of the class under test.
+    private static IEnumerable<string> WithBases(INamedTypeSymbol type)
+    {
+        for (INamedTypeSymbol? current = type; current is not null && current.SpecialType != SpecialType.System_Object; current = current.BaseType)
+        {
+            yield return Key(current.OriginalDefinition);
+        }
+    }
 
     private static bool IsUnknown(ITypeSymbol type) =>
         type.TypeKind is TypeKind.Error or TypeKind.Dynamic or TypeKind.TypeParameter || type.SpecialType == SpecialType.System_Object;
@@ -219,6 +312,7 @@ internal class MapOwners
         var projectTo = new ProjectToPattern();
         List<(ClassDeclarationSyntax Profile, SemanticModel Model, List<MapNode> Nodes)> profiles = [];
         List<(SyntaxNode Call, SemanticModel Model, ISolutionPattern? Pattern)> calls = [];
+        List<(SyntaxNode Root, SemanticModel Model)> sources = [];
         foreach (Document document in solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -228,6 +322,7 @@ internal class MapOwners
                 continue;
             }
 
+            sources.Add((root, model));
             foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => CreateMapPattern.IsProfileWithMaps(c, model)))
             {
                 List<MapNode> nodes = [];
@@ -249,6 +344,19 @@ internal class MapOwners
         }
 
         List<MapNode> all = [.. profiles.SelectMany(p => p.Nodes)];
+        Dictionary<SyntaxNode, List<INamedTypeSymbol>> stubs = [];
+        foreach ((SyntaxNode root, SemanticModel model) in sources.Where(s => s.Root.ToString().Contains("IMapper", StringComparison.Ordinal)))
+        {
+            MockedClasses(root, model).ForEach(c => owners._underTest.UnionWith(WithBases(c)));
+        }
+
+        foreach ((SyntaxNode call, SemanticModel model, _) in calls.Where(c => IsMockSetUp(c.Call, c.Model)))
+        {
+            stubs[call] = ClassesUnderTest(call, model);
+            stubs[call].ForEach(c => owners._underTest.UnionWith(WithBases(c)));
+        }
+
+        owners.CloseUnderTest(sources);
         int count;
         do
         {
@@ -267,7 +375,19 @@ internal class MapOwners
 
             foreach ((SyntaxNode call, SemanticModel model, ISolutionPattern? pattern) in calls)
             {
-                string? reason = IsMockSetUp(call, model) ? "it is stubbed by a mock set-up of IMapper in a test"
+                if (stubs.TryGetValue(call, out List<INamedTypeSymbol>? underTest) && underTest.Count > 0)
+                {
+                    owners.ShareCall(call, model, $"{string.Join(", ", underTest.Select(c => c.Name))} keeps calling IMapper for it, because its test stubs this map ({Where(call)}); every other call site uses the generated method");
+                    continue;
+                }
+
+                if (pattern is not null && owners.ClassUnderTest(call, model) is { } owner)
+                {
+                    owners.ShareCall(call, model, $"{owner.Name} keeps calling IMapper for it (a test hands it a mocked IMapper, {Where(call)}); every other call site uses the generated method");
+                    continue;
+                }
+
+                string? reason = IsMockSetUp(call, model) ? "it is stubbed by a mock set-up of IMapper in a test that does not construct its class under test itself"
                     : pattern is null ? "a ProjectTo or Map with options at " + Where(call) + " is not migrated (automapper.unsupported)"
                     : await pattern.RewriteAsync(call, model, solution, cancellationToken) is ManualResult { Reason: var manual } && !manual.StartsWith(KeptPrefix, StringComparison.Ordinal)
                         ? $"the call at {Where(call)} is not migrated: {manual}"
@@ -290,6 +410,77 @@ internal class MapOwners
     private string? CallReason(SyntaxNode call, SemanticModel model) =>
         CallPairs(call, model).Select(p => Reason(p.Source, p.Destination) is string reason ? $"the map {Name(p.Source)} → {Name(p.Destination)} stays on AutoMapper ({reason})" : null)
             .FirstOrDefault(r => r is not null);
+
+    // Why a call stays: it sits in a class under test (or a type that class hands its IMapper to). Its test runs it on the mock, stubbed or
+    // not (a loose mock returns null for a map it does not stub), so every Map call there keeps IMapper and its pair stays shared.
+    private string? UnderTestReason(SyntaxNode call, SemanticModel model) =>
+        ClassUnderTest(call, model) is { } owner
+            ? $"{owner.Name} is a class under test (a test hands it a mocked IMapper), so it keeps calling IMapper; other classes call the generated method"
+            : null;
+
+    // The innermost type around the call that is a class under test (or a type it hands its IMapper to), or null.
+    private INamedTypeSymbol? ClassUnderTest(SyntaxNode call, SemanticModel model) =>
+        call.Ancestors().OfType<TypeDeclarationSyntax>().Select(t => TypeOf(t, model))
+            .FirstOrDefault(t => t is not null && _underTest.Contains(Key(t.OriginalDefinition)));
+
+    // The classes under test also cover every type they hand an IMapper to (a constructor or method argument), whose calls run the stub too.
+    private void CloseUnderTest(List<(SyntaxNode Root, SemanticModel Model)> sources)
+    {
+        int count;
+        do
+        {
+            count = _underTest.Count;
+            foreach ((SyntaxNode root, SemanticModel model) in sources)
+            {
+                foreach (TypeDeclarationSyntax type in root.DescendantNodes().OfType<TypeDeclarationSyntax>()
+                    .Where(t => TypeOf(t, model) is { } symbol && _underTest.Contains(Key(symbol.OriginalDefinition))))
+                {
+                    foreach (SyntaxNode node in type.DescendantNodes())
+                    {
+                        ArgumentListSyntax? arguments = node switch
+                        {
+                            InvocationExpressionSyntax invocation => invocation.ArgumentList,
+                            BaseObjectCreationExpressionSyntax creation => creation.ArgumentList,
+                            ConstructorInitializerSyntax initializer => initializer.ArgumentList,
+                            _ => null,
+                        };
+                        if (arguments is not null && arguments.Arguments.Any(a => IsMapper(model.GetTypeInfo(a.Expression).Type))
+                            && model.GetSymbolInfo(node).Symbol is IMethodSymbol { ContainingType: { } target } && target.Locations.Any(l => l.IsInSource))
+                        {
+                            _underTest.UnionWith(WithBases(target));
+                        }
+                    }
+                }
+            }
+        }
+        while (_underTest.Count != count);
+    }
+
+    // A pair stubbed for a class under test: shared, unless its types are only known at run time (then it stays like any other kept call).
+    private void ShareCall(SyntaxNode call, SemanticModel model, string reason)
+    {
+        foreach ((ITypeSymbol? source, ITypeSymbol? destination) in CallPairs(call, model))
+        {
+            if (source is null || destination is null || IsUnknown(source) || IsUnknown(destination))
+            {
+                KeepCall(call, model, "it is stubbed by a mock set-up of IMapper in a test, for types only known at run time");
+                return;
+            }
+
+            _shared.TryAdd(Key(source) + "|" + Key(destination), reason);
+        }
+    }
+
+    private string? Shared(string source, string destination) => _shared.GetValueOrDefault(source + "|" + destination);
+
+    private void Share(MapNode node, string reason)
+    {
+        _shared.TryAdd(node.FromKey + "|" + node.ToKey, reason);
+        if (node.Reverse)
+        {
+            _shared.TryAdd(node.ToKey + "|" + node.FromKey, reason);
+        }
+    }
 
     private void KeepCall(SyntaxNode call, SemanticModel model, string reason)
     {
@@ -331,6 +522,19 @@ internal class MapOwners
                 string? reason = Reason(node.FromKey, node.ToKey) ?? (node.Reverse ? Reason(node.ToKey, node.FromKey) : null);
                 if (reason is null)
                 {
+                    // A shared map stays in the profile too, and with it every map AutoMapper may run for it (shared as well, unless kept).
+                    if ((Shared(node.FromKey, node.ToKey) ?? (node.Reverse ? Shared(node.ToKey, node.FromKey) : null)) is string shared)
+                    {
+                        int was = Count;
+                        Share(node, shared);
+                        foreach (MapNode needed in nodes.Where(n => n != node && node.Reaches(n) && Reason(n.FromKey, n.ToKey) is null))
+                        {
+                            Share(needed, $"CreateMap<{node.From.Name}, {node.To.Name}> stays for a class under test and may map its members through this map");
+                        }
+
+                        grew |= Count != was;
+                    }
+
                     continue;
                 }
 

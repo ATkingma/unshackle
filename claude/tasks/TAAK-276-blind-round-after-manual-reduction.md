@@ -25,6 +25,10 @@
 - Step 1 DONE (tool `db05908`, 2026-10-18): all 18 `ok`, 0 build breaks, 0 real regressions. bookstore showed 1-2 "regressions" (OrderLine/Book `Update...Return_Ok` NotFound); a fresh untouched baseline run fails the same OrderLine test, so it is the known flaky shared test database. Results in `<corpus>/corpus-blind/_results/after/` (`summary`: `corpus-am.sh summary after`); copies `after-bookstore-run1`, `base-bookstore-orig`.
 - Next: step 2 (select 6 new repos per library; candidate lists were gathered with `gh search code`, excluded against all CORPUSRUN/REGRESSIE files).
 
+- Step 2 selection DONE (2026-10-18, before any `after` run): candidates from `gh search code` (csproj `Include="<Lib>" Version="<free major>."`), checked against all CORPUSRUN/REGRESSIE files, sln + test project present, then baseline (`base` mode) must build and run tests. Pins in `claude/tools/corpus-blind-repos.txt` ("round 5"), list `claude/tools/corpus-blind-list-r5.txt` (all candidates), `corpus-blind-list-r5-selected.txt` (the 18 chosen).
+  - Rejected at baseline: supertext (build fails), octopus (tests hang >1 h), innosetup, dotnettemplate, passwordmanager (restore fails), orderservice, policeevents, expensestracker, bugtracker, cmartlineupbuilder (build fails), puppeteer (flaky browser tests), minifyurl/otuscleanarch/fijournal/mycrm/lulusia/techchallenge (0 tests discovered).
+- Step 2 `after` run starting (tool `db05908`), results `<corpus>/corpus-blind/_results/after/`.
+
 ## Changed files
 
 _(filled in during execution)_

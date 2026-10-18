@@ -20,6 +20,7 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/SendAsTaskPattern.cs`, registra
 | REQ-4 | Met     | `Rewrite` returns `Fixed`, except for `?.` (extension) and unknown NSubstitute setup values (REQ-5) |
 | REQ-5 | Met     | `nsubstitute-returns` (after compiles against Mediator + NSubstitute), `nsubstitute-returns-lambda` (Manual), `SendAsTaskPatternTests`; corpus dotnet/eShop round 4 |
 | REQ-6 | Met     | `nsubstitute-returns` (`Throws`, `Received().Send`), `SendAsTaskPatternTests.Find_NSubstituteThrowsSetupAndReceivedCheck_FindsNothing` |
+| REQ-7 | Met     | `expression-tree`, `Find_SendInsideExpressionTree_FindsNothing` |
 | Extension review B L4 | Met | `null-conditional` |
 
 Scan on SampleShop: 5 Fixed (`OrderFacade` 2×, `Func<Task> act = () => Sender.Send(...)` 3× in the test projects).

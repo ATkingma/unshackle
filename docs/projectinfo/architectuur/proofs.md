@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1045 proofs (excluding `_Pending`).
+Total: 1046 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -1347,11 +1347,12 @@ Total: 1045 proofs (excluding `_Pending`).
 | `through-interface` | Manual |  — reason: is called through the MediatR interface |
 | `unknown-response` | Manual |  — reason: the response type of T is unknown |
 
-### SendAsTask (6)
+### SendAsTask (7)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `eshop-mediator-extension` | Fixed | `List<Task> tasks = domainEvents.Select(domainEvent => mediator.Publish(domainEvent)).ToList();` → `List<Task> tasks = domainEvents.Select(domainEvent => mediator.Publish(domainEvent).AsTask()).ToList();` |
+| `expression-tree` | Fixed | `public Task<int> RunAsync(IMediator mediator) => mediator.Send(new Ping(), CancellationToken.None);` → `public Task<int> RunAsync(IMediator mediator) => mediator.Send(new Ping(), CancellationToken.None).AsTask();` |
 | `nsubstitute-returns` | Fixed | `_mediator.Send(Arg.Any<IRequest<bool>>(), default).Returns(Task.FromResult(true)); _mediator.Send(Arg.Any<Quer…` → `_mediator.Send(Arg.Any<IRequest<bool>>(), default).Returns(ValueTask.FromResult(true)); _mediator.Send(Arg.Any…` |
 | `nsubstitute-returns-lambda` | Manual |  — reason: set up on an NSubstitute mock |
 | `null-conditional` | Manual |  — reason: called with ?. |

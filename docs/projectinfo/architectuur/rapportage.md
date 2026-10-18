@@ -38,14 +38,15 @@ Built in TAAK-005 (`src/Unshackle.DataAccess/Reports/`):
   in the `.cs` files of those projects become Manual with "Not rewritten: Could not edit the project files: …". Those files
   stay unchanged.
 
-## Source file not UTF-8 (TAAK-167)
+## Source file not UTF-8 (TAAK-167, TAAK-285)
 
-- A `.cs` file that Roslyn did not read as UTF-8 (Latin-1, UTF-16: `SourceText.Encoding` is not a `UTF8Encoding`) is not touched by the
-  `Fixer`: writing it back as UTF-8 would corrupt characters. It stays byte-for-byte identical.
-- If that file mentions the old library, there is a Manual with pattern id `encoding` (line 0, "The file is not UTF-8 ...").
-  The file therefore counts as remaining usage: the project keeps the old package (project-file cascade) and the rest of the
-  solution is migrated. A non-UTF-8 file without the old library gets no row.
-- Evidence: `FixerProjectFileTests.FixAsync_FileNotUtf8_*` and `SampleShopTests.Fix_FileInLatin1_LeavesItAndMigratesTheRest`.
+- A `.cs` file that is not valid UTF-8 but single-byte (e.g. cp1252/Latin-1) is loaded as Latin-1 by `MsBuildSolutionStore`
+  and written back byte-exact by `XmlProjectFileStore.SaveAsync` (Latin-1 maps bytes 1:1; an unencodable character throws,
+  so nothing is lost silently). It is migrated like any other file (TAAK-285: projectpulse stopped on one cp1252 file).
+- Encodings the store does not load that way (UTF-16 and similar) are not touched by the `Fixer`: it stays byte-for-byte
+  identical. If it mentions the old library there is a Manual with pattern id `encoding` (line 0, "The file is not UTF-8 ...");
+  the file counts as remaining usage, so the project keeps the old package. A file without the old library gets no row.
+- Evidence: `FixerProjectFileTests.FixAsync_FileInLatin1_IsMigratedLikeAnyOther`, `XmlProjectFileStoreTests.SaveAsync_SourceFileNotUtf8_WritesLatin1BackByteExact`, `SampleShopTests.Fix_FileInLatin1_MigratesItAndKeepsItsBytes`.
 
 ## See also
 

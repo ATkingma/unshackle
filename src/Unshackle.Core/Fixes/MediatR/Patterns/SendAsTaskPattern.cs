@@ -35,7 +35,7 @@ public class SendAsTaskPattern : IPattern
             if (IsHandlerHandle(invocation, model))
             {
                 // handler.Handle(...) called directly (a unit test): the handler pattern makes it return a ValueTask too (TAAK-268 round 3).
-                if (!IsAwaited(invocation) && Setup(invocation, model) is null && !IsReceivedCheck(invocation, model))
+                if (!IsAwaited(invocation) && Setup(invocation, model) is null && !IsReceivedCheck(invocation, model) && !IsInExpressionTree(invocation, model))
                 {
                     yield return invocation;
                 }
@@ -45,7 +45,7 @@ public class SendAsTaskPattern : IPattern
 
             if (invocation.Expression is not (MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Send" or "Publish" } or MemberBindingExpressionSyntax { Name.Identifier.ValueText: "Send" or "Publish" })
                 || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: "MediatR" }
-                || IsAwaited(invocation) || IsReceivedCheck(invocation, model))
+                || IsAwaited(invocation) || IsReceivedCheck(invocation, model) || IsInExpressionTree(invocation, model))
             {
                 continue;
             }
@@ -106,6 +106,12 @@ public class SendAsTaskPattern : IPattern
         ParenthesizedExpressionSyntax parenthesized => parenthesized.Parent is AwaitExpressionSyntax,
         _ => false,
     };
+
+    // Moq: mock.Setup(m => m.Send(x)).ReturnsAsync(v). The call is only described there, never run, and .AsTask() would not be a mockable member (TAAK-285);
+    // Moq's ReturnsAsync/ThrowsAsync accept the ValueTask-returning member as is.
+    private static bool IsInExpressionTree(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        invocation.Ancestors().OfType<LambdaExpressionSyntax>().Any(l =>
+            model.GetTypeInfo(l).ConvertedType is INamedTypeSymbol { Name: "Expression", ContainingNamespace: { } ns } && ns.ToDisplayString() == "System.Linq.Expressions");
 
     private static bool IsReceivedCheck(InvocationExpressionSyntax invocation, SemanticModel model) =>
         invocation.Parent is ExpressionStatementSyntax

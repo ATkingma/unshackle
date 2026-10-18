@@ -38,6 +38,19 @@ public class SendAsTaskPatternTests
     }
 
     [Fact]
+    public void Find_SendInsideExpressionTree_FindsNothing()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Parse("System.Linq.Expressions.Expression<System.Func<IMediator, Task<int>>> e = x => x.Send(new Q(), default);");
+
+        // Act
+        List<SyntaxNode> found = [.. new SendAsTaskPattern().Find(root, model)];
+
+        // Assert
+        found.ShouldBeEmpty();
+    }
+
+    [Fact]
     public void Rewrite_ReturnsWithVariable_Manual()
     {
         // Arrange

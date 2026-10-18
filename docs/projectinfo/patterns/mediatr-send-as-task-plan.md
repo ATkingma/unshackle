@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "mediatr-send-as-task"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7]
 files_expected:
     - src/Unshackle.Core/Fixes/MediatR/Patterns/SendAsTaskPattern.cs
     - src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs
@@ -44,6 +44,7 @@ mediatr.send-as-task: a MediatR `Send`/`Publish` whose result is not directly `a
 - **Extension review B L4**: IF `Send`/`Publish` is called with `?.` (`_sender?.Send(x)`) THEN THE SYSTEM SHALL report Manual: the null case must be handled by hand (proof `null-conditional`). This is the only exception to REQ-4.
 - **REQ-5** (TAAK-211): WHEN `Send`/`Publish` is the receiver of NSubstitute `Returns`/`ReturnsForAnyArgs` THE SYSTEM SHALL not add `.AsTask()` (that configures nothing, NS1000) but move the values along: `Task.FromResult(x)` → `ValueTask.FromResult(x)` (also with type argument or qualified), `Task.CompletedTask` → `ValueTask.CompletedTask` (only `Publish`/non-generic); any other value (lambda, variable, `Task.CompletedTask` on a void `Send`, which yields `ValueTask<Unit>` in Mediator) → Manual (proofs `nsubstitute-returns`, `nsubstitute-returns-lambda`). Second exception to REQ-4.
 - **REQ-6** (TAAK-211): WHEN `Send`/`Publish` is the receiver of NSubstitute `Throws*`, or stands as a standalone statement after `Received()`/`DidNotReceive()` THE SYSTEM SHALL leave it untouched (proof `nsubstitute-returns`, unit test `Find_NSubstituteThrowsSetupAndReceivedCheck_FindsNothing`). Moq `Setup` lambdas are out of scope.
+- **REQ-7** (TAAK-285): WHEN `Send`/`Publish` (or a direct handler `Handle`) stands inside a lambda converted to `Expression<...>` (Moq `Setup`/`Verify`) THE SYSTEM SHALL leave it untouched: `.AsTask()` is not a mockable member (`NotSupportedException`, 101 projectpulse tests) and Moq's `ReturnsAsync` takes the `ValueTask` member (proof `expression-tree`).
 
 ## Assumptions
 

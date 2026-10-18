@@ -74,7 +74,10 @@ Determining "class under test": the type whose constructor receives the mocked `
 
 Before scans done (tool `4392e29`, `<corpus>/t279/{blind-b,am-b}/_results/scan`): culinary 0/46, msb 3/32, fiapgames 25/9, restapi 0/9,
 baseapi 5/3; AutoMapper corpus unchanged from earlier rounds (eshoponweb 4/0, the rest 0 Fixed: dasblog 0/61, ...).
-After run (`run-after.sh`: scan blind + scan am + after blind) started with `tool-after` (step-4 commit).
+First scan with the step-4 tool showed culinary `GroceryManager` migrated: its test constructs it with a Moq mock that stubs nothing
+(a loose mock returns null), so the rule was widened: **every class a test constructs with a mocked `IMapper` keeps all its Map calls**
+(their pairs are shared). Scan after (final tool): culinary 2/70 (profile + PreferenceManager), msb 8/29, fiapgames 25/9, restapi 0/9,
+baseapi 5/3. `run-after.sh` (scan am + after blind) running with the final tool.
 
 ## Changed files
 

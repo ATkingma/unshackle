@@ -288,6 +288,44 @@ public class FixerTests
     }
 
     [Fact]
+    public async Task FixAsync_UnusedRemovedUsingInConditionalBranch_KeepsDirectivesPaired()
+    {
+        // Arrange (TAAK-281)
+        IPattern pattern = Substitute.For<IPattern>();
+        pattern.Id.Returns("test.pattern");
+        pattern.Find(Arg.Any<SyntaxNode>(), Arg.Any<SemanticModel>()).Returns([]);
+        var fixer = new Fixer([CreateFix(pattern, removed: ["Lib"], added: ["System.IO"])]);
+        string code = "#if FOO\nusing System.IO;\n#else\nusing Lib;\n#endif\n\nnamespace Lib { }\n\npublic class C\n{\n}\n";
+
+        // Act
+        FixReport report = await FixAsync(fixer, code);
+
+        // Assert
+        string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        text.ShouldNotContain("using Lib");
+        text.ShouldContain("using System.IO;");
+        text.Split('\n').Count(l => l.StartsWith("#if", StringComparison.Ordinal)).ShouldBe(text.Split('\n').Count(l => l.StartsWith("#endif", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task FixAsync_UnusedUsingOfRemovedSubNamespace_IsRemoved()
+    {
+        // Arrange (TAAK-283): a sub-namespace listed in RemovedNamespaces goes with the package when nothing binds to it
+        IPattern pattern = Substitute.For<IPattern>();
+        pattern.Id.Returns("test.pattern");
+        pattern.Find(Arg.Any<SyntaxNode>(), Arg.Any<SemanticModel>()).Returns([]);
+        var fixer = new Fixer([CreateFix(pattern, removed: ["System.Text", "System.Text.Json"], added: ["System.IO"])]);
+        string code = "using System.Text;\nusing System.Text.Json;\n\npublic class C\n{\n}\n";
+
+        // Act
+        FixReport report = await FixAsync(fixer, code);
+
+        // Assert
+        string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        text.ShouldNotContain("using");
+    }
+
+    [Fact]
     public async Task FixAsync_NamespaceStillUsed_KeepsUsing()
     {
         // Arrange

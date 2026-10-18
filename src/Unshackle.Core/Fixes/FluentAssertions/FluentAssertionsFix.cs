@@ -27,7 +27,13 @@ public class FluentAssertionsFix : IFix
 
     public IReadOnlyList<MetadataReference> AddedReferences { get; }
 
-    public IReadOnlyList<string> RemovedNamespaces { get; } = ["FluentAssertions", "FluentAssertions.Execution", "FluentAssertions.Extensions", "FluentAssertions.Primitives"];
+    public IReadOnlyList<string> RemovedNamespaces { get; } = [
+        "FluentAssertions", "FluentAssertions.Execution", "FluentAssertions.Extensions", "FluentAssertions.Primitives",
+        // Sub-namespaces: an unused one goes with the package, a used one keeps it (TAAK-283).
+        "FluentAssertions.Collections", "FluentAssertions.Common", "FluentAssertions.Data", "FluentAssertions.Equivalency",
+        "FluentAssertions.Events", "FluentAssertions.Formatting", "FluentAssertions.Numeric", "FluentAssertions.Specialized",
+        "FluentAssertions.Streams", "FluentAssertions.Types", "FluentAssertions.Xml",
+    ];
 
     public IReadOnlyList<string> AddedNamespaces { get; } = ["Shouldly"];
 

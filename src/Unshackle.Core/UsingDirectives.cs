@@ -57,7 +57,15 @@ internal static class UsingDirectives
         // Swap in place, so position and surrounding trivia stay as the user had them; the other unused ones go.
         int swapCount = Math.Min(unused.Count, missing.Count);
         CompilationUnitSyntax updated = Qualify(root.TrackNodes(unused.Cast<SyntaxNode>().Concat(clashing)), clashing, model);
-        updated = updated.RemoveNodes(unused.Skip(swapCount).Select(u => updated.GetCurrentNode(u)!), SyntaxRemoveOptions.KeepNoTrivia)!;
+        // A using that carries #if/#else directives (and the disabled text between them) keeps its leading trivia, so the pairs stay
+        // whole: dropping it would leave the #endif without its #if (TAAK-281).
+        foreach (bool conditional in (bool[])[true, false])
+        {
+            updated = updated.RemoveNodes(
+                unused.Skip(swapCount).Where(u => u.GetLeadingTrivia().Any(t => t.IsDirective || t.IsKind(SyntaxKind.DisabledTextTrivia)) == conditional)
+                    .Select(u => updated.GetCurrentNode(u)!),
+                conditional ? SyntaxRemoveOptions.KeepLeadingTrivia : SyntaxRemoveOptions.KeepNoTrivia)!;
+        }
         for (int i = 0; i < swapCount; i++)
         {
             UsingDirectiveSyntax current = updated.GetCurrentNode(unused[i])!;

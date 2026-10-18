@@ -24,6 +24,8 @@ public class XmlProjectFileStore : IProjectFileStore
     private static readonly StringComparer s_pathComparer =
         OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 
+    // A C# file that is not valid UTF-8 was loaded as Latin-1 (MsBuildSolutionStore): bytes and characters map one to one, so it is written back byte-exact.
+    private static readonly Encoding s_latin1 = Encoding.GetEncoding("iso-8859-1", EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
     private static readonly UTF8Encoding s_strictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
     private readonly IFileSystem _fileSystem;
@@ -157,7 +159,7 @@ public class XmlProjectFileStore : IProjectFileStore
     {
         ArgumentNullException.ThrowIfNull(changes);
         // Check every file before the first write, so a stale file never leaves a half-migrated tree.
-        var checkedFiles = new List<(ProjectFileChange Change, byte[]? Original, bool Bom)>();
+        var checkedFiles = new List<(ProjectFileChange Change, byte[]? Original, bool Bom, bool Latin1)>();
         foreach (ProjectFileChange change in changes)
         {
             // A new file (vendored source, TAAK-194) must not be there yet: it would be overwritten.
@@ -168,25 +170,26 @@ public class XmlProjectFileStore : IProjectFileStore
                     throw new InvalidOperationException($"{change.FilePath} already exists; move it and run the fix again.");
                 }
 
-                checkedFiles.Add((change, null, false));
+                checkedFiles.Add((change, null, false, false));
                 continue;
             }
 
             byte[] original = await _fileSystem.File.ReadAllBytesAsync(change.FilePath, cancellationToken);
-            (string text, bool bom) = Decode(change.FilePath, original);
+            bool latin1 = change.FilePath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) && !IsUtf8(original);
+            (string text, bool bom) = latin1 ? (s_latin1.GetString(original), false) : Decode(change.FilePath, original);
             if (text != change.OldText)
             {
                 throw new InvalidOperationException($"{change.FilePath} changed after it was read; run the fix again.");
             }
 
-            checkedFiles.Add((change, original, bom));
+            checkedFiles.Add((change, original, bom, latin1));
         }
 
         var written = new List<(string Path, byte[]? Original)>();
         var createdDirectories = new List<string>();
         try
         {
-            foreach ((ProjectFileChange change, byte[]? original, bool bom) in checkedFiles)
+            foreach ((ProjectFileChange change, byte[]? original, bool bom, bool latin1) in checkedFiles)
             {
                 string? directory = _fileSystem.Path.GetDirectoryName(change.FilePath);
                 if (change.Creates && !string.IsNullOrEmpty(directory) && !_fileSystem.Directory.Exists(directory))
@@ -195,7 +198,7 @@ public class XmlProjectFileStore : IProjectFileStore
                     createdDirectories.Add(directory);
                 }
 
-                byte[] bytes = Encoding.UTF8.GetBytes(change.NewText);
+                byte[] bytes = (latin1 ? s_latin1 : Encoding.UTF8).GetBytes(change.NewText);
                 await ReplaceAsync(change.FilePath, bom ? [.. s_bom, .. bytes] : bytes, CancellationToken.None);
                 written.Add((change.FilePath, original));
             }
@@ -454,6 +457,19 @@ public class XmlProjectFileStore : IProjectFileStore
     private async Task<(string Text, bool Bom)> ReadAsync(string path, CancellationToken cancellationToken)
     {
         return Decode(path, await _fileSystem.File.ReadAllBytesAsync(path, cancellationToken));
+    }
+
+    private static bool IsUtf8(byte[] bytes)
+    {
+        try
+        {
+            _ = s_strictUtf8.GetCharCount(bytes);
+            return true;
+        }
+        catch (DecoderFallbackException)
+        {
+            return false;
+        }
     }
 
     // Strict: rewriting a Latin-1 or UTF-16 file as UTF-8 would silently lose characters, so such a file is refused.

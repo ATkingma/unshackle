@@ -1,6 +1,7 @@
 # TAAK-285 — MediatR: `AddMediatR(Action<MediatRServiceConfiguration>)` overload
 
-**Status**: step 1/4 — not started
+**Status**: step 3/4 — in progress
+**Branch**: worktree-agent-ade469fda0960cfbe (worktree `.claude/worktrees/agent-ade469fda0960cfbe`)
 **Created**: 2026-10-18
 **Goal**: remove this blocker with proof, or state precisely why it is principally manual.
 
@@ -8,6 +9,9 @@
 
 - projectpulse (round 5, 0 Fixed / 176 Manual) stops because the `AddMediatR(Action<MediatRServiceConfiguration>)` overload is not matched; one registration blocks the whole solution.
 - Source: `claude/tasks/CORPUSRUN-blind.md` (round 5). Proof rules: `claude/tasks/manual-reduction-queue.md`.
+- **Step 1 finding**: the overload is NOT the blocker. `AddMediatR(Action<MediatRServiceConfiguration>)` is the only `AddMediatR` overload in MediatR 12.x and `AddMediatRPattern` already matches it; scanning projectpulse after converting `src/API/Program.cs` to UTF-8 gives 175 Fixed / 0 Manual. The real cause: `Program.cs` is cp1252 (an em dash in a comment), `Fixer` skipped it as not UTF-8 (TAAK-167), and as it has no `using MediatR` no `encoding` row was written, so the report said "unmatched-use".
+- **Step 2 (done)**: non-UTF-8 single-byte `.cs` files are loaded as Latin-1 (`MsBuildSolutionStore.MarkNotUtf8FilesAsync`, now also for a Windows ANSI code page) and written back byte-exact by `XmlProjectFileStore.SaveAsync` (Latin-1 maps bytes 1:1; encoder fallback throws, so nothing is lost silently). `Fixer` still skips UTF-16 and similar. Tests: `SaveAsync_SourceFileNotUtf8_WritesLatin1BackByteExact`, `FixAsync_FileInLatin1_IsMigratedLikeAnyOther`, integration `Fix_FileInLatin1_MigratesItAndKeepsItsBytes` (was `…LeavesItAndMigratesTheRest`), proof `AddMediatR/edge-assemblies-typeof`.
+- Tool for the corpus: `<corpus>/probe285/tool1` (published from this branch).
 - Record progress per step and commit it as WIP in your branch (`claude/docs/agent-werkwijze.md`).
 
 ## Approach
@@ -16,9 +20,9 @@ Measure the overload forms in MediatR 12.5.0 (`RegisterServicesFromAssembly*`, `
 
 ## Steps
 
-- [ ] 1. Measure on the corpus repo(s) and probe the old library; KingmaDoc plan for touched patterns/features
-- [ ] 2. Implementation + unit tests + proofs (`_Combined` where patterns cooperate)
-- [ ] 3. Corpus `after` on projectpulse (and the earlier MediatR corpus repos): build green, 0 regressions; before/after numbers here and in CORPUSRUN-blind.md
+- [x] 1. Measure on the corpus repo(s) and probe the old library; KingmaDoc plan for touched patterns/features
+- [x] 2. Implementation + unit tests + proofs (`_Combined` where patterns cooperate)
+- [→] 3. Corpus `after` on projectpulse (and the earlier MediatR corpus repos): build green, 0 regressions; before/after numbers here and in CORPUSRUN-blind.md
 - [ ] 4. Verify, models, docs; `claude/tools/verify-head.sh` → `VERIFY OK`
 
 ## See also

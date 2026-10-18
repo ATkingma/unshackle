@@ -267,10 +267,10 @@ public class SampleShopTests
         store.Warnings.ShouldContain(w => w.Contains("Gone.csproj", StringComparison.Ordinal), string.Join(" | ", store.Warnings));
     }
 
-    // EventFlow (TAAK-167): one Latin-1 file must not stop the run. It stays byte for byte as it was, gets a Manual row, keeps
-    // the project on FluentAssertions, and the rest of the solution is migrated.
+    // EventFlow (TAAK-167, changed by TAAK-285): one Latin-1 file must not stop the run. It is migrated like the rest and written
+    // back in Latin-1, so its non-ASCII byte stays what it was.
     [Fact]
-    public async Task Fix_FileInLatin1_LeavesItAndMigratesTheRest()
+    public async Task Fix_FileInLatin1_MigratesItAndKeepsItsBytes()
     {
         // Arrange
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
@@ -299,13 +299,15 @@ public class SampleShopTests
 
         // Assert
         exit.ShouldBe(ExitCodes.Ok);
-        (await File.ReadAllBytesAsync(Path.Combine(directory.Path, "Old.cs"), cancellationToken)).ShouldBe(latin1);
+        string old = System.Text.Encoding.Latin1.GetString(await File.ReadAllBytesAsync(Path.Combine(directory.Path, "Old.cs"), cancellationToken));
+        old.ShouldContain("// caf\u00e9");
+        old.ShouldContain("1.ShouldBe(1)");
         string migrated = await File.ReadAllTextAsync(Path.Combine(directory.Path, "New.cs"), cancellationToken);
         migrated.ShouldContain("1.ShouldBe(1)");
         string[] rows = await File.ReadAllLinesAsync(report, cancellationToken);
-        rows.ShouldContain(r => r.StartsWith("Old.cs,0,fluentassertions,encoding,Manual,", StringComparison.Ordinal), string.Join(Environment.NewLine, rows));
+        rows.ShouldNotContain(r => r.Contains(",encoding,", StringComparison.Ordinal), string.Join(Environment.NewLine, rows));
         string projectText = await File.ReadAllTextAsync(project, cancellationToken);
-        projectText.ShouldContain("Include=\"FluentAssertions\"");
+        projectText.ShouldNotContain("Include=\"FluentAssertions\"");
         projectText.ShouldContain("Include=\"Shouldly\"");
     }
 

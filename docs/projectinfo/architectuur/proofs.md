@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1024 proofs (excluding `_Pending`).
+Total: 1045 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -34,12 +34,13 @@ Total: 1024 proofs (excluding `_Pending`).
 | `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check (the map at Test.cs:27 is not in a profile constructor this fix rewrites) |
 | `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
-### CreateMap (114)
+### CreateMap (117)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `after-map` | Manual | `CreateMap<Order, OrderDto>().AfterMap((s, d) => d.Name = d.Name.Trim());` — reason: AfterMap runs code after the members are set; write ToB with a block body |
 | `before-map` | Manual | `CreateMap<Order, OrderDto>().BeforeMap((s, d) => s.Name = s.Name.Trim());` — reason: BeforeMap runs code before the members are set |
+| `broken-conversion` | Manual | `CreateMap<ScheduleEntity, ScheduleDto>();` — reason: the source mapping is broken, this stays manual (principally) |
 | `collection` | Fixed | `CreateMap<Order, OrderDto>();` → `public static class OrderProfileExtensions {` |
 | `collection-dictionary` | Manual | `CreateMap<Order, OrderDto>();` — reason: is a collection of a kind this fix does not copy |
 | `condition` | Fixed | `CreateMap<Activity, ActivityDto>() .ForMember(dest => dest.DocumentId, opt => opt.Condition(src => src.Documen…` → `public static class OrderProfileExtensions {` |
@@ -136,7 +137,7 @@ Total: 1024 proofs (excluding `_Pending`).
 | `partial` | Manual | `CreateMap<Affiliate, AffiliateModel>();` — reason: is partial (another part can add maps or members they use) |
 | `pre-condition` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.PaidAmount, o =>` → `public static class OrderProfileExtensions {` |
 | `preserve-references` | Fixed | `CreateMap<Order, OrderDto>().PreserveReferences();` → `public static class OrderProfileExtensions {` |
-| `private-setter` | Manual | `CreateMap<WebHookViewModel, WebHookSettings>();` — reason: WebHookSettings.WebHookId has a non-public setter, which AutoMapper writes from WebHookViewModel |
+| `private-setter` | Manual | `CreateMap<WebHookViewModel, WebHookSettings>();` — reason: has a non-public setter, which AutoMapper writes from WebHookViewModel through reflection; a mapping method cannot write it (principally manual |
 | `profile-setting` | Manual | `CreateMap<Order, OrderDto>();` — reason: AllowNullCollections changes how null collections are mapped |
 | `project-to` | Fixed | `CreateMap<Series, SeriesDto>(); CreateMap<Genre, GenreTagDto>();` → `} public static class AutoMapperProfilesExtensions` |
 | `project-to-conversion` | Manual | `CreateMap<Order, OrderDto>();` — reason: (ProjectTo converts it in the query, this fix does not) |
@@ -148,6 +149,8 @@ Total: 1024 proofs (excluding `_Pending`).
 | `reverse-map-get-method` | Manual | `CreateMap<Product, ProductDto>().ReverseMap();` — reason: ReverseMap of CreateMap<Product, ProductDto>: Product.Code has no member with the same name in ProductDto |
 | `reverse-map-nested` | Fixed | `CreateMap<Employee, EmployeeDto>().ReverseMap(); CreateMap<Job, JobDto>().ReverseMap();` → `public static class AutoMapperProfileExtensions {` |
 | `reverse-map-options` | Manual | `CreateMap<User, UserDto>()` — reason: is a collection of a kind this fix does not copy |
+| `reverse-prefix-not-flattened` | Fixed | `CreateMap<ShelfModel, ShelfDto>().ReverseMap();` → `public static class ShelfMappingExtensions {` |
+| `reverse-unflatten` | Manual | `CreateMap<Order, OrderDto>().ReverseMap();` — reason: OrderDto.CustomerName may be unflattened into Order.Customer by AutoMapper |
 | `several-constructors` | Manual | `CreateMap<User, UserViewModel>();` — reason: has several constructors (which maps exist depends on the one that runs) |
 | `simple` | Fixed | `CreateMap<Product, ProductDto>(); CreateMap<Tag, TagDto>();` → `public static class ProductProfileExtensions {` |
 | `unmatched-asserted` | Manual | `CreateMap<Customer, CustomerDto>();` — reason: yet the solution calls AssertConfigurationIsValid, which rejects such a member |
@@ -198,20 +201,22 @@ Total: 1024 proofs (excluding `_Pending`).
 | --- | --- | --- |
 | `trimmed-profile` | Manual | `CreateMap<Invoice, InvoiceDto>().BeforeMap((s, d) => d.Id = 1);` — reason: Stays on AutoMapper: CreateMap<Invoice, InvoiceDto> stays in the profile, the rest of it is migrated: 'CreateMap<Invoice, InvoiceDto>().BeforeMap((s, d) => d.Id = 1);' in Profile ShopProfile: BeforeMap |
 
-### MapCall (10)
+### MapCall (12)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `existing-method` | Fixed | `public OrderDto Get(Order order) => _mapper.Map<OrderDto>(order); public OrderDto First(Order[] orders) => thi…` → `public OrderDto Get(Order order) => order.ToOrderDto(); public OrderDto First(Order[] orders) => orders[0].ToO…` |
 | `manual-profile` | Manual | `CreateMap<Order, OrderDto>().BeforeMap((s, d) => d.Id = 1);` — reason: the map Order → OrderDto stays on AutoMapper ('CreateMap<Order, OrderDto>().BeforeMap((s, d) => d.Id = 1);' in Profile OrderProfile: BeforeMap runs code before the members are set |
-| `maybe-null` | Manual |  — reason: may be null |
+| `maybe-null` | Fixed | `var dto = mapper.Map<OrderDto>(order);` → `var dto = order?.ToOrderDto()!;` |
+| `maybe-null-struct` | Manual |  — reason: may be null |
 | `maybe-null-target` | Fixed | `public OrderDto? Find(Order? order) => _mapper.Map<OrderDto?>(order); return _mapper.Map<OrderDto>(order);` → `public OrderDto? Find(Order? order) => order?.ToOrderDto(); return order?.ToOrderDto();` |
 | `method-group` | Fixed | `public List<OrderDto> List(IEnumerable<Order> orders) => orders.Select(_mapper.Map<OrderDto>).ToList();` → `public List<OrderDto> List(IEnumerable<Order> orders) => orders.Select(source => source.ToOrderDto()).ToList()…` |
 | `method-group-two-parameters` | Manual | `CreateMap<Order, OrderDto>();` — reason: passed as a method group in a form this fix does not rewrite |
+| `mocked-class-under-test` | Manual | `CreateMap<Customer, CustomerDto>();` — reason: keeps calling IMapper |
 | `object-source` | Manual |  — reason: no type of its own |
 | `receiver-call` | Manual |  — reason: not called as mapper.Map on a plain field |
 | `several-profiles` | Manual | `// Kavita: CreateMap<Series, SeriesDto> in AutoMapperProfiles and again in AutoMapperSeriesProfile.` — reason: Several profiles map Series to SeriesDto; AutoMapper uses the one registered last |
-| `unknown-map` | Manual |  — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
+| `unknown-map` | Manual |  — reason: the call is broken in the source, so this stays manual (principally) |
 
 ### MapInto (7)
 
@@ -246,7 +251,7 @@ Total: 1024 proofs (excluding `_Pending`).
 | `member-resolver` | Fixed | `CreateMap<Post, NoteObject>() .ForMember(d => d.MediaType, opt => opt.MapFrom<MediaTypeResolver, Content?>(s =…` → `public static class PostProfileExtensions {` |
 | `resolver-class` | Fixed | `CreateMap<ToDoList, ListDto>() .ForMember(x => x.IsShared, opt => opt.MapFrom<IsSharedResolver>())` → `public static class ToDoProfileExtensions {` |
 
-### _Combined (25)
+### _Combined (32)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -257,6 +262,8 @@ Total: 1024 proofs (excluding `_Pending`).
 | `constructor-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
 | `conversion-map-into` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} }` |
 | `convert-using-map-call` | Fixed | `CreateMap<SigningKey, PublicKeyDto>() .ConvertUsing(src => new PublicKeyDto` → `} }` |
+| `convert-using-string` | Fixed | `CreateMap<Money, string>().ConvertUsing<MoneyToStringConverter>(); CreateMap<Product, ProductDto>();` → `} public static class ProductProfileExtensions` |
+| `cycle-destination-only` | Fixed | `CreateMap<OrderDto, OrderModel>().ReverseMap(); CreateMap<BoxModel, BoxDto>().ReverseMap();` → `} public static class OrderMappingExtensions` |
 | `flattening-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Get(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class OrderProfileExtensions` |
 | `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
 | `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
@@ -269,10 +276,15 @@ Total: 1024 proofs (excluding `_Pending`).
 | `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
 | `nested-profiles-nested-map` | Fixed | `CreateMap<TodoList, TodoListDto>(); CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority,` → `} public static class TodoListDtoMappingExtensions` |
 | `partial-closure` | Fixed | `CreateMap<Customer, CustomerDto>(); public CustomerDto Customer(Customer customer) => _mapper.Map<CustomerDto>…` → `} public static class ShopProfileExtensions` |
+| `partial-cycle-source` | Fixed | `CreateMap<OrderDto, OrderModel>(); CreateMap<BoxDto, BoxModel>();` → `} public static class ShopMappingExtensions` |
+| `partial-mocked-class-under-test` | Fixed | `public CustomerDto Line(Customer customer) => _mapper.Map<CustomerDto>(customer);` → `} public static class CustomerProfileExtensions` |
 | `partial-statement` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Order(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class ShopProfileExtensions` |
 | `partial-untyped-source` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Order(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class ShopProfileExtensions` |
 | `project-to-query` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} public static class OrderProfileExtensions` |
+| `project-to-required` | Fixed | `CreateMap<Note, NoteEntity>(); notes.ProjectTo<NoteEntity>(mapper.ConfigurationProvider);` → `} public static class NoteProfileExtensions` |
 | `projection-parameters` | Fixed | `int userId = 0; // Placeholder, will be replaced at runtime CreateMap<Series, SeriesDto>()` → `} public static class SeriesProfileExtensions` |
+| `region-directives` | Fixed | `#region Orders CreateMap<Order, OrderDto>();` → `public static class ShopProfileExtensions {` |
+| `required-members` | Fixed | `CreateMap<NoteDto, NoteEntity>();` → `public static class NoteProfileExtensions {` |
 | `reverse-map-call` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} }` |
 | `value-resolver-map-call` | Fixed | `CreateMap<ToDoTask, TaskDto>() .ForMember(x => x.IsPrivate, opt => opt.MapFrom<IsPrivateResolver>())` → `} public static class TaskProfileExtensions` |
 
@@ -468,7 +480,7 @@ Total: 1024 proofs (excluding `_Pending`).
 | `implicit-conversion` | Fixed | `doc.Should().BeGreaterThan(0); doc.Should().BeLessThanOrEqualTo(7, "small");` → `doc.ShouldBeGreaterThan((Doc)0); doc.ShouldBeLessThanOrEqualTo((Doc)7, "small");` |
 | `in-range` | Fixed | `x.Should().BeInRange(1, 5); x.Should().NotBeInRange(6, 9);` → `x.ShouldBeInRange(1, 5); x.ShouldNotBeInRange(6, 9);` |
 | `lambda` | Fixed | `Action a = () => x.Should().BeGreaterThan(1);` → `Action a = () => x.ShouldBeGreaterThan(1);` |
-| `named-because` | Manual | `x.Should().BeGreaterThan(1, because: "it is positive");` — reason: named arguments |
+| `named-because` | Fixed | `x.Should().BeGreaterThan(1, because: "it is positive");` → `x.ShouldBeGreaterThan(1, "it is positive");` |
 | `negative-double` | Fixed | `d.Should().BeNegative();` → `(d < 0).ShouldBeTrue();` |
 | `negative-float` | Fixed | `f.Should().BeNegative("it dropped"); (a - b).Should().BeNegative();` → `(f < 0).ShouldBeTrue("it dropped"); ((a - b) < 0).ShouldBeTrue();` |
 | `nullable` | Manual | `x.Should().BeGreaterThan(1);` — reason: nullable or has an unknown type |
@@ -577,7 +589,7 @@ Total: 1024 proofs (excluding `_Pending`).
 | `items` | Manual | `x.Should().Contain(new[] { 1, 2 });` — reason: several items |
 | `lambda` | Fixed | `System.Action act = () => x.Should().Contain(1);` → `System.Action act = () => x.ShouldContain(1);` |
 | `list` | Fixed | `x.Should().Contain(2);` → `x.ShouldContain(2);` |
-| `named-because` | Manual | `x.Should().Contain(2, because: "it was added");` — reason: named arguments |
+| `named-because` | Fixed | `x.Should().Contain(2, because: "it was added");` → `x.ShouldContain(2, "it was added");` |
 | `not-contain` | Fixed | `x.Should().NotContain(2); text.Should().NotContain("bad");` → `x.ShouldNotContain(2); text.ShouldNotContain("bad", Shouldly.Case.Sensitive);` |
 | `nullable-expected` | Fixed | `ex.Message.Should().Contain(typeof(NullableExpectedCase).FullName);` → `ex.Message.ShouldContain(typeof(NullableExpectedCase).FullName!, Shouldly.Case.Sensitive);` |
 | `nullable-string` | Fixed | `text.Should().Contain("ab");` → `text.ShouldNotBeNull().ShouldContain("ab", Shouldly.Case.Sensitive);` |
@@ -673,6 +685,13 @@ Total: 1024 proofs (excluding `_Pending`).
 | `unique` | Fixed | `x.Should().OnlyHaveUniqueItems();` → `x.ShouldBeUnique();` |
 | `unique-key` | Manual | `x.Should().OnlyHaveUniqueItems(s => s.Length);` — reason: key selector |
 
+### DiscardAssignment (2)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `await` | Fixed | `_ = await act.Should().ThrowAsync<InvalidOperationException>();` → `await act.Should().ThrowAsync<InvalidOperationException>();` |
+| `simple` | Fixed | `_ = a.Should().Be(3); _ = b.Should().NotBeNull().And.BeEmpty();` → `a.Should().Be(3); b.Should().NotBeNull().And.BeEmpty();` |
+
 ### EqualSequence (18)
 
 | Proof | Outcome | What it proves |
@@ -745,7 +764,7 @@ Total: 1024 proofs (excluding `_Pending`).
 | `collection-interfaces` | Fixed | `a.Should().HaveCount(1); b.Should().HaveCount(2);` → `a.Count.ShouldBe(1); b.Count.ShouldBe(2);` |
 | `count-comparison-because-args` | Fixed | `a.Should().HaveCountGreaterThan(1, "id {0}", 1);` → `a.Count.ShouldBeGreaterThan(1, string.Format(System.Globalization.CultureInfo.InvariantCulture, "id {0}", 1));` |
 | `count-comparisons` | Fixed | `a.Should().HaveCountGreaterThan(1); b.Should().HaveCountGreaterThanOrEqualTo(2, "at least two");` → `a.Count.ShouldBeGreaterThan(1); b.Length.ShouldBeGreaterThanOrEqualTo(2, "at least two");` |
-| `dictionary` | Manual | `x.Should().HaveCount(2);` — reason: Dictionary: |
+| `dictionary` | Fixed | `x.Should().HaveCount(2); y.Should().HaveCountGreaterThan(1);` → `x.Count.ShouldBe(2); y.Count.ShouldBeGreaterThan(1);` |
 | `edge-generic-element` | Fixed | `items.Should().HaveCount(1);` → `items.Count.ShouldBe(1);` |
 | `edge-linq-subject` | Fixed | `items.Where(x => x > 0).Should().HaveCount(2);` → `items.Where(x => x > 0).Count().ShouldBe(2);` |
 | `edge-multiline` | Fixed | `items .Should()` → `items.Length.ShouldBe(3);` |
@@ -812,7 +831,7 @@ Total: 1024 proofs (excluding `_Pending`).
 | `variable` | Manual | `s.Should().Match(p);` — reason: non-empty string constant |
 | `wildcard` | Fixed | `s.Should().Match("SO-*.?");` → `s.ShouldMatch("(?s)\\ASO-.*\\..$");` |
 
-### NotBe (9)
+### NotBe (10)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -825,6 +844,7 @@ Total: 1024 proofs (excluding `_Pending`).
 | `nullable` | Fixed | `count.Should().NotBe(0); name.Should().NotBe("timme");` → `count.ShouldNotBe(0); name.ShouldNotBe("timme");` |
 | `record` | Fixed | `price.Should().NotBe(new Money(0m, "EUR"));` → `price.ShouldNotBe(new Money(0m, "EUR"));` |
 | `simple` | Fixed | `result.Should().NotBe(41); name.Should().NotBe("timme");` → `result.ShouldNotBe(41); name.ShouldNotBe("timme");` |
+| `type` | Fixed | `t.Should().NotBe<string>(); n.Should().NotBe(typeof(int));` → `t.ShouldNotBe(typeof(string)); n.ShouldNotBe(typeof(int));` |
 
 ### NotContainNulls (21)
 
@@ -946,7 +966,7 @@ Total: 1024 proofs (excluding `_Pending`).
 | `string-elements` | Fixed | `x.Should().BeInDescendingOrder();` → `x.ShouldBeInOrder(SortDirection.Descending, System.StringComparer.Ordinal);` |
 | `string-key` | Fixed | `x.Should().BeInAscendingOrder(p => p.Sku);` → `x.Select(p => p.Sku).ShouldBeInOrder(SortDirection.Ascending, System.StringComparer.Ordinal);` |
 
-### ShouldBe (36)
+### ShouldBe (37)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -974,7 +994,7 @@ Total: 1024 proofs (excluding `_Pending`).
 | `edge-interpolated-expected` | Fixed | `url.Should().Be($"{root}/license");` → `url.ShouldBe($"{root}/license");` |
 | `edge-method-chain-subject` | Fixed | `text.Trim().ToUpperInvariant().Should().Be("A");` → `text.Trim().ToUpperInvariant().ShouldBe("A");` |
 | `edge-multiline` | Fixed | `value .Should()` → `value.ShouldBe(42);` |
-| `edge-named-because` | Manual | `total.Should().Be(3, because: "three items were added");` — reason: named arguments |
+| `edge-named-because` | Fixed | `total.Should().Be(3, because: "three items were added");` → `total.ShouldBe(3, "three items were added");` |
 | `edge-raw-string` | Fixed | `json.Should().Be("""{"name":"a"}""");` → `json.ShouldBe("""{"name":"a"}""");` |
 | `edge-trailing-comment` | Fixed | `value.Should().Be(42); // keep me` → `value.ShouldBe(42); // keep me` |
 | `edge-using-after-file-scoped-namespace` | Fixed | `result.Should().Be(42);` → `result.ShouldBe(42);` |
@@ -985,6 +1005,7 @@ Total: 1024 proofs (excluding `_Pending`).
 | `own-equals` | Fixed | `actual.Should().Be(expected);` → `actual.ShouldBe(expected);` |
 | `own-shouldbe-in-namespace` | Manual | `total.Should().Be(25, "{0} items", items);` — reason: binds to Proofs.TestKit.SpecExtensions.ShouldBe instead of Shouldly |
 | `simple` | Fixed | `result.Should().Be(42); name.Should().Be("timme");` → `result.ShouldBe(42); name.ShouldBe("timme");` |
+| `type` | Fixed | `t.Should().Be<List<int>>(); t.Should().Be(typeof(List<int>), "the {0} type", "list");` → `t.ShouldBe(typeof(List<int>)); t.ShouldBe(typeof(List<int>), string.Format(System.Globalization.CultureInfo.In…` |
 | `xml` | Manual | `actual.Should().Be(expected);` — reason: different equality semantics |
 
 ### StringStartEnd (10)
@@ -1080,7 +1101,7 @@ Total: 1024 proofs (excluding `_Pending`).
 | `message-starts` | Fixed | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("order*");` → `(await Should.ThrowAsync<ArgumentException>(act)).Message.ShouldStartWith("order", Shouldly.Case.Insensitive);` |
 | `message-variable` | Manual | `await act.Should().ThrowAsync<ArgumentException>().WithMessage(pattern);` — reason: not a string constant |
 | `message-wildcard` | Manual | `await act.Should().ThrowAsync<ArgumentException>().WithMessage("a*b");` — reason: wildcards other than |
-| `named-because` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>(because: "it is invalid");` — reason: named arguments |
+| `named-because` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>(because: "it is invalid");` → `await Should.ThrowAsync<InvalidOperationException>(act, "it is invalid");` |
 | `no-await` | Manual | `var task = act.Should().ThrowAsync<InvalidOperationException>();` — reason: not directly awaited |
 | `result-inner-awaited` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>().WithInnerException<InvalidOperationException, Argum…` → `(await Should.ThrowAsync<InvalidOperationException>(act)).InnerException.ShouldNotBeNull().ShouldBeAssignableT…` |
 | `result-local-and` | Fixed | `var ex = await act.Should().ThrowAsync<OperationCanceledException>(); ex.And.CancellationToken.Should().Be(tok…` → `var ex = await Should.ThrowAsync<OperationCanceledException>(act); ex.CancellationToken.Should().Be(token);` |
@@ -1134,7 +1155,7 @@ Total: 1024 proofs (excluding `_Pending`).
 | `steeltoe-arithmetic` | Fixed | `public TimeSpan Test(bool slow) => slow ? 1.Minutes() + 30.Seconds() : 250.Milliseconds();` → `public TimeSpan Test(bool slow) => slow ? TimeSpan.FromMinutes(1) + TimeSpan.FromSeconds(30) : TimeSpan.FromMi…` |
 | `steeltoe-assert-argument` | Fixed | `httpClient.Timeout.Should().Be(30.Seconds());` → `httpClient.Timeout.Should().Be(TimeSpan.FromSeconds(30));` |
 
-### _Combined (15)
+### _Combined (19)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1142,6 +1163,8 @@ Total: 1024 proofs (excluding `_Pending`).
 | `all-satisfy-be` | Fixed | `orders.Should().AllSatisfy(o => o.Total.Should().Be(20m));` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
 | `all-satisfy-other` | Fixed | `orders.Should().AllSatisfy(o => o.Note.Should().NotBeNull();` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
 | `custom-assertion-class` | Fixed | `// Custom assertion extension: user code built on FluentAssertions' extension model. public static class Order…` → `public static class OrderAssertions public static void ShouldBeCancelled(this Order subject, string customMess…` |
+| `directives-in-chain` | Fixed | `x.Should().Be(1);` → `x.ShouldBe(1);` |
+| `discard-assignment` | Fixed | `_ = a.Should().Be(3); _ = items.Should().NotBeNull().And.HaveCount(2);` → `a.ShouldBe(3); items.ShouldNotBeNull();` |
 | `lambda-overload-one-run` | Fixed | `ctx.Should().Be(context); maybe2.HasValue.Should().BeTrue();` → `ctx.ShouldBe(context); maybe2.HasValue.ShouldBeTrue();` |
 | `litedb-bson-assertions` | Fixed | `docs.Length.Should().BeOneOf(1, 101); first.Should().BeOneOf("owner1", "owner2");` → `docs.Length.ShouldBeOneOf(1, 101); first.ShouldBeOneOf("owner1", "owner2");` |
 | `manual-and-fixed` | Fixed | `y.Should().Be(1); y.Should().Be(2);` → `y.ShouldBe(1); y.ShouldBe(2);` |
@@ -1149,6 +1172,8 @@ Total: 1024 proofs (excluding `_Pending`).
 | `scope-using-block` | Fixed | `{ x.Should().Be(1);` → `x.ShouldSatisfyAllConditions( () => { x.ShouldBe(1); },` |
 | `scope-using-var` | Fixed | `y.Should().Be(2); name.Should().StartWith("a");` → `y.ShouldSatisfyAllConditions( () => { y.ShouldBe(2); },` |
 | `steeltoe-http-client` | Fixed | `httpClient.Timeout.Should().Be(30.Seconds()); httpClient.DefaultRequestHeaders.UserAgent.Should().ContainSingl…` → `httpClient.Timeout.ShouldBe(TimeSpan.FromSeconds(30)); httpClient.DefaultRequestHeaders.UserAgent.ShouldHaveSi…` |
+| `using-in-conditional` | Fixed | usings only |
+| `using-sub-namespace` | Fixed | `x.Should().Be(1);` → `x.ShouldBe(1);` |
 | `usings` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
 | `usings-existing` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
 | `usings-sorted` | Fixed | `Calc.Sum(values).Should().Be(3);` → `Calc.Sum(values).ShouldBe(3);` |
@@ -1156,7 +1181,7 @@ Total: 1024 proofs (excluding `_Pending`).
 
 ## MediatR
 
-### AddMediatR (16)
+### AddMediatR (17)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1165,6 +1190,7 @@ Total: 1024 proofs (excluding `_Pending`).
 | `edge-assemblies` | Fixed | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` → `_ = handlers; services.AddMediator(configuration => configuration.ServiceLifetime = ServiceLifetime.Transient)…` |
 | `edge-assemblies-friend` | Fixed | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` → `_ = handlers; services.AddMediator(configuration => configuration.ServiceLifetime = ServiceLifetime.Transient)…` |
 | `edge-assemblies-public` | Manual | `services.AddMediatR(configuration => configuration.RegisterServicesFromAssemblies(handlers));` — reason: AddMediatR scans the assembly passed in 'handlers' of a public method |
+| `edge-assemblies-typeof` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies( typeof(Startup).Assembly,` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient);` |
 | `edge-publisher-qualified` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `edge-service-type-behavior` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
 | `empty` | Fixed | `services.AddMediatR(cfg => { });` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient);` |

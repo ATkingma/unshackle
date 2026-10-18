@@ -189,7 +189,7 @@ public class SendAsTaskPattern : IPattern
     {
         switch (expression)
         {
-            case InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "FromResult" } fromResult } when generic && IsTask(fromResult.Expression, model):
+            case InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "FromResult" } fromResult } when (generic || IsUnitResult(expression, model)) && IsTask(fromResult.Expression, model):
                 return expression.ReplaceNode(fromResult.Expression, ValueTask(fromResult.Expression));
             case MemberAccessExpressionSyntax { Name.Identifier.ValueText: "CompletedTask" } completed when !generic && IsTask(completed.Expression, model):
                 return expression.ReplaceNode(completed.Expression, ValueTask(completed.Expression));
@@ -197,6 +197,11 @@ public class SendAsTaskPattern : IPattern
                 return null;
         }
     }
+
+    // A void request's Send is a plain Task in MediatR but ValueTask<Unit> in Mediator, so Task.FromResult(Unit.Value) is its ValueTask.FromResult(Unit.Value) (TAAK-285).
+    private static bool IsUnitResult(ExpressionSyntax expression, SemanticModel model) =>
+        expression is InvocationExpressionSyntax { ArgumentList.Arguments: [{ Expression: var value }] }
+        && model.GetTypeInfo(value).Type is INamedTypeSymbol { Name: "Unit", ContainingNamespace: { } ns } && ns.ToDisplayString() == "MediatR";
 
     private static bool IsTask(ExpressionSyntax expression, SemanticModel model) =>
         expression is IdentifierNameSyntax or QualifiedNameSyntax or AliasQualifiedNameSyntax or MemberAccessExpressionSyntax

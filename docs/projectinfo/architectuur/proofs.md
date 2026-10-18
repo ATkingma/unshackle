@@ -1353,7 +1353,7 @@ Total: 1047 proofs (excluding `_Pending`).
 | --- | --- | --- |
 | `eshop-mediator-extension` | Fixed | `List<Task> tasks = domainEvents.Select(domainEvent => mediator.Publish(domainEvent)).ToList();` → `List<Task> tasks = domainEvents.Select(domainEvent => mediator.Publish(domainEvent).AsTask()).ToList();` |
 | `expression-tree` | Fixed | `public Task<int> RunAsync(IMediator mediator) => mediator.Send(new Ping(), CancellationToken.None);` → `public Task<int> RunAsync(IMediator mediator) => mediator.Send(new Ping(), CancellationToken.None).AsTask();` |
-| `moq-setup-returns` | Fixed | `mock.Setup(m => m.Send(new Ping(), CancellationToken.None)).Returns(Task.FromResult(1));` → `mock.Setup(m => m.Send(new Ping(), CancellationToken.None)).Returns(ValueTask.FromResult(1));` |
+| `moq-setup-returns` | Fixed | `mock.Setup(m => m.Send(new Ping(), CancellationToken.None)).Returns(Task.FromResult(1)); mock.Setup(m => m.Sen…` → `mock.Setup(m => m.Send(new Ping(), CancellationToken.None)).Returns(ValueTask.FromResult(1)); mock.Setup(m => …` |
 | `nsubstitute-returns` | Fixed | `_mediator.Send(Arg.Any<IRequest<bool>>(), default).Returns(Task.FromResult(true)); _mediator.Send(Arg.Any<Quer…` → `_mediator.Send(Arg.Any<IRequest<bool>>(), default).Returns(ValueTask.FromResult(true)); _mediator.Send(Arg.Any…` |
 | `nsubstitute-returns-lambda` | Manual |  — reason: set up on an NSubstitute mock |
 | `null-conditional` | Manual |  — reason: called with ?. |

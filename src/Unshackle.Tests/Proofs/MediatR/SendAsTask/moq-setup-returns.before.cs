@@ -22,11 +22,14 @@ namespace Proofs
 {
     public record Ping : IRequest<int>;
 
+    public record Stop : IRequest;
+
     public class Setups
     {
         public void Configure(Moq.Mock<IMediator> mock)
         {
             mock.Setup(m => m.Send(new Ping(), CancellationToken.None)).Returns(Task.FromResult(1));
+            mock.Setup(m => m.Send(new Stop(), CancellationToken.None)).Returns(Task.FromResult(Unit.Value));
         }
     }
 }

@@ -1,6 +1,6 @@
 # TAAK-287 — FluentAssertions residual Manual, round 2 (inventory first)
 
-**Status**: step 3/4 done (corpus after); step 4 (verify) next
+**Status**: done on the branch (not pushed): VERIFY OK at 08ab032, 1589 tests
 **Branch**: `worktree-agent-a6a00e1539f53e94e` (worktree `.claude/worktrees/agent-a6a00e1539f53e94e`; not pushed)
 **Created**: 2026-10-18
 **Goal**: remove this blocker with proof, or state precisely why it is principally manual.
@@ -55,7 +55,7 @@ Remaining Manual are the principally manual causes in the inventory table (excep
 - [x] 1. Measure on the corpus repo(s) and probe the old library; KingmaDoc plan for touched patterns/features
 - [x] 2. Implementation + unit tests + proofs (`_Combined` where patterns cooperate)
 - [x] 3. Corpus `after` on mihome, catalogapi, buildenator, bearded, ogooreck, xrepo: build green, 0 regressions; before/after numbers here and in CORPUSRUN-blind.md
-- [ ] 4. Verify, models, docs; `claude/tools/verify-head.sh` → `VERIFY OK`
+- [x] 4. Verify, models, docs; `claude/tools/verify-head.sh` → `VERIFY OK`
 
 ## See also
 

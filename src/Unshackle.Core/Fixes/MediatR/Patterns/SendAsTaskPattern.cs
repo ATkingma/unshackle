@@ -132,7 +132,7 @@ public class SendAsTaskPattern : IPattern
             : null;
 
     private static bool IsMoq(InvocationExpressionSyntax invocation, SemanticModel model) =>
-        model.GetSymbolInfo(invocation).Symbol is IMethodSymbol method && method.ContainingNamespace.ToDisplayString() == "Moq";
+        model.GetSymbolInfo(invocation).Symbol is IMethodSymbol method && method.ContainingNamespace.ToDisplayString() is "Moq" or "Moq.Language"; // Returns lives in Moq.Language
 
     private static bool IsReceivedCheck(InvocationExpressionSyntax invocation, SemanticModel model) =>
         invocation.Parent is ExpressionStatementSyntax

@@ -12,7 +12,14 @@ namespace Moq
         public ISetup<T, TResult> Setup<TResult>(Expression<Func<T, TResult>> expression) => throw new NotImplementedException();
     }
 
-    public interface ISetup<T, TResult>
+    public interface ISetup<T, TResult> : Language.IReturns<TResult>
+    {
+    }
+}
+
+namespace Moq.Language
+{
+    public interface IReturns<TResult>
     {
         void Returns(TResult value);
     }

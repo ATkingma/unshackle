@@ -40,7 +40,7 @@ public class MapCallPattern : ISolutionPattern
             }
 
             ExpressionSyntax parameter = SyntaxFactory.IdentifierName(ParameterName(node, model));
-            return Lambda(parameter, Existing(node, model, groupSource!, groupDestination!, parameter, conditional: false) ?? PatternResult.Manual(NoMap(groupSource!, groupDestination!)));
+            return Lambda(parameter, Existing(node, model, groupSource!, groupDestination!, parameter, Kind.Plain) ?? PatternResult.Manual(NoMap(groupSource!, groupDestination!)));
         }
 
         if (Check((InvocationExpressionSyntax)node, model, out ExpressionSyntax? source, out ITypeSymbol? sourceType, out ITypeSymbol? destination, out Kind kind)
@@ -51,7 +51,7 @@ public class MapCallPattern : ISolutionPattern
 
         return kind == Kind.Collection
             ? Collection((InvocationExpressionSyntax)node, model, NestedMaps.From(model), source!, sourceType!, destination!)
-            : Existing(node, model, sourceType!, destination!, source!, kind == Kind.Conditional) ?? PatternResult.Manual(NoMap(sourceType!, destination!));
+            : Existing(node, model, sourceType!, destination!, source!, kind) ?? PatternResult.Manual(NoMap(sourceType!, destination!));
     }
 
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
@@ -72,7 +72,7 @@ public class MapCallPattern : ISolutionPattern
             }
 
             ExpressionSyntax parameter = SyntaxFactory.IdentifierName(ParameterName(node, model));
-            return Lambda(parameter, await SingleAsync(node, model, solution, parameter, groupSource!, groupDestination!, conditional: false, cancellationToken));
+            return Lambda(parameter, await SingleAsync(node, model, solution, parameter, groupSource!, groupDestination!, Kind.Plain, cancellationToken));
         }
 
         if (Check((InvocationExpressionSyntax)node, model, out ExpressionSyntax? source, out ITypeSymbol? sourceType, out ITypeSymbol? destination, out Kind kind)
@@ -86,14 +86,14 @@ public class MapCallPattern : ISolutionPattern
             return Collection((InvocationExpressionSyntax)node, model, await NestedMaps.FromAsync(model, solution, cancellationToken), source!, sourceType!, destination!);
         }
 
-        return await SingleAsync(node, model, solution, source!, sourceType!, destination!, kind == Kind.Conditional, cancellationToken);
+        return await SingleAsync(node, model, solution, source!, sourceType!, destination!, kind, cancellationToken);
     }
 
     // source.ToB() through the method that exists or the one a profile of the solution gets; Manual when there is none (or several).
     private static async Task<PatternResult> SingleAsync(SyntaxNode node, SemanticModel model, Solution solution, ExpressionSyntax source, ITypeSymbol sourceType,
-        ITypeSymbol destination, bool conditional, CancellationToken cancellationToken)
+        ITypeSymbol destination, Kind kind, CancellationToken cancellationToken)
     {
-        if (Existing(node, model, sourceType!, destination!, source!, conditional) is { } existing)
+        if (Existing(node, model, sourceType!, destination!, source!, kind) is { } existing)
         {
             return existing;
         }
@@ -102,7 +102,7 @@ public class MapCallPattern : ISolutionPattern
             await GeneratedAsync(solution, model, sourceType!, destination!, cancellationToken);
         if (generated.Count == 0)
         {
-            return PatternResult.Manual(await MapBlockers.ReasonAsync(solution, model, sourceType!, destination!, cancellationToken) ?? NoMap(sourceType!, destination!));
+            return PatternResult.Manual(await MapBlockers.ReasonAsync(solution, model, sourceType!, destination!, cancellationToken) ?? NoMapAnywhere(sourceType!, destination!));
         }
 
         if (generated.Count > 1)
@@ -124,7 +124,7 @@ public class MapCallPattern : ISolutionPattern
 
         string? callNamespace = model.GetEnclosingSymbol(node.SpanStart, cancellationToken)?.ContainingNamespace is { IsGlobalNamespace: false } current ? current.ToDisplayString() : null;
         bool imported = ns is null || (callNamespace is not null && (callNamespace == ns || callNamespace.StartsWith(ns + ".", StringComparison.Ordinal)));
-        return Fixed(node, source!, method, imported ? [] : [ns!], conditional);
+        return Fixed(node, source!, method, imported ? [] : [ns!], kind);
     }
 
     // Map<B>(source) or Map<A, B>(source) of AutoMapper; Map(source, destination), Map with options and ProjectTo stay with CreateMapPattern.
@@ -243,13 +243,14 @@ public class MapCallPattern : ISolutionPattern
 
         if (model.GetTypeInfo(source).Nullability.FlowState == NullableFlowState.MaybeNull)
         {
-            // Measured (TAAK-259): AutoMapper 14 returns null for a null source; a?.ToB() does the same where null may go.
-            if (destination.IsValueType || !TargetAllowsNull(invocation, model, destination))
+            // Measured (TAAK-259, TAAK-273): AutoMapper 14 returns null for a null source; a?.ToB() does the same, with ! where the target
+            // does not allow null (the null went there before as well). Map<Struct>(null) is not measured.
+            if (destination.IsValueType)
             {
                 return $"The source of Map may be null: AutoMapper returns null, {sourceType.Name}.To{destination.Name}() throws, and the result goes where null is not allowed; check for null and migrate it by hand.";
             }
 
-            kind = Kind.Conditional;
+            kind = TargetAllowsNull(invocation, model, destination) ? Kind.Conditional : Kind.Suppressed;
         }
 
         return null;
@@ -358,14 +359,14 @@ public class MapCallPattern : ISolutionPattern
     // An extension method To<B>() on A returning B: one the calling code already sees, or one in this project's source (also the class
     // the profile patterns just wrote, when the profile is in the same file) with a using for its namespace.
     private static PatternResult? Existing(SyntaxNode node, SemanticModel model, ITypeSymbol sourceType, ITypeSymbol destination, ExpressionSyntax source,
-        bool conditional)
+        Kind kind)
     {
         string name = "To" + destination.Name;
         List<IMethodSymbol> visible = [.. model.LookupSymbols(node.SpanStart, sourceType, name, includeReducedExtensionMethods: true)
             .OfType<IMethodSymbol>().Where(m => m.Parameters.All(p => p.IsOptional) && SymbolEqualityComparer.Default.Equals(m.ReturnType, destination))];
         if (visible is [{ ReducedFrom: not null }])
         {
-            return Fixed(node, source, name, [], conditional);
+            return Fixed(node, source, name, [], kind);
         }
 
         if (visible.Count > 0 || model.LookupSymbols(node.SpanStart, sourceType, name).Any())
@@ -379,8 +380,8 @@ public class MapCallPattern : ISolutionPattern
                 && SymbolEqualityComparer.Default.Equals(m.ReturnType, destination)
                 && (within is null ? m.DeclaredAccessibility != Accessibility.Private : model.Compilation.IsSymbolAccessibleWithin(m, within)))];
         return declared is [{ ContainingNamespace: { IsGlobalNamespace: false } ns }]
-            ? Fixed(node, source, name, [ns.ToDisplayString()], conditional)
-            : declared is [_] ? Fixed(node, source, name, [], conditional) : null;
+            ? Fixed(node, source, name, [ns.ToDisplayString()], kind)
+            : declared is [_] ? Fixed(node, source, name, [], kind) : null;
     }
 
     // Every CreateMap<A, B> in a profile the profile patterns rewrite, in the calling project or one it depends on: the generated method,
@@ -451,11 +452,11 @@ public class MapCallPattern : ISolutionPattern
         return found;
     }
 
-    // conditional: source?.Method(), in parentheses where a member access after it would join the ?. chain (a ?. after it may join).
-    private static PatternResult Fixed(SyntaxNode node, ExpressionSyntax source, string method, IReadOnlyList<string> namespaces, bool conditional)
+    // Conditional: source?.Method() (Suppressed: with !), in parentheses where a member access after it would join the ?. chain (a ?. after it may join).
+    private static PatternResult Fixed(SyntaxNode node, ExpressionSyntax source, string method, IReadOnlyList<string> namespaces, Kind kind)
     {
         ExpressionSyntax receiver = source.WithoutTrivia() is var bare && NeedsParentheses(bare) ? SyntaxFactory.ParenthesizedExpression(bare) : bare;
-        if (!conditional)
+        if (kind is not (Kind.Conditional or Kind.Suppressed))
         {
             return PatternResult.Fixed(
                 SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, receiver, SyntaxFactory.IdentifierName(method))),
@@ -464,12 +465,23 @@ public class MapCallPattern : ISolutionPattern
 
         ExpressionSyntax call = SyntaxFactory.ConditionalAccessExpression(receiver,
             SyntaxFactory.InvocationExpression(SyntaxFactory.MemberBindingExpression(SyntaxFactory.IdentifierName(method))));
+        if (kind == Kind.Suppressed)
+        {
+            call = SyntaxFactory.PostfixUnaryExpression(SyntaxKind.SuppressNullableWarningExpression, call);
+        }
+
         return PatternResult.Fixed(
             node.Parent is MemberAccessExpressionSyntax or ElementAccessExpressionSyntax or PostfixUnaryExpressionSyntax
                 ? SyntaxFactory.ParenthesizedExpression(call)
                 : call,
             namespaces);
     }
+
+    // Measured (TAAK-271, msb): without any CreateMap for the pair AutoMapper throws a missing-type-map error at run time.
+    private static string NoMapAnywhere(ITypeSymbol source, ITypeSymbol destination) =>
+        $"No CreateMap<{source.Name}, {destination.Name}> in this project or the projects it uses, and no {source.Name}.To{destination.Name}() exists. "
+        + "Unless AutoMapper finds the map another way (an [AutoMap] attribute, a map of a base type), it throws a missing-type-map error here too: "
+        + "the call is broken in the source, so this stays manual (principally); fix the call or add the map by hand.";
 
     private static string NoMap(ITypeSymbol source, ITypeSymbol destination) =>
         $"No CreateMap<{source.Name}, {destination.Name}> in a profile this fix rewrites, and no {source.Name}.To{destination.Name}() exists; migrate the call by hand.";
@@ -491,6 +503,7 @@ public class MapCallPattern : ISolutionPattern
     {
         Plain,
         Conditional,
+        Suppressed,
         Collection,
     }
 

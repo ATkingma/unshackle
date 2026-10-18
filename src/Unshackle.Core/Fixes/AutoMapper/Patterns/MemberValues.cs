@@ -165,7 +165,29 @@ public class MemberValues
 
     // The note for a conversion message when the types are not mapped.
     public static string NoMap(ITypeSymbol from, ITypeSymbol to) =>
-        $" and no profile this fix rewrites has a CreateMap<{from.Name}, {to.Name}>";
+        $" and no profile this fix rewrites has a CreateMap<{from.Name}, {to.Name}>"
+        + (NoBuiltInConversion(from, to)
+            ? $"; AutoMapper has no built-in conversion from {from.Name} to {to.Name} either, so without a map it throws there too (measured, TAAK-271): the source mapping is broken, this stays manual (principally)"
+            : "");
+
+    // A class or struct without IConvertible, [TypeConverter] or a conversion operator into a number, bool or char: none of AutoMapper's
+    // built-in mappers applies (TAAK-273).
+    private static bool NoBuiltInConversion(ITypeSymbol from, ITypeSymbol to) =>
+        to.SpecialType is >= SpecialType.System_Boolean and <= SpecialType.System_Double
+        && from is INamedTypeSymbol { TypeKind: TypeKind.Class or TypeKind.Struct, SpecialType: SpecialType.None } named
+        && !IsNullable(from, out _)
+        && !named.AllInterfaces.Any(i => i.ToDisplayString() == "System.IConvertible")
+        && !Levels(named).Any(t => t.GetAttributes().Any(a => a.AttributeClass?.Name == "TypeConverterAttribute")
+            || t.GetMembers().Any(m => m is IMethodSymbol { MethodKind: MethodKind.Conversion }))
+        && !to.GetMembers().Any(m => m is IMethodSymbol { MethodKind: MethodKind.Conversion });
+
+    private static IEnumerable<ITypeSymbol> Levels(ITypeSymbol type)
+    {
+        for (ITypeSymbol? level = type; level is not null; level = level.BaseType)
+        {
+            yield return level;
+        }
+    }
 
     // value.ToB() through the map of the type pair, or null when no profile maps it.
     private string? Nested(string value, ITypeSymbol from, ITypeSymbol to, ITypeSymbol outer, out string? call)
@@ -202,7 +224,7 @@ public class MemberValues
         }
 
         // A converter does not map members, so it cannot recurse.
-        if (!map.Converts && Reaches(destination, outer))
+        if (!map.Converts && ReachesMapped(source, destination, outer))
         {
             return $"{destination.Name} can lead back to {outer.Name}, a cycle (AutoMapper keeps the references, a mapping method would recurse)";
         }
@@ -273,6 +295,104 @@ public class MemberValues
 
     // Whether target is reachable from type through public members, type arguments and array elements: a map from type would
     // then call the map to target again. Types of the framework are not searched (they hold no DTOs).
+    // Whether mapping source into destination can come back to outer the way AutoMapper recurses: only through destination members (and
+    // constructor parameters) that have a source counterpart (measured, TAAK-273: a destination-only cycle is never executed, and AutoMapper then
+    // keeps no references either). A map with options, a member it cannot pair and a collection of another kind fall back to Reaches.
+    private bool ReachesMapped(ITypeSymbol source, ITypeSymbol destination, ITypeSymbol outer)
+    {
+        HashSet<(ITypeSymbol, ITypeSymbol)> seen = new(new PairComparer());
+        Queue<(ITypeSymbol Source, ITypeSymbol Destination)> queue = new([(source, destination)]);
+        while (queue.TryDequeue(out (ITypeSymbol Source, ITypeSymbol Destination) pair))
+        {
+            (ITypeSymbol from, ITypeSymbol to) = pair;
+            if (!seen.Add(pair))
+            {
+                continue;
+            }
+
+            if (SymbolEqualityComparer.Default.Equals(to, outer) || seen.Count > 10_000)
+            {
+                return true;
+            }
+
+            if (IsNullable(to, out ITypeSymbol? toValue))
+            {
+                queue.Enqueue((IsNullable(from, out ITypeSymbol? fromValue) ? fromValue! : from, toValue!));
+                continue;
+            }
+
+            if (TryElement(to, out ITypeSymbol? toElement, out _))
+            {
+                if (!TryElement(from, out ITypeSymbol? fromElement, out _))
+                {
+                    if (Reaches(to, outer))
+                    {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                queue.Enqueue((fromElement, toElement));
+                continue;
+            }
+
+            if (_maps.Find(from, to) is not { Count: > 0 } maps || maps.All(m => m.Converts))
+            {
+                // No map: AutoMapper does not recurse into the pair (it assigns or converts); a converter maps no members.
+                continue;
+            }
+
+            if (maps.Any(m => !m.Plain) || to is not INamedTypeSymbol named)
+            {
+                if (Reaches(to, outer))
+                {
+                    return true;
+                }
+
+                continue;
+            }
+
+            IEnumerable<(string Name, ITypeSymbol Type)> targets = Enumerable.Empty<(string, ITypeSymbol)>()
+                .Concat(named.InstanceConstructors.Where(c => c.DeclaredAccessibility == Accessibility.Public).SelectMany(c => c.Parameters).Select(p => (p.Name, p.Type)));
+            for (ITypeSymbol? level = named; level is not null && level.SpecialType != SpecialType.System_Object; level = level.BaseType)
+            {
+                targets = targets.Concat(level.GetMembers().Where(m => !m.IsStatic && m.DeclaredAccessibility == Accessibility.Public).Select(m => m switch
+                {
+                    IPropertySymbol { IsIndexer: false } property => (property.Name, property.Type),
+                    IFieldSymbol field => (field.Name, field.Type),
+                    _ => (Name: "", Type: (ITypeSymbol)null!),
+                }).Where(t => t.Type is not null));
+            }
+
+            foreach ((string name, ITypeSymbol type) in targets)
+            {
+                if (Flattening.Problem(from, to, char.ToUpperInvariant(name[0]) + name[1..], out IReadOnlyList<ISymbol> path) is not null)
+                {
+                    if (Reaches(type, outer))
+                    {
+                        return true;
+                    }
+                }
+                else if (path.Count > 0)
+                {
+                    queue.Enqueue((path[^1] switch { IPropertySymbol p => p.Type, IFieldSymbol f => f.Type, IMethodSymbol m => m.ReturnType, _ => type }, type));
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private class PairComparer : IEqualityComparer<(ITypeSymbol, ITypeSymbol)>
+    {
+        public bool Equals((ITypeSymbol, ITypeSymbol) x, (ITypeSymbol, ITypeSymbol) y) =>
+            SymbolEqualityComparer.Default.Equals(x.Item1, y.Item1) && SymbolEqualityComparer.Default.Equals(x.Item2, y.Item2);
+
+        public int GetHashCode((ITypeSymbol, ITypeSymbol) obj) =>
+            HashCode.Combine(SymbolEqualityComparer.Default.GetHashCode(obj.Item1), SymbolEqualityComparer.Default.GetHashCode(obj.Item2));
+    }
+
     private static bool Reaches(ITypeSymbol type, ITypeSymbol target)
     {
         HashSet<ITypeSymbol> seen = new(SymbolEqualityComparer.Default);

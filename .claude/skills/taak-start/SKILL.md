@@ -7,12 +7,12 @@ description: Create a new task file in claude/tasks/ for a project or feature. U
 
 Creates a numbered task file in `claude/tasks/` so that every agent — even after an account switch — knows exactly where the task stands and how to continue.
 
-Project root: `/mnt/dikkeschijf/documenten/Git/unshackle`
+Project root: the repository root (run the commands below from there)
 
 ## Step 1: Determine the next task number
 
 ```bash
-ls /mnt/dikkeschijf/documenten/Git/unshackle/claude/tasks/TAAK-*.md /mnt/dikkeschijf/documenten/Git/unshackle/claude/tasks/archief/TAAK-*.md 2>/dev/null \
+ls claude/tasks/TAAK-*.md claude/tasks/archief/TAAK-*.md 2>/dev/null \
   | grep -oP 'TAAK-\K\d+' | sort -n | tail -1
 ```
 

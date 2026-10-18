@@ -36,7 +36,7 @@ Probe results (FA 7.2.2): ForCondition(true) passes, false makes FailWith throw;
 Design: `CustomAssertionPattern` becomes ISolutionFinder/ISolutionPattern placed before `AndChainPattern`; per class one cached `CustomAssertionPlan` (shape analysis + solution-wide usage scan via SymbolFinder) so class, `Should()` extension and calls all convert or none do. Chains with `.And` are split per link into statements (custom link -> `x.ShouldFoo(...)`, FA link stays `x.Should().Bar()` for the other patterns).
 
 Done (step 3): pattern is ISolutionFinder/ISolutionPattern, first in FluentAssertionsFix.Patterns (plans are computed on the unchanged baseline; cache per Solution snapshot via ConditionalWeakTable). Class → static extension class, holder of `Should()` removed (or only the method), calls rewritten, `.And` chains split (FA links stay for the later patterns). Extra plan check: a method name in inactive `#if` code blocks the class. `FluentAssertions.Primitives` added to RemovedNamespaces. Proofs: CustomAssertion/reference-type (after), given-then + class-in-assertion-scope (manual), _Combined/custom-assertion-class. All 1517 tests green.
-Next (old list): `CustomAssertionPlans` (cache + usage scan), pattern changes, `FluentAssertionsFix` (order, add `FluentAssertions.Primitives` to RemovedNamespaces), build, proofs, unit tests, SampleShop before/after, corpus (`/mnt/dikkeschijf/unshackle-corpus`, FA repos with custom assertions: fresults, powerapps, steeltoe, bearded, evo), KingmaDoc plan/models/verify, archive.
+Next (old list): `CustomAssertionPlans` (cache + usage scan), pattern changes, `FluentAssertionsFix` (order, add `FluentAssertions.Primitives` to RemovedNamespaces), build, proofs, unit tests, SampleShop before/after, corpus (`<corpus>`, FA repos with custom assertions: fresults, powerapps, steeltoe, bearded, evo), KingmaDoc plan/models/verify, archive.
 
 ## Result
 
@@ -44,7 +44,7 @@ SampleShop FA Manual 19 → 9 (all 11 OrderAssertions findings gone; the rest is
 
 ## Corpus results (step 4)
 
-Setup: `/mnt/dikkeschijf/unshackle-corpus/t275` (`run.sh`: restore, then `fix --fix fluentassertions --force` with the CLI of main 08794cb (`bin-main`) and of this branch (`bin-new`) on separate copies; `DOTNET_ROLL_FORWARD=Major`).
+Setup: `<corpus>/t275` (`run.sh`: restore, then `fix --fix fluentassertions --force` with the CLI of main 08794cb (`bin-main`) and of this branch (`bin-new`) on separate copies; `DOTNET_ROLL_FORWARD=Major`).
 
 | Solution | Manual main → branch | Output diff main vs branch | Build/tests after |
 | --- | --- | --- | --- |

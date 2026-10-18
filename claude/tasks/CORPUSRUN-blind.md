@@ -2,7 +2,7 @@
 
 Tool: published from main `23c0f28` into `<corpus>/corpus-blind/_results/tool-23c0f28/`. The tool is not changed during this round.
 Harness: `claude/tools/corpus-am.sh` with `REPOS=claude/tools/corpus-blind-repos.txt`, list `claude/tools/corpus-blind-list.txt` (fix per line).
-Corpus root: `/mnt/dikkeschijf/unshackle-corpus/corpus-blind/`.
+Corpus root: `<corpus>/corpus-blind/`.
 
 ## Selection (step 2)
 

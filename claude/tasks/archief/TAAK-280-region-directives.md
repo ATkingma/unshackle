@@ -24,4 +24,4 @@ A profile whose `CreateMap` statements sit inside `#region`/`#endregion` pairs: 
 ## Context for the next agent
 
 - Done: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ProfileDirectives.cs` (`Repair`, called at the end of `CreateMapPattern.Rewrite` on the emptied/trimmed profile constructor): a stray `#region`/`#endregion` is dropped with its indentation; a stray `#if/#else/#elif/#endif` makes the profile Manual (the mapping method would exist in every build configuration). Proof `Proofs/AutoMapper/_Combined/region-directives`, unit test `Rewrite_DirectivesAroundCreateMap_StayBalancedOrManual`, KingmaDoc `automapper-create-map-*` REQ-13.
-- Corpus rerun (tool `_results/tool-a7fb36f`): assistiva builds after `fix`, 0 regressions; results under `/mnt/dikkeschijf/unshackle-corpus/corpus-blind/_results/after/`; CORPUSRUN-blind.md round 5 and README table updated.
+- Corpus rerun (tool `_results/tool-a7fb36f`): assistiva builds after `fix`, 0 regressions; results under `<corpus>/corpus-blind/_results/after/`; CORPUSRUN-blind.md round 5 and README table updated.

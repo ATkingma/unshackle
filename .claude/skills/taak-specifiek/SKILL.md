@@ -7,12 +7,12 @@ description: Create an in-depth task file with explicit reasoning: what is chang
 
 Variant of `/taak-start` for tasks that require reasoning. Investigates the codebase, compares old vs. new, and records decisions concisely so that no subsequent agent has to derive them again.
 
-Project root: `/mnt/dikkeschijf/documenten/Git/unshackle`
+Project root: the repository root (run the commands below from there)
 
 ## Step 1: Determine the next task number
 
 ```bash
-ls /mnt/dikkeschijf/documenten/Git/unshackle/claude/tasks/TAAK-*.md /mnt/dikkeschijf/documenten/Git/unshackle/claude/tasks/archief/TAAK-*.md 2>/dev/null \
+ls claude/tasks/TAAK-*.md claude/tasks/archief/TAAK-*.md 2>/dev/null \
   | grep -oP 'TAAK-\K\d+' | sort -n | tail -1
 ```
 

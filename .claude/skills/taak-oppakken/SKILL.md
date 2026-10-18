@@ -7,14 +7,14 @@ description: Resume an existing task after an account switch or a new session. U
 
 Reads an existing task file from `claude/tasks/` and resumes the task exactly at the last step.
 
-Project root: `/mnt/dikkeschijf/documenten/Git/unshackle`
+Project root: the repository root (run the commands below from there)
 
 ## Step 1: Find the task file
 
 If the user mentions a number or name:
 
 ```bash
-ls /mnt/dikkeschijf/documenten/Git/unshackle/claude/tasks/*.md   # actief; voltooid staat in archief/
+ls claude/tasks/*.md   # actief; voltooid staat in archief/
 ```
 
 If it is unclear which task: show the list and ask which one.
@@ -22,7 +22,7 @@ If it is unclear which task: show the list and ask which one.
 ## Step 2: Read the task file fully
 
 ```bash
-cat /mnt/dikkeschijf/documenten/Git/unshackle/claude/tasks/TAAK-<NNN>-<slug>.md
+cat claude/tasks/TAAK-<NNN>-<slug>.md
 ```
 
 Identify:
@@ -36,8 +36,8 @@ Identify:
 Read the relevant files that should already have been changed:
 
 ```bash
-git -C /mnt/dikkeschijf/documenten/Git/unshackle log --oneline -5
-git -C /mnt/dikkeschijf/documenten/Git/unshackle status --short
+git log --oneline -5
+git status --short
 ```
 
 Check whether the state matches what the task file describes. If there are discrepancies: report them and ask for confirmation before continuing.

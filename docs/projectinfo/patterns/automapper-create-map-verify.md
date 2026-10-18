@@ -26,6 +26,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `AutoM
 | REQ-10 | Met | `broken-conversion` (TAAK-273) |
 | REQ-12 | Met | `_Combined/required-members`, `_Combined/project-to-required`; unit tests `Rewrite_RequiredMember*`; probe against AutoMapper 14.0.0 (TAAK-282): unmapped required members stay `default`, an initializer or constructor value stays |
 | REQ-13 | Met | `_Combined/region-directives`; unit test `Rewrite_DirectivesAroundCreateMap_StayBalancedOrManual` (TAAK-280) |
+| REQ-14 | Met | `_Combined/configuration-maps-map-call`; unit tests `ConfigurationMapsTests` (TAAK-286); hospitalappt 0 / 32 → 6 / 35 Fixed/Manual, 0 regressions |
 
 End-to-end test of SampleShop (copy in `<corpus>/t146/`): 0 Fixed, 10 Manual (8× `Map`, 2 profiles with options), 0 files changed (AllOrNothing); the copy builds and 38/38 tests are green.
 
@@ -36,7 +37,6 @@ TAAK-261 measurement (AutoMapper 14.0.0, `CreateMap<S, D>()`): a destination mem
 - Parameter name `source` instead of `a` from the queue: avoids keywords as a parameter name.
 - `Fixer.ReplaceWithTrivia` now keeps blank lines that a pattern puts before an extra node (otherwise the new class came directly after the profile without a blank line).
 - The empty profile stays and the package too (see plan, Out of scope).
-
 ## Validation results
 
 | Check   | Command                                                     | Result                                  |

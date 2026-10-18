@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "automapper-create-map"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-14]
 files_expected:
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs
     - src/Unshackle.Core/Fixes/AutoMapper/AutoMapperFix.cs
@@ -51,6 +51,7 @@ automapper.create-map: a `Profile` whose constructor only contains `CreateMap<A,
 - **REQ-11** (TAAK-279): WHEN the plan shares a pair (a class under test keeps calling `IMapper` for it) THE SYSTEM SHALL generate its `ToB()` and leave its `CreateMap` statement in the profile constructor ([automapper-mocked-imapper](../features/automapper-mocked-imapper-plan.md)).
 - **REQ-12** (TAAK-282): WHEN a destination member is `required` and nothing maps it (Ignore, no source, get-only source) THE SYSTEM SHALL name it in the object initializer as `Member = default` (`default!` in a nullable-warning context for a non-nullable reference type), because AutoMapper 14.0.0 leaves it at `default` without an error (probe against 14.0.0: unmapped required `int`/`string` stay `0`/`null`, one with an initializer keeps it, one set in the constructor keeps it) but the compiler rejects an initializer that omits it (CS9035). IF the member has an initializer or the type declares a constructor (AutoMapper keeps what they gave it, `= default` would overwrite it) or the type comes from metadata THEN Manual (unit tests `Rewrite_RequiredMember*`, proofs `_Combined/required-members`, `_Combined/project-to-required`).
 - **REQ-13** (TAAK-280): WHEN the removed `CreateMap` statements carried half of a `#region`/`#endregion` pair THE SYSTEM SHALL drop the other half (`ProfileDirectives.Repair`), so the profile still compiles (CS1028). IF a removed map sat in `#if`/`#else`/`#endif` THEN Manual: the mapping method would exist in every build configuration (proof `_Combined/region-directives`, unit test `Rewrite_DirectivesAroundCreateMap_StayBalancedOrManual`).
+- **REQ-14** (TAAK-286): WHEN a class outside a Profile builds one `new MapperConfiguration(cfg => ...)` whose lambda only calls `cfg.CreateMap<A, B>()` (`CreateProjection`) THE SYSTEM SHALL treat that lambda like a Profile constructor: the same rewrite, the extension class `<Class>Extensions` next to the class, and every consumer (Map calls, ProjectTo, nested maps, kept maps) reads its maps through `CreateMapPattern.MapStatements`. IF the lambda also uses `cfg` otherwise (`AddProfile`, a setting), the configuration is used directly (`new MapperConfiguration(...).AssertConfigurationIsValid()`), or the class builds several such configurations THEN it is not a map class: Manual as before (proof `_Combined/configuration-maps-map-call`, unit tests `ConfigurationMapsTests`). Measured on hospitalappt: the remaining Manual is `ReverseMap` with unflattening or a source member without a destination counterpart, not the shape of the configuration (follow-up in TAAK-286).
 
 ## Assumptions
 

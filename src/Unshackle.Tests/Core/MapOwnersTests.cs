@@ -147,7 +147,6 @@ public class MapOwnersTests
             }
             """;
         Solution solution = Create(("Types.cs", Types), ("Profile.cs", profile), ("Service.cs", Service), ("Test.cs", Test));
-        solution = solution.AddMetadataReference(solution.ProjectIds[0], MetadataReference.CreateFromFile(typeof(NSubstitute.Substitute).Assembly.Location));
 
         // Act
         FixReport report = await FixAsync(solution);
@@ -203,7 +202,7 @@ public class MapOwnersTests
     {
         // Arrange
         string profile = Profile.Replace("CreateMap<Customer, CustomerDto>().BeforeMap((s, d) => d.Id = 1);", "CreateMap<Customer, CustomerDto>();", StringComparison.Ordinal);
-        Solution solution = WithNSubstitute(Create(("Types.cs", Types), ("Profile.cs", profile), ("Service.cs", Service), ("Other.cs", OtherService), ("Test.cs", MockedTest)));
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", profile), ("Service.cs", Service), ("Other.cs", OtherService), ("Test.cs", MockedTest));
 
         // Act
         FixReport report = await FixAsync(solution);
@@ -226,7 +225,7 @@ public class MapOwnersTests
         // Arrange
         string profile = Profile.Replace("CreateMap<Customer, CustomerDto>().BeforeMap((s, d) => d.Id = 1);", "CreateMap<Customer, CustomerDto>();", StringComparison.Ordinal);
         string test = MockedTest.Replace("return new ShopService(_mapper).Customer(new Customer());", "return new CustomerDto();", StringComparison.Ordinal);
-        Solution solution = WithNSubstitute(Create(("Types.cs", Types), ("Profile.cs", profile), ("Service.cs", Service), ("Other.cs", OtherService), ("Test.cs", test)));
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", profile), ("Service.cs", Service), ("Other.cs", OtherService), ("Test.cs", test));
 
         // Act
         FixReport report = await FixAsync(solution);
@@ -244,7 +243,7 @@ public class MapOwnersTests
         string profile = Profile.Replace("CreateMap<Customer, CustomerDto>().BeforeMap((s, d) => d.Id = 1);", "CreateMap<Customer, CustomerDto>();", StringComparison.Ordinal);
         string service = Service.Replace("public CustomerDto Customer(Customer customer) => _mapper.Map<CustomerDto>(customer);",
             "public CustomerDto Customer(Customer customer) => new ReportService(_mapper).Customer(customer);", StringComparison.Ordinal);
-        Solution solution = WithNSubstitute(Create(("Types.cs", Types), ("Profile.cs", profile), ("Service.cs", service), ("Other.cs", OtherService), ("Test.cs", MockedTest)));
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", profile), ("Service.cs", service), ("Other.cs", OtherService), ("Test.cs", MockedTest));
 
         // Act
         FixReport report = await FixAsync(solution);
@@ -262,7 +261,7 @@ public class MapOwnersTests
         string test = MockedTest.Replace("_mapper.Map<CustomerDto>(Arg.Any<Customer>()).Returns(new CustomerDto());", "_mapper.Map<OrderDto>(Arg.Any<Order>()).Returns(new OrderDto());", StringComparison.Ordinal)
             .Replace("public CustomerDto Customer()", "public OrderDto Order()", StringComparison.Ordinal)
             .Replace("return new ShopService(_mapper).Customer(new Customer());", "return new ShopService(_mapper).Order(new Order());", StringComparison.Ordinal);
-        Solution solution = WithNSubstitute(Create(("Types.cs", Types), ("Profile.cs", Profile), ("Service.cs", Service), ("Test.cs", test)));
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", Profile), ("Service.cs", Service), ("Test.cs", test));
 
         // Act
         FixReport report = await FixAsync(solution);
@@ -274,9 +273,6 @@ public class MapOwnersTests
         text.ShouldContain("public static LineDto ToLineDto(this Line source)");
         (await TextAsync(report.Solution, "Service.cs")).ShouldContain("_mapper.Map<OrderDto>(order)");
     }
-
-    private static Solution WithNSubstitute(Solution solution) =>
-        solution.AddMetadataReference(solution.ProjectIds[0], MetadataReference.CreateFromFile(typeof(NSubstitute.Substitute).Assembly.Location));
 
     // REQ-11: a Manual finding that is not a planned keep (here a test configuration with maps of its own) still leaves everything as it was.
     [Fact]

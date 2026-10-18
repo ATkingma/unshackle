@@ -39,9 +39,11 @@ public static class TestReferences
             .GetGenerators(LanguageNames.CSharp),
     ];
 
-    // AutoMapper 14.0.0: the last free version. "After" keeps it while a Profile stays (an emptied one too).
+    // AutoMapper 14.0.0: the last free version. "After" keeps it while a Profile stays (an emptied one too). NSubstitute plays the test
+    // project's mock library, so a proof can stub IMapper (TAAK-279).
     public static IReadOnlyList<MetadataReference> AutoMapper { get; } =
-        [.. Net, MetadataReference.CreateFromFile(typeof(global::AutoMapper.Profile).Assembly.Location), DependencyInjection];
+        [.. Net, MetadataReference.CreateFromFile(typeof(global::AutoMapper.Profile).Assembly.Location), DependencyInjection,
+            MetadataReference.CreateFromFile(typeof(global::NSubstitute.Substitute).Assembly.Location)];
 
     // MediatR registered by hand in an Autofac module (TAAK-196); Populate comes from Autofac.Extensions.DependencyInjection.
     private static IReadOnlyList<MetadataReference> Autofac =>

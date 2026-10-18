@@ -83,7 +83,7 @@ internal class MapOwners
         MapOwners owners = await ForAsync(solution, model, cancellationToken);
         if (IsMockSetUp(call, model))
         {
-            return PatternResult.Manual($"{KeptPrefix}a mock set-up of IMapper in a test stays as it is, and so do the maps it stubs (the class under test keeps calling IMapper).");
+            return PatternResult.Manual($"{KeptPrefix}a mock set-up of IMapper in a test stays as it is: the class under test it is handed to keeps calling IMapper for the maps it stubs (other classes use the generated methods once the test constructs that class itself).");
         }
 
         return (owners.CallReason(call, model) ?? owners.UnderTestReason(call, model)) is string reason

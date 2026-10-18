@@ -157,6 +157,13 @@ With `--dry-run` we only show the diff; otherwise `ISolutionStore` writes the ch
   inactive code, it becomes `global using <new>;` in place; otherwise it stays with the new one next to it + Manual `usings`.
   A remaining global using keeps the package in `ProjectPackages`.
 
+## Removing old usings safely (TAAK-281, TAAK-283)
+
+- All FluentAssertions namespaces are removed namespaces, sub-namespaces too (`FluentAssertions.Common`): unused ones go, used ones keep all.
+- An unused using with `#if`/`#else` trivia is removed with `KeepLeadingTrivia`, so the directive pairs stay whole.
+- `Fixer.Replace` gives Manual when a rewrite would drop directives inside the node; `Fixer.UnreachableFilesAsync` skips files that a
+  project without the old and the new library also compiles. See `docs/projectinfo/features/using-removal-edge-cases-plan.md`.
+
 ## Ambiguous through a new namespace (TAAK-174)
 
 - After the using step, the Fixer binds the updated file again. If a call gives CS0121 between a method from an

@@ -24,11 +24,21 @@ public class ShouldBePattern : FluentAssertionPattern
         SemanticModel model = context.Model;
         InvocationExpressionSyntax assertion = context.Assertion;
 
-        // XElement/XDocument and MethodInfoSelector Be(...) do not compare with Equals like ShouldBe does.
-        string? assertionsNamespace = model.GetSymbolInfo(assertion).Symbol?.ContainingNamespace.ToDisplayString();
-        if (assertionsNamespace is "FluentAssertions.Xml" or "FluentAssertions.Types")
+        // XElement/XDocument and MethodInfoSelector Be(...) do not compare with Equals like ShouldBe does. TypeAssertions does:
+        // Be<T>()/Be(typeof(T)) and NotBe match ShouldBe(typeof(T)) exactly (probed: same, base, interface, open generic, null).
+        ISymbol? method = model.GetSymbolInfo(assertion).Symbol;
+        string? assertionsNamespace = method?.ContainingNamespace.ToDisplayString();
+        bool typeAssertion = method?.ContainingType.Name == "TypeAssertions";
+        if (assertionsNamespace is "FluentAssertions.Xml" or "FluentAssertions.Types" && !typeAssertion)
         {
             return PatternResult.Manual($"{context.Name}(...) from {assertionsNamespace} has different equality semantics than {ShouldName}.");
+        }
+
+        if (typeAssertion && method is IMethodSymbol { TypeArguments: [ITypeSymbol typeArgument] })
+        {
+            ExpressionSyntax typeOf = SyntaxFactory.TypeOfExpression(SyntaxFactory.ParseTypeName(typeArgument.ToMinimalDisplayString(model, assertion.SpanStart)));
+            return PatternResult.Fixed(FluentAssertionsSyntax.Invoke(
+                context.Subject.WithoutTrailingTrivia(), ShouldName, SyntaxFactory.Argument(typeOf), context.Because));
         }
 
         if (context.Values.Count != 1)

@@ -142,6 +142,8 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-147-mediatr-restpunten-144.md` | ✅ Generator only with a real `AddMediatR`, global using on name conflict, `InternalsVisibleTo` → Manual |
 | `claude/tasks/archief/TAAK-148-mediatr-friend-echte-aanroep.md` | ✅ `InternalsVisibleTo` only Manual on a real call from another project (`ISolutionPattern`) |
 | `claude/tasks/manual-reduction-queue.md` | Manual-reduction queue after 0.1.0 (TAAK-271..277): analysis, partial migration AutoMapper/MediatR, FA custom assertions, blind round |
+| `claude/tasks/TAAK-276-blind-round-after-manual-reduction.md` | TAAK-276 — blind round 5 (18 old + 18 new repos); results in `CORPUSRUN-blind.md` |
+| `claude/tasks/TAAK-280-region-directives.md` .. `TAAK-283-using-sub-namespace.md` | Open regressions from round 5 (build breaks), each with a pending proof in `_Pending` |
 | `claude/tasks/patroon-queue.md` | Queue of FA → Shouldly patterns: which pattern, which task, status (round 2: rows 15-34) |
 | `claude/tasks/mediatr-queue.md` | Queue of MediatR → Mediator patterns; infrastructure in TAAK-020 |
 | `claude/tasks/automapper-queue.md` | Queue of AutoMapper → hand-written mapping (proposal, by frequency) |

@@ -6,11 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-<<<<<<< HEAD
-Total: 1045 proofs (excluding `_Pending`).
-=======
-Total: 1047 proofs (excluding `_Pending`).
->>>>>>> worktree-agent-ade469fda0960cfbe
+Total: 1055 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -255,11 +251,7 @@ Total: 1047 proofs (excluding `_Pending`).
 | `member-resolver` | Fixed | `CreateMap<Post, NoteObject>() .ForMember(d => d.MediaType, opt => opt.MapFrom<MediaTypeResolver, Content?>(s =…` → `public static class PostProfileExtensions {` |
 | `resolver-class` | Fixed | `CreateMap<ToDoList, ListDto>() .ForMember(x => x.IsShared, opt => opt.MapFrom<IsSharedResolver>())` → `public static class ToDoProfileExtensions {` |
 
-<<<<<<< HEAD
 ### _Combined (33)
-=======
-### _Combined (32)
->>>>>>> worktree-agent-ade469fda0960cfbe
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -825,6 +817,13 @@ Total: 1047 proofs (excluding `_Pending`).
 | `value-result` | Fixed | `breaker.Invoking(b => b.Raise()).Should().Throw<InvalidOperationException>(); await breaker.Awaiting(b => b.Ra…` → `Should.Throw<InvalidOperationException>(() => breaker.Raise()); await Should.ThrowAsync<InvalidOperationExcept…` |
 | `value-type` | Manual | `date.Invoking(d => d.AddYears(100000)).Should().Throw<ArgumentOutOfRangeException>();` — reason: value type |
 
+### InvokingLocal (2)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `side-effect-receiver` | Manual | `act.Should().Throw<InvalidOperationException>();` — reason: may have side effects |
+| `simple` | Fixed | `var act = _other.Invoking(x => x.Fail(1)); var withResult = _other.Invoking(x => x.Get(1));` → `Action act = () => _other.Fail(1); Func<int> withResult = () => _other.Get(1);` |
+
 ### Match (10)
 
 | Proof | Outcome | What it proves |
@@ -1032,7 +1031,7 @@ Total: 1047 proofs (excluding `_Pending`).
 | `nullable` | Fixed | `s.Should().StartWith("Ti"); s.Should().NotBeNullOrWhiteSpace();` → `s.ShouldStartWith("Ti", Shouldly.Case.Sensitive); s.ShouldNotBeNullOrWhiteSpace();` |
 | `simple` | Fixed | `s.Should().StartWith("Ti"); s.Should().EndWith("me");` → `s.ShouldStartWith("Ti", Shouldly.Case.Sensitive); s.ShouldEndWith("me", Shouldly.Case.Sensitive);` |
 
-### Throw (48)
+### Throw (51)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1082,10 +1081,13 @@ Total: 1047 proofs (excluding `_Pending`).
 | `result-where-expression` | Manual | `act.Should().Throw<ArgumentException>().Where(condition);` — reason: one-parameter lambda |
 | `result-where-in-lambda` | Manual | `Action check = () => act.Should().Throw<ArgumentException>().Where(e => e.ParamName == "id");` — reason: not a statement in a block |
 | `simple` | Fixed | `act.Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(act);` |
-| `value-func` | Manual | `func.Should().Throw<InvalidOperationException>();` — reason: reference type |
+| `value-func` | Fixed | `func.Should().Throw<InvalidOperationException>();` → `Should.Throw<InvalidOperationException>(() => func());` |
+| `value-func-call` | Fixed | `CallingWith(seed).Should().Throw<ArgumentException>();` → `var subject = CallingWith(seed); Should.Throw<ArgumentException>(() => subject());` |
+| `value-func-generic` | Fixed | `local.Should().Throw<ArgumentException>();` → `Should.Throw<ArgumentException>(() => local());` |
+| `value-func-nullable` | Manual | `func.Should().Throw<ArgumentException>();` — reason: reference type |
 | `value-used` | Fixed | `var exception = act.Should().Throw<InvalidOperationException>().Which;` → `var exception = Should.Throw<InvalidOperationException>(act);` |
 
-### ThrowAsync (32)
+### ThrowAsync (33)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1118,7 +1120,8 @@ Total: 1047 proofs (excluding `_Pending`).
 | `result-parenthesized-and` | Fixed | `(await act.Should().ThrowAsync<ArgumentException>()).And.ParamName.Should().Be("id");` → `(await Should.ThrowAsync<ArgumentException>(act)).ParamName.Should().Be("id");` |
 | `simple` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(act);` |
 | `steeltoe-cancelled-plain` | Fixed | `await action.Should().ThrowAsync<OperationCanceledException>();` → `await Should.ThrowAsync<OperationCanceledException>(action);` |
-| `value-func` | Manual | `await act.Should().ThrowAsync<InvalidOperationException>();` — reason: reference type |
+| `value-func` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>();` → `await Should.ThrowAsync<InvalidOperationException>(() => act());` |
+| `value-func-call` | Fixed | `await Save().Should().ThrowAsync<InvalidOperationException>();` → `var subject = Save(); await Should.ThrowAsync<InvalidOperationException>(() => subject());` |
 | `value-used` | Fixed | `var thrown = await act.Should().ThrowAsync<InvalidOperationException>();` → `var thrown = await Should.ThrowAsync<InvalidOperationException>(act);` |
 | `where` | Fixed | `await act.Should().ThrowAsync<InvalidOperationException>().Where(e => e.Message.Length > 0);` → `var exception = await Should.ThrowAsync<InvalidOperationException>(act); (exception.Message.Length > 0).Should…` |
 
@@ -1164,7 +1167,7 @@ Total: 1047 proofs (excluding `_Pending`).
 | `steeltoe-arithmetic` | Fixed | `public TimeSpan Test(bool slow) => slow ? 1.Minutes() + 30.Seconds() : 250.Milliseconds();` → `public TimeSpan Test(bool slow) => slow ? TimeSpan.FromMinutes(1) + TimeSpan.FromSeconds(30) : TimeSpan.FromMi…` |
 | `steeltoe-assert-argument` | Fixed | `httpClient.Timeout.Should().Be(30.Seconds());` → `httpClient.Timeout.Should().Be(TimeSpan.FromSeconds(30));` |
 
-### _Combined (19)
+### _Combined (20)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1174,6 +1177,7 @@ Total: 1047 proofs (excluding `_Pending`).
 | `custom-assertion-class` | Fixed | `// Custom assertion extension: user code built on FluentAssertions' extension model. public static class Order…` → `public static class OrderAssertions public static void ShouldBeCancelled(this Order subject, string customMess…` |
 | `directives-in-chain` | Fixed | `x.Should().Be(1);` → `x.ShouldBe(1);` |
 | `discard-assignment` | Fixed | `_ = a.Should().Be(3); _ = items.Should().NotBeNull().And.HaveCount(2);` → `a.ShouldBe(3); items.ShouldNotBeNull();` |
+| `invoking-local` | Fixed | `var act = _other.Invoking(x => x.Fail(1)); var withResult = _other.Invoking(x => x.Get(1));` → `Action act = () => _other.Fail(1); Func<int> withResult = () => _other.Get(1);` |
 | `lambda-overload-one-run` | Fixed | `ctx.Should().Be(context); maybe2.HasValue.Should().BeTrue();` → `ctx.ShouldBe(context); maybe2.HasValue.ShouldBeTrue();` |
 | `litedb-bson-assertions` | Fixed | `docs.Length.Should().BeOneOf(1, 101); first.Should().BeOneOf("owner1", "owner2");` → `docs.Length.ShouldBeOneOf(1, 101); first.ShouldBeOneOf("owner1", "owner2");` |
 | `manual-and-fixed` | Fixed | `y.Should().Be(1); y.Should().Be(2);` → `y.ShouldBe(1); y.ShouldBe(2);` |

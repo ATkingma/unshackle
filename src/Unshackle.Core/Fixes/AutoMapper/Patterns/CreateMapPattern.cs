@@ -1621,7 +1621,7 @@ public class CreateMapPattern : ISolutionPattern
         {
             if (creation.ArgumentList?.Arguments is [{ Expression: LambdaExpressionSyntax lambda }]
                 && lambda.DescendantNodes().OfType<GenericNameSyntax>().Any(n => n.Identifier.ValueText == "CreateMap" && n.Parent is MemberAccessExpressionSyntax)
-                && creation.Parent is not MemberAccessExpressionSyntax // used directly (AssertConfigurationIsValid): the configuration test's business
+                && creation.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent.Parent: FieldDeclarationSyntax } or PropertyDeclarationSyntax } // built once; a local or direct use is the configuration test's business
                 && OnlyCreatesMaps(lambda)
                 && ConfigurationSyntax.IsConfiguration(creation, model) && LambdaParameter(lambda, model) is not null)
             {

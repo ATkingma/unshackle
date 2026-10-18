@@ -163,9 +163,9 @@ Selection (2026-10-18, before any `after` run): `gh search code 'Include="<Libra
 | pi22317        | Granuch/PI-223-1-7 @ `51768d9`                   | automapper       | 21 / 4         | 49/60 → 49/60        | partial (`AddAutoMapper` stays: `IMapper` still injected somewhere)                                           |
 | corebanking    | tuthth/NET9_CoreBanking @ `6888d6c`              | automapper       | 1 / 1          | 10/10 → 10/10        | partial (marginal)                                                                                            |
 | hospitalappt   | AtifChy/HospitalAppointmentSystem @ `e8db15a`    | automapper       | 0 / 32         | 8/8 → 8/8            | blocked: maps live in a `MapperConfig`/`new MapperConfiguration(cfg => ...)`, outside a `Profile` constructor |
-| assistiva      | Dreizack97/Assistiva @ `11f679c`                 | automapper       | 55 / 1         | 14/16 (baseline)     | **build breaks**: `#region` around removed maps (CS1028) → TAAK-280                                           |
-| encryptednotes | ExtendedGuru4883/EncryptedNotes @ `9a06174`      | automapper       | 10 / 6         | 85/85 (baseline)     | **build breaks**: `required` members not set (CS9035) → TAAK-282                                              |
-| estore         | ngckinhluan/eStore @ `917363b`                   | automapper       | 10 / 22        | 45/46 (baseline)     | **build breaks**: `required` members not set (CS9035) → TAAK-282                                              |
+| assistiva      | Dreizack97/Assistiva @ `11f679c`                 | automapper       | 55 / 1         | 14/16 → 14/16        | partial (`AddAutoMapper` stays: `IMapper` still used); was **build breaks** (`#region`, CS1028), fixed in TAAK-280, rerun 0 regressions                                           |
+| encryptednotes | ExtendedGuru4883/EncryptedNotes @ `9a06174`      | automapper       | 10 / 6         | 85/85 → 85/85        | partial (mocked `IMapper` classes keep their maps); was **build breaks** (`required`, CS9035), fixed in TAAK-282, rerun 0 regressions                                              |
+| estore         | ngckinhluan/eStore @ `917363b`                   | automapper       | 10 / 22        | 45/46 → 45/46        | partial (mocked `IMapper` classes keep their maps); was **build breaks** (`required`, CS9035), fixed in TAAK-282, rerun 0 regressions                                              |
 
 Spares that were cloned and baselined but not used (pinned in `corpus-blind-repos.txt`): valid8r, notepadapi, rideshare, dpollvsa, lynx, blogapi, ecommercecloth, flowerinventor, alphabet.
 
@@ -173,7 +173,7 @@ Spares that were cloned and baselined but not used (pinned in `corpus-blind-repo
 | ---------------- | ---- | ------- | -------------------------- | ------------------------------------- | ----------------: |
 | FluentAssertions | 2    | 2       | 0                          | 2 (opentws, serilogmem)               | 0 where it builds |
 | MediatR          | 3    | 0       | 3                          | 0                                     |                 0 |
-| AutoMapper       | 0    | 2       | 1                          | 3 (assistiva, encryptednotes, estore) | 0 where it builds |
+| AutoMapper       | 0    | 5       | 1                          | 0 (3 fixed by TAAK-280/282, see below) | 0                 |
 
 ### Regressions and tasks
 
@@ -181,10 +181,12 @@ All five new failures are build breaks after `fix` (the build is the safety net:
 
 | Task     | Defect                                                                                | Repos                  | Proof                                                             |
 | -------- | ------------------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------- |
-| TAAK-280 | `#region` around removed `CreateMap` statements leaves unbalanced directives (CS1028) | assistiva              | `Proofs/AutoMapper/_Combined/_Pending/region-directives`          |
+| TAAK-280 | `#region` around removed `CreateMap` statements leaves unbalanced directives (CS1028) | assistiva              | `Proofs/AutoMapper/_Combined/region-directives` (fixed)           |
 | TAAK-281 | FA using inside `#if`/`#else` removed with its directives, stray `#endif` (CS1028)    | serilogmem             | `Proofs/FluentAssertions/_Combined/_Pending/using-in-conditional` |
-| TAAK-282 | Generated `new() { ... }` omits `required` destination members (CS9035)               | encryptednotes, estore | `Proofs/AutoMapper/_Combined/_Pending/required-members`           |
+| TAAK-282 | Generated `new() { ... }` omits `required` destination members (CS9035)               | encryptednotes, estore | `Proofs/AutoMapper/_Combined/required-members` (fixed)            |
 | TAAK-283 | `using FluentAssertions.Common;` stays after the package is removed (CS0246)          | opentws                | `Proofs/FluentAssertions/_Combined/_Pending/using-sub-namespace`  |
+
+**Rerun for TAAK-280 and TAAK-282** (tool from branch `worktree-agent-a7fb36f3b60c1eb0d`, published to `_results/tool-a7fb36f/`, harness `after` mode, results `_results/after/{assistiva,encryptednotes,estore}`): all three build after `fix` and have **0 regressions** (assistiva 14/16 → 14/16, encryptednotes 85/85 → 85/85, estore 45/46 → 45/46; same Fixed/Manual as before, the Manual findings are planned `Stays on AutoMapper` keeps). Fix TAAK-282 measured first against AutoMapper 14.0.0: an unmapped `required` member stays at `default` without an error, so the generated initializer names it as `= default`; a `required` member with an initializer or set by a constructor keeps that value in AutoMapper, so that profile is Manual.
 
 Because the break hides later errors, the repos are not yet known to be green after these fixes; a rerun after TAAK-280..283 is needed before claiming them. Also noted: serilogmem is itself a FluentAssertions extension library (third-party `Should()` extensions), where a Shouldly migration is not meaningful.
 
@@ -196,5 +198,5 @@ Because the break hides later errors, the repos are not yet known to be green af
 ## See also
 
 - `claude/tasks/archief/TAAK-268-blind-validation-round.md`
-- `claude/tasks/TAAK-276-blind-round-after-manual-reduction.md`, `claude/tasks/TAAK-280-region-directives.md` .. `TAAK-283-using-sub-namespace.md`
+- `claude/tasks/TAAK-276-blind-round-after-manual-reduction.md`, `claude/tasks/archief/TAAK-280-region-directives.md`, `claude/tasks/archief/TAAK-282-required-members.md`, `claude/tasks/TAAK-283-using-sub-namespace.md`
 - `claude/tasks/CORPUSRUN-automapper.md`

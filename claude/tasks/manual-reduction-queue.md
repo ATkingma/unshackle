@@ -18,9 +18,9 @@ all-or-nothing rule per solution, not from the number of Manual findings.
 | 6   | TAAK-276 | Blind corpus round(s): 0 regressions, measure Manual before/after; README/NuGet numbers | 272–275    | open   |
 | 7   | TAAK-277 | FluentAssertions residual Manual patterns (proposed by TAAK-271; inventory first)       | 271, 275   | done   |
 | 8   | TAAK-279 | AutoMapper: a mocked IMapper only keeps its class under test on AutoMapper              | 272, 273   | done (option A: shared pairs; culinary 0→2, msb 3→8 Fixed, 0 regressions) |
-| 9   | TAAK-280 | Regression (blind round 5): `#region` around removed `CreateMap` statements (CS1028)    | 276        | open   |
+| 9   | TAAK-280 | Regression (blind round 5): `#region` around removed `CreateMap` statements (CS1028)    | 276        | done   |
 | 10  | TAAK-281 | Regression: FA using inside `#if`/`#else` removed, stray `#endif` (CS1028)              | 276        | open   |
-| 11  | TAAK-282 | Regression: generated mapping omits `required` destination members (CS9035)            | 276        | open   |
+| 11  | TAAK-282 | Regression: generated mapping omits `required` destination members (CS9035)            | 276        | done   |
 | 12  | TAAK-283 | Regression: `using FluentAssertions.Common;` stays after the package is removed (CS0246) | 276        | open   |
 
 Statuses: `open` · `in progress (agent)` · `done` · `blocked (reason)`.

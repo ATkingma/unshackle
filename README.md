@@ -71,7 +71,7 @@ measured again plus 18 new ones (tool at commit `db05908`):
 |---|---|---|---|---|---|---|
 | FluentAssertions → Shouldly | 12 | 4 | 6 | 0 | 2 | 0 |
 | MediatR → Mediator | 12 | 6 | 1 | 5 | 0 | 0 |
-| AutoMapper → mappings | 12 | 1 | 6 | 2 | 3 | 0 |
+| AutoMapper → mappings | 12 | 1 | 9 | 2 | 0 | 0 |
 
 "Build broken" are four known bugs (open tasks TAAK-280..283, mostly preprocessor directives and `required` members): the build after `fix` caught
 all of them, no test changed silently. On the 31 repos that build after the fix, no test regressed.

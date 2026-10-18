@@ -876,6 +876,12 @@ public class Fixer : IFixer
             return (root, PatternResult.Manual("Overlaps an earlier finding of this pattern; run the fix again."));
         }
 
+        // A directive inside the node that the rewrite drops would leave its partner behind (#if gone, #endif stays: CS1028, TAAK-281).
+        if (InnerDirectives(current) > result.NewNodes.Sum(InnerDirectives))
+        {
+            return (root, PatternResult.Manual("Not rewritten: the code has #if/#else/#region directives inside it, which a rewrite would break apart. Migrate it by hand."));
+        }
+
         try
         {
             return (ReplaceWithTrivia(root, current, result.NewNodes), result);
@@ -884,6 +890,13 @@ public class Fixer : IFixer
         {
             return (root, InternalError(pattern, ex));
         }
+    }
+
+    // Directives and disabled text inside the node, not those in front of it (they stay with the node's position).
+    private static int InnerDirectives(SyntaxNode node)
+    {
+        SyntaxToken first = node.GetFirstToken();
+        return node.DescendantTrivia().Count(t => (t.IsDirective || t.IsKind(SyntaxKind.DisabledTextTrivia)) && !(t.Token == first && t.Span.End <= first.SpanStart));
     }
 
     private static SyntaxNode ReplaceWithTrivia(SyntaxNode root, SyntaxNode current, IReadOnlyList<SyntaxNode> newNodes)

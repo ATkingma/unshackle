@@ -308,6 +308,22 @@ public class FixerTests
     }
 
     [Fact]
+    public async Task FixAsync_FixedNodeHasDirectiveInside_ReportsManualAndKeepsCode()
+    {
+        // Arrange (TAAK-281): replacing the statement would drop #if/#else and leave #endif behind
+        IPattern pattern = CreatePattern(_ => PatternResult.Fixed(SyntaxFactory.ParseExpression("Bar()")));
+        var fixer = new Fixer([CreateFix(pattern)]);
+        string code = "public class C\n{\n    public void M()\n    {\n        Foo(\n#if A\n            1\n#else\n            2\n#endif\n            );\n    }\n\n    private static void Foo(int x) { }\n}\n";
+
+        // Act
+        FixReport report = await FixAsync(fixer, code);
+
+        // Assert
+        report.Findings.ShouldContain(f => f.Result is ManualResult);
+        (await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken)).ShouldBe(code);
+    }
+
+    [Fact]
     public async Task FixAsync_UnusedUsingOfRemovedSubNamespace_IsRemoved()
     {
         // Arrange (TAAK-283): a sub-namespace listed in RemovedNamespaces goes with the package when nothing binds to it

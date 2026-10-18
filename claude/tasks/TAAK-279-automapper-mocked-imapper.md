@@ -70,6 +70,12 @@ Determining "class under test": the type whose constructor receives the mocked `
 | Stub set up in a shared fixture / base test class               | Resolve the constructed SUT through the fixture; unresolvable → keep the pair on AutoMapper as today |
 | Two owners drift apart                                          | Both come from the same `CreateMap`; proofs compare `ToB()` with AutoMapper                          |
 
+## Corpus (step 5)
+
+Before scans done (tool `4392e29`, `<corpus>/t279/{blind-b,am-b}/_results/scan`): culinary 0/46, msb 3/32, fiapgames 25/9, restapi 0/9,
+baseapi 5/3; AutoMapper corpus unchanged from earlier rounds (eshoponweb 4/0, the rest 0 Fixed: dasblog 0/61, ...).
+After run (`run-after.sh`: scan blind + scan am + after blind) started with `tool-after` (step-4 commit).
+
 ## Changed files
 
 - `docs/projectinfo/features/automapper-mocked-imapper-plan.md` (plan: option A chosen, option B rejected by measurement)
@@ -79,6 +85,7 @@ Determining "class under test": the type whose constructor receives the mocked `
 - `src/Unshackle.Tests/Core/MapOwnersTests.cs`: 4 tests (shared, no construction, IMapper handed on, reached maps)
 - Proofs `_Combined/partial-mocked-class-under-test` (stubbed class keeps `IMapper`, other class migrates), `MapCall/mocked-class-under-test` (manual);
   `Helpers/TestReferences.cs`: NSubstitute in the AutoMapper references so a proof can stub `IMapper`
+- Docs: `features/automapper-mocked-imapper-modellen.md`, REQs in plans of map-call (15), kept-map (4), create-map (11), partial-migration REQ-8 note, README limitation, INDEX, docs README
 - Mock set-up reason now says the class under test keeps calling `IMapper` for the stubbed maps (no longer "and so do the maps it stubs")
 
 ## See also

@@ -89,7 +89,8 @@ Manual map no longer blocks the rest of the solution.
 - **REQ-7** _(deferred, see verify)_: WHEN every `Map`/`ProjectTo` call through a class's private `IMapper` field is rewritten THE
   SYSTEM SHALL remove the field, its constructor parameter and assignment, and the argument at every `new` call of that constructor.
 - **REQ-8**: WHEN a test passes a mocked `IMapper` into a class THE SYSTEM SHALL keep that class's calls (and their pairs) on
-  AutoMapper and never rewrite a mock set-up.
+  AutoMapper and never rewrite a mock set-up. Refined by TAAK-279 ([automapper-mocked-imapper](automapper-mocked-imapper-plan.md)):
+  the stubbed pair is shared, so only the class under test keeps `IMapper` and the other call sites are migrated.
 - **REQ-9**: WHEN no `IMapper` reference is left after the clean-up THE SYSTEM SHALL remove `AddAutoMapper`; otherwise it stays.
 - **REQ-10**: WHEN maps stay on AutoMapper THE SYSTEM SHALL keep `AssertConfigurationIsValid`, which still passes on the trimmed
   profiles (probe).

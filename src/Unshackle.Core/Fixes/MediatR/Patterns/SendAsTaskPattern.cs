@@ -35,7 +35,7 @@ public class SendAsTaskPattern : IPattern
             if (IsHandlerHandle(invocation, model))
             {
                 // handler.Handle(...) called directly (a unit test): the handler pattern makes it return a ValueTask too (TAAK-268 round 3).
-                if (!IsAwaited(invocation) && Setup(invocation, model) is null && !IsReceivedCheck(invocation, model) && !IsInExpressionTree(invocation, model))
+                if (!IsAwaited(invocation) && Setup(invocation, model) is null && !IsReceivedCheck(invocation, model))
                 {
                     yield return invocation;
                 }
@@ -45,8 +45,19 @@ public class SendAsTaskPattern : IPattern
 
             if (invocation.Expression is not (MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Send" or "Publish" } or MemberBindingExpressionSyntax { Name.Identifier.ValueText: "Send" or "Publish" })
                 || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: "MediatR" }
-                || IsAwaited(invocation) || IsReceivedCheck(invocation, model) || IsInExpressionTree(invocation, model))
+                || IsAwaited(invocation) || IsReceivedCheck(invocation, model))
             {
+                continue;
+            }
+
+            if (IsInExpressionTree(invocation, model))
+            {
+                // Moq: mock.Setup(m => m.Send(x)).Returns(Task.FromResult(v)); the call stays, the configured value follows the new return type.
+                if (MoqReturns(invocation, model) is InvocationExpressionSyntax moqReturns)
+                {
+                    yield return moqReturns;
+                }
+
                 continue;
             }
 
@@ -113,6 +124,16 @@ public class SendAsTaskPattern : IPattern
         invocation.Ancestors().OfType<LambdaExpressionSyntax>().Any(l =>
             model.GetTypeInfo(l).ConvertedType is INamedTypeSymbol { Name: "Expression", ContainingNamespace: { } ns } && ns.ToDisplayString() == "System.Linq.Expressions");
 
+    // The Moq `.Returns(...)` that follows `Setup(m => <invocation>)`; null for anything else (ReturnsAsync, Verify, ...).
+    private static InvocationExpressionSyntax? MoqReturns(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        invocation.Parent is LambdaExpressionSyntax { Parent: ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Setup" }, Parent: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Returns", Parent: InvocationExpressionSyntax returns } } setup } }
+        && IsMoq(setup, model) && IsMoq(returns, model)
+            ? returns
+            : null;
+
+    private static bool IsMoq(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        model.GetSymbolInfo(invocation).Symbol is IMethodSymbol method && method.ContainingNamespace.ToDisplayString() == "Moq";
+
     private static bool IsReceivedCheck(InvocationExpressionSyntax invocation, SemanticModel model) =>
         invocation.Parent is ExpressionStatementSyntax
         && invocation.Expression is MemberAccessExpressionSyntax { Expression: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: var check } } received }
@@ -139,6 +160,11 @@ public class SendAsTaskPattern : IPattern
     private static PatternResult RewriteReturns(InvocationExpressionSyntax setup, SemanticModel model)
     {
         var call = (InvocationExpressionSyntax)((MemberAccessExpressionSyntax)setup.Expression).Expression;
+        if (call.ArgumentList.Arguments is [{ Expression: LambdaExpressionSyntax { Body: InvocationExpressionSyntax body } }])
+        {
+            call = body; // Moq: Setup(m => m.Send(x)).Returns(...)
+        }
+
         bool generic = model.GetSymbolInfo(call).Symbol is IMethodSymbol { ReturnType: INamedTypeSymbol { IsGenericType: true } };
         var values = new Dictionary<ExpressionSyntax, ExpressionSyntax>();
         foreach (ArgumentSyntax argument in setup.ArgumentList.Arguments)

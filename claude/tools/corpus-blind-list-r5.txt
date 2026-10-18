@@ -1,0 +1,26 @@
+# name solution fix -- TAAK-276 round 5 (repos: corpus-blind-repos.txt)
+serilogmem SerilogSinksInMemory.sln fluentassertions
+mihome MiHome.sln fluentassertions
+supertext Supertext.Base.sln fluentassertions
+octopus source/OctopusClient.sln fluentassertions
+grpcerror src/GrpcRichError.slnx fluentassertions
+opentws OpenTws.sln fluentassertions
+puppeteer PuppeteerSharp.Contrib.sln fluentassertions
+catalogapi ProductCatalog.sln fluentassertions
+dotnettemplate Dotnet.Template.sln mediatr
+netcorebase src/SomeProject.sln mediatr
+minifyurl Shortener.sln mediatr
+cleanmicro CleanMicroserviceTemplate.sln mediatr
+orderservice OrderService.sln mediatr
+policeevents police-events.sln mediatr
+projectpulse Project.sln mediatr
+brewabear BrewABear.sln mediatr
+expensestracker ExpensesTracker.sln automapper
+encryptednotes EncryptedNotes.sln automapper
+hospitalappt HospitalAppointmentSystem.sln automapper
+bugtracker BugTracker.sln automapper
+otuscleanarch TestSolutionClean.sln automapper
+fijournal Phi-Journal.sln automapper
+mycrm MyCrm.slnx automapper
+corebanking NET9_CoreBanking.sln automapper
+estore eStore.sln automapper

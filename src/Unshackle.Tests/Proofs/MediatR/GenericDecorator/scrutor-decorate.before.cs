@@ -27,6 +27,11 @@ public static class ScrutorStandIn
 
 public static class Registration
 {
+    // An earlier use (kept out of the Scrutor scan): the reason still names the Decorate call.
+    private static readonly Type[] s_decorators = [typeof(DispatchingDecorator<>)];
+
+    public static bool IsDecorator(Type type) => Array.IndexOf(s_decorators, type) >= 0;
+
     public static IServiceCollection AddEvents(this IServiceCollection services) =>
         services.Decorate(typeof(INotificationHandler<>), typeof(DispatchingDecorator<>));
 }

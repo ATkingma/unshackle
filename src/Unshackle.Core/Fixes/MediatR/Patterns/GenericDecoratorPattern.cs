@@ -159,9 +159,11 @@ public class GenericDecoratorPattern : ISolutionPattern
         && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol method
         && method.ContainingNamespace.ToDisplayString().StartsWith("Autofac", StringComparison.Ordinal);
 
-    // Every reference outside the decorator itself must be typeof(D<>) as the first argument of RegisterGenericDecorator; the first other use, or null.
+    // Every reference outside the decorator itself must be typeof(D<>) as the first argument of RegisterGenericDecorator; a Scrutor Decorate use
+    // (marked with ScrutorPrefix) wherever it is, else the first other use, or null.
     private static async Task<string?> UnregisteredUseAsync(INamedTypeSymbol decorator, Solution solution, CancellationToken cancellationToken)
     {
+        string? first = null;
         foreach (ReferencedSymbol referenced in await SymbolFinder.FindReferencesAsync(decorator, solution, cancellationToken))
         {
             foreach (ReferenceLocation location in referenced.Locations)
@@ -179,15 +181,20 @@ public class GenericDecoratorPattern : ISolutionPattern
                     || !IsRegisterDecorator(invocation, model))
                 {
                     string at = $"{location.Document.Name}:{location.Location.GetLineSpan().StartLinePosition.Line + 1}";
-                    return name.FirstAncestorOrSelf<TypeOfExpressionSyntax>() is { Parent: ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax scrutor } } }
-                        && scrutor.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Decorate" } decorate
-                        ? $"{ScrutorPrefix}Scrutor's {decorate.Name}{scrutor.ArgumentList} at {at}"
-                        : at;
+
+                    // A Scrutor Decorate call is the registration the report should name, wherever it is among the uses (fullcart).
+                    if (name.FirstAncestorOrSelf<TypeOfExpressionSyntax>() is { Parent: ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax scrutor } } }
+                        && scrutor.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Decorate" } decorate)
+                    {
+                        return $"{ScrutorPrefix}Scrutor's {decorate.Name}{scrutor.ArgumentList} at {at}";
+                    }
+
+                    first ??= at;
                 }
             }
         }
 
-        return null;
+        return first;
     }
 
     // builder.RegisterAssemblyTypes(typeof(<a MediatR type>).Assembly ...): MediatR registered by hand in Autofac (TAAK-196).

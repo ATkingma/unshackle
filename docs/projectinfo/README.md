@@ -154,6 +154,7 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `mediatr.generic-request` | [plan](patterns/mediatr-generic-request-plan.md) | [models](patterns/mediatr-generic-request-modellen.md) | [verify](patterns/mediatr-generic-request-verify.md) | TAAK-193 |
 | `mediatr.vendored-package` (no pattern class) | [plan](patterns/mediatr-vendored-package-plan.md) | [models](patterns/mediatr-vendored-package-modellen.md) | [verify](patterns/mediatr-vendored-package-verify.md) | TAAK-194 |
 | `mediatr.internal-handler-access` | [plan](patterns/mediatr-internal-handler-access-plan.md) | [models](patterns/mediatr-internal-handler-access-modellen.md) | [verify](patterns/mediatr-internal-handler-access-verify.md) | TAAK-195 |
+| `mediatr.qualified-swapped-type` | [plan](patterns/mediatr-qualified-swapped-type-plan.md) | [models](patterns/mediatr-qualified-swapped-type-modellen.md) | [verify](patterns/mediatr-qualified-swapped-type-verify.md) | TAAK-288 |
 | `fa.be-same-as` | [plan](patterns/fa-be-same-as-plan.md) | [models](patterns/fa-be-same-as-modellen.md) | [verify](patterns/fa-be-same-as-verify.md) | TAAK-093 |
 | `fa.not-throw-async` | [plan](patterns/fa-not-throw-async-plan.md) | [models](patterns/fa-not-throw-async-modellen.md) | [verify](patterns/fa-not-throw-async-verify.md) | TAAK-094 |
 | `fa.match` | [plan](patterns/fa-match-plan.md) | [models](patterns/fa-match-modellen.md) | [verify](patterns/fa-match-verify.md) | TAAK-099 |

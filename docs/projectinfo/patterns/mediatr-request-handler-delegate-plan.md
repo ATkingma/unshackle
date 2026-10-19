@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "mediatr-request-handler-delegate"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
 files_expected:
     - src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerDelegatePattern.cs
     - src/Unshackle.Core/Fixes/MediatR/MediatRFix.cs
@@ -44,6 +44,7 @@ Test code that configures `Substitute.For<RequestHandlerDelegate<TRes>>()` and p
 - **REQ-5** (TAAK-191): WHEN one delegate field is passed to `Handle` of behaviors with different request types THE SYSTEM SHALL type the field as `MessageHandlerDelegate<IMessage, TRes>`, use `Arg.Any<IMessage>()` and replace every `next` argument with an adapter lambda `(message, cancellationToken) => veld(message, cancellationToken)` (proof `_Combined/request-handler-delegate-shared-field`).
 - **REQ-6** (TAAK-288): WHEN a field or local is initialized with a lambda and handed to a behavior `Handle` THE SYSTEM SHALL give the lambda the parameters `(_, token)` and, when it is not async, turn every returned `Task.FromResult/FromException/FromCanceled` into `ValueTask.X` and every other returned `Task<T>` into `new ValueTask<T>(task)` (proof `_Combined/request-handler-delegate-lambda`).
 - **REQ-7** (TAAK-288): WHEN a Moq `Mock<RequestHandlerDelegate<TRes>>` is set up with `Setup/Verify(x => x.Invoke(..))` and its `Object` is handed to a behavior `Handle` THE SYSTEM SHALL type it `Mock<MessageHandlerDelegate<TReq, TRes>>` and give the invocation `(It.IsAny<TReq>(), token or It.IsAny<CancellationToken>())`, keeping `ReturnsAsync`/`ThrowsAsync`/`Throws`/`Callback`/`Verifiable` and turning `Returns(Task.FromResult(x))` into `Returns(ValueTask.FromResult(x))`; any other chain is Manual (proofs `_Combined/request-handler-delegate-moq`, `moq-returns-value`).
+- **REQ-8** (TAAK-288): WHEN the behavior `Handle` call the delegate is handed to is not awaited on the spot (`FluentActions.Invoking(() => sut.Handle(..))`) THE SYSTEM SHALL append `.AsTask()`, so the call keeps its old `Task` type (proof `_Combined/request-handler-delegate-moq`, cleanmicro).
 - **REQ-4**: WHEN, after the patterns, a MediatR symbol without a finding remains in a project that keeps the package THE SYSTEM SHALL report a Manual on that line (unit test `FixerProjectFileTests`).
 
 ## Assumptions
@@ -64,5 +65,5 @@ Decision tree and steps: [mediatr-request-handler-delegate-modellen.md](mediatr-
 
 - [mediatr-request-handler-delegate-verify.md](mediatr-request-handler-delegate-verify.md)
 - `claude/tasks/archief/TAAK-180-mediatr-test-request-handler-delegate.md`
-- `claude/tasks/TAAK-288-mediatr-requesthandlerdelegate-in-tests.md`
+- `claude/tasks/archief/TAAK-288-mediatr-requesthandlerdelegate-in-tests.md`
 - [mediatr-pipeline-behavior-plan.md](mediatr-pipeline-behavior-plan.md)

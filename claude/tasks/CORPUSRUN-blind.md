@@ -203,6 +203,18 @@ Re-measured after the TAAK-281/283 fixes (tool = branch `worktree-agent-a703fd17
 - **New repos found 4 build-breaking defects** in the rewriting of trivia and generated initializers; blind testing keeps paying off. None changed a test result silently. Before a 0.2.0 claim of "no regressions on unseen code", fix TAAK-280..283 and rerun those five repos.
 **Recheck for TAAK-285 (branch `worktree-agent-ade469fda0960cfbe`, tool `_results/t285e`):** projectpulse had never been measured past the first file: its `Program.cs` is cp1252 and was skipped (TAAK-167), so the report said `unmatched-use`. With Latin-1 files migrated byte-exact: 78 Fixed / 0 Manual, builds, 618/686 → 618/686, 0 regressions. The first `after` run (175 Fixed) exposed two defects of `mediatr.send-as-task` that blind data had never shown, both fixed with proofs: `.AsTask()` added inside a Moq `Setup(m => m.Send(..))` expression tree (101 tests `NotSupportedException`; now left untouched), and `Setup(...).Returns(Task.FromResult(x))` / `Task.FromResult(Unit.Value)` left as Task (8 CS1503; now `ValueTask.FromResult`). The other 11 MediatR corpus repos (realworld, fullcart, miru, mediatrsample, cashflow, starter, netcorebase, cleanmicro, brewabear, afripay, dddbankingapi; tool `t285e`, results `_results/t285f`): all build, same pass counts before and after, **0 regressions**, same Fixed/Manual as before.
 
+## TAAK-288 (2026-10-19): `RequestHandlerDelegate` in tests
+
+Tool from branch TAAK-288 (`<corpus>/corpus-blind/_results/tool-288`), harness `claude/tools/corpus-am.sh`, `FIX=mediatr`, results `<corpus>/corpus-blind/_results/{base,after}`.
+
+| Repo       | Fixed / Manual before | Fixed / Manual after | Tests before → after | Regressions | Result |
+| ---------- | --------------------- | -------------------- | -------------------- | ----------: | ------ |
+| afripay    | 0 / 16                | 25 / 0               | 264/264 → 264/264    | 0 | **migrated** (real lambdas; `MediatR.IRequest<T>` written in full → new `mediatr.qualified-swapped-type`) |
+| cleanmicro | 0 / 20                | 19 / 0               | 67/67 → 67/67        | 0 | **migrated** (Moq `Mock<RequestHandlerDelegate<T>>`; `.AsTask()` on `FluentActions.Invoking(() => sut.Handle(..))`) |
+| fullcart   | 27 / 20               | 27 / 20              | 9/9 → 9/9            | 0 | partial, unchanged: the Scrutor notification decorator is principally manual (TAAK-288 task file); display-name-only "flaky" rows (GUIDs in test names) |
+
+The first `after` run broke both builds (afripay CS0246 on fully qualified `MediatR.IRequest<T>` without any finding; cleanmicro CS1061 `ThrowAsync` on `FunctionAssertions<ValueTask<..>>`); both are fixed with proofs before the numbers above.
+
 ## See also
 
 - `claude/tasks/archief/TAAK-268-blind-validation-round.md`

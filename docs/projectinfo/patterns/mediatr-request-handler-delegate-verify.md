@@ -16,6 +16,7 @@
 | REQ-5 | Met | `Proofs/MediatR/_Combined/request-handler-delegate-shared-field` (before compiles against MediatR 12.5, after against Mediator 3.0.2 with generator; replica of amantin `AuthorizationBehaviorTests`) |
 | REQ-6 | Met | `Proofs/MediatR/_Combined/request-handler-delegate-lambda` (block, expression, async and `Task.Run` lambdas; replica of afripay `ValidationBehaviorTests`) |
 | REQ-7 | Met | `Proofs/MediatR/_Combined/request-handler-delegate-moq` (replica of cleanmicro `ExceptionEnrichingTests`, Moq stand-in); `moq-returns-value` |
+| REQ-8 | Met | `Proofs/MediatR/_Combined/request-handler-delegate-moq` (`Func<Task<string>> act = () => _sut.Handle(..).AsTask()`); corpus cleanmicro `after` 67/67 |
 | REQ-4 | Met | `FixerProjectFileTests.FixAsync_CodeStillUsesPackageWithoutFinding_ReportsManualOnThatLine` and `..._ReportsNoUnmatchedUse` |
 
 ## Deviations

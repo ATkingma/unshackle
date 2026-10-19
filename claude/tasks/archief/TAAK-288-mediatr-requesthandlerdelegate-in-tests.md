@@ -1,6 +1,6 @@
 # TAAK-288 — MediatR: `RequestHandlerDelegate` with a real delegate in tests
 
-**Status**: step 3/4 — corpus `after`
+**Status**: ✅ done
 **Created**: 2026-10-18
 **Goal**: remove this blocker with proof, or state precisely why it is principally manual.
 
@@ -28,8 +28,12 @@
 
 - [x] 1. Measure on the corpus repo(s) and probe the old library (above)
 - [x] 2. Implementation + proofs: `RequestHandlerDelegatePattern` (real lambda, Moq); `_Combined/request-handler-delegate-lambda`, `_Combined/request-handler-delegate-moq`; Manual `method-group` (was `lambda`), `lambda-discard-parameter`, `moq-returns-value`. 1604 tests green.
-- [ ] 3. Corpus `after` on afripay, cleanmicro, fullcart: build green, 0 regressions; before/after numbers here and in CORPUSRUN-blind.md
-- [ ] 4. Verify, models, docs; `claude/tools/verify-head.sh` → `VERIFY OK`
+- [x] 3. Corpus `after`: afripay 0/16 → 25/0 (264/264), cleanmicro 0/20 → 19/0 (67/67), fullcart 27/20 → 27/20 (9/9); 0 regressions (CORPUSRUN-blind.md). The first run exposed two build breaks, fixed with proofs:
+  - cleanmicro: `FluentActions.Invoking(() => _sut.Handle(..)).Should().ThrowAsync()` got a `ValueTask` → a behavior `Handle` call that gets the delegate and is not awaited on the spot now gets `.AsTask()` (`_Combined/request-handler-delegate-moq`).
+  - afripay: `record Q : MediatR.IRequest<R>` in files without `using MediatR;` had no finding at all and broke after the package went (CS0246) → new pattern `mediatr.qualified-swapped-type` (`QualifiedSwappedType/record-base`, `_Combined/qualified-request-afripay`); `MediatRFix.SwappedTypeNames` is now static so the pattern shares the list. `docs/patterns.md` got its row.
+- [x] 4. Docs: plan/verify/models of `mediatr.request-handler-delegate` (REQ-6..8) and `mediatr.qualified-swapped-type` (new, README row); `verify-head.sh` result in the handover report.
+
+**Status**: ✅ done (2026-10-19)
 
 ## See also
 

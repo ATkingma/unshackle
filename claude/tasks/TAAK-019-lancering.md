@@ -1,6 +1,6 @@
 # TAAK-019 — Launch FluentAssertions → Shouldly (roadmap step 4)
 
-**Status**: 0.1.0 released on nuget.org 2026-10-17 (tag `v0.1.0`, release run green, Trusted Publishing; install from nuget.org checked). Repo public, branch protection on `main` (PR + "Build and test", no force push; admins may push directly), `.vibe-wise/` removed from history. Left: step 8, the user posts the reddit draft.
+**Status**: 0.2.0 released 2026-10-19 (tag `v0.2.0`; blind round 6: 36/36 build, 0 regressions; decisions by the council). 0.1.0 released on nuget.org 2026-10-17 (tag `v0.1.0`, release run green, Trusted Publishing; install from nuget.org checked). Repo public, branch protection on `main` (PR + "Build and test", no force push; admins may push directly), `.vibe-wise/` removed from history. Left: step 8, the user posts the reddit draft.
 **Created**: 2026-10-11
 **Goal**: Unshackle 0.1 is public on GitHub and NuGet, proven on a real open-source project, with a README that shows in 30 seconds what it does.
 

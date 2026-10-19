@@ -47,7 +47,7 @@ reserve task numbers per agent in advance, `TEMP`/`TMP` on a `D:` folder, never 
 **Open, WIP on unpushed branches (worktrees under `.claude/worktrees/`), resume with `/taak-oppakken`:**
 
 - TAAK-288 — `worktree-agent-a4ddfa0b990b7a5bb` @ `8bdb648`. Step 2: lambda + Moq `RequestHandlerDelegate` rewrite built; 2 new `_Combined` proofs fail (tool output ≠ hand-written after). Autofac (fullcart) answer still open. Progress in the task file.
-- TAAK-289 — `worktree-agent-a61f15fbd8fdc5ded` @ `2105675`. New `automapper.unused-imapper` + `MapperCleanup` built (9 unit tests); pi22317 and assistiva fix-run clean, 0 regressions. Open: regenerate pattern list (`PatternDocTests` fails), KingmaDoc docs/README row, harness `after` on all 6 repos, verify. Review the dropped `GetService<IMapper>()` null-guard assumption (task file).
+- TAAK-289 — done on `worktree-agent-ac55b759e0d16a786` (rebuilt after the first attempt was lost): `automapper.unused-imapper`; pi22317 and assistiva fully migrated, 0 regressions on 6 repos. Waiting for merge; open user decision on the DI-lookup null check (task file).
 - TAAK-290 — `worktree-agent-a372e1b0de035cb2f` @ `5055f35`. Starter judged principally manual (run-time assembly scan, friend `IVT`); reason order changed. Corpus rerun ended `fix-fails`/`restore-fails` on all 11 repos — investigate logs in `<corpus>/corpus-t290/_results/after/*/logs` first; no verify yet.
 - TAAK-291 — not started; do it last (models touched by the others).
   Release 0.2.0 is proposed to the user only after all of these are done.

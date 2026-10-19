@@ -31,11 +31,8 @@ public static class OrderProfileExtensions
 
 public class OrderService
 {
-    private readonly IMapper _mapper;
-
-    public OrderService(IMapper mapper)
+    public OrderService()
     {
-        _mapper = mapper;
     }
 
     public List<OrderDto> All(List<Order> orders) => orders?.Select(x => x?.ToOrderDto()).ToList() ?? [];

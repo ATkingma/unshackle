@@ -29,11 +29,8 @@ public static class OrderProfileExtensions
 
 public class OrderService
 {
-    private readonly IMapper _mapper;
-
-    public OrderService(IMapper mapper)
+    public OrderService()
     {
-        _mapper = mapper;
     }
 
     public OrderDto Get(Order order) => order.ToOrderDto();

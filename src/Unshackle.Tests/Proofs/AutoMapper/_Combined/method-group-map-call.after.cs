@@ -31,11 +31,8 @@ public static class OrderProfileExtensions
 
 public class OrderService
 {
-    private readonly IMapper _mapper;
-
-    public OrderService(IMapper mapper)
+    public OrderService()
     {
-        _mapper = mapper;
     }
 
     // method group, not an invocation (eShopOnWeb PublicApi endpoints)

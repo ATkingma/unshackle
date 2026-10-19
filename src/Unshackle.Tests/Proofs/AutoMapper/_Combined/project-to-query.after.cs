@@ -94,12 +94,10 @@ namespace Shop.Orders
     public class OrderQueries
     {
         private readonly IQueryable<Order> _orders;
-        private readonly IMapper _mapper;
 
-        public OrderQueries(IQueryable<Order> orders, IMapper mapper)
+        public OrderQueries(IQueryable<Order> orders)
         {
             _orders = orders;
-            _mapper = mapper;
         }
 
         public List<OrderDto> Open(int minimum) =>

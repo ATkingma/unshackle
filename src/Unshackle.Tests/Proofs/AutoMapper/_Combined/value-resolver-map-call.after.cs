@@ -42,11 +42,8 @@ namespace ToDo
 
     public class TaskService
     {
-        private readonly IMapper _mapper;
-
-        public TaskService(IMapper mapper)
+        public TaskService()
         {
-            _mapper = mapper;
         }
 
         public TaskDto Get(ToDoTask task) => task.ToTaskDto();

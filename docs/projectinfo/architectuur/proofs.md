@@ -6,38 +6,38 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1061 proofs (excluding `_Pending`).
+Total: 1066 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
-### _Combined (33)
+### _Combined (34)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
-| `collection-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public List<OrderDto> All(List<Order> orders) => _mapper.Map<List<OrderDto>>(ord…` → `} public static class OrderProfileExtensions` |
-| `collection-nullable-map-call` | Fixed | `CreateMap<Order, OrderDto>(); return _mapper.Map<List<OrderDto>>(orders);` → `} public static class OrderProfileExtensions` |
+| `collection-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
+| `collection-nullable-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
 | `condition-map-call` | Fixed | `CreateMap<Line, LineDto>() .ForMember(d => d.Id, o => o.Condition(s => s.Id != Guid.Empty))` → `} public static class LineProfileExtensions` |
 | `configuration-maps-map-call` | Fixed | `cfg.CreateMap<Department, DepartmentDto>().ReverseMap(); cfg.CreateMap<Doctor, DoctorDto>()` → `} public static class MapperConfigExtensions` |
 | `configuration-test-fixture` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IConfigurationProvider _configuration;` → `} public static class OrderProfileExtensions` |
-| `constructor-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
-| `conversion-map-into` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} }` |
+| `constructor-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
+| `conversion-map-into` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} }` |
 | `convert-using-map-call` | Fixed | `CreateMap<SigningKey, PublicKeyDto>() .ConvertUsing(src => new PublicKeyDto` → `} }` |
 | `convert-using-string` | Fixed | `CreateMap<Money, string>().ConvertUsing<MoneyToStringConverter>(); CreateMap<Product, ProductDto>();` → `} public static class ProductProfileExtensions` |
 | `cycle-destination-only` | Fixed | `CreateMap<OrderDto, OrderModel>().ReverseMap(); CreateMap<BoxModel, BoxDto>().ReverseMap();` → `} public static class OrderMappingExtensions` |
-| `flattening-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Get(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class OrderProfileExtensions` |
+| `flattening-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
 | `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
-| `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); public Mapping.OrderDto Get(Mapping.Order order) => _mapper.Map<Mapping.OrderDto…` → `} public static class OrderProfileExtensions` |
+| `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
 | `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
 | `may-be-null-profile` | Fixed | `CreateMap<BookmarkPair, BookmarkDto>() .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Bookmark.Id))` → `} public static class AppProfilesExtensions` |
-| `member-list-map-call` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Destination); public Mapping.OrderDto Get(Mapping.Order order) => _mappe…` → `} public static class OrderProfileExtensions` |
-| `method-group-map-call` | Fixed | `CreateMap<Order, OrderDto>(); public List<OrderDto> List(IEnumerable<Order> orders) => orders.Select(_mapper.M…` → `} public static class OrderProfileExtensions` |
+| `member-list-map-call` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Destination); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
+| `method-group-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
 | `nested-map-call` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `} public static class OrderProfileExtensions` |
 | `nested-profile-map-call` | Fixed | `CreateMap<CustomerDto,AddEditCustomerCommand>(MemberList.None); CreateMap<AddEditCustomerCommand,Customer>(Mem…` → `} }` |
 | `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
 | `nested-profiles-nested-map` | Fixed | `CreateMap<TodoList, TodoListDto>(); CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority,` → `} public static class TodoListDtoMappingExtensions` |
 | `partial-closure` | Fixed | `CreateMap<Customer, CustomerDto>(); public CustomerDto Customer(Customer customer) => _mapper.Map<CustomerDto>…` → `} public static class ShopProfileExtensions` |
 | `partial-cycle-source` | Fixed | `CreateMap<OrderDto, OrderModel>(); CreateMap<BoxDto, BoxModel>();` → `} public static class ShopMappingExtensions` |
-| `partial-mocked-class-under-test` | Fixed | `public CustomerDto Line(Customer customer) => _mapper.Map<CustomerDto>(customer);` → `} public static class CustomerProfileExtensions` |
+| `partial-mocked-class-under-test` | Fixed | `private readonly IMapper _mapper; public ReportService(IMapper mapper)` → `public static class CustomerProfileExtensions {` |
 | `partial-statement` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Order(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class ShopProfileExtensions` |
 | `partial-untyped-source` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Order(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class ShopProfileExtensions` |
 | `project-to-query` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} public static class OrderProfileExtensions` |
@@ -46,6 +46,7 @@ Total: 1061 proofs (excluding `_Pending`).
 | `region-directives` | Fixed | `#region Orders CreateMap<Order, OrderDto>();` → `public static class ShopProfileExtensions {` |
 | `required-members` | Fixed | `CreateMap<NoteDto, NoteEntity>();` → `public static class NoteProfileExtensions {` |
 | `reverse-map-call` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} }` |
+| `unused-imapper-registration` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
 | `value-resolver-map-call` | Fixed | `CreateMap<ToDoTask, TaskDto>() .ForMember(x => x.IsPrivate, opt => opt.MapFrom<IsPrivateResolver>())` → `} public static class TaskProfileExtensions` |
 
 ### AddAutoMapper (4)
@@ -277,6 +278,15 @@ Total: 1061 proofs (excluding `_Pending`).
 | `parameters` | Manual | `CreateMap<Order, OrderDto>();` — reason: ProjectTo<OrderDto> passes userId, but CreateMap<Order, OrderDto> reads no variable of the profile constructor with that name |
 | `parameters-generic` | Manual |  — reason: ProjectTo<TDestination> has no destination type of its own |
 | `unknown-map` | Manual |  — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
+
+### UnusedMapper (4)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `assigned-only` | Fixed | `private readonly IMapper _mapper; public OrderService(IOrderRepository orders, IMapper mapper)` → `public OrderService(IOrderRepository orders)` |
+| `null-checks` | Fixed | `private readonly IMapper _mapper; public OrderService(string name, IMapper mapper)` → `public OrderService(string name)` |
+| `service-lookup` | Fixed | `private readonly IMapper _mapper; public OrderService(IMapper mapper)` → `public OrderService() return new OrderService();` |
+| `test-factory` | Fixed | `private readonly IMapper _mapper; public OrderService(IMapper mapper)` → `public OrderService() _service = new OrderService();` |
 
 ### ValueResolver (6)
 

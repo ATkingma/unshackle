@@ -36,11 +36,8 @@ namespace Shop.Orders
 {
     public class OrderService
     {
-        private readonly IMapper _mapper;
-
-        public OrderService(IMapper mapper)
+        public OrderService()
         {
-            _mapper = mapper;
         }
 
         public Mapping.OrderDto Get(Mapping.Order order) => order.ToOrderDto();

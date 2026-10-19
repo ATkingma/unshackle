@@ -179,6 +179,7 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `automapper.flattening` | [plan](patterns/automapper-flattening-plan.md) | [models](patterns/automapper-flattening-modellen.md) | [verify](patterns/automapper-flattening-verify.md) | TAAK-256 |
 | `automapper.unsupported` | [plan](patterns/automapper-unsupported-plan.md) | [models](patterns/automapper-unsupported-modellen.md) | [verify](patterns/automapper-unsupported-verify.md) | TAAK-257 |
 | `automapper.kept-map` | [plan](patterns/automapper-kept-map-plan.md) | [models](patterns/automapper-kept-map-modellen.md) | [verify](patterns/automapper-kept-map-verify.md) | TAAK-272 |
+| `automapper.unused-imapper` | [plan](patterns/automapper-unused-imapper-plan.md) | [models](patterns/automapper-unused-imapper-modellen.md) | [verify](patterns/automapper-unused-imapper-verify.md) | TAAK-289 |
 
 ## See also
 

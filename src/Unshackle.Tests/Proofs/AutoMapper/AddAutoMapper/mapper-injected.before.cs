@@ -11,6 +11,9 @@ public class OrderService
     {
         _mapper = mapper;
     }
+
+    // Handed out as it is: the IMapper stays, so does its registration.
+    public IMapper Mapper => _mapper;
 }
 
 public static class Registration

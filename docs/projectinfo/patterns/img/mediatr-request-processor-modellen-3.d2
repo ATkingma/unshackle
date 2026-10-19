@@ -1,31 +1,21 @@
-title: "[Beslisboom] RequestProcessorPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Beslisboom] RequestProcessorPattern.Rewrite (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 q1: "Pre en post tegelijk,\nabstract of static?" {shape: diamond}
 q2: "Process in deze klasse,\nniet expliciet?" {shape: diamond}
 q3: "Task met Task.CompletedTask\nof async?" {shape: diamond}
 q4: "Soort processor?" {shape: diamond}
-q5: "TResponse vrij en geen ander gebruik\ndan AddOpenRequestPreProcessor?" {shape: diamond}
-q6: "Request is IRequest<T>\nof IRequest?" {shape: diamond}
-q7: "Al een basisklasse?" {shape: diamond}
 m1: "Manual: abstract or both\n(geen proof)"
 m2: "Manual: not declared here / explicit\n(geen proof)"
 m3: "Manual: not Task.CompletedTask or async\n(other-return)"
-m4: "Manual: TResponse taken or used outside AddMediatR\n(used-elsewhere)"
-m5: "Manual: response type unknown\n(geen proof)"
-m6: "Manual: already has a base class\n(geen proof)"
-f: "MessagePreProcessor / MessagePostProcessor + ValueTask Handle\n(pre-open, post-open-async, pre-closed)"
+to_next_q7: "Continued in Figure 3b: Al een basisklasse?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+to_next_q5: "Continued in Figure 3b: TResponse vrij en geen ander gebruik\ndan AddOpenRequestPreProcessor?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+to_next_q6: "Continued in Figure 3b: Request is IRequest<T>\nof IRequest?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 q1 -> m1: ja
 q1 -> q2: nee
 q2 -> m2: nee
 q2 -> q3: ja
 q3 -> m3: nee
 q3 -> q4: ja
-q4 -> q7: post
-q4 -> q5: "open pre"
-q4 -> q6: "gesloten pre"
-q5 -> m4: nee
-q5 -> q7: ja
-q6 -> m5: nee
-q6 -> q7: ja
-q7 -> m6: ja
-q7 -> f: nee
+q4 -> to_next_q7: post
+q4 -> to_next_q5: "open pre"
+q4 -> to_next_q6: "gesloten pre"

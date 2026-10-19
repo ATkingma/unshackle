@@ -34,10 +34,15 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MemberConversions.cs`, 
 
 ## Figure 3: decision tree
 
-**Figure 3.** The questions of `MemberValues.Conversion` and `MemberConversions.Problem` for one member or element.
+**Figure 3a.** The questions of `MemberValues.Conversion` and `MemberConversions.Problem` for one member or element. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/automapper-conversions-modellen-3.d2 -->
 ![Figure 3: decision tree](img/automapper-conversions-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/automapper-conversions-modellen-4.d2 -->
+![Figure 3: decision tree](img/automapper-conversions-modellen-4.png)
 
 | Leaf                                           | Condition                                                            | Evidence                                    |
 | ---------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------- |

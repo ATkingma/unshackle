@@ -35,10 +35,15 @@ Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/AllSatisfyPattern
 
 ## Figure 3: decision tree
 
-**Figure 3.** Every question in `FluentAssertionPattern.Rewrite` and `RewriteAssertion`; the leaves are the Shouldly form or the Manual reason.
+**Figure 3a.** Every question in `FluentAssertionPattern.Rewrite` and `RewriteAssertion`; the leaves are the Shouldly form or the Manual reason. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/fa-all-satisfy-modellen-3.d2 -->
 ![Figure 3: decision tree](img/fa-all-satisfy-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/fa-all-satisfy-modellen-4.d2 -->
+![Figure 3: decision tree](img/fa-all-satisfy-modellen-4.png)
 
 | Leaf | Condition | Proof (`Proofs/FluentAssertions/AllSatisfy/`) |
 | ---- | --------- | --------------------------------------------- |

@@ -1,0 +1,31 @@
+title: "[Activity] NotThrowPattern.Rewrite - Fixed of Manual (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+q4: "Resultaat weggegooid?" {shape: diamond}
+m4: "Manual: The result of NotThrow() is used\n(proof: result-used, value-used)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5: "Subject Invoking/Awaiting: TryGetAction lukt;\nanders niet met FluentAssertions gebouwd?" {shape: diamond}
+m5: "Manual: receiver niet stabiel, waardetype of geen lambda;\nof subject gebouwd met FluentAssertions\n(proof: Invoking/side-effect-receiver, value-type, method-group)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q6: "Subject is een parameterloze Action of Func?" {shape: diamond}
+m6: "Manual: The subject is not a parameterless Action or Func\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q7: "Geen benoemde argumenten; becauseArgs\nalleen met constante because?" {shape: diamond}
+m7: "Manual: benoemde argumenten of\nbecauseArgs bij niet-constante because\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+s: "Is er een because?" {shape: diamond}
+f1: "Fixed: Should.NotThrow(act)\n(proof: simple, func, value-func)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+f2: "Fixed: Should.NotThrow(act, because)\nbecauseArgs: string.Format(InvariantCulture, because, args)\n(proof: because, because-args)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+from_previous_q4: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q4 -> q4
+q4 -> m4: nee
+q4 -> q5: ja
+q5 -> m5: nee
+q5 -> q6: ja
+q6 -> m6: nee
+q6 -> q7: ja
+q7 -> m7: nee
+q7 -> s: ja
+s -> f1: "nee"
+s -> f2: "ja"

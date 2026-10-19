@@ -1,0 +1,16 @@
+direction: down
+q1: "Map needs MapInto, or forward ForPath\nwith ReverseMap (AutoMapper reverses it)?"
+q4: "Condition passes the MapFrom rules?"
+okp: "A = new() { B = expr }"
+okc: "X = cond ? value : default"
+m1: "Manual: not migrated with MapInto /\nReverseMap reverses the ForPath"
+m4: "Manual: MapFrom reason"
+from_previous_q1: "From Figure 1a: Map needs MapInto, or forward ForPath\nwith ReverseMap (AutoMapper reverses it)?" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q4: "From Figure 1a: Condition passes the MapFrom rules?" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q1 -> q1
+from_previous_q4 -> q4
+q4 -> m4: no
+q4 -> q1: yes
+q1 -> m1: yes
+q1 -> okp: no (ForPath)
+q1 -> okc: no (Condition)

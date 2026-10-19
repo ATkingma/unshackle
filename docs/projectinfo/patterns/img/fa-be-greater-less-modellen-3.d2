@@ -1,23 +1,15 @@
-title: "[Activity] FluentAssertionPattern.Rewrite → BeGreaterLessPattern.RewriteAssertion" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] FluentAssertionPattern.Rewrite → BeGreaterLessPattern.RewriteAssertion (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 start: "" {shape: circle; width: 20; style: {fill: black}}
 form: "Vorm x.Should().M(..)?\n(.And-ketens: fa.and-chain)" {shape: diamond}
 used: "Resultaat weggegooid?" {shape: diamond}
 args: "Argumenten splitsbaar?\n(becauseArgs alleen met constante because)" {shape: diamond}
 type: "Subject non-nullable IComparable<T> van zichzelf?" {shape: diamond}
-count: "Juiste aantal waarden?" {shape: diamond}
-sign: "BePositive/BeNegative: int, long, short, decimal, double, float?" {shape: diamond}
-nan: "BeNegative op double/float?" {shape: diamond}
-conv: "Waarde naar subjecttype te converteren?" {shape: diamond}
-one: "Fixed: x.ShouldBe...(waarden[, because])\n(simple, because, because-args, in-range, sign, comparable,\nlambda, byte-short, dates, edge-double, edge-interpolated-because)" {style.fill: "#c8e6c9"; style.border-radius: 12}
 m1: "Manual: not in the form" {style.fill: "#ffe0b2"; style.border-radius: 12}
 m3: "Manual: is used\n(value-used)" {style.fill: "#ffe0b2"; style.border-radius: 12}
 m6: "Manual: named arguments, or becauseArgs\n(geen proof)" {style.fill: "#ffe0b2"; style.border-radius: 12}
 m5: "Manual: nullable or unknown type /\nIComparable<T>\n(nullable, dates-nullable)" {style.fill: "#ffe0b2"; style.border-radius: 12}
-mc: "Manual: unexpected argument list" {style.fill: "#ffe0b2"; style.border-radius: 12}
-m7: "Manual: only exists for\n(sign-byte)" {style.fill: "#ffe0b2"; style.border-radius: 12}
-m8: "Fixed: (x < 0).ShouldBeTrue([because])\n(negative-double, negative-float)" {style.fill: "#c8e6c9"; style.border-radius: 12}
-m9: "Manual: Value type differs" {style.fill: "#ffe0b2"; style.border-radius: 12}
+to_next_count: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 start -> form
 form -> used: ja
 form -> m1: nee
@@ -25,13 +17,5 @@ used -> args: ja
 used -> m3: nee
 args -> type: ja
 args -> m6: nee
-type -> count: ja
+type -> to_next_count: ja
 type -> m5: nee
-count -> sign: ja
-count -> mc: nee
-sign -> nan: ja
-sign -> m7: nee
-nan -> conv: nee
-nan -> m8: ja
-conv -> one: ja
-conv -> m9: nee

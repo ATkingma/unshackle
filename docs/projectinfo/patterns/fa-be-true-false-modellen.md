@@ -31,10 +31,15 @@ x.Should().BeTrue() to x.ShouldBeTrue(). Facts from `src/Unshackle.Core/Fixes/Fl
 | Manual | `PatternResult.Manual` | The first failing check yields `ManualResult` with a reason (see figure 3) |
 | Fixed | `PatternResult.Fixed` | New node; trivia and usings are handled by the `Fixer` |
 
-**Figure 3.** Decision tree of `FluentAssertionPattern.Rewrite` and `RewriteAssertion`: 5 questions in code order, each leaf names the proof in `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/` that proves it (`<naam>.before.cs` with `.after.cs` or `.manual.txt`).
+**Figure 3a.** Decision tree of `FluentAssertionPattern.Rewrite` and `RewriteAssertion`: 5 questions in code order, each leaf names the proof in `src/Unshackle.Tests/Proofs/FluentAssertions/BeTrueFalse/` that proves it (`<naam>.before.cs` with `.after.cs` or `.manual.txt`). Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/fa-be-true-false-modellen-3.d2 -->
 ![Models: fa.be-true-false](img/fa-be-true-false-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/fa-be-true-false-modellen-4.d2 -->
+![Models: fa.be-true-false](img/fa-be-true-false-modellen-4.png)
 
 | Question or selector | If no: Manual reason | Proof |
 | --- | --- | --- |

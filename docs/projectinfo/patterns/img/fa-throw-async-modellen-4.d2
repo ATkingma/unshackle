@@ -1,0 +1,17 @@
+title: "[Beslisboom] ThrowAsyncPattern.Rewrite (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q5: "Named args, of becauseArgs\nbij niet-constante because?" {shape: diamond}
+q6: "WithMessage?" {shape: diamond}
+q7: "Constante, alleen voor-/achter-*,\ngeen regeleinde naast *?" {shape: diamond}
+m5: "Manual: named arguments or becauseArgs\n(geen proof)"
+m7: "Manual: not a string constant / wildcards other than / line break\n(message-variable, message-wildcard, message-contains-line-break)"
+f1: "Fixed: await Should.ThrowAsync<T>(act[, because])[.ConfigureAwait(..)]\n[(..).ShouldBeOfType<T>() bij ThrowExactlyAsync]\n(simple, func-task-reference, because, because-args,\nedge-configure-await, edge-local-async-lambda, aggregate-awaited)"
+f2: "Fixed: (await Should.ThrowAsync<T>(act)).Message.ShouldX(...)\n(message-contains, -starts, -ends, -exact, -because,\n-because-args, -line-break)"
+from_previous_q5: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q5 -> q5
+q5 -> q6: nee
+q6 -> q7: ja
+q5 -> m5: ja
+q6 -> f1: nee
+q7 -> m7: nee
+q7 -> f2: ja

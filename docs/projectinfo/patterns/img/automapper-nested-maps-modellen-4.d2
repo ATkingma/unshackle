@@ -1,0 +1,24 @@
+title: "[Decision tree] MemberValues.Problem (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+f1: "Xs = source.Xs?.Select(x => x?.ToY())\n.ToList()/.ToArray() ?? []\n(nested-collections, collection)"
+q3s: "Same type?" {shape: diamond}
+f0: "X = source.X\n(simple)"
+m3: "Manual: AutoMapper converts and no\nprofile has a CreateMap (nested-no-map)"
+q4: "One map, public or same project,\nno member ToY, no cycle?" {shape: diamond}
+m4: "Manual: several profiles / internal /\na cycle (nested-several, nested-cycle)"
+q5: "AllowNullCollections or\nAllowNullDestinationValues set?" {shape: diamond}
+m5: "Manual: null handling changed"
+f2: "X = source.X?.ToY()[!] / .ToY() /\n?.ToY() ?? default\n(nested, nested-nullable)"
+from_previous_q5: "From Figure 3a: AllowNullCollections or\nAllowNullDestinationValues set?" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q4: "From Figure 3a: One map, public or same project,\nno member ToY, no cycle?" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q3s: "From Figure 3a: Same type?" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q5 -> q5
+from_previous_q4 -> q4
+from_previous_q3s -> q3s
+q3s -> f0: yes
+q3s -> m3: no
+q4 -> m4: no
+q4 -> q5: yes
+q5 -> m5: yes
+q5 -> f1: "no, collection"
+q5 -> f2: "no, single"

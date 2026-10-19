@@ -1,4 +1,4 @@
-title: "[Activity] FluentAssertionPattern.Rewrite + ContainPattern.RewriteAssertion - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] FluentAssertionPattern.Rewrite + ContainPattern.RewriteAssertion - Fixed of Manual (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 vars: {
   d2-legend: {
@@ -17,17 +17,7 @@ q3: "Subject is geen dictionary?" {shape: diamond}
 m3: "Manual: Dictionary: takes key/value pairs; use ShouldContainKey/ShouldContainKeyAndValue\n(proof: dictionary)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q4: "Geen benoemde argumenten; becauseArgs alleen met constante because?" {shape: diamond}
 m4: "Manual: named arguments, or becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q5: "Eén waarde-argument (geen occurrence-constraint)?" {shape: diamond}
-m5: "Manual: an occurrence constraint: no Shouldly equivalent\n(proof: occurrence)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q6: "Parameter is item of predicaat (niet meerdere items)?" {shape: diamond}
-m6: "Manual: checks several items at once\n(proof: items)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q7: "Subject is string of IEnumerable<T>?" {shape: diamond}
-m7: "Manual: The subject is not a string or a generic IEnumerable<T>\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-s: "Welk subject en welke overload?" {shape: diamond}
-f1: "Fixed: x.ShouldContain(v, Shouldly.Case.Sensitive[, because])\n(proof: string, edge-interpolated, nullable-string)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-f2: "Fixed: x.ShouldContain(item[, because])\n(proof: list, enumerable, lambda, because, because-args, edge-generic-list)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-f3: "Fixed: x.ShouldContain(predicate)\n(proof: predicate)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-f4: "Fixed: x.ShouldNotContain(...)\n(proof: not-contain)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+to_next_q5: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 start -> q0
 q0 -> m0: nee
 q0 -> q1: ja
@@ -38,14 +28,4 @@ q2 -> q3: ja
 q3 -> m3: nee
 q3 -> q4: ja
 q4 -> m4: nee
-q4 -> q5: ja
-q5 -> m5: nee
-q5 -> q6: ja
-q6 -> m6: nee
-q6 -> q7: ja
-q7 -> m7: nee
-q7 -> s: ja
-s -> f1: "string"
-s -> f2: "IEnumerable<T>, item"
-s -> f3: "IEnumerable<T>, predicaat"
-s -> f4: "NotContain"
+q4 -> to_next_q5: ja

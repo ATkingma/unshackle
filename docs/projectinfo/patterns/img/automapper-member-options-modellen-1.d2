@@ -1,27 +1,18 @@
 direction: down
 p1: "ForMember/ForPath option the old parser\ndoes not know: MemberOptions.TryParse"
 p2: "Condition/PreCondition of the source,\nMapFrom, or ForPath at most one object deep?"
-q1: "Map needs MapInto, or forward ForPath\nwith ReverseMap (AutoMapper reverses it)?"
 q2: "ForPath d.A.B: A settable, class with public\nparameterless constructor, not mapped itself?"
 q3: "Condition: member written, no initializer,\nno declared constructor, new()?"
-q4: "Condition passes the MapFrom rules?"
-okp: "A = new() { B = expr }"
-okc: "X = cond ? value : default"
 m0: "Manual: <option> for X is not migrated"
-m1: "Manual: not migrated with MapInto /\nReverseMap reverses the ForPath"
 m2: "Manual: ForPath reason"
 m3: "Manual: AutoMapper keeps that value"
-m4: "Manual: MapFrom reason"
+to_next_q1: "Continued in Figure 1b: Map needs MapInto, or forward ForPath\nwith ReverseMap (AutoMapper reverses it)?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+to_next_q4: "Continued in Figure 1b: Condition passes the MapFrom rules?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 p1 -> p2
 p2 -> m0: no
 p2 -> q2: ForPath
 p2 -> q3: Condition
 q2 -> m2: no
-q2 -> q1: yes
+q2 -> to_next_q1: yes
 q3 -> m3: no
-q3 -> q4: yes
-q4 -> m4: no
-q4 -> q1: yes
-q1 -> m1: yes
-q1 -> okp: no (ForPath)
-q1 -> okc: no (Condition)
+q3 -> to_next_q4: yes

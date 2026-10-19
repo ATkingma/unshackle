@@ -1,0 +1,23 @@
+title: "[Activity] FluentAssertionPattern.Rewrite + BeOfTypePattern.RewriteAssertion - Fixed of Manual (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+q3: "Geen benoemde argumenten; becauseArgs alleen met constante because?" {shape: diamond}
+m4: "Manual: on a Type asserts the type itself\n(proof: type-subject)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q4: "Niet uit FluentAssertions.Types?" {shape: diamond}
+m3: "Manual: named arguments, or becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5: "<T> zonder, of Type met één waarde?" {shape: diamond}
+m5: "Manual: unexpected arguments\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+fx: "Fixed: x.ShouldBeOfType<T>([because]) e.d.\n(simple, because, because-args, type-argument, which, which-chain, which-multiple, nullable)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+from_previous_q3: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q3 -> q3
+q3 -> m3: nee
+q3 -> q4: ja
+q4 -> m4: nee
+q4 -> q5: ja
+q5 -> m5: nee
+q5 -> fx: ja

@@ -27,10 +27,15 @@
 | Rewrite | `ContainSinglePattern.RewriteAssertion` | type `IEnumerable<T>`, `NotNull(subject)`, predicate and `.Which` |
 | Outcome | `PatternResult.Fixed` / `Manual` | Shouldly call or reason |
 
-**Figure 3.** Decision tree of `FluentAssertionPattern.Rewrite` and `ContainSinglePattern.RewriteAssertion`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/ContainSingle/`.
+**Figure 3a.** Decision tree of `FluentAssertionPattern.Rewrite` and `ContainSinglePattern.RewriteAssertion`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/ContainSingle/`. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/fa-contain-single-which-modellen-3.d2 -->
 ![Models: fa.contain-single-which](img/fa-contain-single-which-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/fa-contain-single-which-modellen-4.d2 -->
+![Models: fa.contain-single-which](img/fa-contain-single-which-modellen-4.png)
 
 | Question | If no: Manual reason | Proof |
 | --- | --- | --- |

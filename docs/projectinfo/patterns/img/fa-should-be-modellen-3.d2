@@ -1,4 +1,4 @@
-title: "[Activity] ShouldBePattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] ShouldBePattern.Rewrite - Fixed of Manual (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 vars: {
   d2-legend: {
@@ -13,19 +13,9 @@ q1: "Vorm x.Should().Be(y)?" {shape: diamond}
 m1: "Manual: Be(...) is not in the form x.Should().Be(y)\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q2: "Resultaat weggegooid?" {shape: diamond}
 m2: "Manual: The result of Be(...) is used\n(proof: chain)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q3: "Be niet uit FluentAssertions.Xml of .Types?" {shape: diamond}
-m3: "Manual: Be(...) from Xml/Types: andere gelijkheid\n(proof: xml)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q4: "Geen benoemde argumenten; becauseArgs\nalleen bij constante, formatteerbare because?" {shape: diamond}
 m4: "Manual: named arguments, or becauseArgs whose because is no constant format string\n(proof: edge-named-because, because-args-variable, because-args-bad-format)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q5: "Precies één waarde-argument (geen comparer)?" {shape: diamond}
-m5: "Manual: Be(...) with a comparer\n(proof: comparer)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q6: "Type van het subject bekend?" {shape: diamond}
-m6: "Manual: The type of the subject is unknown\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q7: "ConvertExpected vindt een veilige vorm?" {shape: diamond}
-m7: "Manual: Expected type differs from subject type\n(proof: nullable-expected)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-s: "Moet expected een cast krijgen?" {shape: diamond}
-f1: "Fixed: x.ShouldBe(y[, because])\nbecauseArgs: string.Format(InvariantCulture, because, args)\n(proof: simple, because, lambda, because-args)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-f2: "Fixed: x.ShouldBe((byte)1)\n(proof: constant-cast)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+to_next_q3: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 start -> q0
 q0 -> m0: nee
 q0 -> q1: ja
@@ -33,15 +23,5 @@ q1 -> m1: nee
 q1 -> q2: ja
 q2 -> m2: nee
 q2 -> q4: ja
-q3 -> m3: nee
-q3 -> q5: ja
 q4 -> m4: nee
-q4 -> q3: ja
-q5 -> m5: nee
-q5 -> q6: ja
-q6 -> m6: nee
-q6 -> q7: ja
-q7 -> m7: nee
-q7 -> s: ja
-s -> f1: "nee"
-s -> f2: "ja (constante alleen impliciet naar subjecttype)"
+q4 -> to_next_q3: ja

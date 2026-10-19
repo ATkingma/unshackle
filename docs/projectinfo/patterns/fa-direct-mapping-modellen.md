@@ -30,10 +30,15 @@
 | Arguments | `FluentAssertionPattern.Rewrite` | `TryGetArguments` (becauseArgs with a constant because → `string.Format(CultureInfo.InvariantCulture, ...)`) |
 | Own checks | `DirectMappingPattern.RewriteAssertion` | number of values, `Nullable<T>`, `NotNull` for `BeSubsetOf`/`OnlyHaveUniqueItems` |
 
-**Figure 3.** Decision tree in the order of the code; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/DirectMapping/`.
+**Figure 3a.** Decision tree in the order of the code; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/DirectMapping/`. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/fa-direct-mapping-modellen-3.d2 -->
 ![Models: fa.direct-mapping](img/fa-direct-mapping-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/fa-direct-mapping-modellen-4.d2 -->
+![Models: fa.direct-mapping](img/fa-direct-mapping-modellen-4.png)
 
 | Question | If no: Manual reason | Proof |
 | --- | --- | --- |

@@ -1,31 +1,19 @@
-title: "[Beslisboom] ThrowAsyncPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Beslisboom] ThrowAsyncPattern.Rewrite (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 q0: "In een AssertionScope?" {shape: diamond}
 q3: "Direct geawaite statement?" {shape: diamond}
 q4: "Awaiting: TryGetAction lukt, anders geen FA-subject;\nFunc<Task> of Func<Task<ref type>>?" {shape: diamond}
 qa: "ThrowExactlyAsync, of geen\nAggregateException-risico?" {shape: diamond}
-q5: "Named args, of becauseArgs\nbij niet-constante because?" {shape: diamond}
-q6: "WithMessage?" {shape: diamond}
-q7: "Constante, alleen voor-/achter-*,\ngeen regeleinde naast *?" {shape: diamond}
-q0 -> q3: nee
-q3 -> q4: ja
-q4 -> qa: ja
-qa -> q5: ja
-q5 -> q6: nee
-q6 -> q7: ja
 m0: "Manual: Inside an AssertionScope\n(geen eigen proof)"
 m3: "Manual: not directly awaited / is used\n(no-await, where, value-used)"
 m4: "Manual: Awaiting-receiver/lambda, FA-subject / reference type\n(Invoking/*, value-func)"
 ma: "Manual: unwraps AggregateException\n(aggregate-result)"
-m5: "Manual: named arguments or becauseArgs\n(geen proof)"
-m7: "Manual: not a string constant / wildcards other than / line break\n(message-variable, message-wildcard, message-contains-line-break)"
-f1: "Fixed: await Should.ThrowAsync<T>(act[, because])[.ConfigureAwait(..)]\n[(..).ShouldBeOfType<T>() bij ThrowExactlyAsync]\n(simple, func-task-reference, because, because-args,\nedge-configure-await, edge-local-async-lambda, aggregate-awaited)"
-f2: "Fixed: (await Should.ThrowAsync<T>(act)).Message.ShouldX(...)\n(message-contains, -starts, -ends, -exact, -because,\n-because-args, -line-break)"
+to_next_q5: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+q0 -> q3: nee
+q3 -> q4: ja
+q4 -> qa: ja
+qa -> to_next_q5: ja
 q0 -> m0: ja
 q3 -> m3: nee
 q4 -> m4: nee
 qa -> ma: nee
-q5 -> m5: ja
-q6 -> f1: nee
-q7 -> m7: nee
-q7 -> f2: ja

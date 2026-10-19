@@ -1,0 +1,18 @@
+title: "[Beslisboom] FluentAssertionPattern.Rewrite → AllSatisfyPattern.RewriteAssertion (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q5: "return in de body?" {shape: diamond}
+q6: "Direct in een blok?" {shape: diamond}
+q7: "Subject veilig twee keer te evalueren?" {shape: diamond}
+m5: "Manual: contains a return\n(return)"
+m6: "Manual: not directly in a block\n(not-in-block)"
+h: "Hoist: var subject = x;\n(subject-call)"
+f: "Fixed: x.ShouldNotBeEmpty();\nforeach (var a in x) { body }\n(simple, block, typed-parameter, member-subject, nullable)"
+from_previous_q5: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q5 -> q5
+q5 -> q6: nee
+q6 -> q7: ja
+q5 -> m5: ja
+q6 -> m6: nee
+q7 -> h: nee
+h -> f
+q7 -> f: ja

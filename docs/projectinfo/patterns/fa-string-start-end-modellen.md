@@ -26,10 +26,15 @@
 | Checks | `FluentAssertionPattern.Rewrite` → `StringStartEndPattern.RewriteBeforeArguments` (type) → `RewriteAssertion` | scope, shape, use of the result, type, arguments, Shouldly name and `Case` |
 | Outcome | `PatternResult.Fixed` / `Manual` | Shouldly call or reason |
 
-**Figure 3.** Decision tree of `Rewrite`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/StringStartEnd/`.
+**Figure 3a.** Decision tree of `Rewrite`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/StringStartEnd/`. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/fa-string-start-end-modellen-3.d2 -->
 ![Models: fa.string-start-end](img/fa-string-start-end-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/fa-string-start-end-modellen-4.d2 -->
+![Models: fa.string-start-end](img/fa-string-start-end-modellen-4.png)
 
 | Question | If no: Manual reason | Proof |
 | --- | --- | --- |

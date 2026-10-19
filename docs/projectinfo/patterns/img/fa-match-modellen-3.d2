@@ -1,4 +1,4 @@
-title: "[Activity] FluentAssertionPattern.Rewrite + MatchPattern.RewriteAssertion - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] FluentAssertionPattern.Rewrite + MatchPattern.RewriteAssertion - Fixed of Manual (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 vars: {
   d2-legend: {
@@ -9,29 +9,15 @@ vars: {
 start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
 q0: "Buiten een AssertionScope?" {shape: diamond}
 m0: "Manual: Inside an AssertionScope\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-start -> q0
-q0 -> m0: nee
 q1: "Vorm s.Should().Match..(..)?" {shape: diamond}
 m1: "Manual: is not in the form x.Should()\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q0 -> q1: ja
-q1 -> m1: nee
 q2: "Resultaat weggegooid?" {shape: diamond}
 m2: "Manual: The result of ... is used\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+to_next_q3: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+start -> q0
+q0 -> m0: nee
+q0 -> q1: ja
+q1 -> m1: nee
 q1 -> q2: ja
 q2 -> m2: nee
-q3: "Geen benoemde argumenten; because constant formatteerbaar?" {shape: diamond}
-m3: "Manual: named arguments, or becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q2 -> q3: ja
-q3 -> m3: nee
-q4: "Subject is een string?" {shape: diamond}
-m4: "Manual: on a non-string subject\n(proof: predicate)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q3 -> q4: ja
-q4 -> m4: nee
-q5: "Eén niet-lege stringconstante?" {shape: diamond}
-m5: "Manual: without one non-empty string constant\n(proof: regex-object, variable, empty)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q4 -> q5: ja
-q5 -> m5: nee
-f0: "Fixed: s.ShouldMatch(r) / ShouldNotMatch(r), patroon ongewijzigd\n(proof: regex, not-regex, because, nullable)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-q5 -> f0: "MatchRegex / NotMatchRegex"
-f1: "Fixed: s.ShouldMatch(@\"(?s)\\A...\$\") / ShouldNotMatch\n(proof: wildcard, not-wildcard)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-q5 -> f1: "Match / NotMatch (wildcard)"
+q2 -> to_next_q3: ja

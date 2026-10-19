@@ -1,0 +1,18 @@
+title: "[Beslisboom] PipelineBehaviorPattern.Rewrite (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q5: "Elke return next(...)\nof Task.FromResult?" {shape: diamond}
+q6: "Request-type is typeparameter\nvan de klasse?" {shape: diamond}
+q7: "Constraint al IRequest/INotification\n(of interface daarop)?" {shape: diamond}
+m4: "Manual: not next() or Task.FromResult\n(next-passed)"
+f1: "ValueTask + MessageHandlerDelegate,\nnext(request, token), where T : IMessage\n(open-async, no-constraint, new-constraint,\nnext-token, edge-notnull-constraint)"
+f2: "ValueTask + MessageHandlerDelegate,\nnext(request, token), geen constraint\n(closed, edge-request-constraint)"
+from_previous_q6: "From Figure 3a: Request-type is typeparameter\nvan de klasse?" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q5: "From Figure 3a: Elke return next(...)\nof Task.FromResult?" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q6 -> q6
+from_previous_q5 -> q5
+q5 -> m4: nee
+q5 -> q6: ja
+q6 -> q7: ja
+q7 -> f1: nee
+q7 -> f2: ja
+q6 -> f2: nee

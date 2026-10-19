@@ -1,0 +1,21 @@
+title: "[Activity] InvokingPattern - Fixed of Manual (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q3: "Receiver reference type?" {shape: diamond}
+m3: "Manual: is a value type\n(proof: value-type)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q4: "Lambda met één parameter?" {shape: diamond}
+m4: "Manual: one-parameter lambda\n(proof: method-group)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5: "Geen Wait/Result in de lambda (alleen Throw<T>)?" {shape: diamond}
+m5: "Manual: AggregateException\n(proof: aggregate)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q6: "Geen benoemde argumenten; because constant formatteerbaar?" {shape: diamond}
+m6: "Manual: becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+f0: "Fixed: Should.Throw<T>(() => x.M()) / await Should.ThrowAsync<T>(() => x.M()) / Should.NotThrow(() => x.M())\n(simple, func, because-message, throw-exactly, not-throw, awaiting, awaiting-exactly)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+from_previous_q3: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q3 -> q3
+q3 -> m3: nee
+q3 -> q4: ja
+q4 -> m4: nee
+q4 -> q5: ja
+q5 -> m5: nee
+q5 -> q6: ja
+q6 -> m6: nee
+q6 -> f0: ja

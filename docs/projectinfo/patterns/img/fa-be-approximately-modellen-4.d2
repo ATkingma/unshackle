@@ -1,0 +1,19 @@
+title: "[Activity] FluentAssertionPattern.Rewrite → BeApproximatelyPattern.RewriteAssertion - Fixed of Manual (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q4: "Subject double/float/decimal/DateTime(Offset)/TimeSpan?" {shape: diamond}
+m4: "Manual: tolerance only for ...\n(proof: int-close-to)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5: "Expected heeft hetzelfde type?" {shape: diamond}
+m5: "Manual: nullable or differently typed expected\n(proof: geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q6: "Niet Not… op nullable?" {shape: diamond}
+m6: "Manual: nullable subject\n(proof: nullable-not)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+f0: "Fixed: System.Math.Abs(x - y).ShouldBeGreaterThan(tol) (NotBeApproximately)\n(not)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+f1: "Fixed: x[.ShouldNotBeNull()].ShouldBe / ShouldNotBe(y, tol|span[, because])\n(simple, because, because-args, close-to, nullable)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+from_previous_q4: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q4 -> q4
+q4 -> m4: nee
+q4 -> q5: ja
+q5 -> m5: nee
+q5 -> q6: ja
+q6 -> m6: nee
+q6 -> f0: ja
+q6 -> f1: ja

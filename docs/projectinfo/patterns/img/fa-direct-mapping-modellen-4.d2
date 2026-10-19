@@ -1,0 +1,29 @@
+title: "[Activity] FluentAssertionPattern.Rewrite + DirectMappingPattern - Fixed of Manual (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+q4: "Geen BeOneOf(params), of type bekend en elke waarde converteerbaar?" {shape: diamond}
+m4: "Manual: The type of the subject is unknown / Value type differs from subject type\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5: "Geen benoemde argumenten; because constant formatteerbaar?" {shape: diamond}
+m5: "Manual: named arguments, or becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+fb: "Fixed: x.ShouldBeOneOf(a, b), met cast zoals ShouldBe\n(proof: be-one-of, be-one-of-convert)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+q6: "Niet BeOneOf en juiste aantal waarden (geen collectie, comparer, key selector)?" {shape: diamond}
+m6: "Manual: with a collection, comparer or key selector\n(proof: be-one-of-enumerable, unique-key)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q7: "HaveValue/NotHaveValue alleen op Nullable<T>?" {shape: diamond}
+m7: "Manual: on a non-Nullable<T> subject\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+f0: "Fixed: ShouldBeSubsetOf / ShouldBeUnique (via NotNull) / ShouldNotBeNull / ShouldBeNull\n(proof: be-subset-of, unique, have-value, not-have-value)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+from_previous_q4: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q4 -> q4
+q4 -> m4: nee
+q4 -> q5: "ja (geen BeOneOf(params))"
+q4 -> fb: "ja (BeOneOf(params))"
+q5 -> m5: nee
+q5 -> q6: ja
+q6 -> m6: nee
+q6 -> q7: ja
+q7 -> m7: nee
+q7 -> f0: ja

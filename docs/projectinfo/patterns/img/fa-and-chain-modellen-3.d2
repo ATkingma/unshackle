@@ -1,4 +1,4 @@
-title: "[Activity] AndChainPattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] AndChainPattern.Rewrite - Fixed of Manual (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 vars: {
   d2-legend: {
@@ -9,36 +9,19 @@ vars: {
 start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
 q0: "Buiten een AssertionScope?" {shape: diamond}
 m0: "Manual: Inside an AssertionScope\n(proof: assertion-scope)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-start -> q0
-q0 -> m0: nee
 q1: "Keten is een statement?" {shape: diamond}
 m1: "Manual: The result of the .And chain is used\n(proofs: used, which)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q0 -> q1: ja
-q1 -> m1: nee
 q2: "Statement direct in een blok?" {shape: diamond}
 m2: "Manual: not directly in a block\n(proof: no-block)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q1 -> q2: ja
-q2 -> m2: nee
 q3: "Begint met x.Should().A(..)?" {shape: diamond}
 m3: "Manual: does not start with x.Should()\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+to_next_q4: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+start -> q0
+q0 -> m0: nee
+q0 -> q1: ja
+q1 -> m1: nee
+q1 -> q2: ja
+q2 -> m2: nee
 q2 -> q3: ja
 q3 -> m3: nee
-q4: "Elke .And op hetzelfde subject?" {shape: diamond}
-m4: "Manual: continues on another subject\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q3 -> q4: ja
-q4 -> m4: nee
-q5: "Subject veilig twee keer te evalueren?" {shape: diamond}
-m5: "Hoist: var subject = x;\n(proofs: subject-call, subject-indexer,\nsubject-call-twice)"
-q4 -> q5: ja
-q5 -> m5: nee
-m5 -> q6
-q6: "Elke schakel gevonden door een patroon?" {shape: diamond}
-m6: "Manual: which no pattern rewrites\n(proof: unsupported-link)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q5 -> q6: ja
-q6 -> m6: nee
-q7: "Elke schakel Fixed?" {shape: diamond}
-m7: "Manual: Link <naam> of the .And chain: <reden>\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q6 -> q7: ja
-q7 -> m7: nee
-fx: "Fixed: één Shouldly-statement per schakel\n(simple, because, three-links, be-of-type,\nmember-subject, nullable, edge-multiline,\nbe-same-as, dates, equivalent-collection, ...)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-q7 -> fx: ja
+q3 -> to_next_q4: ja

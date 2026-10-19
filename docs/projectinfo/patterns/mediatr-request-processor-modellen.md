@@ -32,10 +32,15 @@ Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestProcessorPattern.cs
 
 ## Figure 3: decision tree
 
-**Figure 3.** Questions asked by `Rewrite`.
+**Figure 3a.** Questions asked by `Rewrite`. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/mediatr-request-processor-modellen-3.d2 -->
 ![Figure 3: decision tree](img/mediatr-request-processor-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/mediatr-request-processor-modellen-4.d2 -->
+![Figure 3: decision tree](img/mediatr-request-processor-modellen-4.png)
 
 | Leaf | Condition | Proof |
 | ---- | --------- | ----- |

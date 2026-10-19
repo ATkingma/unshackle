@@ -1,0 +1,27 @@
+title: "[Activity] FluentAssertionPattern.Rewrite + EqualSequencePattern - Fixed of Manual (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+q4: "Equal (niet NotEqual)?" {shape: diamond}
+m4: "Manual: Shouldly has no ShouldNotBe for sequences\n(proof: not-equal)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5: "Geen predicate?" {shape: diamond}
+m5: "Manual: with a predicate\n(proof: predicate)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+pa: "Losse params-elementen (geen array)?" {shape: diamond}
+fp: "Fixed: x.ShouldBe(new T[] { a, b }) (becauseArgs-controle overgeslagen)\n(params)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+q6: "Geen benoemde argumenten; because constant formatteerbaar?" {shape: diamond}
+m6: "Manual: named arguments, or becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+f0: "Fixed: x.ShouldBe(y[, ignoreOrder: false, because])\n(simple, params-array, because, because-args, nullable)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+from_previous_q4: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q4 -> q4
+q4 -> m4: nee
+q4 -> pa: ja
+pa -> fp: ja
+pa -> q5: nee
+q5 -> m5: nee
+q5 -> q6: ja
+q6 -> m6: nee
+q6 -> f0: ja

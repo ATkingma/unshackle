@@ -4,10 +4,15 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MemberOptions.cs` (`Try
 
 ## Figure 1: decision tree
 
-**Figure 1.** The questions for one `Condition`, `PreCondition` or `ForPath` option of a `CreateMap<A, B>`.
+**Figure 1a.** The questions for one `Condition`, `PreCondition` or `ForPath` option of a `CreateMap<A, B>`. Split into Figures 1a–1b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/automapper-member-options-modellen-1.d2 -->
 ![Figure 1: decision tree](img/automapper-member-options-modellen-1.png)
+
+**Figure 1b.** Continuation of Figure 1a from its "Continued in Figure 1b" node.
+
+<!-- kingmadoc:diagram img/automapper-member-options-modellen-2.d2 -->
+![Figure 1: decision tree](img/automapper-member-options-modellen-2.png)
 
 | Step       | Method in the code                     | What happens | Proof |
 | ---------- | -------------------------------------- | ------------ | ----- |

@@ -1,0 +1,29 @@
+title: "[Activity] FluentAssertionPattern.Rewrite + ShouldBePattern.RewriteAssertion (NotBe) - Fixed of Manual (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+q4: "NotBe niet uit FluentAssertions.Xml of .Types?" {shape: diamond}
+m4: "Manual: NotBe(...) from Xml/Types: andere gelijkheid\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5: "Precies één waarde-argument (geen comparer)?" {shape: diamond}
+m5: "Manual: NotBe(...) with a comparer\n(proof: comparer)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q6: "Type van het subject bekend?" {shape: diamond}
+m6: "Manual: The type of the subject is unknown\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q7: "ConvertExpected vindt een veilige vorm?" {shape: diamond}
+m7: "Manual: Expected type differs from subject type\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+f0: "Fixed: x.ShouldNotBe(y[, because])\n(proof: simple, because, because-args, nullable, record)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+f1: "Fixed: x.ShouldNotBe((byte)0)\n(proof: constant-cast)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+from_previous_q4: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q4 -> q4
+q4 -> m4: nee
+q4 -> q5: ja
+q5 -> m5: nee
+q5 -> q6: ja
+q6 -> m6: nee
+q6 -> q7: ja
+q7 -> m7: nee
+q7 -> f0: "geen cast"
+q7 -> f1: "cast (constante alleen impliciet naar subjecttype)"

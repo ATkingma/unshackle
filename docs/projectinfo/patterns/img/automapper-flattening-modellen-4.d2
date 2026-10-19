@@ -1,0 +1,16 @@
+title: "[Decision tree] member without an exact-named source member (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q3: "Value leaf behind a possibly\nnull object?" {shape: diamond}
+q4: "Destination U? with U != leaf?" {shape: diamond}
+m4: "Manual: may meet a null object\n(flattening-nullable-conversion)"
+f1: "source.A?.B ?? default / lifted T?\n(flattening-nullable)"
+f2: "source.A?.B (+ !)\n(flattening, flattening-get-method)"
+f3: "MemberValues.Problem: nested map or conversion\n(flattening-nested-map, flattening-multi-level)"
+from_previous_q3: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q3 -> q3
+q3 -> q4: yes
+q3 -> f2: no
+q4 -> m4: yes
+q4 -> f1: no
+f1 -> f3
+f2 -> f3

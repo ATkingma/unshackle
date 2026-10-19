@@ -1,37 +1,21 @@
-title: "[Activity] NotThrowAsyncPattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] NotThrowAsyncPattern.Rewrite - Fixed of Manual (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 start: "" {shape: circle; width: 20; style: {fill: black; stroke: "#9ca3af"}}
 q0: "Buiten een AssertionScope?" {shape: diamond}
 m0: "Manual: Inside an AssertionScope\n(proof: assertion-scope)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-start -> q0
-q0 -> m0: nee
 q1: "await als statement?" {shape: diamond}
 m1: "Manual: not awaited as a statement\n(proof: not-awaited, result-used)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q0 -> q1: ja
-q1 -> m1: nee
 q2: "Geen NotThrowAfterAsync?" {shape: diamond}
 m2: "Manual: waits and polls\n(proof: geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q1 -> q2: ja
-q2 -> m2: nee
 q3: "Niet generiek?" {shape: diamond}
 m3: "Manual: only forbids exception type T\n(proof: generic)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+to_next_q4: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+start -> q0
+q0 -> m0: nee
+q0 -> q1: ja
+q1 -> m1: nee
+q1 -> q2: ja
+q2 -> m2: nee
 q2 -> q3: ja
 q3 -> m3: nee
-q4: "Vorm act.Should()?" {shape: diamond}
-m4: "Manual: is not in the form\n(proof: geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q3 -> q4: ja
-q4 -> m4: nee
-q5: "Subject niet via FluentAssertions?" {shape: diamond}
-m5: "Manual: built with FluentAssertions\n(proof: awaiting)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q4 -> q5: ja
-q5 -> m5: nee
-q6: "Func<Task> of Func<Task<ref>>?" {shape: diamond}
-m6: "Manual: the only delegates Should.NotThrowAsync accepts\n(proof: value-result)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q5 -> q6: ja
-q6 -> m6: nee
-q7: "Geen benoemde argumenten; because constant formatteerbaar?" {shape: diamond}
-m7: "Manual: named arguments, or becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q6 -> q7: ja
-q7 -> m7: nee
-ok: "Fixed: await Should.NotThrowAsync(act[, because])[.ConfigureAwait(x)]\nbecauseArgs: string.Format(InvariantCulture, because, args)\n(proof: simple, because, because-args, configure-await, lambda, reference-result)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-q7 -> ok: ja
+q3 -> to_next_q4: ja

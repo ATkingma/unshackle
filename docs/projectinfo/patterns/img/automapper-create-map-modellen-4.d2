@@ -1,0 +1,17 @@
+title: "[Beslisboom] CreateMapPattern (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q4: "elk schrijfbaar lid: bronlid\nmet exact dezelfde naam?" {shape: diamond}
+m4: "Manual: no member with the\nsame name (flattening)"
+q5: "zelfde type,\ngeen collectie?" {shape: diamond}
+m5: "Manual: AutoMapper converts\n(conversion) / is a collection (collection)"
+q6: "A, B publiek of internal,\n<Profile>Extensions vrij?" {shape: diamond}
+m6: "Manual: private/protected\nof naam bestaat al"
+f: "Fixed: leeg profile +\nstatic B ToB(this A source)\n(simple, internal-types)"
+from_previous_q4: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q4 -> q4
+q4 -> m4: nee
+q4 -> q5: ja
+q5 -> m5: nee
+q5 -> q6: ja
+q6 -> m6: nee
+q6 -> f: ja

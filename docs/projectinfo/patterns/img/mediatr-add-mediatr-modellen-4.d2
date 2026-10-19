@@ -1,0 +1,23 @@
+title: "[Beslisboom] AddMediatRPattern.Rewrite (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q5: "Lifetime = ServiceLifetime.X,\nRegisterGenericHandlers of\ningebouwde NotificationPublisher?" {shape: diamond}
+q6: "Expression body\nmet meer dan een toewijzing?" {shape: diamond}
+m4: "Manual: 'instelling' has no direct equivalent\n(geen proof; eigen publisher)"
+m5: "Manual: several settings in expression lambda\n(geen proof)"
+b: "PipelineBehaviors / StreamPipelineBehaviors += typeof(...)\n(open pre-processor: X<> -> X<,>)"
+l: "ServiceLifetime (standaard Transient),\nvervalt, of NotificationPublisherType"
+s: "Scanned: gesloten exception handlers en\nprocessors vooraan in PipelineBehaviors"
+f: "AddMediator(cfg => ...)\n(behaviors, expression, empty, processors, publisher,\nedge-assemblies, edge-service-type-behavior, edge-publisher-qualified, generic-handlers)"
+from_previous_b: "From Figure 3a: PipelineBehaviors / StreamPipelineBehaviors += typeof(...)\n(open pre-processor: X<> -> X<,>)" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q5: "From Figure 3a: Lifetime = ServiceLifetime.X,\nRegisterGenericHandlers of\ningebouwde NotificationPublisher?" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_s: "From Figure 3a: Scanned: gesloten exception handlers en\nprocessors vooraan in PipelineBehaviors" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_b -> b
+from_previous_q5 -> q5
+from_previous_s -> s
+q5 -> l: ja
+q5 -> m4: nee
+b -> s
+l -> s
+s -> q6
+q6 -> m5: ja
+q6 -> f: nee

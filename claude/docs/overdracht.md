@@ -1,4 +1,4 @@
-# Handover (updated 2026-10-15)
+# Handover (updated 2026-10-19)
 
 Read this first if you are taking over this session. Then `CLAUDE.md` and `claude/docs/INDEX.md`.
 
@@ -40,17 +40,17 @@ TAAK-220/221/222 → Manual (AggregateException unwrapping, cancelled task, meta
 **Way of working that worked:** parallel agents with strictly separated files (MediatR code / FA patterns / `Fixer.cs`+`UsingDirectives.cs`),
 reserve task numbers per agent in advance, `TEMP`/`TMP` on a `D:` folder, never kill other people's dotnet processes, one commit+push after all agents.
 
-## Round 6 blockers (2026-10-18 evening, machine shut down mid-work)
+## Round 6 blockers (done 2026-10-19)
 
-**On main (`b3781a7`+, CI green):** TAAK-287 (FA `Func<V>` Throw subjects, `fa.invoking-local`), TAAK-284 (flaky test: one `AdhocWorkspace` per test solution), TAAK-286 (`MapperConfiguration` lambdas as map classes), TAAK-285 (cp1252/Latin-1 files migrated byte-exact; Moq `Setup(..Send..)` fixes; projectpulse 0/176 → 78/0). `verify-head.sh` now also fails on committed conflict markers.
+TAAK-288 (RequestHandlerDelegate lambdas and Moq mocks, qualified MediatR types), TAAK-289 (`automapper.unused-imapper`, `AddAutoMapper` dropped) and TAAK-290 (starter) are done on main. They were redone from scratch on 2026-10-19: the WIP branches were lost on another PC. TAAK-291 (models rendered, decision trees split to at most 12 arrows) is done on its branch.
 
-**Open, WIP on unpushed branches (worktrees under `.claude/worktrees/`), resume with `/taak-oppakken`:**
+**Open user decisions:**
 
-- TAAK-288 — `worktree-agent-a4ddfa0b990b7a5bb` @ `8bdb648`. Step 2: lambda + Moq `RequestHandlerDelegate` rewrite built; 2 new `_Combined` proofs fail (tool output ≠ hand-written after). Autofac (fullcart) answer still open. Progress in the task file.
-- TAAK-289 — done on `worktree-agent-ac55b759e0d16a786` (rebuilt after the first attempt was lost): `automapper.unused-imapper`; pi22317 and assistiva fully migrated, 0 regressions on 6 repos. Waiting for merge; open user decision on the DI-lookup null check (task file).
-- TAAK-290 — `worktree-agent-a372e1b0de035cb2f` @ `5055f35`. Starter judged principally manual (run-time assembly scan, friend `IVT`); reason order changed. Corpus rerun ended `fix-fails`/`restore-fails` on all 11 repos — investigate logs in `<corpus>/corpus-t290/_results/after/*/logs` first; no verify yet.
-- TAAK-291 — not started; do it last (models touched by the others).
-  Release 0.2.0 is proposed to the user only after all of these are done.
+- starter and fullcart: accept as principally manual (starter: run-time assembly scan via the public `PublisherModule.AddPublisher(Assembly)`; fullcart: Scrutor `Decorate` of an open generic `INotificationHandler<>`, partial: requests on Mediator, notifications on MediatR).
+- `automapper.unused-imapper`: keep removing the `GetService<IMapper>` null check (Fixed with warning) or make it Manual.
+- `automapper.unused-imapper`: remove the empty constructors / factory classes it leaves behind, or leave them.
+
+Release 0.2.0 is proposed to the user only after these decisions.
 
 ## Local environment (Windows, obsolete: the corpus work moved to Linux, TAAK-262)
 
@@ -79,7 +79,7 @@ Tasks to `archief/` → `git add -A` → commit → checks on the commit in a se
 
 ## Known open issues
 
-- Decision trees of some patterns have >12 arrows (not split).
+- Some pattern models are tables only (no figures were drawn when d2 was missing), e.g. most MediatR patterns since TAAK-27x and several AutoMapper/FA ones (TAAK-291 open point).
 - `.vibe-wise/` (learning notes) is local only: removed from the index and in `.gitignore` (2026-10-15); still in the git history.
 - Repo is private: GitHub does not enforce branch protection (no Pro).
 

@@ -47,8 +47,21 @@ Otherwise keep the lookup; the report says which condition failed, with file:lin
 - Enforce the order call patterns → unused-imapper → AddAutoMapper explicitly; one end-to-end test where a single remaining `IMapper` use keeps the registration.
 - Release notes list Fixed/Manual per library and every Manual/partial case.
 
+### 2026-10-19 — implementer questions from TAAK-292 (round 3, unanimous after amendments)
+
+| # | Question | Joint decision |
+| --- | --- | --- |
+| Q1 | Info line in the model | **Separate optional `FixedResult.Info`**, not counted as a warning; also in the JSON/markdown output. Putting it in `Warning` would make warning counts untrustworthy. |
+| Q2 | How a kept lookup is reported | **Manual finding on the lookup call, not undoing the rest of the fix, with a typed reason code** (Architect) instead of a string prefix; the renderer prints `Stays on AutoMapper:`, and a test pins that rendered text (Guardian). The text names the failed rule with file:line. |
+| Q3 | Literal reading of the rules | Accepted, with two changes. (a) A target-typed `new()` counts as a container through its converted type (`IServiceCollection`/`ServiceCollection`): not recognising it errs the unsafe way. (b) An `AddAutoMapper` inside a lambda counts as unconditional only when that lambda is passed directly to an unconditional registration or builder call; otherwise the lookup is kept, with reason code `ConditionalOrDeferredRegistration` and the file:line of the `AddAutoMapper` call/lambda. Inactive `#if` code fails rule 1, and a container filled in another method keeps the lookup. |
+| Q4 | Which removals warn | **Every removed lookup warns**, `GetRequiredService` included: removing it changes how a mis-wired host fails. |
+| — | fullcart reason text says "Autofac's RegisterGenericDecorator" | **Fix before 0.2.0**: name Scrutor's `Decorate(typeof(INotificationHandler<>), …)`. |
+
+Condition (Pragmatist): rerun the corpus `after` on the six AutoMapper repos, 0 regressions. Implementation: TAAK-293.
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct
 - `claude/docs/overdracht.md` — handover
 - `claude/tasks/archief/TAAK-292-council-follow-up.md` — implementation of these decisions
+- `claude/tasks/TAAK-293-council-round-3.md` — implementation of the round-3 decisions

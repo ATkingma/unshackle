@@ -42,7 +42,7 @@ reserve task numbers per agent in advance, `TEMP`/`TMP` on a `D:` folder, never 
 
 ## Round 6 blockers (done 2026-10-19)
 
-TAAK-288 (RequestHandlerDelegate lambdas and Moq mocks, qualified MediatR types), TAAK-289 (`automapper.unused-imapper`, `AddAutoMapper` dropped) and TAAK-290 (starter) are done on main. They were redone from scratch on 2026-10-19: the WIP branches were lost on another PC. TAAK-291 (models rendered, decision trees split to at most 12 arrows) is done on its branch.
+TAAK-288 (RequestHandlerDelegate lambdas and Moq mocks, qualified MediatR types), TAAK-289 (`automapper.unused-imapper`, `AddAutoMapper` dropped) and TAAK-290 (starter) are done on main. They were redone from scratch on 2026-10-19: the WIP branches were lost on another PC. TAAK-291 (models rendered, decision trees split to at most 12 arrows) is done.
 
 **Open user decisions:**
 

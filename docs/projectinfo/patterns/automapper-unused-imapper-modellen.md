@@ -45,7 +45,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/UnusedMapperPattern.cs`
 | Question | Leaf | Proof / test |
 | -------- | ---- | ------------ |
 | rule 1 fails (no AddAutoMapper in the scope) | stays, Manual "rule 1", `KeptReason.NoRegistration` | `FixAsync_ServiceLookupNotSurelyRegistered_…("")`, `("in shop")` |
-| rule 2 fails (only conditional calls, or calls in a lambda not passed directly to a registration/builder call, or in a local function) | stays, Manual "rule 2", `KeptReason.ConditionalOrDeferredRegistration` | `service-lookup-conditional-registration`, `service-lookup-deferred-registration`; theory rows `if`, `#if`, `stored lambda`, `local function` |
+| rule 2 fails (only conditional calls, or calls in a lambda not passed directly to a registration/builder call (matched on the qualified type name, so a lookalike type in user code does not count), or in a local function) | stays, Manual "rule 2", `KeptReason.ConditionalOrDeferredRegistration` | `service-lookup-conditional-registration`, `service-lookup-deferred-registration`; theory rows `if`, `#if`, `stored lambda`, `local function`; `FixAsync_AddAutoMapperInALambdaPassedToALookalikeBuilder_KeepsTheLookup` |
 | rule 3 fails (second container, also a target-typed `new()`) | stays, Manual "rule 3", `KeptReason.ContainerWithoutRegistration` | `service-lookup-second-container`, `service-lookup-target-typed-container`; theory rows `container`, `target-typed` |
 | all hold | removed, warning | `service-lookup`, `FixAsync_ServiceLookupRegisteredByADependentHost_RemovesIt` |
 

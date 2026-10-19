@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Shouldly;
 using Unshackle.Core.Fixes.MediatR.Patterns;
+using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
 using Xunit;
 
@@ -84,6 +85,39 @@ public class GenericDecoratorPatternTests
 
         // Assert
         isDecorator.ShouldBeFalse();
+    }
+
+    // Council round 4 (Q4): only a Decorate that resolves to Scrutor (or does not resolve at all) is named as Scrutor's registration.
+    [Theory]
+    [InlineData("namespace Scrutor { public static class S { public static IServiceCollection Decorate(this IServiceCollection s, Type a, Type b) => s; } }", true)]
+    [InlineData("namespace Own { public static class S { public static IServiceCollection Decorate(this IServiceCollection s, Type a, Type b) => s; } }", false)]
+    [InlineData("", true)]
+    public async Task RewriteAsync_DecorateCall_NamesScrutorOnlyWhenItResolvesThereOrNotAtAll(string extension, bool scrutor)
+    {
+        // Arrange
+        string code = "using System;\nusing System.Threading;\nusing System.Threading.Tasks;\nusing MediatR;\nusing Microsoft.Extensions.DependencyInjection;\n"
+            + "using Scrutor;\nusing Own;\n"
+            + "public class D<T> : INotificationHandler<T> where T : INotification { private readonly INotificationHandler<T> _d; "
+            + "public D(INotificationHandler<T> d) { _d = d; } public Task Handle(T n, CancellationToken c) => _d.Handle(n, c); }\n"
+            + "public static class R { public static IServiceCollection Add(IServiceCollection s) => s.Decorate(typeof(INotificationHandler<>), typeof(D<>)); }\n"
+            + "namespace Scrutor { public class Marker { } }\nnamespace Own { public class Marker { } }\n" + extension;
+        var project = ProjectId.CreateNewId();
+        var documentId = DocumentId.CreateNewId(project);
+        Solution solution = new AdhocWorkspace().CurrentSolution.AddProject(project, "P", "P", LanguageNames.CSharp)
+            .WithProjectCompilationOptions(project, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+            .AddMetadataReferences(project, TestReferences.MediatR)
+            .AddDocument(documentId, "R.cs", code, filePath: "R.cs");
+        Document document = solution.GetDocument(documentId)!;
+        SyntaxNode root = (await document.GetSyntaxRootAsync(TestContext.Current.CancellationToken))!;
+        SemanticModel model = (await document.GetSemanticModelAsync(TestContext.Current.CancellationToken))!;
+        SyntaxNode node = new GenericDecoratorPattern().Find(root, model).Single();
+
+        // Act
+        PatternResult result = await new GenericDecoratorPattern().RewriteAsync(node, model, solution, TestContext.Current.CancellationToken);
+
+        // Assert
+        string reason = result.ShouldBeOfType<ManualResult>().Reason;
+        reason.Contains("Scrutor's Decorate", StringComparison.Ordinal).ShouldBe(scrutor, reason);
     }
 
     private static (SyntaxNode Root, SemanticModel Model) Parse(string declaration)

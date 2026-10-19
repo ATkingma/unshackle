@@ -245,6 +245,26 @@ public class UnusedMapperPatternTests
         report.Findings.Select(f => f.Result).OfType<ManualResult>().ShouldNotContain(m => m.Kept != KeptReason.None);
     }
 
+    // Council round 4 (Q3): a user type that only shares the name of a builder type does not count as a registration target.
+    [Fact]
+    public async Task FixAsync_AddAutoMapperInALambdaPassedToALookalikeBuilder_KeepsTheLookup()
+    {
+        // Arrange
+        string shop = Shop.Replace("services.AddAutoMapper(typeof(ShopProfile).Assembly);",
+                "new WebApplicationBuilder(services).ConfigureServices(s => s.AddAutoMapper(typeof(ShopProfile).Assembly));", StringComparison.Ordinal)
+            + "\n\npublic class WebApplicationBuilder\n{\n    private readonly IServiceCollection _services;\n\n"
+            + "    public WebApplicationBuilder(IServiceCollection services)\n    {\n        _services = services;\n    }\n\n"
+            + "    public void ConfigureServices(Action<IServiceCollection> add)\n    {\n    }\n}\n";
+        Solution solution = Create(shop, Test, seeder: Seeder);
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        (await TextAsync(report.Solution, "Seeder.cs")).ShouldContain("var mapper = services.GetService<IMapper>();");
+        report.Findings.Select(f => f.Result).OfType<ManualResult>().ShouldContain(m => m.Kept == KeptReason.ConditionalOrDeferredRegistration);
+    }
+
     [Fact]
     public async Task FixAsync_ServiceLookupNotANullCheck_KeepsTheLookup()
     {

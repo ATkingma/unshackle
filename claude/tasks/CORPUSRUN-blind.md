@@ -258,6 +258,21 @@ Tool from branch TAAK-293 (`<corpus>/corpus-blind/_results/tool-293`), harness `
 
 No lookup was kept by the stricter rules (target-typed containers, deferred lambdas, local functions) on these repos. fullcart `scan --fix mediatr` (47 findings: 27 Fixed, 20 Manual): the decorator reason now names Scrutor's `Decorate(typeof(INotificationHandler<>), typeof(DispatchingIntegrationEventDecorator<>)) at DependencyInjection.cs:38` instead of Autofac's `RegisterGenericDecorator`.
 
+## TAAK-294 (2026-10-19): qualified builder-type match, Scrutor symbol check
+
+Tool from branch TAAK-294 (`<corpus>/corpus-blind/_results/tool-294`), harness `after` mode on the six AutoMapper repos, same baselines. Before = the TAAK-293 numbers above (kept in `_results/after-t293`).
+
+| Repo           | Before (Fixed / Manual) | After (Fixed / Manual) | Tests before → after | Regressions | Note |
+| -------------- | ----------------------- | ---------------------- | -------------------- | ----------: | ---- |
+| pi22317        | 33 / 0                  | 33 / 0                 | 49/60 → 49/60        | 0 | full, unchanged |
+| assistiva      | 68 / 0                  | 68 / 0                 | 14/16 → 14/16        | 0 | full, unchanged |
+| culinary       | 3 / 70                  | 3 / 70                 | 82/149 → 82/149      | 0 | partial, unchanged |
+| msb            | 12 / 29                 | 12 / 29                | 156/156 → 156/156    | 0 | partial, unchanged |
+| encryptednotes | 10 / 6                  | 10 / 6                 | 85/85 → 85/85        | 0 | partial, unchanged |
+| estore         | 10 / 22                 | 10 / 22                | 45/46 → 45/46        | 0 | partial, unchanged |
+
+fullcart `scan --fix mediatr` (47 findings: 27 Fixed, 20 Manual, unchanged): the reason still names Scrutor's `Decorate(...) at DependencyInjection.cs:38`. Real Scrutor 4.2.2 declares `Decorate` in namespace `Microsoft.Extensions.DependencyInjection` of assembly `Scrutor`, so the check accepts the `Scrutor` assembly as well as the `Scrutor` namespace.
+
 ## See also
 
 - `claude/tasks/archief/TAAK-268-blind-validation-round.md`

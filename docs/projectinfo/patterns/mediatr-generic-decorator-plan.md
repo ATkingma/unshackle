@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "mediatr-generic-decorator"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9]
 files_expected:
     - src/Unshackle.Core/Fixes/MediatR/Patterns/GenericDecoratorPattern.cs
     - src/Unshackle.Core/Fixes/MediatR/Patterns/UnsupportedPattern.cs
@@ -46,6 +46,10 @@ An open generic handler **without** a decorated parameter stays with `mediatr.un
 - **REQ-6**: WHEN a notification decorator is found THE SYSTEM SHALL only give Fixed if MediatR is registered by hand in Autofac (`mediatr.autofac-mediator-module`), otherwise Manual (proof `notification-without-autofac`).
 - **REQ-7** (TAAK-210): WHEN the decorator only implements an own marker (`ICommandHandler<T> : IRequestHandler<T>`) and its file has no `using MediatR` THE SYSTEM SHALL still recognise it as a decorator after its own rewrite (`IRequestHandler<T, Unit>`, only binds after `using Mediator`), so that `mediatr.unsupported` does not report it as a generic handler (proof `_Combined/generic-decorator-marker-without-using`, unit tests `IsDecorator_RewrittenVoidDecoratorInFileWithoutUsingMediatR_True`, `IsDecorator_UnboundHandlerWithOtherResponse_False`).
 - **REQ-8** (council round 3, fullcart): IF the decorator is registered with Scrutor's `Decorate(typeof(S<>), typeof(D<>))` THEN Manual, and the reason SHALL name that Scrutor call with file:line instead of Autofac's `RegisterGenericDecorator` (proof `scrutor-decorate`).
+- **REQ-9** (council round 4, Q4): THE SYSTEM SHALL name a `Decorate` call as Scrutor's only when it resolves to a method of Scrutor (the `Scrutor`
+  namespace, or the `Scrutor` assembly, which declares `Decorate` in `Microsoft.Extensions.DependencyInjection`); the syntax match SHALL be used only
+  when the symbol does not resolve. A user's own `Decorate` SHALL get the plain "used other than in Autofac's RegisterGenericDecorator" reason
+  (unit test `RewriteAsync_DecorateCall_NamesScrutorOnlyWhenItResolvesThereOrNotAtAll`).
 
 ## Assumptions
 

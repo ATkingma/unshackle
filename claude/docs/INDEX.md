@@ -38,6 +38,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | Document | Contents |
 | -------- | -------- |
 | `claude/docs/overdracht.md` | State at an account switch: ongoing work, open assignment, agreements |
+| `claude/docs/council.md` | Decision council (Guardian, Pragmatist, Architect): procedure and recorded decisions |
 | `claude/docs/agent-werkwijze.md` | Task management, cross-references, document splitting, rules of conduct |
 | `claude/docs/code-standaarden.md` | Code style (16 choices) |
 | `claude/docs/patroon-loop.md` | Loop that starts an agent per pattern every 15 min (tick + agent brief) |

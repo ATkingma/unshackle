@@ -57,7 +57,13 @@ Every time an agent writes or updates documentation, cross-references **must** b
 ### Format of `## See also` (at the bottom of every document or skill)
 
 ```markdown
+## Decisions: the council
+
+A choice not settled by code, task or an earlier user decision goes to the council of three sub-agents (`claude/docs/council.md`); they reach one joint decision, which is recorded there. The user can overrule it.
+
 ## See also
+
+- `claude/docs/council.md` — decision council
 
 - `claude/docs/INDEX.md` — volledige documentatie-index
 - `docs/projectinfo/architectuur/testen.md` — proofs en types

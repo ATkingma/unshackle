@@ -52,6 +52,10 @@ TAAK-288 (RequestHandlerDelegate lambdas and Moq mocks, qualified MediatR types)
 
 Release 0.2.0 is proposed to the user only after these decisions.
 
+## Council (2026-10-19)
+
+Open choices go to the decision council (`claude/docs/council.md`), at the user's request. First decisions: starter Manual, fullcart partial, scoped `GetService<IMapper>` removal, empty classes kept with an Info line. Follow-up: TAAK-292.
+
 ## Local environment (Windows, obsolete: the corpus work moved to Linux, TAAK-262)
 
 - This machine blocks starting `.exe` files from `%TEMP%` ("Access is denied"). The two `SampleShopTests` integration tests that build and test a fixed copy therefore fail locally.

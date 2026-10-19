@@ -2,8 +2,6 @@
 
 Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` (`TryParseMap`, `IsMemberList`).
 
-> The figures were created as D2 sources in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
-
 ## Figure 1: classes
 
 **Figure 1.** `TryParseMap` asks `IsMemberList` about the only argument of `CreateMap`, and the AutoMapper types it checks.

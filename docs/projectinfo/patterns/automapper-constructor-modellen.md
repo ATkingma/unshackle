@@ -2,8 +2,6 @@
 
 Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` (`Rewrite`, `Problem`, `ConstructorChoice`, `ConstructorProblem`, `ConstructUsingProblem`, `Extensions`) and `MemberValues.cs`.
 
-> The figure was created as a D2 source in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
-
 ## Figure 1: decision tree
 
 **Figure 1.** The questions for one `CreateMap<A, B>` whose destination may need a constructor.

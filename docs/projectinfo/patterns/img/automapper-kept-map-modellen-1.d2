@@ -1,0 +1,5 @@
+ISolutionPattern: {shape: class; "+Find(root, model)": "IEnumerable<SyntaxNode>"; "+RewriteAsync(node, model, solution, ct)": "Task<PatternResult>"}
+KeptMapPattern: {shape: class; "+Find()": ""; "+Rewrite()": "PatternResult"; "+RewriteAsync()": "Task<PatternResult>"; "-Kept()": "PatternResult"}
+MapOwners: {shape: class; "+KeptPrefix": "string"; "+ForAsync(solution, model, ct)": "Task<MapOwners>"; "+Reason(source, destination)": "string?"; "+StatementPair(statement, model)": "(From, To, Reverse)?"}
+KeptMapPattern -> ISolutionPattern: implements
+KeptMapPattern -> MapOwners: plan and reason

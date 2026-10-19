@@ -2,8 +2,6 @@
 
 Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapIntoPattern.cs`, `CreateMapPattern.cs` and `MapCallPattern.cs`.
 
-> The figures were created as D2 sources in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
-
 ## Figure 1: classes
 
 **Figure 1.** `MapIntoPattern` and `CreateMapPattern` as `ISolutionPattern`; `MapCallPattern` provides the profile search.

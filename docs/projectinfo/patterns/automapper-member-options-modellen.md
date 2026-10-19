@@ -2,8 +2,6 @@
 
 Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MemberOptions.cs` (`TryParse`) and `CreateMapPattern.cs` (`TryParseOptions`, `Rewrite`, `Problem`, `PathProblem`, `ConditionProblem`, `KeepsDefault`).
 
-> The figure was created as a D2 source in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
-
 ## Figure 1: decision tree
 
 **Figure 1.** The questions for one `Condition`, `PreCondition` or `ForPath` option of a `CreateMap<A, B>`.

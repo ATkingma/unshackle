@@ -2,8 +2,6 @@
 
 Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` (`TryParseMap`, `ReverseMapCall`, `TryParseOptions`, `HasReverseMap`, `Reverse`, `MemberPath`, `Unwrap`, `MayFlatten`, `Problem`), `NestedMaps.cs` (`AddProfiles`) and `MapCallPattern.cs` (`GeneratedAsync`).
 
-> The figures were created as D2 sources in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
-
 ## Figure 1: classes
 
 **Figure 1.** The shared profile rewrite with its reverse-map methods, and the two classes that count the generated methods.

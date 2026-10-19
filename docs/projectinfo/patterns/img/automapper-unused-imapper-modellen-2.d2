@@ -1,0 +1,17 @@
+shape: sequence_diagram
+Fixer
+Pattern: UnusedMapperPattern
+Cleanup: MapperCleanup
+Owners: MapOwners
+AddAutoMapper: AddAutoMapperPattern
+Fixer -> Pattern: FindAsync(root, model, solution, ct)
+Pattern -> Cleanup: ForAsync(solution, model, ct)
+Cleanup -> Owners: ForAsync / KeptCall(call, model)
+Cleanup -> Cleanup: BuildAsync: candidates, FindReferencesAsync, fixed point
+Pattern -> Cleanup: Removals(root, model)
+Fixer -> Pattern: RewriteAsync(type, model, solution, ct)
+Pattern -> Pattern: "Replacement() / Remove() per removal"
+Pattern -> Fixer: "Fixed(type) [Warning]"
+Fixer -> AddAutoMapper: RewriteAsync(statement)
+AddAutoMapper -> Cleanup: "Removes(reference)"
+AddAutoMapper -> Fixer: "Fixed (removed) or Manual (IMapper is still used)"

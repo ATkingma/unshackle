@@ -1,0 +1,32 @@
+q0: "At on a DateTime?"
+a1: "TimeSpan argument?"
+a2: "Date a month call?"
+a3: "Microseconds/nanoseconds?"
+a4: "Date safe to evaluate twice?"
+fa1: "d.Date + t / new DateTime(y, m, n) + t"
+fa2: "new DateTime(y, m, n, h, min, s)"
+fa3: "new DateTime(d.Year, d.Month, d.Day, h, min, s, ms, d.Kind)"
+ma: "Manual: microseconds / computed date"
+q1: "Name in s_factories and one number parameter?"
+q2: "Month with day + year?"
+q3: "Day or year constant?"
+f1: "TimeSpan.FromX(n)"
+f2: "new DateTime(y, m, d)"
+m1: "Manual: computed day and year"
+m2: "Manual: no direct replacement"
+q0 -> a1: yes
+q0 -> q1: no
+a1 -> fa1: yes
+a1 -> a3: no
+a3 -> ma: yes
+a3 -> a2: no
+a2 -> fa2: yes
+a2 -> a4: no
+a4 -> fa3: yes
+a4 -> ma: no
+q1 -> f1: yes
+q1 -> q2: no
+q2 -> q3: yes
+q2 -> m2: no
+q3 -> f2: yes
+q3 -> m1: no

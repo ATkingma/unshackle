@@ -1,0 +1,9 @@
+q1: Standalone statement?
+q2: Mapper service still used?
+m1: "Manual: The result of AddAutoMapper is used (result-used)"
+m2: "Manual: IMapper is still used (mapper-injected)"
+f: "Fixed: line removed, _ = p; for unused parameters (simple, parameter)"
+q1 -> m1: no
+q1 -> q2: yes
+q2 -> m2: yes
+q2 -> f: no

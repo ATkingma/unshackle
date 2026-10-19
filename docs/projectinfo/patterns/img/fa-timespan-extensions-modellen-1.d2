@@ -1,0 +1,10 @@
+direction: right
+IPattern: {shape: class; "Find(root, model)"; "Rewrite(node, model)"}
+TimeSpanExtensionsPattern: {shape: class; "-s_factories: Dictionary"; "-s_months: string[]"; "-Method(invocation, model)"; "-RewriteAt(invocation, arguments, definition, model)"; "-MonthReason(name, month, dayAndYear, model)"; "-NeedsParentheses(invocation)"; "-TypeName(name, model, position)"}
+PatternResult: {shape: class}
+FluentTimeSpanExtensions: "FA: FluentTimeSpanExtensions"
+FluentDateTimeExtensions: "FA: FluentDateTimeExtensions"
+TimeSpanExtensionsPattern -> IPattern: implements
+TimeSpanExtensionsPattern -> PatternResult: Fixed / Manual
+TimeSpanExtensionsPattern -> FluentTimeSpanExtensions: recognises
+TimeSpanExtensionsPattern -> FluentDateTimeExtensions: recognises

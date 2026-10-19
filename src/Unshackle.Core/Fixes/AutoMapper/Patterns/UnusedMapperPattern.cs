@@ -26,7 +26,8 @@ public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
     public async Task<IReadOnlyList<SyntaxNode>> FindAsync(SyntaxNode root, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
         MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, cancellationToken);
-        return [.. cleanup.Removals(root, model).Select(r => (SyntaxNode?)r.Node.Ancestors().OfType<TypeDeclarationSyntax>().LastOrDefault() ?? r.Node).Distinct()];
+        return [.. cleanup.Removals(root, model).Select(r => (SyntaxNode?)r.Node.Ancestors().OfType<TypeDeclarationSyntax>().LastOrDefault() ?? r.Node).Distinct(),
+            .. cleanup.KeptLookups(root, model).Select(k => k.Lookup)];
     }
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
@@ -38,6 +39,11 @@ public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(solution);
         MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, cancellationToken);
+        if (node is InvocationExpressionSyntax && cleanup.KeptLookups(node.SyntaxTree.GetRoot(cancellationToken), model).FirstOrDefault(k => k.Lookup == node) is { Reason: string kept })
+        {
+            return PatternResult.Manual(kept);
+        }
+
         List<MapperCleanup.Removal> removals = [.. cleanup.Removals(node.SyntaxTree.GetRoot(cancellationToken), model).Where(r => node.Span.Contains(r.Node.Span))];
         string? warning = removals.Select(r => r.Warning).OfType<string>().FirstOrDefault();
         if (removals is [{ Node: var single }] && single == node)
@@ -45,7 +51,9 @@ public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
             return Replacement(single, model, cleanup) is { } replacement ? PatternResult.Fixed(replacement) : new FixedResult([], []) { Warning = warning };
         }
 
-        SyntaxNode rewritten = node.TrackNodes(removals.Select(r => r.Node));
+        // TAAK-292 (council decision 4): a constructor or class the removals leave empty stays; the finding says so in an Info line.
+        List<SyntaxNode> shells = [.. node.DescendantNodesAndSelf().Where(n => n is ConstructorDeclarationSyntax or ClassDeclarationSyntax && !IsEmpty(n))];
+        SyntaxNode rewritten = node.TrackNodes(removals.Select(r => r.Node).Concat(shells));
         foreach (MapperCleanup.Removal removal in removals)
         {
             SyntaxNode current = rewritten.GetCurrentNode(removal.Node)!;
@@ -54,8 +62,26 @@ public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
                 : Remove(rewritten, removal.Node);
         }
 
-        return new FixedResult([rewritten], []) { Warning = warning };
+        List<string> emptied = [.. shells.Where(s => rewritten.GetCurrentNode(s) is { } now && IsEmpty(now)).Select(Name)];
+        string? info = emptied.Count == 0 ? null : $"{string.Join(", ", emptied)} {(emptied.Count == 1 ? "is" : "are")} now empty and kept; removing it is a separate refactoring.";
+        return new FixedResult([rewritten], []) { Warning = warning, Info = info };
     }
+
+    // A constructor without parameters, initializer and statements, or a class without members.
+    private static bool IsEmpty(SyntaxNode node) => node switch
+    {
+        ConstructorDeclarationSyntax constructor => constructor.ParameterList.Parameters.Count == 0 && constructor.Initializer is null
+            && constructor.ExpressionBody is null && constructor.Body is { Statements.Count: 0 },
+        ClassDeclarationSyntax type => type.Members.Count == 0,
+        _ => false,
+    };
+
+    private static string Name(SyntaxNode node) => node switch
+    {
+        ConstructorDeclarationSyntax constructor => $"the constructor {constructor.Identifier.ValueText}()",
+        ClassDeclarationSyntax type => $"the class {type.Identifier.ValueText}",
+        _ => node.Kind().ToString(),
+    };
 
     // The trimmed node, or null when the whole node goes. original is in the tree of model.
     private static SyntaxNode? Replacement(SyntaxNode original, SemanticModel model, MapperCleanup cleanup) => original switch

@@ -54,7 +54,7 @@ Release 0.2.0 is proposed to the user only after these decisions.
 
 ## Council (2026-10-19)
 
-Open choices go to the decision council (`claude/docs/council.md`), at the user's request. First decisions: starter Manual, fullcart partial, scoped `GetService<IMapper>` removal, empty classes kept with an Info line. Follow-up: TAAK-292.
+Open choices go to the decision council (`claude/docs/council.md`), at the user's request. First decisions: starter Manual, fullcart partial, scoped `GetService<IMapper>` removal, empty classes kept with an Info line. Follow-up: TAAK-292 (done: scoped lookup rule, Info lines, 0 corpus regressions).
 
 ## Local environment (Windows, obsolete: the corpus work moved to Linux, TAAK-262)
 

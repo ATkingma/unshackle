@@ -27,16 +27,20 @@ internal class MapperCleanup
 
     private readonly HashSet<string> _removed;
 
-    private readonly bool _registered;
+    private readonly MapperRegistration _registration;
 
-    private MapperCleanup(HashSet<string> removed, bool registered)
+    // Symbols a GetService<IMapper>() lookup feeds that would go without the scope rule of MapperRegistration (TAAK-292).
+    private readonly HashSet<string> _keptByScope;
+
+    private MapperCleanup(HashSet<string> removed, MapperRegistration registration, HashSet<string> keptByScope)
     {
         _removed = removed;
-        _registered = registered;
+        _registration = registration;
+        _keptByScope = keptByScope;
     }
 
     /// <summary>The plan without a solution: nothing is removed.</summary>
-    public static MapperCleanup None { get; } = new([], registered: false);
+    public static MapperCleanup None { get; } = new([], MapperRegistration.None, []);
 
     /// <summary>
     /// The plan of the solution. Like <see cref="MapOwners.ForAsync"/> it is reused for a solution that differs only in the file it was built
@@ -63,7 +67,23 @@ internal class MapperCleanup
     }
 
     /// <summary>The outermost nodes of root the plan removes or trims, each with a warning when removing it may change behaviour.</summary>
-    public IReadOnlyList<Removal> Removals(SyntaxNode root, SemanticModel model) => Removals(root, model, _removed, _registered);
+    public IReadOnlyList<Removal> Removals(SyntaxNode root, SemanticModel model) => Removals(root, model, _removed, _registration);
+
+    /// <summary>
+    /// The GetService&lt;IMapper&gt;() lookups in root that stay only because their scope is not surely registered, each with the rule that failed.
+    /// </summary>
+    public IReadOnlyList<(InvocationExpressionSyntax Lookup, string Reason)> KeptLookups(SyntaxNode root, SemanticModel model)
+    {
+        if (_keptByScope.Count == 0)
+        {
+            return [];
+        }
+
+        return [.. root.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Where(i => IsLookup(i, model) && Fed(i, model) is string key && _keptByScope.Contains(key))
+            .Select(i => (i, $"{MapOwners.KeptPrefix}the GetService<IMapper>() lookup stays, IMapper may not be registered for this code ({_registration.Failure(model)}); "
+                + "remove it and its null check by hand once AddAutoMapper surely runs first."))];
+    }
 
     /// <summary>Whether node lies inside code the plan removes (a use of IMapper there does not need AddAutoMapper).</summary>
     public bool Removes(SyntaxNode node, SemanticModel model) =>
@@ -90,7 +110,7 @@ internal class MapperCleanup
         _ => null,
     };
 
-    private static List<Removal> Removals(SyntaxNode root, SemanticModel model, HashSet<string> removed, bool registered)
+    private static List<Removal> Removals(SyntaxNode root, SemanticModel model, HashSet<string> removed, MapperRegistration registration)
     {
         List<Removal> found = [];
         if (removed.Count == 0)
@@ -107,11 +127,11 @@ internal class MapperCleanup
                 case FieldDeclarationSyntax field when field.Declaration.Variables.Any(Declared):
                 case LocalDeclarationStatementSyntax { Declaration.Variables: [var local] } when Declared(local):
                 case MethodDeclarationSyntax method when Declared(method):
-                    found.Add(new Removal(node, null));
+                    found.Add(new Removal(node, LookupWarning(node, model, registration)));
                     break;
                 case ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment }
-                    when Removed(Target(assignment.Left)) && IsDroppable(assignment.Right, model, removed, registered):
-                    found.Add(new Removal(node, null));
+                    when Removed(Target(assignment.Left)) && IsDroppable(assignment.Right, model, removed, registration):
+                    found.Add(new Removal(node, LookupWarning(node, model, registration)));
                     break;
                 case ExpressionStatementSyntax { Expression: InvocationExpressionSyntax { ArgumentList.Arguments: [var checkedArgument, ..] } invocation }
                     when model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { Name: "ThrowIfNull", ContainingType.Name: "ArgumentNullException" }
@@ -122,7 +142,7 @@ internal class MapperCleanup
                     found.Add(new Removal(node, guard.Statement is ThrowStatementSyntax or BlockSyntax { Statements: [ThrowStatementSyntax] }
                         ? null
                         : $"The null check on {checkedName} is removed with the IMapper it checks: it only took its branch when no IMapper was "
-                            + "registered, and AddAutoMapper registered one. Check that this code never ran without that registration."));
+                            + $"registered, and AddAutoMapper at {registration.Call(model)} registers one. Check that this code never ran without that registration."));
                     break;
                 case ParameterListSyntax { Parent: ConstructorDeclarationSyntax } parameters when parameters.Parameters.Any(Declared):
                     found.Add(new Removal(node, null));
@@ -181,32 +201,32 @@ internal class MapperCleanup
     };
 
     // A value that may be dropped without dropping anything else the code does.
-    private static bool IsDroppable(ExpressionSyntax expression, SemanticModel model, HashSet<string> removed, bool registered) => expression switch
+    private static bool IsDroppable(ExpressionSyntax expression, SemanticModel model, HashSet<string> removed, MapperRegistration registration) => expression switch
     {
-        ParenthesizedExpressionSyntax parenthesized => IsDroppable(parenthesized.Expression, model, removed, registered),
-        PostfixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.SuppressNullableWarningExpression } suppressed => IsDroppable(suppressed.Operand, model, removed, registered),
-        CastExpressionSyntax cast => IsDroppable(cast.Expression, model, removed, registered),
-        BinaryExpressionSyntax { RawKind: (int)SyntaxKind.CoalesceExpression, Right: ThrowExpressionSyntax } coalesce => IsDroppable(coalesce.Left, model, removed, registered),
+        ParenthesizedExpressionSyntax parenthesized => IsDroppable(parenthesized.Expression, model, removed, registration),
+        PostfixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.SuppressNullableWarningExpression } suppressed => IsDroppable(suppressed.Operand, model, removed, registration),
+        CastExpressionSyntax cast => IsDroppable(cast.Expression, model, removed, registration),
+        BinaryExpressionSyntax { RawKind: (int)SyntaxKind.CoalesceExpression, Right: ThrowExpressionSyntax } coalesce => IsDroppable(coalesce.Left, model, removed, registration),
         IdentifierNameSyntax or MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } => model.GetSymbolInfo(expression).Symbol is ILocalSymbol or IFieldSymbol or IParameterSymbol or IPropertySymbol,
-        MemberAccessExpressionSyntax member => model.GetSymbolInfo(member).Symbol is IFieldSymbol or IPropertySymbol && IsDroppable(member.Expression, model, removed, registered),
-        ObjectCreationExpressionSyntax creation => IsAutoMapperCreation(creation, model, removed, registered),
-        InvocationExpressionSyntax invocation => model.GetSymbolInfo(invocation).Symbol is IMethodSymbol method && IsDroppableCall(invocation, method, model, removed, registered),
+        MemberAccessExpressionSyntax member => model.GetSymbolInfo(member).Symbol is IFieldSymbol or IPropertySymbol && IsDroppable(member.Expression, model, removed, registration),
+        ObjectCreationExpressionSyntax creation => IsAutoMapperCreation(creation, model, removed, registration),
+        InvocationExpressionSyntax invocation => model.GetSymbolInfo(invocation).Symbol is IMethodSymbol method && IsDroppableCall(invocation, method, model, removed, registration),
         _ => false,
     };
 
     // new MapperConfiguration(cfg => ...) or new Mapper(configuration): builds a mapper, nothing else.
-    private static bool IsAutoMapperCreation(ObjectCreationExpressionSyntax creation, SemanticModel model, HashSet<string> removed, bool registered) =>
+    private static bool IsAutoMapperCreation(ObjectCreationExpressionSyntax creation, SemanticModel model, HashSet<string> removed, MapperRegistration registration) =>
         model.GetTypeInfo(creation).Type is { ContainingAssembly.Name: AutoMapperAssembly, Name: "MapperConfiguration" or "Mapper" }
-        && (creation.ArgumentList?.Arguments ?? []).All(a => a.Expression is LambdaExpressionSyntax || IsDroppable(a.Expression, model, removed, registered));
+        && (creation.ArgumentList?.Arguments ?? []).All(a => a.Expression is LambdaExpressionSyntax || IsDroppable(a.Expression, model, removed, registration));
 
-    private static bool IsDroppableCall(InvocationExpressionSyntax invocation, IMethodSymbol method, SemanticModel model, HashSet<string> removed, bool registered)
+    private static bool IsDroppableCall(InvocationExpressionSyntax invocation, IMethodSymbol method, SemanticModel model, HashSet<string> removed, MapperRegistration registration)
     {
         ExpressionSyntax? receiver = (invocation.Expression as MemberAccessExpressionSyntax)?.Expression;
         bool plainReceiver = receiver switch
         {
             null => true,
-            ObjectCreationExpressionSyntax creation => IsAutoMapperCreation(creation, model, removed, registered),
-            _ => model.GetSymbolInfo(receiver).Symbol is INamedTypeSymbol || IsDroppable(receiver, model, removed, registered),
+            ObjectCreationExpressionSyntax creation => IsAutoMapperCreation(creation, model, removed, registration),
+            _ => model.GetSymbolInfo(receiver).Symbol is INamedTypeSymbol || IsDroppable(receiver, model, removed, registration),
         };
         if (!plainReceiver)
         {
@@ -215,7 +235,7 @@ internal class MapperCleanup
 
         // CreateMapper() of a MapperConfiguration; GetService<IMapper>() only while AddAutoMapper registers it (else it returned null or threw).
         return method is { Name: "CreateMapper", ContainingAssembly.Name: AutoMapperAssembly }
-            || (registered && method is { Name: "GetService" or "GetRequiredService", TypeArguments: [var service] } && IsMapper(service))
+            || (registration.Registers(model) && method is { Name: "GetService" or "GetRequiredService", TypeArguments: [var service] } && IsMapper(service))
             || (invocation.ArgumentList.Arguments.Count == 0 && Key(method) is string key && removed.Contains(key));
     }
 
@@ -236,7 +256,6 @@ internal class MapperCleanup
 
         // Candidates: every IMapper field, constructor parameter and local, and every static factory that only builds a mapper.
         Dictionary<string, (ISymbol Symbol, Document Document, SyntaxNode Declaration)> candidates = new(StringComparer.Ordinal);
-        bool registered = false;
         foreach (Document document in solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents))
         {
             if (!(await document.GetTextAsync(cancellationToken)).ToString().Contains("Mapper", StringComparison.Ordinal))
@@ -245,8 +264,6 @@ internal class MapperCleanup
             }
 
             (SyntaxNode root, SemanticModel model) = await LoadAsync(document);
-            registered |= root.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(i =>
-                model.GetSymbolInfo(i).Symbol is IMethodSymbol { Name: "AddAutoMapper", ContainingAssembly.Name: AutoMapperAssembly });
             foreach (SyntaxNode declaration in Declarations(root, model))
             {
                 if (model.GetDeclaredSymbol(declaration, cancellationToken) is { } symbol && Key(symbol) is string key)
@@ -294,99 +311,137 @@ internal class MapperCleanup
             return calls;
         }
 
-        HashSet<string> removed = [.. candidates.Keys];
-        while (true)
+        MapperRegistration registration = await MapperRegistration.ForAsync(solution, cancellationToken);
+        HashSet<string> removed = await PlanAsync(registration);
+
+        // TAAK-292: the lookups the scope rule keeps are the ones the plan would remove if every project counted as registered.
+        HashSet<string> keptByScope = registration.AnyFailure ? await PlanAsync(MapperRegistration.Everywhere) : [];
+        keptByScope.ExceptWith(removed);
+        return new MapperCleanup(removed, registration, keptByScope);
+
+        async Task<HashSet<string>> PlanAsync(MapperRegistration registration)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            Dictionary<DocumentId, List<Removal>> removals = [];
-            async Task<bool> CoveredAsync(Document document, TextSpan span)
+            HashSet<string> removed = [.. candidates.Keys];
+            while (true)
             {
-                (SyntaxNode root, SemanticModel model) = await LoadAsync(document);
-                if (!removals.TryGetValue(document.Id, out List<Removal>? inDocument))
+                cancellationToken.ThrowIfCancellationRequested();
+                Dictionary<DocumentId, List<Removal>> removals = [];
+                async Task<bool> CoveredAsync(Document document, TextSpan span)
                 {
-                    inDocument = Removals(root, model, removed, registered);
-                    removals[document.Id] = inDocument;
+                    (SyntaxNode root, SemanticModel model) = await LoadAsync(document);
+                    if (!removals.TryGetValue(document.Id, out List<Removal>? inDocument))
+                    {
+                        inDocument = Removals(root, model, removed, registration);
+                        removals[document.Id] = inDocument;
+                    }
+
+                    return inDocument.Any(r => r.Node.Span.Contains(span));
                 }
 
-                return inDocument.Any(r => r.Node.Span.Contains(span));
-            }
-
-            List<string> invalid = [];
-            foreach (string key in removed)
-            {
-                (ISymbol symbol, Document document, SyntaxNode declaration) = candidates[key];
-                if (!await IsValidAsync(key, symbol, document, declaration))
+                List<string> invalid = [];
+                foreach (string key in removed)
                 {
-                    invalid.Add(key);
-                }
-            }
-
-            if (invalid.Count == 0)
-            {
-                break;
-            }
-
-            removed.ExceptWith(invalid);
-
-            async Task<bool> IsValidAsync(string key, ISymbol symbol, Document document, SyntaxNode declaration)
-            {
-                (_, SemanticModel declarationModel) = await LoadAsync(document);
-                if (declaration is VariableDeclaratorSyntax { Initializer.Value: var initial } && !IsEmpty(initial) && !IsDroppable(initial, declarationModel, removed, registered))
-                {
-                    return false;
+                    (ISymbol symbol, Document document, SyntaxNode declaration) = candidates[key];
+                    if (!await IsValidAsync(key, symbol, document, declaration))
+                    {
+                        invalid.Add(key);
+                    }
                 }
 
-                foreach (ReferenceLocation use in uses[key])
+                if (invalid.Count == 0)
                 {
-                    if (use.IsImplicit || use.IsCandidateLocation)
+                    break;
+                }
+
+                removed.ExceptWith(invalid);
+
+                async Task<bool> IsValidAsync(string key, ISymbol symbol, Document document, SyntaxNode declaration)
+                {
+                    (_, SemanticModel declarationModel) = await LoadAsync(document);
+                    if (declaration is VariableDeclaratorSyntax { Initializer.Value: var initial } && !IsEmpty(initial) && !IsDroppable(initial, declarationModel, removed, registration))
                     {
                         return false;
                     }
 
-                    (SyntaxNode root, _) = await LoadAsync(use.Document);
-                    SyntaxNode node = root.FindNode(use.Location.SourceSpan, getInnermostNodeForTie: true);
-                    if (!await CoveredAsync(use.Document, node.Span) && !(Call(node) is { } call && (await MigratedCallsAsync(use.Document)).Contains(call)))
+                    foreach (ReferenceLocation use in uses[key])
                     {
-                        return false;
-                    }
-                }
-
-                return symbol is not IParameterSymbol parameter || await IsRemovableParameterAsync(key, parameter);
-            }
-
-            // Every call of the constructor passes a droppable value (or nothing) for it, and no other constructor is left with the same signature.
-            async Task<bool> IsRemovableParameterAsync(string key, IParameterSymbol parameter)
-            {
-                var constructor = (IMethodSymbol)parameter.ContainingSymbol;
-                foreach (ReferenceLocation call in uses[key + "#calls"])
-                {
-                    (SyntaxNode root, SemanticModel model) = await LoadAsync(call.Document);
-                    SyntaxNode node = root.FindNode(call.Location.SourceSpan, getInnermostNodeForTie: true);
-                    ArgumentListSyntax? arguments = node.AncestorsAndSelf()
-                        .Select(n => n switch
+                        if (use.IsImplicit || use.IsCandidateLocation)
                         {
-                            BaseObjectCreationExpressionSyntax creation => creation.ArgumentList,
-                            ConstructorInitializerSyntax initializer => initializer.ArgumentList,
-                            _ => null,
-                        })
-                        .FirstOrDefault(a => a is not null);
-                    if (call.IsImplicit || arguments is null
-                        || (model.GetSymbolInfo(arguments.Parent!, cancellationToken).Symbol as IMethodSymbol)?.OriginalDefinition.GetDocumentationCommentId() != constructor.OriginalDefinition.GetDocumentationCommentId()
-                        || (Argument(arguments, parameter) is { } argument
-                            && (!argument.RefKindKeyword.IsKind(SyntaxKind.None) || !IsDroppable(argument.Expression, model, removed, registered))))
-                    {
-                        return false;
+                            return false;
+                        }
+
+                        (SyntaxNode root, _) = await LoadAsync(use.Document);
+                        SyntaxNode node = root.FindNode(use.Location.SourceSpan, getInnermostNodeForTie: true);
+                        if (!await CoveredAsync(use.Document, node.Span) && !(Call(node) is { } call && (await MigratedCallsAsync(use.Document)).Contains(call)))
+                        {
+                            return false;
+                        }
                     }
+
+                    return symbol is not IParameterSymbol parameter || await IsRemovableParameterAsync(key, parameter);
                 }
 
-                List<string> left = [.. constructor.Parameters.Where(p => Key(p) is not string k || !removed.Contains(k)).Select(p => p.Type.ToDisplayString())];
-                return !constructor.ContainingType.InstanceConstructors.Any(c => !SymbolEqualityComparer.Default.Equals(c, constructor)
-                    && c.Parameters.Select(p => p.Type.ToDisplayString()).SequenceEqual(left, StringComparer.Ordinal));
+                // Every call of the constructor passes a droppable value (or nothing) for it, and no other constructor is left with the same signature.
+                async Task<bool> IsRemovableParameterAsync(string key, IParameterSymbol parameter)
+                {
+                    var constructor = (IMethodSymbol)parameter.ContainingSymbol;
+                    foreach (ReferenceLocation call in uses[key + "#calls"])
+                    {
+                        (SyntaxNode root, SemanticModel model) = await LoadAsync(call.Document);
+                        SyntaxNode node = root.FindNode(call.Location.SourceSpan, getInnermostNodeForTie: true);
+                        ArgumentListSyntax? arguments = node.AncestorsAndSelf()
+                            .Select(n => n switch
+                            {
+                                BaseObjectCreationExpressionSyntax creation => creation.ArgumentList,
+                                ConstructorInitializerSyntax initializer => initializer.ArgumentList,
+                                _ => null,
+                            })
+                            .FirstOrDefault(a => a is not null);
+                        if (call.IsImplicit || arguments is null
+                            || (model.GetSymbolInfo(arguments.Parent!, cancellationToken).Symbol as IMethodSymbol)?.OriginalDefinition.GetDocumentationCommentId() != constructor.OriginalDefinition.GetDocumentationCommentId()
+                            || (Argument(arguments, parameter) is { } argument
+                                && (!argument.RefKindKeyword.IsKind(SyntaxKind.None) || !IsDroppable(argument.Expression, model, removed, registration))))
+                        {
+                            return false;
+                        }
+                    }
+
+                    List<string> left = [.. constructor.Parameters.Where(p => Key(p) is not string k || !removed.Contains(k)).Select(p => p.Type.ToDisplayString())];
+                    return !constructor.ContainingType.InstanceConstructors.Any(c => !SymbolEqualityComparer.Default.Equals(c, constructor)
+                        && c.Parameters.Select(p => p.Type.ToDisplayString()).SequenceEqual(left, StringComparer.Ordinal));
+                }
+            }
+
+            return removed;
+        }
+    }
+
+    // GetService<IMapper>() or GetRequiredService<IMapper>().
+    private static bool IsLookup(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { Name: "GetService" or "GetRequiredService", TypeArguments: [var service] } && IsMapper(service);
+
+    // The key of the field or local whose value (initial or assigned) the expression is part of; null when it feeds no such symbol.
+    private static string? Fed(ExpressionSyntax expression, SemanticModel model)
+    {
+        foreach (SyntaxNode ancestor in expression.Ancestors().TakeWhile(a => a is not StatementSyntax and not MemberDeclarationSyntax || a is LocalDeclarationStatementSyntax or ExpressionStatementSyntax or FieldDeclarationSyntax))
+        {
+            switch (ancestor)
+            {
+                case VariableDeclaratorSyntax declarator:
+                    return Key(model.GetDeclaredSymbol(declarator));
+                case AssignmentExpressionSyntax assignment when assignment.Right.Span.Contains(expression.Span):
+                    return Key(model.GetSymbolInfo(Target(assignment.Left)).Symbol);
             }
         }
 
-        return new MapperCleanup(removed, registered);
+        return null;
     }
+
+    // The warning for a removed declaration or assignment whose value was a DI lookup: it names the AddAutoMapper call that registers IMapper.
+    private static string? LookupWarning(SyntaxNode removed, SemanticModel model, MapperRegistration registration) =>
+        removed.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(i => IsLookup(i, model))
+            ? $"The GetService<IMapper>() lookup is removed: AddAutoMapper at {registration.Call(model)} registers IMapper for this code."
+            : null;
 
     // The Map call (or method group) a use of a mapper is the receiver of: mapper.Map<B>(a), this.mapper.Map(a, b), items.Select(mapper.Map<B>).
     private static SyntaxNode? Call(SyntaxNode use)

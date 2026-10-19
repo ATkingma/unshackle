@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "automapper-unused-imapper"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12]
 files_expected:
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/UnusedMapperPattern.cs
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapperCleanup.cs
@@ -70,28 +70,39 @@ top-level `AddAutoMapper(...)` statement (`GlobalStatementSyntax`), which used t
 - **REQ-4**: THE SYSTEM SHALL remove a null check on a removed parameter or local: `ThrowIfNull`, `if (x == null) throw`, `x ?? throw` (proof `null-checks`).
 - **REQ-5**: WHEN a field or local only held a mapper built by a static factory, `CreateMapper()` or a DI lookup THE SYSTEM SHALL remove it, and the factory
   once nothing else calls it (proof `test-factory`).
-- **REQ-6**: WHEN a `GetService<IMapper>()` lookup is followed by `if (mapper == null) { …; return; }` without `else`, and the solution calls
-  `AddAutoMapper`, THE SYSTEM SHALL remove the lookup and the check and attach a warning to the finding (proof `service-lookup`;
-  `FixAsync_ServiceLookupWithNullCheck_RemovesBothWithAWarning`).
+- **REQ-6**: WHEN a `GetService<IMapper>()`/`GetRequiredService<IMapper>()` lookup feeds a removed symbol and its scope is registered (REQ-10)
+  THE SYSTEM SHALL remove the lookup and a following `if (mapper == null) { …; return; }` without `else`, with a warning that names the
+  `AddAutoMapper` call (file:line) (proof `service-lookup`; `FixAsync_ServiceLookupWithNullCheck_RemovesBothWithAWarning`).
 - **REQ-7**: WHEN the mapper is used otherwise, a caller passes a value that is not droppable (`null`), or removing the parameter would leave two
   constructors with one signature THE SYSTEM SHALL keep it (`FixAsync_MapperUsedOtherwise_KeepsItAndTheRegistration`).
-- **REQ-8**: WHEN the solution does not call `AddAutoMapper`, or the check is not a plain null check, THE SYSTEM SHALL keep the DI lookup
-  (`FixAsync_ServiceLookupNotRegisteredByAddAutoMapperOrNotANullCheck_KeepsTheLookup`).
+- **REQ-8**: WHEN the scope of a lookup is not registered (REQ-10), or the check is not a plain null check, THE SYSTEM SHALL keep the DI lookup,
+  and for a lookup kept only because of the scope THE SYSTEM SHALL report a Manual finding that names the failed condition with file:line
+  (`FixAsync_ServiceLookup…_KeepsTheLookup`).
 - **REQ-9**: WHEN `AddAutoMapper` is a top-level statement THE SYSTEM SHALL remove it like any other (`FixAsync_TopLevelAddAutoMapper_IsRemoved`).
+- **REQ-10** (council decision 3, 2026-10-19): the scope of a lookup in project P is P plus every project that transitively depends on it. It is
+  registered only when (1) an `AddAutoMapper` call is in the scope, (2) one such call is unconditional (not inside `if`, `?:`, `switch`, `#if`
+  or a loop), and (3) no project in the scope has a `new ServiceCollection()`, `Host.CreateApplicationBuilder` or `WebApplication.CreateBuilder`
+  whose own method body lacks an `AddAutoMapper` call (syntactic). This replaces the solution-wide registration flag
+  (`FixAsync_ServiceLookupIn…`: own project, dependent host, conditional call, second container).
+- **REQ-11** (council decision 4): WHEN the removals leave a constructor without parameters and statements, or a class without members,
+  THE SYSTEM SHALL keep it and add an Info line to the finding ("`MapperHelper` is now empty") (`FixAsync_…_ReportsAnInfoLine`).
+- **REQ-12**: THE SYSTEM SHALL run the call patterns before `automapper.unused-imapper`, and that before `automapper.add-automapper`; one remaining
+  `IMapper` use keeps `AddAutoMapper` (`AutoMapperFix_PatternOrder_…`, `FixAsync_OneRemainingMapperUse_KeepsAddAutoMapper`). The plan cache keys
+  symbols by documentation comment id; overloaded constructors and partial types are covered by `FixAsync_OverloadsAndPartialType_…`.
 
 ## Assumptions
 
 - AutoMapper's fix is all-or-nothing (`AutoMapperFix.AllOrNothing`): a call the plan counts as migrated that ends up Manual undoes the whole fix, so the
   plan only has to know which calls are kept (`MapOwners`), not whether each rewrite succeeds.
 - Building a mapper (`new MapperConfiguration(cfg => cfg.AddProfile<P>())`, `CreateMapper()`, a factory) has no effect the code relies on.
-- A `GetService<IMapper>()` null check only took its branch when nothing registered `IMapper`; while the solution calls `AddAutoMapper`
-  that branch did not run. This is the reviewed assumption of the lost first attempt; it is kept, but only under the registration gate,
+- A `GetService<IMapper>()` null check only took its branch when nothing registered `IMapper`; while the scope of the lookup registers it
+  (REQ-10) that branch did not run. This is the reviewed assumption of the lost first attempt; it is kept, but only under the registration gate,
   only for `== null`/`is null` checks without `else`, and the finding carries a warning so a reviewer sees it.
 
 ## Risks
 
-- A service provider built without the `AddAutoMapper` call of the solution (a second container) would have taken the removed branch.
-  Mitigated by the warning; open question for the user below.
+- A service provider built without the `AddAutoMapper` call (a second container) would have taken the removed branch. Mitigated by
+  condition 3 of REQ-10 (syntactic: a container built in one method and filled in another counts as lacking it, so the lookup is kept).
 - A constructor called by reflection with explicit arguments (not DI) would break; such a call is not visible in the solution.
 
 ## Models
@@ -100,8 +111,7 @@ top-level `AddAutoMapper(...)` statement (`GlobalStatementSyntax`), which used t
 
 ## Open questions
 
-- Keep the null-check removal (REQ-6) with its warning, or treat any check on a DI lookup as "keep the lookup and the registration"?
-  The current choice turns pi22317 fully migrated; the stricter one leaves `AddAutoMapper` in its `AccountController`.
+- None. The null-check removal was decided by the council on 2026-10-19 (scoped removal, REQ-10; `claude/docs/council.md`).
 
 ## See also
 

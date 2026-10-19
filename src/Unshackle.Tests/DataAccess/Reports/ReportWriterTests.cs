@@ -104,6 +104,27 @@ public class ReportWriterTests
     }
 
     [Fact]
+    public void From_FixedWithWarningAndInfo_PutsBothInReason()
+    {
+        // Arrange
+        var finding = new Finding
+        {
+            FilePath = "a.cs",
+            Line = 1,
+            FixId = "automapper",
+            PatternId = "automapper.unused-imapper",
+            Result = new FixedResult([SyntaxFactory.ParseExpression("x")], []) { Warning = "lookup removed.", Info = "the class MapperHelper is now empty" },
+        };
+
+        // Act
+        var row = ReportRow.From(finding);
+
+        // Assert
+        row.Status.ShouldBe("Fixed");
+        row.Reason.ShouldBe("lookup removed. Info: the class MapperHelper is now empty");
+    }
+
+    [Fact]
     public void FromAll_CustomAssertionCalls_OneRowPerAssertionWithCount()
     {
         // Arrange

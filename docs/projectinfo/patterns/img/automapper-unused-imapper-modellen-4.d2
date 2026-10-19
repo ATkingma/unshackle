@@ -1,0 +1,11 @@
+r1: "Rule 1: AddAutoMapper in the lookup's project or a project that depends on it?"
+r2: "Rule 2: one of those calls unconditional (no if, ?:, switch, #if, loop)?"
+r3: "Rule 3: no container (new ServiceCollection(), Host.CreateApplicationBuilder, WebApplication.CreateBuilder) in a method without AddAutoMapper?"
+kept: "lookup and null check stay (Manual, Stays on AutoMapper: names the rule, file:line)"
+go: "lookup and null check removed (Fixed, warning names AddAutoMapper file:line)"
+r1 -> kept: no
+r1 -> r2: yes
+r2 -> kept: no
+r2 -> r3: yes
+r3 -> kept: no
+r3 -> go: yes

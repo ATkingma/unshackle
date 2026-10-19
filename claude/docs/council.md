@@ -51,4 +51,4 @@ Otherwise keep the lookup; the report says which condition failed, with file:lin
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct
 - `claude/docs/overdracht.md` — handover
-- `claude/tasks/TAAK-292-council-follow-up.md` — implementation of these decisions
+- `claude/tasks/archief/TAAK-292-council-follow-up.md` — implementation of these decisions

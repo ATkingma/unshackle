@@ -205,6 +205,18 @@ Re-measured after the TAAK-281/283 fixes (tool = branch `worktree-agent-a703fd17
 
 **Recheck for TAAK-290 (starter):** still 0 Fixed / 11 Manual, 45/49 → 45/49 (`fix --force` writes no file). Judged principally manual: the shared library's internal `AddMediatR` scans an assembly that the public `PublisherModule.AddPublisher` receives from the host at run time; Mediator's generator cannot see it. The report now names that blocker instead of the `InternalsVisibleTo` host clash.
 
+## TAAK-288 (2026-10-19): `RequestHandlerDelegate` in tests
+
+Tool from branch TAAK-288 (`<corpus>/corpus-blind/_results/tool-288`), harness `claude/tools/corpus-am.sh`, `FIX=mediatr`, results `<corpus>/corpus-blind/_results/{base,after}`.
+
+| Repo       | Fixed / Manual before | Fixed / Manual after | Tests before → after | Regressions | Result |
+| ---------- | --------------------- | -------------------- | -------------------- | ----------: | ------ |
+| afripay    | 0 / 16                | 25 / 0               | 264/264 → 264/264    | 0 | **migrated** (real lambdas; `MediatR.IRequest<T>` written in full → new `mediatr.qualified-swapped-type`) |
+| cleanmicro | 0 / 20                | 19 / 0               | 67/67 → 67/67        | 0 | **migrated** (Moq `Mock<RequestHandlerDelegate<T>>`; `.AsTask()` on `FluentActions.Invoking(() => sut.Handle(..))`) |
+| fullcart   | 27 / 20               | 27 / 20              | 9/9 → 9/9            | 0 | partial, unchanged: the Scrutor notification decorator is principally manual (TAAK-288 task file); display-name-only "flaky" rows (GUIDs in test names) |
+
+The first `after` run broke both builds (afripay CS0246 on fully qualified `MediatR.IRequest<T>` without any finding; cleanmicro CS1061 `ThrowAsync` on `FunctionAssertions<ValueTask<..>>`); both are fixed with proofs before the numbers above.
+
 ## See also
 
 - `claude/tasks/archief/TAAK-268-blind-validation-round.md`

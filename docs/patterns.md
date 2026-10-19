@@ -76,6 +76,7 @@ How to run a fix: [usage.md](usage.md). The tables below are generated (`unshack
 | `mediatr.mediator-implementation` | No-op class : IMediator / ISender / IPublisher → Mediator 3.0.2's members (ValueTask, ICommand/IQuery/stream overloads) as no-ops |
 | `mediatr.unsupported` | MediatR exception actions, notification publishers, concrete generic messages and request handlers, and packages that build on MediatR → Manual with advice |
 | `mediatr.internal-handler-access` | internal handlers scanned by AddMediatR in another project → [assembly: InternalsVisibleTo("<that project>")], so the code Mediator generates there can reach them |
+| `mediatr.qualified-swapped-type` | MediatR.IRequest<T> (a swapped type written with its namespace) → Mediator.IRequest<T> |
 
 ## automapper
 

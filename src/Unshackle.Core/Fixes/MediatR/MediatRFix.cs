@@ -33,7 +33,10 @@ public class MediatRFix : IFix, IPartialFix
     public IReadOnlyList<string> AddedNamespaces { get; } = ["Mediator"];
 
     // Same name and arity in Mediator 3.0.2 (checked in the real assemblies by MediatRFixTests).
-    public IReadOnlyList<string> SwappedTypes { get; } =
+    public IReadOnlyList<string> SwappedTypes => SwappedTypeNames;
+
+    // Static so QualifiedSwappedTypePattern can rewrite MediatR.IRequest<T> written out in full (TAAK-288).
+    public static IReadOnlyList<string> SwappedTypeNames { get; } =
     [
         "MediatR.IBaseRequest",
         "MediatR.IRequest",
@@ -95,5 +98,5 @@ public class MediatRFix : IFix, IPartialFix
     };
 
     // SendAsTask first: it must see a direct handler.Handle(...) while the handler in the same file still returns Task.
-    public IReadOnlyList<IPattern> Patterns { get; } = [new SendAsTaskPattern(), new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern(), new RequestHandlerDelegatePattern(), new PipelineBehaviorPattern(), new StreamPipelineBehaviorPattern(), new RequestProcessorCallerPattern(), new RequestProcessorPattern(), new ExceptionHandlerPattern(), new AddMediatRPattern(), new BehaviorDiRegistrationPattern(), new AutofacMediatorModulePattern(), new GenericDecoratorPattern(), new GenericRequestPattern(), new GenericNotificationPattern(), new MediatorImplementationPattern(), new UnsupportedPattern(), new InternalHandlerAccessPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new SendAsTaskPattern(), new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern(), new RequestHandlerDelegatePattern(), new PipelineBehaviorPattern(), new StreamPipelineBehaviorPattern(), new RequestProcessorCallerPattern(), new RequestProcessorPattern(), new ExceptionHandlerPattern(), new AddMediatRPattern(), new BehaviorDiRegistrationPattern(), new AutofacMediatorModulePattern(), new GenericDecoratorPattern(), new GenericRequestPattern(), new GenericNotificationPattern(), new MediatorImplementationPattern(), new UnsupportedPattern(), new InternalHandlerAccessPattern(), new QualifiedSwappedTypePattern()];
 }

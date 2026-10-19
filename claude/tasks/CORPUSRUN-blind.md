@@ -273,7 +273,64 @@ Tool from branch TAAK-294 (`<corpus>/corpus-blind/_results/tool-294`), harness `
 
 fullcart `scan --fix mediatr` (47 findings: 27 Fixed, 20 Manual, unchanged): the reason still names Scrutor's `Decorate(...) at DependencyInjection.cs:38`. Real Scrutor 4.2.2 declares `Decorate` in namespace `Microsoft.Extensions.DependencyInjection` of assembly `Scrutor`, so the check accepts the `Scrutor` assembly as well as the `Scrutor` namespace.
 
+## Round 6 (TAAK-296, 2026-10-19): all 36 blind repos on main `0f58486`
+
+Tool published from main `0f58486` into `<corpus>/corpus-blind/_results/tool-0f58486/`, not changed during the round. Harness `claude/tools/corpus-am.sh` (`after` mode), list = `corpus-blind-list.txt` + `corpus-blind-list-r5-selected.txt` (36 repos, same pins). The 26 repos not yet on this machine were cloned and got a fresh `base` here, so some baselines differ from earlier rounds (pathlib, catalogapi, starter, miru, culinary: tests that need a database, network or a slow timer fail on this machine in both baseline runs). "Before" Fixed/Manual = the last measured number in this file (round 5 and the TAAK-28x/29x rechecks). Results: `<corpus>/corpus-blind/_results/after/`.
+
+| Repo | Fix | Fixed / Manual before | Fixed / Manual round 6 | Tests before → after | Regressions | Outcome |
+| --- | --- | --- | --- | --- | ---: | --- |
+| skunkdeco | fluentassertions | 123 / 0 | 123 / 0 | 26/26 → 26/26 | 0 | full |
+| ogooreck | fluentassertions | 23 / 9 | 23 / 9 | 20/20 → 20/20 | 0 | partial |
+| xrepo | fluentassertions | 122 / 9 | 122 / 9 | 70/71 → 70/71 | 0 | partial |
+| pathlib | fluentassertions | 7 / 0 | 7 / 0 | 164/184 → 164/184 | 0 | full |
+| buildenator | fluentassertions | 623 / 46 | 623 / 46 | 127/127 → 127/127 | 0 | partial¹ |
+| bearded | fluentassertions | 383 / 72 | 383 / 72 | 1294/1294 → 1294/1294 | 0 | partial |
+| serilogmem | fluentassertions | 17 / 399 | 17 / 399 | 567/570 → 563/570 | 0 | partial² |
+| mihome | fluentassertions | 328 / 6 | 328 / 6 | 448/448 → 448/448 | 0 | partial |
+| grpcerror | fluentassertions | 12 / 0 | 12 / 0 | 8/8 → 8/8 | 0 | full |
+| opentws | fluentassertions | 118 / 0 | 118 / 0 | 17/56 → 17/56 | 0 | full |
+| catalogapi | fluentassertions | 223 / 2 | 223 / 2 | 28/54 → 28/54 | 0 | partial |
+| asuna | fluentassertions | 48 / 0 | 48 / 0 | 20/21 → 20/21 | 0 | full |
+| realworld | mediatr | 10 / 0 | 10 / 0 | 10/10 → 10/10 | 0 | full |
+| mediatrsample | mediatr | 25 / 0 | 25 / 0 | 14/21 → 14/21 | 0 | full |
+| cashflow | mediatr | 6 / 0 | 6 / 0 | no tests | - | full |
+| fullcart | mediatr | 27 / 20 | 27 / 20 | 9/9 → 9/9 | 0 | partial¹ |
+| miru | mediatr | 0 / 98 | 0 / 98 | 373/474 → 377/474 | 0 | blocked³ |
+| starter | mediatr | 0 / 11 | 0 / 11 | 28/68 → 28/68 | 0 | blocked¹ |
+| netcorebase | mediatr | 12 / 0 | 12 / 0 | 45/46 → 45/46 | 0 | full |
+| cleanmicro | mediatr | 19 / 0 | 19 / 0 | 67/67 → 67/67 | 0 | full |
+| projectpulse | mediatr | 78 / 0 | 78 / 0 | 618/686 → 618/686 | 0 | full |
+| brewabear | mediatr | 23 / 0 | 23 / 0 | 33/33 → 33/33 | 0 | full |
+| afripay | mediatr | 25 / 0 | 25 / 0 | 264/264 → 264/264 | 0 | full |
+| dddbankingapi | mediatr | 11 / 0 | 11 / 0 | 62/64 → 62/64 | 0 | full |
+| bookstore | automapper | 33 / 0 | 78 / 0 | 592/595 → 589–592/595 | 0⁴ | full |
+| culinary | automapper | 3 / 70 | 3 / 70 | 82/149 → 82/149 | 0 | partial |
+| msb | automapper | 12 / 29 | 12 / 29 | 156/156 → 156/156 | 0 | partial |
+| fiapgames | automapper | 25 / 9 | 39 / 9 | 91/91 → 91/91 | 0 | partial |
+| baseapi | automapper | 5 / 3 | 6 / 3 | 9/9 → 9/9 | 0 | partial |
+| restapi | automapper | 0 / 9 | 0 / 12 | 45/45 → 45/45 | 0 | blocked |
+| hospitalappt | automapper | 6 / 35 | 6 / 35 | 8/8 → 8/8 | 0 | partial |
+| corebanking | automapper | 1 / 1 | 11 / 1 | 10/10 → 10/10 | 0 | partial² |
+| encryptednotes | automapper | 10 / 6 | 10 / 6 | 85/85 → 85/85 | 0 | partial |
+| estore | automapper | 10 / 22 | 10 / 22 | 45/46 → 45/46 | 0 | partial |
+| assistiva | automapper | 68 / 0 | 68 / 0 | 14/16 → 14/16 | 0 | full |
+| pi22317 | automapper | 33 / 0 | 33 / 0 | 49/60 → 49/60 | 0 | full |
+
+¹ Only renamed test display names (GUIDs or record `ToString` in the name; compare marks them flaky/missing+new with the same pass count). ² Flaky only: serilogmem 4–6 timing-sensitive tests, corebanking one `...LessThanExpectedTime` test; compare marks them flaky (they also vary between the two baseline runs). ³ Database-dependent tests, count varies per run. ⁴ bookstore: three `after` runs (`_results/after-bookstore-r6{a,b,c}`): 589, 589 and 592 of 595; runs a and b each fail 3 different `..._Return_Ok`/`Created_201` tests with `NotFound` (a shared test database whose rows other tests change), run c passes everything the baseline passes. A changed behaviour would fail in every run, so this is the known flaky shared database of round 5, not a regression. The 45 new Fixed findings are `automapper.unused-imapper` (30) and `automapper.configuration-test` (15), patterns added since round 5; they compile and run green in run c.
+
+**Build after fix: 36/36 build. Test regressions: 0.** New since round 5: bookstore 33 → 78 Fixed, fiapgames 25 → 39, corebanking 1 → 11, baseapi 5 → 6 Fixed (TAAK-289/292 `unused-imapper` and `AddAutoMapper` removal); restapi 9 → 12 Manual (kept-lookup findings now reported, still no file changed).
+
+| Fix | Full | Partial | Blocked (justified Manual) | Build breaks | Test regressions |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| FluentAssertions (12) | 5 | 7 | 0 | 0 | 0 |
+| MediatR (12) | 9 | 1 | 2 (miru, starter) | 0 | 0 |
+| AutoMapper (12) | 3 | 8 | 1 (restapi) | 0 | 0 |
+
+**Release line for 0.2.0: GO** on the council condition: no build break after `fix` and no test regression on any of the 36 blind repos with the tool from current main. Blockers found: none. The open user decisions in `claude/docs/overdracht.md` still stand before the release is proposed.
+
 ## See also
+
+- `claude/tasks/archief/TAAK-296-blind-rerun-before-0.2.0.md`
 
 - `claude/tasks/archief/TAAK-268-blind-validation-round.md`
 - `claude/tasks/TAAK-276-blind-round-after-manual-reduction.md`, `claude/tasks/archief/TAAK-280-region-directives.md`, `TAAK-281-using-in-conditional.md`, `TAAK-282-required-members.md`, `TAAK-283-using-sub-namespace.md`

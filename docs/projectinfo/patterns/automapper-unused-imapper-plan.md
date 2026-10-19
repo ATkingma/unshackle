@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "automapper-unused-imapper"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16]
 files_expected:
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/UnusedMapperPattern.cs
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapperCleanup.cs
@@ -104,6 +104,13 @@ top-level `AddAutoMapper(...)` statement (`GlobalStatementSyntax`), which used t
   lambda is passed directly as an argument to an unconditional registration or builder call (a method on, or extending, `IServiceCollection`,
   a host/web host/application builder); otherwise the lookup SHALL be kept with reason code `ConditionalOrDeferredRegistration` and the
   file:line of the `AddAutoMapper` call (variants `stored lambda`, `builder lambda`). Every removed lookup warns, `GetRequiredService` included (Q4).
+- **REQ-16** (council round 4, Q1/Q3): a registration or builder type SHALL be recognised by its fully qualified metadata name (namespace
+  included): `Microsoft.Extensions.DependencyInjection.IServiceCollection`, `Microsoft.Extensions.Hosting.IHostBuilder`/`IHostApplicationBuilder`/
+  `HostApplicationBuilder`, `Microsoft.AspNetCore.Hosting.IWebHostBuilder`, `Microsoft.AspNetCore.Builder.WebApplicationBuilder`,
+  `Microsoft.Azure.Functions.Extensions.DependencyInjection.IFunctionsHostBuilder`, `Microsoft.Azure.Functions.Worker.Builder.FunctionsApplicationBuilder`
+  and `Microsoft.Azure.Functions.Worker.IFunctionsWorkerApplicationBuilder`; a lookalike name in user code SHALL keep the lookup
+  (`FixAsync_AddAutoMapperInALambdaPassedToALookalikeBuilder_KeepsTheLookup`). An `AddAutoMapper` inside a local function SHALL keep the lookup
+  (variant `local function`).
 
 ## Assumptions
 

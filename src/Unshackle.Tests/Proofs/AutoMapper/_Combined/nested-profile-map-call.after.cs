@@ -57,11 +57,9 @@ public static class AddEditCustomerCommandMappingExtensions
 
 public class AddEditCustomerCommandHandler
 {
-    private readonly IMapper _mapper;
 
-    public AddEditCustomerCommandHandler(IMapper mapper)
+    public AddEditCustomerCommandHandler()
     {
-        _mapper = mapper;
     }
 
     public AddEditCustomerCommand Edit(CustomerDto dto) => dto.ToAddEditCustomerCommand();

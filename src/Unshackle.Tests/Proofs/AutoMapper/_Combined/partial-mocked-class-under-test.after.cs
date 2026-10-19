@@ -50,11 +50,9 @@ public class CustomerService
 // No test hands it a mock: it moves to the generated method.
 public class ReportService
 {
-    private readonly IMapper _mapper;
 
-    public ReportService(IMapper mapper)
+    public ReportService()
     {
-        _mapper = mapper;
     }
 
     public CustomerDto Line(Customer customer) => customer.ToCustomerDto();

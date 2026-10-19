@@ -62,11 +62,9 @@ namespace Shop.Orders
 {
     public class BookmarkService
     {
-        private readonly IMapper _mapper;
 
-        public BookmarkService(IMapper mapper)
+        public BookmarkService()
         {
-            _mapper = mapper;
         }
 
         public Mapping.BookmarkDto Get(Mapping.BookmarkPair pair) => pair.ToBookmarkDto();

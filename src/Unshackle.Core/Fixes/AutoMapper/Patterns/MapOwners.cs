@@ -81,12 +81,18 @@ internal class MapOwners
     public static async Task<PatternResult?> KeptCallAsync(SyntaxNode call, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
         MapOwners owners = await ForAsync(solution, model, cancellationToken);
+        return owners.KeptCall(call, model);
+    }
+
+    /// <summary><see cref="KeptCallAsync"/> on this plan: Manual with the reason when the call stays on IMapper, or null.</summary>
+    public PatternResult? KeptCall(SyntaxNode call, SemanticModel model)
+    {
         if (IsMockSetUp(call, model))
         {
             return PatternResult.Manual($"{KeptPrefix}a mock set-up of IMapper in a test stays as it is: the class under test it is handed to keeps calling IMapper for the maps it stubs (other classes use the generated methods once the test constructs that class itself).");
         }
 
-        return (owners.CallReason(call, model) ?? owners.UnderTestReason(call, model)) is string reason
+        return (CallReason(call, model) ?? UnderTestReason(call, model)) is string reason
             ? PatternResult.Manual($"{KeptPrefix}this call keeps using IMapper: {reason}")
             : null;
     }
@@ -277,7 +283,11 @@ internal class MapOwners
     private static string Name(ITypeSymbol? type) => type?.Name is { Length: > 0 } name ? name : "?";
 
     // Whether two solutions are the same apart from the documents of one file (the one being fixed).
-    private static bool SameApartFrom(Solution solution, Solution cached, string? filePath)
+    private static bool SameApartFrom(Solution solution, Solution cached, string? filePath) => SameApartFrom(solution, cached, [filePath]);
+
+    // Whether two solutions are the same apart from the documents of the given files (MapperCleanup: the file its plan was built
+    // from and the one being fixed).
+    internal static bool SameApartFrom(Solution solution, Solution cached, IReadOnlyCollection<string?> filePaths)
     {
         if (ReferenceEquals(solution, cached))
         {
@@ -294,7 +304,7 @@ internal class MapOwners
         {
             if (project.GetAddedDocuments().Any() || project.GetRemovedDocuments().Any() || project.GetAddedMetadataReferences().Any()
                 || project.GetRemovedMetadataReferences().Any() || project.GetAddedProjectReferences().Any() || project.GetRemovedProjectReferences().Any()
-                || project.GetChangedDocuments().Any(id => solution.GetDocument(id)?.FilePath is not { } path || path != filePath))
+                || project.GetChangedDocuments().Any(id => solution.GetDocument(id)?.FilePath is not { } path || !filePaths.Contains(path)))
             {
                 return false;
             }

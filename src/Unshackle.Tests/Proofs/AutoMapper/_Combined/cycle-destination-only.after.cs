@@ -67,11 +67,9 @@ public static class OrderMappingExtensions
 
 public class OrderService
 {
-    private readonly IMapper _mapper;
 
-    public OrderService(IMapper mapper)
+    public OrderService()
     {
-        _mapper = mapper;
     }
 
     public OrderModel Add(OrderDto order) => order.ToOrderModel();

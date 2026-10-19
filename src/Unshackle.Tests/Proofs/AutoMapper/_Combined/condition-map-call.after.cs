@@ -45,11 +45,9 @@ namespace Shop.Recipes
 {
     public class RecipeService
     {
-        private readonly IMapper _mapper;
 
-        public RecipeService(IMapper mapper)
+        public RecipeService()
         {
-            _mapper = mapper;
         }
 
         public Mapping.LineDto Get(Mapping.Line line) => line.ToLineDto();

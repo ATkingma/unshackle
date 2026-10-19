@@ -77,11 +77,9 @@ public static class TodoItemDtoMappingExtensions
 
 public class GetTodosQueryHandler
 {
-    private readonly IMapper _mapper;
 
-    public GetTodosQueryHandler(IMapper mapper)
+    public GetTodosQueryHandler()
     {
-        _mapper = mapper;
     }
 
     public TodoListDto Handle(TodoList list) => list.ToTodoListDto();

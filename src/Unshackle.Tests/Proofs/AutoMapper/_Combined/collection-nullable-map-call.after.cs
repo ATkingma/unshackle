@@ -38,12 +38,10 @@ public interface IOrderRepository
 
 public class OrderService
 {
-    private readonly IMapper _mapper;
     private readonly IOrderRepository _repository;
 
-    public OrderService(IMapper mapper, IOrderRepository repository)
+    public OrderService(IOrderRepository repository)
     {
-        _mapper = mapper;
         _repository = repository;
     }
 

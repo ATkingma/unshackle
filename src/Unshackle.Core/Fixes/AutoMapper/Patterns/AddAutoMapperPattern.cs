@@ -29,7 +29,8 @@ public class AddAutoMapperPattern : ISolutionPattern
             model.GetSymbolInfo(i) is var info
             && (info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is IMethodSymbol { Name: "AddAutoMapper" } method
             && method.ContainingAssembly?.Name == AutoMapperAssembly)
-            .Select(i => i.Parent is ExpressionStatementSyntax statement ? statement : (SyntaxNode)i);
+            // A top-level statement goes with its GlobalStatement: the ExpressionStatement alone is not an element of a list.
+            .Select(i => i.Parent is ExpressionStatementSyntax statement ? statement.Parent is GlobalStatementSyntax global ? global : statement : (SyntaxNode)i);
 
     // Without the solution only this project's sources are checked for a mapper that is still used.
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
@@ -51,15 +52,19 @@ public class AddAutoMapperPattern : ISolutionPattern
         ArgumentNullException.ThrowIfNull(node);
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(solution);
+        // A use in code that UnusedMapperPattern removes (TAAK-289) does not count.
+        MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, cancellationToken);
         foreach (INamedTypeSymbol service in s_services.Select(model.Compilation.GetTypeByMetadataName).OfType<INamedTypeSymbol>())
         {
             IEnumerable<ReferencedSymbol> references = await SymbolFinder.FindReferencesAsync(service, solution, cancellationToken);
-            // ReferenceLocation is a struct: take the text first, so "none" is null.
-            if (references.SelectMany(r => r.Locations)
-                .Select(l => Location(l.Document.FilePath ?? l.Document.Name, l.Location))
-                .FirstOrDefault() is string user)
+            foreach (ReferenceLocation location in references.SelectMany(r => r.Locations))
             {
-                return Rewrite(node, model, user);
+                SyntaxNode root = await location.Document.GetSyntaxRootAsync(cancellationToken) ?? throw new InvalidOperationException("No syntax root.");
+                SemanticModel locationModel = await location.Document.GetSemanticModelAsync(cancellationToken) ?? throw new InvalidOperationException("No semantic model.");
+                if (!cleanup.Removes(root.FindNode(location.Location.SourceSpan, getInnermostNodeForTie: true), locationModel))
+                {
+                    return Rewrite(node, model, Location(location.Document.FilePath ?? location.Document.Name, location.Location));
+                }
             }
         }
 
@@ -69,7 +74,7 @@ public class AddAutoMapperPattern : ISolutionPattern
     // user: where a mapper is still used ("file:line"), or null.
     private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, string? user)
     {
-        if (node is not ExpressionStatementSyntax statement)
+        if ((node is GlobalStatementSyntax global ? global.Statement : node) is not ExpressionStatementSyntax statement)
         {
             return PatternResult.Manual(MapOwners.KeptPrefix + "the result of AddAutoMapper is used (not a statement on its own), so the registration stays; remove it by hand.");
         }

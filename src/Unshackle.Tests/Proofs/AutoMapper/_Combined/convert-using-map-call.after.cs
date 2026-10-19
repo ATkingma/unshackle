@@ -51,11 +51,9 @@ public static class KeyProfileExtensions
 
 public class ActorService
 {
-    private readonly IMapper _mapper;
 
-    public ActorService(IMapper mapper)
+    public ActorService()
     {
-        _mapper = mapper;
     }
 
     public ActorDto Get(Actor actor) => actor.ToActorDto();

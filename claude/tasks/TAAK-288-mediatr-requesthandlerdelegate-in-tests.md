@@ -1,26 +1,37 @@
 # TAAK-288 — MediatR: `RequestHandlerDelegate` with a real delegate in tests
 
-**Status**: step 1/4 — not started
+**Status**: step 3/4 — corpus `after`
 **Created**: 2026-10-18
 **Goal**: remove this blocker with proof, or state precisely why it is principally manual.
 
 ## Context for the next agent
 
-- afripay (0/16) and cleanmicro (0/20) stop because tests create `RequestHandlerDelegate<T>` from a real lambda (not a mock) to call a pipeline behavior directly. fullcart keeps 15 handlers on MediatR because of an Autofac decorator: confirm whether that is principally manual.
+- afripay (0/16) and cleanmicro (0/20) stop because tests create `RequestHandlerDelegate<T>` from a real lambda (not a mock) to call a pipeline behavior directly. fullcart keeps 15 handlers on MediatR because of a decorator: confirm whether that is principally manual.
 - Source: `claude/tasks/CORPUSRUN-blind.md` (round 5). Proof rules: `claude/tasks/manual-reduction-queue.md`.
-- Record progress per step and commit it as WIP in your branch (`claude/docs/agent-werkwijze.md`).
+- A first attempt (branch `worktree-agent-a4ddfa0b990b7a5bb`) was lost with another machine; this is a fresh implementation.
 
-## Approach
+## Measurement (step 1)
 
-Probe how Mediator's behavior signature (`MessageHandlerDelegate<TMessage,TResponse>`, `ValueTask`) can express the same test call; rewrite the test-side delegate when equivalent, else Manual with the reason. Decide fullcart's decorator case and record it.
+- **afripay** `tests/Application/Common/ValidationBehaviorTests.cs`: five locals `RequestHandlerDelegate<string> next = _ => { called = true; return Task.FromResult("ok"); };` / `_ => Task.FromResult("ok")`, handed to `behavior.Handle(request, next, default)` (also inside `async () => await ...`). MediatR `12.*` (12.5: the delegate takes an optional `CancellationToken`).
+- **cleanmicro** `tests/Application.UnitTests/Pipelines/ExceptionEnrichingTests.cs`: Moq field `Mock<RequestHandlerDelegate<Result<ProductDto>>> _handlerMock = new();`, `Setup(x => x.Invoke()).ThrowsAsync(..)` / `.ReturnsAsync(dto)`, `_handlerMock.Object` handed to `Handle`. MediatR 12.2.0, Moq 4.20.70 (has `ReturnsAsync`/`ThrowsAsync` for `ValueTask<T>`).
+- **fullcart**: the "Autofac decorator" is in fact Scrutor: `services.Decorate(typeof(INotificationHandler<>), typeof(DispatchingIntegrationEventDecorator<>))`.
+
+## Choices
+
+- **Real lambda** → `MessageHandlerDelegate<TReq, TRes>` with parameters `(_, token)` (`(_, _)` when the old parameter was `_` or absent). `TReq` comes from the behavior's `Handle` the delegate is handed to (as for mocks). Not async: every returned `Task.FromResult/FromException/FromCanceled` → `ValueTask.X`, another `Task<T>` → `new ValueTask<T>(task)`, `throw` stays. Async lambdas only change the parameters (the async return type follows the target).
+  Manual: method group, typed/extra lambda parameters, a lambda whose body uses the parameter `_` (it would become a discard), a returned non-Task.
+- **Moq** `Mock<RequestHandlerDelegate<T>>` (private field or local, `new()` or `new Mock<..>()`): type → `Mock<MessageHandlerDelegate<TReq, T>>`; `Setup/Verify(x => x.Invoke(..))` or `x => x(..)` → `(It.IsAny<TReq>(), token or It.IsAny<CancellationToken>())`; after `Setup` only `ReturnsAsync`, `ThrowsAsync`, `Throws`, `Callback`, `Verifiable` and `Returns(Task.FromResult(x))` (→ `ValueTask.FromResult`) are accepted; `.Object` must be the `next` argument of a behavior's `Handle`. Anything else → Manual with the line.
+- `using NSubstitute;` is only added when NSubstitute calls were rewritten (it was added always before; with Moq it would not compile).
+- **fullcart decorator: principally manual (justified partial).** Mediator's source generator registers every `INotificationHandler<T>` implementation it sees, an open generic one as a handler of every notification; the Scrutor decorator would then also run as a plain handler (with itself as `inner`), so notification semantics change. The only case solved is MediatR registered by hand in Autofac (`AutofacMediatorModulePattern`, TAAK-196). fullcart stays partial as in TAAK-274: requests on Mediator, notifications + decorator on MediatR.
 
 ## Steps
 
-- [ ] 1. Measure on the corpus repo(s) and probe the old library; KingmaDoc plan for touched patterns/features
-- [ ] 2. Implementation + unit tests + proofs (`_Combined` where patterns cooperate)
+- [x] 1. Measure on the corpus repo(s) and probe the old library (above)
+- [x] 2. Implementation + proofs: `RequestHandlerDelegatePattern` (real lambda, Moq); `_Combined/request-handler-delegate-lambda`, `_Combined/request-handler-delegate-moq`; Manual `method-group` (was `lambda`), `lambda-discard-parameter`, `moq-returns-value`. 1604 tests green.
 - [ ] 3. Corpus `after` on afripay, cleanmicro, fullcart: build green, 0 regressions; before/after numbers here and in CORPUSRUN-blind.md
 - [ ] 4. Verify, models, docs; `claude/tools/verify-head.sh` → `VERIFY OK`
 
 ## See also
 
 - `claude/tasks/manual-reduction-queue.md`, `claude/tasks/CORPUSRUN-blind.md`
+- `src/Unshackle.Core/Fixes/MediatR/Patterns/RequestHandlerDelegatePattern.cs`

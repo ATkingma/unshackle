@@ -16,6 +16,10 @@ public class RequestHandlerDelegatePattern : IPattern
 
     private static readonly string[] s_receivedChecks = ["Received", "DidNotReceive"];
 
+    private static readonly string[] s_taskFactories = ["FromResult", "FromException", "FromCanceled"];
+
+    private static readonly string[] s_moqChain = ["ReturnsAsync", "ThrowsAsync", "Throws", "Callback", "Verifiable"];
+
     public string Id => "mediatr.request-handler-delegate";
 
     public string Description =>
@@ -49,9 +53,10 @@ public class RequestHandlerDelegatePattern : IPattern
         }
 
         var edits = new Dictionary<SyntaxNode, Func<SyntaxNode, SyntaxNode>>();
+        var namespaces = new SortedSet<string>(StringComparer.Ordinal) { "System.Threading" };
         foreach ((ISymbol holder, List<GenericNameSyntax> declared) in holders)
         {
-            Rewrite(type, model, holder, declared, edits, problems);
+            Rewrite(type, model, holder, declared, edits, problems, namespaces);
         }
 
         if (problems.Count > 0)
@@ -60,7 +65,7 @@ public class RequestHandlerDelegatePattern : IPattern
         }
 
         TypeDeclarationSyntax result = type.ReplaceNodes(edits.Keys, (original, current) => edits[original](current));
-        return PatternResult.Fixed(result, "System.Threading", "NSubstitute");
+        return PatternResult.Fixed(result, [.. namespaces]);
     }
 
     private static void Rewrite(
@@ -69,7 +74,8 @@ public class RequestHandlerDelegatePattern : IPattern
         ISymbol holder,
         List<GenericNameSyntax> declared,
         Dictionary<SyntaxNode, Func<SyntaxNode, SyntaxNode>> edits,
-        List<string> problems)
+        List<string> problems,
+        SortedSet<string> namespaces)
     {
         if (holder is not (ILocalSymbol or IFieldSymbol { DeclaredAccessibility: Accessibility.Private }))
         {
@@ -81,10 +87,19 @@ public class RequestHandlerDelegatePattern : IPattern
         var handedArguments = new List<ExpressionSyntax>();
         var invocations = new List<InvocationExpressionSyntax>();
         var returns = new List<InvocationExpressionSyntax>();
+        var moqInvocations = new List<InvocationExpressionSyntax>();
+        var moqReturns = new List<ArgumentSyntax>();
+        bool moq = IsMoqMock(holder is ILocalSymbol local ? local.Type : ((IFieldSymbol)holder).Type);
         foreach (IdentifierNameSyntax use in type.DescendantNodes().OfType<IdentifierNameSyntax>()
             .Where(n => SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(n).Symbol, holder)))
         {
             ExpressionSyntax expression = use.Parent is MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } member && member.Name == use ? member : use;
+            if (moq)
+            {
+                MoqUse(holder, expression, model, requestTypes, handedArguments, moqInvocations, moqReturns, problems);
+                continue;
+            }
+
             switch (expression.Parent)
             {
                 case AssignmentExpressionSyntax assignment when assignment.Left == expression && IsSubstituteFor(assignment.Right):
@@ -140,16 +155,38 @@ public class RequestHandlerDelegatePattern : IPattern
                 continue;
             }
 
-            // A real delegate (lambda, method group) cannot become the new signature by renaming the type.
+            // A real lambda gets Mediator's (message, cancellationToken) parameters and a ValueTask; a method group cannot be renamed into the new signature.
             if (reference.Parent is VariableDeclarationSyntax { Variables: [{ Initializer.Value: { } initializer }] } && !IsSubstituteFor(initializer))
             {
-                problems.Add($"{holder.Name} at line {Line(reference)} is initialized with a real delegate, not a Substitute.For mock");
-                continue;
+                if (initializer is not LambdaExpressionSyntax lambda)
+                {
+                    problems.Add($"{holder.Name} at line {Line(reference)} is initialized with a delegate that is not a lambda or a Substitute.For mock");
+                    continue;
+                }
+
+                RealLambda(holder, lambda, reference.TypeArgumentList.Arguments[0], model, edits, problems, namespaces);
             }
 
             edits[reference] = current => SyntaxFactory.GenericName(SyntaxFactory.Identifier("MessageHandlerDelegate"))
                 .WithTypeArgumentList(SyntaxFactory.TypeArgumentList(MediatRSyntax.CommaList([request, ((GenericNameSyntax)current).TypeArgumentList.Arguments[0]])))
                 .WithTriviaFrom(current);
+        }
+
+        if (invocations.Count > 0)
+        {
+            namespaces.Add("NSubstitute");
+        }
+
+        foreach (InvocationExpressionSyntax invoke in moqInvocations)
+        {
+            string cancellation = invoke.ArgumentList.Arguments.Count == 1 ? invoke.ArgumentList.Arguments[0].ToString() : "It.IsAny<CancellationToken>()";
+            edits[invoke.ArgumentList] = current => SyntaxFactory.ParseArgumentList($"(It.IsAny<{request}>(), {cancellation})").WithTriviaFrom(current);
+        }
+
+        foreach (ArgumentSyntax argument in moqReturns)
+        {
+            ReturnsArgument(argument, model, edits, problems);
+            namespaces.Add("System.Threading.Tasks");
         }
 
         foreach (InvocationExpressionSyntax invoke in invocations)
@@ -183,6 +220,186 @@ public class RequestHandlerDelegatePattern : IPattern
             problems.Add($"the Returns argument at line {Line(value)} is a Task or a callback, not the response; Invoke now returns a ValueTask");
         }
     }
+
+    // A real lambda: _ => Task.FromResult(x) → (_, _) => ValueTask.FromResult(x). MediatR 12.5's delegate has one (optional CancellationToken)
+    // parameter, Mediator's has the message and the token; a non-async body's returned Task becomes a ValueTask.
+    private static void RealLambda(
+        ISymbol holder,
+        LambdaExpressionSyntax lambda,
+        TypeSyntax response,
+        SemanticModel model,
+        Dictionary<SyntaxNode, Func<SyntaxNode, SyntaxNode>> edits,
+        List<string> problems,
+        SortedSet<string> namespaces)
+    {
+        ParameterSyntax? parameter = lambda switch
+        {
+            SimpleLambdaExpressionSyntax simple => simple.Parameter,
+            ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: [var only] } => only,
+            _ => null,
+        };
+        if (lambda is ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters.Count: > 1 } || parameter is { Type: not null })
+        {
+            problems.Add($"the lambda of {holder.Name} at line {Line(lambda)} has typed or extra parameters");
+            return;
+        }
+
+        string token = parameter?.Identifier.ValueText ?? "_";
+        IParameterSymbol? tokenSymbol = parameter is null ? null : model.GetDeclaredSymbol(parameter);
+        if (token == "_" && tokenSymbol is not null && lambda.Body.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()
+            .Any(n => SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(n).Symbol, tokenSymbol)))
+        {
+            problems.Add($"the lambda of {holder.Name} at line {Line(lambda)} uses its parameter _, which becomes a discard");
+            return;
+        }
+
+        if (lambda.AsyncKeyword.IsKind(SyntaxKind.None))
+        {
+            List<ExpressionSyntax?> returned = lambda.ExpressionBody is { } body
+                ? [body]
+                : [.. lambda.Block!.DescendantNodes(n => n is not AnonymousFunctionExpressionSyntax and not LocalFunctionStatementSyntax)
+                    .OfType<ReturnStatementSyntax>().Select(r => r.Expression)];
+            foreach (ExpressionSyntax? value in returned)
+            {
+                ReturnedTask(holder, lambda, value, response, model, edits, problems);
+            }
+        }
+
+        namespaces.Add("System.Threading.Tasks");
+        edits[lambda] = current =>
+        {
+            var old = (LambdaExpressionSyntax)current;
+            SyntaxTriviaList after = old switch
+            {
+                SimpleLambdaExpressionSyntax simple => simple.Parameter.GetTrailingTrivia(),
+                ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.GetTrailingTrivia(),
+                _ => SyntaxFactory.TriviaList(SyntaxFactory.Space),
+            };
+            return SyntaxFactory.ParenthesizedLambdaExpression()
+                .WithModifiers(old.Modifiers)
+                .WithParameterList(SyntaxFactory.ParseParameterList($"(_, {token})").WithTrailingTrivia(after))
+                .WithArrowToken(old.ArrowToken)
+                .WithBlock(old.Block)
+                .WithExpressionBody(old.ExpressionBody)
+                .WithTriviaFrom(old);
+        };
+    }
+
+    // Task.FromResult/FromException/FromCanceled → ValueTask.X; another Task<T> → new ValueTask<TRes>(task); a throw stays.
+    private static void ReturnedTask(
+        ISymbol holder,
+        LambdaExpressionSyntax lambda,
+        ExpressionSyntax? value,
+        TypeSyntax response,
+        SemanticModel model,
+        Dictionary<SyntaxNode, Func<SyntaxNode, SyntaxNode>> edits,
+        List<string> problems)
+    {
+        if (value is ThrowExpressionSyntax)
+        {
+            return;
+        }
+
+        if (value is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax taskMember } call
+            && s_taskFactories.Any(name => MediatRSyntax.IsTaskMember(call, model, name)))
+        {
+            edits[taskMember] = current => MediatRSyntax.OnValueTask((MemberAccessExpressionSyntax)current);
+            return;
+        }
+
+        if (value is not null && model.GetTypeInfo(value).Type is INamedTypeSymbol { Name: "Task", Arity: 1 } task
+            && task.ContainingNamespace.ToDisplayString() == "System.Threading.Tasks")
+        {
+            edits[value] = current => SyntaxFactory.ParseExpression($"new ValueTask<{response.WithoutTrivia()}>({current.WithoutTrivia()})").WithTriviaFrom(current);
+            return;
+        }
+
+        problems.Add($"the lambda of {holder.Name} at line {Line((SyntaxNode?)value ?? lambda)} returns something other than a Task<T>");
+    }
+
+    // A Moq Mock<RequestHandlerDelegate<TRes>>: Setup/Verify(x => x.Invoke()) get Mediator's two arguments, .Object is the handed delegate.
+    private static void MoqUse(
+        ISymbol holder,
+        ExpressionSyntax expression,
+        SemanticModel model,
+        List<ITypeSymbol> requestTypes,
+        List<ExpressionSyntax> handedArguments,
+        List<InvocationExpressionSyntax> invocations,
+        List<ArgumentSyntax> returns,
+        List<string> problems)
+    {
+        if (expression.Parent is AssignmentExpressionSyntax assignment && assignment.Left == expression
+            && assignment.Right is BaseObjectCreationExpressionSyntax)
+        {
+            return;
+        }
+
+        if (expression.Parent is not MemberAccessExpressionSyntax member || member.Expression != expression)
+        {
+            problems.Add($"{holder.Name} at line {Line(expression)} is used other than through Setup, Verify or Object");
+            return;
+        }
+
+        string name = member.Name.Identifier.ValueText;
+        if (name == "Object" && member.Parent is ArgumentSyntax { NameColon: null, Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax call } list } argument
+            && RequestOf(call, list.Arguments.IndexOf(argument), model) is { } handled)
+        {
+            requestTypes.Add(handled);
+            handedArguments.Add(member);
+            return;
+        }
+
+        if (member.Parent is not InvocationExpressionSyntax configure)
+        {
+            problems.Add($"{holder.Name}.{name} at line {Line(expression)} is not migrated");
+            return;
+        }
+
+        if (name is "Reset" or "VerifyAll" or "VerifyNoOtherCalls" || (name == "Verify" && configure.ArgumentList.Arguments.Count == 0))
+        {
+            return;
+        }
+
+        if (name is not ("Setup" or "Verify")
+            || configure.ArgumentList.Arguments.FirstOrDefault()?.Expression is not SimpleLambdaExpressionSyntax { ExpressionBody: InvocationExpressionSyntax invoke } setup
+            || !InvokesParameter(invoke, setup.Parameter.Identifier.ValueText))
+        {
+            problems.Add($"{holder.Name}.{name} at line {Line(expression)} is not a Setup or Verify of x => x.Invoke()");
+            return;
+        }
+
+        invocations.Add(invoke);
+        if (name == "Verify")
+        {
+            return;
+        }
+
+        // The chain after Setup: ReturnsAsync/ThrowsAsync also configure a ValueTask<T>; Returns(Task.FromResult(x)) → Returns(ValueTask.FromResult(x)).
+        for (SyntaxNode link = configure;
+            link.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: string next, Parent: InvocationExpressionSyntax nextCall } access && access.Expression == link;
+            link = nextCall)
+        {
+            if (next == "Returns" && nextCall.ArgumentList.Arguments is [var value])
+            {
+                returns.Add(value);
+            }
+            else if (!s_moqChain.Contains(next))
+            {
+                problems.Add($"{holder.Name}.Setup(...).{next} at line {Line(nextCall)} is not migrated");
+            }
+        }
+    }
+
+    private static bool InvokesParameter(InvocationExpressionSyntax invoke, string parameter) =>
+        invoke.ArgumentList.Arguments.Count <= 1 && invoke.Expression switch
+        {
+            MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Invoke", Expression: IdentifierNameSyntax receiver } => receiver.Identifier.ValueText == parameter,
+            IdentifierNameSyntax receiver => receiver.Identifier.ValueText == parameter,
+            _ => false,
+        };
+
+    private static bool IsMoqMock(ITypeSymbol type) =>
+        type is INamedTypeSymbol { Name: "Mock", Arity: 1 } mock && mock.ContainingNamespace.ToDisplayString() == "Moq";
 
     // holder.Invoke(), holder() and holder.Received().Invoke(), as the receiver of Returns or in a Received check: the only places Arg.Any is valid.
     private static InvocationExpressionSyntax? ConfiguredInvocation(ExpressionSyntax holder)
@@ -239,6 +456,14 @@ public class RequestHandlerDelegatePattern : IPattern
                 {
                     EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator } => model.GetDeclaredSymbol(declarator),
                     AssignmentExpressionSyntax assignment when assignment.Right == substitute => model.GetSymbolInfo(assignment.Left).Symbol,
+                    _ => null,
+                };
+            case TypeArgumentListSyntax { Parent: GenericNameSyntax { Identifier.ValueText: "Mock" } mock }:
+                return mock.Parent switch
+                {
+                    VariableDeclarationSyntax { Variables.Count: 1 } declaration when declaration.Type == mock => model.GetDeclaredSymbol(declaration.Variables[0]),
+                    ObjectCreationExpressionSyntax { Parent: EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator } } => model.GetDeclaredSymbol(declarator),
+                    ObjectCreationExpressionSyntax { Parent: AssignmentExpressionSyntax assignment } creation when assignment.Right == creation => model.GetSymbolInfo(assignment.Left).Symbol,
                     _ => null,
                 };
             default:

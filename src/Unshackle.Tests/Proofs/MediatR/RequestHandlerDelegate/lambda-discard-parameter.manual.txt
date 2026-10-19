@@ -1,0 +1,1 @@
+uses its parameter _, which becomes a discard

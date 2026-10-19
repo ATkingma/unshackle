@@ -147,6 +147,18 @@ public class RequestHandlerDelegatePattern : IPattern
             }
         }
 
+        // The behavior's Handle now returns a ValueTask: a call that is not awaited on the spot (FluentActions.Invoking(() => sut.Handle(..)),
+        // Func<Task> act = () => sut.Handle(..)) gets .AsTask(), so it keeps the Task type it had.
+        foreach (InvocationExpressionSyntax call in handedArguments.Select(a => a.Parent?.Parent?.Parent).OfType<InvocationExpressionSyntax>().Distinct())
+        {
+            if (call.Parent is not AwaitExpressionSyntax && !edits.ContainsKey(call))
+            {
+                edits[call] = current => SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression, ((ExpressionSyntax)current).WithoutTrailingTrivia(), SyntaxFactory.IdentifierName("AsTask")))
+                    .WithTrailingTrivia(current.GetTrailingTrivia());
+            }
+        }
+
         foreach (GenericNameSyntax reference in declared)
         {
             if (reference.Parent is QualifiedNameSyntax)

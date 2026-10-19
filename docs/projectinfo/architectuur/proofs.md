@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1059 proofs (excluding `_Pending`).
+Total: 1061 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -1194,7 +1194,7 @@ Total: 1059 proofs (excluding `_Pending`).
 
 ## MediatR
 
-### _Combined (14)
+### _Combined (15)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1207,6 +1207,7 @@ Total: 1059 proofs (excluding `_Pending`).
 | `host-references-host` | Fixed | `public Task Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Task.CompletedTask; bu…` → `public ValueTask<Unit> Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Unit.ValueT…` |
 | `identified-command-eshop` | Fixed | `public class IdentifiedCommand<T, R> : IRequest<R> public async Task<R> Handle(IdentifiedCommand<T, R> message…` → `public abstract class IdentifiedCommand<T, R> : IRequest<R> }` |
 | `internal-message-access` | Fixed | `public Task Handle(CancelMeetingCommand request, CancellationToken cancellationToken) => Task.CompletedTask; b…` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyMeetings.Modules.Meetings.Infrastructure")] p…` |
+| `qualified-request-afripay` | Fixed | `: MediatR.IRequest<string>; public class GetMerchantHandler : MediatR.IRequestHandler<GetMerchantQuery, string…` → `: Mediator.IRequest<string>; public class GetMerchantHandler : Mediator.IRequestHandler<GetMerchantQuery, stri…` |
 | `request-handler-delegate` | Fixed | `public async Task<int> Handle(Register command, RequestHandlerDelegate<int> next, CancellationToken token) ret…` → `public async ValueTask<int> Handle(Register command, MessageHandlerDelegate<Register, int> next, CancellationT…` |
 | `request-handler-delegate-lambda` | Fixed | `public async Task<int> Handle(Register command, RequestHandlerDelegate<int> next, CancellationToken token) ret…` → `public async ValueTask<int> Handle(Register command, MessageHandlerDelegate<Register, int> next, CancellationT…` |
 | `request-handler-delegate-moq` | Fixed | `public async Task<string> Handle(AddProduct request, RequestHandlerDelegate<string> next, CancellationToken ca…` → `public async ValueTask<string> Handle(AddProduct request, MessageHandlerDelegate<AddProduct, string> next, Can…` |
@@ -1326,6 +1327,12 @@ Total: 1059 proofs (excluding `_Pending`).
 | `next-token` | Fixed | `where TRequest : notnull public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> nex…` → `where TRequest : notnull, IMessage public ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate…` |
 | `no-constraint` | Fixed | `public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken canc…` → `where TRequest : IMessage public ValueTask<TResponse> Handle(TRequest request, MessageHandlerDelegate<TRequest…` |
 | `open-async` | Fixed | `where TRequest : notnull public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TRespons…` → `where TRequest : notnull, IMessage public async ValueTask<TResponse> Handle(TRequest request, MessageHandlerDe…` |
+
+### QualifiedSwappedType (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `record-base` | Fixed | `: MediatR.IRequest<string>; public record MerchantCreated(Guid MerchantId) : global::MediatR.INotification;` → `: Mediator.IRequest<string>; public record MerchantCreated(Guid MerchantId) : global::Mediator.INotification;` |
 
 ### RequestHandler (19)
 

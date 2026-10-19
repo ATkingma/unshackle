@@ -68,7 +68,13 @@ namespace Proofs
                 .Setup(x => x.Invoke(It.IsAny<AddProduct>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception());
 
-            await _sut.Handle(new AddProduct("a"), _handlerMock.Object, CancellationToken.None);
+            Func<Task<string>> act = () =>
+                _sut.Handle(
+                    new AddProduct("a"),
+                    _handlerMock.Object,
+                    CancellationToken.None).AsTask();
+
+            await act();
         }
 
         public async Task Handle_NoError_ReturnsResult()

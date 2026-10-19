@@ -70,6 +70,13 @@ Condition (Pragmatist): rerun the corpus `after` on the six AutoMapper repos, 0 
 
 Nothing here blocks 0.2.0 outright; Q3 and Q4 are small and land before it (TAAK-294), with the corpus `after` at 0 regressions.
 
+### 2026-10-19 — implementer questions from TAAK-294 (round 5, unanimous)
+
+| # | Question | Joint decision |
+| --- | --- | --- |
+| Q1 | Scrutor 4.2.2 declares `Decorate` in `Microsoft.Extensions.DependencyInjection` (assembly `Scrutor`) | **Namespace `Scrutor` OR assembly `Scrutor`**, syntax match only when the symbol is unresolved. Corrects the round-4 wording. |
+| Q2 | `IsContainer` matches `ServiceCollection`/`IServiceCollection` by bare name | **Leave for 0.2.0** (a lookalike only keeps more lookups); qualify for consistency after 0.2.0 (added to TAAK-295). |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

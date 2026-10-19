@@ -9,6 +9,8 @@
 - Do this after release 0.2.0; the output must not change (tests pin the rendered text).
 - `AutoMapperFix.AllowsPartial` accepts both the code and the old prefix today; after this task, only the code.
 
+- Also (council round 5 Q2): `IsContainer` in `MapperRegistration.cs` matches on the fully qualified name, like the builder types.
+
 ## Steps
 
 - [ ] 1. Inventory all prefix uses; plan

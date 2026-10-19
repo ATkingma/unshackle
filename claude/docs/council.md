@@ -64,4 +64,4 @@ Condition (Pragmatist): rerun the corpus `after` on the six AutoMapper repos, 0 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct
 - `claude/docs/overdracht.md` — handover
 - `claude/tasks/archief/TAAK-292-council-follow-up.md` — implementation of these decisions
-- `claude/tasks/TAAK-293-council-round-3.md` — implementation of the round-3 decisions
+- `claude/tasks/archief/TAAK-293-council-round-3.md` — implementation of the round-3 decisions

@@ -44,13 +44,17 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/UnusedMapperPattern.cs`
 
 | Question | Leaf | Proof / test |
 | -------- | ---- | ------------ |
-| rule 1 fails (no AddAutoMapper in the scope) | stays, Manual "rule 1" | `FixAsync_ServiceLookupNotSurelyRegistered_…("")`, `("in shop")` |
-| rule 2 fails (only conditional calls) | stays, Manual "rule 2" | `service-lookup-conditional-registration`; theory rows `if`, `#if` |
-| rule 3 fails (second container) | stays, Manual "rule 3" | `service-lookup-second-container`; theory row `container` |
+| rule 1 fails (no AddAutoMapper in the scope) | stays, Manual "rule 1", `KeptReason.NoRegistration` | `FixAsync_ServiceLookupNotSurelyRegistered_…("")`, `("in shop")` |
+| rule 2 fails (only conditional calls, or calls in a lambda not passed directly to a registration/builder call, or in a local function) | stays, Manual "rule 2", `KeptReason.ConditionalOrDeferredRegistration` | `service-lookup-conditional-registration`, `service-lookup-deferred-registration`; theory rows `if`, `#if`, `stored lambda`, `local function` |
+| rule 3 fails (second container, also a target-typed `new()`) | stays, Manual "rule 3", `KeptReason.ContainerWithoutRegistration` | `service-lookup-second-container`, `service-lookup-target-typed-container`; theory rows `container`, `target-typed` |
 | all hold | removed, warning | `service-lookup`, `FixAsync_ServiceLookupRegisteredByADependentHost_RemovesIt` |
 
 The scope is the lookup's project plus `GetProjectsThatTransitivelyDependOnThisProject`. The kept lookups are found by planning twice:
 once with the scope rule, once as if every project were registered; a symbol only the second plan removes is a lookup the rule keeps.
+Its Manual finding carries the `KeptReason` code (council round 3, TAAK-293); the reason text has no prefix, `ReportRow.ReasonOf` prints
+`Stays on AutoMapper: ` in the CSV/JSON/markdown report and on the console. A lambda passed directly to a call on (or extending)
+`IServiceCollection` or a host/web host/application builder counts as unconditional (`FixAsync_AddAutoMapperInALambdaPassedToARegistrationCall_RemovesTheLookup`).
+The D2 source of figure 4 is not re-rendered for these leaves (no `d2` here).
 
 ## See also
 

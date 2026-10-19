@@ -76,5 +76,5 @@ Nothing here blocks 0.2.0 outright; Q3 and Q4 are small and land before it (TAAK
 - `claude/docs/overdracht.md` — handover
 - `claude/tasks/archief/TAAK-292-council-follow-up.md` — implementation of these decisions
 - `claude/tasks/archief/TAAK-293-council-round-3.md` — implementation of the round-3 decisions
-- `claude/tasks/TAAK-294-council-round-4.md` — round-4 changes before 0.2.0
+- `claude/tasks/archief/TAAK-294-council-round-4.md` — round-4 changes before 0.2.0
 - `claude/tasks/TAAK-295-kept-reason-codes.md` — reason codes for all kept findings (after 0.2.0)

@@ -56,6 +56,7 @@ Release 0.2.0 is proposed to the user only after these decisions.
 
 Open choices go to the decision council (`claude/docs/council.md`), at the user's request. First decisions: starter Manual, fullcart partial, scoped `GetService<IMapper>` removal, empty classes kept with an Info line. Follow-up: TAAK-292 (done: scoped lookup rule, Info lines, 0 corpus regressions).
 Round 3 (implementer questions): TAAK-293 done (typed `KeptReason` on the kept lookup, target-typed containers, deferred registrations, Scrutor reason for fullcart; 0 corpus regressions).
+Round 4: TAAK-294 done (builder types matched on the qualified name incl. `HostApplicationBuilder` and the isolated Functions builders; `Decorate` named as Scrutor's only when it resolves to Scrutor's namespace or assembly, or not at all; 0 corpus regressions). TAAK-295 (reason codes for all kept findings) is after 0.2.0.
 
 ## Local environment (Windows, obsolete: the corpus work moved to Linux, TAAK-262)
 

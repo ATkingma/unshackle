@@ -31,7 +31,7 @@
 
 ## Build and tests
 
-- `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1613 passed, 0 failed (TAAK-289); 1635 passed, 0 failed (TAAK-292); 1644 passed, 0 failed (TAAK-293).
+- `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1613 passed, 0 failed (TAAK-289); 1635 passed, 0 failed (TAAK-292); 1644 passed, 0 failed (TAAK-293); 1648 passed, 0 failed (TAAK-294).
 - Corpus `after` (6 repos, see `claude/tasks/CORPUSRUN-blind.md`): all build, 0 regressions; pi22317 and assistiva fully migrated.
 
 ## Deviations

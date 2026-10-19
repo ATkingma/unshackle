@@ -1,0 +1,21 @@
+title: "[Decision tree] profile shapes (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q4: "Each statement / the arrow body\na CreateMap the rewrite handles?" {shape: diamond}
+m4: "Manual: existing reasons\n(options, conversion, ...)"
+q5: "Types public or internal?" {shape: diamond}
+m5: "Manual: private or protected\n(nested-private-dto)"
+q6: "MapFrom names accessible and\nthe same next to the outer type?" {shape: diamond}
+m6: "Manual: private or protected /\nmeans something else\n(nested-private-member,\nnested-outer-member)"
+q7: "<Outer><Profile>Extensions free?" {shape: diamond}
+m7: "Manual: already exists\n(nested-name-taken)"
+f0: "Fixed: empty constructor,\nextension class after the outer type\n(nested-profile, nested-record,\nnested-in-nested, expression-bodied*)"
+from_previous_q4: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q4 -> q4
+q4 -> m4: no
+q4 -> q5: yes
+q5 -> m5: no
+q5 -> q6: yes
+q6 -> m6: no
+q6 -> q7: yes
+q7 -> m7: no
+q7 -> f0: yes

@@ -1,29 +1,19 @@
-title: "[Beslisboom] PipelineBehaviorPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Beslisboom] PipelineBehaviorPattern.Rewrite (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 q1: "Expliciete interface-\nimplementatie?" {shape: diamond}
 q2: "Task<T> + 3 parameters,\nnext is RequestHandlerDelegate<T>?" {shape: diamond}
 q3: "Elk gebruik van next\nis next() of next(token)?" {shape: diamond}
 q4: "async?" {shape: diamond}
-q5: "Elke return next(...)\nof Task.FromResult?" {shape: diamond}
-q6: "Request-type is typeparameter\nvan de klasse?" {shape: diamond}
-q7: "Constraint al IRequest/INotification\n(of interface daarop)?" {shape: diamond}
 m1: "Manual: explicit interface\n(explicit)"
 m2: "Manual: does not have the form\n(geen proof)"
 m3: "Manual: next is used other than\n(next-stored)"
-m4: "Manual: not next() or Task.FromResult\n(next-passed)"
-f1: "ValueTask + MessageHandlerDelegate,\nnext(request, token), where T : IMessage\n(open-async, no-constraint, new-constraint,\nnext-token, edge-notnull-constraint)"
-f2: "ValueTask + MessageHandlerDelegate,\nnext(request, token), geen constraint\n(closed, edge-request-constraint)"
+to_next_q6: "Continued in Figure 3b: Request-type is typeparameter\nvan de klasse?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+to_next_q5: "Continued in Figure 3b: Elke return next(...)\nof Task.FromResult?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 q1 -> m1: ja
 q1 -> q2: nee
 q2 -> m2: nee
 q2 -> q3: ja
 q3 -> m3: nee
 q3 -> q4: ja
-q4 -> q6: ja
-q4 -> q5: nee
-q5 -> m4: nee
-q5 -> q6: ja
-q6 -> q7: ja
-q7 -> f1: nee
-q7 -> f2: ja
-q6 -> f2: nee
+q4 -> to_next_q6: ja
+q4 -> to_next_q5: nee

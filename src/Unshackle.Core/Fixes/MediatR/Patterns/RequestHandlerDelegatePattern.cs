@@ -23,7 +23,7 @@ public class RequestHandlerDelegatePattern : IPattern
     public string Id => "mediatr.request-handler-delegate";
 
     public string Description =>
-        "RequestHandlerDelegate<TRes> mock or field handed to a behavior's Handle → MessageHandlerDelegate<TReq, TRes>, Invoke() → Invoke(Arg.Any<TReq>(), Arg.Any<CancellationToken>()); anything else → Manual with the line";
+        "RequestHandlerDelegate<TRes> handed to a behavior's Handle (NSubstitute mock, field, real lambda or Moq Mock<RequestHandlerDelegate<TRes>>) → MessageHandlerDelegate<TReq, TRes>: Invoke() → Invoke(Arg.Any<TReq>(), Arg.Any<CancellationToken>()), _ => Task → (_, _) => ValueTask; anything else → Manual with the line";
 
     // The type, not the reference: all uses of one delegate (declaration, mock, Invoke, Handle call) are rewritten together.
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>

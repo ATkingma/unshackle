@@ -4,15 +4,8 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/AddAutoMapperPattern.cs
 
 ## Figure 1: class diagram
 
-```d2
-ISolutionPattern: {shape: class; "+Find(root, model)": "IEnumerable<SyntaxNode>"; "+RewriteAsync(node, model, solution, ct)": "Task<PatternResult>"}
-AddAutoMapperPattern: {shape: class; "-s_services": "string[]"; "+Find()": ""; "+Rewrite()": "PatternResult"; "+RewriteAsync()": "Task<PatternResult>"; "-UnusedParameters()": "List<string>"; "-IsService()": "bool"}
-PatternResult: {shape: class}
-SymbolFinder: {shape: class}
-AddAutoMapperPattern -> ISolutionPattern: implements
-AddAutoMapperPattern -> SymbolFinder: FindReferencesAsync
-AddAutoMapperPattern -> PatternResult: Fixed / Manual
-```
+<!-- kingmadoc:diagram img/automapper-add-automapper-modellen-1.d2 -->
+![Figure 1: class diagram](img/automapper-add-automapper-modellen-1.png)
 
 | Element                | Role                                                                 |
 | ---------------------- | -------------------------------------------------------------------- |
@@ -23,17 +16,8 @@ AddAutoMapperPattern -> PatternResult: Fixed / Manual
 
 ## Figure 2: sequence
 
-```d2
-shape: sequence_diagram
-Fixer
-Pattern: AddAutoMapperPattern
-SF: SymbolFinder
-Fixer -> Pattern: Find(root, model)
-Fixer -> Pattern: RewriteAsync(node, model, solution, ct)
-Pattern -> SF: FindReferencesAsync(service) per s_services
-Pattern -> Pattern: Rewrite(node, model, user)
-Pattern -> Fixer: Fixed / Manual
-```
+<!-- kingmadoc:diagram img/automapper-add-automapper-modellen-2.d2 -->
+![Figure 2: sequence](img/automapper-add-automapper-modellen-2.png)
 
 | Step                | Explanation                                                         |
 | ------------------- | ------------------------------------------------------------------- |
@@ -43,17 +27,8 @@ Pattern -> Fixer: Fixed / Manual
 
 ## Figure 3: decision tree
 
-```d2
-q1: Standalone statement?
-q2: Mapper service still used?
-m1: "Manual: The result of AddAutoMapper is used (result-used)"
-m2: "Manual: IMapper is still used (mapper-injected)"
-f: "Fixed: line removed, _ = p; for unused parameters (simple, parameter)"
-q1 -> m1: no
-q1 -> q2: yes
-q2 -> m2: yes
-q2 -> f: no
-```
+<!-- kingmadoc:diagram img/automapper-add-automapper-modellen-3.d2 -->
+![Figure 3: decision tree](img/automapper-add-automapper-modellen-3.png)
 
 | Question           | Leaf         | Proof                 |
 | ------------------ | ------------ | --------------------- |

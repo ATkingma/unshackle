@@ -2,8 +2,6 @@
 
 Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `MemberValues.cs`, `NestedMaps.cs`, `NestedMap.cs` and `MapCallPattern.cs`.
 
-> The figures were created as D2 sources in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
-
 ## Figure 1: classes
 
 **Figure 1.** The profile rewrite asks `MemberValues` per member; `MemberValues` looks the type pair up in `NestedMaps`.
@@ -37,10 +35,15 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `
 
 ## Figure 3: decision tree
 
-**Figure 3.** The questions of `MemberValues.Problem` for one member.
+**Figure 3a.** The questions of `MemberValues.Problem` for one member. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/automapper-nested-maps-modellen-3.d2 -->
 ![Figure 3: decision tree](img/automapper-nested-maps-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/automapper-nested-maps-modellen-4.d2 -->
+![Figure 3: decision tree](img/automapper-nested-maps-modellen-4.png)
 
 | Leaf                                         | Condition                                                          | Evidence                                    |
 | -------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------- |

@@ -1,4 +1,4 @@
-title: "[Activity] FluentAssertionPattern.Rewrite + HaveCountPattern.RewriteAssertion - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] FluentAssertionPattern.Rewrite + HaveCountPattern.RewriteAssertion - Fixed of Manual (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 vars: {
   d2-legend: {
@@ -17,17 +17,7 @@ q4: "Geen benoemde argumenten; because constant formatteerbaar?" {shape: diamond
 m4: "Manual: named arguments, or becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q5: "Subject zonder ?. (conditional access)?" {shape: diamond}
 m5: "Manual: The subject uses ?.\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q6: "Eerste parameter is int (geen predicate)?" {shape: diamond}
-m6: "Manual: Predicate: rewrite by hand\n(proof: predicate)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q7: "Type van het subject bekend?" {shape: diamond}
-m7: "Manual: The type of the subject is unknown\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q8: "Geen IDictionary / IReadOnlyDictionary?" {shape: diamond}
-m8: "Manual: Dictionary: check whether Count or Keys is meant\n(proof: dictionary)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-s: "Welk lid geeft het aantal?" {shape: diamond}
-f1: "Fixed: x.Length.<Should>(n)\n(proof: array)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-f2: "Fixed: x.Count.<Should>(n[, because]); haakjes en ShouldNotBeNull() via NotNullReceiver\n(proof: list, list-because, collection-interfaces, receiver-parens, nullable, count-comparisons)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-f3: "Fixed: x.Count().<Should>(n) + using System.Linq\n(proof: enumerable, enumerable-because, enumerable-existing-using)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-mx1: "Manual: Non-generic IEnumerable: use Cast<T>().Count()\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+to_next_q6: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 start -> q1
 q1 -> m1: nee
 q1 -> q2: ja
@@ -38,14 +28,4 @@ q3 -> q4: ja
 q4 -> m4: nee
 q4 -> q5: ja
 q5 -> m5: nee
-q5 -> q6: ja
-q6 -> m6: nee
-q6 -> q7: ja
-q7 -> m7: nee
-q7 -> q8: ja
-q8 -> m8: nee
-q8 -> s: ja
-s -> f1: "array, of alleen publieke int Length"
-s -> f2: "publieke int Count"
-s -> f3: "alleen IEnumerable<T>"
-s -> mx1: "niet-generieke IEnumerable"
+q5 -> to_next_q6: ja

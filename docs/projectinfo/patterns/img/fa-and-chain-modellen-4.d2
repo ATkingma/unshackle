@@ -1,0 +1,28 @@
+title: "[Activity] AndChainPattern.Rewrite - Fixed of Manual (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+q4: "Elke .And op hetzelfde subject?" {shape: diamond}
+m4: "Manual: continues on another subject\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5: "Subject veilig twee keer te evalueren?" {shape: diamond}
+m5: "Hoist: var subject = x;\n(proofs: subject-call, subject-indexer,\nsubject-call-twice)"
+q6: "Elke schakel gevonden door een patroon?" {shape: diamond}
+m6: "Manual: which no pattern rewrites\n(proof: unsupported-link)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q7: "Elke schakel Fixed?" {shape: diamond}
+m7: "Manual: Link <naam> of the .And chain: <reden>\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+fx: "Fixed: één Shouldly-statement per schakel\n(simple, because, three-links, be-of-type,\nmember-subject, nullable, edge-multiline,\nbe-same-as, dates, equivalent-collection, ...)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+from_previous_q4: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q4 -> q4
+q4 -> m4: nee
+q4 -> q5: ja
+q5 -> m5: nee
+m5 -> q6
+q5 -> q6: ja
+q6 -> m6: nee
+q6 -> q7: ja
+q7 -> m7: nee
+q7 -> fx: ja

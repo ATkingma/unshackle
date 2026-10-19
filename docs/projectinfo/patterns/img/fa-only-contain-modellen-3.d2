@@ -1,31 +1,19 @@
-title: "[Beslisboom] OnlyContainPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Beslisboom] OnlyContainPattern.Rewrite (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 q0: "In een AssertionScope?" {shape: diamond}
 q1: "x.Should().OnlyContain(...)?" {shape: diamond}
 q2: "Resultaat gebruikt?" {shape: diamond}
 q3: "named args, of becauseArgs\nbij niet-constante because?" {shape: diamond}
-q4: "Generieke IEnumerable<T>?" {shape: diamond}
-q5: "Statement direct in blok?" {shape: diamond}
-q6: "Subject veilig twee keer te evalueren?" {shape: diamond}
-q0 -> q1: nee
-q1 -> q2: ja
-q2 -> q3: nee
-q3 -> q4: nee
-q4 -> q5: ja
-q5 -> q6: ja
 m0: "Manual: Inside an AssertionScope"
 m1: "Manual: is not in the form"
 m2: "Manual: is used"
 m3: "Manual: named arguments or becauseArgs"
-m4: "Manual: not a generic IEnumerable<T>"
-m5: "Manual: cannot hold two statements"
-h: "Fixed met hoisting:\nvar subject = x;\nsubject.ShouldNotBeEmpty([because]);\nsubject.ShouldAllBe(pred[, because]);"
-f: "Fixed:\nx.ShouldNotBeEmpty([because]);\nx.ShouldAllBe(pred[, because]);\n(because met becauseArgs: string.Format(...))"
+to_next_q4: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+q0 -> q1: nee
+q1 -> q2: ja
+q2 -> q3: nee
+q3 -> to_next_q4: nee
 q1 -> m1: nee
 q2 -> m2: ja
 q3 -> m3: ja
-q4 -> m4: nee
-q5 -> m5: nee
 q0 -> m0: ja
-q6 -> h: nee
-q6 -> f: ja

@@ -26,10 +26,15 @@
 | Checks | `FluentAssertionPattern.Rewrite` → `HaveLengthPattern.RewriteAssertion` | scope, form, use of the result, arguments (`TryGetArguments`); then `?.`, type, `NotNullReceiver` |
 | Outcome | `PatternResult.Fixed` / `Manual` | Shouldly call or reason |
 
-**Figure 3.** Decision tree of `FluentAssertionPattern.Rewrite` + `RewriteAssertion`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/HaveLength/`.
+**Figure 3a.** Decision tree of `FluentAssertionPattern.Rewrite` + `RewriteAssertion`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/HaveLength/`. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/fa-have-length-modellen-3.d2 -->
 ![Models: fa.have-length](img/fa-have-length-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/fa-have-length-modellen-4.d2 -->
+![Models: fa.have-length](img/fa-have-length-modellen-4.png)
 
 | Question | If no: Manual reason | Proof |
 | --- | --- | --- |

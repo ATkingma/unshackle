@@ -1,0 +1,21 @@
+direction: down
+ex: "MapInto bestaat?" {shape: diamond}
+gen: "herschreven CreateMap<A, B>?" {shape: diamond}
+one: "precies een?" {shape: diamond}
+int: "internal in ander project?" {shape: diamond}
+mem: "A heeft member MapInto?" {shape: diamond}
+m6: "Manual: No CreateMap\n(unknown-map)"
+m7: "Manual: Several profiles / becomes internal / already has a member"
+f1: "Fixed: a.MapInto(b)\n(existing-method, map-into-profile, unittest)"
+from_previous_ex: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_ex -> ex
+ex -> f1: ja
+ex -> gen: nee
+gen -> m6: nee
+gen -> one: ja
+one -> m7: nee
+one -> int: ja
+int -> m7: ja
+int -> mem: nee
+mem -> m7: ja
+mem -> f1: nee

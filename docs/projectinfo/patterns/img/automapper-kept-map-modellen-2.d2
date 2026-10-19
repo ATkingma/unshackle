@@ -1,0 +1,9 @@
+shape: sequence_diagram
+Fixer
+Pattern: KeptMapPattern
+Owners: MapOwners
+Fixer -> Pattern: Find(root, model)
+Fixer -> Pattern: RewriteAsync(statement, model, solution, ct)
+Pattern -> Owners: ForAsync(solution, model, ct)
+Pattern -> Owners: Reason(from, to)
+Pattern -> Fixer: "Manual(Stays on AutoMapper: …)"

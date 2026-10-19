@@ -1,0 +1,21 @@
+title: "[Activity] FluentAssertionPattern.Rewrite → BeGreaterLessPattern.RewriteAssertion (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+count: "Juiste aantal waarden?" {shape: diamond}
+sign: "BePositive/BeNegative: int, long, short, decimal, double, float?" {shape: diamond}
+nan: "BeNegative op double/float?" {shape: diamond}
+conv: "Waarde naar subjecttype te converteren?" {shape: diamond}
+one: "Fixed: x.ShouldBe...(waarden[, because])\n(simple, because, because-args, in-range, sign, comparable,\nlambda, byte-short, dates, edge-double, edge-interpolated-because)" {style.fill: "#c8e6c9"; style.border-radius: 12}
+mc: "Manual: unexpected argument list" {style.fill: "#ffe0b2"; style.border-radius: 12}
+m7: "Manual: only exists for\n(sign-byte)" {style.fill: "#ffe0b2"; style.border-radius: 12}
+m8: "Fixed: (x < 0).ShouldBeTrue([because])\n(negative-double, negative-float)" {style.fill: "#c8e6c9"; style.border-radius: 12}
+m9: "Manual: Value type differs" {style.fill: "#ffe0b2"; style.border-radius: 12}
+from_previous_count: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_count -> count
+count -> sign: ja
+count -> mc: nee
+sign -> nan: ja
+sign -> m7: nee
+nan -> conv: nee
+nan -> m8: ja
+conv -> one: ja
+conv -> m9: nee

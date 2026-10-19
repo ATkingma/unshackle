@@ -1,0 +1,18 @@
+q1: "IMapper field / constructor parameter / local / mapper factory?"
+q2: "Initializer null, default or droppable?"
+q3: "Every use a migrated, not kept call, or inside a removal?"
+q4: "Parameter: every caller passes a droppable value (or none)?"
+q5: "Parameter: no other constructor gets the same signature?"
+keep: "stays (no finding; AddAutoMapper Manual: IMapper is still used)"
+go: "removed (Fixed, per type)"
+q1 -> keep: no
+q1 -> q2: yes
+q2 -> keep: no
+q2 -> q3: yes
+q3 -> keep: no
+q3 -> q4: "yes, parameter"
+q3 -> go: "yes, other"
+q4 -> keep: no
+q4 -> q5: yes
+q5 -> keep: no
+q5 -> go: yes

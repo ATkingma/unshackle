@@ -1,0 +1,17 @@
+q0: "At on a DateTime?"
+a1: "TimeSpan argument?"
+a3: "Microseconds/nanoseconds?"
+fa1: "d.Date + t / new DateTime(y, m, n) + t"
+ma: "Manual: microseconds / computed date"
+q1: "Name in s_factories and one number parameter?"
+f1: "TimeSpan.FromX(n)"
+to_next_a2: "Continued in Figure 3b: Date a month call?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+to_next_q2: "Continued in Figure 3b: Month with day + year?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+q0 -> a1: yes
+q0 -> q1: no
+a1 -> fa1: yes
+a1 -> a3: no
+a3 -> ma: yes
+a3 -> to_next_a2: no
+q1 -> f1: yes
+q1 -> to_next_q2: no

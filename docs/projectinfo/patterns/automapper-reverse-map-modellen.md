@@ -2,8 +2,6 @@
 
 Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` (`TryParseMap`, `ReverseMapCall`, `TryParseOptions`, `HasReverseMap`, `Reverse`, `MemberPath`, `Unwrap`, `MayFlatten`, `Problem`), `NestedMaps.cs` (`AddProfiles`) and `MapCallPattern.cs` (`GeneratedAsync`).
 
-> The figures were created as D2 sources in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
-
 ## Figure 1: classes
 
 **Figure 1.** The shared profile rewrite with its reverse-map methods, and the two classes that count the generated methods.
@@ -38,10 +36,15 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` (`
 
 ## Figure 3: decision tree
 
-**Figure 3.** The questions `Rewrite` asks for a `ReverseMap()`, with the evidence of each leaf.
+**Figure 3a.** The questions `Rewrite` asks for a `ReverseMap()`, with the evidence of each leaf. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/automapper-reverse-map-modellen-3.d2 -->
 ![Figure 3: decision tree](img/automapper-reverse-map-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/automapper-reverse-map-modellen-4.d2 -->
+![Figure 3: decision tree](img/automapper-reverse-map-modellen-4.png)
 
 | Leaf                                         | Condition                                                         | Evidence                                    |
 | -------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------- |

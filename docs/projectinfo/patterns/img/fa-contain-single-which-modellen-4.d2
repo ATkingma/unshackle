@@ -1,0 +1,17 @@
+title: "[Activity] FluentAssertionPattern.Rewrite + ContainSinglePattern.RewriteAssertion - Fixed of Manual (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q3: "Geen benoemde argumenten; becauseArgs alleen met constante because?" {shape: diamond}
+m3: "Manual: named arguments, or becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q4: "Subject is IEnumerable<T>?" {shape: diamond}
+m4: "Manual: non-generic collection\n(proof: geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5: "Geen predicate, geen .Which, of lambda-predicate?" {shape: diamond}
+m5: "Manual: Expression variable\n(proof: expression-variable)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+f0: "Fixed: x.ShouldHaveSingleItem() / x.ShouldContain(pred, 1) / x.Where(pred).ShouldHaveSingleItem()\n(simple, predicate, enumerable, because, because-args, which, which-chain, edge-subject, nullable)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+from_previous_q3: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q3 -> q3
+q3 -> m3: nee
+q3 -> q4: ja
+q4 -> m4: nee
+q4 -> q5: ja
+q5 -> m5: nee
+q5 -> f0: ja

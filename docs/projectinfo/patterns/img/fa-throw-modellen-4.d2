@@ -1,0 +1,36 @@
+title: "[Activity] ThrowPattern.Rewrite - Fixed of Manual (2/3)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+classes: {
+  m: {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+  f: {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+  q: {shape: diamond}
+}
+q6: "Action of Func naar referentietype?" {class: q}
+m6: "Manual: not an Action or a Func returning a reference type\n(proof: value-func)" {class: m}
+qa: "ThrowExactly, of geen AggregateException-risico\n(ThrowMessage.MayThrowAggregate)?" {class: q}
+ma: "Manual: FluentAssertions unwraps AggregateException\n(proof: aggregate-wait, aggregate-method-group)" {class: m}
+q7: "Geen named args op Throw; becauseArgs\nalleen bij constante because?" {class: q}
+m7: "Manual: named arguments or becauseArgs\n(geen proof)" {class: m}
+q8: "Volgt .WithMessage(...) direct?" {class: q}
+f0: "Fixed: Should.Throw<T>(act[, because])\n[.ShouldBeOfType<T>() bij ThrowExactly]\n(proof: simple, because, because-args, func, lambda,\nvalue-used, aggregate-expected, aggregate-get-result)" {class: f}
+w1: "Geen named args, één waarde op WithMessage?" {class: q}
+mw1: "Manual: WithMessage(...) with named arguments or becauseArgs\n(geen proof)" {class: m}
+from_previous_q6: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+to_next_w2: "Continued in Figure 3c" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q6 -> q6
+q6 -> m6: nee
+q6 -> qa: ja
+qa -> ma: nee
+qa -> q7: ja
+q7 -> m7: nee
+q7 -> q8: ja
+q8 -> f0: nee
+q8 -> w1: ja
+w1 -> mw1: nee
+w1 -> to_next_w2: ja

@@ -1,4 +1,4 @@
-title: "[Beslisboom] CreateMapPattern" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Beslisboom] CreateMapPattern (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 q0: "Map/ProjectTo van\nAutoMapper?" {shape: diamond}
 m0: "Manual: not migrated yet\n(map-call)"
@@ -8,13 +8,7 @@ q2: "elk statement\nCreateMap<A, B>()?" {shape: diamond}
 m2: "Manual: not a CreateMap\nwithout options (options)"
 q3: "B publieke parameterloze\nconstructor, niet abstract?" {shape: diamond}
 m3: "Manual: no public parameterless\nconstructor (constructor)"
-q4: "elk schrijfbaar lid: bronlid\nmet exact dezelfde naam?" {shape: diamond}
-m4: "Manual: no member with the\nsame name (flattening)"
-q5: "zelfde type,\ngeen collectie?" {shape: diamond}
-m5: "Manual: AutoMapper converts\n(conversion) / is a collection (collection)"
-q6: "A, B publiek of internal,\n<Profile>Extensions vrij?" {shape: diamond}
-m6: "Manual: private/protected\nof naam bestaat al"
-f: "Fixed: leeg profile +\nstatic B ToB(this A source)\n(simple, internal-types)"
+to_next_q4: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 q0 -> m0: ja
 q0 -> q1: "nee (profile)"
 q1 -> m1: nee
@@ -22,10 +16,4 @@ q1 -> q2: ja
 q2 -> m2: nee
 q2 -> q3: ja
 q3 -> m3: nee
-q3 -> q4: ja
-q4 -> m4: nee
-q4 -> q5: ja
-q5 -> m5: nee
-q5 -> q6: ja
-q6 -> m6: nee
-q6 -> f: ja
+q3 -> to_next_q4: ja

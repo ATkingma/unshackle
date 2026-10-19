@@ -1,0 +1,26 @@
+title: "[Decision tree] ToA for CreateMap<A, B>().ReverseMap() (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+f4: "X = source.Y\n(ForMemberMapFrom/reverse-map)"
+q5: "Same-named member in B?" {shape: diamond}
+f5: "X = source.X / nested call\n(reverse-map, reverse-map-nested)"
+q6: "Case, GetX or prefix\nin B (MayFlatten)?" {shape: diamond}
+m6: "Manual: no member with the same name\n(reverse-map-get-method)"
+f6: "left out: AutoMapper leaves it\n(reverse-map: CreationDate)"
+q7: "Second map for the\nsame type pair?" {shape: diamond}
+m7: "Manual: maps ... twice\n(reverse-map-duplicate)"
+f7: "ToA after ToB; Map<A>(b) → b.ToA()\n(_Combined/reverse-map-call)"
+from_previous_f4: "From Figure 3a: X = source.Y\n(ForMemberMapFrom/reverse-map)" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q5: "From Figure 3a: Same-named member in B?" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q7: "From Figure 3a: Second map for the\nsame type pair?" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_f4 -> f4
+from_previous_q5 -> q5
+from_previous_q7 -> q7
+q5 -> f5: yes
+q5 -> q6: no
+q6 -> m6: yes
+q6 -> f6: no
+f4 -> q7
+f5 -> q7
+f6 -> q7
+q7 -> m7: yes
+q7 -> f7: no

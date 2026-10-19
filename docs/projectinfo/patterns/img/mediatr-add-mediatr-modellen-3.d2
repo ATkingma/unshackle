@@ -1,35 +1,23 @@
-title: "[Beslisboom] AddMediatRPattern.Rewrite" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Beslisboom] AddMediatRPattern.Rewrite (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 q1: "x.AddMediatR(lambda met\néén parameter)?" {shape: diamond}
 q2: "Body: expressie of blok met\nalleen expressie-statements (ook leeg)?" {shape: diamond}
 q3: "Per instelling:\nRegisterServicesFrom*?" {shape: diamond}
 q4: "(Open)Behavior/StreamBehavior/Pre-/PostProcessor\nmet alleen typeof / generics?" {shape: diamond}
-q5: "Lifetime = ServiceLifetime.X,\nRegisterGenericHandlers of\ningebouwde NotificationPublisher?" {shape: diamond}
-q6: "Expression body\nmet meer dan een toewijzing?" {shape: diamond}
 m1: "Manual: not called as AddMediatR(cfg => ...)\n(no-lambda)"
 m2: "Manual: not a list of cfg calls\n(geen proof)"
 m3: "Manual: cfg.X(...) has no direct equivalent\n(unknown-call, behavior-lifetime)"
-m4: "Manual: 'instelling' has no direct equivalent\n(geen proof; eigen publisher)"
-m5: "Manual: several settings in expression lambda\n(geen proof)"
 d: "vervalt (source generator)"
-b: "PipelineBehaviors / StreamPipelineBehaviors += typeof(...)\n(open pre-processor: X<> -> X<,>)"
-l: "ServiceLifetime (standaard Transient),\nvervalt, of NotificationPublisherType"
-s: "Scanned: gesloten exception handlers en\nprocessors vooraan in PipelineBehaviors"
-f: "AddMediator(cfg => ...)\n(behaviors, expression, empty, processors, publisher,\nedge-assemblies, edge-service-type-behavior, edge-publisher-qualified, generic-handlers)"
+to_next_b: "Continued in Figure 3b: PipelineBehaviors / StreamPipelineBehaviors += typeof(...)\n(open pre-processor: X<> -> X<,>)" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+to_next_q5: "Continued in Figure 3b: Lifetime = ServiceLifetime.X,\nRegisterGenericHandlers of\ningebouwde NotificationPublisher?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+to_next_s: "Continued in Figure 3b: Scanned: gesloten exception handlers en\nprocessors vooraan in PipelineBehaviors" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 q1 -> m1: nee
 q1 -> q2: ja
 q2 -> m2: nee
 q2 -> q3: ja
 q3 -> d: ja
 q3 -> q4: nee
-q4 -> b: ja
-q4 -> q5: "geen aanroep"
+q4 -> to_next_b: ja
+q4 -> to_next_q5: "geen aanroep"
 q4 -> m3: "andere aanroep"
-q5 -> l: ja
-q5 -> m4: nee
-d -> s
-b -> s
-l -> s
-s -> q6
-q6 -> m5: ja
-q6 -> f: nee
+d -> to_next_s

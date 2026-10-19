@@ -2,14 +2,22 @@
 
 Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` (`Rewrite`, `Problem`, `ConstructorChoice`, `ConstructorProblem`, `ConstructUsingProblem`, `Extensions`) and `MemberValues.cs`.
 
-> The figure was created as a D2 source in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
-
 ## Figure 1: decision tree
 
-**Figure 1.** The questions for one `CreateMap<A, B>` whose destination may need a constructor.
+**Figure 1a.** The questions for one `CreateMap<A, B>` whose destination may need a constructor. Split into Figures 1a–1c (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/automapper-constructor-modellen-1.d2 -->
 ![Figure 1: decision tree](img/automapper-constructor-modellen-1.png)
+
+**Figure 1b.** Continuation of Figure 1a from its "Continued in Figure 1b" node.
+
+<!-- kingmadoc:diagram img/automapper-constructor-modellen-2.d2 -->
+![Figure 1: decision tree](img/automapper-constructor-modellen-2.png)
+
+**Figure 1c.** Continuation of Figure 1b from its "Continued in Figure 1c" node.
+
+<!-- kingmadoc:diagram img/automapper-constructor-modellen-3.d2 -->
+![Figure 1: decision tree](img/automapper-constructor-modellen-3.png)
 
 | Step         | Method in the code                       | What happens |
 | ------------ | ---------------------------------------- | ------------ |

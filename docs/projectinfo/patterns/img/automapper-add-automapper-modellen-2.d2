@@ -1,0 +1,9 @@
+shape: sequence_diagram
+Fixer
+Pattern: AddAutoMapperPattern
+SF: SymbolFinder
+Fixer -> Pattern: Find(root, model)
+Fixer -> Pattern: RewriteAsync(node, model, solution, ct)
+Pattern -> SF: FindReferencesAsync(service) per s_services
+Pattern -> Pattern: Rewrite(node, model, user)
+Pattern -> Fixer: Fixed / Manual

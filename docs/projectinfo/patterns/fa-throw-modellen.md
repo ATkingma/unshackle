@@ -31,10 +31,20 @@ act.Should().Throw<T>() to Should.Throw<T>(act). Facts from `src/Unshackle.Core/
 | Manual | `PatternResult.Manual` | The first failed check gives `ManualResult` with a reason (see figure 3) |
 | Fixed | `PatternResult.Fixed` | New node; the `Fixer` takes care of trivia and usings |
 
-**Figure 3.** Decision tree of `Rewrite`: 13 questions in code order, each leaf names the proof in `src/Unshackle.Tests/Proofs/FluentAssertions/Throw/` that proves it (`<naam>.before.cs` with `.after.cs` or `.manual.txt`).
+**Figure 3a.** Decision tree of `Rewrite`: 13 questions in code order, each leaf names the proof in `src/Unshackle.Tests/Proofs/FluentAssertions/Throw/` that proves it (`<naam>.before.cs` with `.after.cs` or `.manual.txt`). Split into Figures 3a–3c (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/fa-throw-modellen-3.d2 -->
 ![Models: fa.throw](img/fa-throw-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/fa-throw-modellen-4.d2 -->
+![Models: fa.throw](img/fa-throw-modellen-4.png)
+
+**Figure 3c.** Continuation of Figure 3b from its "Continued in Figure 3c" node.
+
+<!-- kingmadoc:diagram img/fa-throw-modellen-5.d2 -->
+![Models: fa.throw](img/fa-throw-modellen-5.png)
 
 | Question or selector | If no: Manual reason | Proof |
 | --- | --- | --- |

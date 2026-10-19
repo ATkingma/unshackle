@@ -30,10 +30,15 @@ act.Should().NotThrow() to Should.NotThrow(act). Facts from `src/Unshackle.Core/
 | Manual | `PatternResult.Manual` | The first failing check gives a `ManualResult` with a reason (see figure 3) |
 | Fixed | `PatternResult.Fixed` | New node; the `Fixer` handles trivia and usings |
 
-**Figure 3.** Decision tree of `Rewrite`: 8 questions in the order of the code, every leaf names the proof in `src/Unshackle.Tests/Proofs/FluentAssertions/NotThrow/` that proves it (`<name>.before.cs` with `.after.cs` or `.manual.txt`).
+**Figure 3a.** Decision tree of `Rewrite`: 8 questions in the order of the code, every leaf names the proof in `src/Unshackle.Tests/Proofs/FluentAssertions/NotThrow/` that proves it (`<name>.before.cs` with `.after.cs` or `.manual.txt`). Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/fa-not-throw-modellen-3.d2 -->
 ![Models: fa.not-throw](img/fa-not-throw-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/fa-not-throw-modellen-4.d2 -->
+![Models: fa.not-throw](img/fa-not-throw-modellen-4.png)
 
 | Question or selector | If no: Manual reason | Proof |
 | --- | --- | --- |

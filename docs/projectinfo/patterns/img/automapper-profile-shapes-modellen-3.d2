@@ -1,4 +1,4 @@
-title: "[Decision tree] profile shapes" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Decision tree] profile shapes (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 q0: "One profile with maps\nin the outermost type?" {shape: diamond}
 m0: "Manual: holds several profiles\n(nested-several-profiles)"
@@ -8,15 +8,7 @@ q2: "Partial?" {shape: diamond}
 m2: "Manual: is partial\n(partial)"
 q3: "One constructor?" {shape: diamond}
 m3: "Manual: several constructors\n(several-constructors)"
-q4: "Each statement / the arrow body\na CreateMap the rewrite handles?" {shape: diamond}
-m4: "Manual: existing reasons\n(options, conversion, ...)"
-q5: "Types public or internal?" {shape: diamond}
-m5: "Manual: private or protected\n(nested-private-dto)"
-q6: "MapFrom names accessible and\nthe same next to the outer type?" {shape: diamond}
-m6: "Manual: private or protected /\nmeans something else\n(nested-private-member,\nnested-outer-member)"
-q7: "<Outer><Profile>Extensions free?" {shape: diamond}
-m7: "Manual: already exists\n(nested-name-taken)"
-f0: "Fixed: empty constructor,\nextension class after the outer type\n(nested-profile, nested-record,\nnested-in-nested, expression-bodied*)"
+to_next_q4: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 q0 -> m0: no
 q0 -> q1: yes
 q1 -> m1: yes
@@ -24,12 +16,4 @@ q1 -> q2: no
 q2 -> m2: yes
 q2 -> q3: no
 q3 -> m3: no
-q3 -> q4: yes
-q4 -> m4: no
-q4 -> q5: yes
-q5 -> m5: no
-q5 -> q6: yes
-q6 -> m6: no
-q6 -> q7: yes
-q7 -> m7: no
-q7 -> f0: yes
+q3 -> to_next_q4: yes

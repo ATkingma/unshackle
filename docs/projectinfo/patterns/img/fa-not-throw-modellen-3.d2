@@ -1,4 +1,4 @@
-title: "[Activity] NotThrowPattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] NotThrowPattern.Rewrite - Fixed of Manual (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 vars: {
   d2-legend: {
@@ -15,17 +15,7 @@ q2: "Niet generiek NotThrow<T>()?" {shape: diamond}
 m2: "Manual: NotThrow<T>() only forbids exception type T\n(proof: generic)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
 q3: "Vorm x.Should().NotThrow()?" {shape: diamond}
 m3: "Manual: NotThrow() is not in the form x.Should().NotThrow()\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q4: "Resultaat weggegooid?" {shape: diamond}
-m4: "Manual: The result of NotThrow() is used\n(proof: result-used, value-used)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q5: "Subject Invoking/Awaiting: TryGetAction lukt;\nanders niet met FluentAssertions gebouwd?" {shape: diamond}
-m5: "Manual: receiver niet stabiel, waardetype of geen lambda;\nof subject gebouwd met FluentAssertions\n(proof: Invoking/side-effect-receiver, value-type, method-group)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q6: "Subject is een parameterloze Action of Func?" {shape: diamond}
-m6: "Manual: The subject is not a parameterless Action or Func\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-q7: "Geen benoemde argumenten; becauseArgs\nalleen met constante because?" {shape: diamond}
-m7: "Manual: benoemde argumenten of\nbecauseArgs bij niet-constante because\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
-s: "Is er een because?" {shape: diamond}
-f1: "Fixed: Should.NotThrow(act)\n(proof: simple, func, value-func)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
-f2: "Fixed: Should.NotThrow(act, because)\nbecauseArgs: string.Format(InvariantCulture, because, args)\n(proof: because, because-args)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+to_next_q4: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 start -> q0
 q0 -> m0: nee
 q0 -> q1: ja
@@ -34,14 +24,4 @@ q1 -> q2: ja
 q2 -> m2: nee
 q2 -> q3: ja
 q3 -> m3: nee
-q3 -> q4: ja
-q4 -> m4: nee
-q4 -> q5: ja
-q5 -> m5: nee
-q5 -> q6: ja
-q6 -> m6: nee
-q6 -> q7: ja
-q7 -> m7: nee
-q7 -> s: ja
-s -> f1: "nee"
-s -> f2: "ja"
+q3 -> to_next_q4: ja

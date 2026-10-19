@@ -2,8 +2,6 @@
 
 Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapIntoPattern.cs`, `CreateMapPattern.cs` and `MapCallPattern.cs`.
 
-> The figures were created as D2 sources in `img/`; `kingmadoc`/`d2` were not available in this environment, so the PNG/SVG follow with the next `kingmadoc render`.
-
 ## Figure 1: classes
 
 **Figure 1.** `MapIntoPattern` and `CreateMapPattern` as `ISolutionPattern`; `MapCallPattern` provides the profile search.
@@ -37,10 +35,15 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapIntoPattern.cs`, `Cr
 
 ## Figure 3: decision tree
 
-**Figure 3.** The questions of `RewriteAsync`.
+**Figure 3a.** The questions of `RewriteAsync`. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/automapper-map-into-modellen-3.d2 -->
 ![Figure 3: decision tree](img/automapper-map-into-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/automapper-map-into-modellen-4.d2 -->
+![Figure 3: decision tree](img/automapper-map-into-modellen-4.png)
 
 | Leaf                              | Condition                                 | Evidence                                        |
 | --------------------------------- | ----------------------------------------- | ----------------------------------------------- |

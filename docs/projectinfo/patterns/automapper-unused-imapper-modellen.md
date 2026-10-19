@@ -4,21 +4,8 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/UnusedMapperPattern.cs`
 
 ## Figure 1: class diagram
 
-```d2
-ISolutionPattern: {shape: class; "+RewriteAsync(node, model, solution, ct)": "Task<PatternResult>"}
-ISolutionFinder: {shape: class; "+FindAsync(root, model, solution, ct)": "Task<IReadOnlyList<SyntaxNode>>"}
-UnusedMapperPattern: {shape: class; "+FindAsync()": "outermost types with removals"; "+RewriteAsync()": "Task<PatternResult>"; "-Replacement()": "SyntaxNode?"; "-Remove()": "SyntaxNode"}
-MapperCleanup: {shape: class; "+ForAsync(solution, model, ct)": "Task<MapperCleanup>"; "+Removals(root, model)": "IReadOnlyList<Removal>"; "+Removes(node, model)": "bool"; "+IsRemoved(declaration, model)": "bool"; "+RemovedArguments(arguments, model)": "IReadOnlyList<ArgumentSyntax>"; "-BuildAsync()": "fixed point"}
-Removal: {shape: class; "+Node": "SyntaxNode"; "+Warning": "string?"}
-MapOwners: {shape: class; "+ForAsync()": "Task<MapOwners>"; "+KeptCall(call, model)": "PatternResult?"; "+SameApartFrom(solution, cached, paths)": "bool"}
-AddAutoMapperPattern: {shape: class; "+RewriteAsync()": "Task<PatternResult>"}
-UnusedMapperPattern -> ISolutionPattern: implements
-UnusedMapperPattern -> ISolutionFinder: implements
-UnusedMapperPattern -> MapperCleanup: plan
-MapperCleanup -> Removal: yields
-MapperCleanup -> MapOwners: kept calls
-AddAutoMapperPattern -> MapperCleanup: "Removes(): ignore uses"
-```
+<!-- kingmadoc:diagram img/automapper-unused-imapper-modellen-1.d2 -->
+![Figure 1: class diagram](img/automapper-unused-imapper-modellen-1.png)
 
 | Element                | Role                                                                                           |
 | ---------------------- | ---------------------------------------------------------------------------------------------- |
@@ -30,48 +17,13 @@ AddAutoMapperPattern -> MapperCleanup: "Removes(): ignore uses"
 
 ## Figure 2: sequence
 
-```d2
-shape: sequence_diagram
-Fixer
-Pattern: UnusedMapperPattern
-Cleanup: MapperCleanup
-Owners: MapOwners
-AddAutoMapper: AddAutoMapperPattern
-Fixer -> Pattern: FindAsync(root, model, solution, ct)
-Pattern -> Cleanup: ForAsync(solution, model, ct)
-Cleanup -> Owners: ForAsync / KeptCall(call, model)
-Cleanup -> Cleanup: BuildAsync: candidates, FindReferencesAsync, fixed point
-Pattern -> Cleanup: Removals(root, model)
-Fixer -> Pattern: RewriteAsync(type, model, solution, ct)
-Pattern -> Pattern: "Replacement() / Remove() per removal"
-Pattern -> Fixer: "Fixed(type) [Warning]"
-Fixer -> AddAutoMapper: RewriteAsync(statement)
-AddAutoMapper -> Cleanup: "Removes(reference)"
-AddAutoMapper -> Fixer: "Fixed (removed) or Manual (IMapper is still used)"
-```
+<!-- kingmadoc:diagram img/automapper-unused-imapper-modellen-2.d2 -->
+![Figure 2: sequence](img/automapper-unused-imapper-modellen-2.png)
 
 ## Figure 3: decision tree (per candidate, per round of the fixed point)
 
-```d2
-q1: "IMapper field / constructor parameter / local / mapper factory?"
-q2: "Initializer null, default or droppable?"
-q3: "Every use a migrated, not kept call, or inside a removal?"
-q4: "Parameter: every caller passes a droppable value (or none)?"
-q5: "Parameter: no other constructor gets the same signature?"
-keep: "stays (no finding; AddAutoMapper Manual: IMapper is still used)"
-go: "removed (Fixed, per type)"
-q1 -> keep: no
-q1 -> q2: yes
-q2 -> keep: no
-q2 -> q3: yes
-q3 -> keep: no
-q3 -> q4: "yes, parameter"
-q3 -> go: "yes, other"
-q4 -> keep: no
-q4 -> q5: yes
-q5 -> keep: no
-q5 -> go: yes
-```
+<!-- kingmadoc:diagram img/automapper-unused-imapper-modellen-3.d2 -->
+![Figure 3: decision tree (per candidate, per round of the fixed point)](img/automapper-unused-imapper-modellen-3.png)
 
 | Question                         | Leaf                     | Proof / test                                                                 |
 | -------------------------------- | ------------------------ | ---------------------------------------------------------------------------- |

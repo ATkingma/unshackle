@@ -1,0 +1,23 @@
+title: "[Activity] FluentAssertionPattern.Rewrite + HaveLengthPattern.RewriteAssertion - Fixed of Manual (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+q3: "Geen benoemde argumenten; because constant formatteerbaar?" {shape: diamond}
+m3: "Manual: named arguments, or becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q4: "Geen ?. in het subject?" {shape: diamond}
+m4: "Manual: uses ?.\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5: "Op StringAssertions?" {shape: diamond}
+m5: "Manual: on a stream\n(proof: stream)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+f0: "Fixed: s[.ShouldNotBeNull()].Length.ShouldBe(n[, because])\n(simple, because, because-args, nullable, receiver-parens)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+from_previous_q3: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q3 -> q3
+q3 -> m3: nee
+q3 -> q4: ja
+q4 -> m4: nee
+q4 -> q5: ja
+q5 -> m5: nee
+q5 -> f0: ja

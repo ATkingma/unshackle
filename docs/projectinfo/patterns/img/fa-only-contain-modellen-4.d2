@@ -1,0 +1,17 @@
+title: "[Beslisboom] OnlyContainPattern.Rewrite (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q4: "Generieke IEnumerable<T>?" {shape: diamond}
+q5: "Statement direct in blok?" {shape: diamond}
+q6: "Subject veilig twee keer te evalueren?" {shape: diamond}
+m4: "Manual: not a generic IEnumerable<T>"
+m5: "Manual: cannot hold two statements"
+h: "Fixed met hoisting:\nvar subject = x;\nsubject.ShouldNotBeEmpty([because]);\nsubject.ShouldAllBe(pred[, because]);"
+f: "Fixed:\nx.ShouldNotBeEmpty([because]);\nx.ShouldAllBe(pred[, because]);\n(because met becauseArgs: string.Format(...))"
+from_previous_q4: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q4 -> q4
+q4 -> q5: ja
+q5 -> q6: ja
+q4 -> m4: nee
+q5 -> m5: nee
+q6 -> h: nee
+q6 -> f: ja

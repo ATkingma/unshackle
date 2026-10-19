@@ -1,4 +1,4 @@
-title: "[Activity] ThrowPattern.Rewrite - Fixed of Manual" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Activity] ThrowPattern.Rewrite - Fixed of Manual (1/3)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 vars: {
   d2-legend: {
@@ -22,26 +22,7 @@ q4: "Node is .Which, of resultaat weggegooid?" {class: q}
 m4: "Manual: The result of Throw<T>() is used\n(proof: chain, edge-inner-exception)" {class: m}
 q5: "Invoking: TryGetAction lukt;\nanders niet met FluentAssertions gebouwd?" {class: q}
 m5: "Manual: Invoking-receiver/lambda, of FA-subject\n(proof: Invoking/side-effect-receiver, value-type, method-group)" {class: m}
-q6: "Action of Func naar referentietype?" {class: q}
-m6: "Manual: not an Action or a Func returning a reference type\n(proof: value-func)" {class: m}
-qa: "ThrowExactly, of geen AggregateException-risico\n(ThrowMessage.MayThrowAggregate)?" {class: q}
-ma: "Manual: FluentAssertions unwraps AggregateException\n(proof: aggregate-wait, aggregate-method-group)" {class: m}
-q7: "Geen named args op Throw; becauseArgs\nalleen bij constante because?" {class: q}
-m7: "Manual: named arguments or becauseArgs\n(geen proof)" {class: m}
-q8: "Volgt .WithMessage(...) direct?" {class: q}
-f0: "Fixed: Should.Throw<T>(act[, because])\n[.ShouldBeOfType<T>() bij ThrowExactly]\n(proof: simple, because, because-args, func, lambda,\nvalue-used, aggregate-expected, aggregate-get-result)" {class: f}
-w1: "Geen named args, één waarde op WithMessage?" {class: q}
-mw1: "Manual: WithMessage(...) with named arguments or becauseArgs\n(geen proof)" {class: m}
-w2: "Patroon is een constante string?" {class: q}
-mw2: "Manual: pattern is not a string constant\n(proof: message-variable)" {class: m}
-w3: "Alleen een * vooraan of achteraan?" {class: q}
-mw3: "Manual: wildcards other than a leading or trailing *\n(proof: message-wildcard)" {class: m}
-w4: "Geen regeleinde naast een *?" {class: q}
-mw4: "Manual: pattern contains a line break\n(proof: message-contains-line-break)" {class: m}
-sel: "Welk patroon?" {class: q}
-f1: "Fixed: ...Message.ShouldContain(lit, Case.Insensitive)\n(proof: message-contains)" {class: f}
-f2: "Fixed: ...Message.ShouldStartWith / ShouldEndWith(lit, Case.Insensitive)\n(proof: message-starts, message-ends)" {class: f}
-f4: "Fixed: ...Message.ShouldBe(lit[, because], IgnoreCase[ | IgnoreLineEndings])\n(proof: message-exact, message-exact-because, message-because,\nmessage-because-args, message-line-break, edge-multiline-message, edge-which-message)" {class: f}
+to_next_q6: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 start -> q0
 q0 -> m0: nee
 q0 -> q2: ja
@@ -52,23 +33,4 @@ q3 -> q4: ja
 q4 -> m4: nee
 q4 -> q5: ja
 q5 -> m5: nee
-q5 -> q6: ja
-q6 -> m6: nee
-q6 -> qa: ja
-qa -> ma: nee
-qa -> q7: ja
-q7 -> m7: nee
-q7 -> q8: ja
-q8 -> f0: nee
-q8 -> w1: ja
-w1 -> mw1: nee
-w1 -> w2: ja
-w2 -> mw2: nee
-w2 -> w3: ja
-w3 -> mw3: nee
-w3 -> w4: ja
-w4 -> mw4: nee
-w4 -> sel: ja
-sel -> f1: "*lit*"
-sel -> f2: "lit* / *lit"
-sel -> f4: "lit"
+q5 -> to_next_q6: ja

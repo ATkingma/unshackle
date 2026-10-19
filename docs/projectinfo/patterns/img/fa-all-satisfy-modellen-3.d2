@@ -1,32 +1,19 @@
-title: "[Beslisboom] FluentAssertionPattern.Rewrite → AllSatisfyPattern.RewriteAssertion" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Beslisboom] FluentAssertionPattern.Rewrite → AllSatisfyPattern.RewriteAssertion (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 q1: "x.Should().AllSatisfy(...)?" {shape: diamond}
 q2: "Statement (resultaat weggegooid)?" {shape: diamond}
 q3: "because (ook met becauseArgs)?" {shape: diamond}
 q4: "Inline lambda, 1 gewone parameter, niet async?" {shape: diamond}
-q5: "return in de body?" {shape: diamond}
-q6: "Direct in een blok?" {shape: diamond}
-q7: "Subject veilig twee keer te evalueren?" {shape: diamond}
-q1 -> q2: ja
-q2 -> q3: ja
-q3 -> q4: nee
-q4 -> q5: ja
-q5 -> q6: nee
-q6 -> q7: ja
 m1: "Manual: is not in the form\n(and-chain)"
 m2: "Manual: is used\n(used)"
 m3: "Manual: because message\n(because, because-args)"
 m4: "Manual: not an inline lambda / is async\n(method-group, async)"
-m5: "Manual: contains a return\n(return)"
-m6: "Manual: not directly in a block\n(not-in-block)"
-h: "Hoist: var subject = x;\n(subject-call)"
-f: "Fixed: x.ShouldNotBeEmpty();\nforeach (var a in x) { body }\n(simple, block, typed-parameter, member-subject, nullable)"
+to_next_q5: "Continued in Figure 3b" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+q1 -> q2: ja
+q2 -> q3: ja
+q3 -> q4: nee
+q4 -> to_next_q5: ja
 q1 -> m1: nee
 q2 -> m2: nee
 q3 -> m3: ja
 q4 -> m4: nee
-q5 -> m5: ja
-q6 -> m6: nee
-q7 -> h: nee
-h -> f
-q7 -> f: ja

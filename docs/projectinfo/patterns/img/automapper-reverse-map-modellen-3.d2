@@ -1,4 +1,4 @@
-title: "[Decision tree] ToA for CreateMap<A, B>().ReverseMap()" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Decision tree] ToA for CreateMap<A, B>().ReverseMap() (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 q0: "After ReverseMap() only\nForMember Ignore/MapFrom?" {shape: diamond}
 m0: "Manual: not a CreateMap<A, B>()\nwithout options\n(reverse-map-options)"
@@ -9,15 +9,9 @@ m2: "Manual: may be unflattened\n(unit test)"
 q3: "Per A member:\nReverseMap().ForMember?" {shape: diamond}
 f3: "Ignore: left out / MapFrom: X = expr\n(ForMemberMapFrom/reverse-map,\nForMemberIgnore/reverse-map-options)"
 q4: "Reversed forward\nMapFrom(s => s.X)?" {shape: diamond}
-f4: "X = source.Y\n(ForMemberMapFrom/reverse-map)"
-q5: "Same-named member in B?" {shape: diamond}
-f5: "X = source.X / nested call\n(reverse-map, reverse-map-nested)"
-q6: "Case, GetX or prefix\nin B (MayFlatten)?" {shape: diamond}
-m6: "Manual: no member with the same name\n(reverse-map-get-method)"
-f6: "left out: AutoMapper leaves it\n(reverse-map: CreationDate)"
-q7: "Second map for the\nsame type pair?" {shape: diamond}
-m7: "Manual: maps ... twice\n(reverse-map-duplicate)"
-f7: "ToA after ToB; Map<A>(b) → b.ToA()\n(_Combined/reverse-map-call)"
+to_next_f4: "Continued in Figure 3b: X = source.Y\n(ForMemberMapFrom/reverse-map)" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+to_next_q5: "Continued in Figure 3b: Same-named member in B?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+to_next_q7: "Continued in Figure 3b: Second map for the\nsame type pair?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 q0 -> m0: no
 q0 -> q1: yes
 q1 -> m1: yes
@@ -26,15 +20,6 @@ q2 -> m2: yes
 q2 -> q3: no
 q3 -> f3: yes
 q3 -> q4: no
-q4 -> f4: yes
-q4 -> q5: no
-q5 -> f5: yes
-q5 -> q6: no
-q6 -> m6: yes
-q6 -> f6: no
-f3 -> q7
-f4 -> q7
-f5 -> q7
-f6 -> q7
-q7 -> m7: yes
-q7 -> f7: no
+q4 -> to_next_f4: yes
+q4 -> to_next_q5: no
+f3 -> to_next_q7

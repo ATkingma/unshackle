@@ -1,0 +1,14 @@
+title: "[Decision tree] automapper.configuration-test (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q3: "Test member or lone constructor\nleft with nothing?" {shape: diamond}
+f2: "Member removed\n(local-configuration, validity-test,\nclass-fixture, _Combined)"
+f3: "Statements removed\n(assert-statement)"
+q4: "CreateMap outside a profile\nconstructor or [AutoMap]\nin project + dependencies?" {shape: diamond}
+m3: "Manual: still has maps to check\n(unmigrated-map)"
+from_previous_q3: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q3 -> q3
+q3 -> f2: yes
+q3 -> f3: no
+f2 -> q4: "holds a check"
+f3 -> q4: "holds a check"
+q4 -> m3: yes

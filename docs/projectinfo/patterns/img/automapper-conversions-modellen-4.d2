@@ -1,0 +1,17 @@
+title: "[Decision tree] MemberConversions.Problem (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q3: "Same type apart from Nullable?" {shape: diamond}
+f3: "source.X.GetValueOrDefault() / source.X\n(conversion-nullable)"
+q4: "Core conversion known?\n(number, enum, DateTime→DateTimeOffset)" {shape: diamond}
+m4: "Manual: throws at run time / no rule\n(conversion-enum-number, conversion-operator)"
+q5: "Nullable lift keeps\nAutoMapper's null result?" {shape: diamond}
+m5: "Manual (conversion-nullable-narrowing,\nconversion-nullable-enum-switch)"
+f5: "(E)x / switch / Convert.ToX(x) / x\n(conversion-enum, conversion-numbers)"
+from_previous_q3: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q3 -> q3
+q3 -> f3: yes
+q3 -> q4: no
+q4 -> m4: no
+q4 -> q5: yes
+q5 -> f5: yes
+q5 -> m5: no

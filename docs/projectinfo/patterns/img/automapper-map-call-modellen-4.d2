@@ -1,0 +1,19 @@
+direction: down
+ex: "ToB bestaat (scope of bron)?" {shape: diamond}
+gen: "herschreven CreateMap<A, B>?" {shape: diamond}
+one: "precies één?" {shape: diamond}
+int: "internal in ander project?" {shape: diamond}
+m5: "Manual: No CreateMap\n(unknown-map, manual-profile)"
+m6: "Manual: Several profiles"
+m7: "Manual: becomes internal\n(unittest)"
+f1: "Fixed: a.ToB()\n(existing-method, map-call-*)"
+from_previous_ex: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_ex -> ex
+ex -> f1: ja
+ex -> gen: nee
+gen -> m5: nee
+gen -> one: ja
+one -> m6: nee
+one -> int: ja
+int -> m7: ja
+int -> f1: nee

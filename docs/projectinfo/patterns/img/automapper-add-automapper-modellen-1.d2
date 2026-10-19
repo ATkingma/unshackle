@@ -1,0 +1,7 @@
+ISolutionPattern: {shape: class; "+Find(root, model)": "IEnumerable<SyntaxNode>"; "+RewriteAsync(node, model, solution, ct)": "Task<PatternResult>"}
+AddAutoMapperPattern: {shape: class; "-s_services": "string[]"; "+Find()": ""; "+Rewrite()": "PatternResult"; "+RewriteAsync()": "Task<PatternResult>"; "-UnusedParameters()": "List<string>"; "-IsService()": "bool"}
+PatternResult: {shape: class}
+SymbolFinder: {shape: class}
+AddAutoMapperPattern -> ISolutionPattern: implements
+AddAutoMapperPattern -> SymbolFinder: FindReferencesAsync
+AddAutoMapperPattern -> PatternResult: Fixed / Manual

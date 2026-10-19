@@ -1,0 +1,34 @@
+title: "[Activity] ThrowPattern.Rewrite - Fixed of Manual (3/3)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+classes: {
+  m: {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+  f: {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+  q: {shape: diamond}
+}
+w2: "Patroon is een constante string?" {class: q}
+mw2: "Manual: pattern is not a string constant\n(proof: message-variable)" {class: m}
+w3: "Alleen een * vooraan of achteraan?" {class: q}
+mw3: "Manual: wildcards other than a leading or trailing *\n(proof: message-wildcard)" {class: m}
+w4: "Geen regeleinde naast een *?" {class: q}
+mw4: "Manual: pattern contains a line break\n(proof: message-contains-line-break)" {class: m}
+sel: "Welk patroon?" {class: q}
+f1: "Fixed: ...Message.ShouldContain(lit, Case.Insensitive)\n(proof: message-contains)" {class: f}
+f2: "Fixed: ...Message.ShouldStartWith / ShouldEndWith(lit, Case.Insensitive)\n(proof: message-starts, message-ends)" {class: f}
+f4: "Fixed: ...Message.ShouldBe(lit[, because], IgnoreCase[ | IgnoreLineEndings])\n(proof: message-exact, message-exact-because, message-because,\nmessage-because-args, message-line-break, edge-multiline-message, edge-which-message)" {class: f}
+from_previous_w2: "From Figure 3b" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_w2 -> w2
+w2 -> mw2: nee
+w2 -> w3: ja
+w3 -> mw3: nee
+w3 -> w4: ja
+w4 -> mw4: nee
+w4 -> sel: ja
+sel -> f1: "*lit*"
+sel -> f2: "lit* / *lit"
+sel -> f4: "lit"

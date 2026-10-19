@@ -1,0 +1,21 @@
+title: "[Beslisboom] RequestProcessorPattern.Rewrite (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q5: "TResponse vrij en geen ander gebruik\ndan AddOpenRequestPreProcessor?" {shape: diamond}
+q6: "Request is IRequest<T>\nof IRequest?" {shape: diamond}
+q7: "Al een basisklasse?" {shape: diamond}
+m4: "Manual: TResponse taken or used outside AddMediatR\n(used-elsewhere)"
+m5: "Manual: response type unknown\n(geen proof)"
+m6: "Manual: already has a base class\n(geen proof)"
+f: "MessagePreProcessor / MessagePostProcessor + ValueTask Handle\n(pre-open, post-open-async, pre-closed)"
+from_previous_q7: "From Figure 3a: Al een basisklasse?" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q5: "From Figure 3a: TResponse vrij en geen ander gebruik\ndan AddOpenRequestPreProcessor?" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q6: "From Figure 3a: Request is IRequest<T>\nof IRequest?" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q7 -> q7
+from_previous_q5 -> q5
+from_previous_q6 -> q6
+q5 -> m4: nee
+q5 -> q7: ja
+q6 -> m5: nee
+q6 -> q7: ja
+q7 -> m6: ja
+q7 -> f: nee

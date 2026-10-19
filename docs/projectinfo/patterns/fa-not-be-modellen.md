@@ -31,10 +31,15 @@
 | Manual    | `PatternResult.Manual` | First failed check (figure 3)                                         |
 | Fixed     | `PatternResult.Fixed`  | `subject.ShouldNotBe(arguments)`                                      |
 
-**Figure 3.** Decision tree of `FluentAssertionPattern.Rewrite` + `ShouldBePattern.RewriteAssertion` in code order; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/NotBe/`.
+**Figure 3a.** Decision tree of `FluentAssertionPattern.Rewrite` + `ShouldBePattern.RewriteAssertion` in code order; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/NotBe/`. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/fa-not-be-modellen-3.d2 -->
 ![Models: fa.not-be](img/fa-not-be-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/fa-not-be-modellen-4.d2 -->
+![Models: fa.not-be](img/fa-not-be-modellen-4.png)
 
 | Question                   | If no: Manual reason                              | Proof                                                             |
 | -------------------------- | ------------------------------------------------- | ----------------------------------------------------------------- |

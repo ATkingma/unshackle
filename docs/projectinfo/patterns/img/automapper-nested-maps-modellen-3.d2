@@ -1,32 +1,19 @@
-title: "[Decision tree] MemberValues.Problem" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+title: "[Decision tree] MemberValues.Problem (1/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
 direction: down
 q1: "Source and destination\nboth collections?" {shape: diamond}
 q1c: "Both array, List<T> or a\nsupported interface?" {shape: diamond}
 m1: "Manual: is a collection of a kind\nthis fix does not copy\n(collection-dictionary)"
 q2: "Element pair has its own map,\nor the same element type?" {shape: diamond}
 m2: "Manual: AutoMapper converts"
-f1: "Xs = source.Xs?.Select(x => x?.ToY())\n.ToList()/.ToArray() ?? []\n(nested-collections, collection)"
 q3: "Pair has exactly one map\n(own project or depended on)?" {shape: diamond}
-q3s: "Same type?" {shape: diamond}
-f0: "X = source.X\n(simple)"
-m3: "Manual: AutoMapper converts and no\nprofile has a CreateMap (nested-no-map)"
-q4: "One map, public or same project,\nno member ToY, no cycle?" {shape: diamond}
-m4: "Manual: several profiles / internal /\na cycle (nested-several, nested-cycle)"
-q5: "AllowNullCollections or\nAllowNullDestinationValues set?" {shape: diamond}
-m5: "Manual: null handling changed"
-f2: "X = source.X?.ToY()[!] / .ToY() /\n?.ToY() ?? default\n(nested, nested-nullable)"
+to_next_q5: "Continued in Figure 3b: AllowNullCollections or\nAllowNullDestinationValues set?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+to_next_q4: "Continued in Figure 3b: One map, public or same project,\nno member ToY, no cycle?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+to_next_q3s: "Continued in Figure 3b: Same type?" {shape: page; style: {fill: "#e5e7eb"; font-color: "#000000"}}
 q1 -> q1c: yes
 q1 -> q3: no
 q1c -> m1: no
 q1c -> q2: yes
 q2 -> m2: no
-q2 -> q5: yes
-q3 -> q4: yes
-q3 -> q3s: no
-q3s -> f0: yes
-q3s -> m3: no
-q4 -> m4: no
-q4 -> q5: yes
-q5 -> m5: yes
-q5 -> f1: "no, collection"
-q5 -> f2: "no, single"
+q2 -> to_next_q5: yes
+q3 -> to_next_q4: yes
+q3 -> to_next_q3s: no

@@ -1,0 +1,21 @@
+title: "[Activity] NotThrowAsyncPattern.Rewrite - Fixed of Manual (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+q4: "Vorm act.Should()?" {shape: diamond}
+m4: "Manual: is not in the form\n(proof: geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q5: "Subject niet via FluentAssertions?" {shape: diamond}
+m5: "Manual: built with FluentAssertions\n(proof: awaiting)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q6: "Func<Task> of Func<Task<ref>>?" {shape: diamond}
+m6: "Manual: the only delegates Should.NotThrowAsync accepts\n(proof: value-result)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q7: "Geen benoemde argumenten; because constant formatteerbaar?" {shape: diamond}
+m7: "Manual: named arguments, or becauseArgs whose because is no constant format string\n(geen proof)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+ok: "Fixed: await Should.NotThrowAsync(act[, because])[.ConfigureAwait(x)]\nbecauseArgs: string.Format(InvariantCulture, because, args)\n(proof: simple, because, because-args, configure-await, lambda, reference-result)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+from_previous_q4: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q4 -> q4
+q4 -> m4: nee
+q4 -> q5: ja
+q5 -> m5: nee
+q5 -> q6: ja
+q6 -> m6: nee
+q6 -> q7: ja
+q7 -> m7: nee
+q7 -> ok: ja

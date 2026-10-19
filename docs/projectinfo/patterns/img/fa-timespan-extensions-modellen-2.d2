@@ -1,0 +1,7 @@
+shape: sequence_diagram
+Fixer; Pattern: TimeSpanExtensionsPattern; Model: SemanticModel
+Fixer -> Pattern: Find(root, model)
+Pattern -> Model: GetSymbolInfo(invocation)
+Fixer -> Pattern: Rewrite(node, model)
+Pattern -> Model: GetConstantValue (month) / LookupNamespacesAndTypes (TypeName)
+Pattern -> Fixer: Fixed(new expression, "System"?) or Manual(reason)

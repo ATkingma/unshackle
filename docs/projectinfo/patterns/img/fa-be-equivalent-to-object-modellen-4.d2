@@ -1,0 +1,27 @@
+title: "[Activity] FluentAssertionPattern.Rewrite → BeEquivalentToObjectPattern.RewriteAssertion - Fixed of Manual (2/2)" {shape: text; near: top-center; style: {font-size: 24; bold: true}}
+direction: down
+vars: {
+  d2-legend: {
+    f: Fixed {style.fill: "#c8e6c9"; style.font-color: "#000000"}
+    m: Manual {style.fill: "#ffe0b2"; style.font-color: "#000000"}
+  }
+}
+q5: "Precies één waarde (geen options)?" {shape: diamond}
+m5: "Manual: options => ... configuration\n(proof: options)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+qc: "Beide IEnumerable<T> met hetzelfde leaf-elementtype?" {shape: diamond}
+fc: "Fixed: a.ShouldBe(b, ignoreOrder: true[, because])\n(proof: collection-ints, collection-strings-because,\ncollection-nullable-enum, collection-because-args, edge-array-literal)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+q6: "Zelfde compile-time type, niet anoniem?" {shape: diamond}
+m6: "Manual: Different compile-time types\n(proof: anonymous, different-types, base-vs-derived, collection-element-types)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+q7: "Gewoon type zonder collectie, object, Equals-override, cyclus; met publieke leden?" {shape: diamond}
+m7: "Manual: collection / not a plain class / overrides Equals / cyclic / no public members\n(proof: collection, collection-member, object-subject, object-member, equals-override, equals-member, cyclic, no-members)" {style.fill: "#ffe0b2"; style.font-color: "#000000"; style.border-radius: 12}
+f1: "Fixed: a.ShouldBeEquivalentTo(b[, because])\n+ Warning bij niet-sealed class (behalve beide new)\n(proof: simple, new-expectation, record, nested, lambda,\nbecause, because-args, sealed, both-new)" {style.fill: "#c8e6c9"; style.font-color: "#000000"; style.border-radius: 12}
+from_previous_q5: "From Figure 3a" {shape: oval; style: {fill: "#e5e7eb"; font-color: "#000000"}}
+from_previous_q5 -> q5
+q5 -> m5: nee
+q5 -> qc: ja
+qc -> fc: ja
+qc -> q6: nee
+q6 -> m6: nee
+q6 -> q7: ja
+q7 -> m7: nee
+q7 -> f1: ja

@@ -28,10 +28,15 @@
 | Link | `AndChainPattern.RewriteLink` | `Find` + `Rewrite` of the link patterns on the split model |
 | Fixed | `PatternResult.Fixed` | optionally the hoist declaration, the Shouldly statements (a link may yield several statements) + namespaces and warnings of the links |
 
-**Figure 3.** Decision tree of `Rewrite`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/AndChain/`.
+**Figure 3a.** Decision tree of `Rewrite`; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/AndChain/`. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/fa-and-chain-modellen-3.d2 -->
 ![Models: fa.and-chain](img/fa-and-chain-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/fa-and-chain-modellen-4.d2 -->
+![Models: fa.and-chain](img/fa-and-chain-modellen-4.png)
 
 | Question | If no: Manual reason | Proof |
 | --- | --- | --- |

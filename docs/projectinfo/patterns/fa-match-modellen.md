@@ -29,10 +29,15 @@
 | Own checks | `MatchPattern.RewriteAssertion` | subject is string; one non-empty string constant; wildcard → regex; `NotNull` |
 | Outcome | `PatternResult.Fixed` / `Manual` | Shouldly call or reason |
 
-**Figure 3.** Decision tree in code order; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/Match/`.
+**Figure 3a.** Decision tree in code order; proofs in `src/Unshackle.Tests/Proofs/FluentAssertions/Match/`. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/fa-match-modellen-3.d2 -->
 ![Models: fa.match](img/fa-match-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/fa-match-modellen-4.d2 -->
+![Models: fa.match](img/fa-match-modellen-4.png)
 
 | Question | If no: Manual reason | Proof |
 | --- | --- | --- |

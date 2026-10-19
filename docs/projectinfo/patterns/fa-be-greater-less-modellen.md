@@ -34,10 +34,15 @@ Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/BeGreaterLessPatt
 
 ## Figure 3: decision tree
 
-**Figure 3.** Every question in `FluentAssertionPattern.Rewrite` → `RewriteAssertion`; the leaves are the Shouldly form or the Manual reason, with the proof in the table.
+**Figure 3a.** Every question in `FluentAssertionPattern.Rewrite` → `RewriteAssertion`; the leaves are the Shouldly form or the Manual reason, with the proof in the table. Split into Figures 3a–3b (at most 12 arrows each).
 
 <!-- kingmadoc:diagram img/fa-be-greater-less-modellen-3.d2 -->
 ![Figure 3: decision tree](img/fa-be-greater-less-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/fa-be-greater-less-modellen-4.d2 -->
+![Figure 3: decision tree](img/fa-be-greater-less-modellen-4.png)
 
 | Leaf | Condition | Proof (`Proofs/FluentAssertions/BeGreaterLess/`) |
 | ---- | --------- | ------------------------------------------------ |

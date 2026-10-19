@@ -4,18 +4,8 @@ Facts from `src/Unshackle.Core/Fixes/FluentAssertions/Patterns/TimeSpanExtension
 
 ## Figure 1 — Classes
 
-```d2
-direction: right
-IPattern: {shape: class; "Find(root, model)"; "Rewrite(node, model)"}
-TimeSpanExtensionsPattern: {shape: class; "-s_factories: Dictionary"; "-s_months: string[]"; "-Method(invocation, model)"; "-RewriteAt(invocation, arguments, definition, model)"; "-MonthReason(name, month, dayAndYear, model)"; "-NeedsParentheses(invocation)"; "-TypeName(name, model, position)"}
-PatternResult: {shape: class}
-FluentTimeSpanExtensions: "FA: FluentTimeSpanExtensions"
-FluentDateTimeExtensions: "FA: FluentDateTimeExtensions"
-TimeSpanExtensionsPattern -> IPattern: implements
-TimeSpanExtensionsPattern -> PatternResult: Fixed / Manual
-TimeSpanExtensionsPattern -> FluentTimeSpanExtensions: recognises
-TimeSpanExtensionsPattern -> FluentDateTimeExtensions: recognises
-```
+<!-- kingmadoc:diagram img/fa-timespan-extensions-modellen-1.d2 -->
+![Figure 1 — Classes](img/fa-timespan-extensions-modellen-1.png)
 
 | Element | Role |
 | --- | --- |
@@ -28,15 +18,8 @@ TimeSpanExtensionsPattern -> FluentDateTimeExtensions: recognises
 
 ## Figure 2 — Order
 
-```d2
-shape: sequence_diagram
-Fixer; Pattern: TimeSpanExtensionsPattern; Model: SemanticModel
-Fixer -> Pattern: Find(root, model)
-Pattern -> Model: GetSymbolInfo(invocation)
-Fixer -> Pattern: Rewrite(node, model)
-Pattern -> Model: GetConstantValue (month) / LookupNamespacesAndTypes (TypeName)
-Pattern -> Fixer: Fixed(new expression, "System"?) or Manual(reason)
-```
+<!-- kingmadoc:diagram img/fa-timespan-extensions-modellen-2.d2 -->
+![Figure 2 — Order](img/fa-timespan-extensions-modellen-2.png)
 
 | Step | What |
 | --- | --- |
@@ -45,40 +28,15 @@ Pattern -> Fixer: Fixed(new expression, "System"?) or Manual(reason)
 
 ## Figure 3 — Decision tree of `Rewrite`
 
-```d2
-q0: "At on a DateTime?"
-a1: "TimeSpan argument?"
-a2: "Date a month call?"
-a3: "Microseconds/nanoseconds?"
-a4: "Date safe to evaluate twice?"
-fa1: "d.Date + t / new DateTime(y, m, n) + t"
-fa2: "new DateTime(y, m, n, h, min, s)"
-fa3: "new DateTime(d.Year, d.Month, d.Day, h, min, s, ms, d.Kind)"
-ma: "Manual: microseconds / computed date"
-q1: "Name in s_factories and one number parameter?"
-q2: "Month with day + year?"
-q3: "Day or year constant?"
-f1: "TimeSpan.FromX(n)"
-f2: "new DateTime(y, m, d)"
-m1: "Manual: computed day and year"
-m2: "Manual: no direct replacement"
-q0 -> a1: yes
-q0 -> q1: no
-a1 -> fa1: yes
-a1 -> a3: no
-a3 -> ma: yes
-a3 -> a2: no
-a2 -> fa2: yes
-a2 -> a4: no
-a4 -> fa3: yes
-a4 -> ma: no
-q1 -> f1: yes
-q1 -> q2: no
-q2 -> q3: yes
-q2 -> m2: no
-q3 -> f2: yes
-q3 -> m1: no
-```
+**Figure 3a.** Split into Figures 3a–3b (at most 12 arrows each).
+
+<!-- kingmadoc:diagram img/fa-timespan-extensions-modellen-3.d2 -->
+![Figure 3 — Decision tree of `Rewrite`](img/fa-timespan-extensions-modellen-3.png)
+
+**Figure 3b.** Continuation of Figure 3a from its "Continued in Figure 3b" node.
+
+<!-- kingmadoc:diagram img/fa-timespan-extensions-modellen-4.d2 -->
+![Figure 3 — Decision tree of `Rewrite`](img/fa-timespan-extensions-modellen-4.png)
 
 | Leaf | Proof / test |
 | --- | --- |

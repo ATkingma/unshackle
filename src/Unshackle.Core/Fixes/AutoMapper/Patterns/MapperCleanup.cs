@@ -172,6 +172,14 @@ internal class MapperCleanup
         _ => null,
     };
 
+    // null, default or null! as the first value of a field or local: nothing to drop. (Passed as an argument it may be what a test checks, so not there.)
+    private static bool IsEmpty(ExpressionSyntax expression) => expression switch
+    {
+        PostfixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.SuppressNullableWarningExpression } suppressed => IsEmpty(suppressed.Operand),
+        LiteralExpressionSyntax { RawKind: (int)SyntaxKind.NullLiteralExpression or (int)SyntaxKind.DefaultLiteralExpression } => true,
+        _ => false,
+    };
+
     // A value that may be dropped without dropping anything else the code does.
     private static bool IsDroppable(ExpressionSyntax expression, SemanticModel model, HashSet<string> removed, bool registered) => expression switch
     {
@@ -323,7 +331,7 @@ internal class MapperCleanup
             async Task<bool> IsValidAsync(string key, ISymbol symbol, Document document, SyntaxNode declaration)
             {
                 (_, SemanticModel declarationModel) = await LoadAsync(document);
-                if (declaration is VariableDeclaratorSyntax { Initializer.Value: var initial } && !IsDroppable(initial, declarationModel, removed, registered))
+                if (declaration is VariableDeclaratorSyntax { Initializer.Value: var initial } && !IsEmpty(initial) && !IsDroppable(initial, declarationModel, removed, registered))
                 {
                     return false;
                 }

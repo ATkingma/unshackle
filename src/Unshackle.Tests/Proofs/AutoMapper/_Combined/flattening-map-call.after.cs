@@ -44,7 +44,6 @@ public static class OrderProfileExtensions
 
 public class OrderService
 {
-
     public OrderService()
     {
     }

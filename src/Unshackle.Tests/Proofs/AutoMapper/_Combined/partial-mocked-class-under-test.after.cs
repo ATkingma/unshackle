@@ -50,7 +50,6 @@ public class CustomerService
 // No test hands it a mock: it moves to the generated method.
 public class ReportService
 {
-
     public ReportService()
     {
     }

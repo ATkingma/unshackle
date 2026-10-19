@@ -28,7 +28,6 @@ namespace Shop.Orders
 {
     public class OrderService
     {
-
         public OrderService()
         {
         }

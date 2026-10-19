@@ -11,6 +11,7 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// null checks and the arguments for it at every caller (DI registrations and tests included), and a static factory that only built
 /// that mapper. Runs after the call patterns and before <see cref="AddAutoMapperPattern"/>, which then no longer sees an IMapper user.
 /// What may go is planned once for the solution by <see cref="MapperCleanup"/>; anything it is not sure of stays as it is.
+/// One finding per outermost type (its removals together, so no blank line is left where the first member or statement went).
 /// </summary>
 public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
 {
@@ -25,7 +26,7 @@ public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
     public async Task<IReadOnlyList<SyntaxNode>> FindAsync(SyntaxNode root, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
         MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, cancellationToken);
-        return [.. cleanup.Removals(root, model).Select(r => r.Node)];
+        return [.. cleanup.Removals(root, model).Select(r => (SyntaxNode?)r.Node.Ancestors().OfType<TypeDeclarationSyntax>().LastOrDefault() ?? r.Node).Distinct()];
     }
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
@@ -37,14 +38,55 @@ public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(solution);
         MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, cancellationToken);
-        string? warning = cleanup.Removals(node.SyntaxTree.GetRoot(cancellationToken), model).FirstOrDefault(r => r.Node == node)?.Warning;
-        return node switch
+        List<MapperCleanup.Removal> removals = [.. cleanup.Removals(node.SyntaxTree.GetRoot(cancellationToken), model).Where(r => node.Span.Contains(r.Node.Span))];
+        string? warning = removals.Select(r => r.Warning).OfType<string>().FirstOrDefault();
+        if (removals is [{ Node: var single }] && single == node)
         {
-            FieldDeclarationSyntax field when field.Declaration.Variables.Where(v => !cleanup.IsRemoved(v, model)).ToList() is { Count: > 0 } kept
-                => PatternResult.Fixed(field.WithDeclaration(field.Declaration.WithVariables(SyntaxFactory.SeparatedList(kept)))),
-            ParameterListSyntax parameters => PatternResult.Fixed(parameters.RemoveNodes(parameters.Parameters.Where(p => cleanup.IsRemoved(p, model)), SyntaxRemoveOptions.KeepNoTrivia)!),
-            ArgumentListSyntax arguments => PatternResult.Fixed(arguments.RemoveNodes(cleanup.RemovedArguments(arguments, model), SyntaxRemoveOptions.KeepNoTrivia)!),
-            _ => new FixedResult([], []) { Warning = warning },
-        };
+            return Replacement(single, model, cleanup) is { } replacement ? PatternResult.Fixed(replacement) : new FixedResult([], []) { Warning = warning };
+        }
+
+        SyntaxNode rewritten = node.TrackNodes(removals.Select(r => r.Node));
+        foreach (MapperCleanup.Removal removal in removals)
+        {
+            SyntaxNode current = rewritten.GetCurrentNode(removal.Node)!;
+            rewritten = Replacement(removal.Node, model, cleanup) is { } replacement
+                ? rewritten.ReplaceNode(current, replacement.WithTriviaFrom(current))
+                : Remove(rewritten, removal.Node);
+        }
+
+        return new FixedResult([rewritten], []) { Warning = warning };
+    }
+
+    // The trimmed node, or null when the whole node goes. original is in the tree of model.
+    private static SyntaxNode? Replacement(SyntaxNode original, SemanticModel model, MapperCleanup cleanup) => original switch
+    {
+        FieldDeclarationSyntax field when field.Declaration.Variables.Where(v => !cleanup.IsRemoved(v, model)).ToList() is { Count: > 0 } kept
+            => field.WithDeclaration(field.Declaration.WithVariables(SyntaxFactory.SeparatedList(kept))),
+        ParameterListSyntax parameters => parameters.RemoveNodes(parameters.Parameters.Where(p => cleanup.IsRemoved(p, model)), SyntaxRemoveOptions.KeepNoTrivia),
+        ArgumentListSyntax arguments => arguments.RemoveNodes(cleanup.RemovedArguments(arguments, model), SyntaxRemoveOptions.KeepNoTrivia),
+        _ => null,
+    };
+
+    // Removes a member or statement (tracked in root); when it was the first of its list, the next one loses its leading blank lines.
+    private static SyntaxNode Remove(SyntaxNode root, SyntaxNode original)
+    {
+        SyntaxNode node = root.GetCurrentNode(original)!;
+        List<SyntaxNode> siblings = [.. node.Parent!.ChildNodes().Where(n => n is MemberDeclarationSyntax or StatementSyntax)];
+        if (siblings.IndexOf(node) == 0 && siblings.Count > 1)
+        {
+            SyntaxNode next = siblings[1];
+            SyntaxTriviaList leading = next.GetLeadingTrivia();
+            int blank = 0;
+            while (blank < leading.Count && (leading[blank].IsKind(SyntaxKind.EndOfLineTrivia) || (leading[blank].IsKind(SyntaxKind.WhitespaceTrivia)
+                && blank + 1 < leading.Count && leading[blank + 1].IsKind(SyntaxKind.EndOfLineTrivia))))
+            {
+                blank++;
+            }
+
+            root = root.ReplaceNode(next, next.WithLeadingTrivia(leading.Skip(blank)));
+            node = root.GetCurrentNode(original)!;
+        }
+
+        return root.RemoveNode(node, SyntaxRemoveOptions.KeepUnbalancedDirectives)!;
     }
 }

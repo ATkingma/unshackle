@@ -62,7 +62,6 @@ namespace Shop.Orders
 {
     public class BookmarkService
     {
-
         public BookmarkService()
         {
         }

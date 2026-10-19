@@ -45,7 +45,6 @@ namespace Shop.Recipes
 {
     public class RecipeService
     {
-
         public RecipeService()
         {
         }

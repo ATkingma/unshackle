@@ -51,7 +51,6 @@ public static class KeyProfileExtensions
 
 public class ActorService
 {
-
     public ActorService()
     {
     }

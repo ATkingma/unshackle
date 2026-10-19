@@ -77,7 +77,6 @@ public static class TodoItemDtoMappingExtensions
 
 public class GetTodosQueryHandler
 {
-
     public GetTodosQueryHandler()
     {
     }

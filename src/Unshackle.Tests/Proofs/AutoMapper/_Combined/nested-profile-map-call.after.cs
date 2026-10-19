@@ -57,7 +57,6 @@ public static class AddEditCustomerCommandMappingExtensions
 
 public class AddEditCustomerCommandHandler
 {
-
     public AddEditCustomerCommandHandler()
     {
     }

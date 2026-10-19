@@ -67,7 +67,6 @@ public static class OrderMappingExtensions
 
 public class OrderService
 {
-
     public OrderService()
     {
     }

@@ -196,6 +196,17 @@ Re-measured after the TAAK-281/283 fixes (tool = branch `worktree-agent-a703fd17
 
 **Recheck for TAAK-287 (branch `worktree-agent-a6a00e1539f53e94e`, 2026-10-18):** `Func<V>` subjects of Throw/ThrowAsync and `var act = x.Invoking(...)` locals are migrated now. Fixed / Manual: mihome 319/15 → 328/6, catalogapi 222/4 → 223/2, bearded 375/80 → 383/72; ogooreck, xrepo, buildenator unchanged. All six build, tests unchanged (448/448, 44/54, 20/20, 71/71, 127/127, 1294/1294), **0 regressions**. Details: `claude/tasks/archief/TAAK-287-fa-residual-round-2.md`.
 
+**TAAK-289 (2026-10-19):** new `automapper.unused-imapper` (an `IMapper` that only served migrated calls goes, with the arguments at its callers) and top-level `AddAutoMapper` removal. Tool from branch `worktree-agent-ac55b759e0d16a786`, harness `after` mode on the six AutoMapper repos, before = tool from main `d78c218` on the same machine and baselines (culinary's baseline here is 82/149: database tests fail on this machine, the same in both runs). Fixed/Manual counts are findings; the new pattern reports one finding per rewritten type.
+
+| Repo           | Before (Fixed / Manual) | After (Fixed / Manual) | Tests before → after | Regressions | Outcome |
+| -------------- | ----------------------- | ---------------------- | -------------------- | ----------: | ------- |
+| pi22317        | 21 / 4                  | 33 / 0                 | 49/60 → 49/60        | 0 | **full** (was partial: `AddAutoMapper` stayed) |
+| assistiva      | 55 / 1                  | 68 / 0                 | 14/16 → 14/16        | 0 | **full** (was partial: `AddAutoMapper` stayed) |
+| culinary       | 2 / 70                  | 3 / 70                 | 82/149 → 82/149      | 0 | partial (mocked `IMapper` classes keep their maps) |
+| msb            | 8 / 29                  | 12 / 29                | 156/156 → 156/156    | 0 | partial |
+| encryptednotes | 10 / 6                  | 10 / 6                 | 85/85 → 85/85        | 0 | partial (mocked `IMapper`) |
+| estore         | 10 / 22                 | 10 / 22                | 45/46 → 45/46        | 0 | partial (mocked `IMapper`) |
+
 ### Conclusion of round 5
 
 - **Manual work went down where the tasks aimed**: FA Manual 430 → 144 on the six old repos, MediatR fullcart blocked → partial, AutoMapper 5 blocked repos → 1 blocked and 4 partial, 0 test regressions on all 18 old repos.

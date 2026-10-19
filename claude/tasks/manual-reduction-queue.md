@@ -28,7 +28,7 @@ all-or-nothing rule per solution, not from the number of Manual findings.
 | 11   | TAAK-287 | FluentAssertions residual Manual, round 2 (inventory first) | round 5 | open |
 | 12   | TAAK-288 | MediatR: `RequestHandlerDelegate` with a real delegate in tests | round 5 | open |
 | 13   | TAAK-289 | AutoMapper: `AddAutoMapper` stays because `IMapper` is still injected | round 5 | open |
-| 14   | TAAK-290 | MediatR: starter still blocked (`AddMediatR` + `InternalsVisibleTo`) | round 5 | open |
+| 14   | TAAK-290 | MediatR: starter still blocked (`AddMediatR` + `InternalsVisibleTo`) | round 5 | done (principally manual: run-time assembly scan via a public wrapper; reason now names it) |
 | 15   | TAAK-291 | Docs: re-render pattern models, split decision trees over 12 arrows | round 5 | open |
 
 Statuses: `open` · `in progress (agent)` · `done` · `blocked (reason)`.

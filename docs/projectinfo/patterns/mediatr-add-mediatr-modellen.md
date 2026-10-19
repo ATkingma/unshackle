@@ -45,6 +45,7 @@ Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`.
 | Manual "not a list of cfg calls"              | block with other statements            | no proof                            |
 | Manual "cfg.X(...) has no direct equivalent"  | unknown call or lifetime argument      | `unknown-call`, `behavior-lifetime` |
 | Manual "'...' has no direct equivalent"       | other assignment/expression (own publisher) | no proof                       |
+| Manual "comes from a parameter of the public method"  | internal scan fed by a public wrapper (TAAK-290); checked before the host clash | `AddMediatRPatternTests.RewriteAsync_InternalScanFedByPublicParameter_*` |
 | `AddMediator(cfg => ...)`                     | everything known                       | `behaviors`, `expression`, `expression-several`, `empty`, `processors`, `publisher`, `edge-publisher-qualified`, `edge-assemblies`, `edge-service-type-behavior`, `generic-handlers` |
 
 ## See also

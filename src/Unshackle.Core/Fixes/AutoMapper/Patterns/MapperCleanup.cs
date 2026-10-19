@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Text;
+using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 
@@ -72,16 +73,17 @@ internal class MapperCleanup
     /// <summary>
     /// The GetService&lt;IMapper&gt;() lookups in root that stay only because their scope is not surely registered, each with the rule that failed.
     /// </summary>
-    public IReadOnlyList<(InvocationExpressionSyntax Lookup, string Reason)> KeptLookups(SyntaxNode root, SemanticModel model)
+    public IReadOnlyList<(InvocationExpressionSyntax Lookup, KeptReason Code, string Reason)> KeptLookups(SyntaxNode root, SemanticModel model)
     {
-        if (_keptByScope.Count == 0)
+        if (_keptByScope.Count == 0 || _registration.Failure(model) is not { Code: var code, Text: var failure })
         {
             return [];
         }
 
+        // No "Stays on AutoMapper: " prefix: the code marks the finding as kept and the report renderer prints it (council round 3, Q2).
         return [.. root.DescendantNodes().OfType<InvocationExpressionSyntax>()
             .Where(i => IsLookup(i, model) && Fed(i, model) is string key && _keptByScope.Contains(key))
-            .Select(i => (i, $"{MapOwners.KeptPrefix}the GetService<IMapper>() lookup stays, IMapper may not be registered for this code ({_registration.Failure(model)}); "
+            .Select(i => (i, code, $"the GetService<IMapper>() lookup stays, IMapper may not be registered for this code ({failure}); "
                 + "remove it and its null check by hand once AddAutoMapper surely runs first."))];
     }
 

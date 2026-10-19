@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "automapper-unused-imapper"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15]
 files_expected:
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/UnusedMapperPattern.cs
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapperCleanup.cs
@@ -11,6 +11,10 @@ files_expected:
     - src/Unshackle.Core/Fixes/AutoMapper/AutoMapperFix.cs
     - src/Unshackle.Tests/Proofs/AutoMapper/UnusedMapper/
     - src/Unshackle.Tests/Core/UnusedMapperPatternTests.cs
+    - src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapperRegistration.cs
+    - src/Unshackle.Core/Models/ManualResult.cs
+    - src/Unshackle.Core/Models/KeptReason.cs
+    - src/Unshackle.DataAccess/Reports/ReportRow.cs
 ---
 
 # Feature: automapper.unused-imapper: remove the IMapper that only served migrated calls
@@ -89,6 +93,17 @@ top-level `AddAutoMapper(...)` statement (`GlobalStatementSyntax`), which used t
 - **REQ-12**: THE SYSTEM SHALL run the call patterns before `automapper.unused-imapper`, and that before `automapper.add-automapper`; one remaining
   `IMapper` use keeps `AddAutoMapper` (`AutoMapperFix_PatternOrder_…`, `FixAsync_OneRemainingMapperUse_KeepsAddAutoMapper`). The plan cache keys
   symbols by documentation comment id; overloaded constructors and partial types are covered by `FixAsync_OverloadsAndPartialType_…`.
+
+- **REQ-13** (council round 3, Q1/Q2): a kept lookup's Manual finding SHALL carry a typed reason code (`KeptReason`: `NoRegistration`,
+  `ConditionalOrDeferredRegistration`, `ContainerWithoutRegistration`, `NotInSolution`) instead of a `Stays on AutoMapper:` string prefix; the
+  report renderer (`ReportRow`, console) SHALL print the prefix, and the Info line of REQ-11 SHALL appear in the JSON and markdown output
+  (`ReportRow_KeptReason_RendersThePrefix`, `JsonReportWriter`/`MarkdownReportWriter` Info tests).
+- **REQ-14** (council round 3, Q3a): a target-typed `new()` whose converted type is `IServiceCollection`/`ServiceCollection` SHALL count as a
+  container for rule 3 (`FixAsync_ServiceLookupNotSurelyRegistered_…` variant `target-typed`).
+- **REQ-15** (council round 3, Q3b): an `AddAutoMapper` call inside a lambda (or local function) SHALL count as unconditional only when that
+  lambda is passed directly as an argument to an unconditional registration or builder call (a method on, or extending, `IServiceCollection`,
+  a host/web host/application builder); otherwise the lookup SHALL be kept with reason code `ConditionalOrDeferredRegistration` and the
+  file:line of the `AddAutoMapper` call (variants `stored lambda`, `builder lambda`). Every removed lookup warns, `GetRequiredService` included (Q4).
 
 ## Assumptions
 

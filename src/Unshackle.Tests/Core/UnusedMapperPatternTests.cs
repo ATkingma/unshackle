@@ -5,6 +5,7 @@ using Unshackle.Core;
 using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.AutoMapper.Patterns;
 using Unshackle.Core.Models;
+using Unshackle.DataAccess.Reports;
 using Unshackle.Tests.Helpers;
 using Xunit;
 
@@ -178,14 +179,19 @@ public class UnusedMapperPatternTests
         report.Findings.Select(f => f.Result).OfType<FixedResult>().ShouldContain(f => f.Warning != null && f.Warning.Contains("AddAutoMapper at Test.cs:7", StringComparison.Ordinal));
     }
 
-    // Each failing rule keeps the lookup and its null check, and the report names the rule with file:line.
+    // Each failing rule keeps the lookup and its null check, and the report names the rule with file:line and a typed reason code
+    // (council round 3: target-typed containers and deferred lambdas included).
     [Theory]
-    [InlineData("", "rule 1: no AddAutoMapper call in Shop.Tests or a project that depends on it")]
-    [InlineData("in shop", "rule 1: no AddAutoMapper call in Shop or a project that depends on it")]
-    [InlineData("if", "is conditional (inside an if)")]
-    [InlineData("#if", "is conditional (inside an #if)")]
-    [InlineData("container", "rule 3: Seeder.cs:21 builds a new ServiceCollection() without AddAutoMapper in the same method")]
-    public async Task FixAsync_ServiceLookupNotSurelyRegistered_KeepsTheLookupAndNamesTheRule(string variant, string rule)
+    [InlineData("", "rule 1: no AddAutoMapper call in Shop.Tests or a project that depends on it", KeptReason.NoRegistration)]
+    [InlineData("in shop", "rule 1: no AddAutoMapper call in Shop or a project that depends on it", KeptReason.NoRegistration)]
+    [InlineData("if", "is conditional or deferred (inside an if)", KeptReason.ConditionalOrDeferredRegistration)]
+    [InlineData("#if", "is conditional or deferred (inside an #if)", KeptReason.ConditionalOrDeferredRegistration)]
+    [InlineData("stored lambda", "is conditional or deferred (inside a lambda that is not passed directly to a registration or builder call",
+        KeptReason.ConditionalOrDeferredRegistration)]
+    [InlineData("local function", "is conditional or deferred (inside a local function", KeptReason.ConditionalOrDeferredRegistration)]
+    [InlineData("container", "rule 3: Seeder.cs:21 builds a new ServiceCollection() without AddAutoMapper in the same method", KeptReason.ContainerWithoutRegistration)]
+    [InlineData("target-typed", "rule 3: Seeder.cs:21 builds a new ServiceCollection() (target-typed new()) without AddAutoMapper", KeptReason.ContainerWithoutRegistration)]
+    public async Task FixAsync_ServiceLookupNotSurelyRegistered_KeepsTheLookupAndNamesTheRule(string variant, string rule, KeptReason code)
     {
         // Arrange ("": the lookup sits in the test project, which AddAutoMapper in Shop does not cover)
         string shop = variant switch
@@ -193,11 +199,18 @@ public class UnusedMapperPatternTests
             "in shop" => Shop.Replace("services.AddAutoMapper(typeof(ShopProfile).Assembly);", "services.AddSingleton(new MapperConfiguration(cfg => cfg.AddProfile<ShopProfile>()).CreateMapper());", StringComparison.Ordinal),
             "if" => Shop.Replace("services.AddAutoMapper(", "if (services.Count > 0) services.AddAutoMapper(", StringComparison.Ordinal),
             "#if" => Shop.Replace("services.AddAutoMapper(typeof(ShopProfile).Assembly);", "#if !UNSET\n        services.AddAutoMapper(typeof(ShopProfile).Assembly);\n#endif", StringComparison.Ordinal),
+            "stored lambda" => Shop.Replace("services.AddAutoMapper(typeof(ShopProfile).Assembly);",
+                "Action<IServiceCollection> register = s => s.AddAutoMapper(typeof(ShopProfile).Assembly);\n        register(services);", StringComparison.Ordinal),
+            "local function" => Shop.Replace("services.AddAutoMapper(typeof(ShopProfile).Assembly);",
+                "void Register() => services.AddAutoMapper(typeof(ShopProfile).Assembly);\n        Register();", StringComparison.Ordinal),
             _ => Shop,
         };
-        string seeder = variant == "container"
-            ? Seeder.Replace("    }\n}", "    }\n\n    public static IServiceProvider Build() => new ServiceCollection().BuildServiceProvider();\n}", StringComparison.Ordinal)
-            : Seeder;
+        string seeder = variant switch
+        {
+            "container" => Seeder.Replace("    }\n}", "    }\n\n    public static IServiceProvider Build() => new ServiceCollection().BuildServiceProvider();\n}", StringComparison.Ordinal),
+            "target-typed" => Seeder.Replace("    }\n}", "    }\n\n    public static ServiceCollection Build() => new();\n}", StringComparison.Ordinal),
+            _ => Seeder,
+        };
         Solution solution = variant == "" ? Create(shop, seeder) : Create(shop, Test, seeder: seeder);
 
         // Act
@@ -208,9 +221,28 @@ public class UnusedMapperPatternTests
         kept.ShouldContain("var mapper = services.GetService<IMapper>();");
         kept.ShouldContain("if (mapper == null)");
         kept.ShouldContain("return new OrderService(\"seed\");");
-        Reasons(report).ShouldContain(r => r.StartsWith(MapOwners.KeptPrefix + "the GetService<IMapper>() lookup stays", StringComparison.Ordinal) && r.Contains(rule, StringComparison.Ordinal),
+        Reasons(report).ShouldContain(r => r.StartsWith("Stays on AutoMapper: the GetService<IMapper>() lookup stays", StringComparison.Ordinal) && r.Contains(rule, StringComparison.Ordinal),
             string.Join(" | ", Reasons(report)));
+        report.Findings.Select(f => f.Result).OfType<ManualResult>().ShouldContain(m => m.Kept == code && !m.Reason.StartsWith("Stays on", StringComparison.Ordinal));
         (await TextAsync(report.Solution, "Shop.cs")).ShouldContain("public OrderService(string name)");
+    }
+
+    // Council round 3 (Q3b): a lambda passed directly to an unconditional call on IServiceCollection runs while the container is built.
+    [Fact]
+    public async Task FixAsync_AddAutoMapperInALambdaPassedToARegistrationCall_RemovesTheLookup()
+    {
+        // Arrange
+        string shop = Shop.Replace("services.AddAutoMapper(typeof(ShopProfile).Assembly);", "services.With(s => s.AddAutoMapper(typeof(ShopProfile).Assembly));", StringComparison.Ordinal)
+            + "\n\npublic static class ServiceCollectionExtensions\n{\n    public static IServiceCollection With(this IServiceCollection services, Action<IServiceCollection> add)\n    {\n"
+            + "        add(services);\n        return services;\n    }\n}\n";
+        Solution solution = Create(shop, Test, seeder: Seeder);
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        (await TextAsync(report.Solution, "Seeder.cs")).ShouldNotContain("GetService");
+        report.Findings.Select(f => f.Result).OfType<ManualResult>().ShouldNotContain(m => m.Kept != KeptReason.None);
     }
 
     [Fact]
@@ -372,7 +404,8 @@ public class UnusedMapperPatternTests
     private static Task<FixReport> FixAsync(Solution solution) =>
         new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
 
-    private static List<string> Reasons(FixReport report) => [.. report.Findings.Select(f => f.Result).OfType<ManualResult>().Select(m => m.Reason)];
+    // The reasons as the report renders them (a kept finding with its "Stays on AutoMapper: " prefix).
+    private static List<string> Reasons(FixReport report) => [.. report.Findings.Select(f => f.Result).OfType<ManualResult>().Select(ReportRow.ReasonOf)];
 
     // Shop.cs (and Seeder.cs) in project Shop; Test.cs in project Shop.Tests, which references Shop (keys must match across compilations).
     private static Solution Create(string shop, string test, string? seeder = null)

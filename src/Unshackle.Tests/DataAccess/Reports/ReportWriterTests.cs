@@ -124,6 +124,57 @@ public class ReportWriterTests
         row.Reason.ShouldBe("lookup removed. Info: the class MapperHelper is now empty");
     }
 
+    // Council round 3 (Q2): the kept finding carries a reason code; the renderer prints the prefix, and this pins the rendered text.
+    [Fact]
+    public void From_KeptLookup_RendersThePrefixInFrontOfTheReason()
+    {
+        // Arrange
+        var finding = new Finding
+        {
+            FilePath = "Seeder.cs",
+            Line = 9,
+            FixId = "automapper",
+            PatternId = "automapper.unused-imapper",
+            Result = new ManualResult("the GetService<IMapper>() lookup stays (rule 1).") { Kept = KeptReason.NoRegistration },
+        };
+
+        // Act
+        var row = ReportRow.From(finding);
+
+        // Assert
+        row.Status.ShouldBe("Manual");
+        row.Reason.ShouldBe("Stays on AutoMapper: the GetService<IMapper>() lookup stays (rule 1).");
+    }
+
+    // Council round 3 (Q1): the Info line is in the JSON and markdown output too, not only in the model.
+    [Fact]
+    public async Task JsonAndMarkdownWriteAsync_FixedWithInfo_WriteTheInfoLine()
+    {
+        // Arrange
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddDirectory("/out");
+        Finding[] findings =
+        [
+            new()
+            {
+                FilePath = "MapperHelper.cs",
+                Line = 3,
+                FixId = "automapper",
+                PatternId = "automapper.unused-imapper",
+                Result = new FixedResult([SyntaxFactory.ParseExpression("x")], []) { Info = "MapperHelper is now empty and kept" },
+            },
+        ];
+
+        // Act
+        await new JsonReportWriter(fileSystem).WriteAsync(ReportPath + ".json", findings, TestContext.Current.CancellationToken);
+        await new MarkdownReportWriter(fileSystem).WriteAsync(ReportPath + ".md", findings, TestContext.Current.CancellationToken);
+
+        // Assert
+        using var json = JsonDocument.Parse(fileSystem.File.ReadAllText(ReportPath + ".json"));
+        json.RootElement[0].GetProperty("Reason").GetString().ShouldBe("Info: MapperHelper is now empty and kept");
+        fileSystem.File.ReadAllLines(ReportPath + ".md")[2].ShouldContain("| Fixed | Info: MapperHelper is now empty and kept |");
+    }
+
     [Fact]
     public void FromAll_CustomAssertionCalls_OneRowPerAssertionWithCount()
     {

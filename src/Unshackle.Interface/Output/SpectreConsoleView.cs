@@ -4,6 +4,7 @@ using Unshackle.Core;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.FluentAssertions.Patterns;
 using Unshackle.Core.Models;
+using Unshackle.DataAccess.Reports;
 
 namespace Unshackle.Interface.Output;
 
@@ -66,7 +67,7 @@ public class SpectreConsoleView : IConsoleView
             _out.WriteLine(ConsoleText.Sanitize($"{blocked} findings wait on these {blockers.Count} manual ones; fix them first, then run again:"));
             foreach (Finding blocker in blockers.Take(MaxBlockersShown))
             {
-                _out.WriteLine(ConsoleText.Sanitize($"  {blocker.FilePath}:{blocker.Line} {blocker.PatternId}: {((ManualResult)blocker.Result).Reason}"));
+                _out.WriteLine(ConsoleText.Sanitize($"  {blocker.FilePath}:{blocker.Line} {blocker.PatternId}: {ReportRow.ReasonOf((ManualResult)blocker.Result)}"));
             }
 
             if (blockers.Count > MaxBlockersShown)

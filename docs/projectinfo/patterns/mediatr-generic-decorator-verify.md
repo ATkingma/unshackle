@@ -17,6 +17,7 @@
 | REQ-5 | Met | `GenericDecorator/decorated-members`, `decorated-other-use` |
 | REQ-6 | Met | `GenericDecorator/notification-without-autofac`; Fixed-tak in `_Combined/generic-decorators-kgrzybek` |
 | REQ-7 | Met | `_Combined/generic-decorator-marker-without-using` (two projects, decorator file without `using MediatR`; without the fix: `mediatr.unsupported` → everything Manual); `GenericDecoratorPatternTests.IsDecorator_RewrittenVoidDecoratorInFileWithoutUsingMediatR_True`, `..._UnboundHandlerWithOtherResponse_False`; corpus kgrzybek round 4 |
+| REQ-8 | Met | `GenericDecorator/scrutor-decorate` (an earlier `typeof` use, then `Decorate(typeof(INotificationHandler<>), typeof(D<>))`); fullcart `scan` (TAAK-293): the reason names `Decorate(...)` at `DependencyInjection.cs:38` |
 
 ## Deviations
 

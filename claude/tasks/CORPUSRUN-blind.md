@@ -243,6 +243,21 @@ Tool from branch TAAK-292 (`<corpus>/corpus-blind/_results/tool-292`), harness `
 
 No lookup was kept by the scope rule on these repos. Council decisions 1 and 2 rechecked with `scan`: starter's reason names `PublisherModule.AddPublisher`; fullcart's names `DispatchingIntegrationEventDecorator` and the registration line (`ImplementationTypeSelectorExtensions.cs:14`), though it calls it "Autofac's RegisterGenericDecorator" while the call is Scrutor's `Decorate`.
 
+## TAAK-293 (2026-10-19): typed kept-lookup reason, stricter registration rules, Scrutor reason
+
+Tool from branch TAAK-293 (`<corpus>/corpus-blind/_results/tool-293`), harness `after` mode on the six AutoMapper repos, same baselines. Before = the TAAK-292 numbers above (kept in `_results/after-t292`).
+
+| Repo           | Before (Fixed / Manual) | After (Fixed / Manual) | Tests before → after | Regressions | Note |
+| -------------- | ----------------------- | ---------------------- | -------------------- | ----------: | ---- |
+| pi22317        | 33 / 0                  | 33 / 0                 | 49/60 → 49/60        | 0 | full; the lookup still goes; Info line `MapperHelper` now empty |
+| assistiva      | 68 / 0                  | 68 / 0                 | 14/16 → 14/16        | 0 | full |
+| culinary       | 3 / 70                  | 3 / 70                 | 82/149 → 82/149      | 0 | partial, unchanged |
+| msb            | 12 / 29                 | 12 / 29                | 156/156 → 156/156    | 0 | partial, unchanged |
+| encryptednotes | 10 / 6                  | 10 / 6                 | 85/85 → 85/85        | 0 | partial, unchanged |
+| estore         | 10 / 22                 | 10 / 22                | 45/46 → 45/46        | 0 | partial, unchanged |
+
+No lookup was kept by the stricter rules (target-typed containers, deferred lambdas, local functions) on these repos. fullcart `scan --fix mediatr` (47 findings: 27 Fixed, 20 Manual): the decorator reason now names Scrutor's `Decorate(typeof(INotificationHandler<>), typeof(DispatchingIntegrationEventDecorator<>)) at DependencyInjection.cs:38` instead of Autofac's `RegisterGenericDecorator`.
+
 ## See also
 
 - `claude/tasks/archief/TAAK-268-blind-validation-round.md`

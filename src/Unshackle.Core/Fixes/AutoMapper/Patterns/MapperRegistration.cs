@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 
@@ -11,10 +12,21 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// (not inside <c>if</c>, <c>?:</c>, <c>switch</c>, <c>#if</c> or a loop), and (3) no project in the scope builds a container
 /// (<c>new ServiceCollection()</c>, <c>Host.CreateApplicationBuilder</c>, <c>WebApplication.CreateBuilder</c>) in a method body without an
 /// AddAutoMapper call (syntactic). Otherwise <see cref="Failure"/> names the first condition that fails, with file:line.
+/// <para>
+/// Council round 3 (TAAK-293): a target-typed <c>new()</c> counts as a container through its converted type, and an AddAutoMapper call inside
+/// a lambda or local function counts as unconditional only when the lambda is passed directly to an unconditional registration or builder
+/// call; the failure carries a typed <see cref="KeptReason"/>.
+/// </para>
 /// </summary>
 internal class MapperRegistration
 {
     private const string AddAutoMapper = "AddAutoMapper";
+
+    // The types a registration or builder call works on: a lambda passed to such a call runs while the container is built.
+    private static readonly HashSet<string> s_registrationTargets = new(StringComparer.Ordinal)
+    {
+        "IServiceCollection", "IHostBuilder", "IWebHostBuilder", "IHostApplicationBuilder", "WebApplicationBuilder", "IFunctionsHostBuilder",
+    };
 
     // Assembly name → the file:line of the unconditional AddAutoMapper call that registers it, or the reason it is not registered.
     private readonly Dictionary<string, Scope> _scopes;
@@ -69,8 +81,12 @@ internal class MapperRegistration
     /// <summary>The file:line of the AddAutoMapper call that registers IMapper for model's project; null when it is not registered.</summary>
     public string? Call(SemanticModel model) => Of(model) is { Failure: null } scope ? scope.Call : null;
 
-    /// <summary>Why IMapper is not surely registered for model's project; null when it is.</summary>
-    public string? Failure(SemanticModel model) => _everywhere ? null : Of(model) is { } scope ? scope.Failure : "the project is not part of the solution";
+    /// <summary>Why IMapper is not surely registered for model's project, as a reason code and text; null when it is.</summary>
+    public (KeptReason Code, string Text)? Failure(SemanticModel model) =>
+        _everywhere ? null
+        : Of(model) is not { } scope ? (KeptReason.NotInSolution, "the project is not part of the solution")
+        : scope.Failure is string failure ? (scope.Code, failure)
+        : null;
 
     private Scope? Of(SemanticModel model) =>
         model.Compilation.AssemblyName is string name && _scopes.TryGetValue(name, out Scope? scope) ? scope : null;
@@ -80,20 +96,22 @@ internal class MapperRegistration
         List<(string Location, string? Condition)> calls = [.. inScope.SelectMany(f => f.Calls)];
         if (calls.Count == 0)
         {
-            return new Scope(null, $"rule 1: no AddAutoMapper call in {project.Name} or a project that depends on it");
+            return new Scope(null, $"rule 1: no AddAutoMapper call in {project.Name} or a project that depends on it", KeptReason.NoRegistration);
         }
 
         if (calls.FirstOrDefault(c => c.Condition is null) is not { Location: string call })
         {
-            return new Scope(null, $"rule 2: the AddAutoMapper call at {calls[0].Location} is conditional (inside {calls[0].Condition})");
+            return new Scope(null, $"rule 2: the AddAutoMapper call at {calls[0].Location} is conditional or deferred (inside {calls[0].Condition})",
+                KeptReason.ConditionalOrDeferredRegistration);
         }
 
         if (inScope.SelectMany(f => f.Containers).FirstOrDefault() is string container)
         {
-            return new Scope(null, $"rule 3: {container} without AddAutoMapper in the same method, so IMapper may not be registered there");
+            return new Scope(null, $"rule 3: {container} without AddAutoMapper in the same method, so IMapper may not be registered there",
+                KeptReason.ContainerWithoutRegistration);
         }
 
-        return new Scope(call, null);
+        return new Scope(call, null, KeptReason.None);
     }
 
     private static async Task<Facts> FactsAsync(Project project, CancellationToken cancellationToken)
@@ -103,24 +121,33 @@ internal class MapperRegistration
         {
             string text = (await document.GetTextAsync(cancellationToken)).ToString();
             bool calls = text.Contains(AddAutoMapper, StringComparison.Ordinal);
-            if (!calls && !text.Contains("ServiceCollection", StringComparison.Ordinal) && !text.Contains("CreateApplicationBuilder", StringComparison.Ordinal)
+            bool targetTyped = text.Contains("new(", StringComparison.Ordinal);
+            if (!calls && !targetTyped && !text.Contains("ServiceCollection", StringComparison.Ordinal) && !text.Contains("CreateApplicationBuilder", StringComparison.Ordinal)
                 && !text.Contains("CreateBuilder", StringComparison.Ordinal))
             {
                 continue;
             }
 
             SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken))!;
-            SemanticModel? model = calls ? await document.GetSemanticModelAsync(cancellationToken) : null;
+            SemanticModel? model = calls || (targetTyped && root.DescendantNodes().OfType<ImplicitObjectCreationExpressionSyntax>().Any())
+                ? await document.GetSemanticModelAsync(cancellationToken)
+                : null;
             foreach (SyntaxNode node in root.DescendantNodes())
             {
                 switch (node)
                 {
-                    case InvocationExpressionSyntax invocation when model is not null
+                    case InvocationExpressionSyntax invocation when calls && model is not null
                         && model.GetSymbolInfo(invocation, cancellationToken).Symbol is IMethodSymbol { Name: AddAutoMapper, ContainingAssembly.Name: "AutoMapper" }:
-                        facts.Calls.Add((Location(invocation), Condition(invocation)));
+                        facts.Calls.Add((Location(invocation), Condition(invocation, model, cancellationToken)));
                         break;
                     case ObjectCreationExpressionSyntax creation when LastName(creation.Type) == "ServiceCollection" && !CallsAddAutoMapper(Body(creation)):
                         facts.Containers.Add($"{Location(creation)} builds a new ServiceCollection()");
+                        break;
+
+                    // Council round 3 (Q3a): not recognising a target-typed container would err the unsafe way.
+                    case ImplicitObjectCreationExpressionSyntax creation when model is not null && IsContainer(model.GetTypeInfo(creation, cancellationToken))
+                        && !CallsAddAutoMapper(Body(creation)):
+                        facts.Containers.Add($"{Location(creation)} builds a new ServiceCollection() (target-typed new())");
                         break;
                     case InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax member } invocation
                         when (LastName(member.Expression), member.Name.Identifier.ValueText) is ("Host", "CreateApplicationBuilder") or ("WebApplication", "CreateBuilder")
@@ -155,13 +182,20 @@ internal class MapperRegistration
     private static bool CallsAddAutoMapper(SyntaxNode body) =>
         body.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(i => LastName(i.Expression) == AddAutoMapper);
 
-    // What makes the call conditional within its member, or null when it is not.
-    private static string? Condition(SyntaxNode call)
+    private static bool IsContainer(TypeInfo info) =>
+        new[] { info.Type, info.ConvertedType }.Any(t => t is { Name: "ServiceCollection" or "IServiceCollection" });
+
+    // What makes the call conditional or deferred within its member, or null when it is not. A lambda counts only when it is passed directly
+    // to a registration or builder call (council round 3, Q3b); the walk then goes on over that call's own ancestors.
+    private static string? Condition(SyntaxNode call, SemanticModel model, CancellationToken cancellationToken)
     {
-        foreach (SyntaxNode ancestor in call.Ancestors().TakeWhile(a => a is not (MemberDeclarationSyntax or LocalFunctionStatementSyntax)))
+        foreach (SyntaxNode ancestor in call.Ancestors().TakeWhile(a => a is not MemberDeclarationSyntax))
         {
             string? condition = ancestor switch
             {
+                LocalFunctionStatementSyntax => "a local function, which may run later or not at all",
+                AnonymousFunctionExpressionSyntax lambda when !IsPassedToRegistration(lambda, model, cancellationToken)
+                    => "a lambda that is not passed directly to a registration or builder call, so it may run later or not at all",
                 IfStatementSyntax or ElseClauseSyntax => "an if",
                 ConditionalExpressionSyntax => "a ?: expression",
                 SwitchStatementSyntax or SwitchExpressionSyntax => "a switch",
@@ -175,7 +209,7 @@ internal class MapperRegistration
         }
 
         int depth = 0;
-        for (DirectiveTriviaSyntax? directive = call.SyntaxTree.GetRoot().GetFirstDirective(); directive is not null && directive.SpanStart < call.SpanStart;
+        for (DirectiveTriviaSyntax? directive = call.SyntaxTree.GetRoot(cancellationToken).GetFirstDirective(); directive is not null && directive.SpanStart < call.SpanStart;
             directive = directive.GetNextDirective())
         {
             depth += directive.Kind() switch
@@ -189,17 +223,42 @@ internal class MapperRegistration
         return depth > 0 ? "an #if" : null;
     }
 
+    // lambda is an argument of a call on, or extending, a service collection or a host, web host or application builder.
+    private static bool IsPassedToRegistration(AnonymousFunctionExpressionSyntax lambda, SemanticModel model, CancellationToken cancellationToken)
+    {
+        if (lambda.Parent is not ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax invocation } })
+        {
+            return false;
+        }
+
+        SymbolInfo info = model.GetSymbolInfo(invocation, cancellationToken);
+        if ((info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is not IMethodSymbol method)
+        {
+            return false;
+        }
+
+        ITypeSymbol? receiver = invocation.Expression is MemberAccessExpressionSyntax member ? model.GetTypeInfo(member.Expression, cancellationToken).Type : null;
+        ITypeSymbol? extended = method.ReducedFrom is { Parameters: [var self, ..] } ? self.Type : null;
+        return new[] { receiver, extended }.OfType<ITypeSymbol>().Any(IsRegistrationTarget);
+    }
+
+    private static bool IsRegistrationTarget(ITypeSymbol type) =>
+        s_registrationTargets.Contains(type.Name) || type.AllInterfaces.Any(i => s_registrationTargets.Contains(i.Name));
+
     private class Scope
     {
-        public Scope(string? call, string? failure)
+        public Scope(string? call, string? failure, KeptReason code)
         {
             Call = call;
             Failure = failure;
+            Code = code;
         }
 
         public string? Call { get; }
 
         public string? Failure { get; }
+
+        public KeptReason Code { get; }
     }
 
     private class Facts

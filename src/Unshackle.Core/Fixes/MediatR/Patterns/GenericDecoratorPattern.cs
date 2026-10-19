@@ -20,6 +20,9 @@ public class GenericDecoratorPattern : ISolutionPattern
 {
     private const string RegisterDecorator = "RegisterGenericDecorator";
 
+    // Marks a use that is a Scrutor Decorate(typeof(S<>), typeof(D<>)) call (UnregisteredUseAsync).
+    private const string ScrutorPrefix = "scrutor:";
+
     public string Id => "mediatr.generic-decorator";
 
     public string Description =>
@@ -68,6 +71,14 @@ public class GenericDecoratorPattern : ISolutionPattern
         (Kind kind, INamedTypeSymbol decorated) = Decorated(symbol)!.Value;
         if (await UnregisteredUseAsync(symbol, solution, cancellationToken) is string use)
         {
+            // Council round 3 (fullcart): name the Scrutor registration itself, not Autofac's, when that is what wraps the handlers.
+            if (use.StartsWith(ScrutorPrefix, StringComparison.Ordinal))
+            {
+                return PatternResult.Manual(
+                    $"{symbol.Name} is registered with {use[ScrutorPrefix.Length..]}; under Mediator's source generator the decorator would become a plain handler "
+                    + "(a silent behaviour change), and only Autofac's RegisterGenericDecorator is known to wrap Mediator's handlers the same way. Register the decorator by hand.");
+            }
+
             return PatternResult.Manual(
                 $"{symbol.Name} is used other than in Autofac's RegisterGenericDecorator(typeof({symbol.Name}<>), ...) ({use}); only that registration is known to wrap Mediator's handlers the same way. Register the decorator by hand.");
         }
@@ -148,9 +159,11 @@ public class GenericDecoratorPattern : ISolutionPattern
         && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol method
         && method.ContainingNamespace.ToDisplayString().StartsWith("Autofac", StringComparison.Ordinal);
 
-    // Every reference outside the decorator itself must be typeof(D<>) as the first argument of RegisterGenericDecorator; the first other use, or null.
+    // Every reference outside the decorator itself must be typeof(D<>) as the first argument of RegisterGenericDecorator; a Scrutor Decorate use
+    // (marked with ScrutorPrefix) wherever it is, else the first other use, or null.
     private static async Task<string?> UnregisteredUseAsync(INamedTypeSymbol decorator, Solution solution, CancellationToken cancellationToken)
     {
+        string? first = null;
         foreach (ReferencedSymbol referenced in await SymbolFinder.FindReferencesAsync(decorator, solution, cancellationToken))
         {
             foreach (ReferenceLocation location in referenced.Locations)
@@ -167,12 +180,21 @@ public class GenericDecoratorPattern : ISolutionPattern
                     || list.Arguments.IndexOf(argument) != 0
                     || !IsRegisterDecorator(invocation, model))
                 {
-                    return $"{location.Document.Name}:{location.Location.GetLineSpan().StartLinePosition.Line + 1}";
+                    string at = $"{location.Document.Name}:{location.Location.GetLineSpan().StartLinePosition.Line + 1}";
+
+                    // A Scrutor Decorate call is the registration the report should name, wherever it is among the uses (fullcart).
+                    if (name.FirstAncestorOrSelf<TypeOfExpressionSyntax>() is { Parent: ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax scrutor } } }
+                        && scrutor.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Decorate" } decorate)
+                    {
+                        return $"{ScrutorPrefix}Scrutor's {decorate.Name}{scrutor.ArgumentList} at {at}";
+                    }
+
+                    first ??= at;
                 }
             }
         }
 
-        return null;
+        return first;
     }
 
     // builder.RegisterAssemblyTypes(typeof(<a MediatR type>).Assembly ...): MediatR registered by hand in Autofac (TAAK-196).

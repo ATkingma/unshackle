@@ -23,6 +23,7 @@ Code: `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`, registra
 | REQ-5 | Met | `no-lambda`                         |
 | REQ-6 | Met | `generic-handlers` (TAAK-037)       |
 | REQ-7 | Met | `MediatorHostsTests` (AddMediatR host next to host; scan of other host → Manual; TAAK-213) |
+| REQ-8 | Met | `AddMediatRPatternTests.RewriteAsync_InternalScanFedByPublicParameter_ManualNamingThePublicMethod` (public wrapper → Manual; constant assembly or no wrapper → Fixed); starter scan names `PublisherModule.AddPublisher` (TAAK-290) |
 | Extension TAAK-060 | Met | `publisher`, `edge-publisher-qualified` |
 | Extension TAAK-061/062 | Met | `processors`, `empty` |
 | Extension TAAK-144 | Met | `edge-assemblies-public`, `AddMediatRPatternTests` |

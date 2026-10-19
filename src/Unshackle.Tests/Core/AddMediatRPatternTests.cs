@@ -171,6 +171,42 @@ public class AddMediatRPatternTests
     }
 
     [Theory]
+    [InlineData("public static IServiceCollection AddPublisher(this IServiceCollection services, Assembly assembly) => services.AddInMemory(assembly);", typeof(ManualResult))]
+    [InlineData("public static IServiceCollection AddPublisher(this IServiceCollection services) => services.AddInMemory(typeof(Module).Assembly);", typeof(FixedResult))]
+    [InlineData("", typeof(FixedResult))]
+    public async Task RewriteAsync_InternalScanFedByPublicParameter_ManualNamingThePublicMethod(string wrapper, Type expected)
+    {
+        // Arrange (starter, TAAK-290: a public wrapper in a shared library passes the host's assembly to an internal AddMediatR method)
+        CancellationToken token = TestContext.Current.CancellationToken;
+        var library = ProjectId.CreateNewId();
+        var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+        var registration = DocumentId.CreateNewId(library);
+        Solution solution = new AdhocWorkspace().CurrentSolution
+            .AddProject(library, "Common", "Common", LanguageNames.CSharp).WithProjectCompilationOptions(library, options)
+            .AddMetadataReferences(library, TestReferences.MediatR)
+            .AddDocument(registration, "Module.cs",
+                "using System.Reflection;\nusing Microsoft.Extensions.DependencyInjection;\nnamespace Common;\n"
+                + "internal static class Module { internal static IServiceCollection AddInMemory(this IServiceCollection services, Assembly assembly) { "
+                + "services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly)); return services; } }")
+            .AddDocument(DocumentId.CreateNewId(library), "Publisher.cs",
+                "using System.Reflection;\nusing Microsoft.Extensions.DependencyInjection;\nnamespace Common;\npublic static class Publisher { " + wrapper + " }");
+        Document document = solution.GetDocument(registration)!;
+        SemanticModel model = (await document.GetSemanticModelAsync(token))!;
+        var pattern = new AddMediatRPattern();
+        SyntaxNode node = pattern.Find((await document.GetSyntaxRootAsync(token))!, model).Single();
+
+        // Act
+        PatternResult result = await pattern.RewriteAsync(node, model, solution, token);
+
+        // Assert
+        result.ShouldBeOfType(expected);
+        if (result is ManualResult manual)
+        {
+            manual.Reason.ShouldContain("'assembly', which comes from a parameter of the public method Publisher.AddPublisher");
+        }
+    }
+
+    [Theory]
     [InlineData("NetArchTest.Rules.dll", true)]
     [InlineData("ArchUnitNET.xUnit.dll", true)]
     [InlineData("Other.dll", false)]

@@ -29,7 +29,7 @@ public class AddMediatRPattern : ISolutionPattern
 
     // Without the solution every friend may call the internal method.
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
-        Rewrite(node, model, Friend(model) is string friend ? $"{friend} may call" : null, _ => false, MediatorHostSettings.None, new HashSet<string>());
+        Rewrite(node, model, Friend(model) is string friend ? $"{friend} may call" : null, null, _ => false, MediatorHostSettings.None, new HashSet<string>());
 
     // With the solution only a real call from another project counts, and the report names it (TAAK-148).
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
@@ -49,16 +49,15 @@ public class AddMediatRPattern : ISolutionPattern
                 .FirstOrDefault();
         }
 
-        // A host next to another host gets GenerateTypesAsInternal and/or Assemblies (TAAK-213).
+        // An internal method whose scanned assembly comes from a public method's parameter scans whatever the caller passes (TAAK-290).
+        string? forwarder = await PublicForwarderAsync(node, model, solution, cancellationToken);
+
+        // A host next to another host gets GenerateTypesAsInternal and/or Assemblies (TAAK-213); its Manual reason comes after the run-time scan checks.
         MediatorHostSettings host = await MediatorHosts.SettingsAsync(node, model, solution, cancellationToken);
-        if (host.ManualReason is string reason)
-        {
-            return PatternResult.Manual(reason);
-        }
 
         // A scanned project of this solution gets InternalsVisibleTo for this one from InternalHandlerAccessPattern (TAAK-195).
         IReadOnlySet<string> hosts = await MediatorHosts.AssemblyNamesAsync(solution, cancellationToken);
-        return MediatorHosts.WithArchitectureTestWarning(Rewrite(node, model, caller, a => CanGrantAccess(a, solution), host, hosts), solution);
+        return MediatorHosts.WithArchitectureTestWarning(Rewrite(node, model, caller, forwarder, a => CanGrantAccess(a, solution), host, hosts), solution);
     }
 
     // A C# project of the solution without a strong name: InternalHandlerAccessPattern can add InternalsVisibleTo to it.
@@ -68,9 +67,10 @@ public class AddMediatRPattern : ISolutionPattern
 
     // caller: who may call this method from another project ("X may call", "X calls (file:line)"), or null.
     // granted: a scanned assembly that will give this project InternalsVisibleTo, so its internal handlers are fine.
+    // forwarder: the public method whose parameter reaches the scanned assembly parameter of this non-public method, or null.
     // host: settings next to other hosts; hosts: assembly names of all hosts (a scan of another host cannot become Mediator's).
     private static PatternResult Rewrite(
-        SyntaxNode node, SemanticModel model, string? caller, Func<IAssemblySymbol, bool> granted, MediatorHostSettings host, IReadOnlySet<string> hosts)
+        SyntaxNode node, SemanticModel model, string? caller, string? forwarder, Func<IAssemblySymbol, bool> granted, MediatorHostSettings host, IReadOnlySet<string> hosts)
     {
         var statement = node as ExpressionStatementSyntax;
         var invocation = (InvocationExpressionSyntax)(statement?.Expression ?? node);
@@ -180,6 +180,19 @@ public class AddMediatRPattern : ISolutionPattern
                 + "Call AddMediator once in that project (with Mediator.SourceGenerator) instead.");
         }
 
+        if (forwarder is not null && CallerAssemblyParameter(dropped, model, _ => true) is string forwardedParameter)
+        {
+            return PatternResult.Manual(
+                $"AddMediatR scans the assembly passed in '{forwardedParameter}', which comes from a parameter of the public method {forwarder}: its handlers live in the caller's project and are only known at run time, "
+                + "which Mediator's source generator in this project cannot see. Call AddMediator once in the host project (with Mediator.SourceGenerator) instead of in this shared method.");
+        }
+
+        // The scanned assemblies are known at compile time: now a clash with another host is the real blocker.
+        if (host.ManualReason is string reason)
+        {
+            return PatternResult.Manual(reason);
+        }
+
         if (ScannedAssemblies(dropped, model).FirstOrDefault(a => hosts.Contains(a.Name)) is IAssemblySymbol otherHost)
         {
             return PatternResult.Manual(
@@ -267,6 +280,63 @@ public class AddMediatRPattern : ISolutionPattern
             .Select(p => p.Name)];
     }
 
+    // The public method (as Type.Method) whose parameter is passed, through calls in the solution, to the assembly parameter a dropped
+    // scan of this non-public method uses; null when every call passes an assembly known in its own project.
+    private static async Task<string?> PublicForwarderAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<InvocationExpressionSyntax> dropped = DroppedScans(node);
+        Queue<IParameterSymbol> pending = new(dropped.SelectMany(d => d.ArgumentList.DescendantNodes().OfType<IdentifierNameSyntax>())
+            .Select(i => model.GetSymbolInfo(i, cancellationToken).Symbol)
+            .OfType<IParameterSymbol>());
+        HashSet<ISymbol> seen = new(SymbolEqualityComparer.Default);
+        while (pending.TryDequeue(out IParameterSymbol? parameter))
+        {
+            bool first = seen.Count == 0;
+            if (parameter.ContainingSymbol is not IMethodSymbol method || !seen.Add(parameter))
+            {
+                continue;
+            }
+
+            // The method of the AddMediatR call itself is covered by the public-method check in Rewrite.
+            if (IsVisibleOutside(method))
+            {
+                if (!first)
+                {
+                    return $"{method.ContainingType.Name}.{method.Name}";
+                }
+
+                continue;
+            }
+
+            foreach (ReferenceLocation location in (await SymbolFinder.FindReferencesAsync(method.OriginalDefinition, solution, cancellationToken)).SelectMany(r => r.Locations))
+            {
+                if ((await location.Document.GetSyntaxRootAsync(cancellationToken))?.FindNode(location.Location.SourceSpan).FirstAncestorOrSelf<InvocationExpressionSyntax>() is { } call
+                    && await location.Document.GetSemanticModelAsync(cancellationToken) is SemanticModel callModel
+                    && Argument(call, callModel, parameter, cancellationToken) is { } argument
+                    && callModel.GetSymbolInfo(argument, cancellationToken).Symbol is IParameterSymbol passed)
+                {
+                    pending.Enqueue(passed);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // The argument of a call that fills the parameter: by name, or by position (one less for an extension method called on its receiver).
+    private static ExpressionSyntax? Argument(InvocationExpressionSyntax call, SemanticModel model, IParameterSymbol parameter, CancellationToken cancellationToken)
+    {
+        if (call.ArgumentList.Arguments.FirstOrDefault(a => a.NameColon?.Name.Identifier.ValueText == parameter.Name) is { } named)
+        {
+            return named.Expression;
+        }
+
+        int position = parameter.Ordinal - (model.GetSymbolInfo(call, cancellationToken).Symbol is IMethodSymbol { ReducedFrom: not null } ? 1 : 0);
+        return position >= 0 && position < call.ArgumentList.Arguments.Count && call.ArgumentList.Arguments[position].NameColon is null
+            ? call.ArgumentList.Arguments[position].Expression
+            : null;
+    }
+
     // A parameter of a method passed to a dropped scan, when the method passes the check (e.g. externally visible): the scanned assembly is the caller's.
     private static string? CallerAssemblyParameter(List<InvocationExpressionSyntax> dropped, SemanticModel model, Func<ISymbol, bool> callable) =>
         dropped.SelectMany(d => d.ArgumentList.DescendantNodes().OfType<IdentifierNameSyntax>())
@@ -290,7 +360,11 @@ public class AddMediatRPattern : ISolutionPattern
             .FirstOrDefault(IsHiddenHandler);
 
     // The other assemblies the AddMediatR call found by Find scans, for InternalHandlerAccessPattern; none when it is not services.AddMediatR(cfg => ...).
-    internal static IReadOnlyList<IAssemblySymbol> ScannedAssemblies(SyntaxNode found, SemanticModel model)
+    internal static IReadOnlyList<IAssemblySymbol> ScannedAssemblies(SyntaxNode found, SemanticModel model) =>
+        ScannedAssemblies([.. DroppedScans(found)], model);
+
+    // The RegisterServicesFrom... calls in the lambda of the AddMediatR call found by Find; none when it is not services.AddMediatR(cfg => ...).
+    private static IReadOnlyList<InvocationExpressionSyntax> DroppedScans(SyntaxNode found)
     {
         var invocation = (InvocationExpressionSyntax)((found as ExpressionStatementSyntax)?.Expression ?? found);
         if (invocation.ArgumentList.Arguments is not [{ Expression: LambdaExpressionSyntax lambda }] || ParameterName(lambda) is not string config)
@@ -300,10 +374,9 @@ public class AddMediatRPattern : ISolutionPattern
 
         IEnumerable<ExpressionSyntax> settings = lambda.Block?.Statements.OfType<ExpressionStatementSyntax>().Select(s => s.Expression)
             ?? (lambda.ExpressionBody is { } body ? [body] : []);
-        List<InvocationExpressionSyntax> dropped = [.. settings.OfType<InvocationExpressionSyntax>().Where(i =>
+        return [.. settings.OfType<InvocationExpressionSyntax>().Where(i =>
             i.Expression is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax target } call
             && target.Identifier.ValueText == config && s_dropped.Contains(call.Name.Identifier.ValueText))];
-        return ScannedAssemblies(dropped, model);
     }
 
     // Assemblies other than this one that the dropped scans name by typeof(T) or <T>, directly or through a local of this file.

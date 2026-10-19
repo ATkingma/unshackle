@@ -44,13 +44,7 @@ reserve task numbers per agent in advance, `TEMP`/`TMP` on a `D:` folder, never 
 
 TAAK-288 (RequestHandlerDelegate lambdas and Moq mocks, qualified MediatR types), TAAK-289 (`automapper.unused-imapper`, `AddAutoMapper` dropped) and TAAK-290 (starter) are done on main. They were redone from scratch on 2026-10-19: the WIP branches were lost on another PC. TAAK-291 (models rendered, decision trees split to at most 12 arrows) is done.
 
-**Open user decisions:**
-
-- starter and fullcart: accept as principally manual (starter: run-time assembly scan via the public `PublisherModule.AddPublisher(Assembly)`; fullcart: Scrutor `Decorate` of an open generic `INotificationHandler<>`, partial: requests on Mediator, notifications on MediatR).
-- `automapper.unused-imapper`: keep removing the `GetService<IMapper>` null check (Fixed with warning) or make it Manual.
-- `automapper.unused-imapper`: remove the empty constructors / factory classes it leaves behind, or leave them.
-
-Release 0.2.0 is proposed to the user only after these decisions.
+**Former open decisions:** all settled by the council on 2026-10-19 (the user made the council the decision maker; see `claude/docs/council.md`): starter Manual, fullcart partial, scoped `GetService<IMapper>` removal, empty classes kept with an Info line. Release 0.2.0 waits only for the user's go to publish (external action).
 
 ## Council (2026-10-19)
 

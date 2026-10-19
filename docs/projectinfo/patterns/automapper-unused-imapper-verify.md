@@ -6,7 +6,7 @@
 | **Status**    | Verified                                                                                       |
 | **Generated** | 2026-10-19 by KingmaDoc skill (by hand, `kingmadoc` not available)                             |
 
-> Verified by an AI agent against the code of branch `worktree-agent-ac55b759e0d16a786` (TAAK-289); REQ-6, REQ-8 and REQ-10..12 re-verified on branch `worktree-agent-ad17ff04cdf5c5b21` (TAAK-292); REQ-8, REQ-10 and REQ-13..15 on branch `worktree-agent-af3ef946941f5cd53` (TAAK-293).
+> Verified by an AI agent against the code of branch `worktree-agent-ac55b759e0d16a786` (TAAK-289); REQ-6, REQ-8 and REQ-10..12 re-verified on branch `worktree-agent-ad17ff04cdf5c5b21` (TAAK-292); REQ-8, REQ-10 and REQ-13..15 on branch `worktree-agent-af3ef946941f5cd53` (TAAK-293); REQ-16 on branch `worktree-agent-a437254212d26f72a` (TAAK-294).
 
 ## Requirements
 
@@ -27,6 +27,7 @@
 | REQ-13 | Met    | `ReportWriterTests.From_KeptLookup_RendersThePrefixInFrontOfTheReason` (pins `Stays on AutoMapper: `), `JsonAndMarkdownWriteAsync_FixedWithInfo_WriteTheInfoLine`; the theory asserts `ManualResult.Kept` and a reason without prefix; `AutoMapperFix.AllowsPartial` accepts the code |
 | REQ-14 | Met    | theory row `target-typed` (rule 3, `ContainerWithoutRegistration`); proof `service-lookup-target-typed-container` |
 | REQ-15 | Met    | theory rows `stored lambda`, `local function` (`ConditionalOrDeferredRegistration`); `FixAsync_AddAutoMapperInALambdaPassedToARegistrationCall_RemovesTheLookup`; proof `service-lookup-deferred-registration` |
+| REQ-16 | Met    | `MapperRegistration.s_registrationTargets` holds the nine qualified names; `FixAsync_AddAutoMapperInALambdaPassedToALookalikeBuilder_KeepsTheLookup` (user `WebApplicationBuilder` → `ConditionalOrDeferredRegistration`); `FixAsync_AddAutoMapperInALambdaPassedToARegistrationCall_RemovesTheLookup` (real `IServiceCollection`); theory row `local function` |
 
 ## Build and tests
 

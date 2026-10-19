@@ -18,6 +18,7 @@
 | REQ-6 | Met | `GenericDecorator/notification-without-autofac`; Fixed-tak in `_Combined/generic-decorators-kgrzybek` |
 | REQ-7 | Met | `_Combined/generic-decorator-marker-without-using` (two projects, decorator file without `using MediatR`; without the fix: `mediatr.unsupported` → everything Manual); `GenericDecoratorPatternTests.IsDecorator_RewrittenVoidDecoratorInFileWithoutUsingMediatR_True`, `..._UnboundHandlerWithOtherResponse_False`; corpus kgrzybek round 4 |
 | REQ-8 | Met | `GenericDecorator/scrutor-decorate` (an earlier `typeof` use, then `Decorate(typeof(INotificationHandler<>), typeof(D<>))`); fullcart `scan` (TAAK-293): the reason names `Decorate(...)` at `DependencyInjection.cs:38` |
+| REQ-9 | Met | `GenericDecoratorPatternTests.RewriteAsync_DecorateCall_NamesScrutorOnlyWhenItResolvesThereOrNotAtAll` (Scrutor namespace → named, own namespace → plain reason, unresolved → named); proof `scrutor-decorate` now resolves to a stand-in in `namespace Scrutor`; fullcart `scan` (TAAK-294, real Scrutor 4.2.2, whose `Decorate` is in `Microsoft.Extensions.DependencyInjection` of assembly `Scrutor`): reason unchanged |
 
 ## Deviations
 

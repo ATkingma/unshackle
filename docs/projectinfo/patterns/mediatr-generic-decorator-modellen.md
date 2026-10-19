@@ -27,7 +27,8 @@ Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/GenericDecoratorPattern.cs
 | ---- | --------- | -------- |
 | Not found | decorator of a handler with a response | `Find_DecoratorWithResponse_LeavesItToTheHandlerPatterns` |
 | Not found (stays `mediatr.unsupported`) | no decorated parameter | `IsDecorator_OpenGenericHandlerWithoutDecoratedParameter_False` |
-| Manual "used other than in RegisterGenericDecorator" | another reference | `used-elsewhere` |
+| Manual "used other than in RegisterGenericDecorator" | another reference (also a `Decorate` that resolves outside Scrutor) | `used-elsewhere`; `RewriteAsync_DecorateCall_NamesScrutorOnlyWhenItResolvesThereOrNotAtAll` |
+| Manual "registered with Scrutor's Decorate(...) at file:line" | a `Decorate(typeof(S<>), typeof(D<>))` that resolves to Scrutor (namespace or assembly), or does not resolve | `scrutor-decorate`; same unit test |
 | Manual "every notification" | notification, no Autofac registration of MediatR | `notification-without-autofac` |
 | Fixed (unchanged) | notification, MediatR in Autofac | `_Combined/generic-decorators-kgrzybek` |
 | Manual "declares members of its own" | own interface with members | `decorated-members` |

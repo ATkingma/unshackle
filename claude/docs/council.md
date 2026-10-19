@@ -59,9 +59,22 @@ Otherwise keep the lookup; the report says which condition failed, with file:lin
 
 Condition (Pragmatist): rerun the corpus `after` on the six AutoMapper repos, 0 regressions. Implementation: TAAK-293.
 
+### 2026-10-19 — implementer questions from TAAK-293 (round 4, unanimous)
+
+| # | Question | Joint decision |
+| --- | --- | --- |
+| Q1 | `AddAutoMapper` inside a local function | **Deferred: keep the lookup.** A local function may never run, and it is not a lambda passed directly to a registration call. |
+| Q2 | Other kept findings still use a string prefix | **Move to reason codes after 0.2.0** (TAAK-295). Users see no change; the tests pin the rendered text. |
+| Q3 | Recognising registration/builder types | **Match on the fully qualified metadata name, namespace included** (`Microsoft.Extensions.*`, `Microsoft.AspNetCore.*`, `Microsoft.Azure.Functions.*`), not on a bare name and not on the assembly. A lookalike name would wrongly remove a lookup. Add `HostApplicationBuilder` and the isolated Functions builders (`FunctionsApplicationBuilder`, `IFunctionsWorkerApplicationBuilder`). Before 0.2.0. |
+| Q4 | Scrutor recognised by syntax only | **Require that `Decorate` resolves to a method in the `Scrutor` namespace**; use the syntax match only when the symbol does not resolve. A user's own `Decorate` would otherwise cause a false partial. Before 0.2.0. |
+
+Nothing here blocks 0.2.0 outright; Q3 and Q4 are small and land before it (TAAK-294), with the corpus `after` at 0 regressions.
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct
 - `claude/docs/overdracht.md` — handover
 - `claude/tasks/archief/TAAK-292-council-follow-up.md` — implementation of these decisions
 - `claude/tasks/archief/TAAK-293-council-round-3.md` — implementation of the round-3 decisions
+- `claude/tasks/TAAK-294-council-round-4.md` — round-4 changes before 0.2.0
+- `claude/tasks/TAAK-295-kept-reason-codes.md` — reason codes for all kept findings (after 0.2.0)

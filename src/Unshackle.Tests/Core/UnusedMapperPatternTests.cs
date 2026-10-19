@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Fixes.AutoMapper;
+using Unshackle.Core.Fixes.AutoMapper.Patterns;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
 using Xunit;
@@ -134,40 +135,216 @@ public class UnusedMapperPatternTests
         """;
 
     // The reviewed assumption: a null check on a GetService<IMapper>() lookup only took its branch without a registration. It goes with the
-    // lookup only while the solution calls AddAutoMapper, and the finding carries a warning that says so.
+    // lookup only while the scope of the lookup surely registers IMapper (TAAK-292, council decision 3), and the finding names the call.
     [Fact]
-    public async Task FixAsync_ServiceLookupWithNullCheck_RemovesBothWithAWarning()
+    public async Task FixAsync_ServiceLookupInTheRegisteringProject_RemovesItAndTheNullCheckWithAWarning()
     {
         // Arrange
-        Solution solution = Create(Shop, Seeder);
+        Solution solution = Create(Shop, Test, seeder: Seeder);
 
         // Act
         FixReport report = await FixAsync(solution);
 
         // Assert
-        string seeder = await TextAsync(report.Solution, "Test.cs");
+        string seeder = await TextAsync(report.Solution, "Seeder.cs");
         seeder.ShouldNotContain("GetService");
         seeder.ShouldContain("return new OrderService(\"seed\");");
-        report.Findings.Select(f => f.Result).OfType<FixedResult>().ShouldContain(f => f.Warning != null && f.Warning.Contains("null check on mapper", StringComparison.Ordinal));
+        List<string> warnings = [.. report.Findings.Select(f => f.Result).OfType<FixedResult>().Select(f => f.Warning).OfType<string>()];
+        warnings.ShouldContain(w => w.Contains("AddAutoMapper at Shop.cs:", StringComparison.Ordinal), string.Join(" | ", warnings));
     }
 
-    [Theory]
-    [InlineData("services.AddAutoMapper(typeof(ShopProfile).Assembly);", "services.AddSingleton(new MapperConfiguration(cfg => cfg.AddProfile<ShopProfile>()).CreateMapper());")]
-    [InlineData("if (mapper == null)", "if (mapper != null)")]
-    public async Task FixAsync_ServiceLookupNotRegisteredByAddAutoMapperOrNotANullCheck_KeepsTheLookup(string find, string replace)
+    // Rule 1: the AddAutoMapper call may also be in a project that depends on the lookup's project (the host).
+    [Fact]
+    public async Task FixAsync_ServiceLookupRegisteredByADependentHost_RemovesIt()
     {
         // Arrange
-        Solution solution = Create(Shop.Replace(find, replace, StringComparison.Ordinal), Seeder.Replace(find, replace, StringComparison.Ordinal));
+        const string Host = """
+            using Microsoft.Extensions.DependencyInjection;
+
+            namespace Shop.Host;
+
+            public static class Startup
+            {
+                public static void Configure(IServiceCollection services) => services.AddAutoMapper(typeof(Shop.ShopProfile).Assembly);
+            }
+            """;
+        Solution solution = Create(Shop.Replace("services.AddAutoMapper(typeof(ShopProfile).Assembly);", "", StringComparison.Ordinal), Host, seeder: Seeder);
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        (await TextAsync(report.Solution, "Seeder.cs")).ShouldNotContain("GetService");
+        report.Findings.Select(f => f.Result).OfType<FixedResult>().ShouldContain(f => f.Warning != null && f.Warning.Contains("AddAutoMapper at Test.cs:7", StringComparison.Ordinal));
+    }
+
+    // Each failing rule keeps the lookup and its null check, and the report names the rule with file:line.
+    [Theory]
+    [InlineData("", "rule 1: no AddAutoMapper call in Shop.Tests or a project that depends on it")]
+    [InlineData("in shop", "rule 1: no AddAutoMapper call in Shop or a project that depends on it")]
+    [InlineData("if", "is conditional (inside an if)")]
+    [InlineData("#if", "is conditional (inside an #if)")]
+    [InlineData("container", "rule 3: Seeder.cs:21 builds a new ServiceCollection() without AddAutoMapper in the same method")]
+    public async Task FixAsync_ServiceLookupNotSurelyRegistered_KeepsTheLookupAndNamesTheRule(string variant, string rule)
+    {
+        // Arrange ("": the lookup sits in the test project, which AddAutoMapper in Shop does not cover)
+        string shop = variant switch
+        {
+            "in shop" => Shop.Replace("services.AddAutoMapper(typeof(ShopProfile).Assembly);", "services.AddSingleton(new MapperConfiguration(cfg => cfg.AddProfile<ShopProfile>()).CreateMapper());", StringComparison.Ordinal),
+            "if" => Shop.Replace("services.AddAutoMapper(", "if (services.Count > 0) services.AddAutoMapper(", StringComparison.Ordinal),
+            "#if" => Shop.Replace("services.AddAutoMapper(typeof(ShopProfile).Assembly);", "#if !UNSET\n        services.AddAutoMapper(typeof(ShopProfile).Assembly);\n#endif", StringComparison.Ordinal),
+            _ => Shop,
+        };
+        string seeder = variant == "container"
+            ? Seeder.Replace("    }\n}", "    }\n\n    public static IServiceProvider Build() => new ServiceCollection().BuildServiceProvider();\n}", StringComparison.Ordinal)
+            : Seeder;
+        Solution solution = variant == "" ? Create(shop, seeder) : Create(shop, Test, seeder: seeder);
 
         // Act
         FixReport report = await FixAsync(solution);
 
         // Assert (the parameter still goes: its argument is a plain name)
-        string seeder = await TextAsync(report.Solution, "Test.cs");
-        seeder.ShouldContain("var mapper = services.GetService<IMapper>();");
-        seeder.ShouldContain(replace.StartsWith("if", StringComparison.Ordinal) ? replace : "if (mapper == null)");
-        seeder.ShouldContain("return new OrderService(\"seed\");");
+        string kept = await TextAsync(report.Solution, variant == "" ? "Test.cs" : "Seeder.cs");
+        kept.ShouldContain("var mapper = services.GetService<IMapper>();");
+        kept.ShouldContain("if (mapper == null)");
+        kept.ShouldContain("return new OrderService(\"seed\");");
+        Reasons(report).ShouldContain(r => r.StartsWith(MapOwners.KeptPrefix + "the GetService<IMapper>() lookup stays", StringComparison.Ordinal) && r.Contains(rule, StringComparison.Ordinal),
+            string.Join(" | ", Reasons(report)));
         (await TextAsync(report.Solution, "Shop.cs")).ShouldContain("public OrderService(string name)");
+    }
+
+    [Fact]
+    public async Task FixAsync_ServiceLookupNotANullCheck_KeepsTheLookup()
+    {
+        // Arrange
+        Solution solution = Create(Shop, Test, seeder: Seeder.Replace("if (mapper == null)", "if (mapper != null)", StringComparison.Ordinal));
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        string seeder = await TextAsync(report.Solution, "Seeder.cs");
+        seeder.ShouldContain("var mapper = services.GetService<IMapper>();");
+        seeder.ShouldContain("if (mapper != null)");
+    }
+
+    // Council decision 4: a class the removals leave empty stays, with an Info line in the finding.
+    [Fact]
+    public async Task FixAsync_FactoryClassLeftEmpty_KeepsItAndReportsAnInfoLine()
+    {
+        // Arrange
+        const string Factory = """
+            using AutoMapper;
+
+            namespace Shop.Tests;
+
+            public static class MapperHelper
+            {
+                public static IMapper Create() => new MapperConfiguration(cfg => cfg.AddProfile<ShopProfile>()).CreateMapper();
+            }
+
+            public class OrderServiceTests
+            {
+                public OrderDto Get() => new OrderService("shop", MapperHelper.Create()).Get(new Order());
+            }
+            """;
+        Solution solution = Create(Shop, Factory);
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        string test = await TextAsync(report.Solution, "Test.cs");
+        test.ShouldContain("public static class MapperHelper");
+        test.ShouldNotContain("Create()");
+        report.Findings.Select(f => f.Result).OfType<FixedResult>().ShouldContain(f => f.Info == "the class MapperHelper is now empty and kept; removing it is a separate refactoring.");
+    }
+
+    // The plan keys symbols by documentation comment id: overloaded constructors and a partial type over two files each keep their own key.
+    [Fact]
+    public async Task FixAsync_OverloadsAndPartialType_RemovesEveryMapper()
+    {
+        // Arrange
+        const string Part = """
+            namespace Shop;
+
+            public partial class OrderService
+            {
+                public OrderService(AutoMapper.IMapper mapper) : this("default", mapper)
+                {
+                }
+
+                public OrderDto Again(Order order) => _mapper.Map<OrderDto>(order);
+            }
+            """;
+        Solution solution = Create(Shop.Replace("public class OrderService", "public partial class OrderService", StringComparison.Ordinal), Test, seeder: Part);
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult, string.Join(" | ", Reasons(report)));
+        string shop = await TextAsync(report.Solution, "Shop.cs");
+        shop.ShouldContain("public OrderService(string name)");
+        shop.ShouldNotContain("IMapper");
+        shop.ShouldNotContain("AddAutoMapper");
+        string part = await TextAsync(report.Solution, "Seeder.cs");
+        part.ShouldContain("public OrderService() : this(\"default\")");
+        part.ShouldContain("public OrderDto Again(Order order) => order.ToOrderDto();");
+    }
+
+    // One IMapper use the fix cannot remove keeps AddAutoMapper, while an IMapper elsewhere that only served migrated calls still goes.
+    [Fact]
+    public async Task FixAsync_OneRemainingMapperUse_KeepsAddAutoMapper()
+    {
+        // Arrange
+        const string Other = """
+            using AutoMapper;
+
+            namespace Shop.Tests;
+
+            public class Exporter
+            {
+                private readonly IMapper _mapper;
+
+                public Exporter(IMapper mapper)
+                {
+                    _mapper = mapper;
+                }
+
+                public IMapper Mapper => _mapper;
+            }
+            """;
+        Solution solution = Create(Shop, Other);
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        string shop = await TextAsync(report.Solution, "Shop.cs");
+        shop.ShouldContain("public OrderService(string name)");
+        shop.ShouldContain("services.AddAutoMapper(typeof(ShopProfile).Assembly);");
+        (await TextAsync(report.Solution, "Test.cs")).ShouldContain("public IMapper Mapper => _mapper;");
+        Reasons(report).ShouldContain(r => r.StartsWith("Stays on AutoMapper: IMapper is still used", StringComparison.Ordinal));
+    }
+
+    // The order is part of the design: the call patterns migrate the Map calls, then unused-imapper removes the mapper, then add-automapper
+    // sees no IMapper user left.
+    [Fact]
+    public void AutoMapperFix_PatternOrder_CallPatternsThenUnusedMapperThenAddAutoMapper()
+    {
+        // Arrange
+        List<string> ids = [.. new AutoMapperFix().Patterns.Select(p => p.Id)];
+
+        // Act
+        int unused = ids.IndexOf("automapper.unused-imapper");
+        int register = ids.IndexOf("automapper.add-automapper");
+
+        // Assert
+        unused.ShouldBeGreaterThan(ids.IndexOf("automapper.map-call"));
+        unused.ShouldBeGreaterThan(ids.IndexOf("automapper.map-into"));
+        unused.ShouldBeGreaterThan(ids.IndexOf("automapper.project-to"));
+        register.ShouldBeGreaterThan(unused);
     }
 
     // A top-level AddAutoMapper statement goes with its global statement (it used to be an internal error once nothing used IMapper).
@@ -197,10 +374,15 @@ public class UnusedMapperPatternTests
 
     private static List<string> Reasons(FixReport report) => [.. report.Findings.Select(f => f.Result).OfType<ManualResult>().Select(m => m.Reason)];
 
-    // Shop.cs in project Shop; Test.cs in project Shop.Tests, which references Shop (keys must match across compilations).
-    private static Solution Create(string shop, string test)
+    // Shop.cs (and Seeder.cs) in project Shop; Test.cs in project Shop.Tests, which references Shop (keys must match across compilations).
+    private static Solution Create(string shop, string test, string? seeder = null)
     {
         Solution solution = Create(shop, OutputKind.DynamicallyLinkedLibrary);
+        if (seeder is not null)
+        {
+            solution = solution.AddDocument(DocumentId.CreateNewId(solution.ProjectIds[0]), "Seeder.cs", seeder, filePath: "Seeder.cs");
+        }
+
         ProjectId shopId = solution.ProjectIds[0];
         var testId = ProjectId.CreateNewId();
         return solution.AddProject(testId, "Shop.Tests", "Shop.Tests", LanguageNames.CSharp)

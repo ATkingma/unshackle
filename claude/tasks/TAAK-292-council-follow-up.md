@@ -1,6 +1,6 @@
 # TAAK-292 — Council follow-up: scoped IMapper lookup removal, Info lines, 0.2.0 checks
 
-**Status**: step 1/4 — not started
+**Status**: step 3/4 — steps 1-2 done
 **Created**: 2026-10-19
 **Goal**: implement the council decisions of 2026-10-19 (`claude/docs/council.md`) with proof.
 
@@ -12,8 +12,8 @@
 
 ## Steps
 
-- [ ] 1. KingmaDoc plan update (unused-imapper REQ for the scoped rule and Info line)
-- [ ] 2. Implementation + unit tests + proofs: own project / dependent host / conditional call / second container without AddAutoMapper; overload/partial-type test for the plan cache; end-to-end test that one remaining `IMapper` use keeps `AddAutoMapper`; explicit pattern order check
+- [x] 1. KingmaDoc plan update (unused-imapper REQ for the scoped rule and Info line)
+- [x] 2. Implementation + unit tests + proofs: own project / dependent host / conditional call / second container without AddAutoMapper; overload/partial-type test for the plan cache; end-to-end test that one remaining `IMapper` use keeps `AddAutoMapper`; explicit pattern order check
 - [ ] 3. Corpus `after` on pi22317, assistiva, culinary, msb, encryptednotes, estore: 0 regressions, numbers here and in CORPUSRUN-blind.md
 - [ ] 4. Verify, models, docs; `claude/tools/verify-head.sh` → `VERIFY OK`
 

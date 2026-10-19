@@ -46,7 +46,7 @@ public class ReportRow
         ArgumentNullException.ThrowIfNull(finding);
         (string status, string reason) = finding.Result switch
         {
-            FixedResult fixedResult => ("Fixed", fixedResult.Warning ?? ""),
+            FixedResult fixedResult => ("Fixed", string.Join(" ", new[] { fixedResult.Warning, fixedResult.Info is null ? null : "Info: " + fixedResult.Info }.OfType<string>())),
             ManualResult manual => ("Manual", manual.Reason),
             _ => throw new UnreachableException(),
         };

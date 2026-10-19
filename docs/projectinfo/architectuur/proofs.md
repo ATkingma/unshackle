@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1066 proofs (excluding `_Pending`).
+Total: 1069 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -279,13 +279,16 @@ Total: 1066 proofs (excluding `_Pending`).
 | `parameters-generic` | Manual |  — reason: ProjectTo<TDestination> has no destination type of its own |
 | `unknown-map` | Manual |  — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
 
-### UnusedMapper (4)
+### UnusedMapper (7)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `assigned-only` | Fixed | `private readonly IMapper _mapper; public OrderService(IOrderRepository orders, IMapper mapper)` → `public OrderService(IOrderRepository orders)` |
+| `empty-factory-class` | Fixed | `public static IMapper Create() => new MapperConfiguration(cfg => cfg.CreateMap<Order, OrderDto>()).CreateMappe…` → `public OrderService() public static OrderService Create() => new OrderService();` |
 | `null-checks` | Fixed | `private readonly IMapper _mapper; public OrderService(string name, IMapper mapper)` → `public OrderService(string name)` |
 | `service-lookup` | Fixed | `private readonly IMapper _mapper; public OrderService(IMapper mapper)` → `public OrderService() return new OrderService();` |
+| `service-lookup-conditional-registration` | Fixed | `private readonly IMapper _mapper; public OrderService(IMapper mapper)` → `public OrderService() return new OrderService();` |
+| `service-lookup-second-container` | Fixed | `private readonly IMapper _mapper; public OrderService(IMapper mapper)` → `public OrderService() return new OrderService();` |
 | `test-factory` | Fixed | `private readonly IMapper _mapper; public OrderService(IMapper mapper)` → `public OrderService() _service = new OrderService();` |
 
 ### ValueResolver (6)

@@ -1,6 +1,6 @@
 # TAAK-293 — Council round 3: typed kept-lookup reason, stricter registration rules, fullcart text
 
-**Status**: step 2/4 — implementation
+**Status**: step 3/4 — corpus
 **Created**: 2026-10-19
 **Goal**: implement the round-3 council decisions in `claude/docs/council.md` with proof.
 
@@ -15,7 +15,7 @@
 ## Steps
 
 - [x] 1. KingmaDoc plan updates (unused-imapper; the MediatR pattern with the decorator reason)
-- [ ] 2. Implementation + unit tests + proofs
+- [x] 2. Implementation + unit tests + proofs
 - [ ] 3. Corpus `after` on pi22317, assistiva, culinary, msb, encryptednotes, estore (+ `scan` on fullcart for the text): 0 regressions, numbers here and in CORPUSRUN-blind.md
 - [ ] 4. Verify, models, docs; `claude/tools/verify-head.sh` → `VERIFY OK`
 

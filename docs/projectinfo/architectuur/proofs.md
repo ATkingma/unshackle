@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1069 proofs (excluding `_Pending`).
+Total: 1072 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -279,7 +279,7 @@ Total: 1069 proofs (excluding `_Pending`).
 | `parameters-generic` | Manual |  — reason: ProjectTo<TDestination> has no destination type of its own |
 | `unknown-map` | Manual |  — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
 
-### UnusedMapper (7)
+### UnusedMapper (9)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -288,7 +288,9 @@ Total: 1069 proofs (excluding `_Pending`).
 | `null-checks` | Fixed | `private readonly IMapper _mapper; public OrderService(string name, IMapper mapper)` → `public OrderService(string name)` |
 | `service-lookup` | Fixed | `private readonly IMapper _mapper; public OrderService(IMapper mapper)` → `public OrderService() return new OrderService();` |
 | `service-lookup-conditional-registration` | Fixed | `private readonly IMapper _mapper; public OrderService(IMapper mapper)` → `public OrderService() return new OrderService();` |
+| `service-lookup-deferred-registration` | Fixed | `private readonly IMapper _mapper; public OrderService(IMapper mapper)` → `public OrderService() return new OrderService();` |
 | `service-lookup-second-container` | Fixed | `private readonly IMapper _mapper; public OrderService(IMapper mapper)` → `public OrderService() return new OrderService();` |
+| `service-lookup-target-typed-container` | Fixed | `private readonly IMapper _mapper; public OrderService(IMapper mapper)` → `public OrderService() return new OrderService();` |
 | `test-factory` | Fixed | `private readonly IMapper _mapper; public OrderService(IMapper mapper)` → `public OrderService() _service = new OrderService();` |
 
 ### ValueResolver (6)
@@ -1271,13 +1273,14 @@ Total: 1069 proofs (excluding `_Pending`).
 | `set-handled` | Fixed | `public class FallbackHandler : IRequestExceptionHandler<Query, int, KeyNotFoundException> public Task Handle(Q…` → `public class FallbackHandler : MessageExceptionHandler<Query, int, KeyNotFoundException> protected override Va…` |
 | `state-passed` | Manual | `public Task Handle(Query request, InvalidOperationException exception, RequestExceptionHandlerState<int> state…` — reason: state is used other than as state.SetHandled(x) |
 
-### GenericDecorator (4)
+### GenericDecorator (5)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `decorated-members` | Manual | `public Task Handle(T request, CancellationToken cancellationToken) => _decorated.Handle(request, cancellationT…` — reason: ICommandHandler declares members of its own |
 | `decorated-other-use` | Manual | `public Task Handle(T request, CancellationToken cancellationToken)` — reason: is used other than to call Handle |
 | `notification-without-autofac` | Manual | `public async Task Handle(T notification, CancellationToken cancellationToken)` — reason: registers the open generic DispatchingDecorator<T> as a handler of every notification |
+| `scrutor-decorate` | Manual | `public Task Handle(T notification, CancellationToken cancellationToken) => _decorated.Handle(notification, can…` — reason: is registered with Scrutor's Decorate(typeof(INotificationHandler<>), typeof(DispatchingDecorator<>)) |
 | `used-elsewhere` | Manual | `public Task Handle(T request, CancellationToken cancellationToken) => _decorated.Handle(request, cancellationT…` — reason: is used other than in Autofac's RegisterGenericDecorator |
 
 ### GenericNotification (5)

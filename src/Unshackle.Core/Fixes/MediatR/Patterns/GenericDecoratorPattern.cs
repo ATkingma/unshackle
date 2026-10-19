@@ -20,6 +20,9 @@ public class GenericDecoratorPattern : ISolutionPattern
 {
     private const string RegisterDecorator = "RegisterGenericDecorator";
 
+    // Marks a use that is a Scrutor Decorate(typeof(S<>), typeof(D<>)) call (UnregisteredUseAsync).
+    private const string ScrutorPrefix = "scrutor:";
+
     public string Id => "mediatr.generic-decorator";
 
     public string Description =>
@@ -68,6 +71,14 @@ public class GenericDecoratorPattern : ISolutionPattern
         (Kind kind, INamedTypeSymbol decorated) = Decorated(symbol)!.Value;
         if (await UnregisteredUseAsync(symbol, solution, cancellationToken) is string use)
         {
+            // Council round 3 (fullcart): name the Scrutor registration itself, not Autofac's, when that is what wraps the handlers.
+            if (use.StartsWith(ScrutorPrefix, StringComparison.Ordinal))
+            {
+                return PatternResult.Manual(
+                    $"{symbol.Name} is registered with {use[ScrutorPrefix.Length..]}; under Mediator's source generator the decorator would become a plain handler "
+                    + "(a silent behaviour change), and only Autofac's RegisterGenericDecorator is known to wrap Mediator's handlers the same way. Register the decorator by hand.");
+            }
+
             return PatternResult.Manual(
                 $"{symbol.Name} is used other than in Autofac's RegisterGenericDecorator(typeof({symbol.Name}<>), ...) ({use}); only that registration is known to wrap Mediator's handlers the same way. Register the decorator by hand.");
         }
@@ -167,7 +178,11 @@ public class GenericDecoratorPattern : ISolutionPattern
                     || list.Arguments.IndexOf(argument) != 0
                     || !IsRegisterDecorator(invocation, model))
                 {
-                    return $"{location.Document.Name}:{location.Location.GetLineSpan().StartLinePosition.Line + 1}";
+                    string at = $"{location.Document.Name}:{location.Location.GetLineSpan().StartLinePosition.Line + 1}";
+                    return name.FirstAncestorOrSelf<TypeOfExpressionSyntax>() is { Parent: ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax scrutor } } }
+                        && scrutor.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Decorate" } decorate
+                        ? $"{ScrutorPrefix}Scrutor's {decorate.Name}{scrutor.ArgumentList} at {at}"
+                        : at;
                 }
             }
         }

@@ -184,7 +184,8 @@ public class GenericDecoratorPattern : ISolutionPattern
 
                     // A Scrutor Decorate call is the registration the report should name, wherever it is among the uses (fullcart).
                     if (name.FirstAncestorOrSelf<TypeOfExpressionSyntax>() is { Parent: ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax scrutor } } }
-                        && scrutor.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Decorate" } decorate)
+                        && scrutor.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Decorate" } decorate
+                        && IsScrutor(scrutor, model))
                     {
                         return $"{ScrutorPrefix}Scrutor's {decorate.Name}{scrutor.ArgumentList} at {at}";
                     }
@@ -195,6 +196,20 @@ public class GenericDecoratorPattern : ISolutionPattern
         }
 
         return first;
+    }
+
+    // Council round 4 (Q4): Decorate must resolve to a method of Scrutor; only an unresolved call falls back to the syntax match, so a user's own
+    // Decorate does not cause a false partial. Scrutor declares Decorate in Microsoft.Extensions.DependencyInjection, so its assembly counts too.
+    private static bool IsScrutor(InvocationExpressionSyntax invocation, SemanticModel model)
+    {
+        SymbolInfo info = model.GetSymbolInfo(invocation);
+        if ((info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is not IMethodSymbol method)
+        {
+            return true;
+        }
+
+        string ns = method.ContainingNamespace.ToDisplayString();
+        return method.ContainingAssembly?.Name == "Scrutor" || ns == "Scrutor" || ns.StartsWith("Scrutor.", StringComparison.Ordinal);
     }
 
     // builder.RegisterAssemblyTypes(typeof(<a MediatR type>).Assembly ...): MediatR registered by hand in Autofac (TAAK-196).

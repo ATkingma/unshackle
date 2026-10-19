@@ -22,10 +22,19 @@ internal class MapperRegistration
 {
     private const string AddAutoMapper = "AddAutoMapper";
 
-    // The types a registration or builder call works on: a lambda passed to such a call runs while the container is built.
+    // The types a registration or builder call works on: a lambda passed to such a call runs while the container is built. Council round 4
+    // (Q3): matched on the fully qualified metadata name, so a lookalike type in user code does not count.
     private static readonly HashSet<string> s_registrationTargets = new(StringComparer.Ordinal)
     {
-        "IServiceCollection", "IHostBuilder", "IWebHostBuilder", "IHostApplicationBuilder", "WebApplicationBuilder", "IFunctionsHostBuilder",
+        "Microsoft.Extensions.DependencyInjection.IServiceCollection",
+        "Microsoft.Extensions.Hosting.IHostBuilder",
+        "Microsoft.Extensions.Hosting.IHostApplicationBuilder",
+        "Microsoft.Extensions.Hosting.HostApplicationBuilder",
+        "Microsoft.AspNetCore.Hosting.IWebHostBuilder",
+        "Microsoft.AspNetCore.Builder.WebApplicationBuilder",
+        "Microsoft.Azure.Functions.Extensions.DependencyInjection.IFunctionsHostBuilder",
+        "Microsoft.Azure.Functions.Worker.Builder.FunctionsApplicationBuilder",
+        "Microsoft.Azure.Functions.Worker.IFunctionsWorkerApplicationBuilder",
     };
 
     // Assembly name → the file:line of the unconditional AddAutoMapper call that registers it, or the reason it is not registered.
@@ -243,7 +252,10 @@ internal class MapperRegistration
     }
 
     private static bool IsRegistrationTarget(ITypeSymbol type) =>
-        s_registrationTargets.Contains(type.Name) || type.AllInterfaces.Any(i => s_registrationTargets.Contains(i.Name));
+        s_registrationTargets.Contains(QualifiedName(type)) || type.AllInterfaces.Any(i => s_registrationTargets.Contains(QualifiedName(i)));
+
+    private static string QualifiedName(ITypeSymbol type) =>
+        type.ContainingNamespace is { IsGlobalNamespace: false } ns ? $"{ns.ToDisplayString()}.{type.MetadataName}" : type.MetadataName;
 
     private class Scope
     {

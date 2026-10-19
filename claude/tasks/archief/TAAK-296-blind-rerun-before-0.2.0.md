@@ -1,6 +1,6 @@
 # TAAK-296 — Blind corpus rerun on current main before 0.2.0
 
-**Status**: step 1/3 — not started
+**Status**: done (2026-10-19)
 **Created**: 2026-10-19
 **Goal**: council condition for 0.2.0: rerun every repo of the blind round (`claude/tasks/CORPUSRUN-blind.md`) with the tool from current main; any "build fails after fix" or test regression blocks the release.
 
@@ -12,9 +12,13 @@
 
 ## Steps
 
-- [ ] 1. Build the tool from main; baseline (`base`) for repos without one
-- [ ] 2. `after` on all repos; table in CORPUSRUN-blind.md (round 6) with Fixed/Manual, tests before → after, regressions
-- [ ] 3. Fix or task-ify blockers; verify; release go/no-go line for 0.2.0 in the table summary
+- [x] 1. Build the tool from main; baseline (`base`) for repos without one
+- [x] 2. `after` on all repos; table in CORPUSRUN-blind.md (round 6) with Fixed/Manual, tests before → after, regressions
+- [x] 3. Fix or task-ify blockers; verify; release go/no-go line for 0.2.0 in the table summary
+
+## Result
+
+Round 6 table in `claude/tasks/CORPUSRUN-blind.md`: 36/36 build after `fix`, 0 test regressions (bookstore's 3 failures in two of three runs are the flaky shared test database; run three is green). No code change was needed. Release line for 0.2.0: go on this condition.
 
 ## See also
 

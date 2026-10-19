@@ -1,7 +1,8 @@
 ISolutionPattern: {shape: class; "+RewriteAsync(node, model, solution, ct)": "Task<PatternResult>"}
 ISolutionFinder: {shape: class; "+FindAsync(root, model, solution, ct)": "Task<IReadOnlyList<SyntaxNode>>"}
 UnusedMapperPattern: {shape: class; "+FindAsync()": "outermost types with removals"; "+RewriteAsync()": "Task<PatternResult>"; "-Replacement()": "SyntaxNode?"; "-Remove()": "SyntaxNode"}
-MapperCleanup: {shape: class; "+ForAsync(solution, model, ct)": "Task<MapperCleanup>"; "+Removals(root, model)": "IReadOnlyList<Removal>"; "+Removes(node, model)": "bool"; "+IsRemoved(declaration, model)": "bool"; "+RemovedArguments(arguments, model)": "IReadOnlyList<ArgumentSyntax>"; "-BuildAsync()": "fixed point"}
+MapperCleanup: {shape: class; "+ForAsync(solution, model, ct)": "Task<MapperCleanup>"; "+Removals(root, model)": "IReadOnlyList<Removal>"; "+Removes(node, model)": "bool"; "+IsRemoved(declaration, model)": "bool"; "+RemovedArguments(arguments, model)": "IReadOnlyList<ArgumentSyntax>"; "+KeptLookups(root, model)": "lookups kept by the scope rule"; "-BuildAsync()": "fixed point"}
+MapperRegistration: {shape: class; "+ForAsync(solution, ct)": "Task<MapperRegistration>"; "+Registers(model)": "bool"; "+Call(model)": "string?"; "+Failure(model)": "string?"}
 Removal: {shape: class; "+Node": "SyntaxNode"; "+Warning": "string?"}
 MapOwners: {shape: class; "+ForAsync()": "Task<MapOwners>"; "+KeptCall(call, model)": "PatternResult?"; "+SameApartFrom(solution, cached, paths)": "bool"}
 AddAutoMapperPattern: {shape: class; "+RewriteAsync()": "Task<PatternResult>"}
@@ -10,4 +11,5 @@ UnusedMapperPattern -> ISolutionFinder: implements
 UnusedMapperPattern -> MapperCleanup: plan
 MapperCleanup -> Removal: yields
 MapperCleanup -> MapOwners: kept calls
+MapperCleanup -> MapperRegistration: "scope rule (TAAK-292)"
 AddAutoMapperPattern -> MapperCleanup: "Removes(): ignore uses"

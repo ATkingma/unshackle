@@ -45,6 +45,8 @@ automapper.add-automapper: the statement `services.AddAutoMapper(...);` disappea
 - **REQ-2**: WHEN a parameter was only passed to `AddAutoMapper` THE SYSTEM SHALL leave `_ = p;` (proof `parameter`).
 - **REQ-3**: IF `IMapper` (or another AutoMapper service) is still used anywhere in the solution THEN THE SYSTEM SHALL report Manual with the place (proof `mapper-injected`).
 - **REQ-4**: IF the result of `AddAutoMapper` is used THEN THE SYSTEM SHALL report Manual (proof `result-used`).
+- **REQ-5** (TAAK-289): THE SYSTEM SHALL not count a use of `IMapper` inside code that [automapper.unused-imapper](automapper-unused-imapper-plan.md) removes,
+  and SHALL remove a top-level `AddAutoMapper(...)` statement with its global statement (`UnusedMapperPatternTests.FixAsync_TopLevelAddAutoMapper_IsRemoved`).
 
 ## Assumptions
 

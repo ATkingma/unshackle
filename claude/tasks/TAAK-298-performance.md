@@ -1,6 +1,6 @@
 # TAAK-298 — Performance of a fix run
 
-**Status**: step 1/7 — not started  
+**Status**: step 2/7 — baseline done, quick wins in progress  
 **Created**: 2026-10-20  
 **Goal**: a measurably faster `scan --fix` on large solutions, with identical output (same findings in the same order, same rewritten files) and 0 corpus regressions.
 
@@ -22,7 +22,7 @@
 
 ## Steps
 
-- [ ] 1. Baseline: time `scan --fix` (fa, mediatr, automapper) on 3 large corpus repos + SampleShop; record wall time and, if possible, a trace (`dotnet-trace`/`dotnet-counters`) of where the time goes. Numbers in this task.
+- [x] 1. Baseline: time `scan --fix` (fa, mediatr, automapper) on 3 large corpus repos + SampleShop; record wall time and, if possible, a trace (`dotnet-trace`/`dotnet-counters`) of where the time goes. Numbers in this task.
 - [ ] 2. Quick wins without behaviour risk: the load check without full `GetDiagnostics()`, assembly names from the original solution or the metadata, ReadyToRun for the tool, cache the compilation per project per run, fewer semantic model fetches in `UsingDirectives`, `Count()` → a counter, one `DescendantNodes()` pass where one tree is walked several times. Measure again.
 - [ ] 3. Pre-filter per file: skip the patterns for a file without any old-library trace; tests for global usings, swapped types and the unused-using case. Measure again.
 - [ ] 4. Proposal for parallel file processing (council); first split `Fixer.cs` along the `FileFixer` seam proposed in TAAK-297: collect results per file, merge in the original order; thread safety of what is shared.

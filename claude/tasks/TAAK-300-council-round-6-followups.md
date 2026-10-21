@@ -1,6 +1,6 @@
 # TAAK-300 — Council round 6 follow-ups
 
-**Status**: step 0/7 — not started
+**Status**: steps 1–3 done; next step 4 (Q4)
 **Created**: 2026-10-21
 **Goal**: carry out the round-6 council decisions (`claude/docs/council.md`, "2026-10-21 — open questions from TAAK-295 and TAAK-297").
 Only step 4 may change rendered output.
@@ -22,11 +22,21 @@ Only step 4 may change rendered output.
 
 ## Steps
 
-- [ ] 1. Q1: `ReportRow` uses the Core rendering (`MapOwners.Rendered` or a shared Core helper); delete `ReportRow.KeptPrefix`. No test expectation changes.
-- [ ] 2. Q2: inventory every branch on `Kept != None` / `KeptReason` (report grouping, counts, filters, summaries, `AllOrNothing`,
+- [x] 1. Q1: `ReportRow` uses the Core rendering (`MapOwners.Rendered` or a shared Core helper); delete `ReportRow.KeptPrefix`. No test expectation changes.
+- [x] 2. Q2: inventory every branch on `Kept != None` / `KeptReason` (report grouping, counts, filters, summaries, `AllOrNothing`,
   `AllowsPartial`, partial plans) and record it here. Then add a MediatR `KeptReason` code with a per-fix prefix, rendered
   byte-identical. Add a test that pins the rendered MediatR text, plus one test per branch that proves it behaves exactly as it did when that row had `Kept == None` (same grouping, counts, filtering, `AllOrNothing` and partial plan result). No existing expectation may change.
-- [ ] 3. Q3: test that the `MapBlockers` reason contains `Stays on AutoMapper: ` exactly once.
+- [x] 3. Q3: test that the `MapBlockers` reason contains `Stays on AutoMapper: ` exactly once.
+  Inventory (2026-10-21), every place that branches on `Kept`/`KeptReason` or reads a kept row:
+  - `KeptReasonText.Rendered` (Core, new): the only rendering; used by `ReportRow.ReasonOf` (CSV/Markdown rows) and
+    `SpectreConsoleView.ShowSummary` (blocker lines) and `MapBlockers` (quote). Test: `KeptReasonTextTests` (rows, both files, console).
+  - `AutoMapperFix.AllowsPartial` (`Kept: not None`): AutoMapper only. `MediatRFix` keeps the default `AllowsPartial => false`, so
+    `Fixer.FixAsync`'s `AllOrNothing` check is unchanged. Test: `KeptReasonTextTests.AllowsPartial_MediatRKept_SameAsThePlainManual`.
+  - `Fixer.RunPartialAsync` roots/blocking (`ManualResult` type + `Reason` prefixes `Not rewritten: `, kept global using; `plan.Findings.Contains`):
+    no `Kept` check; kept MediatR rows are created by the plan, never roots, and their raw reason never started with those prefixes. Test:
+    `MediatRPartialTests.FixAsync_MediatRRegisteredByHand_*` (same partial result, 11 kept rows, rendered prefix once).
+  - `ReportRow.FromAll` grouping (custom assertion pattern id only), `SpectreConsoleView` counts (by result type): no `Kept` check. Tests as above.
+  - `CreateMapPattern` (`Kept: None`), `MapOwners` plan loop (`Kept: None`): AutoMapper results only, never see a MediatR row.
 - [ ] 4. Q4: stable first IMapper user (path ordinal, separator-independent, then line) in `Rewrite` and `RewriteAsync`; add a test with
   two users in reverse tree order. **Changes rendered output**: the `IMapper is still used (<file>:<line>)` example in the kept
   `add-automapper` row. Test expectations that name that example (search the tests for `IMapper is still used`: `AddAutoMapperPattern`
@@ -39,7 +49,12 @@ Only step 4 may change rendered output.
 
 ## Progress log
 
-_(filled in during execution)_
+- 2026-10-21: steps 1–3. New `Core/Models/KeptReasonText` (one prefix per fix, `Rendered`); `ReportRow.KeptPrefix` and
+  `MapOwners.KeptPrefix/Rendered` deleted; `KeptReason.MediatRNextToMediator = 13` on the `mediatr.kept` rows (raw reason without prefix).
+  Tests added: `KeptReasonTextTests` (8), `MediatRPartialTests.FixAsync_MediatRRegisteredByHand_KeptRowsRenderTheMediatRPrefix`,
+  `MapOwnersTests.FixAsync_KeptReasonQuotingMapBlockers_HasThePrefixOnce`. No expectation changed; 1663 tests green.
+  Q3 note: a probe found no input where `MapBlockers` quotes a *kept* inner result (the plan loop only uses `Kept: None` results); the
+  test pins the reachable path, a kept row quoting `MapBlockers`, which has the prefix once.
 
 ## See also
 

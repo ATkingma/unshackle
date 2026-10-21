@@ -2,7 +2,7 @@ namespace Unshackle.Core.Models;
 
 /// <summary>
 /// Why a finding stays on the old library while the rest of the fix goes ahead (council round 3, Q2). A <see cref="ManualResult"/> with a
-/// kept reason does not undo the fix; the report renderer prints the "Stays on AutoMapper: " prefix in front of its reason.
+/// kept reason does not undo the fix; the report renderer prints the prefix of its fix in front of its reason (<see cref="KeptReasonText"/>).
 /// </summary>
 public enum KeptReason
 {
@@ -44,4 +44,7 @@ public enum KeptReason
 
     /// <summary>A Map, ProjectTo or similar call keeps using IMapper because its map stays on AutoMapper.</summary>
     CallKept = 12,
+
+    /// <summary>MediatR: code tied to a finding that cannot be migrated stays on MediatR next to Mediator (partial migration, TAAK-274).</summary>
+    MediatRNextToMediator = 13,
 }

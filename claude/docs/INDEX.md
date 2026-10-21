@@ -54,6 +54,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-295-kept-reason-codes.md` | Typed reason codes for every kept AutoMapper finding instead of the `Stays on AutoMapper:` prefix (done) |
 | `claude/tasks/TAAK-298-performance.md` | Faster `scan --fix`: measure, caches, pre-filter, parallel files with ordered merge |
 | `claude/tasks/TAAK-299-split-large-files.md` | Split `CreateMapPattern.cs` and `Fixer.cs` along the TAAK-297 proposal |
+| `claude/tasks/TAAK-300-council-round-6-followups.md` | Council round 6 follow-ups: one kept prefix in Core, MediatR kept code, stable IMapper example, §7 entry points |
 | `claude/tasks/archief/TAAK-297-code-standards-cleanup.md` | ✅ TAAK-297 — code standards pass: Arrange blocks, nested types to own files, `ThrowIfNull` only at entry points, split proposal |
 | `claude/tasks/archief/TAAK-244-automapper-corpus-survey.md` | ✅ AutoMapper ≤14 corpus survey: API frequencies per project, orders automapper-queue rows 9–15 |
 | `claude/tasks/archief/TAAK-220-throw-aggregateexception-uitpakken.md` | ✅ `Throw<T>()` on a blocking delegate, FA unwraps `AggregateException` (Akka.Streams, 9 regressions) |

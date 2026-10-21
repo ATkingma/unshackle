@@ -77,6 +77,18 @@ Nothing here blocks 0.2.0 outright; Q3 and Q4 are small and land before it (TAAK
 | Q1 | Scrutor 4.2.2 declares `Decorate` in `Microsoft.Extensions.DependencyInjection` (assembly `Scrutor`) | **Namespace `Scrutor` OR assembly `Scrutor`**, syntax match only when the symbol is unresolved. Corrects the round-4 wording. |
 | Q2 | `IsContainer` matches `ServiceCollection`/`IServiceCollection` by bare name | **Leave for 0.2.0** (a lookalike only keeps more lookups); qualify for consistency after 0.2.0 (added to TAAK-295). |
 
+### 2026-10-21 — open questions from TAAK-295 and TAAK-297 (round 6, unanimous after round 2)
+
+| # | Question | Votes round 1 (G / P / A) | Joint decision |
+| --- | --- | --- | --- |
+| Q1 | `Stays on AutoMapper: ` lives twice (`ReportRow.KeptPrefix` in DataAccess, `MapOwners.KeptPrefix` in Core) | one in Core / one in Core / one in Core | **One constant and one rendering in Core.** `ReportRow` calls `MapOwners.Rendered` (or a shared Core helper) and its own `KeptPrefix` is deleted. Output unchanged: corpus diff must be zero. |
+| Q2 | MediatR "Stays on MediatR next to Mediator:" is a plain string | leave / code / code → round 2 | **Give it a `KeptReason` code, rendered through a per-fix prefix**, with byte-identical rendered text pinned by a test. Amendment (Guardian, Architect): before merging, list every branch on `Kept != None` (report grouping, counts, filters, summaries, `AllOrNothing`, partial plan) and prove with a test per branch that it behaves exactly as it did when that row had `Kept == None` (tightening, Architect; accepted by all). The zero-diff gate covers every report output, not only the reason text. `AllOrNothing` and the MediatR partial plan stay as they are. |
+| Q3 | `MapBlockers` quotes a kept reason with prefix inside another finding's reason | keep / drop / keep → round 2 | **Keep the quote with its prefix**: one fact, one wording. Add a test that the outer reason contains the prefix exactly once (the outer row is not kept). The Pragmatist withdrew "drop" after seeing the prefix is not doubled. |
+| Q4 | Example IMapper user in the kept `add-automapper` row differs between runs | stable / stable / stable | **Pick the first user by file path (ordinal, independent of the path separator), then line**, in both `Rewrite` and `RewriteAsync`. This changes rendered text: a one-time, reviewed corpus baseline refresh, recorded in the commit. |
+| Q5 | `ThrowIfNull` in the public members of fix classes (`FluentAssertionsFix` constructor, `MediatRFix.PlanPartialAsync`) | keep / keep / keep | **Keep them: they are entry points** (built at the composition root; `PlanPartialAsync` is `IFix` surface the Fixer calls). Add "fix constructors and public `IFix` members" to the entry-point list in `code-standaarden.md` §7 (Architect). |
+
+Follow-up: TAAK-300.
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct
@@ -85,3 +97,4 @@ Nothing here blocks 0.2.0 outright; Q3 and Q4 are small and land before it (TAAK
 - `claude/tasks/archief/TAAK-293-council-round-3.md` — implementation of the round-3 decisions
 - `claude/tasks/archief/TAAK-294-council-round-4.md` — round-4 changes before 0.2.0
 - `claude/tasks/archief/TAAK-295-kept-reason-codes.md` — reason codes for all kept findings (after 0.2.0)
+- `claude/tasks/TAAK-300-council-round-6-followups.md` — follow-up of the round-6 decisions

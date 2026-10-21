@@ -1,6 +1,6 @@
 # TAAK-297 — Code standards cleanup
 
-**Status**: step 4/6 — step 1 and the step 5 proposal done; steps 2–3 done, step 4 next  
+**Status**: done (2026-10-21) — the split of `CreateMapPattern.cs`/`Fixer.cs` (step 5 proposal) is a follow-up task  
 **Created**: 2026-10-20  
 **Goal**: all non-vendored code in `src/` follows `claude/docs/code-standaarden.md`; behaviour and rendered output stay exactly the same.
 
@@ -17,9 +17,9 @@
 - [x] 1. §15: add `// Arrange`, `// Act`, `// Assert` to `Tests/Core/MediatRFixPackageTests.cs`, `Tests/Core/ShouldBeEqualsOrderTests.cs`, `Tests/Helpers/TestSolutionTests.cs`; grep for other tests that lack them (also in files that have some).
 - [x] 2. §13: move `MapperCleanup.Removal` and `MapperCleanup.Entry` (`Core/Fixes/AutoMapper/Patterns/MapperCleanup.cs:490,503`) to their own files; grep for other nested types in non-vendored code and do the same.
 - [x] 3. §1: `RequestProcessorCallerPattern.CallAnalysis` (private record, line 166) → class with `required init`, own file. `ProjectFile.Span` (`readonly record struct`) stays unless the council says otherwise (private value type, not a model).
-- [ ] 4. Manual pass over the rules that `.editorconfig` cannot enforce: §5 `var` only with a visible type, §7 `ThrowIfNull` only at public entry points, §9 in `IEnumerable<T>`/out `IReadOnlyList<T>`, §16 comments explain the why.
+- [x] 4. Manual pass over the rules that `.editorconfig` cannot enforce: §5 `var` only with a visible type, §7 `ThrowIfNull` only at public entry points, §9 in `IEnumerable<T>`/out `IReadOnlyList<T>`, §16 comments explain the why.
 - [x] 5. Split candidates: `CreateMapPattern.cs` (2040 lines) and `Fixer.cs` (966 lines). Make a proposal (which helper classes, along which seams); executing it is a follow-up task, not this one.
-- [ ] 6. Build, tests, sample tests green in a worktree check → commit → push → CI green.
+- [x] 6. Build, tests, sample tests green in a worktree check → commit → push → CI green.
 
 ## Result step 1 (2026-10-21)
 
@@ -33,6 +33,19 @@ Twelve nested types moved to their own files as top-level `internal` types: `Map
 `MapperCleanupRemoval`, `MapperCleanupEntry`, `MapperRegistrationScope`, `MapperRegistrationFacts`, `TypePairComparer`,
 `GenericDecoratorKind`, `NotificationClosedTypes`, `GenericRequestUses`, and `ProcessorCallAnalysis` (was the private record
 `CallAnalysis`, now a class with `required init`). `ProjectFile.Span` stays. No test changed; 1648 tests green.
+
+## Result step 4 (2026-10-21)
+
+- §7: 58 `ThrowIfNull` calls removed from patterns and helpers (34 AutoMapper, 24 elsewhere). They stay in the Fixer, commands,
+  `Cli`, `SpectreConsoleView`, the stores, report writers, `ProcessRunner`, and the public members of the fix classes
+  (`FluentAssertionsFix` constructor, `MediatRFix.PlanPartialAsync`): the fixes are built at the composition root. If the council
+  sees fixes as helpers, move those too.
+- §9: `CreateMapPattern.ConfigurationLambdas` and `MediatRSyntax.ReturnedExpressions` return `IReadOnlyList<T>`;
+  `MediatRSyntax.CommaList<T>` takes `IReadOnlyList<T>` (needs `Count`). Skipped on purpose: lists that callers fill or store in
+  typed tuples/dictionaries (`CapturedLocal.Used`, `MapOwners.ClassesUnderTest`/`MockedClasses`, `Projections.Problem` out
+  parameter, `MapperRegistrationFacts.Containers`, the `namespaces` sets) and ~20 private helpers that use `Count`/indexing.
+- §5: no change; IDE0007 already enforces the visible-type rule and rejects explicit types where Roslyn sees the type.
+- §16: no comment removed; the inline comments give reasons or TAAK references.
 
 ## Proposal step 5: splitting the two large files
 

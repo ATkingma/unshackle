@@ -1,6 +1,6 @@
 # TAAK-295 — Reason codes for every kept finding (after 0.2.0)
 
-**Status**: step 4/4 — steps 1-3 done, verify and docs next
+**Status**: ✅ done
 **Created**: 2026-10-19
 **Goal**: council round 4 Q2: kept maps, kept calls, kept `AddAutoMapper` and configuration tests use a typed reason code (like `KeptReason` on the `GetService<IMapper>()` lookup) instead of the `Stays on AutoMapper:` string prefix.
 
@@ -16,7 +16,7 @@
 - [x] 1. Inventory all prefix uses; plan
 - [x] 2. Implementation + tests (rendered text unchanged)
 - [x] 3. Corpus `after` on the six AutoMapper repos: identical reports
-- [ ] 4. Verify, docs; `claude/tools/verify-head.sh` → `VERIFY OK`
+- [x] 4. Verify, docs; `claude/tools/verify-head.sh` → `VERIFY OK`
 
 ## Inventory (step 1)
 
@@ -69,7 +69,9 @@ on the qualified name (council round 5 Q2).
   example file in "IMapper is still used (<file>:<line>)" of the kept `add-automapper` row. That example already changed between
   earlier rounds (estore: t289 OrderController, t292 MemberService, t293/t294 ProductService, now MemberServiceTest), so it is
   existing nondeterminism in `AddAutoMapperPattern` (first IMapper user over `Compilation.SyntaxTrees`), not this change. See council Q4.
+- 2026-10-21: step 4. Docs (`klassen.md`, partial-migration models, kept-map plan) updated; `verify-head.sh` → `VERIFY OK: a3485ef`
+  (note: `jq` is missing on this machine, so the pattern-docs hook inside verify-head ran without effect). Task archived.
 
 ## See also
 
-- `claude/docs/council.md`, `claude/tasks/archief/TAAK-293-council-round-3.md`
+- `claude/docs/council.md`, `claude/tasks/archief/TAAK-293-council-round-3.md`, `claude/tasks/CORPUSRUN-blind.md`

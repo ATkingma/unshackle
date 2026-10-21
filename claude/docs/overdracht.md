@@ -50,7 +50,7 @@ TAAK-288 (RequestHandlerDelegate lambdas and Moq mocks, qualified MediatR types)
 
 Open choices go to the decision council (`claude/docs/council.md`), at the user's request. First decisions: starter Manual, fullcart partial, scoped `GetService<IMapper>` removal, empty classes kept with an Info line. Follow-up: TAAK-292 (done: scoped lookup rule, Info lines, 0 corpus regressions).
 Round 3 (implementer questions): TAAK-293 done (typed `KeptReason` on the kept lookup, target-typed containers, deferred registrations, Scrutor reason for fullcart; 0 corpus regressions).
-Round 4: TAAK-294 done (builder types matched on the qualified name incl. `HostApplicationBuilder` and the isolated Functions builders; `Decorate` named as Scrutor's only when it resolves to Scrutor's namespace or assembly, or not at all; 0 corpus regressions). TAAK-295 (reason codes for all kept findings) is after 0.2.0.
+Round 4: TAAK-294 done (builder types matched on the qualified name incl. `HostApplicationBuilder` and the isolated Functions builders; `Decorate` named as Scrutor's only when it resolves to Scrutor's namespace or assembly, or not at all; 0 corpus regressions). TAAK-295 done (typed `KeptReason` on every kept AutoMapper finding, `AllowsPartial` only on the code, `IsContainer` qualified; output unchanged; open council Q1-Q4 in the task).
 Round 5 condition: TAAK-296 done (blind rerun of all 36 repos on main `0f58486`: 36/36 build, 0 test regressions; go for 0.2.0 on that condition).
 
 ## Local environment (Windows, obsolete: the corpus work moved to Linux, TAAK-262)

@@ -51,7 +51,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/` | Active tasks: `TAAK-NNN-<slug>.md` |
 | `claude/tasks/TAAK-019-lancering.md` | Next step: launch (real case, NuGet, public, README GIF) |
 | `docs/projectinfo/lancering/reddit-post.md` | Draft r/dotnet launch post (user posts it) |
-| `claude/tasks/TAAK-295-kept-reason-codes.md` | Typed reason codes for every kept AutoMapper finding instead of the `Stays on AutoMapper:` prefix |
+| `claude/tasks/archief/TAAK-295-kept-reason-codes.md` | Typed reason codes for every kept AutoMapper finding instead of the `Stays on AutoMapper:` prefix (done) |
 | `claude/tasks/TAAK-298-performance.md` | Faster `scan --fix`: measure, caches, pre-filter, parallel files with ordered merge |
 | `claude/tasks/TAAK-299-split-large-files.md` | Split `CreateMapPattern.cs` and `Fixer.cs` along the TAAK-297 proposal |
 | `claude/tasks/archief/TAAK-297-code-standards-cleanup.md` | ✅ TAAK-297 — code standards pass: Arrange blocks, nested types to own files, `ThrowIfNull` only at entry points, split proposal |

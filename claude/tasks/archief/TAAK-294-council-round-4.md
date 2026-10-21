@@ -26,4 +26,4 @@
 
 ## See also
 
-- `claude/docs/council.md`, `claude/tasks/TAAK-295-kept-reason-codes.md`
+- `claude/docs/council.md`, `claude/tasks/archief/TAAK-295-kept-reason-codes.md`

@@ -42,7 +42,7 @@ automapper.flattening: in the `ToB` method that the profile rewrite writes, a de
 
 ## Design
 
-Part of the shared profile rewrite, like TAAK-245..251. `Flattening.Problem` finds the path AutoMapper reads: a direct match (same name in any case, else `Get` + name; several → Manual), else AutoMapper's PascalCase word split, shortest prefix first, recursing into the member's type; a direct match ends the search at each level. Every complete path is collected; more than one → Manual. `Flattening.Value` writes the path with `?.` after every reference type and decides the value for a value-type leaf (`?? default`, or the plain lifted value for `T?`). `CreateMapPattern.FlattenedProblem` connects both and hands the expression and its type to `MemberValues.Problem`, which applies nested maps and conversions unchanged. `MemberValues.NullableWarnings` tells whether a `!` is needed.
+Part of the shared profile rewrite, like TAAK-245..251. `Flattening.Problem` finds the path AutoMapper reads: a direct match (same name in any case, else `Get` + name; several → Manual), else AutoMapper's PascalCase word split, shortest prefix first, recursing into the member's type; a direct match ends the search at each level. Every complete path is collected; more than one → Manual. `Flattening.Value` writes the path with `?.` after every reference type and decides the value for a value-type leaf (`?? default`, or the plain lifted value for `T?`). `CreateMapProblems.FlattenedProblem` connects both and hands the expression and its type to `MemberValues.Problem`, which applies nested maps and conversions unchanged. `MemberValues.NullableWarnings` tells whether a `!` is needed.
 
 ## Requirements
 

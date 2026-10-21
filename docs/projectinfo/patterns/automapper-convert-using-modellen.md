@@ -18,12 +18,12 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/Converters.cs`, `Create
 
 | Step      | Method in the code                                  | What happens                                                                                   |
 | --------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Parse     | `CreateMapPattern.TryParseMap`, `Converters.MemberOption` | `ConvertUsing` on the map (nothing else configured) or per member                         |
+| Parse     | `ProfileSyntax.TryParseMap`, `Converters.MemberOption` | `ConvertUsing` on the map (nothing else configured) or per member                         |
 | Type map  | `Converters.TypeProblem`                            | Name clash, lambda or converter (by type or instance) → body                                   |
 | Converter | `Converters.ConvertCall`                            | Implements `ITypeConverter<A, B>`/`IValueConverter<S, M>` implicitly in this project, does not read destination/context, the call binds |
-| Member    | `CreateMapPattern.Problem` → `Converters.MemberProblem` | Source expression (lambda or same-named member) → `converter.Convert(value, null)`        |
+| Member    | `CreateMapProblems.Problem` → `Converters.MemberProblem` | Source expression (lambda or same-named member) → `converter.Convert(value, null)`        |
 | Nested    | `NestedMaps.AddProfiles`/`AddRewritten` → `MemberValues.Nested` | Other maps call `source.X.ToB()`                                           |
-| Write     | `CreateMapPattern.Extensions`                       | `public static B ToB(this A source) => body;` (multi-line bodies re-indented)                  |
+| Write     | `MapMethodWriter.Extensions`                       | `public static B ToB(this A source) => body;` (multi-line bodies re-indented)                  |
 
 ## Figure 3: decision tree
 

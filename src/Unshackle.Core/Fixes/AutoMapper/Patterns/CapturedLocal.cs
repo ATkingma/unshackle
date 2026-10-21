@@ -44,7 +44,7 @@ public class CapturedLocal
         }
 
         HashSet<string> read = [.. members.SelectMany(m => SyntaxFactory.ParseExpression(m.Value).DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()
-            .Where(CreateMapPattern.IsReference).Select(n => n.Identifier.ValueText))];
+            .Where(MapAccessibility.IsReference).Select(n => n.Identifier.ValueText))];
         return [.. captured.Where(c => read.Contains(c.Name))];
     }
 

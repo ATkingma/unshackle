@@ -27,7 +27,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/Converters.cs`, `CreateMapPa
 ## Deviations
 
 - No pattern class of its own (as TAAK-245/247): the behaviour is part of the shared profile rewrite; the proofs live in `CreateMap/`.
-- `CreateMapPattern.MethodName` now names keyword destinations by their .NET type name (`ToInt32`); before, such a map could not be written.
+- `MapMethodWriter.MethodName` now names keyword destinations by their .NET type name (`ToInt32`); before, such a map could not be written.
 - The `MapInto` Manual case for a converter map has no test of its own (it needs a solution with a `Map(source, destination)` call).
 - No figures (no `kingmadoc`/`d2`).
 

@@ -17,14 +17,14 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/Flattening.cs`, `Create
 
 ## Figure 2: sequence
 
-**Figure 2.** From `CreateMapPattern.Problem` to the assignment or a Manual reason.
+**Figure 2.** From `CreateMapProblems.Problem` to the assignment or a Manual reason.
 
 <!-- kingmadoc:diagram img/automapper-flattening-modellen-2.d2 -->
 ![Figure 2: sequence](img/automapper-flattening-modellen-2.png)
 
 | Step   | Method in the code | What happens |
 | ------ | ------------------ | ------------ |
-| Exact  | `CreateMapPattern.Problem` | One source member with the exact name → `source.X` as before |
+| Exact  | `CreateMapProblems.Problem` | One source member with the exact name → `source.X` as before |
 | Path   | `Flattening.Problem` → `Direct`, `Paths` | Direct match (any case, then `Get`), else word split, all complete paths |
 | Value  | `Flattening.Value` | `?.` after reference types; `?? default` or lifted `T?` for a value leaf; `!` |
 | Member | `MemberValues.Problem` | Nested map, collection copy or conversion on the expression |

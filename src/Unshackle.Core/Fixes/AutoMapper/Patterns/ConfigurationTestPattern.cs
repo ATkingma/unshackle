@@ -108,8 +108,8 @@ public class ConfigurationTestPattern : ISolutionPattern
         {
             InvocationExpressionSyntax invocation => model.GetSymbolInfo(invocation) is var info
                 && (info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is IMethodSymbol { Name: "CreateMap" or "CreateProjection", ContainingAssembly.Name: AutoMapperAssembly }
-                && !(invocation.FirstAncestorOrSelf<ClassDeclarationSyntax>() is { } owner && CreateMapPattern.IsProfileWithMaps(owner, model)
-                    && CreateMapPattern.IsInMapStatements(invocation, owner, model)),
+                && !(invocation.FirstAncestorOrSelf<ClassDeclarationSyntax>() is { } owner && ProfileSyntax.IsProfileWithMaps(owner, model)
+                    && ProfileSyntax.IsInMapStatements(invocation, owner, model)),
             AttributeSyntax attribute => model.GetTypeInfo(attribute).Type is { Name: "AutoMapAttribute", ContainingAssembly.Name: AutoMapperAssembly },
             _ => false,
         });

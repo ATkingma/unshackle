@@ -26,11 +26,11 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MemberConversions.cs`, 
 | Step        | Method in the code                                          | What happens                                                                 |
 | ----------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | Index       | `NestedMaps.FromAsync`, `AddConfigured`                     | Profile maps, every `CreateMap` pair of the solution, null settings          |
-| Member      | `CreateMapPattern.Problem` / `MapFromProblem` → `MemberValues.Problem` | The value per destination member (or expression)                 |
+| Member      | `CreateMapProblems.Problem` / `MapFromProblem` → `MemberValues.Problem` | The value per destination member (or expression)                 |
 | Nested      | `MemberValues.Nested`                                       | A map of the pair is called as `ToY()` (TAAK-245); no map → conversion       |
 | Guard       | `MemberValues.Conversion`, `NestedMaps.ConfiguredAt`, `NullSettingProblem` | A `CreateMap` of the pair or a null setting → Manual              |
 | Convert     | `MemberConversions.Problem` → `ToStringProblem` / `FromStringProblem` / `CoreProblem` / `EnumProblem` | The form per conversion, lifted over `Nullable<T>` |
-| Write       | `CreateMapPattern.Extensions`, `PatternResult.Fixed(nodes, namespaces)` | `System` (for `Convert`/`Enum`) and `System.Linq` as required usings |
+| Write       | `MapMethodWriter.Extensions`, `PatternResult.Fixed(nodes, namespaces)` | `System` (for `Convert`/`Enum`) and `System.Linq` as required usings |
 
 ## Figure 3: decision tree
 

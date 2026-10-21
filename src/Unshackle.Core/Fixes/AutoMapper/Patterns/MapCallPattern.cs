@@ -357,7 +357,7 @@ public class MapCallPattern : ISolutionPattern
     private static PatternResult? Existing(SyntaxNode node, SemanticModel model, ITypeSymbol sourceType, ITypeSymbol destination, ExpressionSyntax source,
         MapCallKind kind)
     {
-        string name = CreateMapPattern.MethodName(destination.Name);
+        string name = MapMethodWriter.MethodName(destination.Name);
         List<IMethodSymbol> visible = [.. model.LookupSymbols(node.SpanStart, sourceType, name, includeReducedExtensionMethods: true)
             .OfType<IMethodSymbol>().Where(m => m.Parameters.All(p => p.IsOptional) && SymbolEqualityComparer.Default.Equals(m.ReturnType, destination))];
         if (visible is [{ ReducedFrom: not null }])
@@ -403,7 +403,7 @@ public class MapCallPattern : ISolutionPattern
                     continue;
                 }
 
-                foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => CreateMapPattern.IsProfileWithMaps(c, profileModel)))
+                foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => ProfileSyntax.IsProfileWithMaps(c, profileModel)))
                 {
                     // With the solution: a member may call the map of a profile in a project this one depends on.
                     if (await CreateMapPattern.RewriteMethodsAsync(profile, profileModel, solution, cancellationToken) is not FixedResult { NewNodes: [_, ClassDeclarationSyntax extensions] })
@@ -413,7 +413,7 @@ public class MapCallPattern : ISolutionPattern
 
                     // One generated method per CreateMap statement (or expression body), in the same order, followed by the reverse one for a ReverseMap.
                     List<MethodDeclarationSyntax> methods = [.. extensions.Members.OfType<MethodDeclarationSyntax>()];
-                    IReadOnlyList<SyntaxNode> statements = CreateMapPattern.MapStatements(profile, profileModel);
+                    IReadOnlyList<SyntaxNode> statements = ProfileSyntax.MapStatements(profile, profileModel);
                     List<(ITypeSymbol From, ITypeSymbol To)> pairs = [];
                     foreach (SyntaxNode statement in statements)
                     {
@@ -424,7 +424,7 @@ public class MapCallPattern : ISolutionPattern
                             && owners.Reason(from, to) is null)
                         {
                             pairs.Add((from, to));
-                            if (CreateMapPattern.HasReverseMap(createMap))
+                            if (ProfileSyntax.HasReverseMap(createMap))
                             {
                                 pairs.Add((to, from));
                             }

@@ -46,7 +46,7 @@ automapper.value-resolver: a profile whose `ForMember` uses `MapFrom<TResolver>(
 
 ## Design
 
-`ValueResolverPattern` is a `CreateMapPattern` subclass like `ForMemberIgnorePattern` and `ForMemberMapFromPattern`: it only claims profiles (`ValueResolvers.UsesResolver`), and `ForMemberMapFromPattern` stops claiming them. `CreateMapPattern.TryParseOptions` collects resolver forms in a separate dictionary (member → `MapFrom` call); `Problem` asks a `ValueResolvers` instance for those members before the `Ignore`/`MapFrom` options. `ValueResolvers` checks the resolver class (symbol and its `Resolve` syntax) or the lambda and hands the value to `MemberValues.Problem` for conversions and nested maps.
+`ValueResolverPattern` is a `CreateMapPattern` subclass like `ForMemberIgnorePattern` and `ForMemberMapFromPattern`: it only claims profiles (`ValueResolvers.UsesResolver`), and `ForMemberMapFromPattern` stops claiming them. `ProfileSyntax.TryParseOptions` collects resolver forms in a separate dictionary (member → `MapFrom` call); `Problem` asks a `ValueResolvers` instance for those members before the `Ignore`/`MapFrom` options. `ValueResolvers` checks the resolver class (symbol and its `Resolve` syntax) or the lambda and hands the value to `MemberValues.Problem` for conversions and nested maps.
 
 The resolver class itself is not changed: it still implements AutoMapper's interface and takes a `ResolutionContext`, which is fine as long as the package stays (the emptied profiles keep it too). Inlining the `Resolve` body was rejected: it can hold statements and several returns, and the class can be shared by several maps.
 

@@ -132,7 +132,7 @@ internal class MapOwners
             if (invocation.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap" } or MemberAccessExpressionSyntax { Name: GenericNameSyntax { Identifier.ValueText: "CreateMap" } })
             {
                 return model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly, TypeArguments: [{ } from, { } to] }
-                    ? (from, to, CreateMapPattern.HasReverseMap(invocation))
+                    ? (from, to, ProfileSyntax.HasReverseMap(invocation))
                     : null;
             }
 
@@ -339,10 +339,10 @@ internal class MapOwners
             }
 
             sources.Add((root, model));
-            foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => CreateMapPattern.IsProfileWithMaps(c, model)))
+            foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => ProfileSyntax.IsProfileWithMaps(c, model)))
             {
                 List<MapNode> nodes = [];
-                foreach (SyntaxNode statement in CreateMapPattern.MapStatements(profile, model))
+                foreach (SyntaxNode statement in ProfileSyntax.MapStatements(profile, model))
                 {
                     if (StatementPair(statement, model) is var (from, to, reverse))
                     {

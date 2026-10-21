@@ -1,6 +1,6 @@
 # TAAK-299 — Split CreateMapPattern.cs and Fixer.cs
 
-**Status**: step 1/4 — not started
+**Status**: step 1/4 done (CreateMapPattern split); step 2 waits for the Fixer.cs performance work
 **Created**: 2026-10-21
 **Goal**: execute the split proposal from TAAK-297 step 5: `CreateMapPattern.cs` (2040 lines) into five classes, `Fixer.cs` (966 lines) into five; behaviour and rendered output exactly the same.
 
@@ -14,14 +14,21 @@
 
 ## Steps
 
-- [ ] 1. Split `CreateMapPattern.cs`: `CreateMapProblems`, `ProfileSyntax`, `MapAccessibility`, `MapMethodWriter`; update callers (subclasses and other AutoMapper patterns)
+- [x] 1. Split `CreateMapPattern.cs`: `CreateMapProblems`, `ProfileSyntax`, `MapAccessibility`, `MapMethodWriter`; update callers (subclasses and other AutoMapper patterns)
 - [ ] 2. Split `Fixer.cs`: `PartialRun`, `FileFixer`, `SolutionChecks`, `FindingFactory`
 - [ ] 3. Update `docs/projectinfo/architectuur/core.md` (and class models that name the moved methods)
 - [ ] 4. Build, tests, sample tests green → commit (push by the main session)
 
 ## Progress log
 
-_(filled in during execution)_
+- 2026-10-21: step 1. Line ranges re-checked against `b236685` (2037 lines after TAAK-295). Moved, unchanged apart from `private`/`protected` → `internal` and qualified calls:
+  - `CreateMapProblems.cs` (1000 lines): old 582–1548 and 1568–1585 (`OutsideProblem` … `NullSafeChain`, `MayBeNull`, `BlockMarker`)
+  - `ProfileSyntax.cs` (328 lines): old 527–530 (`MapStatements(constructor)`) and 1602–1910 (`Anchor`, `IsProfileWithMaps` … `IsProfile`)
+  - `MapAccessibility.cs` (52 lines): old 1549–1567 (`IsReference`, `IsAvailableOutsideProfile`) and 1911–1928 (`Effective`, `Weakest`)
+  - `MapMethodWriter.cs` (175 lines): old 531–581 (`ExtensionsName`, `Emptied`, `Trimmed`, `AtAnchor`) and 1929–2036 (`MethodName`, `Extensions`)
+  - `CreateMapPattern.cs` keeps 543 lines: `Find`, the `Rewrite`s, `PlanAsync`, `SeveralConstructorsReason`, `AllMembers` (not in the proposal, used outside the problems too); `AutoMapperAssembly` became `internal`.
+  - Callers updated in 14 AutoMapper pattern files (subclasses now call `ProfileSyntax.IsProfileWithMaps`/`UsesForMember`/`Anchor`); 18 docs in `docs/projectinfo` renamed `CreateMapPattern.X` to the new class.
+  - Build 0 warnings, `dotnet test` 1652/1652, SampleShop 38/38. Commit: see `git log` ("TAAK-299: split CreateMapPattern").
 
 ## See also
 

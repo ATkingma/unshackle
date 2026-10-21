@@ -137,17 +137,17 @@ public class NestedMaps
 
     private static void AddProfiles(Dictionary<(string Source, string Destination), List<NestedMap>> maps, SyntaxNode root, SemanticModel model, ProjectId? project)
     {
-        foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => CreateMapPattern.IsProfileWithMaps(c, model)))
+        foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => ProfileSyntax.IsProfileWithMaps(c, model)))
         {
             List<(TypeSyntax Destination, ITypeSymbol From, ITypeSymbol To, bool Converts, bool Plain)> found = [];
-            foreach (InvocationExpressionSyntax createMap in CreateMapPattern.MapStatements(profile, model).SelectMany(s => s.DescendantNodesAndSelf()).OfType<InvocationExpressionSyntax>())
+            foreach (InvocationExpressionSyntax createMap in ProfileSyntax.MapStatements(profile, model).SelectMany(s => s.DescendantNodesAndSelf()).OfType<InvocationExpressionSyntax>())
             {
                 if ((createMap.Expression is MemberAccessExpressionSyntax { Name: var written } ? written : createMap.Expression) is GenericNameSyntax { Identifier.ValueText: "CreateMap", TypeArgumentList.Arguments: [{ } source, { } destination] }
                     && model.GetSymbolInfo(createMap).Symbol is IMethodSymbol { ContainingAssembly.Name: "AutoMapper", TypeArguments: [{ } from, { } to] })
                 {
                     bool plain = IsPlain(createMap);
                     found.Add((destination, from, to, createMap.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ConvertUsing" }, plain));
-                    if (CreateMapPattern.HasReverseMap(createMap))
+                    if (ProfileSyntax.HasReverseMap(createMap))
                     {
                         // ReverseMap: the rewrite also writes A ToA(this B source).
                         found.Add((source, to, from, false, plain));
@@ -156,11 +156,11 @@ public class NestedMaps
             }
 
             // The generated class is internal when one of its maps uses an internal type (see CreateMapPattern.Rewrite).
-            bool isInternal = found.Any(m => CreateMapPattern.Weakest(CreateMapPattern.Effective(m.From), CreateMapPattern.Effective(m.To)) != Accessibility.Public);
+            bool isInternal = found.Any(m => MapAccessibility.Weakest(MapAccessibility.Effective(m.From), MapAccessibility.Effective(m.To)) != Accessibility.Public);
             string? ns = Namespace(model.GetDeclaredSymbol(profile)?.ContainingNamespace);
             foreach ((TypeSyntax destination, ITypeSymbol from, ITypeSymbol to, bool converts, bool plain) in found)
             {
-                Add(maps, from, to, new NestedMap { Method = CreateMapPattern.MethodName(destination), Namespace = ns, IsInternal = isInternal, Project = project, Converts = converts, Plain = plain });
+                Add(maps, from, to, new NestedMap { Method = MapMethodWriter.MethodName(destination), Namespace = ns, IsInternal = isInternal, Project = project, Converts = converts, Plain = plain });
             }
         }
     }
@@ -174,7 +174,7 @@ public class NestedMaps
     private static void AddRewritten(Dictionary<(string Source, string Destination), List<NestedMap>> maps, SyntaxNode root, SemanticModel model, ProjectId? project)
     {
         HashSet<string> extensions = [.. root.DescendantNodes().OfType<ClassDeclarationSyntax>()
-            .Where(c => model.GetDeclaredSymbol(c) is INamedTypeSymbol type && (CreateMapPattern.IsProfile(type) || CreateMapPattern.HoldsConfiguration(c, model))).Select(CreateMapPattern.ExtensionsName)];
+            .Where(c => model.GetDeclaredSymbol(c) is INamedTypeSymbol type && (ProfileSyntax.IsProfile(type) || ProfileSyntax.HoldsConfiguration(c, model))).Select(MapMethodWriter.ExtensionsName)];
         if (extensions.Count == 0)
         {
             return;

@@ -52,7 +52,7 @@ as Manual with the reason the plan (`MapOwners`) keeps that map on AutoMapper; t
 
 ## Assumptions
 
-- The profile patterns leave exactly the kept statements in the constructor (see `CreateMapPattern.Trimmed`).
+- The profile patterns leave exactly the kept statements in the constructor (see `MapMethodWriter.Trimmed`).
 
 ## Risks
 

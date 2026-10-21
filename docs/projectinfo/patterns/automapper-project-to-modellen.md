@@ -23,7 +23,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ProjectToPattern.cs`, `
 | Targets     | `ProjectToPattern.TargetsAsync` → `Check`                         | Type pair `(A, B)` of every rewritable `ProjectTo` call in the solution       |
 | Profile     | `CreateMapPattern.RewriteAsync` → `Rewrite` → `Problem`/`MapFromProblem` | `ToB` values plus the `ProjectionMember` list per map                        |
 | Projection  | `Projections.Problem` → `Value` → `Inline`                        | Assignments per member; Manual stops the profile                              |
-| Write       | `CreateMapPattern.Extensions`                                     | `AToBProjection` properties after the methods; usings `System`, `System.Linq.Expressions` (+ `System.Linq`) |
+| Write       | `MapMethodWriter.Extensions`                                     | `AToBProjection` properties after the methods; usings `System`, `System.Linq.Expressions` (+ `System.Linq`) |
 | Call        | `ProjectToPattern.RewriteAsync` → `Existing` / `GeneratedAsync` + `ProfilesAsync` → `Fixed` | `query.Select(<Profile>Extensions.AToBProjection)`, usings `System.Linq` and the profile namespace |
 
 ## Figure 3: decision tree (one member, `Projections.Value`)

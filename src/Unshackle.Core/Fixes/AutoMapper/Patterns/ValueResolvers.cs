@@ -177,7 +177,7 @@ public class ValueResolvers
             return $"the resolver {named.Name} for {member} keeps state in fields (AutoMapper shares one instance per Map call or per configuration)";
         }
 
-        if (CreateMapPattern.Weakest(CreateMapPattern.Effective(named), Accessibility.Public) is not (Accessibility.Public or Accessibility.Internal))
+        if (MapAccessibility.Weakest(MapAccessibility.Effective(named), Accessibility.Public) is not (Accessibility.Public or Accessibility.Internal))
         {
             return $"the resolver {named.Name} for {member} is private or protected";
         }
@@ -239,7 +239,7 @@ public class ValueResolvers
                 return $"MapFrom for {member} uses this or base of the profile";
             }
 
-            if (node is not SimpleNameSyntax name || !CreateMapPattern.IsReference(name))
+            if (node is not SimpleNameSyntax name || !MapAccessibility.IsReference(name))
             {
                 continue;
             }
@@ -257,7 +257,7 @@ public class ValueResolvers
             {
                 return $"MapFrom for {member} already uses the name source for something else";
             }
-            else if (!CreateMapPattern.IsAvailableOutsideProfile(symbol, body, _profileType)
+            else if (!MapAccessibility.IsAvailableOutsideProfile(symbol, body, _profileType)
                 || !_model.Compilation.IsSymbolAccessibleWithin(symbol is IMethodSymbol { ReducedFrom: { } extension } ? extension : symbol!, _model.Compilation.Assembly))
             {
                 return $"MapFrom for {member} uses {name.Identifier.ValueText}, which is not available outside the profile";

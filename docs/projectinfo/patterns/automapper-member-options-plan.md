@@ -51,7 +51,7 @@ See the Evidence table in `claude/tasks/archief/TAAK-255-automapper-member-optio
 
 ## Design
 
-- No new pattern class: like the constructor and nested maps, this is a capability of the shared profile rewrite. A new helper `MemberOptions` parses the options and holds conditions and paths; `CreateMapPattern.TryParseOptions` hands it the `ForMember`/`ForPath` calls the old parser does not know; `Problem` writes paths through new `PathProblem` and wraps conditional members in new `ConditionProblem`.
+- No new pattern class: like the constructor and nested maps, this is a capability of the shared profile rewrite. A new helper `MemberOptions` parses the options and holds conditions and paths; `ProfileSyntax.TryParseOptions` hands it the `ForMember`/`ForPath` calls the old parser does not know; `Problem` writes paths through new `PathProblem` and wraps conditional members in new `ConditionProblem`.
 - `Condition` and `PreCondition` give the same code: the value expressions the rewrite moves are side-effect free (the `MapFrom` rules), so it does not matter that AutoMapper resolves the value before a `Condition`.
 - Keeping an initializer value is not possible inside an object initializer without repeating it; the rewrite only accepts members whose value before mapping is known to be `default`.
 

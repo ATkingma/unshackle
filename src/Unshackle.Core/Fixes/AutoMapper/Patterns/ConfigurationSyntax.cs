@@ -59,7 +59,7 @@ internal static class ConfigurationSyntax
         }
 
         // A map class (TAAK-286): CreateMapPattern rewrites its maps and the map calls follow them.
-        if (creation.FirstAncestorOrSelf<ClassDeclarationSyntax>() is { } owner && CreateMapPattern.ConfigurationLambdas(owner, model).Contains(lambda))
+        if (creation.FirstAncestorOrSelf<ClassDeclarationSyntax>() is { } owner && ProfileSyntax.ConfigurationLambdas(owner, model).Contains(lambda))
         {
             return null;
         }

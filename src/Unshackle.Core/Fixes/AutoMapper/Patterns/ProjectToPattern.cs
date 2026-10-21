@@ -301,14 +301,14 @@ public class ProjectToPattern : ISolutionPattern
                 continue;
             }
 
-            foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => CreateMapPattern.IsProfileWithMaps(c, profileModel)))
+            foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => ProfileSyntax.IsProfileWithMaps(c, profileModel)))
             {
-                if (CreateMapPattern.MapStatements(profile, profileModel).SelectMany(s => s.DescendantNodesAndSelf()).OfType<InvocationExpressionSyntax>()
+                if (ProfileSyntax.MapStatements(profile, profileModel).SelectMany(s => s.DescendantNodesAndSelf()).OfType<InvocationExpressionSyntax>()
                     .Any(c => (c.Expression is GenericNameSyntax { Identifier.ValueText: "CreateMap" } or MemberAccessExpressionSyntax { Name: GenericNameSyntax { Identifier.ValueText: "CreateMap" } })
                         && profileModel.GetSymbolInfo(c, cancellationToken).Symbol is IMethodSymbol { ContainingAssembly.Name: AutoMapperAssembly, TypeArguments: [{ } from, { } to] }
                         && MapIntoPattern.Key(from, to) == key))
                 {
-                    found.Add((CreateMapPattern.ExtensionsName(profile), profile, profileModel));
+                    found.Add((MapMethodWriter.ExtensionsName(profile), profile, profileModel));
                 }
             }
         }

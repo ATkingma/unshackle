@@ -169,7 +169,7 @@ public class Converters
             {
                 case ThisExpressionSyntax or BaseExpressionSyntax:
                     return "ConvertUsing uses this or base of the profile";
-                case SimpleNameSyntax name when CreateMapPattern.IsReference(name):
+                case SimpleNameSyntax name when MapAccessibility.IsReference(name):
                     ISymbol? symbol = model.GetSymbolInfo(name).Symbol;
                     int index = parameters.FindIndex(p => SymbolEqualityComparer.Default.Equals(p, symbol));
                     if (index == 0)
@@ -185,7 +185,7 @@ public class Converters
                     {
                         return "ConvertUsing already uses the name source for something else";
                     }
-                    else if (!CreateMapPattern.IsAvailableOutsideProfile(symbol, expression, profileType))
+                    else if (!MapAccessibility.IsAvailableOutsideProfile(symbol, expression, profileType))
                     {
                         return $"ConvertUsing uses {name.Identifier.ValueText}, which is not available outside the profile";
                     }
@@ -231,7 +231,7 @@ public class Converters
         {
             ObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: 0, Initializer: null } => true,
             IdentifierNameSyntax or MemberAccessExpressionSyntax => model.GetSymbolInfo(instance).Symbol is IFieldSymbol { IsStatic: true } or IPropertySymbol { IsStatic: true }
-                && CreateMapPattern.IsAvailableOutsideProfile(model.GetSymbolInfo(instance).Symbol, instance, profileType),
+                && MapAccessibility.IsAvailableOutsideProfile(model.GetSymbolInfo(instance).Symbol, instance, profileType),
             _ => false,
         };
         return repeatable ? null : $"the converter {text} is not new C() or a static field or property the generated code can use";

@@ -16,5 +16,5 @@ public class ForMemberMapFromPattern : CreateMapPattern
         "CreateMap<A, B>().ForMember(d => d.X, o => o.MapFrom(s => expr)) → B ToB(this A source) with X = expr; expressions that may throw on null or need a conversion stay Manual";
 
     public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => IsProfileWithMaps(c, model) && UsesForMember(c, ignore: false) && !ValueResolvers.UsesResolver(c)).Select(Anchor).Distinct();
+        root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => ProfileSyntax.IsProfileWithMaps(c, model) && ProfileSyntax.UsesForMember(c, ignore: false) && !ValueResolvers.UsesResolver(c)).Select(ProfileSyntax.Anchor).Distinct();
 }

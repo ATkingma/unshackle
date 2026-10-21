@@ -17,11 +17,11 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/ValueResolverPattern.cs
 | Step      | Method in the code                                  | What happens                                                                         |
 | --------- | --------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | Claim     | `ValueResolverPattern.Find`                         | Profile with a `ForMember(d => d.X, o => o.MapFrom...)` in a resolver form            |
-| Parse     | `CreateMapPattern.TryParseMap` → `TryParseOptions`  | Resolver forms into `resolverCalls`, `Ignore`/`MapFrom(s => …)` into `options`; a member configured twice → no match |
+| Parse     | `ProfileSyntax.TryParseMap` → `TryParseOptions`  | Resolver forms into `resolverCalls`, `Ignore`/`MapFrom(s => …)` into `options`; a member configured twice → no match |
 | ReverseMap| `CreateMapPattern.Rewrite`                          | Resolver forms next to `ReverseMap()` → Manual                                         |
-| Member    | `CreateMapPattern.Problem` → `ValueResolvers.Problem` | Per form: `Resolver` (class checks, `Resolve` body) or `Lambda` (parameter use, availability outside the profile) |
+| Member    | `CreateMapProblems.Problem` → `ValueResolvers.Problem` | Per form: `Resolver` (class checks, `Resolve` body) or `Lambda` (parameter use, availability outside the profile) |
 | Value     | `MemberValues.Problem`                              | Conversion of the result to the member type; a lambda also allows implicit numeric/nullable conversions |
-| Write     | `CreateMapPattern.Extensions`                       | `X = new R().Resolve(source, default!, …)` or `X = expr` in `ToB` (and `MapInto`)      |
+| Write     | `MapMethodWriter.Extensions`                       | `X = new R().Resolve(source, default!, …)` or `X = expr` in `ToB` (and `MapInto`)      |
 
 ## Decision tree (`ValueResolvers.Problem`)
 

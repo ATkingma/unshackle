@@ -37,7 +37,7 @@ automapper.unsupported: `MaxDepth`/`PreserveReferences` on a map without nested 
 
 ## Design
 
-`UnsupportedOptions` (internal static) holds the knowledge: `IsDepthOption`, `IsDoNotValidate`, `DepthOption` and `Reason`. `CreateMapPattern.TryParseOptions` skips the droppable calls anywhere between the `ForMember` calls; `Rewrite` turns a depth option into Manual when `Problem` reports a copied nested object or collection, or the map has a `ReverseMap`; the generic Manual asks `UnsupportedOptions.Reason` first.
+`UnsupportedOptions` (internal static) holds the knowledge: `IsDepthOption`, `IsDoNotValidate`, `DepthOption` and `Reason`. `ProfileSyntax.TryParseOptions` skips the droppable calls anywhere between the `ForMember` calls; `Rewrite` turns a depth option into Manual when `Problem` reports a copied nested object or collection, or the map has a `ReverseMap`; the generic Manual asks `UnsupportedOptions.Reason` first.
 
 ## Requirements
 

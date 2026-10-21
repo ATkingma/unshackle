@@ -14,7 +14,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `
 | `CreateMapPattern` | Shared rewrite of the three profile patterns; builds `NestedMaps` (with the solution in `RewriteAsync`) and one `MemberValues` per profile |
 | `MemberValues`     | `Problem`: the assigned expression for a member (nested call, collection copy, plain copy) or a Manual reason; collects usings |
 | `NestedMaps`       | Index of every `CreateMap<A, B>` of the profiles by fully qualified type pair; `NullSetting` where a null setting is assigned |
-| `NestedMap`        | One map: method name (`CreateMapPattern.MethodName`), namespace, internal class, project (null: the profile's own)          |
+| `NestedMap`        | One map: method name (`MapMethodWriter.MethodName`), namespace, internal class, project (null: the profile's own)          |
 | `MapCallPattern`   | `GeneratedAsync` rewrites profiles through `RewriteMethodsAsync`, so a map with a nested map in another project is found     |
 
 ## Figure 2: sequence
@@ -28,7 +28,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `
 | -------- | ------------------------------------------------------- | --------------------------------------------------------------------------- |
 | Index    | `NestedMaps.FromAsync`, `AddCompilation`, `AddProfiles` | Maps of the own project, projects depended on, and rewritten `<Profile>Extensions` in the same file |
 | Settings | `NestedMaps.NullSettingIn`                              | An assignment to `AllowNullCollections`/`AllowNullDestinationValues` anywhere in the solution |
-| Member   | `CreateMapPattern.Problem`/`MapFromProblem` → `MemberValues.Problem` | The value per destination member                               |
+| Member   | `CreateMapProblems.Problem`/`MapFromProblem` → `MemberValues.Problem` | The value per destination member                               |
 | Nested   | `MemberValues.Nested`, `LookupSymbols`, `ReachesMapped` | One map, callable, no member of that name, no cycle through mapped members (TAAK-273; options fall back to `Reaches`); the using it needs |
 | MapInto  | `CreateMapPattern.Rewrite`                              | A map with a copied member that needs `MapInto` is Manual                    |
 | Write    | `Extensions`, `PatternResult.Fixed(nodes, namespaces)`  | `System.Linq` and the other profile's namespace as required usings          |

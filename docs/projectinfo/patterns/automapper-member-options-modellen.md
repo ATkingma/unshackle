@@ -17,8 +17,8 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MemberOptions.cs` (`Try
 | Step       | Method in the code                     | What happens | Proof |
 | ---------- | -------------------------------------- | ------------ | ----- |
 | Parse      | `MemberOptions.TryParse`               | Condition/PreCondition with a source lambda, MapFrom, ForPath of one or two members; other options set `Unsupported` | `CreateMap/null-substitute`, `CreateMap/condition-destination`, `CreateMap/for-path-deep` |
-| ForPath    | `CreateMapPattern.PathProblem`         | `A = new() { B = expr }` when `A` is settable, a class with `new()`, and not mapped itself | `CreateMap/for-path`, `CreateMap/for-path-member` |
-| Condition  | `CreateMapPattern.ConditionProblem`, `KeepsDefault` | The member keeps `default` on a new object, the condition passes `MapFromProblem` | `CreateMap/condition`, `CreateMap/condition-map-from`, `CreateMap/pre-condition`, `CreateMap/condition-initializer` |
+| ForPath    | `CreateMapProblems.PathProblem`         | `A = new() { B = expr }` when `A` is settable, a class with `new()`, and not mapped itself | `CreateMap/for-path`, `CreateMap/for-path-member` |
+| Condition  | `CreateMapProblems.ConditionProblem`, `KeepsDefault` | The member keeps `default` on a new object, the condition passes `MapFromProblem` | `CreateMap/condition`, `CreateMap/condition-map-from`, `CreateMap/pre-condition`, `CreateMap/condition-initializer` |
 | Guard      | `CreateMapPattern.Rewrite`, `Reverse` | With MapInto (forward or reverse map), or a forward ForPath with ReverseMap: Manual; a Condition or ForPath on the reverse map goes through the same `Problem` with the reverse destination (TAAK-264) | `CreateMap/forward-for-path-reverse-map`, `CreateMap/reverse-condition`, unit tests |
 | Map call   | `MapCallPattern`                       | `Map<B>(a)` → `a.ToB()` | `_Combined/condition-map-call` |
 

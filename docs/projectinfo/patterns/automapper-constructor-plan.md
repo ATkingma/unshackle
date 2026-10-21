@@ -53,7 +53,7 @@ See the Evidence table in `claude/tasks/archief/TAAK-251-automapper-constructor.
 
 ## Design
 
-- No new pattern class: like nested maps and member lists, this is a capability of the shared profile rewrite. `CreateMapPattern.Problem` returns the creation expression (`new()` or `new(...)`) next to the members; new `ConstructorProblem` builds the arguments; `Extensions` writes the creation expression; `Rewrite` threads it through the map tuple and guards `MapInto`.
+- No new pattern class: like nested maps and member lists, this is a capability of the shared profile rewrite. `CreateMapProblems.Problem` returns the creation expression (`new()` or `new(...)`) next to the members; new `ConstructorProblem` builds the arguments; `Extensions` writes the creation expression; `Rewrite` threads it through the map tuple and guards `MapInto`.
 - Target-typed `new(...)` keeps the output close to `new() { ... }` and needs no type name.
 - TAAK-266: `ConstructorChoice` reproduces AutoMapper's measured choice between several constructors where it is statically decidable; `ConstructUsingProblem` turns the lambda into the creation (the parameter becomes `source`; `BlockMarker` asks `Extensions` for a block body); `UnsupportedOptions.MaxDepthLimit` lets `Rewrite` drop a harmless `MaxDepth`.
 

@@ -49,7 +49,7 @@ internal static class MapBlockers
                 .Where(i => Maps(i, mapModel, sourceName, destinationName, cancellationToken)))
             {
                 ClassDeclarationSyntax? profile = createMap.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
-                if (profile is not null && CreateMapPattern.IsProfileWithMaps(profile, mapModel) && CreateMapPattern.IsInMapStatements(createMap, profile, mapModel))
+                if (profile is not null && ProfileSyntax.IsProfileWithMaps(profile, mapModel) && ProfileSyntax.IsInMapStatements(createMap, profile, mapModel))
                 {
                     if (await CreateMapPattern.RewriteMethodsAsync(profile, mapModel, solution, cancellationToken) is ManualResult manual)
                     {
@@ -88,7 +88,7 @@ internal static class MapBlockers
 
         string fromName = from.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         string toName = to.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        return (fromName == source && toName == destination) || (fromName == destination && toName == source && CreateMapPattern.HasReverseMap(invocation));
+        return (fromName == source && toName == destination) || (fromName == destination && toName == source && ProfileSyntax.HasReverseMap(invocation));
     }
 
     private static string Where(SyntaxNode node)

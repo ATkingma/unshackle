@@ -89,6 +89,16 @@ Nothing here blocks 0.2.0 outright; Q3 and Q4 are small and land before it (TAAK
 
 Follow-up: TAAK-300.
 
+### 2026-10-21 — parallel file processing and the pre-filter (TAAK-298, round 7, unanimous after round 2)
+
+| # | Question | Votes round 1 (G / P / A) | Joint decision |
+| --- | --- | --- | --- |
+| D1 | How many files at once | fixed 4 / ProcessorCount / min(ProcessorCount, 8) → round 2 | **min(ProcessorCount, 8)**, one named default (`Fixer.DefaultMaxDegree`), overridable with `FixRequest.MaxDegree` / `--max-degree N` (Guardian's amendment: a user out of memory steps down without going fully sequential). Results per file in an array slot by file index, merged in file order. akka is measured at degree 1, 4 and 8 (wall time and peak working set, Pragmatist's amendment); if peak at 8 is more than 2× sequential, the default becomes 4. |
+| D2 | Fixes whose caches are not thread-safe (AutoMapper: one `MapOwners`/`MapperCleanup` entry per SolutionId, mutable `MapOwners.Rewrites`) | opt-in / opt-in / opt-in | **Opt-in `IFix.FixesFilesInParallel`, default false.** FluentAssertions and MediatR opt in; AutoMapper stays sequential until a follow-up makes its caches thread-safe (its files belong to TAAK-300 now). The flag promises that every static cache and shared mutable field is thread-safe and answers the same whichever file asks first. |
+| D3 | Default and control | parallel only once proven / parallel + `--sequential` / parallel + `--sequential` | **Parallel by default once the identity proof below is green; `--sequential` stays permanently.** One rule in one place (Architect): parallel only when `!request.Sequential && fix.FixesFilesInParallel`. |
+| D4 | Proof of identical output | unit + corpus + 5× varied / unit + corpus (+ files) / unit + SampleShop + corpus | **All of it:** unit tests on multi-file solutions of all three fixes (pre-filter on/off, sequential, parallel at degrees 2, 3, 4, 8 and default), the inactive-branch cleanup over two target frameworks, a shuffled-completion test repeated 5× at varied degrees; a SampleShop integration test (scan sequential vs parallel, all three fixes); the corpus compares report.json and the rewritten files byte for byte between sequential and parallel. |
+| D5 | Pre-filter contract `IFix.FindsOnlyOldLibraryCode` | true, reluctantly / true / true | **Default true**, the contract in the XML doc, with a guard: the identity tests and the corpus compare `CheckEveryFile` on and off for every fix, so a fix that breaks the contract fails loudly. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

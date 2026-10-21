@@ -24,9 +24,18 @@ public class FixCommand
         _view = view;
     }
 
-    public async Task<int> ExecuteAsync(
+    public Task<int> ExecuteAsync(
         string solutionPath,
         string fixId,
+        string? reportPath,
+        bool dryRun,
+        bool force,
+        CancellationToken cancellationToken) =>
+        ExecuteAsync(solutionPath, new FixRequest { FixId = fixId }, reportPath, dryRun, force, cancellationToken);
+
+    public async Task<int> ExecuteAsync(
+        string solutionPath,
+        FixRequest request,
         string? reportPath,
         bool dryRun,
         bool force,
@@ -44,7 +53,7 @@ public class FixCommand
                     "The working tree has uncommitted changes. Commit or stash them first, preview with --dry-run, or use --force.");
             }
 
-            ScanResult result = await _scan.RunAsync(solutionPath, fixId, reportPath, force, cancellationToken);
+            ScanResult result = await _scan.RunAsync(solutionPath, request, reportPath, force, cancellationToken);
             List<DocumentId> changed =
             [
                 .. result.Report.Solution.GetChanges(result.Original).GetProjectChanges().SelectMany(p => p.GetChangedDocuments())

@@ -33,6 +33,9 @@ public class Fixer : IFixer
     // Start of the usings row for old code in an inactive #if branch; a later pass over another target framework replaces it (TAAK-223).
     internal const string InactiveBranchReason = "Code in an inactive #if branch is not migrated";
 
+    // Each file in flight holds its own semantic models: the cap bounds memory (council round 7, TAAK-298).
+    public const int DefaultMaxDegree = 8;
+
     private static readonly IReadOnlyDictionary<string, string> s_noneBlocked = new Dictionary<string, string>();
 
     private readonly IReadOnlyList<IFix> _fixes;
@@ -59,14 +62,14 @@ public class Fixer : IFixer
         IFix fix = _fixes.FirstOrDefault(f => string.Equals(f.Id, request.FixId, StringComparison.OrdinalIgnoreCase))
             ?? throw new ArgumentException($"Unknown fix '{request.FixId}'.", nameof(request));
 
-        FixReport full = await RunAsync(fix, solution, [], cancellationToken);
+        FixReport full = await RunAsync(fix, request, solution, [], cancellationToken);
         if (!fix.AllOrNothing || !full.Findings.Any(f => f.Result is ManualResult && !fix.AllowsPartial(f)))
         {
             return full;
         }
 
         // TAAK-274: the code tied to the Manual findings stays on the old library, the rest moves; otherwise nothing changes.
-        if (fix is IPartialFix partial && await PartialRun.RunPartialAsync(partial, solution, full, (s, seed, ct) => RunAsync(fix, s, seed, ct), cancellationToken) is FixReport partialReport)
+        if (fix is IPartialFix partial && await PartialRun.RunPartialAsync(partial, solution, full, (s, seed, ct) => RunAsync(fix, request, s, seed, ct), cancellationToken) is FixReport partialReport)
         {
             return partialReport;
         }
@@ -75,7 +78,7 @@ public class Fixer : IFixer
     }
 
     // One run of the fix over the solution; seed findings come first in the report (the rows of a partial plan).
-    private async Task<FixReport> RunAsync(IFix fix, Solution solution, IReadOnlyList<Finding> seed, CancellationToken cancellationToken)
+    private async Task<FixReport> RunAsync(IFix fix, FixRequest request, Solution solution, IReadOnlyList<Finding> seed, CancellationToken cancellationToken)
     {
         var findings = new List<Finding>(seed);
         Solution original = solution;
@@ -111,6 +114,8 @@ public class Fixer : IFixer
                 .Where(d => !notUtf8.Contains(d.FilePath ?? d.Id.Id.ToString()))
                 .GroupBy(d => d.FilePath ?? d.Id.Id.ToString(), d => d.Id, StringComparer.Ordinal),
         ];
+        // A file without any name of the old library gets no finding and no change: it skips the patterns (TAAK-298).
+        HashSet<string>? candidates = request.CheckEveryFile || !fix.FindsOnlyOldLibraryCode ? null : await OldLibraryFiles.FindAsync(solution, fix, files, cancellationToken);
         HashSet<ProjectId> globalProjects = [];
         foreach (Document document in solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents)
             .Where(d => !notUtf8.Contains(d.FilePath ?? d.Id.Id.ToString())))
@@ -122,41 +127,30 @@ public class Fixer : IFixer
             }
         }
 
-        foreach (IGrouping<string, DocumentId> file in files)
+        // TAAK-298: files are independent (each is fixed against the baseline), so they run in parallel; each collects its own
+        // rows and the rows are merged in file order, which gives the same report as one file at a time.
+        List<IGrouping<string, DocumentId>> checkedFiles = [.. files.Where(f => candidates?.Contains(f.Key) != false)];
+        var outcomes = new FileOutcome[checkedFiles.Count];
+        var options = new ParallelOptions
         {
-            // TAAK-223: a copy per distinct set of active #if branches. The first pass fixes what is active in the first copy;
-            // each later pass takes the text so far and fixes only the code that none of the earlier copies saw (`#if !NETFRAMEWORK`).
-            SourceText? text = null;
-            List<ParseOptions> earlier = [];
-            foreach (DocumentId documentId in await PassCopiesAsync(solution, file, cancellationToken))
+            MaxDegreeOfParallelism = Degree(fix, request),
+            CancellationToken = cancellationToken,
+        };
+        await Parallel.ForEachAsync(Enumerable.Range(0, checkedFiles.Count), options, async (i, ct) =>
+            outcomes[i] = await FixFileCopiesAsync(fix, original, baseline, checkedFiles[i], swappedTypes, globalProjects, ct));
+        for (int i = 0; i < checkedFiles.Count; i++)
+        {
+            FileOutcome outcome = outcomes[i];
+            if (outcome.ClearsInactiveBranchRows)
             {
-                Solution passBaseline = text is null ? baseline : baseline.WithDocumentText(documentId, text);
-                (Solution working, bool usingsUpdated, int firstFinding) = await FixCopyAsync(
-                    fix, original, passBaseline, documentId, swappedTypes, globalProjects, earlier, findings, text, cancellationToken);
-                if (earlier.Count > 0 && usingsUpdated)
-                {
-                    // The usings of this pass replace the inactive-branch row of an earlier one: that code may be migrated now.
-                    for (int i = firstFinding - 1; i >= 0; i--)
-                    {
-                        if (findings[i].PatternId == UsingsPatternId && findings[i].FilePath == file.Key
-                            && findings[i].Result is ManualResult { Reason: var reason } && reason.StartsWith(InactiveBranchReason, StringComparison.Ordinal))
-                        {
-                            findings.RemoveAt(i);
-                        }
-                    }
-                }
-
-                if (working != passBaseline)
-                {
-                    text = await working.GetDocument(documentId)!.GetTextAsync(cancellationToken);
-                }
-
-                earlier.Add(solution.GetDocument(documentId)!.Project.ParseOptions!);
+                // As one file at a time did: the row of this file may be a seed row too.
+                findings.RemoveAll(f => IsInactiveBranchRow(f, checkedFiles[i].Key));
             }
 
-            if (text is not null)
+            findings.AddRange(outcome.Findings);
+            if (outcome.Text is SourceText text)
             {
-                foreach (DocumentId copy in file)
+                foreach (DocumentId copy in checkedFiles[i])
                 {
                     solution = solution.WithDocumentText(copy, text);
                 }
@@ -178,6 +172,59 @@ public class Fixer : IFixer
         projectFileChanges = [.. vendored.Files, .. projectFileChanges];
         return new FixReport { Solution = solution, Findings = findings, ProjectFileChanges = projectFileChanges };
     }
+
+    // One file with all its copies (one per target framework): its rows and its fixed text (null when it stays as it was).
+    private static async Task<FileOutcome> FixFileCopiesAsync(
+        IFix fix,
+        Solution original,
+        Solution baseline,
+        IGrouping<string, DocumentId> file,
+        HashSet<string> swappedTypes,
+        HashSet<ProjectId> globalProjects,
+        CancellationToken cancellationToken)
+    {
+        // TAAK-223: a copy per distinct set of active #if branches. The first pass fixes what is active in the first copy;
+        // each later pass takes the text so far and fixes only the code that none of the earlier copies saw (`#if !NETFRAMEWORK`).
+        List<Finding> findings = [];
+        bool clears = false;
+        SourceText? text = null;
+        List<ParseOptions> earlier = [];
+        foreach (DocumentId documentId in await PassCopiesAsync(original, file, cancellationToken))
+        {
+            Solution passBaseline = text is null ? baseline : baseline.WithDocumentText(documentId, text);
+            (Solution working, bool usingsUpdated, int firstFinding) = await FixCopyAsync(
+                fix, original, passBaseline, documentId, swappedTypes, globalProjects, earlier, findings, text, cancellationToken);
+            if (earlier.Count > 0 && usingsUpdated)
+            {
+                // The usings of this pass replace the inactive-branch row of an earlier one: that code may be migrated now.
+                clears = true;
+                for (int i = firstFinding - 1; i >= 0; i--)
+                {
+                    if (IsInactiveBranchRow(findings[i], file.Key))
+                    {
+                        findings.RemoveAt(i);
+                    }
+                }
+            }
+
+            if (working != passBaseline)
+            {
+                text = await working.GetDocument(documentId)!.GetTextAsync(cancellationToken);
+            }
+
+            earlier.Add(original.GetDocument(documentId)!.Project.ParseOptions!);
+        }
+
+        return new FileOutcome { Findings = findings, Text = text, ClearsInactiveBranchRows = clears };
+    }
+
+    // The one rule for parallel files (council round 7): only when the request allows it and the fix promises thread safety.
+    private static int Degree(IFix fix, FixRequest request) =>
+        request.Sequential || !fix.FixesFilesInParallel ? 1 : Math.Max(1, request.MaxDegree ?? Math.Min(Environment.ProcessorCount, DefaultMaxDegree));
+
+    private static bool IsInactiveBranchRow(Finding finding, string filePath) =>
+        finding.PatternId == UsingsPatternId && finding.FilePath == filePath
+        && finding.Result is ManualResult { Reason: var reason } && reason.StartsWith(InactiveBranchReason, StringComparison.Ordinal);
 
     // One copy of a file: the patterns and usings, then the checks for an added namespace that conflicts with an own extension.
     // Returns the solution with the fixed copy (passBaseline when it stays as it was), whether the usings were updated, and

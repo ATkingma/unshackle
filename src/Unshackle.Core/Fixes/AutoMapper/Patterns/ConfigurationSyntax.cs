@@ -24,21 +24,23 @@ internal static class ConfigurationSyntax
     // Every node the pattern reports: removable test members, fields and statements, plus the configurations and checks that stay Manual.
     public static IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model)
     {
-        HashSet<ISymbol> removable = RemovableSymbols(root, model);
-        HashSet<StatementSyntax> statements = [.. root.DescendantNodes().OfType<StatementSyntax>().Where(s => IsRemovableStatement(s, model, removable))];
+        // One walk over the tree (TAAK-298); each list keeps the document order.
+        List<SyntaxNode> nodes = [.. root.DescendantNodes()];
+        HashSet<ISymbol> removable = RemovableSymbols(nodes, model);
+        HashSet<StatementSyntax> statements = [.. nodes.OfType<StatementSyntax>().Where(s => IsRemovableStatement(s, model, removable))];
         List<SyntaxNode> found = [];
         HashSet<StatementSyntax> covered = [];
-        foreach (BaseMethodDeclarationSyntax member in root.DescendantNodes().OfType<BaseMethodDeclarationSyntax>().Where(m => IsRemovableMember(m, model, statements)))
+        foreach (BaseMethodDeclarationSyntax member in nodes.OfType<BaseMethodDeclarationSyntax>().Where(m => IsRemovableMember(m, model, statements)))
         {
             found.Add(member);
             covered.UnionWith(member.Body?.Statements ?? []);
         }
 
-        found.AddRange(root.DescendantNodes().OfType<FieldDeclarationSyntax>()
+        found.AddRange(nodes.OfType<FieldDeclarationSyntax>()
             .Where(f => f.Declaration.Variables.All(v => model.GetDeclaredSymbol(v) is { } field && removable.Contains(field))));
         found.AddRange(statements.Where(s => !covered.Contains(s)));
-        found.AddRange(root.DescendantNodes().OfType<BaseObjectCreationExpressionSyntax>().Where(c => IsConfiguration(c, model) && ConfigurationProblem(c, model) is not null));
-        found.AddRange(root.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => IsAssert(i, model) && AssertProblem(i, model) is not null));
+        found.AddRange(nodes.OfType<BaseObjectCreationExpressionSyntax>().Where(c => IsConfiguration(c, model) && ConfigurationProblem(c, model) is not null));
+        found.AddRange(nodes.OfType<InvocationExpressionSyntax>().Where(i => IsAssert(i, model) && AssertProblem(i, model) is not null));
         return found;
     }
 
@@ -89,10 +91,10 @@ internal static class ConfigurationSyntax
 
     // Locals and private fields of an AutoMapper type (configuration or mapper) that are only built here from profiles, checked or mapped
     // with (Map calls belong to the Map patterns), so they are dead once the profiles are hand-written methods.
-    public static HashSet<ISymbol> RemovableSymbols(SyntaxNode root, SemanticModel model)
+    private static HashSet<ISymbol> RemovableSymbols(IReadOnlyList<SyntaxNode> nodes, SemanticModel model)
     {
         Dictionary<ISymbol, List<ISymbol>?> candidates = new(SymbolEqualityComparer.Default);
-        foreach (VariableDeclaratorSyntax declarator in root.DescendantNodes().OfType<VariableDeclaratorSyntax>())
+        foreach (VariableDeclaratorSyntax declarator in nodes.OfType<VariableDeclaratorSyntax>())
         {
             if (model.GetDeclaredSymbol(declarator) is { } symbol && IsCandidate(declarator, symbol))
             {
@@ -100,7 +102,7 @@ internal static class ConfigurationSyntax
             }
         }
 
-        List<IdentifierNameSyntax> names = [.. root.DescendantNodes().OfType<IdentifierNameSyntax>()];
+        List<IdentifierNameSyntax> names = [.. nodes.OfType<IdentifierNameSyntax>()];
         foreach (ISymbol symbol in candidates.Keys.ToList())
         {
             List<ExpressionSyntax> values = [.. symbol.DeclaringSyntaxReferences.Select(r => r.GetSyntax()).OfType<VariableDeclaratorSyntax>()

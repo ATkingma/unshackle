@@ -317,7 +317,10 @@ internal static class UsingDirectives
     private static IEnumerable<(IMethodSymbol Added, IMethodSymbol Existing, int Line)> Ambiguities(
         SyntaxNode root, SemanticModel model, IReadOnlyCollection<string> addedNamespaces, CancellationToken cancellationToken)
     {
-        foreach (Diagnostic diagnostic in model.GetDiagnostics(cancellationToken: cancellationToken).Where(d => d.Id == "CS0121"))
+        // In file order: Roslyn binds method bodies concurrently, so the diagnostics come in no fixed order, and the first conflict
+        // names the reason of the whole class (TAAK-298: the akka report differed between two runs of the same tool).
+        foreach (Diagnostic diagnostic in model.GetDiagnostics(cancellationToken: cancellationToken).Where(d => d.Id == "CS0121")
+            .OrderBy(d => d.Location.SourceSpan.Start).ThenBy(d => d.Location.SourceSpan.End))
         {
             SyntaxNode node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
             if (node.FirstAncestorOrSelf<InvocationExpressionSyntax>() is not InvocationExpressionSyntax invocation)

@@ -25,6 +25,8 @@ public class FluentAssertionsFix : IFix
 
     public string Id => "fluentassertions";
 
+    public bool FixesFilesInParallel => true;
+
     public IReadOnlyList<MetadataReference> AddedReferences { get; }
 
     public IReadOnlyList<string> RemovedNamespaces { get; } = [

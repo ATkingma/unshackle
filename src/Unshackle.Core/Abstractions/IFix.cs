@@ -49,6 +49,20 @@ public interface IFix
     IReadOnlyList<string> RemovedExtensionMethods => [];
 
     /// <summary>
+    /// True (the default) when every pattern only finds code in a file that names the old library: a type, member or namespace of
+    /// its assemblies, or a declaration whose signature names one. The Fixer then skips the patterns for a file without any such
+    /// name. False runs every pattern on every file (a fix whose patterns match code of the user's own).
+    /// </summary>
+    bool FindsOnlyOldLibraryCode => true;
+
+    /// <summary>
+    /// True when the patterns may fix several files at the same time: every static cache and every shared mutable field of the fix
+    /// and its patterns is thread-safe and gives the same answer whichever file asks first. False (the default) fixes one file at a
+    /// time. The output is the same either way (council round 7).
+    /// </summary>
+    bool FixesFilesInParallel => false;
+
+    /// <summary>
     /// True when a partial migration is unsafe (for example code rewritten while its registration stays): if any finding is Manual,
     /// the solution and project files are left as they are and every Fixed finding is reported as Manual. False (the default): fix what can be fixed.
     /// </summary>

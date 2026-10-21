@@ -25,12 +25,16 @@ public class ScanCommand
         _view = view;
     }
 
+    public Task<int> ExecuteAsync(
+        string solutionPath, string fixId, string? reportPath, bool force, CancellationToken cancellationToken) =>
+        ExecuteAsync(solutionPath, new FixRequest { FixId = fixId }, reportPath, force, cancellationToken);
+
     public async Task<int> ExecuteAsync(
-        string solutionPath, string fixId, string? reportPath, bool force, CancellationToken cancellationToken)
+        string solutionPath, FixRequest request, string? reportPath, bool force, CancellationToken cancellationToken)
     {
         try
         {
-            await RunAsync(solutionPath, fixId, reportPath, force, cancellationToken);
+            await RunAsync(solutionPath, request, reportPath, force, cancellationToken);
             return ExitCodes.Ok;
         }
         catch (CommandException ex)
@@ -41,11 +45,17 @@ public class ScanCommand
     }
 
     // Throws CommandException with the exit code on any expected failure. Force lets the report replace an existing file.
+    public Task<ScanResult> RunAsync(
+        string solutionPath, string fixId, string? reportPath, bool force, CancellationToken cancellationToken) =>
+        RunAsync(solutionPath, new FixRequest { FixId = fixId }, reportPath, force, cancellationToken);
+
+    // The request carries how files are processed (--sequential, --max-degree); the output is the same either way.
     public async Task<ScanResult> RunAsync(
-        string solutionPath, string fixId, string? reportPath, bool force, CancellationToken cancellationToken)
+        string solutionPath, FixRequest request, string? reportPath, bool force, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(solutionPath);
-        ArgumentException.ThrowIfNullOrWhiteSpace(fixId);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.FixId);
         IReportWriter? reportWriter = reportPath is null ? null : FindReportWriter(reportPath);
         // --report README.md must not silently replace a file of the user.
         if (reportPath is not null && !force && File.Exists(reportPath))
@@ -76,7 +86,7 @@ public class ScanCommand
         FixReport report;
         try
         {
-            report = await _fixer.FixAsync(solution, new FixRequest { FixId = fixId }, cancellationToken);
+            report = await _fixer.FixAsync(solution, request, cancellationToken);
         }
         catch (ArgumentException ex)
         {

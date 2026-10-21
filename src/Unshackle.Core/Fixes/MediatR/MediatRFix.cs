@@ -19,6 +19,8 @@ public class MediatRFix : IFix, IPartialFix
     // Half a migration builds but fails at run time (behaviors rewritten while AddMediatR stays): any Manual finding leaves the solution as it is.
     public bool AllOrNothing => true;
 
+    public bool FixesFilesInParallel => true;
+
     // TAAK-274: instead of nothing, the code tied to the Manual findings stays on MediatR and the rest moves (MediatROwners).
     public Task<PartialPlan?> PlanPartialAsync(Solution solution, IReadOnlyList<Finding> roots, CancellationToken cancellationToken)
     {

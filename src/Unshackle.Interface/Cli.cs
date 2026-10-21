@@ -7,6 +7,7 @@ using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.FluentAssertions;
 using Unshackle.Core.Fixes.MediatR;
+using Unshackle.Core.Models;
 using Unshackle.DataAccess.Projects;
 using Unshackle.DataAccess.Reports;
 using Unshackle.DataAccess.Solutions;
@@ -74,16 +75,22 @@ public static class Cli
         var dryRun = new Option<bool>("--dry-run") { Description = "Show the diff, write nothing." };
         var force = new Option<bool>("--force") { Description = "Write even when the working tree is dirty, not a git repository, or git fails; overwrite an existing report." };
 
+        var sequential = new Option<bool>("--sequential") { Description = "Fix one file at a time instead of several in parallel (same output)." };
+        var maxDegree = new Option<int?>("--max-degree") { Description = $"Fix at most this many files at once (default: the processor count, at most {Fixer.DefaultMaxDegree}); lower it when memory runs out." };
+        FixRequest Request(ParseResult r) => new()
+        {
+            FixId = r.GetRequiredValue(fixOption), Sequential = r.GetValue(sequential), MaxDegree = r.GetValue(maxDegree),
+        };
         var scanCommand = new Command("scan", "Run a fix and report what it would change, without writing code.")
         {
-            solution, fixOption, report, force,
+            solution, fixOption, report, force, sequential, maxDegree,
         };
         scanCommand.SetAction((r, ct) => WithSolution(view, r.GetValue(solution), path => scan.ExecuteAsync(
-            path, r.GetRequiredValue(fixOption), r.GetValue(report), r.GetValue(force), ct)));
+            path, Request(r), r.GetValue(report), r.GetValue(force), ct)));
 
-        var fixCommand = new Command("fix", "Run a fix and write the changes.") { solution, fixOption, report, dryRun, force };
+        var fixCommand = new Command("fix", "Run a fix and write the changes.") { solution, fixOption, report, dryRun, force, sequential, maxDegree };
         fixCommand.SetAction((r, ct) => WithSolution(view, r.GetValue(solution), path => fix.ExecuteAsync(
-            path, r.GetRequiredValue(fixOption), r.GetValue(report), r.GetValue(dryRun), r.GetValue(force), ct)));
+            path, Request(r), r.GetValue(report), r.GetValue(dryRun), r.GetValue(force), ct)));
 
         var markdown = new Option<bool>("--markdown") { Description = "Print the patterns as a Markdown table (docs/patterns.md is made with this)." };
         var listCommand = new Command("list", "Show every fix and its patterns.") { markdown };

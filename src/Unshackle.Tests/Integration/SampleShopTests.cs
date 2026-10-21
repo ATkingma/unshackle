@@ -60,6 +60,34 @@ public class SampleShopTests
         afterFix.ShouldContain("using Shouldly;");
     }
 
+    // TAAK-298 (council round 7): fixing files in parallel gives the same report as one at a time. AutoMapper is always sequential
+    // (FixesFilesInParallel is false) and its kept add-automapper row still names a varying example (TAAK-300), so it is not compared.
+    [Fact]
+    public async Task Scan_SequentialAndParallel_WriteTheSameReport()
+    {
+        // Arrange
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using var directory = new TempDirectory();
+        string samples = Path.Combine(directory.Path, "samples");
+        CopyWithoutBuildOutput(Path.Combine(RepositoryRoot.Path, "samples"), samples);
+        string solution = Path.Combine(samples, "SampleShop", "SampleShop.slnx");
+        await DotnetAsync(cancellationToken, "restore", solution);
+        List<(string Fix, string Sequential, string Parallel)> reports = [];
+
+        // Act
+        foreach (string fix in new[] { "fluentassertions", "mediatr" })
+        {
+            string sequential = Path.Combine(directory.Path, $"{fix}-sequential.json");
+            string parallel = Path.Combine(directory.Path, $"{fix}-parallel.json");
+            (await Cli.RunAsync(["scan", solution, "--fix", fix, "--report", sequential, "--sequential"], cancellationToken)).ShouldBe(ExitCodes.Ok);
+            (await Cli.RunAsync(["scan", solution, "--fix", fix, "--report", parallel, "--max-degree", "4"], cancellationToken)).ShouldBe(ExitCodes.Ok);
+            reports.Add((fix, await File.ReadAllTextAsync(sequential, cancellationToken), await File.ReadAllTextAsync(parallel, cancellationToken)));
+        }
+
+        // Assert
+        reports.ShouldAllBe(r => r.Parallel == r.Sequential && r.Sequential.Length > 100);
+    }
+
     // SampleShop.Tests migrates completely in the first fix (dictionary HaveCount included); SampleShop.Advanced.Tests keeps its manual findings.
     [Fact]
     public async Task FixTwice_SampleShopCopy_MigratesProjectFilesAndBuildsAndTests()

@@ -70,7 +70,7 @@ and always passed on. No `ConfigureAwait(false)` (CLI, no sync context).
 
 ## 7. Argument checks only at public entry points
 
-`ArgumentNullException.ThrowIfNull(...)` in the `Fixer`, commands and `ISolutionStore`/`IReportWriter` implementations.
+`ArgumentNullException.ThrowIfNull(...)` in the `Fixer`, commands, `ISolutionStore`/`IReportWriter` implementations, fix constructors and public `IFix` members (council round 6, Q5: built at the composition root or called by the `Fixer`).
 Internally (patterns, helpers) we rely on nullable reference types.
 
 ## 8. Error handling

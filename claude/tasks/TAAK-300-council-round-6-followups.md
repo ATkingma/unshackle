@@ -1,6 +1,6 @@
 # TAAK-300 — Council round 6 follow-ups
 
-**Status**: steps 1–3 done; next step 4 (Q4)
+**Status**: steps 1–5 done; next step 6 (corpus rerun)
 **Created**: 2026-10-21
 **Goal**: carry out the round-6 council decisions (`claude/docs/council.md`, "2026-10-21 — open questions from TAAK-295 and TAAK-297").
 Only step 4 may change rendered output.
@@ -37,11 +37,13 @@ Only step 4 may change rendered output.
     `MediatRPartialTests.FixAsync_MediatRRegisteredByHand_*` (same partial result, 11 kept rows, rendered prefix once).
   - `ReportRow.FromAll` grouping (custom assertion pattern id only), `SpectreConsoleView` counts (by result type): no `Kept` check. Tests as above.
   - `CreateMapPattern` (`Kept: None`), `MapOwners` plan loop (`Kept: None`): AutoMapper results only, never see a MediatR row.
-- [ ] 4. Q4: stable first IMapper user (path ordinal, separator-independent, then line) in `Rewrite` and `RewriteAsync`; add a test with
+- [x] 4. Q4: stable first IMapper user (path ordinal, separator-independent, then line) in `Rewrite` and `RewriteAsync`; add a test with
   two users in reverse tree order. **Changes rendered output**: the `IMapper is still used (<file>:<line>)` example in the kept
   `add-automapper` row. Test expectations that name that example (search the tests for `IMapper is still used`: `AddAutoMapperPattern`
   tests, `CombinedProofTests` partial-*, proofs `*.manual.txt`) are updated only where the chosen file changes; list them here.
-- [ ] 5. Q5: add "fix constructors and public `IFix` members" to the entry-point list in `claude/docs/code-standaarden.md` §7.
+- [x] 5. Q5: add "fix constructors and public `IFix` members" to the entry-point list in `claude/docs/code-standaarden.md` §7.
+  Expectations changed by step 4: none. No test or proof names the example file (`UnusedMapperPatternTests` and
+  `mapper-injected.manual.txt` only match `IMapper is still used`).
 - [ ] 6. Corpus rerun: `after` on the six AutoMapper repos and the MediatR repos. Steps 1–3 and 5 must give zero diff in every report
   output (rows, counts, grouping, summaries). Step 4 may only change the example in the kept `add-automapper` row, and it must then be
   identical across two runs. Fixed/Manual counts stay as in `after-t295`.
@@ -55,6 +57,10 @@ Only step 4 may change rendered output.
   `MapOwnersTests.FixAsync_KeptReasonQuotingMapBlockers_HasThePrefixOnce`. No expectation changed; 1663 tests green.
   Q3 note: a probe found no input where `MapBlockers` quotes a *kept* inner result (the plan loop only uses `Kept: None` results); the
   test pins the reachable path, a kept row quoting `MapBlockers`, which has the prefix once.
+- 2026-10-21: steps 4–5. `AddAutoMapperPattern.First`: users ordered by path (ordinal, `\` as `/`), then line, in `Rewrite` and
+  `RewriteAsync` (which now collects every user instead of returning the first reference). New `AddAutoMapperPatternTests` (2, reverse
+  tree order, mixed separators). `code-standaarden.md` §7 lists fix constructors and public `IFix` members. No expectation changed;
+  1665 tests green.
 
 ## See also
 

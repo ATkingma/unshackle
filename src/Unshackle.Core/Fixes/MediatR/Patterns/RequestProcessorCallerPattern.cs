@@ -131,7 +131,7 @@ public class RequestProcessorCallerPattern : IPattern
         node.Ancestors().OfType<InvocationExpressionSyntax>().Any(i =>
             i.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "AddMediatR" } or IdentifierNameSyntax { Identifier.ValueText: "AddMediatR" });
 
-    private static CallAnalysis? Analyze(IdentifierNameSyntax name, SemanticModel model)
+    private static ProcessorCallAnalysis? Analyze(IdentifierNameSyntax name, SemanticModel model)
     {
         IMethodSymbol? method = ProcessMethod(name, model);
         if (method is null)
@@ -142,26 +142,24 @@ public class RequestProcessorCallerPattern : IPattern
         int line = Line(name);
         if (MediatRSyntax.IsMediatR(method.ContainingType, "IRequestPreProcessor", "IRequestPostProcessor"))
         {
-            return new CallAnalysis($"Process at line {line} is called through the MediatR interface, which is gone after the migration; call the processor class's Handle by hand.");
+            return new ProcessorCallAnalysis { Problem = $"Process at line {line} is called through the MediatR interface, which is gone after the migration; call the processor class's Handle by hand." };
         }
 
         bool isPre = MediatRSyntax.DeclaredInterface(method.ContainingType.OriginalDefinition, PreProcessor) is not null;
         if (name.Parent is not MemberAccessExpressionSyntax { Parent: InvocationExpressionSyntax { Parent: AwaitExpressionSyntax { Parent: ExpressionStatementSyntax } } call } access
             || access.Name != name || call.Expression != access)
         {
-            return new CallAnalysis($"Process at line {line} is not a plain `await x.Process(...);` statement (result used, not awaited, mocked or a method group); Mediator's Handle takes a next delegate and returns ValueTask<TResponse>, rewrite it by hand.");
+            return new ProcessorCallAnalysis { Problem = $"Process at line {line} is not a plain `await x.Process(...);` statement (result used, not awaited, mocked or a method group); Mediator's Handle takes a next delegate and returns ValueTask<TResponse>, rewrite it by hand." };
         }
 
         if (call.ArgumentList.Arguments.Count != method.Parameters.Length || call.ArgumentList.Arguments.Any(a => a.NameColon is not null || a.RefKindKeyword.ValueText.Length > 0))
         {
-            return new CallAnalysis($"Process at line {line} has named or ref arguments; rewrite it by hand.");
+            return new ProcessorCallAnalysis { Problem = $"Process at line {line} has named or ref arguments; rewrite it by hand." };
         }
 
         string response = isPre ? string.Empty : method.Parameters[1].Type.ToMinimalDisplayString(model, call.SpanStart);
-        return new CallAnalysis(null, isPre, response);
+        return new ProcessorCallAnalysis { Problem = null, IsPre = isPre, ResponseType = response };
     }
 
     private static int Line(SyntaxNode node) => node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-
-    private record CallAnalysis(string? Problem, bool IsPre = false, string ResponseType = "");
 }

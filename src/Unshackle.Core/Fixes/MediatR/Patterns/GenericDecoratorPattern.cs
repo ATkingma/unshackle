@@ -29,13 +29,6 @@ public class GenericDecoratorPattern : ISolutionPattern
         "Open generic handler decorator D<T> : IRequestHandler<T> (Autofac RegisterGenericDecorator) → decorated IRequestHandler<T, Unit> and typeof(IRequestHandler<,>) as the decorated service; "
         + "a notification decorator stays when MediatR is registered by hand in Autofac";
 
-    private enum Kind
-    {
-        Void,
-        Result,
-        Notification,
-    }
-
     /// <summary>True for an open generic class that decorates a MediatR handler of its own type parameter (a constructor parameter of that handler type).</summary>
     public static bool IsDecorator(INamedTypeSymbol type) => Decorated(type) is not null;
 
@@ -46,7 +39,7 @@ public class GenericDecoratorPattern : ISolutionPattern
             switch (node)
             {
                 // A decorator of a handler with a response needs nothing beyond the Task → ValueTask of the handler patterns.
-                case TypeDeclarationSyntax type when model.GetDeclaredSymbol(type) is INamedTypeSymbol symbol && Decorated(symbol) is { Kind: not Kind.Result }:
+                case TypeDeclarationSyntax type when model.GetDeclaredSymbol(type) is INamedTypeSymbol symbol && Decorated(symbol) is { Kind: not GenericDecoratorKind.Result }:
                     yield return type;
                     break;
                 case TypeOfExpressionSyntax typeOf when VoidService(typeOf, model):
@@ -68,7 +61,7 @@ public class GenericDecoratorPattern : ISolutionPattern
 
         var type = (TypeDeclarationSyntax)node;
         var symbol = (INamedTypeSymbol)model.GetDeclaredSymbol(type, cancellationToken)!;
-        (Kind kind, INamedTypeSymbol decorated) = Decorated(symbol)!.Value;
+        (GenericDecoratorKind kind, INamedTypeSymbol decorated) = Decorated(symbol)!.Value;
         if (await UnregisteredUseAsync(symbol, solution, cancellationToken) is string use)
         {
             // Council round 3 (fullcart): name the Scrutor registration itself, not Autofac's, when that is what wraps the handlers.
@@ -83,7 +76,7 @@ public class GenericDecoratorPattern : ISolutionPattern
                 $"{symbol.Name} is used other than in Autofac's RegisterGenericDecorator(typeof({symbol.Name}<>), ...) ({use}); only that registration is known to wrap Mediator's handlers the same way. Register the decorator by hand.");
         }
 
-        if (kind == Kind.Notification)
+        if (kind == GenericDecoratorKind.Notification)
         {
             return await RegistersMediatRInAutofacAsync(solution, cancellationToken)
                 ? PatternResult.Fixed(type)
@@ -96,7 +89,7 @@ public class GenericDecoratorPattern : ISolutionPattern
     }
 
     // The class and the handler type of its decorated constructor parameter; null when it is no decorator.
-    private static (Kind Kind, INamedTypeSymbol Decorated)? Decorated(INamedTypeSymbol type)
+    private static (GenericDecoratorKind Kind, INamedTypeSymbol Decorated)? Decorated(INamedTypeSymbol type)
     {
         if (type is not { TypeKind: TypeKind.Class, IsAbstract: false, IsGenericType: true } || !SymbolEqualityComparer.Default.Equals(type, type.OriginalDefinition)
             || !type.Locations.Any(l => l.IsInSource))
@@ -106,11 +99,11 @@ public class GenericDecoratorPattern : ISolutionPattern
 
         foreach (INamedTypeSymbol handler in type.AllInterfaces)
         {
-            Kind? kind = handler.OriginalDefinition.MetadataName switch
+            GenericDecoratorKind? kind = handler.OriginalDefinition.MetadataName switch
             {
-                "IRequestHandler`1" when MediatRSyntax.IsMediatR(handler, "IRequestHandler") => Kind.Void,
-                "IRequestHandler`2" when MediatRSyntax.IsMediatR(handler, "IRequestHandler") => Kind.Result,
-                "INotificationHandler`1" when MediatRSyntax.IsMediatR(handler, "INotificationHandler") => Kind.Notification,
+                "IRequestHandler`1" when MediatRSyntax.IsMediatR(handler, "IRequestHandler") => GenericDecoratorKind.Void,
+                "IRequestHandler`2" when MediatRSyntax.IsMediatR(handler, "IRequestHandler") => GenericDecoratorKind.Result,
+                "INotificationHandler`1" when MediatRSyntax.IsMediatR(handler, "INotificationHandler") => GenericDecoratorKind.Notification,
                 _ => null,
             };
             if (kind is null || handler.TypeArguments[0] is not ITypeParameterSymbol parameter || !SymbolEqualityComparer.Default.Equals(parameter.DeclaringType, type))
@@ -123,7 +116,7 @@ public class GenericDecoratorPattern : ISolutionPattern
                     && (SymbolEqualityComparer.Default.Equals(p, handler) || p.AllInterfaces.Contains(handler, SymbolEqualityComparer.Default))
                     && type.AllInterfaces.Contains(p, SymbolEqualityComparer.Default))
                 // Already rewritten in this file (an earlier pattern run sees MediatR's IRequestHandler<T, Unit>, which MediatR does not relate to IRequestHandler<T>).
-                ?? (kind == Kind.Void ? type.InstanceConstructors.SelectMany(c => c.Parameters).Select(p => p.Type).OfType<INamedTypeSymbol>()
+                ?? (kind == GenericDecoratorKind.Void ? type.InstanceConstructors.SelectMany(c => c.Parameters).Select(p => p.Type).OfType<INamedTypeSymbol>()
                     .FirstOrDefault(p => IsRewrittenVoid(p, parameter)) : null);
             if (decorated is not null)
             {
@@ -149,7 +142,7 @@ public class GenericDecoratorPattern : ISolutionPattern
         && service.Expression == typeOf
         && IsRegisterDecorator(invocation, model)
         && model.GetTypeInfo(decorator.Type).Type is INamedTypeSymbol { IsUnboundGenericType: true } unbound
-        && Decorated(unbound.OriginalDefinition) is { Kind: Kind.Void }
+        && Decorated(unbound.OriginalDefinition) is { Kind: GenericDecoratorKind.Void }
         && model.GetTypeInfo(typeOf.Type).Type is INamedTypeSymbol { IsUnboundGenericType: true, Arity: 1 } serviceType
         && (MediatRSyntax.IsMediatR(serviceType.OriginalDefinition, "IRequestHandler")
             || serviceType.OriginalDefinition.AllInterfaces.Any(i => i.OriginalDefinition.MetadataName == "IRequestHandler`1" && MediatRSyntax.IsMediatR(i, "IRequestHandler")));

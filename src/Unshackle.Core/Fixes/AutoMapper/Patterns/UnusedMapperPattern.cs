@@ -44,7 +44,7 @@ public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
             return new ManualResult(kept) { Kept = code };
         }
 
-        List<MapperCleanup.Removal> removals = [.. cleanup.Removals(node.SyntaxTree.GetRoot(cancellationToken), model).Where(r => node.Span.Contains(r.Node.Span))];
+        List<MapperCleanupRemoval> removals = [.. cleanup.Removals(node.SyntaxTree.GetRoot(cancellationToken), model).Where(r => node.Span.Contains(r.Node.Span))];
         string? warning = removals.Select(r => r.Warning).OfType<string>().FirstOrDefault();
         if (removals is [{ Node: var single }] && single == node)
         {
@@ -54,7 +54,7 @@ public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
         // TAAK-292 (council decision 4): a constructor or class the removals leave empty stays; the finding says so in an Info line.
         List<SyntaxNode> shells = [.. node.DescendantNodesAndSelf().Where(n => n is ConstructorDeclarationSyntax or ClassDeclarationSyntax && !IsEmpty(n))];
         SyntaxNode rewritten = node.TrackNodes(removals.Select(r => r.Node).Concat(shells));
-        foreach (MapperCleanup.Removal removal in removals)
+        foreach (MapperCleanupRemoval removal in removals)
         {
             SyntaxNode current = rewritten.GetCurrentNode(removal.Node)!;
             rewritten = Replacement(removal.Node, model, cleanup) is { } replacement

@@ -24,7 +24,7 @@ internal class MapperCleanup
 
     private static readonly string[] s_mapperTypes = ["AutoMapper.IMapper", "AutoMapper.IMapperBase", "AutoMapper.IRuntimeMapper"];
 
-    private static readonly ConditionalWeakTable<SolutionId, Entry> s_cache = new();
+    private static readonly ConditionalWeakTable<SolutionId, MapperCleanupEntry> s_cache = new();
 
     private readonly HashSet<string> _removed;
 
@@ -49,7 +49,7 @@ internal class MapperCleanup
     /// </summary>
     public static async Task<MapperCleanup> ForAsync(Solution solution, SemanticModel model, CancellationToken cancellationToken)
     {
-        Entry entry = s_cache.GetValue(solution.Id, _ => new Entry());
+        MapperCleanupEntry entry = s_cache.GetValue(solution.Id, _ => new MapperCleanupEntry());
         Task<MapperCleanup> plan;
         lock (entry)
         {
@@ -68,7 +68,7 @@ internal class MapperCleanup
     }
 
     /// <summary>The outermost nodes of root the plan removes or trims, each with a warning when removing it may change behaviour.</summary>
-    public IReadOnlyList<Removal> Removals(SyntaxNode root, SemanticModel model) => Removals(root, model, _removed, _registration);
+    public IReadOnlyList<MapperCleanupRemoval> Removals(SyntaxNode root, SemanticModel model) => Removals(root, model, _removed, _registration);
 
     /// <summary>
     /// The GetService&lt;IMapper&gt;() lookups in root that stay only because their scope is not surely registered, each with the rule that failed.
@@ -112,9 +112,9 @@ internal class MapperCleanup
         _ => null,
     };
 
-    private static List<Removal> Removals(SyntaxNode root, SemanticModel model, HashSet<string> removed, MapperRegistration registration)
+    private static List<MapperCleanupRemoval> Removals(SyntaxNode root, SemanticModel model, HashSet<string> removed, MapperRegistration registration)
     {
-        List<Removal> found = [];
+        List<MapperCleanupRemoval> found = [];
         if (removed.Count == 0)
         {
             return found;
@@ -129,28 +129,28 @@ internal class MapperCleanup
                 case FieldDeclarationSyntax field when field.Declaration.Variables.Any(Declared):
                 case LocalDeclarationStatementSyntax { Declaration.Variables: [var local] } when Declared(local):
                 case MethodDeclarationSyntax method when Declared(method):
-                    found.Add(new Removal(node, LookupWarning(node, model, registration)));
+                    found.Add(new MapperCleanupRemoval(node, LookupWarning(node, model, registration)));
                     break;
                 case ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment }
                     when Removed(Target(assignment.Left)) && IsDroppable(assignment.Right, model, removed, registration):
-                    found.Add(new Removal(node, LookupWarning(node, model, registration)));
+                    found.Add(new MapperCleanupRemoval(node, LookupWarning(node, model, registration)));
                     break;
                 case ExpressionStatementSyntax { Expression: InvocationExpressionSyntax { ArgumentList.Arguments: [var checkedArgument, ..] } invocation }
                     when model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { Name: "ThrowIfNull", ContainingType.Name: "ArgumentNullException" }
                         && Removed(checkedArgument.Expression):
-                    found.Add(new Removal(node, null));
+                    found.Add(new MapperCleanupRemoval(node, null));
                     break;
                 case IfStatementSyntax { Else: null, Parent: BlockSyntax } guard when NullChecked(guard.Condition) is { } checkedName && Removed(checkedName):
-                    found.Add(new Removal(node, guard.Statement is ThrowStatementSyntax or BlockSyntax { Statements: [ThrowStatementSyntax] }
+                    found.Add(new MapperCleanupRemoval(node, guard.Statement is ThrowStatementSyntax or BlockSyntax { Statements: [ThrowStatementSyntax] }
                         ? null
                         : $"The null check on {checkedName} is removed with the IMapper it checks: it only took its branch when no IMapper was "
                             + $"registered, and AddAutoMapper at {registration.Call(model)} registers one. Check that this code never ran without that registration."));
                     break;
                 case ParameterListSyntax { Parent: ConstructorDeclarationSyntax } parameters when parameters.Parameters.Any(Declared):
-                    found.Add(new Removal(node, null));
+                    found.Add(new MapperCleanupRemoval(node, null));
                     break;
                 case ArgumentListSyntax arguments when RemovedArguments(arguments, model, removed).Count > 0:
-                    found.Add(new Removal(node, null));
+                    found.Add(new MapperCleanupRemoval(node, null));
                     break;
             }
         }
@@ -327,11 +327,11 @@ internal class MapperCleanup
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                Dictionary<DocumentId, List<Removal>> removals = [];
+                Dictionary<DocumentId, List<MapperCleanupRemoval>> removals = [];
                 async Task<bool> CoveredAsync(Document document, TextSpan span)
                 {
                     (SyntaxNode root, SemanticModel model) = await LoadAsync(document);
-                    if (!removals.TryGetValue(document.Id, out List<Removal>? inDocument))
+                    if (!removals.TryGetValue(document.Id, out List<MapperCleanupRemoval>? inDocument))
                     {
                         inDocument = Removals(root, model, removed, registration);
                         removals[document.Id] = inDocument;
@@ -485,27 +485,4 @@ internal class MapperCleanup
         && !method.Modifiers.Any(SyntaxKind.PartialKeyword) && !method.Modifiers.Any(SyntaxKind.ExternKeyword)
         && IsMapper(model.GetTypeInfo(method.ReturnType).Type)
         && (method.ExpressionBody is not null || (method.Body is { } body && body.Statements.All(s => s is LocalDeclarationStatementSyntax or ReturnStatementSyntax)));
-
-    /// <summary>A node the cleanup removes or trims, with a warning for the report when it may change behaviour.</summary>
-    internal class Removal
-    {
-        public Removal(SyntaxNode node, string? warning)
-        {
-            Node = node;
-            Warning = warning;
-        }
-
-        public SyntaxNode Node { get; }
-
-        public string? Warning { get; }
-    }
-
-    private class Entry
-    {
-        public Solution? Solution { get; set; }
-
-        public string? FilePath { get; set; }
-
-        public Task<MapperCleanup>? Plan { get; set; }
-    }
 }

@@ -147,7 +147,7 @@ public class GenericNotificationPattern : ISolutionPattern
             return PatternResult.Manual($"{name}<T> creates or reflects on itself; it becomes abstract with one concrete subclass per closed type. Rewrite that code by hand.");
         }
 
-        ClosedTypes found = Scan(notification, compilations);
+        NotificationClosedTypes found = Scan(notification, compilations);
         if (found.Subclass is not null)
         {
             return PatternResult.Manual($"{name}<T> already has a subclass ({found.Subclass}); make {name}<T> abstract and give every closed type its own concrete subclass by hand.");
@@ -351,12 +351,12 @@ public class GenericNotificationPattern : ISolutionPattern
         };
     }
 
-    private static ClosedTypes Scan(INamedTypeSymbol notification, IReadOnlyList<Compilation> compilations)
+    private static NotificationClosedTypes Scan(INamedTypeSymbol notification, IReadOnlyList<Compilation> compilations)
     {
         string key = MetadataKey(notification);
         ITypeSymbol? constraint = ConstraintType(notification);
         string? constraintKey = constraint is INamedTypeSymbol named ? MetadataKey(named.OriginalDefinition) : null;
-        var result = new ClosedTypes();
+        var result = new NotificationClosedTypes();
         foreach (Compilation compilation in compilations)
         {
             foreach (SyntaxTree tree in compilation.SyntaxTrees)
@@ -409,16 +409,5 @@ public class GenericNotificationPattern : ISolutionPattern
         {
             yield return current;
         }
-    }
-
-    private class ClosedTypes
-    {
-        public HashSet<string> Arguments { get; } = new(StringComparer.Ordinal);
-
-        public HashSet<string> Constrained { get; } = new(StringComparer.Ordinal);
-
-        public bool MakesGenericType { get; set; }
-
-        public string? Subclass { get; set; }
     }
 }

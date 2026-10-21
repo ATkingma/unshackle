@@ -298,7 +298,7 @@ public class MemberValues
     // keeps no references either). A map with options, a member it cannot pair and a collection of another kind fall back to Reaches.
     private bool ReachesMapped(ITypeSymbol source, ITypeSymbol destination, ITypeSymbol outer)
     {
-        HashSet<(ITypeSymbol, ITypeSymbol)> seen = new(new PairComparer());
+        HashSet<(ITypeSymbol, ITypeSymbol)> seen = new(new TypePairComparer());
         Queue<(ITypeSymbol Source, ITypeSymbol Destination)> queue = new([(source, destination)]);
         while (queue.TryDequeue(out (ITypeSymbol Source, ITypeSymbol Destination) pair))
         {
@@ -380,15 +380,6 @@ public class MemberValues
         }
 
         return false;
-    }
-
-    private class PairComparer : IEqualityComparer<(ITypeSymbol, ITypeSymbol)>
-    {
-        public bool Equals((ITypeSymbol, ITypeSymbol) x, (ITypeSymbol, ITypeSymbol) y) =>
-            SymbolEqualityComparer.Default.Equals(x.Item1, y.Item1) && SymbolEqualityComparer.Default.Equals(x.Item2, y.Item2);
-
-        public int GetHashCode((ITypeSymbol, ITypeSymbol) obj) =>
-            HashCode.Combine(SymbolEqualityComparer.Default.GetHashCode(obj.Item1), SymbolEqualityComparer.Default.GetHashCode(obj.Item2));
     }
 
     // Whether target is reachable from type through public members, type arguments and array elements: a map from type would

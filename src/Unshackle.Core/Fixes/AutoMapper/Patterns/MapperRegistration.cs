@@ -38,12 +38,12 @@ internal class MapperRegistration
     };
 
     // Assembly name → the file:line of the unconditional AddAutoMapper call that registers it, or the reason it is not registered.
-    private readonly Dictionary<string, Scope> _scopes;
+    private readonly Dictionary<string, MapperRegistrationScope> _scopes;
 
     // Every project counts as registered: the plan as it would be without the scope rule, to find the lookups that rule keeps.
     private readonly bool _everywhere;
 
-    private MapperRegistration(Dictionary<string, Scope> scopes, bool everywhere)
+    private MapperRegistration(Dictionary<string, MapperRegistrationScope> scopes, bool everywhere)
     {
         _scopes = scopes;
         _everywhere = everywhere;
@@ -60,22 +60,22 @@ internal class MapperRegistration
 
     public static async Task<MapperRegistration> ForAsync(Solution solution, CancellationToken cancellationToken)
     {
-        Dictionary<ProjectId, Facts> facts = [];
+        Dictionary<ProjectId, MapperRegistrationFacts> facts = [];
         foreach (Project project in solution.Projects.Where(p => p.Language == LanguageNames.CSharp))
         {
             facts[project.Id] = await FactsAsync(project, cancellationToken);
         }
 
         ProjectDependencyGraph graph = solution.GetProjectDependencyGraph();
-        Dictionary<string, Scope> scopes = new(StringComparer.Ordinal);
+        Dictionary<string, MapperRegistrationScope> scopes = new(StringComparer.Ordinal);
         foreach (Project project in solution.Projects.Where(p => p.Language == LanguageNames.CSharp))
         {
             List<Project> inScope = [project, .. graph.GetProjectsThatTransitivelyDependOnThisProject(project.Id)
                 .Select(solution.GetProject).OfType<Project>().Where(p => facts.ContainsKey(p.Id)).OrderBy(p => p.Name, StringComparer.Ordinal)];
-            Scope scope = ScopeOf(project, inScope.Select(p => facts[p.Id]).ToList());
+            MapperRegistrationScope scope = ScopeOf(project, inScope.Select(p => facts[p.Id]).ToList());
 
             // Projects that share an assembly name (multi-targeting) are registered only when all of them are.
-            if (!scopes.TryGetValue(project.AssemblyName, out Scope? known) || (known.Failure is null && scope.Failure is not null))
+            if (!scopes.TryGetValue(project.AssemblyName, out MapperRegistrationScope? known) || (known.Failure is null && scope.Failure is not null))
             {
                 scopes[project.AssemblyName] = scope;
             }
@@ -97,35 +97,35 @@ internal class MapperRegistration
         : scope.Failure is string failure ? (scope.Code, failure)
         : null;
 
-    private Scope? Of(SemanticModel model) =>
-        model.Compilation.AssemblyName is string name && _scopes.TryGetValue(name, out Scope? scope) ? scope : null;
+    private MapperRegistrationScope? Of(SemanticModel model) =>
+        model.Compilation.AssemblyName is string name && _scopes.TryGetValue(name, out MapperRegistrationScope? scope) ? scope : null;
 
-    private static Scope ScopeOf(Project project, List<Facts> inScope)
+    private static MapperRegistrationScope ScopeOf(Project project, List<MapperRegistrationFacts> inScope)
     {
         List<(string Location, string? Condition)> calls = [.. inScope.SelectMany(f => f.Calls)];
         if (calls.Count == 0)
         {
-            return new Scope(null, $"rule 1: no AddAutoMapper call in {project.Name} or a project that depends on it", KeptReason.NoRegistration);
+            return new MapperRegistrationScope(null, $"rule 1: no AddAutoMapper call in {project.Name} or a project that depends on it", KeptReason.NoRegistration);
         }
 
         if (calls.FirstOrDefault(c => c.Condition is null) is not { Location: string call })
         {
-            return new Scope(null, $"rule 2: the AddAutoMapper call at {calls[0].Location} is conditional or deferred (inside {calls[0].Condition})",
+            return new MapperRegistrationScope(null, $"rule 2: the AddAutoMapper call at {calls[0].Location} is conditional or deferred (inside {calls[0].Condition})",
                 KeptReason.ConditionalOrDeferredRegistration);
         }
 
         if (inScope.SelectMany(f => f.Containers).FirstOrDefault() is string container)
         {
-            return new Scope(null, $"rule 3: {container} without AddAutoMapper in the same method, so IMapper may not be registered there",
+            return new MapperRegistrationScope(null, $"rule 3: {container} without AddAutoMapper in the same method, so IMapper may not be registered there",
                 KeptReason.ContainerWithoutRegistration);
         }
 
-        return new Scope(call, null, KeptReason.None);
+        return new MapperRegistrationScope(call, null, KeptReason.None);
     }
 
-    private static async Task<Facts> FactsAsync(Project project, CancellationToken cancellationToken)
+    private static async Task<MapperRegistrationFacts> FactsAsync(Project project, CancellationToken cancellationToken)
     {
-        var facts = new Facts();
+        var facts = new MapperRegistrationFacts();
         foreach (Document document in project.Documents)
         {
             string text = (await document.GetTextAsync(cancellationToken)).ToString();
@@ -256,27 +256,4 @@ internal class MapperRegistration
 
     private static string QualifiedName(ITypeSymbol type) =>
         type.ContainingNamespace is { IsGlobalNamespace: false } ns ? $"{ns.ToDisplayString()}.{type.MetadataName}" : type.MetadataName;
-
-    private class Scope
-    {
-        public Scope(string? call, string? failure, KeptReason code)
-        {
-            Call = call;
-            Failure = failure;
-            Code = code;
-        }
-
-        public string? Call { get; }
-
-        public string? Failure { get; }
-
-        public KeptReason Code { get; }
-    }
-
-    private class Facts
-    {
-        public List<(string Location, string? Condition)> Calls { get; } = [];
-
-        public List<string> Containers { get; } = [];
-    }
 }

@@ -68,7 +68,7 @@ public class GenericRequestPattern : ISolutionPattern, ISolutionFinder
             return false;
         }
 
-        Uses uses = Scan(type, compilations);
+        GenericRequestUses uses = Scan(type, compilations);
         return uses.Closed.Count == 0 && uses.Subclassed.Count > 0 && uses.Unbound is null && uses.OpenCreation is null;
     }
 
@@ -178,7 +178,7 @@ public class GenericRequestPattern : ISolutionPattern, ISolutionFinder
             return PatternResult.Manual($"{name} is a record, partial or file-local; Mediator's source generator does not support generic messages. Write one concrete message per closed type by hand.");
         }
 
-        Uses uses = Scan(message, compilations);
+        GenericRequestUses uses = Scan(message, compilations);
         if (uses.Unbound is not null)
         {
             return PatternResult.Manual($"typeof({name}<>) is used ({uses.Unbound}); {name} becomes abstract with one concrete subclass per closed type. Rewrite that use by hand.");
@@ -398,10 +398,10 @@ public class GenericRequestPattern : ISolutionPattern, ISolutionFinder
         string.Join(", ", closed.TypeArguments.Select(a => a is INamedTypeSymbol n ? MetadataKey(n) : a.ToDisplayString()));
 
     // Every use of the generic message in the solution, by the written G<...> names and by inherited handler interfaces.
-    private static Uses Scan(INamedTypeSymbol message, IReadOnlyList<Compilation> compilations)
+    private static GenericRequestUses Scan(INamedTypeSymbol message, IReadOnlyList<Compilation> compilations)
     {
         string key = MetadataKey(message);
-        var result = new Uses();
+        var result = new GenericRequestUses();
         foreach (Compilation compilation in compilations)
         {
             foreach (SyntaxTree tree in compilation.SyntaxTrees)
@@ -458,18 +458,5 @@ public class GenericRequestPattern : ISolutionPattern, ISolutionFinder
         }
 
         return result;
-    }
-
-    private class Uses
-    {
-        public Dictionary<string, IReadOnlyList<ITypeSymbol>> Closed { get; } = new(StringComparer.Ordinal);
-
-        public HashSet<string> Subclassed { get; } = new(StringComparer.Ordinal);
-
-        public HashSet<string> Assemblies { get; } = new(StringComparer.Ordinal);
-
-        public string? Unbound { get; set; }
-
-        public string? OpenCreation { get; set; }
     }
 }

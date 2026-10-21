@@ -40,16 +40,16 @@ public class MapCallPattern : ISolutionPattern
             }
 
             ExpressionSyntax parameter = SyntaxFactory.IdentifierName(ParameterName(node, model));
-            return Lambda(parameter, Existing(node, model, groupSource!, groupDestination!, parameter, Kind.Plain) ?? PatternResult.Manual(NoMap(groupSource!, groupDestination!)));
+            return Lambda(parameter, Existing(node, model, groupSource!, groupDestination!, parameter, MapCallKind.Plain) ?? PatternResult.Manual(NoMap(groupSource!, groupDestination!)));
         }
 
-        if (Check((InvocationExpressionSyntax)node, model, out ExpressionSyntax? source, out ITypeSymbol? sourceType, out ITypeSymbol? destination, out Kind kind)
+        if (Check((InvocationExpressionSyntax)node, model, out ExpressionSyntax? source, out ITypeSymbol? sourceType, out ITypeSymbol? destination, out MapCallKind kind)
             is string problem)
         {
             return PatternResult.Manual(problem);
         }
 
-        return kind == Kind.Collection
+        return kind == MapCallKind.Collection
             ? Collection((InvocationExpressionSyntax)node, model, NestedMaps.From(model), source!, sourceType!, destination!)
             : Existing(node, model, sourceType!, destination!, source!, kind) ?? PatternResult.Manual(NoMap(sourceType!, destination!));
     }
@@ -72,16 +72,16 @@ public class MapCallPattern : ISolutionPattern
             }
 
             ExpressionSyntax parameter = SyntaxFactory.IdentifierName(ParameterName(node, model));
-            return Lambda(parameter, await SingleAsync(node, model, solution, parameter, groupSource!, groupDestination!, Kind.Plain, cancellationToken));
+            return Lambda(parameter, await SingleAsync(node, model, solution, parameter, groupSource!, groupDestination!, MapCallKind.Plain, cancellationToken));
         }
 
-        if (Check((InvocationExpressionSyntax)node, model, out ExpressionSyntax? source, out ITypeSymbol? sourceType, out ITypeSymbol? destination, out Kind kind)
+        if (Check((InvocationExpressionSyntax)node, model, out ExpressionSyntax? source, out ITypeSymbol? sourceType, out ITypeSymbol? destination, out MapCallKind kind)
             is string problem)
         {
             return PatternResult.Manual(problem);
         }
 
-        if (kind == Kind.Collection)
+        if (kind == MapCallKind.Collection)
         {
             return Collection((InvocationExpressionSyntax)node, model, await NestedMaps.FromAsync(model, solution, cancellationToken), source!, sourceType!, destination!);
         }
@@ -91,7 +91,7 @@ public class MapCallPattern : ISolutionPattern
 
     // source.ToB() through the method that exists or the one a profile of the solution gets; Manual when there is none (or several).
     private static async Task<PatternResult> SingleAsync(SyntaxNode node, SemanticModel model, Solution solution, ExpressionSyntax source, ITypeSymbol sourceType,
-        ITypeSymbol destination, Kind kind, CancellationToken cancellationToken)
+        ITypeSymbol destination, MapCallKind kind, CancellationToken cancellationToken)
     {
         if (Existing(node, model, sourceType!, destination!, source!, kind) is { } existing)
         {
@@ -211,9 +211,9 @@ public class MapCallPattern : ISolutionPattern
 
     // Why the call cannot become source.ToB(),or null with the source expression and the types of the map.
     private static string? Check(InvocationExpressionSyntax invocation, SemanticModel model, out ExpressionSyntax? source, out ITypeSymbol? sourceType,
-        out ITypeSymbol? destination, out Kind kind)
+        out ITypeSymbol? destination, out MapCallKind kind)
     {
-        kind = Kind.Plain;
+        kind = MapCallKind.Plain;
         source = invocation.ArgumentList.Arguments[0].Expression;
         sourceType = null;
         destination = null;
@@ -237,7 +237,7 @@ public class MapCallPattern : ISolutionPattern
 
         if (IsCollection(sourceType) || IsCollection(destination))
         {
-            kind = Kind.Collection;
+            kind = MapCallKind.Collection;
             return null;
         }
 
@@ -250,7 +250,7 @@ public class MapCallPattern : ISolutionPattern
                 return $"The source of Map may be null: AutoMapper returns null, {sourceType.Name}.To{destination.Name}() throws, and the result goes where null is not allowed; check for null and migrate it by hand.";
             }
 
-            kind = TargetAllowsNull(invocation, model, destination) ? Kind.Conditional : Kind.Suppressed;
+            kind = TargetAllowsNull(invocation, model, destination) ? MapCallKind.Conditional : MapCallKind.Suppressed;
         }
 
         return null;
@@ -359,7 +359,7 @@ public class MapCallPattern : ISolutionPattern
     // An extension method To<B>() on A returning B: one the calling code already sees, or one in this project's source (also the class
     // the profile patterns just wrote, when the profile is in the same file) with a using for its namespace.
     private static PatternResult? Existing(SyntaxNode node, SemanticModel model, ITypeSymbol sourceType, ITypeSymbol destination, ExpressionSyntax source,
-        Kind kind)
+        MapCallKind kind)
     {
         string name = CreateMapPattern.MethodName(destination.Name);
         List<IMethodSymbol> visible = [.. model.LookupSymbols(node.SpanStart, sourceType, name, includeReducedExtensionMethods: true)
@@ -453,10 +453,10 @@ public class MapCallPattern : ISolutionPattern
     }
 
     // Conditional: source?.Method() (Suppressed: with !), in parentheses where a member access after it would join the ?. chain (a ?. after it may join).
-    private static PatternResult Fixed(SyntaxNode node, ExpressionSyntax source, string method, IReadOnlyList<string> namespaces, Kind kind)
+    private static PatternResult Fixed(SyntaxNode node, ExpressionSyntax source, string method, IReadOnlyList<string> namespaces, MapCallKind kind)
     {
         ExpressionSyntax receiver = source.WithoutTrivia() is var bare && NeedsParentheses(bare) ? SyntaxFactory.ParenthesizedExpression(bare) : bare;
-        if (kind is not (Kind.Conditional or Kind.Suppressed))
+        if (kind is not (MapCallKind.Conditional or MapCallKind.Suppressed))
         {
             return PatternResult.Fixed(
                 SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, receiver, SyntaxFactory.IdentifierName(method))),
@@ -465,7 +465,7 @@ public class MapCallPattern : ISolutionPattern
 
         ExpressionSyntax call = SyntaxFactory.ConditionalAccessExpression(receiver,
             SyntaxFactory.InvocationExpression(SyntaxFactory.MemberBindingExpression(SyntaxFactory.IdentifierName(method))));
-        if (kind == Kind.Suppressed)
+        if (kind == MapCallKind.Suppressed)
         {
             call = SyntaxFactory.PostfixUnaryExpression(SyntaxKind.SuppressNullableWarningExpression, call);
         }
@@ -498,14 +498,6 @@ public class MapCallPattern : ISolutionPattern
     internal static bool NeedsParentheses(ExpressionSyntax expression) => expression is not (IdentifierNameSyntax or MemberAccessExpressionSyntax or InvocationExpressionSyntax
         or ElementAccessExpressionSyntax or ParenthesizedExpressionSyntax or ThisExpressionSyntax or LiteralExpressionSyntax or ObjectCreationExpressionSyntax
         or GenericNameSyntax or PostfixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.SuppressNullableWarningExpression });
-
-    private enum Kind
-    {
-        Plain,
-        Conditional,
-        Suppressed,
-        Collection,
-    }
 
     internal static bool IsCollection(ITypeSymbol type) =>
         type.SpecialType != SpecialType.System_String && (type is IArrayTypeSymbol || type.AllInterfaces.Any(i => i.SpecialType == SpecialType.System_Collections_IEnumerable));

@@ -51,6 +51,10 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/` | Active tasks: `TAAK-NNN-<slug>.md` |
 | `claude/tasks/TAAK-019-lancering.md` | Next step: launch (real case, NuGet, public, README GIF) |
 | `docs/projectinfo/lancering/reddit-post.md` | Draft r/dotnet launch post (user posts it) |
+| `claude/tasks/TAAK-295-kept-reason-codes.md` | Typed reason codes for every kept AutoMapper finding instead of the `Stays on AutoMapper:` prefix |
+| `claude/tasks/TAAK-298-performance.md` | Faster `scan --fix`: measure, caches, pre-filter, parallel files with ordered merge |
+| `claude/tasks/TAAK-299-split-large-files.md` | Split `CreateMapPattern.cs` and `Fixer.cs` along the TAAK-297 proposal |
+| `claude/tasks/archief/TAAK-297-code-standards-cleanup.md` | ✅ TAAK-297 — code standards pass: Arrange blocks, nested types to own files, `ThrowIfNull` only at entry points, split proposal |
 | `claude/tasks/archief/TAAK-244-automapper-corpus-survey.md` | ✅ AutoMapper ≤14 corpus survey: API frequencies per project, orders automapper-queue rows 9–15 |
 | `claude/tasks/archief/TAAK-220-throw-aggregateexception-uitpakken.md` | ✅ `Throw<T>()` on a blocking delegate, FA unwraps `AggregateException` (Akka.Streams, 9 regressions) |
 | `claude/tasks/archief/TAAK-221-throwasync-geannuleerde-task.md` | ✅ `ThrowAsync` on a cancelled task loses the real exception (Steeltoe, 18 regressions) |
@@ -144,7 +148,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-148-mediatr-friend-echte-aanroep.md` | ✅ `InternalsVisibleTo` only Manual on a real call from another project (`ISolutionPattern`) |
 | `claude/tasks/TAAK-285..291` | Round-6 blockers after the blind round 5: MediatR overload/RequestHandlerDelegate/starter, AutoMapper MapperConfiguration/IMapper injection, FA residuals, model re-render |
 | `claude/tasks/manual-reduction-queue.md` | Manual-reduction queue after 0.1.0 (TAAK-271..277): analysis, partial migration AutoMapper/MediatR, FA custom assertions, blind round |
-| `claude/tasks/TAAK-276-blind-round-after-manual-reduction.md` | TAAK-276 — blind round 5 (18 old + 18 new repos); results in `CORPUSRUN-blind.md` |
+| `claude/tasks/archief/TAAK-276-blind-round-after-manual-reduction.md` | TAAK-276 — blind round 5 (18 old + 18 new repos); results in `CORPUSRUN-blind.md` |
 | `claude/tasks/archief/TAAK-280-region-directives.md`, `TAAK-281-using-in-conditional.md`, `TAAK-282-required-members.md`, `TAAK-283-using-sub-namespace.md` (all done) | Regressions from round 5 (build breaks); 281 and 283 open with a pending proof in `_Pending` |
 | `claude/tasks/patroon-queue.md` | Queue of FA → Shouldly patterns: which pattern, which task, status (round 2: rows 15-34) |
 | `claude/tasks/mediatr-queue.md` | Queue of MediatR → Mediator patterns; infrastructure in TAAK-020 |

@@ -1,6 +1,6 @@
 # TAAK-276 — Blind corpus round after the manual reduction
 
-**Status**: steps 1-3 done (agent, 2026-10-18); step 4 only as a proposal below
+**Status**: done (2026-10-21) — step 4 closed by release 0.2.0 (TAAK-296 blind rerun, TAAK-019)
 **Branch**: `worktree-agent-acb7a9a79f3ea57be` · **Worktree**: `.claude/worktrees/agent-acb7a9a79f3ea57be`
 **Created**: 2026-10-17
 **Goal**: proof that TAAK-272..275 reduced manual work without regressions, on the same 18 blind repos plus a fresh set of unseen repos, with the numbers in README and on NuGet (release 0.2.0).
@@ -15,7 +15,7 @@
 - [x] 1. Rerun the 18 blind repos (`after` mode): migrated / partially migrated / Manual count / regressions per repo
 - [x] 2. 6–9 fresh unseen repos (never used during development) per library, same measurements
 - [x] 3. Every regression → its own task with a failing proof first; rerun until 0 regressions
-- [→] 4. README results table updated (done); `docs/usage.md` and release 0.2.0 left for the user (proposal below)
+- [x] 4. README results table updated (done); `docs/usage.md` and release 0.2.0 left for the user (proposal below)
 
 ## Progress log
 

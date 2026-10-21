@@ -333,5 +333,5 @@ Tool published from main `0f58486` into `<corpus>/corpus-blind/_results/tool-0f5
 - `claude/tasks/archief/TAAK-296-blind-rerun-before-0.2.0.md`
 
 - `claude/tasks/archief/TAAK-268-blind-validation-round.md`
-- `claude/tasks/TAAK-276-blind-round-after-manual-reduction.md`, `claude/tasks/archief/TAAK-280-region-directives.md`, `TAAK-281-using-in-conditional.md`, `TAAK-282-required-members.md`, `TAAK-283-using-sub-namespace.md`
+- `claude/tasks/archief/TAAK-276-blind-round-after-manual-reduction.md`, `claude/tasks/archief/TAAK-280-region-directives.md`, `TAAK-281-using-in-conditional.md`, `TAAK-282-required-members.md`, `TAAK-283-using-sub-namespace.md`
 - `claude/tasks/CORPUSRUN-automapper.md`

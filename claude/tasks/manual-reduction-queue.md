@@ -15,7 +15,7 @@ all-or-nothing rule per solution, not from the number of Manual findings.
 | 3   | TAAK-273 | AutoMapper specific blockers: cycles, unflattening, null sources, private setters       | 271, 272   | done (cycles, unflattening, null source, ToMappedString fixed; private setters and broken mappings principally manual; remaining keeps are mock stubs) |
 | 4   | TAAK-274 | MediatR partial migration per request type (MediatR and Mediator side by side)          | 271        | done (fullcart migrates partly; starter/miru stay: their root is `AddMediatR`) |
 | 5   | TAAK-275 | FluentAssertions: custom assertion classes → Shouldly                                   | 271        | done   |
-| 6   | TAAK-276 | Blind corpus round(s): 0 regressions, measure Manual before/after; README/NuGet numbers | 272–275    | open   |
+| 6   | TAAK-276 | Blind corpus round(s): 0 regressions, measure Manual before/after; README/NuGet numbers | 272–275    | done   |
 | 7   | TAAK-277 | FluentAssertions residual Manual patterns (proposed by TAAK-271; inventory first)       | 271, 275   | done   |
 | 8   | TAAK-279 | AutoMapper: a mocked IMapper only keeps its class under test on AutoMapper              | 272, 273   | done (option A: shared pairs; culinary 0→2, msb 3→8 Fixed, 0 regressions) |
 | 9   | TAAK-280 | Regression (blind round 5): `#region` around removed `CreateMap` statements (CS1028)    | 276        | done   |

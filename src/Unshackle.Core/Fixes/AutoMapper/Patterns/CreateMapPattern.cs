@@ -47,9 +47,6 @@ public class CreateMapPattern : ISolutionPattern
 
     public virtual async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(solution);
         if (node is not TypeDeclarationSyntax)
         {
             return await MapOwners.KeptCallAsync(node, model, solution, cancellationToken)
@@ -1614,7 +1611,7 @@ public class CreateMapPattern : ISolutionPattern
 
     // The lambdas of `new MapperConfiguration(cfg => ...)` / `new(cfg => ...)` in the class itself (not in a nested type) that call cfg.CreateMap<A, B>(). Syntax
     // first: this runs for every class of every file.
-    internal static List<LambdaExpressionSyntax> ConfigurationLambdas(ClassDeclarationSyntax c, SemanticModel model)
+    internal static IReadOnlyList<LambdaExpressionSyntax> ConfigurationLambdas(ClassDeclarationSyntax c, SemanticModel model)
     {
         List<LambdaExpressionSyntax> found = [];
         foreach (BaseObjectCreationExpressionSyntax creation in c.DescendantNodes(n => n == c || n is not BaseTypeDeclarationSyntax).OfType<BaseObjectCreationExpressionSyntax>())

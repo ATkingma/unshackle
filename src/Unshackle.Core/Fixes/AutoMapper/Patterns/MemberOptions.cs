@@ -64,9 +64,6 @@ public class MemberOptions
     /// </summary>
     public bool TryParse(InvocationExpressionSyntax call, SemanticModel model, Dictionary<string, SimpleLambdaExpressionSyntax?> options)
     {
-        ArgumentNullException.ThrowIfNull(call);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(options);
         if (call is not { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: var kind } }
             || call.ArgumentList.Arguments is not [{ Expression: SimpleLambdaExpressionSyntax target }, { Expression: SimpleLambdaExpressionSyntax option }]
             || Path(target) is not { Count: > 0 } path)
@@ -152,8 +149,6 @@ public class MemberOptions
     /// </summary>
     public bool TryParseCtorParam(InvocationExpressionSyntax call, SemanticModel model)
     {
-        ArgumentNullException.ThrowIfNull(call);
-        ArgumentNullException.ThrowIfNull(model);
         return call.ArgumentList.Arguments is [{ Expression: LiteralExpressionSyntax { RawKind: (int)SyntaxKind.StringLiteralExpression } name },
                 { Expression: SimpleLambdaExpressionSyntax { Parameter.Identifier.ValueText: var o, Body: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax receiver, Name.Identifier.ValueText: "MapFrom" }, ArgumentList.Arguments: [{ Expression: SimpleLambdaExpressionSyntax { Body: ExpressionSyntax } mapFrom }] } mapFromCall } }]
             && receiver.Identifier.ValueText == o

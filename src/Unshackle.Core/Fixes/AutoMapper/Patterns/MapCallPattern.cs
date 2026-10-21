@@ -31,7 +31,6 @@ public class MapCallPattern : ISolutionPattern
     // Without the solution only an extension method the code already has counts.
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
-        ArgumentNullException.ThrowIfNull(model);
         if (node is not InvocationExpressionSyntax)
         {
             if (CheckGroup((ExpressionSyntax)node, model, out ITypeSymbol? groupSource, out ITypeSymbol? groupDestination) is string groupProblem)
@@ -56,9 +55,6 @@ public class MapCallPattern : ISolutionPattern
 
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(solution);
         if (await MapOwners.KeptCallAsync(node, model, solution, cancellationToken) is { } kept)
         {
             return kept;

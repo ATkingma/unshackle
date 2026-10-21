@@ -35,9 +35,6 @@ public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
 
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(solution);
         MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, cancellationToken);
         if (node is InvocationExpressionSyntax && cleanup.KeptLookups(node.SyntaxTree.GetRoot(cancellationToken), model).FirstOrDefault(k => k.Lookup == node) is { Reason: string kept, Code: var code })
         {

@@ -35,8 +35,6 @@ public class AddAutoMapperPattern : ISolutionPattern
     // Without the solution only this project's sources are checked for a mapper that is still used.
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
         string? user = model.Compilation.SyntaxTrees
             .SelectMany(t => t.GetRoot().DescendantNodes().OfType<IdentifierNameSyntax>()
                 .Where(n => s_services.Any(s => s.EndsWith("." + n.Identifier.ValueText, StringComparison.Ordinal)))
@@ -49,9 +47,6 @@ public class AddAutoMapperPattern : ISolutionPattern
     // With the solution every project counts: a test resolving IMapper from AddSampleShop() needs the registration too.
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(solution);
         // A use in code that UnusedMapperPattern removes (TAAK-289) does not count.
         MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, cancellationToken);
         foreach (INamedTypeSymbol service in s_services.Select(model.Compilation.GetTypeByMetadataName).OfType<INamedTypeSymbol>())

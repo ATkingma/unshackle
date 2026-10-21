@@ -31,9 +31,6 @@ public class KeptMapPattern : ISolutionPattern
 
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(solution);
         return Kept(node, model, await MapOwners.ForAsync(solution, model, cancellationToken));
     }
 

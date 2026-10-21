@@ -29,8 +29,6 @@ public class ConfigurationTestPattern : ISolutionPattern
     // Without the solution only this project's sources are searched for maps that stay AutoMapper.
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
         return Problem(node, model) is string problem
             ? PatternResult.Manual(problem)
             : Remove(ChecksConfiguration(node, model)
@@ -41,9 +39,6 @@ public class ConfigurationTestPattern : ISolutionPattern
     // With the solution: a test project checks the profiles of the projects it references.
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(solution);
         string? problem = Problem(node, model);
         if (problem is not null && node is not InvocationExpressionSyntax)
         {

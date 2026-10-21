@@ -32,9 +32,6 @@ public class MapIntoPattern : ISolutionPattern
 
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(solution);
         var invocation = (InvocationExpressionSyntax)node;
         if (await MapOwners.KeptCallAsync(node, model, solution, cancellationToken) is { } kept)
         {

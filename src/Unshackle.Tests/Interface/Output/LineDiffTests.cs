@@ -43,8 +43,12 @@ public class LineDiffTests
     [Fact]
     public void Compute_CrLfAgainstLf_TreatsLineEndingsAsEqual()
     {
+        // Arrange
+        const string crLf = "a\r\nb\r\n";
+        const string lf = "a\nb\n";
+
         // Act
-        IReadOnlyList<DiffLine> lines = LineDiff.Compute("a\r\nb\r\n", "a\nb\n");
+        IReadOnlyList<DiffLine> lines = LineDiff.Compute(crLf, lf);
 
         // Assert
         lines.ShouldBeEmpty();

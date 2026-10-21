@@ -10,8 +10,10 @@ public class TestSolutionTests
     [Fact]
     public void NewEmpty_CalledTwice_GivesDifferentSolutionIds()
     {
-        // Act
+        // Arrange
         Solution first = TestSolution.NewEmpty();
+
+        // Act
         Solution second = TestSolution.NewEmpty();
 
         // Assert

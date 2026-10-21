@@ -13,8 +13,11 @@ public class MediatRFixPackageTests
     [InlineData("MSG0005")] // message without handler (TAAK-136)
     public void Package_SourceGenerator_KeepsGeneratorWarningAsWarning(string id)
     {
+        // Arrange
+        MediatRFix fix = new();
+
         // Act
-        AddedPackage generator = new MediatRFix().Package.AddedPackages.Single(p => p.Name == "Mediator.SourceGenerator");
+        AddedPackage generator = fix.Package.AddedPackages.Single(p => p.Name == "Mediator.SourceGenerator");
 
         // Assert
         generator.WarningsNotAsErrors.ShouldContain(id);

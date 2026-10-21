@@ -32,9 +32,12 @@ public class SwappedTypesTests
     [MemberData(nameof(SwappedTypeNames))]
     public void SwappedTypes_EachType_ExistsInMediatRAndMediator(string metadataName)
     {
+        // Arrange
+        string twinName = "Mediator" + metadataName["MediatR".Length..];
+
         // Act
         INamedTypeSymbol? old = Compile(TestReferences.MediatR).GetTypeByMetadataName(metadataName);
-        INamedTypeSymbol? twin = Compile(TestReferences.Mediator).GetTypeByMetadataName("Mediator" + metadataName["MediatR".Length..]);
+        INamedTypeSymbol? twin = Compile(TestReferences.Mediator).GetTypeByMetadataName(twinName);
 
         // Assert
         old.ShouldNotBeNull();
@@ -45,6 +48,9 @@ public class SwappedTypesTests
     [Fact]
     public void AddedTypes_MatchPublicAndGeneratedTypesOfMediatorNamespace()
     {
+        // Arrange
+        MediatRFix fix = new();
+
         // Act
         List<string> actual = [.. Compile(TestReferences.Mediator).GetTypeByMetadataName("Mediator.IMediator")!.ContainingNamespace
             .GetTypeMembers()
@@ -54,7 +60,7 @@ public class SwappedTypesTests
             .Order(StringComparer.Ordinal)];
 
         // Assert
-        new MediatRFix().AddedTypes.Order(StringComparer.Ordinal).ShouldBe(actual);
+        fix.AddedTypes.Order(StringComparer.Ordinal).ShouldBe(actual);
     }
 
     [Fact]

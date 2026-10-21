@@ -26,8 +26,11 @@ public class ShouldBeEqualsOrderTests
     [InlineData("IThing a, IThing b", "a.Should().Be(b)", "the runtime types are unknown here")]
     public void Rewrite_EqualsMayBeAsymmetric_FixedWithWarning(string parameters, string assertion, string warning)
     {
+        // Arrange
+        string code = Code(parameters, assertion);
+
         // Act
-        FixedResult result = Rewrite(parameters, assertion).ShouldBeOfType<FixedResult>();
+        FixedResult result = Rewrite(code, assertion).ShouldBeOfType<FixedResult>();
 
         // Assert
         result.Warning.ShouldNotBeNull().ShouldContain("Shouldly compares expected.Equals(actual)");
@@ -42,16 +45,21 @@ public class ShouldBeEqualsOrderTests
     [InlineData("System.DateTime a, System.DateTime b", "a.Should().NotBe(b)")]
     public void Rewrite_EqualsSymmetricOrBcl_FixedWithoutWarning(string parameters, string assertion)
     {
+        // Arrange
+        string code = Code(parameters, assertion);
+
         // Act
-        FixedResult result = Rewrite(parameters, assertion).ShouldBeOfType<FixedResult>();
+        FixedResult result = Rewrite(code, assertion).ShouldBeOfType<FixedResult>();
 
         // Assert
         result.Warning.ShouldBeNull();
     }
 
-    private static PatternResult Rewrite(string parameters, string assertion)
+    private static string Code(string parameters, string assertion) =>
+        $"using FluentAssertions;\n{Types}\nclass C {{ void T({parameters}) {{ {assertion}; }} }}";
+
+    private static PatternResult Rewrite(string code, string assertion)
     {
-        string code = $"using FluentAssertions;\n{Types}\nclass C {{ void T({parameters}) {{ {assertion}; }} }}";
         SyntaxTree tree = CSharpSyntaxTree.ParseText(code, cancellationToken: TestContext.Current.CancellationToken);
         SemanticModel model = CSharpCompilation.Create("Check", [tree], TestReferences.FluentAssertions).GetSemanticModel(tree);
         ShouldBePattern pattern = assertion.Contains("NotBe", StringComparison.Ordinal) ? new NotBePattern() : new ShouldBePattern();

@@ -29,8 +29,11 @@ public class CliTests
     [Fact]
     public async Task RunAsync_List_ReturnsOk()
     {
+        // Arrange
+        string[] args = ["list"];
+
         // Act
-        int exitCode = await Cli.RunAsync(["list"], TestContext.Current.CancellationToken);
+        int exitCode = await Cli.RunAsync(args, TestContext.Current.CancellationToken);
 
         // Assert
         exitCode.ShouldBe(ExitCodes.Ok);

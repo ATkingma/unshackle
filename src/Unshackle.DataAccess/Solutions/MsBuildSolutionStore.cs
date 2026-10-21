@@ -88,15 +88,10 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
         // Nothing binds in it, so the fix could only damage it: with no project depending on it, it is left out with a warning.
         // A lone unrestored project, or one others depend on, stays fatal below. A shared package file may still change for the
         // others; the left-out project does not build with the solution anyway (the restore that skipped it is the solution's).
-        List<Project> unresolved = [];
-        foreach (Project project in solution.Projects)
-        {
-            Compilation? compilation = await project.GetCompilationAsync(cancellationToken);
-            if (compilation?.GetSpecialType(SpecialType.System_Object).TypeKind == TypeKind.Error)
-            {
-                unresolved.Add(project);
-            }
-        }
+        // The projects compile independently of each other, so in parallel; the results keep the solution's order (TAAK-298).
+        List<Project> projects = [.. solution.Projects];
+        Compilation?[] compilations = await Task.WhenAll(projects.Select(p => Task.Run(() => p.GetCompilationAsync(cancellationToken), cancellationToken)));
+        List<Project> unresolved = [.. projects.Where((_, i) => compilations[i]?.GetSpecialType(SpecialType.System_Object).TypeKind == TypeKind.Error)];
 
         if (unresolved.Count < solution.ProjectIds.Count)
         {
@@ -113,11 +108,16 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
         // TAAK-142: an AOT app, benchmark or sample (Akka.NET, Steeltoe) that does not resolve, uses none of the migrated libraries
         // and has no project depending on it, is left out with a warning, as long as another project does resolve.
         Dictionary<Project, List<string>> broken = [];
-        foreach (Project project in solution.Projects)
+        // Binding every method body is the most expensive part of the load; each project's diagnostics are computed in parallel.
+        projects = [.. solution.Projects];
+        List<Diagnostic>[] diagnostics = await Task.WhenAll(projects.Select(p => Task.Run(
+            async () => (await p.GetCompilationAsync(cancellationToken))?.GetDiagnostics(cancellationToken)
+                .Where(d => d.Id is "CS0246" or "CS0234" && d.Severity == DiagnosticSeverity.Error).ToList() ?? [],
+            cancellationToken)));
+        for (int i = 0; i < projects.Count; i++)
         {
-            Compilation? compilation = await project.GetCompilationAsync(cancellationToken);
-            List<Diagnostic> unresolvedNames = compilation?.GetDiagnostics(cancellationToken)
-                .Where(d => d.Id is "CS0246" or "CS0234" && d.Severity == DiagnosticSeverity.Error).ToList() ?? [];
+            Project project = projects[i];
+            List<Diagnostic> unresolvedNames = diagnostics[i];
             HashSet<string> razorNames = unresolvedNames.Count > 0 ? RazorNames(project) : [];
             List<string> messages = [.. unresolvedNames
                 .Select(d => d.GetMessage(CultureInfo.InvariantCulture))

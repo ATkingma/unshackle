@@ -23,7 +23,8 @@ internal static class ProjectPackages
         var migrations = new List<ProjectMigration>();
         foreach (Project project in solution.Projects.Where(p => p.Language == LanguageNames.CSharp && p.FilePath is not null))
         {
-            Compilation? compilation = await project.GetCompilationAsync(cancellationToken);
+            // The references do not change during a fix: the original's compilation is already built at load (TAAK-298).
+            Compilation? compilation = await (original.GetProject(project.Id) ?? project).GetCompilationAsync(cancellationToken);
             // shortcut: package id = assembly name (true for FluentAssertions and MediatR); other packages need a mapping.
             HashSet<string> removed = [package.RemovedPackage, .. package.AlsoRemovedPackages];
             if (compilation is null || !compilation.ReferencedAssemblyNames.Any(a => removed.Contains(a.Name)))

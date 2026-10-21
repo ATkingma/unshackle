@@ -1,8 +1,5 @@
-using System.Diagnostics;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
@@ -27,20 +24,14 @@ public class Fixer : IFixer
     // A non-UTF-8 single-byte file is loaded as Latin-1 and written back byte-exact, so it is migrated like any other (TAAK-285).
     public const string EncodingPatternId = "encoding";
 
-    // TAAK-198: each round of targeted imports can only add conflicts; real files settle in two or three.
-    private const int MaxTargetedRounds = 8;
+    internal const string KeptPackageReason = " is still used in this project, so its package and global usings stay. ";
 
-    // TAAK-274: each partial round can only keep more; a plan that does not settle in a few rounds falls back to all-or-nothing.
-    private const int MaxPartialRounds = 4;
+    internal const string KeptSharedPackageReason = " is not migrated but still uses ";
 
-    private const string KeptPackageReason = " is still used in this project, so its package and global usings stay. ";
-
-    private const string KeptSharedPackageReason = " is not migrated but still uses ";
-
-    private const string KeptGlobalUsingReason = "The project still uses ";
+    internal const string KeptGlobalUsingReason = "The project still uses ";
 
     // Start of the usings row for old code in an inactive #if branch; a later pass over another target framework replaces it (TAAK-223).
-    private const string InactiveBranchReason = "Code in an inactive #if branch is not migrated";
+    internal const string InactiveBranchReason = "Code in an inactive #if branch is not migrated";
 
     private static readonly IReadOnlyDictionary<string, string> s_noneBlocked = new Dictionary<string, string>();
 
@@ -75,135 +66,26 @@ public class Fixer : IFixer
         }
 
         // TAAK-274: the code tied to the Manual findings stays on the old library, the rest moves; otherwise nothing changes.
-        if (fix is IPartialFix partial && await RunPartialAsync(fix, partial, solution, full, cancellationToken) is FixReport partialReport)
+        if (fix is IPartialFix partial && await PartialRun.RunPartialAsync(partial, solution, full, (s, seed, ct) => RunAsync(fix, s, seed, ct), cancellationToken) is FixReport partialReport)
         {
             return partialReport;
         }
 
-        return new FixReport { Solution = solution, Findings = [.. full.Findings.Select(f => f.Result is FixedResult ? NotApplied(f) : f)], ProjectFileChanges = [] };
+        return new FixReport { Solution = solution, Findings = [.. full.Findings.Select(f => f.Result is FixedResult ? FindingFactory.NotApplied(f) : f)], ProjectFileChanges = [] };
     }
-
-    // Plans a partial run from the Manual findings, runs it, and plans again with every new blocking Manual finding as an extra
-    // root. Null when the fix finds no safe plan or the plan does not settle.
-    private async Task<FixReport?> RunPartialAsync(IFix fix, IPartialFix partial, Solution solution, FixReport firstRun, CancellationToken cancellationToken)
-    {
-        List<Finding> roots = [];
-        // Rows that only say the old library stays somewhere are no roots; in a partial run a kept global using is (it would clash).
-        foreach (Finding finding in firstRun.Findings.Where(f => f.Result is ManualResult manual && !manual.Reason.StartsWith(NotRewrittenPrefix, StringComparison.Ordinal)
-            && !IsKeptPackageRow(f) && !(f.PatternId == UsingsPatternId && manual.Reason.StartsWith(KeptGlobalUsingReason, StringComparison.Ordinal))))
-        {
-            roots.Add(finding.PatternId == UnmatchedPatternId ? await InOriginalAsync(finding, solution, firstRun.Solution, cancellationToken) : finding);
-        }
-
-        for (int round = 0; round < MaxPartialRounds; round++)
-        {
-            if (await partial.PlanPartialAsync(solution, roots, cancellationToken) is not PartialPlan plan)
-            {
-                return null;
-            }
-
-            FixReport report = await RunAsync(fix, plan.Solution, plan.Findings, cancellationToken);
-            if (!await KeepsKeptCodeAsync(plan.Solution, report.Solution, cancellationToken))
-            {
-                return null;
-            }
-
-            List<Finding> blocking = [.. report.Findings.Where(f => f.Result is ManualResult && !plan.Findings.Contains(f) && !IsKeptPackageRow(f))];
-            if (blocking.Count == 0)
-            {
-                return report;
-            }
-
-            int known = roots.Count;
-            roots.AddRange(blocking.Where(b => !roots.Any(r => r.FilePath == b.FilePath && r.Line == b.Line)));
-            if (roots.Count == known)
-            {
-                return null;
-            }
-        }
-
-        return null;
-    }
-
-    // Every outermost kept node of the plan is still in the fixed file, in order and with the same text: no pattern or using step
-    // rewrote code that stays on the old library.
-    private static async Task<bool> KeepsKeptCodeAsync(Solution planned, Solution fixedSolution, CancellationToken cancellationToken)
-    {
-        foreach (Document document in planned.Projects.SelectMany(p => p.Documents))
-        {
-            SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken))!;
-            if (!root.ContainsAnnotations || fixedSolution.GetDocument(document.Id) is not Document fixedDocument)
-            {
-                continue;
-            }
-
-            string text = (await fixedDocument.GetTextAsync(cancellationToken)).ToString();
-            int position = 0;
-            foreach (SyntaxNode kept in root.GetAnnotatedNodes(PartialPlan.KeptAnnotationKind)
-                .Where(n => !n.Ancestors().Any(a => a.HasAnnotations(PartialPlan.KeptAnnotationKind))).OrderBy(n => n.SpanStart))
-            {
-                int found = text.IndexOf(kept.ToString(), position, StringComparison.Ordinal);
-                if (found < 0)
-                {
-                    return false;
-                }
-
-                position = found + kept.Span.Length;
-            }
-        }
-
-        return true;
-    }
-
-    // An unmatched-use row has its line in the fixed file (added usings move it down): the plan needs the line in the original. The
-    // code it points at was not rewritten, so the same line is in the original, near the same number.
-    private static async Task<Finding> InOriginalAsync(Finding finding, Solution original, Solution fixedSolution, CancellationToken cancellationToken)
-    {
-        if (finding.Line < 1 || original.GetDocumentIdsWithFilePath(finding.FilePath).FirstOrDefault() is not DocumentId id
-            || fixedSolution.GetDocument(id) is not Document fixedDocument)
-        {
-            return finding;
-        }
-
-        TextLineCollection before = (await original.GetDocument(id)!.GetTextAsync(cancellationToken)).Lines;
-        TextLineCollection after = (await fixedDocument.GetTextAsync(cancellationToken)).Lines;
-        if (finding.Line > after.Count)
-        {
-            return finding;
-        }
-
-        string line = after[finding.Line - 1].ToString().Trim();
-        for (int distance = 0; distance < Math.Max(before.Count, after.Count); distance++)
-        {
-            foreach (int candidate in (int[])[finding.Line - 1 - distance, finding.Line - 1 + distance])
-            {
-                if (candidate >= 0 && candidate < before.Count && before[candidate].ToString().Trim() == line)
-                {
-                    return new Finding { FilePath = finding.FilePath, Line = candidate + 1, FixId = finding.FixId, PatternId = finding.PatternId, Result = finding.Result };
-                }
-            }
-        }
-
-        return finding;
-    }
-
-    // The project-file rows that kept code causes: the old package stays next to the new one.
-    private static bool IsKeptPackageRow(Finding finding) =>
-        finding.PatternId == ProjectFilePatternId && finding.Result is ManualResult { Reason: var reason }
-        && (reason.Contains(KeptPackageReason, StringComparison.Ordinal) || reason.Contains(KeptSharedPackageReason, StringComparison.Ordinal));
 
     // One run of the fix over the solution; seed findings come first in the report (the rows of a partial plan).
     private async Task<FixReport> RunAsync(IFix fix, Solution solution, IReadOnlyList<Finding> seed, CancellationToken cancellationToken)
     {
         var findings = new List<Finding>(seed);
         Solution original = solution;
-        Solution baseline = AddReferences(original, fix.AddedReferences, fix.AddedNamespaces);
+        Solution baseline = FileFixer.AddReferences(original, fix.AddedReferences, fix.AddedNamespaces);
         HashSet<string> swappedTypes = [.. fix.SwappedTypes];
         // A file that is not UTF-8 stays as it is, with one Manual row (TAAK-167). It still names the old library, so its
         // project keeps the package (the project-file cascade below) and the rest of the solution is migrated.
-        HashSet<string> notUtf8 = await NotUtf8FilesAsync(solution, cancellationToken);
+        HashSet<string> notUtf8 = await SolutionChecks.NotUtf8FilesAsync(solution, cancellationToken);
         // A file shared with a project that can reach neither the old nor the new library is not migrated either (below).
-        HashSet<string> unreachable = await UnreachableFilesAsync(solution, fix, cancellationToken);
+        HashSet<string> unreachable = await SolutionChecks.UnreachableFilesAsync(solution, fix, cancellationToken);
         notUtf8.UnionWith(unreachable);
         // Only a file that names the old library needs the row; another one is left alone without noise.
         foreach (string path in notUtf8.Order(StringComparer.Ordinal))
@@ -211,7 +93,7 @@ public class Fixer : IFixer
             Document document = solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents).First(d => d.FilePath == path);
             if (await UsingDirectives.NamesRemovedNamespaceAsync(document, fix.RemovedNamespaces, cancellationToken))
             {
-                findings.Add(CreateFinding(path, 0, fix, EncodingPatternId, unreachable.Contains(path) ? PatternResult.Manual(
+                findings.Add(FindingFactory.CreateFinding(path, 0, fix, EncodingPatternId, unreachable.Contains(path) ? PatternResult.Manual(
                     "The file is also compiled by a project that references neither the old nor the new library (a linked file, e.g. for another " +
                     "assertion library), so a rewrite would not build there. It is not migrated and its other projects keep the old package. " +
                     "Migrate it by hand.") : PatternResult.Manual(
@@ -281,7 +163,7 @@ public class Fixer : IFixer
             }
         }
 
-        solution = await SwapGlobalUsingsAsync(solution, fix, globalProjects, swappedTypes, notUtf8, findings, cancellationToken);
+        solution = await SolutionChecks.SwapGlobalUsingsAsync(solution, fix, globalProjects, swappedTypes, notUtf8, findings, cancellationToken);
         // A package that builds on the old library: its source goes in, the package goes out with the others (TAAK-194).
         VendoredPlan vendored = await VendoredPackages.PlanAsync(original, fix, cancellationToken);
         findings.AddRange(vendored.Findings);
@@ -313,7 +195,7 @@ public class Fixer : IFixer
         CancellationToken cancellationToken)
     {
         int firstFinding = findings.Count;
-        FilePass pass = await FixFileAsync(fix, original, passBaseline, documentId, swappedTypes, globalProjects, s_noneBlocked, false, earlier, findings, cancellationToken);
+        FilePass pass = await FileFixer.FixFileAsync(fix, original, passBaseline, documentId, swappedTypes, globalProjects, s_noneBlocked, false, earlier, findings, cancellationToken);
         Solution working = pass.Working;
         if (pass.Updated is not Document updated)
         {
@@ -352,9 +234,9 @@ public class Fixer : IFixer
         if (!globalProjects.Contains(documentId.ProjectId))
         {
             // References without the global using, so a check sees the imports the file itself has.
-            Solution unimported = AddReferences(original, fix.AddedReferences, []);
+            Solution unimported = FileFixer.AddReferences(original, fix.AddedReferences, []);
             unimported = text is null ? unimported : unimported.WithDocumentText(documentId, text);
-            targeted = await FixWithTargetedImportsAsync(
+            targeted = await FileFixer.FixWithTargetedImportsAsync(
                 fix, original, passBaseline, unimported, documentId, swappedTypes, globalProjects, earlier, findings, firstFinding, cancellationToken);
         }
 
@@ -369,11 +251,11 @@ public class Fixer : IFixer
         {
             if (findings[i].Result is FixedResult)
             {
-                findings[i] = CreateFinding(findings[i], PatternResult.Manual($"{NotRewrittenPrefix}{c.Reason}"));
+                findings[i] = FindingFactory.CreateFinding(findings[i], PatternResult.Manual($"{NotRewrittenPrefix}{c.Reason}"));
             }
         }
 
-        findings.Add(CreateUsingsFinding(updated.FilePath ?? updated.Name, c.Line, fix, PatternResult.Manual(c.Reason)));
+        findings.Add(FindingFactory.CreateUsingsFinding(updated.FilePath ?? updated.Name, c.Line, fix, PatternResult.Manual(c.Reason)));
         return (passBaseline, false, firstFinding);
     }
 
@@ -400,220 +282,6 @@ public class Fixer : IFixer
 
         return result;
     }
-
-    // TAAK-223: true when the node is in code that every earlier pass saw as an inactive #if branch, so no earlier pass fixed it.
-    // The first pass (no earlier ones) takes everything.
-    private static Func<SyntaxNode, bool> NewCode(SyntaxNode root, IReadOnlyList<ParseOptions> earlier)
-    {
-        if (earlier.Count == 0)
-        {
-            return _ => true;
-        }
-
-        string text = root.ToFullString();
-        List<List<TextSpan>> inactive =
-        [
-            .. earlier.Select(options => CSharpSyntaxTree.ParseText(text, (CSharpParseOptions)options).GetRoot()
-                .DescendantTrivia().Where(t => t.IsKind(SyntaxKind.DisabledTextTrivia)).Select(t => t.FullSpan).ToList()),
-        ];
-        return node => inactive.All(spans => spans.Any(s => s.Contains(node.Span)));
-    }
-
-    // One pass over a file: the patterns, then the usings. A rewrite that calls a blocked name is Manual with the blocked reason;
-    // targeted leaves the added namespaces out of the usings (the caller imports the classes that do not conflict, TAAK-198).
-    // Updated is null when the usings were not touched.
-    private static async Task<FilePass> FixFileAsync(
-        IFix fix,
-        Solution original,
-        Solution baseline,
-        DocumentId documentId,
-        HashSet<string> swappedTypes,
-        HashSet<ProjectId> globalProjects,
-        IReadOnlyDictionary<string, string> blocked,
-        bool targeted,
-        IReadOnlyList<ParseOptions> earlier,
-        List<Finding> findings,
-        CancellationToken cancellationToken)
-    {
-        // Every file is fixed against the original solution, so what a pattern finds never depends on which files
-        // were fixed before (a marker interface in an earlier file would already be swapped, TAAK-130).
-        Solution working = baseline;
-        var requiredNamespaces = new HashSet<string>(StringComparer.Ordinal);
-        bool changed = false;
-        // Patterns run one after another, each on a fresh semantic model of the previous result.
-        foreach (IPattern pattern in fix.Patterns)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            Document document = working.GetDocument(documentId)!;
-            SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken))!;
-            SemanticModel model = (await document.GetSemanticModelAsync(cancellationToken))!;
-            string filePath = document.FilePath ?? document.Name;
-            SyntaxNode newRoot = await ApplyPatternAsync(fix, pattern, filePath, root, model, document.Project.Solution, blocked, NewCode(root, earlier), findings, requiredNamespaces, cancellationToken);
-            if (newRoot != root)
-            {
-                working = working.WithDocumentSyntaxRoot(documentId, newRoot);
-                changed = true;
-            }
-        }
-
-        // A file that only uses swapped types needs no pattern, just the using swap. A file without findings still loses
-        // its unused old using: the package may be removed from the project (TAAK-073).
-        if (!changed
-            && !await UsingDirectives.HasUnusedRemovedUsingAsync(working.GetDocument(documentId)!, fix.RemovedNamespaces, swappedTypes, cancellationToken))
-        {
-            return new FilePass { Working = working, Changed = changed, ImportsAdded = false, Updated = null };
-        }
-
-        // Only a file that names the old library gets the new namespaces: one that uses it through a base type of its own
-        // would get an unused using (IDE0005, TAAK-115).
-        if ((changed || swappedTypes.Count > 0)
-            && await UsingDirectives.NamesRemovedNamespaceAsync(original.GetDocument(documentId)!, fix.RemovedNamespaces, cancellationToken))
-        {
-            requiredNamespaces.UnionWith(fix.AddedNamespaces);
-        }
-
-        if (globalProjects.Contains(documentId.ProjectId) || targeted)
-        {
-            // The project's global using brings the added namespaces (see SwapGlobalUsingsAsync), or the caller imports them per class.
-            requiredNamespaces.ExceptWith(fix.AddedNamespaces);
-        }
-
-        Document current = working.GetDocument(documentId)!;
-        working = await UsingDirectives.UpdateAsync(
-            current, requiredNamespaces, fix.RemovedNamespaces, swappedTypes, fix.RemovedExtensionMethods, fix.AddedTypes, cancellationToken);
-        Document updated = working.GetDocument(documentId)!;
-        SyntaxNode updatedRoot = (await updated.GetSyntaxRootAsync(cancellationToken))!;
-        SemanticModel currentModel = (await current.GetSemanticModelAsync(cancellationToken))!;
-        SyntaxNode currentRoot = (await current.GetSyntaxRootAsync(cancellationToken))!;
-        Func<SyntaxNode, bool> isNew = NewCode(currentRoot, earlier);
-        findings.AddRange(UsingDirectives.UnboundCalls(currentRoot, currentModel, fix.RemovedExtensionMethods, cancellationToken).Where(n => isNew(n))
-            .Select(n => CreateUsingsFinding(updated.FilePath ?? updated.Name, n.GetLocation().GetLineSpan().StartLinePosition.Line + 1, fix, PatternResult.Manual(
-                $"{n.Identifier.ValueText}() binds to nothing here (the type it is called on is unknown, e.g. after a rewrite in a lambda earlier on), " +
-                "so no pattern migrated it and the old using stays. Run the fix again once the project builds, or migrate it by hand."))));
-        if (UsingDirectives.KeepsRemovedUsing(updatedRoot, currentModel.Compilation, fix.RemovedNamespaces))
-        {
-            // Line in the file as the patterns saw it, like their findings; 0 (whole file) when only the updated root has it.
-            SyntaxTrivia disabled = (await current.GetSyntaxRootAsync(cancellationToken))!.DescendantTrivia()
-                .FirstOrDefault(t => t.IsKind(SyntaxKind.DisabledTextTrivia));
-            int line = disabled.IsKind(SyntaxKind.DisabledTextTrivia) ? disabled.GetLocation().GetLineSpan().StartLinePosition.Line + 1 : 0;
-            findings.Add(CreateUsingsFinding(updated.FilePath ?? updated.Name, line, fix, PatternResult.Manual(
-                $"{InactiveBranchReason}, so the old using stays. Migrate that branch by hand.")));
-        }
-
-        return new FilePass { Working = working, Changed = changed, ImportsAdded = requiredNamespaces.Count > 0, Updated = updated };
-    }
-
-    // TAAK-198: a file whose rewrite conflicts with an own extension (Akka.TestKit's ShouldBe next to Shouldly's) is migrated
-    // anyway. Instead of the added namespace it gets `using static` for each added class it calls, minus the classes that make a
-    // call ambiguous; rewrites that would call a conflicting name (or a name of a left-out class) stay as they were, as Manual.
-    // Each round may find a new conflict; the sets only grow. Null when it does not work out (the caller keeps the whole file).
-    private static async Task<Solution?> FixWithTargetedImportsAsync(
-        IFix fix,
-        Solution original,
-        Solution baseline,
-        Solution unimported,
-        DocumentId documentId,
-        HashSet<string> swappedTypes,
-        HashSet<ProjectId> globalProjects,
-        IReadOnlyList<ParseOptions> earlier,
-        List<Finding> findings,
-        int firstFinding,
-        CancellationToken cancellationToken)
-    {
-        var blocked = new Dictionary<string, string>(StringComparer.Ordinal);
-        var leftOut = new Dictionary<string, string>(StringComparer.Ordinal);
-        Document originalCheck = unimported.GetDocument(documentId)!;
-        int originalErrors = await UsingDirectives.ErrorCountAsync(originalCheck, cancellationToken);
-        for (int round = 0; round < MaxTargetedRounds; round++)
-        {
-            findings.RemoveRange(firstFinding, findings.Count - firstFinding);
-            FilePass pass = await FixFileAsync(fix, original, baseline, documentId, swappedTypes, globalProjects, blocked, true, earlier, findings, cancellationToken);
-            Document document = pass.Working.GetDocument(documentId)!;
-            if (await UsingDirectives.AddedUsageAsync(document, fix.AddedNamespaces, cancellationToken) is not AddedUsage usage)
-            {
-                return null;
-            }
-
-            bool grew = false;
-            foreach ((string name, string type) in usage.Calls)
-            {
-                if (leftOut.TryGetValue(type, out string? why) && !blocked.ContainsKey(name))
-                {
-                    blocked[name] = $"{name}() is in {type}, which is not imported here: {why}";
-                    grew = true;
-                }
-            }
-
-            if (grew)
-            {
-                continue;
-            }
-
-            CompilationUnitSyntax root = UsingDirectives.AddTargetedImports(
-                (CompilationUnitSyntax)(await document.GetSyntaxRootAsync(cancellationToken))!, usage.Calls.Select(c => c.Type).Where(type => !leftOut.ContainsKey(type)), usage.Types);
-            Document candidate = unimported.GetDocument(documentId)!.WithSyntaxRoot(root);
-            IReadOnlyList<AddedConflict> conflicts = await UsingDirectives.ConflictsWithAddedAsync(originalCheck, candidate, fix.AddedNamespaces, cancellationToken);
-            if (conflicts.Count == 0)
-            {
-                // Anything else the imports broke (a missed type, an alias that clashes): the whole file stays.
-                return await UsingDirectives.ErrorCountAsync(candidate, cancellationToken) > originalErrors
-                    ? null
-                    : pass.Working.WithDocumentSyntaxRoot(documentId, root);
-            }
-
-            foreach (AddedConflict conflict in conflicts)
-            {
-                grew |= conflict.AddedType is string type && leftOut.TryAdd(type, conflict.Reason);
-                grew |= blocked.TryAdd(conflict.Name, conflict.Reason);
-            }
-
-            if (!grew)
-            {
-                return null;
-            }
-        }
-
-        return null;
-    }
-
-    // Only for the semantic model the patterns see: the added namespaces are imported by a global using in an extra document,
-    // because a file gets its new usings after all patterns ran. A project that already references the assembly (by file name)
-    // keeps its own copy.
-    private static Solution AddReferences(Solution solution, IReadOnlyList<MetadataReference> references, IReadOnlyList<string> namespaces)
-    {
-        if (references.Count == 0)
-        {
-            return solution;
-        }
-
-        string usings = string.Concat(namespaces.Select(ns => $"global using {ns};\n"));
-        foreach (Project project in solution.Projects.Where(p => p.Language == LanguageNames.CSharp).ToList())
-        {
-            solution = solution.AddDocument(
-                DocumentId.CreateNewId(project.Id), UsingDirectives.AddedUsingsPath, SourceText.From(usings), filePath: UsingDirectives.AddedUsingsPath);
-            HashSet<string> present = [.. project.MetadataReferences.Select(r => Path.GetFileName(r.Display ?? string.Empty))];
-            List<MetadataReference> missing = [.. references.Where(r => !present.Contains(Path.GetFileName(r.Display ?? string.Empty)))];
-            if (missing.Count > 0)
-            {
-                solution = solution.AddMetadataReferences(project.Id, missing);
-            }
-        }
-
-        return solution;
-    }
-
-    private static Finding NotApplied(Finding finding) => CreateFinding(finding, PatternResult.Manual(
-        NotRewrittenPrefix + "this fix changes nothing while other findings are Manual (a partial migration would break at run time). " +
-        "Fix the manual findings and run the fix again."));
-
-    private static Finding CreateFinding(Finding finding, PatternResult result) => new()
-    {
-        FilePath = finding.FilePath,
-        Line = finding.Line,
-        FixId = finding.FixId,
-        PatternId = finding.PatternId,
-        Result = result,
-    };
 
     // Runs on the fixed solution: only code that is still there can keep the removed package.
     // When the project files cannot be edited, the code of those projects stays as it was: rewritten code without the new
@@ -658,15 +326,15 @@ public class Fixer : IFixer
             {
                 if (findings[i].Result is FixedResult && filePaths.Contains(findings[i].FilePath))
                 {
-                    findings[i] = CreateFinding(findings[i], PatternResult.Manual($"{NotRewrittenPrefix}{reason}"));
+                    findings[i] = FindingFactory.CreateFinding(findings[i], PatternResult.Manual($"{NotRewrittenPrefix}{reason}"));
                 }
             }
 
-            findings.AddRange(migrations.Select(m => CreateProjectFinding(m.ProjectPath, fix, PatternResult.Manual(reason))));
+            findings.AddRange(migrations.Select(m => FindingFactory.CreateProjectFinding(m.ProjectPath, fix, PatternResult.Manual(reason))));
             return (solution, []);
         }
 
-        findings.AddRange(migrations.Where(m => m.KeepRemovedPackage).Select(m => CreateProjectFinding(m.ProjectPath, fix,
+        findings.AddRange(migrations.Where(m => m.KeepRemovedPackage).Select(m => FindingFactory.CreateProjectFinding(m.ProjectPath, fix,
             PatternResult.Manual($"{package.RemovedPackage}{KeptPackageReason}Fix the manual findings and run the fix again."))));
         // The project-file row alone says that something is left, not where. A file with a Manual finding already has its explanation.
         HashSet<string> removed = [package.RemovedPackage, .. package.AlsoRemovedPackages];
@@ -677,290 +345,16 @@ public class Fixer : IFixer
             {
                 if (!explained.Contains(filePath))
                 {
-                    findings.Add(CreateFinding(filePath, line, fix, UnmatchedPatternId, PatternResult.Manual(
+                    findings.Add(FindingFactory.CreateFinding(filePath, line, fix, UnmatchedPatternId, PatternResult.Manual(
                         $"{symbol} is still used here and no pattern migrates it, so {package.RemovedPackage} stays in this project. Migrate it by hand.")));
                 }
             }
         }
 
-        findings.AddRange(changes.Select(c => CreateProjectFinding(c.FilePath, fix, c.KeptRemovedPackageFor is string user
+        findings.AddRange(changes.Select(c => FindingFactory.CreateProjectFinding(c.FilePath, fix, c.KeptRemovedPackageFor is string user
             ? PatternResult.Manual($"{user}{KeptSharedPackageReason}{package.RemovedPackage}, so this shared file keeps it next to the new package. " +
                 "Migrate that project and run the fix again.")
             : PatternResult.Fixed(Array.Empty<SyntaxNode>()))));
         return (solution, changes);
     }
-
-    // A global using applies to the whole project (every target): it is swapped only when no file still needs it.
-    // Otherwise the added namespaces are imported next to it, so the migrated files still compile.
-    private static async Task<Solution> SwapGlobalUsingsAsync(
-        Solution solution,
-        IFix fix,
-        HashSet<ProjectId> globalProjects,
-        HashSet<string> swappedTypes,
-        HashSet<string> notUtf8,
-        List<Finding> findings,
-        CancellationToken cancellationToken)
-    {
-        foreach (IGrouping<string, ProjectId> project in globalProjects.GroupBy(id => solution.GetProject(id)!.FilePath ?? id.Id.ToString(), StringComparer.Ordinal))
-        {
-            bool keep = false;
-            foreach (Document document in project.SelectMany(id => solution.GetProject(id)!.Documents))
-            {
-                keep = keep || await UsingDirectives.MayUseRemovedNamespaceAsync(document, fix.RemovedNamespaces, swappedTypes, cancellationToken);
-            }
-
-            foreach (DocumentId documentId in project.SelectMany(id => solution.GetProject(id)!.DocumentIds).ToList())
-            {
-                if (notUtf8.Contains(solution.GetDocument(documentId)!.FilePath ?? documentId.Id.ToString()))
-                {
-                    continue;
-                }
-
-                solution = await UsingDirectives.QualifyClashingAsync(
-                    solution.GetDocument(documentId)!, fix.AddedNamespaces, fix.RemovedNamespaces, fix.AddedTypes, cancellationToken);
-            }
-
-            HashSet<string> reported = new(StringComparer.Ordinal);
-            Dictionary<ProjectId, HashSet<string>> imported = [];
-            foreach (Document document in project.SelectMany(id => solution.GetProject(id)!.Documents).Where(d => !notUtf8.Contains(d.FilePath ?? d.Id.Id.ToString())))
-            {
-                SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken))!;
-                List<UsingDirectiveSyntax> globals = [.. UsingDirectives.RemovedGlobalUsings(root, document.FilePath, fix.RemovedNamespaces)];
-                if (globals.Count == 0)
-                {
-                    continue;
-                }
-
-                if (!imported.TryGetValue(document.Project.Id, out HashSet<string>? projectImports))
-                {
-                    Compilation compilation = (await document.Project.GetCompilationAsync(cancellationToken))!;
-                    projectImports = [.. UsingDirectives.GlobalUsings(compilation, cancellationToken).Where(u => u.Alias is null && u.StaticKeyword.IsKind(SyntaxKind.None))
-                        .Select(u => u.Name!.ToString())];
-                    imported[document.Project.Id] = projectImports;
-                }
-
-                solution = solution.WithDocumentSyntaxRoot(
-                    document.Id, UsingDirectives.SwapGlobalUsings((CompilationUnitSyntax)root, globals, fix.AddedNamespaces, keep, projectImports));
-                string filePath = document.FilePath ?? document.Name;
-                if (keep && reported.Add(filePath))
-                {
-                    findings.AddRange(globals.Select(g => CreateUsingsFinding(filePath, g.GetLocation().GetLineSpan().StartLinePosition.Line + 1, fix,
-                        PatternResult.Manual($"{KeptGlobalUsingReason}{g.Name} (or has inactive #if code), so its global using stays next to the new one. " +
-                            "Fix the manual findings and run the fix again."))));
-                }
-            }
-        }
-
-        return solution;
-    }
-
-    // Roslyn reads a file with a BOM or valid UTF-8 as UTF-8, and anything else (Latin-1, UTF-16) with that other encoding.
-    // Text without an encoding (made in memory) is written as UTF-8.
-    // Files that one project can migrate (it references the old library) but another project compiles without any reference to the old
-    // or the new one (TAAK-281, serilogmem): its project file gets no new package, so the migrated file would not build there.
-    private static async Task<HashSet<string>> UnreachableFilesAsync(Solution solution, IFix fix, CancellationToken cancellationToken)
-    {
-        if (fix.Package is not PackageMigration package)
-        {
-            return [];
-        }
-
-        HashSet<string> old = [package.RemovedPackage, .. package.AlsoRemovedPackages];
-        HashSet<string> added = [.. package.AddedPackages.Select(p => p.Name)];
-        var reach = new Dictionary<ProjectId, (bool Old, bool Neither)>();
-        foreach (Project project in solution.Projects.Where(p => p.Language == LanguageNames.CSharp))
-        {
-            Compilation? compilation = await project.GetCompilationAsync(cancellationToken);
-            string[] names = compilation is null ? [] : [.. compilation.ReferencedAssemblyNames.Select(a => a.Name)];
-            reach[project.Id] = (names.Any(old.Contains), !names.Any(old.Contains) && !names.Any(added.Contains));
-        }
-
-        return [.. solution.Projects.Where(p => p.Language == LanguageNames.CSharp)
-            .SelectMany(p => p.Documents.Where(d => d.FilePath is not null).Select(d => (Path: d.FilePath!, Project: p.Id)))
-            .GroupBy(d => d.Path, StringComparer.Ordinal)
-            .Where(g => g.Any(d => reach[d.Project].Old) && g.Any(d => reach[d.Project].Neither))
-            .Select(g => g.Key)];
-    }
-
-    private static async Task<HashSet<string>> NotUtf8FilesAsync(Solution solution, CancellationToken cancellationToken)
-    {
-        HashSet<string> paths = new(StringComparer.Ordinal);
-        foreach (Document document in solution.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents))
-        {
-            if (document.FilePath is not null && (await document.GetTextAsync(cancellationToken)).Encoding is { } encoding and not UTF8Encoding && encoding.CodePage != Encoding.Latin1.CodePage)
-            {
-                paths.Add(document.FilePath);
-            }
-        }
-
-        return paths;
-    }
-
-    private static Finding CreateUsingsFinding(string filePath, int line, IFix fix, PatternResult result) =>
-        new() { FilePath = filePath, Line = line, FixId = fix.Id, PatternId = UsingsPatternId, Result = result };
-
-    private static Finding CreateProjectFinding(string filePath, IFix fix, PatternResult result) =>
-        new() { FilePath = filePath, Line = 0, FixId = fix.Id, PatternId = ProjectFilePatternId, Result = result };
-
-    // Returns the same root instance when nothing was rewritten.
-    private static async Task<SyntaxNode> ApplyPatternAsync(
-        IFix fix,
-        IPattern pattern,
-        string filePath,
-        SyntaxNode root,
-        SemanticModel model,
-        Solution solution,
-        IReadOnlyDictionary<string, string> blocked,
-        Func<SyntaxNode, bool> isNew,
-        List<Finding> findings,
-        HashSet<string> requiredNamespaces,
-        CancellationToken cancellationToken)
-    {
-        List<SyntaxNode> nodes;
-        try
-        {
-            // Outer nodes first: a nested finding inside an already replaced node is reported, not lost.
-            IEnumerable<SyntaxNode> found = pattern is ISolutionFinder finder
-                ? await finder.FindAsync(root, model, solution, cancellationToken)
-                : pattern.Find(root, model);
-            nodes = [.. found.Where(isNew).OrderBy(n => n.SpanStart).ThenByDescending(n => n.Span.Length)];
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            findings.Add(CreateFinding(filePath, 0, fix, pattern, InternalError(pattern, ex)));
-            return root;
-        }
-
-        // TAAK-274: code a partial plan keeps goes to no pattern (RunPartialAsync checks afterwards that it is still there as it was).
-        if (root.ContainsAnnotations)
-        {
-            nodes.RemoveAll(n => n.AncestorsAndSelf().Any(a => a.HasAnnotations(PartialPlan.KeptAnnotationKind)));
-        }
-
-        if (nodes.Count == 0)
-        {
-            return root;
-        }
-
-        SyntaxNode newRoot = root.TrackNodes(nodes);
-        bool changed = false;
-        foreach (SyntaxNode node in nodes)
-        {
-            PatternResult result = await RewriteAsync(pattern, node, model, solution, cancellationToken);
-            if (BlockedCall(result, blocked) is string reason)
-            {
-                result = PatternResult.Manual($"{NotRewrittenPrefix}{reason}");
-            }
-
-            (newRoot, PatternResult reported) = result switch
-            {
-                FixedResult fixedResult => Replace(newRoot, node, fixedResult, pattern),
-                ManualResult => (newRoot, result),
-                _ => throw new UnreachableException(),
-            };
-
-            if (reported is FixedResult applied)
-            {
-                changed = true;
-                requiredNamespaces.UnionWith(applied.RequiredNamespaces);
-            }
-
-            int line = node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-            findings.Add(CreateFinding(filePath, line, fix, pattern, reported));
-        }
-
-        return changed ? newRoot : root;
-    }
-
-    // The reason of the first call in the rewrite to a name that conflicts with an own extension (TAAK-198); null when there is none.
-    private static string? BlockedCall(PatternResult result, IReadOnlyDictionary<string, string> blocked) =>
-        blocked.Count == 0 || result is not FixedResult fixedResult
-            ? null
-            : fixedResult.NewNodes.SelectMany(n => n.DescendantNodesAndSelf()).OfType<InvocationExpressionSyntax>()
-                .Select(i => i.Expression switch
-                {
-                    MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText,
-                    MemberBindingExpressionSyntax binding => binding.Name.Identifier.ValueText,
-                    SimpleNameSyntax name => name.Identifier.ValueText,
-                    _ => null,
-                })
-                .Select(name => name is not null && blocked.TryGetValue(name, out string? reason) ? reason : null)
-                .FirstOrDefault(reason => reason is not null);
-
-    private static async Task<PatternResult> RewriteAsync(IPattern pattern, SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return pattern is ISolutionPattern solutionPattern
-                ? await solutionPattern.RewriteAsync(node, model, solution, cancellationToken)
-                : pattern.Rewrite(node, model);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            return InternalError(pattern, ex);
-        }
-    }
-
-    private static (SyntaxNode Root, PatternResult Result) Replace(SyntaxNode root, SyntaxNode node, FixedResult result, IPattern pattern)
-    {
-        SyntaxNode? current = root.GetCurrentNode(node);
-        if (current is null)
-        {
-            return (root, PatternResult.Manual("Overlaps an earlier finding of this pattern; run the fix again."));
-        }
-
-        // A directive inside the node that the rewrite drops would leave its partner behind (#if gone, #endif stays: CS1028, TAAK-281).
-        // #region/#endregion may only go as a pair (TAAK-280 repairs AutoMapper profiles that way).
-        int DroppedDirectives(Func<SyntaxTrivia, bool> kind) => InnerDirectives(current, kind) - result.NewNodes.Sum(n => InnerDirectives(n, kind));
-        if (DroppedDirectives(t => !IsRegionDirective(t)) > 0
-            || DroppedDirectives(t => t.IsKind(SyntaxKind.RegionDirectiveTrivia)) != DroppedDirectives(t => t.IsKind(SyntaxKind.EndRegionDirectiveTrivia)))
-        {
-            return (root, PatternResult.Manual("Not rewritten: the code has #if/#else/#region directives inside it, which a rewrite would break apart. Migrate it by hand."));
-        }
-
-        try
-        {
-            return (ReplaceWithTrivia(root, current, result.NewNodes), result);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            return (root, InternalError(pattern, ex));
-        }
-    }
-
-    // Directives and disabled text inside the node, not those in front of it (they stay with the node's position).
-    private static int InnerDirectives(SyntaxNode node, Func<SyntaxTrivia, bool> kind)
-    {
-        SyntaxToken first = node.GetFirstToken();
-        return node.DescendantTrivia().Count(t => (t.IsDirective || t.IsKind(SyntaxKind.DisabledTextTrivia)) && kind(t) && !(t.Token == first && t.Span.End <= first.SpanStart));
-    }
-
-    private static bool IsRegionDirective(SyntaxTrivia trivia) =>
-        trivia.IsKind(SyntaxKind.RegionDirectiveTrivia) || trivia.IsKind(SyntaxKind.EndRegionDirectiveTrivia);
-
-    private static SyntaxNode ReplaceWithTrivia(SyntaxNode root, SyntaxNode current, IReadOnlyList<SyntaxNode> newNodes)
-    {
-        if (newNodes.Count == 1)
-        {
-            return root.ReplaceNode(current, newNodes[0].WithTriviaFrom(current));
-        }
-
-        // Extra nodes get only the indentation, so comments in front of the original are not duplicated;
-        // blank lines a pattern put in front of an extra node stay (a new type after a class).
-        SyntaxTriviaList leading = current.GetLeadingTrivia();
-        SyntaxTriviaList indentation = [.. leading.Reverse().TakeWhile(t => !t.IsKind(SyntaxKind.EndOfLineTrivia)).Reverse()];
-        IEnumerable<SyntaxNode> withTrivia = newNodes.Select((n, i) => n
-            .WithLeadingTrivia(i == 0 ? leading : [.. n.GetLeadingTrivia().TakeWhile(t => t.IsKind(SyntaxKind.EndOfLineTrivia)), .. indentation])
-            .WithTrailingTrivia(current.GetTrailingTrivia()));
-        return root.ReplaceNode(current, withTrivia);
-    }
-
-    private static PatternResult InternalError(IPattern pattern, Exception ex) =>
-        PatternResult.Manual($"Internal error in {pattern.Id}: {ex.Message}");
-
-    private static Finding CreateFinding(string filePath, int line, IFix fix, IPattern pattern, PatternResult result) =>
-        CreateFinding(filePath, line, fix, pattern.Id, result);
-
-    private static Finding CreateFinding(string filePath, int line, IFix fix, string patternId, PatternResult result) =>
-        new() { FilePath = filePath, Line = line, FixId = fix.Id, PatternId = patternId, Result = result };
 }

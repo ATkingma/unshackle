@@ -6,17 +6,15 @@ using Unshackle.Core.Abstractions;
 
 namespace Unshackle.Core;
 
-// TAAK-298: the pre-filter. A file can only get a finding or a change when its text names the old library: a type, member or
-// namespace of an assembly of the old library, a swapped type, a removed extension method, or a declaration of the solution
+// TAAK-298: the pre-filter. A file can only get a finding or a change when its text names the old library: a type, static member,
+// extension method or namespace of an assembly of the old library, a swapped type, a removed extension method, or a declaration of the solution
 // whose signature (base list, type, parameters, constraints, attributes) names one of those, transitively. Everything that
-// has the old library's type in a file starts at such a name in that file (a type, a member, a declared local's initializer),
+// has the old library's type in a file starts at such a name in that file (a type, a static or extension call, a member declared
+// elsewhere whose signature names one),
 // so a file without any of them is left alone without a semantic model. Text is matched as identifiers over the whole file,
 // comments and inactive #if code included: a false hit only costs time.
 internal static partial class OldLibraryFiles
 {
-    // Every type has them; a call on an old-library value still names where that value comes from.
-    private static readonly HashSet<string> s_objectMembers = new(StringComparer.Ordinal) { "Equals", "GetHashCode", "ToString", "GetType" };
-
     // The files (by path, as the Fixer groups them) that may name the old library.
     public static async Task<HashSet<string>> FindAsync(
         Solution solution, IFix fix, IEnumerable<IGrouping<string, DocumentId>> files, CancellationToken cancellationToken)
@@ -38,19 +36,34 @@ internal static partial class OldLibraryFiles
             });
         }
 
-        // The declarations whose signature names the old library add their names, until nothing is added.
-        List<OldLibraryDeclaration> open = [.. scanned.SelectMany(f => f.Declarations)];
-        bool grew = true;
-        while (grew)
+        // The declarations whose signature names the old library add their names, until nothing is added: a worklist over an
+        // index from each signature identifier to its declarations, so every declaration is looked at once.
+        Dictionary<string, List<OldLibraryDeclaration>> bySignature = new(StringComparer.Ordinal);
+        foreach (OldLibraryDeclaration declaration in scanned.SelectMany(f => f.Declarations))
         {
-            grew = false;
-            for (int i = open.Count - 1; i >= 0; i--)
+            foreach (string identifier in declaration.Signature)
             {
-                if (open[i].Signature.Overlaps(names))
+                if (!bySignature.TryGetValue(identifier, out List<OldLibraryDeclaration>? list))
                 {
-                    names.UnionWith(open[i].Names);
-                    open.RemoveAt(i);
-                    grew = true;
+                    bySignature[identifier] = list = [];
+                }
+
+                list.Add(declaration);
+            }
+        }
+
+        Queue<string> pending = new(names);
+        HashSet<OldLibraryDeclaration> reached = [];
+        while (pending.TryDequeue(out string? name))
+        {
+            foreach (OldLibraryDeclaration declaration in bySignature.GetValueOrDefault(name) ?? [])
+            {
+                if (reached.Add(declaration))
+                {
+                    foreach (string declared in declaration.Names.Where(names.Add))
+                    {
+                        pending.Enqueue(declared);
+                    }
                 }
             }
         }
@@ -143,7 +156,9 @@ internal static partial class OldLibraryFiles
             {
                 AddType(nested, names);
             }
-            else if (member.CanBeReferencedByName && !s_objectMembers.Contains(member.Name))
+            // Only static members (reachable through `using static` without the type's name) and extension methods: an instance
+            // member is called on a value whose origin is named in the file already. Every member would let `Value` or `Name` in.
+            else if (member.CanBeReferencedByName && (member.IsStatic || member is IMethodSymbol { IsExtensionMethod: true }))
             {
                 names.Add(member.Name);
             }

@@ -13,4 +13,7 @@ public abstract record PatternResult
         new FixedResult([.. newNodes], requiredNamespaces);
 
     public static PatternResult Manual(string reason) => new ManualResult(reason);
+
+    // A finding that stays on the old library while the rest of the fix goes ahead (council round 3, Q2); the renderer adds the prefix.
+    public static PatternResult KeptManual(KeptReason code, string reason) => new ManualResult(reason) { Kept = code };
 }

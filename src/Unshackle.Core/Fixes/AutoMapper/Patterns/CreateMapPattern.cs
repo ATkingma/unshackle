@@ -98,7 +98,7 @@ public class CreateMapPattern : ISolutionPattern
         List<(SyntaxNode? Statement, string Reason)> problems = [];
         PatternResult result = Rewrite(profile, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken), await NestedMaps.FromAsync(model, solution, cancellationToken),
             await ProjectToPattern.TargetsAsync(solution, cancellationToken), await AssertsAsync(solution, cancellationToken), await MapOwners.ForAsync(solution, model, cancellationToken), problems);
-        if (result is ManualResult { Reason: var reason } && !reason.StartsWith(MapOwners.KeptPrefix, StringComparison.Ordinal))
+        if (result is ManualResult { Kept: KeptReason.None, Reason: var reason })
         {
             problems.Add((null, $"Profile {profile.Identifier.ValueText}: {reason}"));
         }
@@ -235,7 +235,7 @@ public class CreateMapPattern : ISolutionPattern
 
         if (maps.Count == 0 && keptReason is not null)
         {
-            return PatternResult.Manual(MapOwners.KeptPrefix + keptReason);
+            return PatternResult.KeptManual(KeptReason.ProfileKept, keptReason);
         }
 
 

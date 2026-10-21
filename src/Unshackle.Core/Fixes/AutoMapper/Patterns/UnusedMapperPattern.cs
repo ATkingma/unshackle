@@ -38,7 +38,7 @@ public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
         MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, cancellationToken);
         if (node is InvocationExpressionSyntax && cleanup.KeptLookups(node.SyntaxTree.GetRoot(cancellationToken), model).FirstOrDefault(k => k.Lookup == node) is { Reason: string kept, Code: var code })
         {
-            return new ManualResult(kept) { Kept = code };
+            return PatternResult.KeptManual(code, kept);
         }
 
         List<MapperCleanupRemoval> removals = [.. cleanup.Removals(node.SyntaxTree.GetRoot(cancellationToken), model).Where(r => node.Span.Contains(r.Node.Span))];

@@ -191,8 +191,10 @@ internal class MapperRegistration
     private static bool CallsAddAutoMapper(SyntaxNode body) =>
         body.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(i => LastName(i.Expression) == AddAutoMapper);
 
+    // Council round 5 (Q2): matched on the fully qualified name, like the registration targets, so a lookalike type in user code does not count.
     private static bool IsContainer(TypeInfo info) =>
-        new[] { info.Type, info.ConvertedType }.Any(t => t is { Name: "ServiceCollection" or "IServiceCollection" });
+        new[] { info.Type, info.ConvertedType }.OfType<ITypeSymbol>().Any(t => QualifiedName(t) is "Microsoft.Extensions.DependencyInjection.ServiceCollection"
+            or "Microsoft.Extensions.DependencyInjection.IServiceCollection");
 
     // What makes the call conditional or deferred within its member, or null when it is not. A lambda counts only when it is passed directly
     // to a registration or builder call (council round 3, Q3b); the walk then goes on over that call's own ancestors.

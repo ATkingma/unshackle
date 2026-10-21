@@ -7,6 +7,7 @@ using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.FluentAssertions;
 using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Models;
+using Unshackle.DataAccess.Reports;
 using Unshackle.Tests.Helpers;
 using Xunit;
 
@@ -93,7 +94,7 @@ public class ProofTests
         {
             string reason = (await File.ReadAllTextAsync(basePath + ".manual.txt", TestContext.Current.CancellationToken)).Trim();
             reason.ShouldNotBeNullOrWhiteSpace("manual.txt must name the reason");
-            report.Findings.ShouldAllBe(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains(reason),
+            report.Findings.ShouldAllBe(f => f.Result is ManualResult && ReportRow.ReasonOf((ManualResult)f.Result).Contains(reason),
                 string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.Result.GetType().Name)));
             actual.ShouldBe(before);
         }

@@ -20,4 +20,28 @@ public enum KeptReason
 
     /// <summary>The lookup's project is not part of the solution.</summary>
     NotInSolution = 4,
+
+    /// <summary>The result of AddAutoMapper is used (not a statement on its own), so the registration stays.</summary>
+    RegistrationResultUsed = 5,
+
+    /// <summary>IMapper is still used, so AddAutoMapper stays.</summary>
+    MapperStillUsed = 6,
+
+    /// <summary>Maps of the solution stay on AutoMapper, so a configuration check or test mapper stays.</summary>
+    ConfigurationCheckWithKeptMaps = 7,
+
+    /// <summary>AssertConfigurationIsValid still has a map to check that is not in a profile constructor this fix rewrites.</summary>
+    ConfigurationCheckWithUnmigratedMap = 8,
+
+    /// <summary>Every map of a profile stays on AutoMapper.</summary>
+    ProfileKept = 9,
+
+    /// <summary>One CreateMap stays in a profile whose other maps are migrated.</summary>
+    MapKept = 10,
+
+    /// <summary>A mock set-up of IMapper in a test stays for the class under test.</summary>
+    MockSetUpKept = 11,
+
+    /// <summary>A Map, ProjectTo or similar call keeps using IMapper because its map stays on AutoMapper.</summary>
+    CallKept = 12,
 }

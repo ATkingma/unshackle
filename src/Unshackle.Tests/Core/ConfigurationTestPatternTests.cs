@@ -5,6 +5,7 @@ using Unshackle.Core;
 using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.AutoMapper.Patterns;
 using Unshackle.Core.Models;
+using Unshackle.DataAccess.Reports;
 using Unshackle.Tests.Helpers;
 using Xunit;
 
@@ -191,8 +192,8 @@ public class ConfigurationTestPatternTests
         FixReport report = await new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
 
         // Assert
-        report.Findings.Single(f => f.PatternId == "automapper.configuration-test").Result.ShouldBeOfType<ManualResult>().Reason
-            .ShouldStartWith("Stays on AutoMapper: maps of the solution stay on AutoMapper");
+        report.Findings.Single(f => f.PatternId == "automapper.configuration-test").Result.ShouldBeOfType<ManualResult>()
+            .ShouldSatisfyAllConditions(m => m.Kept.ShouldBe(KeptReason.ConfigurationCheckWithKeptMaps), m => ReportRow.ReasonOf(m).ShouldStartWith("Stays on AutoMapper: maps of the solution stay on AutoMapper"));
     }
 
     // An AssertConfigurationIsValid that is not a statement of its own (here the body of a non-test method) stays Manual.

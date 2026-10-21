@@ -19,7 +19,7 @@ public class AutoMapperFix : IFix
     public bool AllOrNothing => true;
 
     public bool AllowsPartial(Finding finding) =>
-        finding.Result is ManualResult { Kept: not KeptReason.None } || (finding.Result is ManualResult { Reason: var reason } && reason.StartsWith(MapOwners.KeptPrefix, StringComparison.Ordinal));
+        finding.Result is ManualResult { Kept: not KeptReason.None };
 
     // No Package yet: every migrated Profile stays (empty) and keeps AutoMapper referenced; the package goes once the
     // Profile, Map and AddAutoMapper rows of claude/tasks/automapper-queue.md can remove all of it (TAAK-159: AddAutoMapper

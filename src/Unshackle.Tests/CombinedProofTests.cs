@@ -5,6 +5,7 @@ using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.FluentAssertions;
 using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Models;
+using Unshackle.DataAccess.Reports;
 using Unshackle.Tests.Helpers;
 using Xunit;
 
@@ -74,7 +75,7 @@ public class CombinedProofTests
         // Assert
         string actual = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
         // A partial-* case (TAAK-272) keeps some maps on AutoMapper: only planned keeps may be Manual.
-        report.Findings.ShouldAllBe(f => f.Result is FixedResult || (name.StartsWith("partial-", StringComparison.Ordinal) && ((ManualResult)f.Result).Reason.StartsWith("Stays on AutoMapper: ", StringComparison.Ordinal)),
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult || (name.StartsWith("partial-", StringComparison.Ordinal) && ((ManualResult)f.Result).Kept != KeptReason.None && ReportRow.ReasonOf((ManualResult)f.Result).StartsWith("Stays on AutoMapper: ", StringComparison.Ordinal)),
             string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
         actual.ShouldBe(expected);
         TestSolution.CompileErrors(actual, TestReferences.AutoMapper).ShouldBeEmpty("after must compile");

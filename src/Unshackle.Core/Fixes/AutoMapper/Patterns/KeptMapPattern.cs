@@ -37,7 +37,7 @@ public class KeptMapPattern : ISolutionPattern
     private static PatternResult Kept(SyntaxNode node, SemanticModel model, MapOwners owners)
     {
         (ITypeSymbol from, ITypeSymbol to, _) = MapOwners.StatementPair(node, model)!.Value;
-        return PatternResult.Manual($"{MapOwners.KeptPrefix}CreateMap<{from.Name}, {to.Name}> stays in the profile, the rest of it is migrated: "
+        return PatternResult.KeptManual(KeptReason.MapKept, $"CreateMap<{from.Name}, {to.Name}> stays in the profile, the rest of it is migrated: "
             + (owners.Reason(from, to) ?? owners.Shared(from, to) ?? "the profile pattern left it in place"));
     }
 }

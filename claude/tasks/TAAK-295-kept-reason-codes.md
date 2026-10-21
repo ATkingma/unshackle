@@ -1,6 +1,6 @@
 # TAAK-295 — Reason codes for every kept finding (after 0.2.0)
 
-**Status**: step 1/4 — not started
+**Status**: step 3/4 — steps 1-2 done, corpus run next
 **Created**: 2026-10-19
 **Goal**: council round 4 Q2: kept maps, kept calls, kept `AddAutoMapper` and configuration tests use a typed reason code (like `KeptReason` on the `GetService<IMapper>()` lookup) instead of the `Stays on AutoMapper:` string prefix.
 
@@ -13,10 +13,53 @@
 
 ## Steps
 
-- [ ] 1. Inventory all prefix uses; plan
-- [ ] 2. Implementation + tests (rendered text unchanged)
+- [x] 1. Inventory all prefix uses; plan
+- [x] 2. Implementation + tests (rendered text unchanged)
 - [ ] 3. Corpus `after` on the six AutoMapper repos: identical reports
 - [ ] 4. Verify, docs; `claude/tools/verify-head.sh` → `VERIFY OK`
+
+## Inventory (step 1)
+
+Prefix producers (now `PatternResult.KeptManual(code, reason)`, reason without the prefix):
+
+| Site | Code |
+| --- | --- |
+| `AddAutoMapperPattern`, result used | `RegistrationResultUsed` |
+| `AddAutoMapperPattern`, IMapper still used | `MapperStillUsed` |
+| `ConfigurationTestPattern`, maps stay | `ConfigurationCheckWithKeptMaps` |
+| `ConfigurationTestPattern`, unmigrated map | `ConfigurationCheckWithUnmigratedMap` |
+| `CreateMapPattern`, all maps kept | `ProfileKept` |
+| `KeptMapPattern` | `MapKept` |
+| `MapOwners.KeptCall`, mock set-up | `MockSetUpKept` |
+| `MapOwners.KeptCall`, call | `CallKept` |
+| `UnusedMapperPattern` lookup (already typed) | rules 1-3 / `NotInSolution` |
+
+Prefix consumers: `AutoMapperFix.AllowsPartial`, `CreateMapPattern.PlanAsync` and the `MapOwners` plan ("call not migrated") now check
+`Kept`. `MapBlockers.ReasonAsync` quotes a profile's Manual reason inside its own text: it uses `MapOwners.Rendered` (prefix + reason
+for a kept result), so that text is unchanged. `MapOwners.KeptPrefix` stays only for that quote.
+
+Tests that read the raw `Reason` of a kept finding (`ProofTests` manual.txt, `CombinedProofTests` partial-*, `MapOwnersTests.Reasons`,
+`ConfigurationTestPatternTests`) now read `ReportRow.ReasonOf` (the rendered text); the expected strings are unchanged.
+`UnusedMapperPatternTests.FixAsync_AddAutoMapperInALambdaPassedToARegistrationCall_RemovesTheLookup` asserted "no kept finding at
+all"; other kept findings now carry a code too, so it asserts no registration-rule code (its intent: the lookup is not kept).
+
+`IsContainer` (`MapperRegistration.cs`) now matches `Microsoft.Extensions.DependencyInjection.ServiceCollection` / `IServiceCollection`
+on the qualified name (council round 5 Q2).
+
+## Proposals for the council
+
+- Q1: the prefix text lives twice: `ReportRow.KeptPrefix` (DataAccess) and `MapOwners.KeptPrefix` (Core, for the quote in
+  `MapBlockers`). Options: (a) keep both (chosen, conservative; DataAccess was out of scope for this task); (b) one constant in Core
+  that `ReportRow` uses. Proposal: (b) in a follow-up that may touch DataAccess.
+- Q2: MediatR's "Stays on MediatR next to Mediator:" reason is still a plain string (MediatR does not use `AllowsPartial` for it).
+  Leave as is (chosen) or give it a code for symmetry?
+- Q3: `MapBlockers` quotes a kept reason (with prefix) inside the Manual reason of another finding. Keep the quote (chosen, output
+  unchanged) or drop the inner prefix?
+
+## Progress log
+
+- 2026-10-21: steps 1-2. Inventory above; 8 new `KeptReason` codes, `PatternResult.KeptManual`, `IsContainer` on the qualified name,
+  new `Core/AutoMapperFixTests` (4 cases). Build green, `dotnet test` 1652/1652, SampleShop 38/38. Commit "TAAK-295: typed kept reason codes".
 
 ## See also
 

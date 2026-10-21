@@ -51,9 +51,9 @@ internal static class MapBlockers
                 ClassDeclarationSyntax? profile = createMap.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
                 if (profile is not null && CreateMapPattern.IsProfileWithMaps(profile, mapModel) && CreateMapPattern.IsInMapStatements(createMap, profile, mapModel))
                 {
-                    if (await CreateMapPattern.RewriteMethodsAsync(profile, mapModel, solution, cancellationToken) is ManualResult { Reason: var reason })
+                    if (await CreateMapPattern.RewriteMethodsAsync(profile, mapModel, solution, cancellationToken) is ManualResult manual)
                     {
-                        return $"{map} is in profile {profile.Identifier.ValueText}, which this fix does not rewrite: {reason}";
+                        return $"{map} is in profile {profile.Identifier.ValueText}, which this fix does not rewrite: {MapOwners.Rendered(manual)}";
                     }
 
                     continue;

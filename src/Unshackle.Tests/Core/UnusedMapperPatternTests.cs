@@ -242,7 +242,9 @@ public class UnusedMapperPatternTests
 
         // Assert
         (await TextAsync(report.Solution, "Seeder.cs")).ShouldNotContain("GetService");
-        report.Findings.Select(f => f.Result).OfType<ManualResult>().ShouldNotContain(m => m.Kept != KeptReason.None);
+        report.Findings.Select(f => f.Result).OfType<ManualResult>().Select(m => m.Kept)
+            .ShouldNotContain(k => k == KeptReason.NoRegistration || k == KeptReason.ConditionalOrDeferredRegistration || k == KeptReason.ContainerWithoutRegistration
+                || k == KeptReason.NotInSolution);
     }
 
     // Council round 4 (Q3): a user type that only shares the name of a builder type does not count as a registration target.

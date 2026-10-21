@@ -4,6 +4,7 @@ using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Models;
+using Unshackle.DataAccess.Reports;
 using Unshackle.Tests.Helpers;
 using Xunit;
 
@@ -360,7 +361,7 @@ public class MapOwnersTests
     private static Task<FixReport> FixAsync(Solution solution) =>
         new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
 
-    private static List<string> Reasons(FixReport report) => [.. report.Findings.Select(f => f.Result).OfType<ManualResult>().Select(m => m.Reason)];
+    private static List<string> Reasons(FixReport report) => [.. report.Findings.Select(f => f.Result).OfType<ManualResult>().Select(ReportRow.ReasonOf)];
 
     private static Solution Create(params (string Name, string Text)[] documents)
     {

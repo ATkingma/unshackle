@@ -49,7 +49,7 @@ public class ConfigurationTestPattern : ISolutionPattern
         // test mapper may still serve Map calls that stay. A check in any form (also inside Action act = () => ..., TAAK-273) then stays as it is.
         if (!(await MapOwners.ForAsync(solution, model, cancellationToken)).IsEmpty)
         {
-            return PatternResult.Manual($"{MapOwners.KeptPrefix}maps of the solution stay on AutoMapper, so this configuration check or test mapper stays as it is.");
+            return PatternResult.KeptManual(KeptReason.ConfigurationCheckWithKeptMaps, "maps of the solution stay on AutoMapper, so this configuration check or test mapper stays as it is.");
         }
 
         if (problem is not null)
@@ -58,7 +58,7 @@ public class ConfigurationTestPattern : ISolutionPattern
         }
 
         return ChecksConfiguration(node, model) && await UnmigratedMapAsync(solution, model, cancellationToken) is string unmigrated
-            ? PatternResult.Manual($"{MapOwners.KeptPrefix}AssertConfigurationIsValid still has maps to check (the map at {unmigrated} is not in a profile constructor this fix rewrites), so it stays.")
+            ? PatternResult.KeptManual(KeptReason.ConfigurationCheckWithUnmigratedMap, $"AssertConfigurationIsValid still has maps to check (the map at {unmigrated} is not in a profile constructor this fix rewrites), so it stays.")
             : Remove(null);
     }
 

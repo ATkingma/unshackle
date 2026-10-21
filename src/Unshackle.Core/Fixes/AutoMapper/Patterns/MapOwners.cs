@@ -19,8 +19,14 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 internal class MapOwners
 {
-    /// <summary>Start of the reason of every Manual finding that is a planned keep: the rest of the solution is migrated anyway.</summary>
+    /// <summary>
+    /// What the report prints in front of the reason of a kept finding (<see cref="ManualResult.Kept"/>); used here only where a kept reason is
+    /// quoted inside another reason, so that text reads as before.
+    /// </summary>
     public const string KeptPrefix = "Stays on AutoMapper: ";
+
+    /// <summary>The reason of a Manual result as the report renders it: with <see cref="KeptPrefix"/> for a kept finding.</summary>
+    public static string Rendered(ManualResult manual) => manual.Kept == KeptReason.None ? manual.Reason : KeptPrefix + manual.Reason;
 
     private const string AutoMapperAssembly = "AutoMapper";
 
@@ -89,11 +95,11 @@ internal class MapOwners
     {
         if (IsMockSetUp(call, model))
         {
-            return PatternResult.Manual($"{KeptPrefix}a mock set-up of IMapper in a test stays as it is: the class under test it is handed to keeps calling IMapper for the maps it stubs (other classes use the generated methods once the test constructs that class itself).");
+            return PatternResult.KeptManual(KeptReason.MockSetUpKept, "a mock set-up of IMapper in a test stays as it is: the class under test it is handed to keeps calling IMapper for the maps it stubs (other classes use the generated methods once the test constructs that class itself).");
         }
 
         return (CallReason(call, model) ?? UnderTestReason(call, model)) is string reason
-            ? PatternResult.Manual($"{KeptPrefix}this call keeps using IMapper: {reason}")
+            ? PatternResult.KeptManual(KeptReason.CallKept, $"this call keeps using IMapper: {reason}")
             : null;
     }
 
@@ -399,7 +405,7 @@ internal class MapOwners
 
                 string? reason = IsMockSetUp(call, model) ? "it is stubbed by a mock set-up of IMapper in a test that does not construct its class under test itself"
                     : pattern is null ? "a ProjectTo or Map with options at " + Where(call) + " is not migrated (automapper.unsupported)"
-                    : await pattern.RewriteAsync(call, model, solution, cancellationToken) is ManualResult { Reason: var manual } && !manual.StartsWith(KeptPrefix, StringComparison.Ordinal)
+                    : await pattern.RewriteAsync(call, model, solution, cancellationToken) is ManualResult { Kept: KeptReason.None, Reason: var manual }
                         ? $"the call at {Where(call)} is not migrated: {manual}"
                         : null;
                 if (reason is not null)

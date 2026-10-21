@@ -71,14 +71,14 @@ public class AddAutoMapperPattern : ISolutionPattern
     {
         if ((node is GlobalStatementSyntax global ? global.Statement : node) is not ExpressionStatementSyntax statement)
         {
-            return PatternResult.Manual(MapOwners.KeptPrefix + "the result of AddAutoMapper is used (not a statement on its own), so the registration stays; remove it by hand.");
+            return PatternResult.KeptManual(KeptReason.RegistrationResultUsed, "the result of AddAutoMapper is used (not a statement on its own), so the registration stays; remove it by hand.");
         }
 
         if (user is not null)
         {
             // Safe to keep (TAAK-272): the registration still works with trimmed or emptied profiles.
-            return PatternResult.Manual(
-                $"{MapOwners.KeptPrefix}IMapper is still used ({user}), so AddAutoMapper stays (without it IMapper no longer resolves from DI). "
+            return PatternResult.KeptManual(KeptReason.MapperStillUsed,
+                $"IMapper is still used ({user}), so AddAutoMapper stays (without it IMapper no longer resolves from DI). "
                 + "To remove it, remove the IMapper fields, constructor parameters and lookups (and their arguments at the callers), then run the fix again.");
         }
 

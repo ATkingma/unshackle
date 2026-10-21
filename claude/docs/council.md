@@ -97,4 +97,4 @@ Follow-up: TAAK-300.
 - `claude/tasks/archief/TAAK-293-council-round-3.md` — implementation of the round-3 decisions
 - `claude/tasks/archief/TAAK-294-council-round-4.md` — round-4 changes before 0.2.0
 - `claude/tasks/archief/TAAK-295-kept-reason-codes.md` — reason codes for all kept findings (after 0.2.0)
-- `claude/tasks/TAAK-300-council-round-6-followups.md` — follow-up of the round-6 decisions
+- `claude/tasks/archief/TAAK-300-council-round-6-followups.md` — follow-up of the round-6 decisions

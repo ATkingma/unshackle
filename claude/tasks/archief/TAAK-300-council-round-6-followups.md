@@ -1,6 +1,6 @@
 # TAAK-300 — Council round 6 follow-ups
 
-**Status**: steps 1–5 done; next step 6 (corpus rerun)
+**Status**: done (2026-10-21), all 7 steps
 **Created**: 2026-10-21
 **Goal**: carry out the round-6 council decisions (`claude/docs/council.md`, "2026-10-21 — open questions from TAAK-295 and TAAK-297").
 Only step 4 may change rendered output.
@@ -44,10 +44,10 @@ Only step 4 may change rendered output.
 - [x] 5. Q5: add "fix constructors and public `IFix` members" to the entry-point list in `claude/docs/code-standaarden.md` §7.
   Expectations changed by step 4: none. No test or proof names the example file (`UnusedMapperPatternTests` and
   `mapper-injected.manual.txt` only match `IMapper is still used`).
-- [ ] 6. Corpus rerun: `after` on the six AutoMapper repos and the MediatR repos. Steps 1–3 and 5 must give zero diff in every report
+- [x] 6. Corpus rerun: `after` on the six AutoMapper repos and the MediatR repos. Steps 1–3 and 5 must give zero diff in every report
   output (rows, counts, grouping, summaries). Step 4 may only change the example in the kept `add-automapper` row, and it must then be
   identical across two runs. Fixed/Manual counts stay as in `after-t295`.
-- [ ] 7. Build, `dotnet test`, SampleShop tests green; `claude/tools/verify-head.sh` → `VERIFY OK`; docs; archive the task.
+- [x] 7. Build, `dotnet test`, SampleShop tests green; `claude/tools/verify-head.sh` → `VERIFY OK`; docs; archive the task.
 
 ## Progress log
 
@@ -61,6 +61,18 @@ Only step 4 may change rendered output.
   `RewriteAsync` (which now collects every user instead of returning the first reference). New `AddAutoMapperPatternTests` (2, reverse
   tree order, mixed separators). `code-standaarden.md` §7 lists fix constructors and public `IFix` members. No expectation changed;
   1665 tests green.
+- 2026-10-21: step 6. Tool `<corpus>/corpus-blind/_results/tool-300` (this branch), harness `corpus-am.sh after` (JOBS=1; a copy that
+  writes to `_results/<OUT>/<name>` and works in `work/<OUT>-<name>`). AutoMapper six twice (`after-t300a`, `after-t300b`), MediatR twelve
+  blind repos once (`after-t300m`). Status ok, 0 regressions everywhere. Fixed/Manual as `after-t295`: pi22317 33/0, assistiva 68/0,
+  culinary 3/70, msb 12/29, encryptednotes 10/6, estore 10/22. Reports vs `after-t295`: identical apart from exactly one row in the four
+  partial repos, the example in the kept `add-automapper` row (now the first by path: culinary `BL/Managers/Accounts/AccountManager.cs:20`,
+  msb `API/Controllers/Warehouse/WareHouseController.cs:22`, encryptednotes `Api/Controllers/AuthController.cs:15`, estore
+  `API/Controllers/AuthController.cs:12`); run a = run b row for row (work folder name stripped). MediatR reports vs `_results/after`
+  (TAAK-296, tool `0f58486`): all 12 identical row for row, incl. fullcart 27/20 with its `mediatr.kept` rows, miru 0/98, starter 0/11.
+  Note: the example path is absolute in the work copy (existing behaviour, unchanged here).
+- 2026-10-21: step 7. Build green, `dotnet test` 1665/1665, SampleShop 38/38. Docs: model text of `MapOwners` without `KeptPrefix`
+  (partial-migration models, kept-map `.d2`; SVG/PNG not re-rendered, no `d2` here), unused-imapper models name `KeptReasonText.Rendered`.
+  Task archived.
 
 ## See also
 

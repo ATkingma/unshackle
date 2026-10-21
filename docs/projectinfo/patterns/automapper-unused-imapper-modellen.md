@@ -51,7 +51,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/UnusedMapperPattern.cs`
 
 The scope is the lookup's project plus `GetProjectsThatTransitivelyDependOnThisProject`. The kept lookups are found by planning twice:
 once with the scope rule, once as if every project were registered; a symbol only the second plan removes is a lookup the rule keeps.
-Its Manual finding carries the `KeptReason` code (council round 3, TAAK-293); the reason text has no prefix, `ReportRow.ReasonOf` prints
+Its Manual finding carries the `KeptReason` code (council round 3, TAAK-293); the reason text has no prefix, `KeptReasonText.Rendered` (Core, via `ReportRow.ReasonOf`; council round 6) prints
 `Stays on AutoMapper: ` in the CSV/JSON/markdown report and on the console. A lambda passed directly to a call on (or extending)
 `IServiceCollection` or a host/web host/application builder counts as unconditional (`FixAsync_AddAutoMapperInALambdaPassedToARegistrationCall_RemovesTheLookup`).
 The D2 source of figure 4 is not re-rendered for these leaves (no `d2` here).

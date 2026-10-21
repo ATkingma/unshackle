@@ -9,7 +9,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapOwners.cs`, `CreateM
 IFix: {shape: class; "+AllOrNothing": "bool"; "+AllowsPartial(finding)": "bool"}
 AutoMapperFix: {shape: class; "+AllowsPartial(finding)": "ManualResult.Kept is not None"}
 Fixer: {shape: class; "+FixAsync()": "undoes all only for a Manual finding that is not allowed"}
-MapOwners: {shape: class; "+KeptPrefix": "string"; "+ForAsync(solution, model, ct)": "Task<MapOwners>"; "+KeptCallAsync(call, model, solution, ct)": "Task<PatternResult?>"; "+Reason(source, destination)": "string?"; "-BuildAsync()": "fixpoint"; "-Close(nodes)": "closure"}
+MapOwners: {shape: class; "+ForAsync(solution, model, ct)": "Task<MapOwners>"; "+KeptCallAsync(call, model, solution, ct)": "Task<PatternResult?>"; "+Reason(source, destination)": "string?"; "-BuildAsync()": "fixpoint"; "-Close(nodes)": "closure"}
 MapNode: {shape: class; "+Statement": "SyntaxNode"; "+Reaches(other)": "bool"}
 CreateMapPattern: {shape: class; "+PlanAsync(profile, …)": "statement problems"; "-Rewrite(…, owners, problems)": "trimmed profile + Extensions"}
 NestedMaps: {shape: class; "+FromAsync()": "without kept pairs"}

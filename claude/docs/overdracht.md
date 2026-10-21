@@ -1,6 +1,23 @@
-# Handover (updated 2026-10-19)
+# Handover (updated 2026-10-21)
 
 Read this first if you are taking over this session. Then `CLAUDE.md` and `claude/docs/INDEX.md`.
+
+## Current state (2026-10-21, end of day) — start here
+
+**Done today, all on main with CI green:** TAAK-297 (code standards), TAAK-295 (typed kept reason codes), council round 6 +
+TAAK-300 (one kept-reason rendering in Core, MediatR kept code, stable IMapper example, §7 entry points), TAAK-299 (split of
+`CreateMapPattern.cs` and `Fixer.cs`; `FileFixer` is the per-file seam), TAAK-298 steps 1–2 (load check parallel per project,
+package check on the original compilation: 6–20% faster, output byte-identical). TAAK-276 archived (closed by 0.2.0).
+
+**In progress: TAAK-298 steps 3–7 on branch `taak-298-perf-wip` (not merged).** State at `d8d6c23`: steps 1–5 done (per-file
+pre-filter, council round 7 in `claude/docs/council.md`, parallel file processing for FA and MediatR with ordered merge,
+AutoMapper stays sequential). Build, 1660 tests green; akka 548 s → 340 s at degree 8 (peak memory 1.29×), reports
+byte-identical. Open: the pre-filter skips almost nothing and costs nop/AutoMapper ~30 s (cause unknown), then step 6 (corpus
+round, 36 repos) and step 7. The task file on that branch (`claude/tasks/TAAK-298-performance.md`) has the progress log and
+measurements; continue from there (`git checkout taak-298-perf-wip`), and merge to main only after the corpus round and
+`verify-head.sh` → `VERIFY OK`. The branch may have newer commits than `d8d6c23`: the agent kept pushing milestones.
+
+**Left for the user:** TAAK-019 step 8 (post the reddit draft).
 
 ## Status (2026-10-14, afternoon)
 

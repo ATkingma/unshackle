@@ -18,8 +18,8 @@ plan: using-removal-edge-cases-plan.md
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `UsingDirectives.UpdateAsync` two passes   | as planned (`KeepLeadingTrivia` for usings with directives / disabled text)                                                                            |
 | `FluentAssertionsFix.RemovedNamespaces`    | plus Collections, Common, Data, Equivalency, Events, Formatting, Numeric, Specialized, Streams, Types, Xml                                              |
-| `Fixer.Replace` directive guard            | `InnerDirectives`; Manual reason "has #if/#else/#region directives inside it"                                                                          |
-| `Fixer.UnreachableFilesAsync`              | as planned; reuses the `encoding` row path with its own text                                                                                           |
+| `FileFixer.Replace` directive guard            | `InnerDirectives`; Manual reason "has #if/#else/#region directives inside it"                                                                          |
+| `SolutionChecks.UnreachableFilesAsync`              | as planned; reuses the `encoding` row path with its own text                                                                                           |
 
 ## Requirements
 

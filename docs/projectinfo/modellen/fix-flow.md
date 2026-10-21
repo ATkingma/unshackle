@@ -5,13 +5,13 @@
 <!-- kingmadoc:diagram img/fix-flow-1.d2 -->
 ![Flow: Fixer.FixAsync](img/fix-flow-1.png)
 
-| Step | Location in `src/Unshackle.Core/Fixer.cs` | What happens |
-| ---- | ----------------------------------------- | ------------ |
-| Pick fix | `FixAsync` | Looks up `IFix` by `FixId` (case-insensitive) |
-| Find | `ApplyPattern` | An exception becomes one `Manual` finding with line 0 |
-| Rewrite | `Rewrite` | An exception becomes `Manual("Internal error in …")` |
-| Replace | `Replace`, `ReplaceWithTrivia` | Overlap with an earlier replacement becomes `Manual`; trivia comes from the old node |
-| Usings | `UsingDirectives.UpdateAsync` | Only if the document changed; namespaces of the results plus `AddedNamespaces` |
+| Step | Location in `src/Unshackle.Core/` | What happens |
+| ---- | --------------------------------- | ------------ |
+| Pick fix | `Fixer.FixAsync` | Looks up `IFix` by `FixId` (case-insensitive) |
+| Find | `FileFixer.ApplyPatternAsync` | An exception becomes one `Manual` finding with line 0 |
+| Rewrite | `FileFixer.RewriteAsync` | An exception becomes `Manual("Internal error in …")` |
+| Replace | `FileFixer.Replace`, `FileFixer.ReplaceWithTrivia` | Overlap with an earlier replacement becomes `Manual`; trivia comes from the old node |
+| Usings | `FileFixer.FixFileAsync` → `UsingDirectives.UpdateAsync` | Only if the document changed; namespaces of the results plus `AddedNamespaces` |
 
 ## See also
 

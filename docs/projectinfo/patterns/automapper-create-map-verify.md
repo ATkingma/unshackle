@@ -35,7 +35,7 @@ TAAK-261 measurement (AutoMapper 14.0.0, `CreateMap<S, D>()`): a destination mem
 ## Deviations
 
 - Parameter name `source` instead of `a` from the queue: avoids keywords as a parameter name.
-- `Fixer.ReplaceWithTrivia` now keeps blank lines that a pattern puts before an extra node (otherwise the new class came directly after the profile without a blank line).
+- `FileFixer.ReplaceWithTrivia` now keeps blank lines that a pattern puts before an extra node (otherwise the new class came directly after the profile without a blank line).
 - The empty profile stays and the package too (see plan, Out of scope).
 ## Validation results
 

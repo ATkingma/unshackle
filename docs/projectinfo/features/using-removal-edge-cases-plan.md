@@ -40,9 +40,9 @@ Blind round 5 found two ways a file's old using made the build fail after `fix`:
 2. `FluentAssertionsFix.RemovedNamespaces` lists Collections, Common, Data, Equivalency, Events, Formatting, Numeric, Specialized, Streams,
    Types and Xml as well. `UsedRemovedNamespaces`, `ProjectPackages.KeepsRemovedUsing` and the project-file cascade work from that list, so a
    used sub-namespace needs no new rule.
-3. `Fixer.Replace`: when the node has more directives/disabled text inside (not in front of its first token) than the new nodes,
+3. `FileFixer.Replace`: when the node has more directives/disabled text inside (not in front of its first token) than the new nodes,
    the finding is Manual and the code stays (`InnerDirectives`). Without this a chain with `#if` between its calls lost the `#if` and kept `#endif`.
-4. `Fixer.UnreachableFilesAsync`: a file compiled by one project that references the removed package and by another that references neither
+4. `SolutionChecks.UnreachableFilesAsync`: a file compiled by one project that references the removed package and by another that references neither
    the removed nor an added package is skipped (an `encoding`-style Manual row); that other project gets no Shouldly from the project-file cascade (CS0246).
 
 Not done: stripping the using together with its branch (the other branch's code may be real code in another configuration), and reporting

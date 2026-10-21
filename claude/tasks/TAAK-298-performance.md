@@ -25,7 +25,7 @@
 - [x] 1. Baseline: time `scan --fix` (fa, mediatr, automapper) on 3 large corpus repos + SampleShop; record wall time and, if possible, a trace (`dotnet-trace`/`dotnet-counters`) of where the time goes. Numbers in this task.
 - [x] 2. Quick wins without behaviour risk: the load check without full `GetDiagnostics()`, assembly names from the original solution or the metadata, ReadyToRun for the tool, cache the compilation per project per run, fewer semantic model fetches in `UsingDirectives`, `Count()` → a counter, one `DescendantNodes()` pass where one tree is walked several times. Measure again.
 - [ ] 3. Pre-filter per file: skip the patterns for a file without any old-library trace; tests for global usings, swapped types and the unused-using case. Measure again.
-- [ ] 4. Proposal for parallel file processing (council); first split `Fixer.cs` along the `FileFixer` seam proposed in TAAK-297: collect results per file, merge in the original order; thread safety of what is shared.
+- [ ] 4. Proposal for parallel file processing (council); `Fixer.cs` is split along the `FileFixer` seam (done, see `claude/tasks/archief/TAAK-299-split-large-files.md` for the shared state left in it): collect results per file, merge in the original order; thread safety of what is shared.
 - [ ] 5. Implement parallel processing behind the merge in the same order; tests that compare findings order with the sequential run.
 - [ ] 6. Corpus round (all 36 repos): 36/36 build, 0 regressions, identical findings; final timings next to the baseline.
 - [ ] 7. Worktree check → commit → push → CI green; numbers in `claude/docs/overdracht.md`.

@@ -10,7 +10,11 @@ Fixer                       the single entry point: FixAsync(solution, request)
 
 ```
 src/Unshackle.Core/
-├─ Fixer.cs
+├─ Fixer.cs            FixAsync, RunAsync (the pass loop over files), project files
+├─ PartialRun.cs       RunPartialAsync: the partial run of an all-or-nothing fix (TAAK-274)
+├─ FileFixer.cs        one file in, one FilePass out: patterns, usings, targeted imports, replace
+├─ SolutionChecks.cs   SwapGlobalUsingsAsync, UnreachableFilesAsync, NotUtf8FilesAsync
+├─ FindingFactory.cs   CreateFinding, NotApplied, InternalError
 ├─ Abstractions/   IFix, IPattern, IFixer, ISolutionStore, IReportWriter
 ├─ Models/         Finding, PatternResult, FixRequest, FixReport
 └─ Fixes/
@@ -37,7 +41,7 @@ With `--dry-run` we only show the diff; otherwise `ISolutionStore` writes the ch
   (an expression, the outermost call of a chain, or a whole statement).
 - `PatternResult.Fixed(node(s), params requiredNamespaces)` or `PatternResult.Manual(reason)`.
 - `IFix`: `Id`, `Patterns`, `RemovedNamespaces`, `AddedNamespaces`.
-- `Fixer`: per document the patterns one after another (fresh `SemanticModel`), replaced with `TrackNodes`/`ReplaceNode`
+- `Fixer` (per file via `FileFixer.FixFileAsync`): per document the patterns one after another (fresh `SemanticModel`), replaced with `TrackNodes`/`ReplaceNode`
   (outermost first, overlap → Manual), then usings via `UsingDirectives`. Exceptions per pattern → Manual.
   Every file is fixed against the **original** solution (only that file changes in its working copy): the semantics
   of other files therefore do not depend on the order (TAAK-130: a marker interface in an earlier file had already been
@@ -45,7 +49,7 @@ With `--dry-run` we only show the diff; otherwise `ISolutionStore` writes the ch
   Once per file path: a multi-target project (one Roslyn project per TFM) is first fixed in the first TFM;
   if the file has `#if` code that is active in another TFM (`#if !NETFRAMEWORK`), then for each differing set of
   inactive code one extra pass follows on the text so far, which only fixes nodes that were inactive in **all** earlier
-  passes (`Fixer.NewCode`), so shared code is fixed and reported once. The usings row "inactive #if branch" of an
+  passes (`FileFixer.NewCode`), so shared code is fixed and reported once. The usings row "inactive #if branch" of an
   earlier pass is dropped when a later pass updates the usings (TAAK-223). All copies get the final text. Project
   migrations also count per project file (the package stays when one TFM still needs it); `fix` counts written files
   uniquely (TAAK-022).
@@ -153,7 +157,7 @@ With `--dry-run` we only show the diff; otherwise `ISolutionStore` writes the ch
   symbols exist (`DEBUG`, own ones) cannot be known, and enabling everything at once does not parse `#else` branches.
 - `global using <old>;` in an own file (not `*.g.cs`; `<Using Include>` is handled by `XmlProjectFileStore`) applies to the
   whole project. Files in such a project do not get their own `using <new>;`. After all files,
-  `Fixer.SwapGlobalUsingsAsync` decides per project file (all TFMs): if no file binds to the old namespace any more and there is no
+  `SolutionChecks.SwapGlobalUsingsAsync` decides per project file (all TFMs): if no file binds to the old namespace any more and there is no
   inactive code, it becomes `global using <new>;` in place; otherwise it stays with the new one next to it + Manual `usings`.
   A remaining global using keeps the package in `ProjectPackages`.
 
@@ -161,7 +165,7 @@ With `--dry-run` we only show the diff; otherwise `ISolutionStore` writes the ch
 
 - All FluentAssertions namespaces are removed namespaces, sub-namespaces too (`FluentAssertions.Common`): unused ones go, used ones keep all.
 - An unused using with `#if`/`#else` trivia is removed with `KeepLeadingTrivia`, so the directive pairs stay whole.
-- `Fixer.Replace` gives Manual when a rewrite would drop directives inside the node; `Fixer.UnreachableFilesAsync` skips files that a
+- `FileFixer.Replace` gives Manual when a rewrite would drop directives inside the node; `SolutionChecks.UnreachableFilesAsync` skips files that a
   project without the old and the new library also compiles. See `docs/projectinfo/features/using-removal-edge-cases-plan.md`.
 
 ## Ambiguous through a new namespace (TAAK-174)
@@ -177,7 +181,7 @@ With `--dry-run` we only show the diff; otherwise `ISolutionStore` writes the ch
   extension from an added namespace binds elsewhere, and the original had fewer of them, the same fallback follows with reason
   "binds to <type>.<method> instead of Shouldly". `UsingDirectives.MisboundAddedCallAsync`.
 - **Targeted imports (TAAK-198)**: before that fallback, the Fixer tries to migrate the rest of the file anyway
-  (`Fixer.FixWithTargetedImportsAsync`). The file then gets no `using Shouldly;`, but a `using static` for every Shouldly class
+  (`FileFixer.FixWithTargetedImportsAsync`). The file then gets no `using Shouldly;`, but a `using static` for every Shouldly class
   whose extensions it calls (`using static Shouldly.ShouldBeBooleanExtensions;`) and an alias for every named type
   (`using Should = Shouldly.Should;`). A class that makes a call ambiguous is left out; a rewrite that would call a clashing
   name (or a name from a left-out class) becomes Manual per call ("Not rewritten: … is ambiguous with … (CS0121) …")
@@ -214,4 +218,4 @@ With `--dry-run` we only show the diff; otherwise `ISolutionStore` writes the ch
 
 - `docs/projectinfo/README.md` — overview and C4 diagrams
 - `claude/docs/design-patterns.md` — GoF patterns in this design
-- `src/Unshackle.Core/Fixer.cs` — implementation
+- `src/Unshackle.Core/Fixer.cs` — implementation (with `PartialRun.cs`, `FileFixer.cs`, `SolutionChecks.cs`, `FindingFactory.cs`)

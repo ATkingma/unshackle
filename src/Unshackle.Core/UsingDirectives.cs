@@ -427,7 +427,7 @@ internal static class UsingDirectives
     }
 
     // The extension methods (with their static class) and the types of the added namespaces the rewritten file uses. The model
-    // imports the added namespaces globally (Fixer.AddReferences), so an ambiguous call counts with its added candidates.
+    // imports the added namespaces globally (FileFixer.AddReferences), so an ambiguous call counts with its added candidates.
     // Null when a type cannot get an alias (generic) or the file already imports an added namespace itself.
     public static async Task<AddedUsage?> AddedUsageAsync(Document document, IReadOnlyCollection<string> addedNamespaces, CancellationToken cancellationToken)
     {
@@ -640,7 +640,7 @@ internal static class UsingDirectives
     private static bool IsPlainUsing(UsingDirectiveSyntax directive) =>
         directive.Alias is null && directive.StaticKeyword.IsKind(SyntaxKind.None) && directive.Name is not null;
 
-    // The Fixer's own document (see Fixer.AddReferences) imports for the model only: it is no using the files have (TAAK-116).
+    // The Fixer's own document (see FileFixer.AddReferences) imports for the model only: it is no using the files have (TAAK-116).
     public const string AddedUsingsPath = "Unshackle.AddedUsings.g.cs";
 
     public static IEnumerable<UsingDirectiveSyntax> GlobalUsings(Compilation compilation, CancellationToken cancellationToken) =>

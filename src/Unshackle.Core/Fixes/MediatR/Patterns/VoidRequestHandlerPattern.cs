@@ -77,7 +77,7 @@ public class VoidRequestHandlerPattern : IPattern
     // Not async: only return Task.CompletedTask is known; it becomes Unit.ValueTask.
     private static PatternResult RewriteSync(MethodDeclarationSyntax method, SemanticModel model, TypeSyntax returnType)
     {
-        List<ExpressionSyntax?> returned = MediatRSyntax.ReturnedExpressions(method);
+        IReadOnlyList<ExpressionSyntax?> returned = MediatRSyntax.ReturnedExpressions(method);
         if (returned.Any(e => e is not MemberAccessExpressionSyntax || !MediatRSyntax.IsTaskMember(e, model, "CompletedTask")))
         {
             return PatternResult.Manual("Handle returns a Task that is not Task.CompletedTask; Mediator needs a ValueTask<Unit>, convert it by hand (e.g. make the method async and return Unit.Value).");

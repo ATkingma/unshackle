@@ -24,9 +24,6 @@ public class InternalHandlerAccessPattern : ISolutionPattern, ISolutionFinder
 
     public async Task<IReadOnlyList<SyntaxNode>> FindAsync(SyntaxNode root, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(root);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(solution);
         return root is CompilationUnitSyntax && IsChosenFile(model, cancellationToken) && (await HostsAsync(model, solution, cancellationToken)).Count > 0
             ? [root]
             : [];
@@ -34,9 +31,6 @@ public class InternalHandlerAccessPattern : ISolutionPattern, ISolutionFinder
 
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(solution);
         var unit = (CompilationUnitSyntax)node;
         IReadOnlyList<string> hosts = await HostsAsync(model, solution, cancellationToken);
         SyntaxTrivia endOfLine = unit.DescendantTrivia().FirstOrDefault(t => t.IsKind(SyntaxKind.EndOfLineTrivia)) is { RawKind: not 0 } found ? found : SyntaxFactory.LineFeed;

@@ -30,7 +30,6 @@ public class AndChainPattern : IPattern
 
     public AndChainPattern(IReadOnlyList<IPattern> links)
     {
-        ArgumentNullException.ThrowIfNull(links);
         _links = links;
     }
 

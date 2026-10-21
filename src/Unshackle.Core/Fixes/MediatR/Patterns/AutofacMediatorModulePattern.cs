@@ -33,16 +33,12 @@ public class AutofacMediatorModulePattern : ISolutionPattern
     // With the solution: a module next to another host's module gets GenerateTypesAsInternal and/or Assemblies (TAAK-213).
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
         MediatorHostSettings host = await MediatorHosts.SettingsAsync(node, model, solution, cancellationToken);
         return host.ManualReason is string reason ? PatternResult.Manual(reason) : MediatorHosts.WithArchitectureTestWarning(Rewrite(node, model, host), solution);
     }
 
     private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, MediatorHostSettings host)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
         var block = (BlockSyntax)node;
         List<ExpressionStatementSyntax> scans = [.. block.Statements.OfType<ExpressionStatementSyntax>().Where(s => ScanOfMediatR(s, model) is not null)];
         if (scans is not [ExpressionStatementSyntax scan])

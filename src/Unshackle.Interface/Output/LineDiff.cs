@@ -5,8 +5,6 @@ public static class LineDiff
 {
     public static IReadOnlyList<DiffLine> Compute(string oldText, string newText)
     {
-        ArgumentNullException.ThrowIfNull(oldText);
-        ArgumentNullException.ThrowIfNull(newText);
         string[] a = oldText.ReplaceLineEndings("\n").Split('\n');
         string[] b = newText.ReplaceLineEndings("\n").Split('\n');
 

@@ -34,9 +34,6 @@ public class AddMediatRPattern : ISolutionPattern
     // With the solution only a real call from another project counts, and the report names it (TAAK-148).
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(solution);
         string? caller = null;
         if (Friend(model) is not null
             && node.FirstAncestorOrSelf<BaseMethodDeclarationSyntax>() is { } declaration

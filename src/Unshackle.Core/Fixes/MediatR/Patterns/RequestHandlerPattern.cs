@@ -33,7 +33,7 @@ public class RequestHandlerPattern : IPattern
             return PatternResult.Fixed(method.WithReturnType(returnType.WithTriviaFrom(method.ReturnType)));
         }
 
-        List<ExpressionSyntax?> returned = MediatRSyntax.ReturnedExpressions(method);
+        IReadOnlyList<ExpressionSyntax?> returned = MediatRSyntax.ReturnedExpressions(method);
         ITypeSymbol? taskType = model.GetDeclaredSymbol(method)?.ReturnType;
         if (returned.Any(e => e is null || !IsFromResult(e, model) && !SymbolEqualityComparer.Default.Equals(model.GetTypeInfo(e).Type, taskType)))
         {

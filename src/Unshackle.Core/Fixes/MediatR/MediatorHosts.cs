@@ -25,7 +25,6 @@ public static class MediatorHosts
     /// <param name="cancellationToken">Cancels the search.</param>
     public static async Task<IReadOnlySet<string>> AssemblyNamesAsync(Solution solution, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(solution);
         var addMediatR = new AddMediatRPattern();
         var autofac = new AutofacMediatorModulePattern();
         SortedSet<string> hosts = new(StringComparer.Ordinal);
@@ -65,9 +64,6 @@ public static class MediatorHosts
     /// <param name="cancellationToken">Cancels the search.</param>
     public static async Task<MediatorHostSettings> SettingsAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(solution);
         IAssemblySymbol self = model.Compilation.Assembly;
         if (solution.Projects.FirstOrDefault(p => p.Language == LanguageNames.CSharp && p.AssemblyName == self.Name) is not Project project)
         {
@@ -194,8 +190,6 @@ public static class MediatorHosts
     /// <returns>The result, with the warning appended to an existing one.</returns>
     public static PatternResult WithArchitectureTestWarning(PatternResult result, Solution solution)
     {
-        ArgumentNullException.ThrowIfNull(result);
-        ArgumentNullException.ThrowIfNull(solution);
         if (result is not FixedResult fixedResult || ArchitectureTestProject(solution) is not Project project)
         {
             return result;

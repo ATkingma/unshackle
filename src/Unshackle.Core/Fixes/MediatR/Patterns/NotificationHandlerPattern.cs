@@ -38,7 +38,7 @@ public class NotificationHandlerPattern : IPattern
             return PatternResult.Fixed(method.WithReturnType(returnType));
         }
 
-        List<ExpressionSyntax?> returned = MediatRSyntax.ReturnedExpressions(method);
+        IReadOnlyList<ExpressionSyntax?> returned = MediatRSyntax.ReturnedExpressions(method);
         if (returned.Any(e => e is null || !IsCompletedTask(e, model) && model.GetTypeInfo(e).Type?.ToDisplayString() != "System.Threading.Tasks.Task"))
         {
             return PatternResult.Manual("Handle returns something that is not a Task; Mediator needs a ValueTask, convert it by hand (e.g. make the method async).");

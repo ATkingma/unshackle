@@ -46,7 +46,7 @@ public static class MediatRSyntax
     };
 
     /// <summary>The expression body, or every return in the body except those of nested lambdas and local functions; a bare <c>return;</c> gives null.</summary>
-    public static List<ExpressionSyntax?> ReturnedExpressions(MethodDeclarationSyntax method) =>
+    public static IReadOnlyList<ExpressionSyntax?> ReturnedExpressions(MethodDeclarationSyntax method) =>
         method.ExpressionBody is not null
             ? [method.ExpressionBody.Expression]
             : [.. method.Body?.DescendantNodes(n => n is not AnonymousFunctionExpressionSyntax and not LocalFunctionStatementSyntax)
@@ -79,7 +79,7 @@ public static class MediatRSyntax
             return method;
         }
 
-        List<ExpressionSyntax?> returned = ReturnedExpressions(method);
+        IReadOnlyList<ExpressionSyntax?> returned = ReturnedExpressions(method);
         if (returned.Any(e => e is null || !IsCompletedTask(e, model) && model.GetTypeInfo(e).Type?.ToDisplayString() != "System.Threading.Tasks.Task"))
         {
             return null;
@@ -170,7 +170,7 @@ public static class MediatRSyntax
         method.ExplicitInterfaceSpecifier is null ? null : PatternResult.Manual($"{method.Identifier.ValueText} is an explicit interface implementation; {todo}");
 
     /// <summary>Nodes separated by ", ".</summary>
-    public static SeparatedSyntaxList<T> CommaList<T>(List<T> nodes)
+    public static SeparatedSyntaxList<T> CommaList<T>(IReadOnlyList<T> nodes)
         where T : SyntaxNode =>
         SyntaxFactory.SeparatedList(nodes, Enumerable.Repeat(SyntaxFactory.Token(SyntaxKind.CommaToken).WithTrailingTrivia(SyntaxFactory.Space), nodes.Count - 1));
 

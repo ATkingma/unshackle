@@ -54,7 +54,7 @@ public class PipelineBehaviorPattern : IPattern
         }
 
         bool isAsync = method.Modifiers.Any(SyntaxKind.AsyncKeyword);
-        List<ExpressionSyntax?> returned = MediatRSyntax.ReturnedExpressions(method);
+        IReadOnlyList<ExpressionSyntax?> returned = MediatRSyntax.ReturnedExpressions(method);
         if (!isAsync && returned.Any(e => !calls.Contains(e) && !IsTaskFromResult(e, model)))
         {
             return PatternResult.Manual("Handle returns a Task that is not next() or Task.FromResult(...); Mediator needs a ValueTask<TResponse>, convert it by hand (e.g. make the method async).");

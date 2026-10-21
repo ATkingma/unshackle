@@ -23,7 +23,6 @@ public class ReportRow
     // the fix is one rewrite of the extension, not of every call.
     public static IEnumerable<ReportRow> FromAll(IEnumerable<Finding> findings)
     {
-        ArgumentNullException.ThrowIfNull(findings);
         List<Finding> all = [.. findings];
         var groups = CustomAssertionPattern.Group(all).ToDictionary(g => g.First(), g => g.Count());
         return all
@@ -47,13 +46,11 @@ public class ReportRow
     // The reason of a Manual result as the report shows it: a kept finding gets the prefix, its reason code stays in the model.
     public static string ReasonOf(ManualResult manual)
     {
-        ArgumentNullException.ThrowIfNull(manual);
         return manual.Kept == KeptReason.None ? manual.Reason : KeptPrefix + manual.Reason;
     }
 
     public static ReportRow From(Finding finding)
     {
-        ArgumentNullException.ThrowIfNull(finding);
         (string status, string reason) = finding.Result switch
         {
             FixedResult fixedResult => ("Fixed", string.Join(" ", new[] { fixedResult.Warning, fixedResult.Info is null ? null : "Info: " + fixedResult.Info }.OfType<string>())),

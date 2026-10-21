@@ -39,7 +39,7 @@ as Manual with the reason the plan (`MapOwners`) keeps that map on AutoMapper; t
 ## Design
 
 `KeptMapPattern` (an `ISolutionPattern`) runs after the four profile patterns and before the call patterns. `Find` is syntactic;
-`RewriteAsync` asks `MapOwners.ForAsync` for the reason of the statement's pair. The reason starts with `MapOwners.KeptPrefix`, so
+`RewriteAsync` asks `MapOwners.ForAsync` for the reason of the statement's pair. The result carries the code `KeptReason.MapKept` (TAAK-295; the report prints the "Stays on AutoMapper: " prefix), so
 `AutoMapperFix.AllowsPartial` lets the rest of the solution be migrated.
 
 ## Requirements

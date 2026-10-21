@@ -15,7 +15,7 @@
 | `Finding` | `Models/Finding.cs` | One found node: file, line (0 = whole file), fix, pattern, result |
 | `PatternResult` | `Models/PatternResult.cs` | Factory methods `Fixed` (one or more nodes) and `Manual` |
 | `FixedResult` | `Models/FixedResult.cs` | Replacement nodes and required namespaces |
-| `ManualResult` | `Models/ManualResult.cs` | Reason why manual work is needed; `Kept` (`KeptReason`, `Models/KeptReason.cs`) marks a finding that stays on the old library while the rest is migrated (the report prints the prefix) |
+| `ManualResult` | `Models/ManualResult.cs` | Reason why manual work is needed; `Kept` (`KeptReason`, `Models/KeptReason.cs`) marks a finding that stays on the old library while the rest is migrated (the report prints the prefix); every kept AutoMapper finding carries one (TAAK-295), made with `PatternResult.KeptManual` |
 
 **Figure 2.** Contracts that Core defines for I/O (`Abstractions/`) and their implementations in `Unshackle.DataAccess`.
 

@@ -335,3 +335,20 @@ Tool published from main `0f58486` into `<corpus>/corpus-blind/_results/tool-0f5
 - `claude/tasks/archief/TAAK-268-blind-validation-round.md`
 - `claude/tasks/archief/TAAK-276-blind-round-after-manual-reduction.md`, `claude/tasks/archief/TAAK-280-region-directives.md`, `TAAK-281-using-in-conditional.md`, `TAAK-282-required-members.md`, `TAAK-283-using-sub-namespace.md`
 - `claude/tasks/CORPUSRUN-automapper.md`
+
+## TAAK-295 (2026-10-21): typed kept reason codes
+
+Tool from branch TAAK-295 (`<corpus>/corpus-blind/_results/tool-295`), harness `after` mode on the six AutoMapper repos, same baselines,
+JOBS=1. Results in `_results/after-t295`. Before = the TAAK-294 numbers above.
+
+| Repo           | Before (Fixed / Manual) | After (Fixed / Manual) | Regressions | Report vs TAAK-294 |
+| -------------- | ----------------------- | ---------------------- | ----------: | ------------------ |
+| pi22317        | 33 / 0                  | 33 / 0                 | 0 | identical |
+| assistiva      | 68 / 0                  | 68 / 0                 | 0 | identical |
+| culinary       | 3 / 70                  | 3 / 70                 | 0 | 1 row: example file of "IMapper is still used" |
+| msb            | 12 / 29                 | 12 / 29                | 0 | 1 row: same |
+| encryptednotes | 10 / 6                  | 10 / 6                 | 0 | 1 row: same |
+| estore         | 10 / 22                 | 10 / 22                | 0 | 1 row: same |
+
+The one differing row (kept `automapper.add-automapper`) names another IMapper user as its example; that example already varied
+between earlier rounds (estore t289/t292/t293), so it is pre-existing nondeterminism, not the reason-code change (council question in TAAK-295).

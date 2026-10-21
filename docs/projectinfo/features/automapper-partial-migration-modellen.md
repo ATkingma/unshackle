@@ -7,7 +7,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapOwners.cs`, `CreateM
 
 ```d2
 IFix: {shape: class; "+AllOrNothing": "bool"; "+AllowsPartial(finding)": "bool"}
-AutoMapperFix: {shape: class; "+AllowsPartial(finding)": "reason starts with KeptPrefix"}
+AutoMapperFix: {shape: class; "+AllowsPartial(finding)": "ManualResult.Kept is not None"}
 Fixer: {shape: class; "+FixAsync()": "undoes all only for a Manual finding that is not allowed"}
 MapOwners: {shape: class; "+KeptPrefix": "string"; "+ForAsync(solution, model, ct)": "Task<MapOwners>"; "+KeptCallAsync(call, model, solution, ct)": "Task<PatternResult?>"; "+Reason(source, destination)": "string?"; "-BuildAsync()": "fixpoint"; "-Close(nodes)": "closure"}
 MapNode: {shape: class; "+Statement": "SyntaxNode"; "+Reaches(other)": "bool"}
@@ -49,7 +49,7 @@ Owners -> Owners: "BuildAsync: collect profiles, CreateMap statements, calls; s_
 Owners -> CMP: "PlanAsync(profile) (loop)"
 CMP -> Owners: "statement problems → Keep"
 Owners -> Calls: "RewriteAsync(call) (loop)"
-Calls -> Owners: "Manual without KeptPrefix → KeepCall (pair, destination or all)"
+Calls -> Owners: "Manual without a Kept code → KeepCall (pair, destination or all)"
 Owners -> Owners: "Close: kept statement keeps its reverse and every reached map"
 Owners -> Owners: "repeat until the plan stops growing"
 Owners -> Pattern: plan

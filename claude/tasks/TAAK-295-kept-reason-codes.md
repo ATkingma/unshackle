@@ -1,6 +1,6 @@
 # TAAK-295 — Reason codes for every kept finding (after 0.2.0)
 
-**Status**: step 3/4 — steps 1-2 done, corpus run next
+**Status**: step 4/4 — steps 1-3 done, verify and docs next
 **Created**: 2026-10-19
 **Goal**: council round 4 Q2: kept maps, kept calls, kept `AddAutoMapper` and configuration tests use a typed reason code (like `KeptReason` on the `GetService<IMapper>()` lookup) instead of the `Stays on AutoMapper:` string prefix.
 
@@ -15,7 +15,7 @@
 
 - [x] 1. Inventory all prefix uses; plan
 - [x] 2. Implementation + tests (rendered text unchanged)
-- [ ] 3. Corpus `after` on the six AutoMapper repos: identical reports
+- [x] 3. Corpus `after` on the six AutoMapper repos: identical reports
 - [ ] 4. Verify, docs; `claude/tools/verify-head.sh` → `VERIFY OK`
 
 ## Inventory (step 1)
@@ -55,11 +55,20 @@ on the qualified name (council round 5 Q2).
   Leave as is (chosen) or give it a code for symmetry?
 - Q3: `MapBlockers` quotes a kept reason (with prefix) inside the Manual reason of another finding. Keep the quote (chosen, output
   unchanged) or drop the inner prefix?
+- Q4 (found in step 3): the "IMapper is still used (file:line)" example in the kept `add-automapper` row differs between runs.
+  Proposal: pick the first user in a stable order (path, then line) so corpus reports compare byte for byte. Not done here (would
+  change rendered text, out of this task's scope).
 
 ## Progress log
 
 - 2026-10-21: steps 1-2. Inventory above; 8 new `KeptReason` codes, `PatternResult.KeptManual`, `IsContainer` on the qualified name,
   new `Core/AutoMapperFixTests` (4 cases). Build green, `dotnet test` 1652/1652, SampleShop 38/38. Commit "TAAK-295: typed kept reason codes".
+- 2026-10-21: step 3. Tool `<corpus>/corpus-blind/_results/tool-295`, harness `corpus-am.sh after` (JOBS=1, own WORKROOT), results
+  copied to `<corpus>/corpus-blind/_results/after-t295`. Fixed/Manual identical to TAAK-294 on all six (33/0, 68/0, 3/70, 12/29, 10/6,
+  10/22), 0 regressions. Reports byte-identical for pi22317 and assistiva; in the four partial repos exactly one row differs: the
+  example file in "IMapper is still used (<file>:<line>)" of the kept `add-automapper` row. That example already changed between
+  earlier rounds (estore: t289 OrderController, t292 MemberService, t293/t294 ProductService, now MemberServiceTest), so it is
+  existing nondeterminism in `AddAutoMapperPattern` (first IMapper user over `Compilation.SyntaxTrees`), not this change. See council Q4.
 
 ## See also
 

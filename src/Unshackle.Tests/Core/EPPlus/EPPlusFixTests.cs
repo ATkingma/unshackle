@@ -29,7 +29,7 @@ public class EPPlusFixTests
         package.ShouldNotBeNull();
         package.RemovedPackage.ShouldBe("EPPlus");
         package.AddedPackages.Select(p => (p.Name, p.Version)).ShouldBe([("ClosedXML", typeof(global::ClosedXML.Excel.XLWorkbook).Assembly.GetName().Version!.ToString(3))]);
-        fix.Patterns.Select(p => p.Id).ShouldBe(["epplus.license-context", "epplus.package", "epplus.unsupported"]);
+        fix.Patterns.Select(p => p.Id).ShouldBe(["epplus.license-context", "epplus.package", "epplus.styles", "epplus.unsupported"]);
     }
 
     [Fact]

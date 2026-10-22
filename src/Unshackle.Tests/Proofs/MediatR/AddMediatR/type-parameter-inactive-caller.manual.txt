@@ -1,0 +1,1 @@
+AssemblyNotStaticallyKnown: Registration.AddPipeline may be called in inactive #if code

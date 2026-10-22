@@ -51,6 +51,8 @@ Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`.
 | Manual "cfg.X(...) has no direct equivalent"  | unknown call or lifetime argument      | `unknown-call`, `behavior-lifetime` |
 | Manual "'...' has no direct equivalent"       | other assignment/expression (own publisher) | no proof                       |
 | Manual "comes from a parameter of the public method"  | internal scan fed by a public wrapper (TAAK-290); checked before the host clash | `AddMediatRPatternTests.RewriteAsync_InternalScanFedByPublicParameter_*` |
+| Manual "AssemblyNotStaticallyKnown: ..."      | scan of a parameter or type parameter that does not resolve through its callers (TAAK-312, A2) | `type-parameter-different-assemblies`, `type-parameter-inactive-caller`, `AssemblyResolverTests` |
+| `AddMediator(cfg => ...)` (resolved scan)     | every caller passes one literal assembly the project sees; method non-public or not packable | `resolved-type-parameter`, `AssemblyResolverTests` |
 | `AddMediator(cfg => ...)`                     | everything known                       | `behaviors`, `expression`, `expression-several`, `empty`, `processors`, `publisher`, `edge-publisher-qualified`, `edge-assemblies`, `edge-service-type-behavior`, `generic-handlers` |
 
 ## See also
@@ -58,4 +60,5 @@ Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`.
 - [mediatr-add-mediatr-plan.md](mediatr-add-mediatr-plan.md)
 - [mediatr-add-mediatr-verify.md](mediatr-add-mediatr-verify.md)
 - `src/Unshackle.Core/Fixes/MediatR/Patterns/AddMediatRPattern.cs`
+- `src/Unshackle.Core/Fixes/MediatR/AssemblyResolver.cs` — resolves a scanned parameter or type parameter through its callers (TAAK-312)
 - `src/Unshackle.Tests/Proofs/MediatR/AddMediatR/`

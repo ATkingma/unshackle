@@ -17,4 +17,5 @@ public enum PollyReason
     OnRetryUsesContext,
     OnRetryNotMappable,
     SleepDurationsNotLiteral,
+    PolicyMemberNotPrivate,
 }

@@ -47,6 +47,24 @@ public class RetryVariantsPatternTests
         results.ShouldAllBe(r => r is ManualResult && ((ManualResult)r).Code == code);
     }
 
+    [Theory]
+    [InlineData("public partial class W { private readonly IAsyncPolicy _p = Policy.Handle<TimeoutException>().RetryAsync(1); public Task M() => _p.ExecuteAsync(() => Task.CompletedTask); } public partial class W { }", nameof(PollyReason.PolicyMemberNotPrivate))]
+    [InlineData("public class W { private readonly IAsyncPolicy _p; public W() { _p = Policy.Handle<TimeoutException>().RetryAsync(1); } }", nameof(PollyReason.PolicyNotLocal))]
+    public void Rewrite_FieldNotProvablyLocal_Manual(string type, string code)
+    {
+        // Arrange (queue row 5)
+        SyntaxTree tree = CSharpSyntaxTree.ParseText("using System;\nusing System.Threading.Tasks;\nusing Polly;\n" + type, cancellationToken: TestContext.Current.CancellationToken);
+        SemanticModel model = CSharpCompilation.Create("Check", [tree], PollyReferences.Before).GetSemanticModel(tree);
+        var pattern = new RetryVariantsPattern();
+
+        // Act
+        List<PatternResult> results = [.. pattern.Find(tree.GetRoot(TestContext.Current.CancellationToken), model).Select(n => pattern.Rewrite(n, model))];
+
+        // Assert
+        results.ShouldNotBeEmpty();
+        results.ShouldAllBe(r => r is ManualResult && ((ManualResult)r).Code == code);
+    }
+
     private static (SyntaxNode Root, SemanticModel Model) Parse(string statements)
     {
         SyntaxTree tree = CSharpSyntaxTree.ParseText(

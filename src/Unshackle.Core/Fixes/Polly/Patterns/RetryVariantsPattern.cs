@@ -28,10 +28,10 @@ public class RetryVariantsPattern : IPattern
     {
         PollyPlan plan = node switch
         {
-            LocalDeclarationStatementSyntax statement => PollyRetry.PlanDeclaration(statement, model),
+            LocalDeclarationStatementSyntax or FieldDeclarationSyntax => PollyRetry.PlanDeclaration(node, model),
             InvocationExpressionSyntax invocation when PollyRetry.IsRetryCreation(invocation, model) =>
                 PollyPlan.Manual(PollyReason.PolicyNotLocal,
-                    "the policy is stored or passed on (field, property, return value or argument); only a local or inline policy used by awaited ExecuteAsync calls is rewritten so far."),
+                    "the policy is stored or passed on (property, return value, argument, or a field assigned outside its declaration); only a local, a private field or an inline policy used by awaited ExecuteAsync calls is rewritten so far."),
             InvocationExpressionSyntax execute => PollyRetry.PlanExecute(execute, model),
             _ => PollyPlan.Manual(PollyReason.PolicyNotLocal, "unexpected node."),
         };

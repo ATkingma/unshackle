@@ -20,6 +20,7 @@ Proofs: `src/Unshackle.Tests/Proofs/Polly/RetryVariants/` (text: `ProofTests`; r
 | REQ-3 | Met | `durations` (3 literal durations, onRetry sees 0, 1, 2 ms), `durations-variable`; unit test with a variable element |
 | REQ-4 | Met | `retry-count`, `durations`; unit test `OnRetryUsesContext` on `RetryForeverAsync` |
 | REQ-5 | Met | `Proof_BeforeAndAfter_SameTrace` for all four Fixed proofs |
+| REQ-7 | Met | `field-instance` (+ trace), `Rewrite_FieldNotProvablyLocal_Manual` |
 | REQ-6 | Met | unit test `RetryAsync(n)` with a variable |
 
 `Find_EachRetryCallBelongsToExactlyOnePattern` checks the split between this pattern and `polly.wait-and-retry-async`.
@@ -33,7 +34,7 @@ None.
 | Check | Command | Result |
 | --- | --- | --- |
 | Build | `dotnet build` | passed (0 warnings) |
-| Tests | `dotnet test` | 1836/1836 green |
+| Tests | `dotnet test` | all green (see TAAK-308 log) |
 
 ## See also
 

@@ -1,6 +1,6 @@
 # TAAK-308 — Polly v7 → Microsoft.Extensions.Resilience (roadmap step 8)
 
-**Status**: step 3/6 — steps 1–2 done, waiting for the council
+**Status**: step 5/6 — steps 1–4 done; next: queue row 2 (`claude/tasks/polly-queue.md`)
 **Created**: 2026-10-22
 **Goal**: A `polly` fix that rewrites Polly v7 policy code to v8 resilience pipelines via Microsoft.Extensions.Resilience / Http.Resilience, at 100% on a Polly corpus.
 
@@ -19,8 +19,8 @@
 
 - [x] 1. Verify the OSMF facts and the transitive-dependency claim from primary sources; record in the task
 - [x] 2. Survey: repos with Polly v7 (`Policy.Handle<>().WaitAndRetryAsync`, `AddPolicyHandler`, `PolicyWrap`), API frequency; `docs/projectinfo/architectuur/corpus-polly.md`
-- [ ] 3. Council: target library and the Fixed/Manual line
-- [ ] 4. `PollyFix` skeleton with proofs; `claude/tasks/polly-queue.md`
+- [x] 3. Council: target library and the Fixed/Manual line (round 8, P1–P7)
+- [x] 4. `PollyFix` skeleton with proofs; `claude/tasks/polly-queue.md`
 - [ ] 5. Patterns from the queue, each with docs and proofs
 - [ ] 6. Corpus round to 100%, `claude/tasks/CORPUSRUN-polly.md`; blind round; roadmap row and README
 
@@ -44,6 +44,12 @@ references (MEHP itself depends on Polly 7) and the v7 API; staying on Polly 8.x
 - 2026-10-22 (agent polly): step 1 facts verified (table above). Step 2 survey: 38 candidates cloned, 20 kept,
   `docs/projectinfo/architectuur/corpus-polly.md`, `claude/tools/corpus-polly-repos.txt`; builds in
   `D:/playground/corpus-polly/logs/summary.txt`. Draft queue and council questions in the agent report.
+- 2026-10-22 (agent polly-skeleton): step 4. `PollyFix` (id `polly`; removes `Polly`, `Polly.Extensions.Http`,
+  `Microsoft.Extensions.Http.Polly`, adds `Microsoft.Extensions.Resilience` 10.11.0; v7 code left by a Manual row binds to
+  `Polly` and so keeps the package per project). Queue row 1 `polly.wait-and-retry-async` with 7 proofs and
+  `PollyBehaviourProofTests`: before (Polly 7.2.4) and after (Polly.Core) are compiled and run, traces must be equal, and a
+  mutation without `AttemptNumber + 1` must differ. Manual texts lead with a `PollyReason` code. Queue in `claude/tasks/polly-queue.md`.
+  Not yet registered in `Cli.cs`/README (main session).
 
 ## Changes
 

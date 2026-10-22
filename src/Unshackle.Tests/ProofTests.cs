@@ -7,9 +7,11 @@ using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.FluentAssertions;
 using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Fixes.Moq;
+using Unshackle.Core.Fixes.Polly;
 using Unshackle.Core.Models;
 using Unshackle.DataAccess.Reports;
 using Unshackle.Tests.Core.Moq;
+using Unshackle.Tests.Core.Polly;
 using Unshackle.Tests.Helpers;
 using Xunit;
 
@@ -51,6 +53,12 @@ public class ProofTests
             Fix = new MoqFix(MoqReferences.NSubstituteAssembly),
             Before = MoqReferences.Moq,
             After = MoqReferences.NSubstitute,
+        },
+        ["Polly"] = new()
+        {
+            Fix = new PollyFix(),
+            Before = PollyReferences.Before,
+            After = PollyReferences.After,
         },
     };
 

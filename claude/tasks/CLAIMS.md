@@ -15,7 +15,6 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 
 | # | Agent | Task | Files (owned, write) | Reserved task nrs | Since |
 | --- | --- | --- | --- | --- | --- |
-| 20 | polly-skeleton | TAAK-308 st 4 | `src/Unshackle.Core/Fixes/Polly/**`, `src/Unshackle.Tests/Core/Polly/**`, `src/Unshackle.Tests/Proofs/Polly/**`, `docs/projectinfo/patterns/polly-*`, `claude/tasks/polly-queue.md` (new), `claude/tasks/TAAK-308-*.md` | 340–349 | 2026-10-22 |
 | 21 | epplus-skeleton | TAAK-309 st 2–3 | `src/Unshackle.Core/Fixes/EPPlus/**`, `src/Unshackle.Tests/Core/EPPlus/**` (incl. cell-compare harness), `src/Unshackle.Tests/Proofs/EPPlus/**`, `docs/projectinfo/patterns/epplus-*`, `claude/tasks/epplus-queue.md` (new), `claude/tasks/TAAK-309-*.md` | 350–359 | 2026-10-22 |
 | 22 | engine | TAAK-316, then 317 | `src/Unshackle.Core/*.cs` (root files: Fixer, FileFixer, ProjectPackages, …), `src/Unshackle.Core/Abstractions/**` (additive only), `src/Unshackle.Core/Models/**` (additive only), `src/Unshackle.DataAccess/**`, `src/Unshackle.Tests/Core/Engine/**` (new), `src/Unshackle.Tests/DataAccess/**`, `docs/projectinfo/architectuur/core.md`, `claude/tasks/TAAK-316-*.md`, `claude/tasks/TAAK-317-*.md` | 318–319 | 2026-10-22 |
 | 23 | am-mocked-imapper | TAAK-311 | `src/Unshackle.Core/Fixes/AutoMapper/**`, existing AutoMapper-only test files in `src/Unshackle.Tests/Core/` + new ones in `src/Unshackle.Tests/Core/AutoMapper/**`, `src/Unshackle.Tests/Proofs/AutoMapper/**`, `docs/projectinfo/patterns/automapper-*`, `claude/tasks/TAAK-311-*.md` | — | 2026-10-22 |
@@ -39,6 +38,7 @@ Shared grant (2026-10-22): `src/Unshackle.Tests/ProofTests.cs` — moq-, polly- 
 | scout-efbulk | TAAK-430 | conditional go narrow (council) | 2026-10-22 |
 | scout-testfw | TAAK-440 | xUnit go / NUnit no-go (council) | 2026-10-22 |
 | moq | TAAK-307 st 1 | done, council | 2026-10-22 |
+| polly-skeleton | TAAK-308 st 4 | done: PollyFix + polly.wait-and-retry-async with run-time trace proof | 2026-10-22 |
 | moq-skeleton | TAAK-307 st 3 | done: MoqFix + moq.create, queue rows 0–14 | 2026-10-22 |
 | council (3) | round 8 | decided, recorded in council.md | 2026-10-22 |
 | polly | TAAK-308 st 1–2 | done, council | 2026-10-22 |

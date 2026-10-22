@@ -8,6 +8,7 @@ using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.FluentAssertions;
 using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Fixes.Moq;
+using Unshackle.Core.Fixes.Polly;
 using Unshackle.Core.Models;
 using Unshackle.DataAccess.Projects;
 using Unshackle.DataAccess.Reports;
@@ -32,6 +33,7 @@ public static class Cli
             new MediatRFix(),
             new AutoMapperFix(),
             new MoqFix(),
+            new PollyFix(),
         ];
         var fileSystem = new FileSystem();
         IReportWriter[] reportWriters =

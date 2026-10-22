@@ -29,17 +29,17 @@ public static class Cli
     public static async Task<int> RunAsync(string[] args, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(args);
+        var fileSystem = new FileSystem();
         IReadOnlyList<IFix> fixes =
         [
             new FluentAssertionsFix([MetadataReference.CreateFromFile(Path.Combine(AppContext.BaseDirectory, "References", "Shouldly.dll"))]),
-            new MediatRFix(),
+            new MediatRFix(new XmlProjectProperties(fileSystem)),
             new AutoMapperFix(),
             new MoqFix([MetadataReference.CreateFromFile(Path.Combine(AppContext.BaseDirectory, "References", "NSubstitute.dll"))]),
             new PollyFix(),
             new EPPlusFix(),
             new MassTransitFix(),
         ];
-        var fileSystem = new FileSystem();
         IReportWriter[] reportWriters =
             [new CsvReportWriter(fileSystem), new JsonReportWriter(fileSystem), new MarkdownReportWriter(fileSystem)];
         IAnsiConsole output = AnsiConsole.Console;

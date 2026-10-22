@@ -185,6 +185,7 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `moq.setup-returns` | [plan](patterns/moq-setup-returns-plan.md) | [models](patterns/moq-setup-returns-modellen.md) | [verify](patterns/moq-setup-returns-verify.md) | TAAK-307 |
 | `moq.verify` | [plan](patterns/moq-verify-plan.md) | [models](patterns/moq-verify-modellen.md) | [verify](patterns/moq-verify-verify.md) | TAAK-307 |
 | `polly.wait-and-retry-async` | [plan](patterns/polly-wait-and-retry-async-plan.md) | [models](patterns/polly-wait-and-retry-async-modellen.md) | [verify](patterns/polly-wait-and-retry-async-verify.md) | TAAK-308 |
+| `polly.retry-variants` | [plan](patterns/polly-retry-variants-plan.md) | [models](patterns/polly-retry-variants-modellen.md) | [verify](patterns/polly-retry-variants-verify.md) | TAAK-308 |
 | `epplus.license-context` | [plan](patterns/epplus-license-context-plan.md) | [models](patterns/epplus-license-context-modellen.md) | [verify](patterns/epplus-license-context-verify.md) | TAAK-309 |
 | `epplus.package` | [plan](patterns/epplus-package-plan.md) | [models](patterns/epplus-package-modellen.md) | [verify](patterns/epplus-package-verify.md) | TAAK-309 |
 | `epplus.unsupported` | [plan](patterns/epplus-unsupported-plan.md) | [models](patterns/epplus-unsupported-modellen.md) | [verify](patterns/epplus-unsupported-verify.md) | TAAK-309 |

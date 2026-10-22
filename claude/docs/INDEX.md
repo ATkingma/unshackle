@@ -54,6 +54,14 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-295-kept-reason-codes.md` | Typed reason codes for every kept AutoMapper finding instead of the `Stays on AutoMapper:` prefix (done) |
 | `claude/tasks/POOL-2026-10-22.md` | Agent pool plan: waves, file ownership and reserved task numbers for TAAK-301..310 |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
+| `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |
+| `claude/tasks/TAAK-380-scout-identityserver.md` | Scout IdentityServer4 → OpenIddict/Duende (go/no-go research) |
+| `claude/tasks/TAAK-390-scout-imagesharp.md` | Scout ImageSharp → SkiaSharp/Magick.NET (go/no-go research) |
+| `claude/tasks/TAAK-400-scout-pdf.md` | Scout iTextSharp/iText7/QuestPDF → PDFsharp/PdfPig (go/no-go research) |
+| `claude/tasks/TAAK-410-scout-swashbuckle.md` | Scout Swashbuckle → Microsoft.AspNetCore.OpenApi (go/no-go research) |
+| `claude/tasks/TAAK-420-scout-newtonsoft.md` | Scout Newtonsoft.Json → System.Text.Json (go/no-go research) |
+| `claude/tasks/TAAK-430-scout-efbulk.md` | Scout EF bulk extensions → EF Core ExecuteUpdate/Delete (go/no-go research) |
+| `claude/tasks/TAAK-440-scout-testfw.md` | Scout xUnit v2 → v3 and NUnit 3 → 4 (go/no-go research) |
 | `claude/tasks/TAAK-301-document-parallel-options.md` | Document `--sequential` / `--max-degree` for users |
 | `claude/tasks/TAAK-302-verify-head-pattern-check.md` | verify-head must not pass when the pattern-docs check could not run (jq) |
 | `claude/tasks/TAAK-303-cleanup-worktrees.md` | Remove stale agent worktrees and merged branches |

@@ -186,6 +186,15 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `epplus.license-context` | [plan](patterns/epplus-license-context-plan.md) | [models](patterns/epplus-license-context-modellen.md) | [verify](patterns/epplus-license-context-verify.md) | TAAK-309 |
 | `epplus.package` | [plan](patterns/epplus-package-plan.md) | [models](patterns/epplus-package-modellen.md) | [verify](patterns/epplus-package-verify.md) | TAAK-309 |
 | `epplus.unsupported` | [plan](patterns/epplus-unsupported-plan.md) | [models](patterns/epplus-unsupported-modellen.md) | [verify](patterns/epplus-unsupported-verify.md) | TAAK-309 |
+| `masstransit.registration` | [plan](patterns/masstransit-registration-plan.md) | [models](patterns/masstransit-registration-modellen.md) | [verify](patterns/masstransit-registration-verify.md) | TAAK-310 |
+| `masstransit.transport` | [plan](patterns/masstransit-transport-plan.md) | [models](patterns/masstransit-transport-modellen.md) | [verify](patterns/masstransit-transport-verify.md) | TAAK-310 |
+| `masstransit.outbox` | [plan](patterns/masstransit-outbox-plan.md) | [models](patterns/masstransit-outbox-modellen.md) | [verify](patterns/masstransit-outbox-verify.md) | TAAK-310 |
+| `masstransit.retry` | [plan](patterns/masstransit-retry-plan.md) | [models](patterns/masstransit-retry-modellen.md) | [verify](patterns/masstransit-retry-verify.md) | TAAK-310 |
+| `masstransit.test-harness` | [plan](patterns/masstransit-test-harness-plan.md) | [models](patterns/masstransit-test-harness-modellen.md) | [verify](patterns/masstransit-test-harness-verify.md) | TAAK-310 |
+| `masstransit.consumer` | [plan](patterns/masstransit-consumer-plan.md) | [models](patterns/masstransit-consumer-modellen.md) | [verify](patterns/masstransit-consumer-verify.md) | TAAK-310 |
+| `masstransit.consumer-definition` | [plan](patterns/masstransit-consumer-definition-plan.md) | [models](patterns/masstransit-consumer-definition-modellen.md) | [verify](patterns/masstransit-consumer-definition-verify.md) | TAAK-310 |
+| `masstransit.saga` | [plan](patterns/masstransit-saga-plan.md) | [models](patterns/masstransit-saga-modellen.md) | [verify](patterns/masstransit-saga-verify.md) | TAAK-310 |
+| `masstransit.request-client` | [plan](patterns/masstransit-request-client-plan.md) | [models](patterns/masstransit-request-client-modellen.md) | [verify](patterns/masstransit-request-client-verify.md) | TAAK-310 |
 
 ## See also
 

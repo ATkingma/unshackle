@@ -3,6 +3,7 @@ using NSubstitute;
 using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
+using Unshackle.Core.Fixes.EPPlus;
 using Unshackle.Core.Fixes.EPPlus.Patterns;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
@@ -84,7 +85,7 @@ public class StylesHarnessTests
         (FixReport report, string after) = await RewriteAsync(before, translate: false);
 
         // Assert
-        ((ManualResult)report.Findings.ShouldHaveSingleItem().Result).Reason.ShouldContain(StylesPattern.FillCode);
+        ((ManualResult)report.Findings.ShouldHaveSingleItem().Result).Code.ShouldBe(nameof(EPPlusReason.FillWithoutSolidPattern));
         after.ShouldBe(before.ReplaceLineEndings("\n"));
     }
 

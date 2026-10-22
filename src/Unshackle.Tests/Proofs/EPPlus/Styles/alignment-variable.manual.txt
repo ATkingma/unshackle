@@ -1,1 +1,1 @@
-[UnmappedEPPlusStyle] EPPlus style 'HorizontalAlignment'
+UnmappedEPPlusStyle: EPPlus style 'HorizontalAlignment'

@@ -22,7 +22,7 @@
 | REQ-9 | Met     | proofs `Package/worksheet-local`, `Package/worksheet-name` (harness equal), `Package/used-worksheet` |
 | REQ-10 | Met    | proofs `Package/name-missing`, `Package/conditional-add`, `Package/rename-to-existing` |
 | REQ-11 | Met    | proof `Package/worksheet-index`; `WorksheetIndexTests` (EPPlus 5 stub, assembly version 5.8.0.0; unknown version); `Harness_EPPlus4OnNetStandard_IsZeroBased` |
-| REQ-12 | Partly met | `FontsLicenceTests` (Warning; 1.x Fixed; 2.x Manual `[LicensedDependency]`). The `PackageAddEdit` pin is not done: there is no assets-file reader behind a Core interface (engine work). |
+| REQ-12 | Partly met | `FontsLicenceTests` (Warning; 1.x Fixed; 2.x Manual `LicensedDependency`). The `PackageAddEdit` pin is not done: there is no assets-file reader behind a Core interface (engine work). |
 | REQ-7 | Met     | `EPPlusFixTests.Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles` |
 
 ## Build and tests
@@ -38,7 +38,7 @@
   padding and reads EPPlus's back as 19.289); pinned by `Differences_SameColumnWidthNumber_IsReported`, input for queue row 9.
 - Deviation from council E3 (needs the council): E3 says 4.x is 1-based, but the harness shows EPPlus 4.5.3.3's .NET Standard build (the
   one .NET Core and .NET 5+ load) is 0-based by default. Its .NET Framework builds default to 1-based, and both read an override from
-  configuration. So 4.x integer indexes are Manual `[WorksheetIndexBaseNotProvable]`. 5+ is rewritten as decided, although 5+ also reads
+  configuration. So 4.x integer indexes are Manual `WorksheetIndexBaseNotProvable`. 5+ is rewritten as decided, although 5+ also reads
   that configuration key.
 - Row 3 widens this pattern instead of being a pattern of its own: a worksheet only exists through its package local, so one rewrite of the
   scope covers both (the queue said rows 3-9 widen the use set).

@@ -16,7 +16,7 @@ internal class WorkbookUses
     private readonly SyntaxNode _scope;
     private readonly ILocalSymbol _package;
     private readonly List<ILocalSymbol> _worksheets = [];
-    private string? _unknownVersion;
+    private Models.PatternResult? _unknownVersion;
 
     public WorkbookUses(SemanticModel model, SyntaxNode scope, ILocalSymbol package)
     {
@@ -27,14 +27,14 @@ internal class WorkbookUses
 
     public Dictionary<SyntaxNode, SyntaxNode> Replacements { get; } = [];
 
-    // Null when every use is mapped; otherwise why not.
-    public string? Map()
+    // Null when every use is mapped; otherwise the Manual result that says why not.
+    public Models.PatternResult? Map()
     {
         foreach (IdentifierNameSyntax use in UsesOf(_package))
         {
             if (!MapPackageUse(use))
             {
-                return _unknownVersion ?? $"ExcelPackage local {_package.Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue).";
+                return _unknownVersion ?? Models.PatternResult.Manual($"ExcelPackage local {_package.Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue).");
             }
         }
 
@@ -45,7 +45,7 @@ internal class WorkbookUses
             {
                 if (!IsNameAccess(use))
                 {
-                    return $"Worksheet local {_worksheets[i].Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue row 4+).";
+                    return Models.PatternResult.Manual($"Worksheet local {_worksheets[i].Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue row 4+).");
                 }
             }
         }
@@ -157,9 +157,9 @@ internal class WorkbookUses
         if (version is null || version.Major < 5)
         {
             _unknownVersion = version is null
-                ? $"[UnknownEPPlusVersion] Worksheets[{index}] (line {Line(lookup)}): the referenced EPPlus version is unknown, so its index base is (4.x 0- or 1-based, 5+ 0-based)."
-                : $"[WorksheetIndexBaseNotProvable] Worksheets[{index}] (line {Line(lookup)}): EPPlus {version.Major}.x is 0-based on .NET Standard/Core and 1-based on .NET Framework by default, "
-                    + "and configuration can switch it (EPPlus:ExcelPackage.Compatibility.IsWorksheets1Based); use the sheet name or rewrite by hand.";
+                ? Models.PatternResult.Manual(EPPlusReason.UnknownEPPlusVersion, $"Worksheets[{index}] (line {Line(lookup)}): the referenced EPPlus version is unknown, so its index base is (4.x 0- or 1-based, 5+ 0-based).")
+                : Models.PatternResult.Manual(EPPlusReason.WorksheetIndexBaseNotProvable, $"Worksheets[{index}] (line {Line(lookup)}): EPPlus {version.Major}.x is 0-based on .NET Standard/Core and 1-based on .NET Framework by default, "
+                    + "and configuration can switch it (EPPlus:ExcelPackage.Compatibility.IsWorksheets1Based); use the sheet name or rewrite by hand.");
             return null;
         }
 

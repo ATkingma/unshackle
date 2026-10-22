@@ -1,1 +1,1 @@
-[UnmappedEPPlusStyle] EPPlus style 'Font.UnderLine'
+UnmappedEPPlusStyle: EPPlus style 'Font.UnderLine'

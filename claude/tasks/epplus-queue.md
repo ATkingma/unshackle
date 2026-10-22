@@ -33,7 +33,7 @@ padding (reads EPPlus's 20 back as 19.289), so row 9 cannot be a rename (`CellCo
 culture-invariant ones); (c) an invalid or duplicate sheet name throws in both, with different exceptions (row 3: Manual unless literal and valid);
 (d) EPPlus 4.5.3.3's .NET Standard build is 0-based for `Worksheets[i]` (`WorksheetIndexTests.Harness_EPPlus4OnNetStandard_IsZeroBased`), not 1-based as
 council E3 assumed. Its .NET Framework builds default to 1-based, and configuration can switch both, so 4.x integer indexes are Manual
-`[WorksheetIndexBaseNotProvable]` (council question).
+`WorksheetIndexBaseNotProvable` (council question).
 
 ## See also
 

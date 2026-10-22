@@ -79,6 +79,7 @@
   current with no requirement >= 2.0, and Core has no reader for it (I/O belongs in DataAccess behind a Core interface; engine/main files).
   Under E7 a missing check means "Warning only", which is the current behaviour. `FontsLicenceTests` (3).
   `dotnet test` 1865 passed, 0 failed.
+- 2026-10-22 (epplus-skeleton, C1): `EPPlusReason` enum; every coded Manual now uses `PatternResult.Manual(EPPlusReason.X, text)`, rendered as `Code: text` (it was `[Code] text`). `EPPlusFix` implements `IProjectFileMigration`. It has no edits yet; `ProjectBlockers` reports `ProjectBlockingReason.LicensedDependency` when the project resolves SixLabors.Fonts 2.x (read from reference metadata). `dotnet test` 1993 passed, 0 failed.
 
 ## See also
 

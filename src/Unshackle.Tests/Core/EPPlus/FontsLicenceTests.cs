@@ -49,12 +49,28 @@ public class FontsLicenceTests
         // Assert
         if (manual)
         {
-            result.ShouldBeOfType<ManualResult>().Reason.ShouldStartWith("[LicensedDependency]");
+            result.ShouldBeOfType<ManualResult>().Code.ShouldBe("LicensedDependency");
         }
         else
         {
             result.ShouldBeOfType<FixedResult>();
         }
+    }
+
+    [Theory]
+    [InlineData("1.0.0.0", 0)]
+    [InlineData("2.1.3.0", 1)]
+    public void ProjectBlockers_ResolvedFontsVersion_LicensedDependencyFromTwo(string version, int expected)
+    {
+        // Arrange
+        Project project = Helpers.TestSolution.Create(Code, [.. EPPlusReferences.EPPlus, Fonts(version)]).Projects.Single();
+
+        // Act
+        IReadOnlyList<ManualResult> blockers = new Unshackle.Core.Fixes.EPPlus.EPPlusFix().ProjectBlockers(project);
+
+        // Assert
+        blockers.Count.ShouldBe(expected);
+        blockers.ShouldAllBe(b => b.Code == nameof(ProjectBlockingReason.LicensedDependency));
     }
 
     private static PatternResult Rewrite(IEnumerable<MetadataReference> extra)

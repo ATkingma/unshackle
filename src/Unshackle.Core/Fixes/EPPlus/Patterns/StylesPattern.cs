@@ -14,9 +14,7 @@ namespace Unshackle.Core.Fixes.EPPlus.Patterns;
 /// </summary>
 public class StylesPattern : IPattern
 {
-    public const string UnmappedCode = "UnmappedEPPlusStyle";
 
-    public const string FillCode = "FillWithoutSolidPattern";
 
     // On every statement this pattern wrote: its style tail is ClosedXML, only the receiver in front of .Style may still be EPPlus.
     public const string MigratedAnnotationKind = "Unshackle.EPPlus.StyleMigrated";
@@ -43,23 +41,23 @@ public class StylesPattern : IPattern
                 {
                     return IsSolid(assignment.Right, model) && Neighbour(statement, 1) is { } next && IsBackgroundSetColor(next, receiver, model)
                         ? new FixedResult([], [])
-                        : Manual(FillCode, shape, "a fill pattern other than Solid, or not directly followed by Fill.BackgroundColor.SetColor on the same style");
+                        : Manual(EPPlusReason.FillWithoutSolidPattern, shape, "a fill pattern other than Solid, or not directly followed by Fill.BackgroundColor.SetColor on the same style");
                 }
 
                 if (StylesMapping.Assignment(shape, assignment.Right, model) is not (string target, string value))
                 {
-                    return Manual(UnmappedCode, shape, "this style property or value is not mapped yet");
+                    return Manual(EPPlusReason.UnmappedEPPlusStyle, shape, "this style property or value is not mapped yet");
                 }
 
                 return PatternResult.Fixed(Migrated($"{receiver}.{target} = {value};"), ClosedXmlNamespace);
             case InvocationExpressionSyntax { ArgumentList.Arguments: [var color] } when shape == "Fill.BackgroundColor.SetColor" && IsColor(color.Expression, model):
                 return Neighbour(statement, -1) is { } previous && IsSolidAssignment(previous, receiver, model)
                     ? PatternResult.Fixed(Migrated($"{receiver}.Fill.BackgroundColor = XLColor.FromColor({color.Expression.WithoutTrivia()});"), ClosedXmlNamespace)
-                    : Manual(FillCode, shape, "the colour is not directly preceded by Fill.PatternType = ExcelFillStyle.Solid on the same style");
+                    : Manual(EPPlusReason.FillWithoutSolidPattern, shape, "the colour is not directly preceded by Fill.PatternType = ExcelFillStyle.Solid on the same style");
             case InvocationExpressionSyntax { ArgumentList.Arguments: [var color] } when shape == "Font.Color.SetColor" && IsColor(color.Expression, model):
                 return PatternResult.Fixed(Migrated($"{receiver}.Font.FontColor = XLColor.FromColor({color.Expression.WithoutTrivia()});"), ClosedXmlNamespace);
             default:
-                return Manual(UnmappedCode, shape, "this style call is not mapped yet");
+                return Manual(EPPlusReason.UnmappedEPPlusStyle, shape, "this style call is not mapped yet");
         }
     }
 
@@ -75,8 +73,8 @@ public class StylesPattern : IPattern
     private static StatementSyntax Migrated(string text) =>
         SyntaxFactory.ParseStatement(text).WithAdditionalAnnotations(new SyntaxAnnotation(MigratedAnnotationKind));
 
-    private static PatternResult Manual(string code, string shape, string why) =>
-        PatternResult.Manual($"[{code}] EPPlus style '{shape}': {why} (queue row 8). Migrate it by hand.");
+    private static PatternResult Manual(EPPlusReason code, string shape, string why) =>
+        PatternResult.Manual(code, $"EPPlus style '{shape}': {why} (queue row 8). Migrate it by hand.");
 
     private static ExpressionStatementSyntax? Neighbour(ExpressionStatementSyntax statement, int offset)
     {

@@ -25,7 +25,7 @@
 
 ## Deviations
 
-- Reason codes are text prefixes (`[UnmigratedEPPlusApi]`, `[PublicApiExposesOldLibrary]`) until TAAK-318 (council round 10, C1).
+- Reason codes are typed (`EPPlusReason`, council round 10 C1); the report prints `Code: reason`.
 - "Packable" is approximated as in MediatR's `AssemblyResolver` (a library without a test framework); a library with `IsPackable=false` still
   counts as packable, so it errs on the side of Manual.
 - In `Fix_TwoPackagesInOneBlock_Manual` the other uses in the block get an extra Unmigrated row next to the two package rows (the package

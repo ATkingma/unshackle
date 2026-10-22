@@ -100,7 +100,7 @@ public class WorksheetIndexTests
         PatternResult result = new PackagePattern().Rewrite(node, model);
 
         // Assert
-        result.ShouldBeOfType<ManualResult>().Reason.ShouldStartWith("[UnknownEPPlusVersion]");
+        result.ShouldBeOfType<ManualResult>().Code.ShouldBe("UnknownEPPlusVersion");
     }
 
     private static (SyntaxNode Node, SemanticModel Model) Parse(string code, IEnumerable<MetadataReference> references)

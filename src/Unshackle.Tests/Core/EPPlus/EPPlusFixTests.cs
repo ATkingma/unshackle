@@ -238,7 +238,7 @@ public class EPPlusFixTests
         FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "epplus" }, TestContext.Current.CancellationToken);
 
         // Assert
-        report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.StartsWith("[UnmigratedEPPlusApi]", StringComparison.Ordinal));
-        report.Findings.ShouldNotContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains("PublicApiExposesOldLibrary"));
+        report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Code == "UnmigratedEPPlusApi");
+        report.Findings.ShouldNotContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Code == "PublicApiExposesOldLibrary");
     }
 }

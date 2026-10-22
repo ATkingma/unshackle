@@ -53,9 +53,9 @@ public class PackagePattern : IPattern
         }
 
         var uses = new WorkbookUses(model, scope, local);
-        if (uses.Map() is string blocked)
+        if (uses.Map() is PatternResult blocked)
         {
-            return PatternResult.Manual(blocked);
+            return blocked;
         }
 
         Dictionary<SyntaxNode, SyntaxNode> replacements = uses.Replacements;
@@ -71,7 +71,7 @@ public class PackagePattern : IPattern
         // E7: ClosedXML accepts SixLabors.Fonts [1.0.0, 3.0.0); 2.x is under the Six Labors Split License.
         if (FontsLicence.Resolved(model) is { Major: >= 2 } fonts)
         {
-            return PatternResult.Manual($"[{FontsLicence.Code}] this project already resolves SixLabors.Fonts {fonts.ToString(3)}, which is under the Six Labors Split License; "
+            return PatternResult.Manual(EPPlusReason.LicensedDependency, $"this project already resolves SixLabors.Fonts {fonts.ToString(3)}, which is under the Six Labors Split License; "
                 + "ClosedXML would use it. Pin SixLabors.Fonts below 2.0 (or license it) and run the fix again.");
         }
 

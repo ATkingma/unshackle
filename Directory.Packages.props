@@ -30,6 +30,7 @@
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.11.0" />
     <PackageVersion Include="EPPlus" Version="4.5.3.3" />
     <PackageVersion Include="ClosedXML" Version="0.105.1" />
+    <PackageVersion Include="MassTransit" Version="8.5.12" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />
     <!-- A package that builds on MediatR (TAAK-194): the version of the ardalis corpus case, only as types for proofs -->

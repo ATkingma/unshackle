@@ -143,8 +143,8 @@ With `--dry-run` we only show the diff; otherwise `ISolutionStore` writes the ch
 
 ## Same-named types (TAAK-024)
 
-- `IFix.SwappedTypes` (default empty): types such as `MediatR.IRequest\`1` with a twin in the new namespace. Symbols of
-  those types and their members do not count as usage in `UsingDirectives.UsedNamespaces` and `ProjectPackages`.
+- `IFix.SwappedTypes` (default empty): types such as `MediatR.IRequest\`1`with a twin in the new namespace. Symbols of
+those types and their members do not count as usage in`UsingDirectives.UsedNamespaces`and`ProjectPackages`.
 - A file without a pattern change still gets the using swap if only swapped types need the old using.
 - `PackageMigration.AlsoRemovedPackages` (MediatR: `MediatR.Contracts`) is removed as well. See
   `docs/projectinfo/features/gelijknamige-typen-swap-plan.md`.
@@ -223,14 +223,14 @@ each candidate file (same pre-filter as a normal run), and the solution, usings 
 Council round 8, S3. A fix that also implements `IProjectFileMigration` (`EditsFor(Project)`, a Strategy) declares exact typed
 edits per project from a closed set (`ProjectFileEdit` has a private-protected constructor):
 
-| Edit | What it does | Manual when |
-| --- | --- | --- |
-| `PackageRenameEdit` | renames the project's `PackageReference` in place with the new version; under CPM adds a `PackageVersion` (the old one stays) | declared only in a shared `Directory.*.props`; no version and no CPM |
-| `PackageRemoveEdit` | removes the project's `PackageReference` | declared only in a shared file |
-| `PackageAddEdit` | adds a `PackageReference` after the last one (plus `PackageVersion` under CPM) | — (skipped when already declared) |
-| `PropertyEdit` | sets one MSBuild property, added to the last unconditional `PropertyGroup` when missing | set twice or under a condition |
-| `ConfigFileRenameEdit` | renames a file next to the project, and items that name it exactly (`Include`/`Update`/`Remove`) | the new name exists |
-| `ConfigFileTransformEdit` | exact text replacements in a file next to the project | an old text does not occur exactly once |
+| Edit                      | What it does                                                                                                                  | Manual when                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `PackageRenameEdit`       | renames the project's `PackageReference` in place with the new version; under CPM adds a `PackageVersion` (the old one stays) | declared only in a shared `Directory.*.props`; no version and no CPM |
+| `PackageRemoveEdit`       | removes the project's `PackageReference`                                                                                      | declared only in a shared file                                       |
+| `PackageAddEdit`          | adds a `PackageReference` after the last one (plus `PackageVersion` under CPM)                                                | — (skipped when already declared)                                    |
+| `PropertyEdit`            | sets one MSBuild property, added to the last unconditional `PropertyGroup` when missing                                       | set twice or under a condition                                       |
+| `ConfigFileRenameEdit`    | renames a file next to the project, and items that name it exactly (`Include`/`Update`/`Remove`)                              | the new name exists                                                  |
+| `ConfigFileTransformEdit` | exact text replacements in a file next to the project                                                                         | an old text does not occur exactly once                              |
 
 - The Fixer calls `ProjectFileMigrations.ApplyAsync` at the end of a run, after the document pass, vendoring and the package
   migration, and only when the `IProjectFileStore` also implements `IProjectFileEditor` (`XmlProjectFileStore` does).
@@ -291,23 +291,38 @@ edits per project from a closed set (`ProjectFileEdit` has a private-protected c
   `obj/project.assets.json`. The result has a `State`, the resolved versions (the highest over all target frameworks), and every
   requirement with its range, whether from the project or from a package.
 - `Current` means:
-  - the assets file was restored for this project file;
-  - it is not older than the project file or its nearest `Directory.Build.props` / `Directory.Packages.props`;
-  - it lists every `PackageReference` the project declares.
+    - the assets file was restored for this project file;
+    - it is not older than the project file or its nearest `Directory.Build.props` / `Directory.Packages.props`;
+    - it lists every `PackageReference` the project declares.
 
-  A file that is there but fails any of these checks is `Stale`. A missing or unreadable file is `Missing`.
+    A file that is there but fails any of these checks is `Stale`. A missing or unreadable file is `Missing`.
+
 - `ResolvesAtLeast(package, v)` and `RequiresAtLeast(package, v)` answer EPPlus E7 (council round 10). A requirement whose range cannot be
   read counts as "at least", so the pin is not made.
 
+## Council round 12 engine rules (TAAK-322)
+
+- G6: a blocked project gets no package migration at all (TAAK-321, pinned by `FixAsync_ProjectBlocker_SkipsThePackageMigrationOfThatProject`).
+- G7: an old central `<PackageVersion>` is no longer decided per project. A project edit that leaves it reports it in
+  `ProjectFileEditOutcome.PendingOldVersions` (`OldPackageVersion`: props path + package). After every project is edited, `ProjectFileMigrations`
+  deduplicates them per `Directory.Packages.props` and calls `RemoveOldVersionsAsync` once, on the final texts of all projects. That pass
+  emits a `PackageVersionRemoveEdit`, so the version goes only when no project still references the old package.
+- G8: when the first `using` of a file is removed and its leading trivia holds a comment (a file header), `UsingDirectives.KeepFirstUsingComment`
+  moves that trivia to the next node that stays. Only the first line of the file; a leading directive or disabled text keeps the TAAK-281 rule.
+- G9: `IFix.OldLibraryAssemblies` (default empty) lists assembly names of the old library for the pre-filter (`OldLibraryFiles`): every name in
+  such a referenced assembly counts as old-library code; `RemovedNamespaces` stays the fallback. `PollyFix` declares the v7 assemblies and
+  no longer needs `FindsOnlyOldLibraryCode => false`. `PreFilterContractTests` checks that every fix gives identical output with the pre-filter
+  on and off over its proofs.
+
 ## SOLID in brief
 
-| Principle | How                                                                                                                       |
-| --------- | ------------------------------------------------------------------------------------------------------------------------- |
-| S         | A pattern only describes what is rewritten. Loading, writing and reporting happen elsewhere                               |
-| O         | A new library or new pattern is a new class. The Fixer does not change                                                    |
-| L         | Every pattern returns `Fixed` or `Manual` and never throws an exception, so the Fixer treats them all the same           |
-| I         | Small interfaces: find/rewrite, solution storage and report writing are separate                                         |
-| D         | Core depends on interfaces. MSBuild, the file system and CSV live in DataAccess                                           |
+| Principle | How                                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------------------- |
+| S         | A pattern only describes what is rewritten. Loading, writing and reporting happen elsewhere                    |
+| O         | A new library or new pattern is a new class. The Fixer does not change                                         |
+| L         | Every pattern returns `Fixed` or `Manual` and never throws an exception, so the Fixer treats them all the same |
+| I         | Small interfaces: find/rewrite, solution storage and report writing are separate                               |
+| D         | Core depends on interfaces. MSBuild, the file system and CSV live in DataAccess                                |
 
 ## See also
 

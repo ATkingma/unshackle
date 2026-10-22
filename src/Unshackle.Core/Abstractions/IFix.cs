@@ -56,6 +56,13 @@ public interface IFix
     bool FindsOnlyOldLibraryCode => true;
 
     /// <summary>
+    /// Names of the old library's assemblies (= package ids, for example <c>Polly</c>) for the pre-filter (council round 12, G9): every type and
+    /// member of a referenced assembly with one of these names counts as a name of the old library, also when the fix removes none of its
+    /// namespaces. The namespaces of <see cref="RemovedNamespaces"/> stay the fallback. Empty (the default): namespaces only.
+    /// </summary>
+    IReadOnlyList<string> OldLibraryAssemblies => [];
+
+    /// <summary>
     /// True when the patterns may fix several files at the same time: every static cache and every shared mutable field of the fix
     /// and its patterns is thread-safe and gives the same answer whichever file asks first. False (the default) fixes one file at a
     /// time. The output is the same either way (council round 7).

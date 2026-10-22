@@ -21,7 +21,7 @@ lane at a time after `claude/tools/verify-head.sh <scratch> > log && git push` (
 
 | Lane | Agent id | Branch (origin) | Last commit | Done so far | Next |
 | --- | --- | --- | --- | --- | --- |
-| L1 polly (TAAK-308) | `aea372f23f1a4c394` (resumed 2026-10-22) | `pool/l1-polly-wip` | `b36d4d7f` | row 4 `polly.sync-retry` done | rows 8 circuit-breaker, 9 timeout, 11 no-op, 12 unsupported; last WIP commit may be half done: build + test first |
+| ~~L1 polly (TAAK-308)~~ | done | merged to main | `e1e29869` | rows 4, 8, 9, 11, 12 done, 3645 tests | row 13 corpus = L6; council P8 (Polly.Core removal) open |
 | L2 moq (TAAK-307) | `a1d1f9446e08e6453` (resumed 2026-10-22) | `pool/l2-moq-wip` | `2df82fa2` | row 9 `moq.class-mocks` done (only `CallBase = true` + `.Object`) | rows 11 setup-sequence, 12 logger-verify, 13 unsupported |
 | L4 epplus-corpus (TAAK-309/310) | `a35be5d9a48f3449e` (resumed 2026-10-22) | `pool/l4-epplus-corpus-wip` | `9ea72a22` | EPPlus queue rows 7–10 verified done; CA1859 fix (also on main) | wire `IPackageAssetsReader` into `EPPlusFix` (E7, give the main session the `Cli.cs` line), C1 codes Layout/Dimension/LoadFrom → `EPPlusReason`, E14 combined after-proofs, corpus rounds EPPlus + MassTransit (`<corpus>/corpus-epplus`, `corpus-masstransit` exist) |
 | L5 remeasure (TAAK-313–315) | paused (no agent) | `pool/l5-remeasure-wip` | `2dcc93b7` | re-measure started (ANALYSE-manual-round-2.md +16 lines, MediatR repos added); `<corpus>/corpus-mediatr` exists | finish the 22 scans (check `_results` first), then TAAK-313, 314, 315 |

@@ -28,7 +28,7 @@
 ## Deviations
 
 - Diagrams are inline Mermaid instead of D2/PNG under `img/`.
-- No proof for the Info leaf: `ProofTests` knows only `.after.cs` and `.manual.txt` (an `.info.txt` kind is a request to the main session).
+- The Info leaf has proof `Consumer/consumer-simple` (`.info.txt`).
 - Filters and definitions are looked up in the loaded solution only; a filter registered in a project outside it is not seen.
 
 ## See also

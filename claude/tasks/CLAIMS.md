@@ -3,7 +3,7 @@
 Live register of who owns which files. **Only the main session edits this file.** Agents read it (absolute path
 `D:/playground/projects/unshackle/claude/tasks/CLAIMS.md`) before touching any file; a file not claimed by you is
 read-only for you. Need another file? Put a `CLAIM REQUEST: <path> — <why>` line in your final report; the main session
-grants it to you or your successor. Budget: 50 agents in total across the roadmap; at most 3 CPU-heavy at once.
+grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22; was 50) across the roadmap; at most 3 CPU-heavy at once.
 
 ## Always main-session only
 
@@ -39,7 +39,7 @@ grants it to you or your successor. Budget: 50 agents in total across the roadma
 
 ## Spawn log
 
-Agents spawned: 15 / 50 (7 wave 1, 8 library scouts).
+Agents spawned: 15 / 25 (7 wave 1, 8 library scouts).
 
 ## See also
 

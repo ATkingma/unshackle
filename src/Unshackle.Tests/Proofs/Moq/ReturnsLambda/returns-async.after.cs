@@ -1,4 +1,6 @@
 using Moq;
+using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Proofs;
 
@@ -12,10 +14,14 @@ public interface IRepo
 
 public class SetupProof
 {
+    private int _counter;
+
     public void Test()
     {
         var repo = new Mock<IRepo>();
-        repo.Setup(r => r.Count(It.IsAny<string>())).Returns((string n) => n.Length);
+        repo.Object.TotalAsync(Arg.Any<int>()).Returns(ci => Task.FromResult<int>(ci.ArgAt<int>(0) * 2));
         var sut = repo.Object;
     }
+
+    private static int Compute(string name) => name.Length;
 }

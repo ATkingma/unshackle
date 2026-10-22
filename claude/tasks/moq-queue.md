@@ -16,7 +16,7 @@ Order: projects first, hits second. Rows that rewrite a use of a mock (2–9) ru
 | 4   | `moq.verify` | `m.Verify(x => .., Times.Once/Never/Exactly(n)/AtLeastOnce)` | `m.Received(1).M(..)` / `DidNotReceive()` / `Received(n)` / `Received()`; ranges Manual | 1406 / 12; Times.Once 819 / 11; Never 496 / 12 | done (TAAK-307; ranges and messages Manual) |
 | 5   | `moq.properties` | `SetupGet`, `SetupSet`, `SetupProperty`, `SetupAllProperties`, `VerifyGet`/`VerifySet` | `m.P.Returns(v)`, `m.Received().P = v`; property semantics difference checked | 443 / 8; 202 / 3; 70 / 4 | done (TAAK-307; in setup-returns/verify/create; `SetupSet` Manual) |
 | 6   | `moq.throws` | `Throws(ex)` / `ThrowsAsync(ex)` | `.Throws(ex)` / `.ThrowsAsync(ex)` (`NSubstitute.ExceptionExtensions`) | 257 / 8; 89 / 9 | done (TAAK-307; void → When/Do) |
-| 7   | `moq.returns-lambda` | `Returns((a, b) => ..)` | `Returns(ci => ..)` with `ci.ArgAt<T>(i)` | 302 / 10 | open |
+| 7   | `moq.returns-lambda` | `Returns((a, b) => ..)` | `Returns(ci => ..)` with `ci.ArgAt<T>(i)` | 302 / 10 | done (TAAK-307; method groups Manual) |
 | 8   | `moq.callback` | `Callback(..)` | `AndDoes(..)` / `When(..).Do(..)` | 193 / 11 | open |
 | 9   | `moq.class-mocks` | `new Mock<T>(ctor args)`, class and delegate mocks, `CallBase = true` | `Substitute.ForPartsOf<T>(args)` where provably the same, else Manual | 23 / 6; CallBase 10 / 4 | open |
 | 10  | `moq.verify-all` | `Verifiable()` + `Verify()`, `VerifyAll()` | one `Received()` per covered setup when every setup of that mock is local to the test method (council M4), else Manual `VerifyScopeNotLocal`; `VerifyNoOtherCalls` Manual | 85+37 / 6; 28 / 4; 101 / 5 | done (TAAK-307; `VerifyNoOtherCalls` Manual; void setups removed) |

@@ -23,9 +23,13 @@ public static class SetupReturnsSyntax
 
     public static bool IsVerifiable(InvocationExpressionSyntax setup) => Chain(setup).Verifiable;
 
-    // Throws/ThrowsAsync (moq.throws, row 6) rather than Returns or nothing (moq.setup-returns).
-    public static bool IsThrows(InvocationExpressionSyntax setup) =>
-        Chain(setup).Returns?.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "Throws" or "ThrowsAsync" };
+    // Which pattern rewrites the Setup: Throws/ThrowsAsync (moq.throws, row 6), Returns with a function (moq.returns-lambda, row 7), else moq.setup-returns.
+    public static SetupKind Kind(InvocationExpressionSyntax setup) => Chain(setup).Returns switch
+    {
+        { Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Throws" or "ThrowsAsync" } } => SetupKind.Throws,
+        { ArgumentList.Arguments: [{ Expression: AnonymousFunctionExpressionSyntax }] } => SetupKind.ReturnsLambda,
+        _ => SetupKind.Returns,
+    };
 
     // The rewritten statement (in Node; Removed when the statement goes), or why the Setup cannot be rewritten; Type is set only when
     // the rewrite needs System.Threading.Tasks.
@@ -64,14 +68,40 @@ public static class SetupReturnsSyntax
         }
 
         if (returns.ArgumentList.Arguments is not [{ Expression: var value }]
-            || model.GetSymbolInfo(returns).Symbol is not IMethodSymbol { Parameters: [var parameter] }
-            || parameter.Type.TypeKind == TypeKind.Delegate && call.Type!.TypeKind != TypeKind.Delegate
-            || value is AnonymousFunctionExpressionSyntax)
+            || model.GetSymbolInfo(returns).Symbol is not IMethodSymbol { Parameters: [var parameter] })
         {
-            return MockCall.Blocked(MoqReason.ReturnsLambda, $"{name} with a function or several arguments computes its value per call; see moq-queue.md row 7");
+            return MockCall.Blocked(MoqReason.ReturnsLambda, $"{name} with several arguments (a delay or a function with more arguments)");
+        }
+
+        // Row 7: a function computes the value per call, in both libraries.
+        // Moq also has Returns(Delegate), which a method group binds to.
+        bool function = (parameter.Type.TypeKind == TypeKind.Delegate || parameter.Type.SpecialType == SpecialType.System_Delegate)
+            && !SymbolEqualityComparer.Default.Equals(parameter.Type, call.Type);
+        if (function && call.Type!.TypeKind == TypeKind.Delegate)
+        {
+            return MockCall.Blocked(MoqReason.ReturnsLambda, $"{name} with a function on a member that itself returns a delegate");
+        }
+
+        if (function && value is not LambdaExpressionSyntax)
+        {
+            return MockCall.Blocked(MoqReason.ReturnsLambda, $"{name} with a method group or anonymous method; only a plain lambda is rewritten");
         }
 
         ExpressionSyntax returned = value.WithoutTrivia();
+        LambdaExpressionSyntax? converted = null;
+        if (function)
+        {
+            IReadOnlyList<IParameterSymbol> mocked = call.Member is IMethodSymbol method ? method.Parameters : [];
+            MockCall lambdaCall = CallLambda.Convert(value, mocked, model);
+            if (lambdaCall.Blocker is not null)
+            {
+                return lambdaCall;
+            }
+
+            converted = (LambdaExpressionSyntax)lambdaCall.Node!;
+            returned = converted;
+        }
+
         bool needsTasks = false;
         if (name == "ReturnsAsync")
         {
@@ -82,7 +112,20 @@ public static class SetupReturnsSyntax
             }
 
             string resultType = result.ToMinimalDisplayString(model, setup.SpanStart);
-            returned = SyntaxFactory.ParseExpression(task.Name == "Task" ? $"Task.FromResult<{resultType}>({returned})" : $"new ValueTask<{resultType}>({returned})");
+            string Wrap(string inner) => task.Name == "Task" ? $"Task.FromResult<{resultType}>({inner})" : $"new ValueTask<{resultType}>({inner})";
+            if (converted is SimpleLambdaExpressionSyntax { ExpressionBody: { } body } simple)
+            {
+                returned = simple.WithExpressionBody(SyntaxFactory.ParseExpression(Wrap(body.ToString())));
+            }
+            else if (converted is not null)
+            {
+                return MockCall.Blocked(MoqReason.ReturnsLambda, "ReturnsAsync with a block-bodied function; only an expression body is rewritten");
+            }
+            else
+            {
+                returned = SyntaxFactory.ParseExpression(Wrap(returned.ToString()));
+            }
+
             needsTasks = true;
         }
 

@@ -1,5 +1,6 @@
 using System.IO.Abstractions;
 using System.Net;
+using Unshackle.Core;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
@@ -7,6 +8,8 @@ namespace Unshackle.DataAccess.Reports;
 
 public class MarkdownReportWriter : IReportWriter
 {
+    public const string InventoryOnlyHeader = "**Inventory only**: a report-only fix; nothing was changed.";
+
     private readonly IFileSystem _fileSystem;
 
     public MarkdownReportWriter(IFileSystem fileSystem)
@@ -21,13 +24,16 @@ public class MarkdownReportWriter : IReportWriter
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(findings);
-        List<string> lines =
+        List<Finding> all = [.. findings];
+        // A report-only fix (council round 8, S2): the header says so before the table; its first row repeats it for CSV and JSON.
+        List<string> lines = all.Any(f => f.PatternId == Fixer.InventoryOnlyPatternId) ? [InventoryOnlyHeader, string.Empty] : [];
+        lines.AddRange(
         [
             "| File | Line | Fix | Pattern | Status | Reason |",
             "| --- | --- | --- | --- | --- | --- |",
-            .. ReportRow.FromAll(findings).Select(r =>
+            .. ReportRow.FromAll(all).Select(r =>
                 $"| {Cell(r.File)} | {r.Line} | {Cell(r.Fix)} | {Cell(r.Pattern)} | {r.Status} | {Cell(r.Reason)} |"),
-        ];
+        ]);
         await _fileSystem.File.WriteAllLinesAsync(path, lines, cancellationToken);
     }
 

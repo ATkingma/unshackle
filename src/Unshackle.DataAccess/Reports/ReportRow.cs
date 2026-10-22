@@ -49,6 +49,7 @@ public class ReportRow
         {
             FixedResult fixedResult => ("Fixed", string.Join(" ", new[] { fixedResult.Warning, fixedResult.Info is null ? null : "Info: " + fixedResult.Info }.OfType<string>())),
             ManualResult manual => ("Manual", ReasonOf(manual)),
+            InfoResult info => ("Info", info.Text),
             _ => throw new UnreachableException(),
         };
         return new ReportRow

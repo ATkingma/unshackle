@@ -204,6 +204,43 @@ With `--dry-run` we only show the diff; otherwise `ISolutionStore` writes the ch
   `global::MediatR.X`; such a name needs no using (`UsingDirectives.IsGlobalQualified`) and keeps the package in its project
   even for a swapped type (`ProjectPackages`).
 
+## Report-only fixes (TAAK-316)
+
+Council round 8, S2. A fix that also implements `IReportOnlyFix` (one member, `ReportOnlyReason`) only takes inventory.
+`Fixer.FixAsync` hands it to `ReportOnlyRun` before anything else: every pattern runs `Find` + `Rewrite` on the first copy of
+each candidate file (same pre-filter as a normal run), and the solution, usings and project files stay as they are
+(`FixReport.ProjectFileChanges` is empty, `IProjectFileStore` is never called, `FixReport.InventoryOnly` is true).
+
+- Patterns return `Manual` or `PatternResult.Note(text)` (`InfoResult`, neither Fixed nor Manual). A `Fixed` result is
+  reported as `Manual` with the `Not rewritten: ` prefix and not applied, so a report-only run never counts anything as Fixed.
+- The first row is the header: pattern id `Fixer.InventoryOnlyPatternId` (`inventory-only`), line 0, the solution path, an
+  Info row "Inventory only: ... " plus the fix's reason. CSV and JSON show it as a row with status `Info`; Markdown also
+  writes `**Inventory only**` above the table.
+- An ordinary fix may return `Note` too: the node stays as it is and the row has status `Info`.
+
+## Project-file migrations (TAAK-317)
+
+Council round 8, S3. A fix that also implements `IProjectFileMigration` (`EditsFor(Project)`, a Strategy) declares exact typed
+edits per project from a closed set (`ProjectFileEdit` has a private-protected constructor):
+
+| Edit | What it does | Manual when |
+| --- | --- | --- |
+| `PackageRenameEdit` | renames the project's `PackageReference` in place with the new version; under CPM adds a `PackageVersion` (the old one stays) | declared only in a shared `Directory.*.props`; no version and no CPM |
+| `PackageRemoveEdit` | removes the project's `PackageReference` | declared only in a shared file |
+| `PackageAddEdit` | adds a `PackageReference` after the last one (plus `PackageVersion` under CPM) | — (skipped when already declared) |
+| `PropertyEdit` | sets one MSBuild property, added to the last unconditional `PropertyGroup` when missing | set twice or under a condition |
+| `ConfigFileRenameEdit` | renames a file next to the project, and items that name it exactly (`Include`/`Update`/`Remove`) | the new name exists |
+| `ConfigFileTransformEdit` | exact text replacements in a file next to the project | an old text does not occur exactly once |
+
+- The Fixer calls `ProjectFileMigrations.ApplyAsync` at the end of a run, after the document pass, vendoring and the package
+  migration, and only when the `IProjectFileStore` also implements `IProjectFileEditor` (`XmlProjectFileStore` does).
+- A project whose documents have a blocking Manual row (`Kept` = None) gets no edits and one Manual `project-file` row.
+- Each edit with something to do is one `project-file` row on its file:line: Fixed with `Info` = `Describe()`, or Manual with
+  the reason. `OutputType` and `IsTestProject` edits always carry a `Warning`.
+- The editor starts from earlier changes of the same run (package migration), keeps their `OldText`, and the Fixer replaces
+  that change. A renamed file is a `Deletes` change plus a `Creates` change; `SaveAsync` deletes and restores on failure.
+- An all-or-nothing fix that ends up changing nothing drops these changes like any other.
+
 ## SOLID in brief
 
 | Principle | How                                                                                                                       |

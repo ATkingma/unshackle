@@ -10,4 +10,7 @@ public class FixReport
 
     // Not required: a fix without a package migration, or a Fixer without a project file store, changes none.
     public IReadOnlyList<ProjectFileChange> ProjectFileChanges { get; init; } = [];
+
+    // True for a report-only fix (IReportOnlyFix, council round 8, S2): nothing was changed, the findings are an inventory.
+    public bool InventoryOnly { get; init; }
 }

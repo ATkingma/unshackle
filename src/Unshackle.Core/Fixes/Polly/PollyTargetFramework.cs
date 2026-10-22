@@ -6,11 +6,9 @@ namespace Unshackle.Core.Fixes.Polly;
 // Microsoft.Extensions.Resilience 10.11.0 ships net462, netstandard2.0, net8.0+; the Microsoft.Extensions 10 packages flag
 // netcoreapp2.x/3.x and net5–7 as unsupported (a build warning, an error under TreatWarningsAsErrors). The project's target
 // framework is read from the preprocessor symbols MSBuild defines; none (an ad-hoc compilation) counts as supported.
-// Council round 10, P9: Manual TargetFrameworkUnsupported, a project blocker (G4).
+// Council round 10, P9: a project blocker (G4) with code TargetFrameworkUnsupported; TAAK-320 keeps the project's documents unrewritten.
 internal static class PollyTargetFramework
 {
-    public static string? Unsupported(SyntaxNode node) => Unsupported(node.SyntaxTree.Options.PreprocessorSymbolNames);
-
     public static string? Unsupported(IEnumerable<string> preprocessorSymbols)
     {
         HashSet<string> symbols = [.. preprocessorSymbols];

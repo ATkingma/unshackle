@@ -26,6 +26,10 @@ public class PollyFix : IFix, IProjectFileMigration
     // Each rewrite names the namespaces it needs; an unchanged file gets nothing.
     public IReadOnlyList<string> AddedNamespaces { get; } = [];
 
+    // The pre-filter (TAAK-298) finds old-library files by RemovedNamespaces, which is empty here (Polly v7 and Polly.Core share
+    // the namespace Polly): with it every file would be skipped. The patterns are cheap without a Polly call, so all files run.
+    public bool FindsOnlyOldLibraryCode => false;
+
     // Stateless patterns.
     public bool FixesFilesInParallel => true;
 
@@ -40,7 +44,7 @@ public class PollyFix : IFix, IProjectFileMigration
     };
 
     // Council round 10, P9/G4: a target framework Microsoft.Extensions.Resilience does not support blocks the project's file edits.
-    // The patterns report the same code on each rewrite in that project, so its code stays on v7 and keeps building.
+    // TAAK-320: the Fixer then also leaves that project's documents unrewritten, so its code stays on v7 and keeps building.
     public IReadOnlyList<ManualResult> ProjectBlockers(Project project)
     {
         ArgumentNullException.ThrowIfNull(project);

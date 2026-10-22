@@ -20,7 +20,8 @@ Proofs: `src/Unshackle.Tests/Proofs/Polly/AddPolicyHandler/` (text: `ProofTests`
 | REQ-3 | Met | `transient-lambda-429` (`p.OrResult(...)`) |
 | REQ-4 | Met | `inline-transient` (`send 500, send 0, send 408, send 200, final 200`), `transient-lambda-429` |
 | REQ-5 | Met | `two-handlers` |
-| REQ-6 | Met | `policy-from-method`; `AddPolicyHandlerPatternTests` |
+| REQ-6 | Met | `AddPolicyHandlerPatternTests` |
+| REQ-8 | Met | `policy-method` (+ trace `send 502, send 504, final 504`), `Rewrite_PolicyMethodAlsoUsedElsewhere_HandlerAndMethodManual` |
 | REQ-7 | Met | `PollyFixTests.Package_RemovesEveryPollyV7Package_AddsResilience`; `inline-transient` after drops `using Polly.Extensions.Http;` |
 
 ## Deviations

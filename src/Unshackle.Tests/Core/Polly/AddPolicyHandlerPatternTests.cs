@@ -42,11 +42,27 @@ public class AddPolicyHandlerPatternTests
         result.ShouldBeOfType<ManualResult>().Code.ShouldBe(code);
     }
 
+    [Fact]
+    public void Rewrite_PolicyMethodAlsoUsedElsewhere_HandlerAndMethodManual()
+    {
+        // Arrange (row 6, slice 2: the method goes only when every use is a handler)
+        (SyntaxNode root, SemanticModel model) = Parse("b.AddPolicyHandler(GetPolicy()); var kept = GetPolicy();");
+        var pattern = new AddPolicyHandlerPattern();
+
+        // Act
+        List<PatternResult> results = [.. pattern.Find(root, model).Select(n => pattern.Rewrite(n, model))];
+
+        // Assert
+        results.Count.ShouldBe(2);
+        results.ShouldAllBe(r => r is ManualResult && ((ManualResult)r).Code == nameof(PollyReason.HandlerPolicyNotInline));
+    }
+
     private static (SyntaxNode Root, SemanticModel Model) Parse(string statements)
     {
         SyntaxTree tree = CSharpSyntaxTree.ParseText(
             "using System;\nusing System.Net.Http;\nusing Microsoft.Extensions.DependencyInjection;\nusing Polly;\nusing Polly.Extensions.Http;\n"
-            + "public class T { public void M(IHttpClientBuilder b, int n) { " + statements + " } }",
+            + "public class T { private static IAsyncPolicy<HttpResponseMessage> GetPolicy() => HttpPolicyExtensions.HandleTransientHttpError().RetryAsync(1); "
+            + "public void M(IHttpClientBuilder b, int n) { " + statements + " } }",
             cancellationToken: TestContext.Current.CancellationToken);
         SemanticModel model = CSharpCompilation.Create("Check", [tree], PollyReferences.Before).GetSemanticModel(tree);
         return (tree.GetRoot(TestContext.Current.CancellationToken), model);

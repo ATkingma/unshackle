@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using System.Xml;
 using System.Xml.Linq;
 using Unshackle.Core.Abstractions;
@@ -6,20 +7,22 @@ using Unshackle.Core.Models;
 
 namespace Unshackle.DataAccess.Projects;
 
-// TAAK-317, council round 8 S3: the typed edits of IProjectFileMigration. Only the project file itself and config files next to it are
-// edited; a package declared in a shared Directory.*.props is Manual (it would change other projects too), except a new <PackageVersion>
-// under central package management, which changes nothing for a project that does not reference it.
+// TAAK-317, council round 8 S3: the typed edits of IProjectFileMigration. The project file itself and config files next to it are edited;
+// a package declared in a shared Directory.*.props only when every project that imports it is loaded and unblocked (council round 10, G3),
+// otherwise Manual (SharedDeclarationBlocked). Under central package management a new <PackageVersion> is added, and the old one removed
+// only when no project under that Directory.Packages.props still uses it (G2).
 public partial class XmlProjectFileStore
 {
     private static readonly string[] s_itemPathAttributes = ["Include", "Update", "Remove"];
 
     public async Task<IReadOnlyList<ProjectFileEditOutcome>> ApplyAsync(
-        string projectPath, IEnumerable<ProjectFileEdit> edits, IEnumerable<ProjectFileChange> earlier, CancellationToken cancellationToken)
+        string projectPath, IEnumerable<ProjectFileEdit> edits, IEnumerable<ProjectFileChange> earlier, ProjectFileEditContext context, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(projectPath);
         ArgumentNullException.ThrowIfNull(edits);
         ArgumentNullException.ThrowIfNull(earlier);
-        var run = new EditRun(_fileSystem.Path.GetFullPath(projectPath), earlier, s_pathComparer);
+        ArgumentNullException.ThrowIfNull(context);
+        var run = new EditRun(_fileSystem.Path.GetFullPath(projectPath), earlier, context, s_pathComparer);
         List<ProjectFileEditOutcome> outcomes = [];
         foreach (ProjectFileEdit edit in edits)
         {
@@ -45,21 +48,32 @@ public partial class XmlProjectFileStore
     private async Task<ProjectFileEditOutcome?> RenamePackageAsync(EditRun run, PackageRenameEdit edit, CancellationToken cancellationToken)
     {
         ProjectFile project = await LoadProjectAsync(run, cancellationToken);
-        XElement? reference = Find(project, PackageReference, edit.OldName);
-        if (reference is null)
+        if (Find(project, PackageReference, edit.OldName) is XElement reference)
         {
-            return await SharedDeclarationAsync(run, edit, edit.OldName, cancellationToken);
+            return await RenameInAsync(run, project, reference, edit, null, cancellationToken);
         }
 
+        return await SharedDeclarationAsync(run, edit, edit.OldName, cancellationToken) switch
+        {
+            null => null,
+            { Blocked: ProjectFileEditOutcome blocked } => blocked,
+            { File: var shared, Declared: var declared } => await RenameInAsync(run, shared, declared, edit, shared.Path, cancellationToken),
+        };
+    }
+
+    // The rename in the file that declares the reference: the project, or a shared file (filePath, G3).
+    private async Task<ProjectFileEditOutcome> RenameInAsync(
+        EditRun run, ProjectFile file, XElement reference, PackageRenameEdit edit, string? filePath, CancellationToken cancellationToken)
+    {
         int line = LineOf(reference);
-        bool versioned = s_versionNames.Any(n => reference.Attribute(n) is not null || reference.Element(project.Namespace + n) is not null);
-        ProjectFile? versions = await CentralVersionsAsync(run, project, cancellationToken);
+        bool versioned = s_versionNames.Any(n => reference.Attribute(n) is not null || reference.Element(file.Namespace + n) is not null);
+        ProjectFile? versions = await CentralVersionsAsync(run, file, cancellationToken);
         if (!versioned && versions is null)
         {
-            return Manual(run, edit, line, "the reference has no version and there is no central package version for it; edit it by hand.");
+            return Manual(run, edit, line, "the reference has no version and there is no central package version for it; edit it by hand.", filePath);
         }
 
-        if (Find(project, PackageReference, edit.NewName) is not null)
+        if (Find(file, PackageReference, edit.NewName) is not null)
         {
             RemoveWithIndentation(reference);
         }
@@ -69,31 +83,64 @@ public partial class XmlProjectFileStore
             foreach (string name in s_versionNames)
             {
                 reference.Attribute(name)?.SetValue(edit.Version);
-                reference.Element(project.Namespace + name)?.SetValue(edit.Version);
+                reference.Element(file.Namespace + name)?.SetValue(edit.Version);
             }
         }
 
-        List<string> touched = [run.Store(project)];
+        List<string> touched = [run.Store(file)];
         if (!versioned && AddVersion(versions!, edit.OldName, edit.NewName, edit.Version))
         {
             touched.Add(run.Store(versions!));
         }
 
-        return Applied(run, edit, line, touched);
+        string? note = versions is null ? null : await RemoveOldVersionAsync(run, versions, edit.OldName, touched, cancellationToken);
+        return Applied(run, edit, line, touched, filePath, note);
     }
 
     private async Task<ProjectFileEditOutcome?> RemovePackageAsync(EditRun run, PackageRemoveEdit edit, CancellationToken cancellationToken)
     {
         ProjectFile project = await LoadProjectAsync(run, cancellationToken);
-        XElement? reference = Find(project, PackageReference, edit.Name);
-        if (reference is null)
+        if (Find(project, PackageReference, edit.Name) is XElement reference)
         {
-            return await SharedDeclarationAsync(run, edit, edit.Name, cancellationToken);
+            return await RemoveInAsync(run, project, reference, edit, null, cancellationToken);
         }
 
+        return await SharedDeclarationAsync(run, edit, edit.Name, cancellationToken) switch
+        {
+            null => null,
+            { Blocked: ProjectFileEditOutcome blocked } => blocked,
+            { File: var shared, Declared: var declared } => await RemoveInAsync(run, shared, declared, edit, shared.Path, cancellationToken),
+        };
+    }
+
+    private async Task<ProjectFileEditOutcome> RemoveInAsync(
+        EditRun run, ProjectFile file, XElement reference, PackageRemoveEdit edit, string? filePath, CancellationToken cancellationToken)
+    {
         int line = LineOf(reference);
+        ProjectFile? central = await CentralVersionsAsync(run, file, cancellationToken);
+        if (edit.AtMostVersion is string limit)
+        {
+            // P8: the declared version (the reference's own, else the central one) must be a plain version at most the limit.
+            string? declared = s_versionNames.Select(n => (string?)reference.Attribute(n) ?? reference.Element(file.Namespace + n)?.Value).FirstOrDefault(v => v is not null)
+                ?? (central is null ? null : (string?)Find(central, PackageVersion, edit.Name)?.Attribute("Version"));
+            if (declared is null || !Version.TryParse(declared.Trim(), out Version? version) || !Version.TryParse(limit, out Version? max) || version > max)
+            {
+                return new ProjectFileEditOutcome
+                {
+                    Edit = edit,
+                    FilePath = filePath ?? run.ProjectPath,
+                    Line = line,
+                    KeptInfo = $"PackageReference {edit.Name} {declared ?? "(no version)"} stays: it is not a version at most {limit}, which the new packages bring in.",
+                };
+            }
+        }
+
         RemoveWithIndentation(reference);
-        return Applied(run, edit, line, [run.Store(project)]);
+        List<string> touched = [run.Store(file)];
+        string? note = central is ProjectFile versions
+            ? await RemoveOldVersionAsync(run, versions, edit.Name, touched, cancellationToken)
+            : null;
+        return Applied(run, edit, line, touched, filePath, note);
     }
 
     private async Task<ProjectFileEditOutcome?> AddPackageAsync(EditRun run, PackageAddEdit edit, CancellationToken cancellationToken)
@@ -214,12 +261,19 @@ public partial class XmlProjectFileStore
             text = string.Concat(text.AsSpan(0, first), replacement.NewText, text.AsSpan(first + replacement.OldText.Length));
         }
 
+        // Council round 10, G5: the result must still parse.
+        if (ParseError(path, text) is string error)
+        {
+            return Manual(run, edit, line, $"the result does not parse ({error}); edit the file by hand.", path);
+        }
+
         run.SetText(path, text);
         return Applied(run, edit, line, [path], path);
     }
 
-    // A Directory.Build.props or Directory.Packages.props (without central management) above the project that declares the package.
-    private async Task<ProjectFileEditOutcome?> SharedDeclarationAsync(EditRun run, ProjectFileEdit edit, string package, CancellationToken cancellationToken)
+    // A Directory.Build.props or Directory.Packages.props (without central management) above the project that declares the package: the file
+    // to edit, or why it may not be edited (council round 10, G3); null when no shared file declares it.
+    private async Task<SharedDeclaration?> SharedDeclarationAsync(EditRun run, ProjectFileEdit edit, string package, CancellationToken cancellationToken)
     {
         foreach (string? shared in new[] { FindUp(run.ProjectPath, BuildProps), FindUp(run.ProjectPath, PackagesProps) })
         {
@@ -228,12 +282,117 @@ public partial class XmlProjectFileStore
                 var file = new ProjectFile(_fileSystem.Path.GetFullPath(shared), text);
                 if (Find(file, PackageReference, package) is XElement declared)
                 {
-                    return Manual(run, edit, LineOf(declared), "the package is declared in a shared file that other projects use too; edit it by hand.", file.Path);
+                    return SharedBlocker(run, file.Path) is string why
+                        ? new SharedDeclaration(file, declared, Manual(run, edit, LineOf(declared),
+                            $"the package is declared in a shared file that {why}; edit it by hand.", file.Path, nameof(ProjectBlockingReason.SharedDeclarationBlocked)))
+                        : new SharedDeclaration(file, declared, null);
                 }
             }
         }
 
         return null;
+    }
+
+    // Why a shared file may not be edited (G3): a project that imports it is not loaded, or has blocking rows; null when every one is fine.
+    private string? SharedBlocker(EditRun run, string sharedPath)
+    {
+        foreach (string user in Importers(sharedPath))
+        {
+            if (!run.Context.LoadedProjects.Contains(user))
+            {
+                return $"{user} also imports and is not loaded";
+            }
+
+            if (run.Context.BlockedProjects.TryGetValue(user, out string? why))
+            {
+                return $"{user} also imports and still has blocking rows ({why})";
+            }
+        }
+
+        return null;
+    }
+
+    // The project files on disk under a shared Directory.*.props that import it (a nearer file of the same name hides it), in path order.
+    private IEnumerable<string> Importers(string sharedPath)
+    {
+        string name = _fileSystem.Path.GetFileName(sharedPath);
+        return _fileSystem.Directory.EnumerateFiles(_fileSystem.Path.GetDirectoryName(sharedPath)!, "*.csproj", SearchOption.AllDirectories)
+            .Select(p => _fileSystem.Path.GetFullPath(p))
+            .Where(p => FindUp(p, name) is string found && SamePath(found, sharedPath))
+            .Order(StringComparer.Ordinal);
+    }
+
+    // Council round 10, G2: the old <PackageVersion> goes only when it is no GlobalPackageReference, every project under the
+    // Directory.Packages.props is loaded, and none of them (nor its Directory.Build.props) still references the package. Returns why it stays.
+    private async Task<string?> RemoveOldVersionAsync(EditRun run, ProjectFile versions, string package, List<string> touched, CancellationToken cancellationToken)
+    {
+        if (Find(versions, PackageVersion, package) is not XElement old)
+        {
+            return null;
+        }
+
+        string? why = null;
+        if (Find(versions, "GlobalPackageReference", package) is not null)
+        {
+            why = "it is a GlobalPackageReference";
+        }
+
+        foreach (string user in why is null ? Importers(versions.Path) : Enumerable.Empty<string>())
+        {
+            if (!run.Context.LoadedProjects.Contains(user))
+            {
+                why = $"{user} is not loaded";
+                break;
+            }
+
+            string? buildProps = FindUp(user, BuildProps);
+            string[] files = buildProps is null ? [user] : [user, _fileSystem.Path.GetFullPath(buildProps)];
+            foreach (string path in files)
+            {
+                if ((await StateAsync(run, path, cancellationToken)).Current is string text && Find(new ProjectFile(path, text), PackageReference, package) is not null)
+                {
+                    why = $"{path} still references it";
+                    break;
+                }
+            }
+
+            if (why is not null)
+            {
+                break;
+            }
+        }
+
+        if (why is not null)
+        {
+            return $"The PackageVersion of {package} stays in {versions.Path}: {why}.";
+        }
+
+        RemoveWithIndentation(old);
+        touched.Add(run.Store(versions));
+        return null;
+    }
+
+    // G5: null when the text parses as its file kind (JSON, or XML for .xml/.config/.props/.targets); other files are not checked.
+    private static string? ParseError(string path, string text)
+    {
+        string extension = System.IO.Path.GetExtension(path).ToUpperInvariant();
+        try
+        {
+            if (extension == ".JSON")
+            {
+                using var document = JsonDocument.Parse(text, new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip });
+            }
+            else if (extension is ".XML" or ".CONFIG" or ".PROPS" or ".TARGETS")
+            {
+                _ = XDocument.Parse(text);
+            }
+
+            return null;
+        }
+        catch (Exception ex) when (ex is JsonException or XmlException)
+        {
+            return ex.Message;
+        }
     }
 
     // The Directory.Packages.props of the project when it manages versions centrally; null otherwise.
@@ -286,14 +445,32 @@ public partial class XmlProjectFileStore
 
     private static int LineOf(XElement element) => ((IXmlLineInfo)element).HasLineInfo() ? ((IXmlLineInfo)element).LineNumber : 0;
 
-    private static ProjectFileEditOutcome Applied(EditRun run, ProjectFileEdit edit, int line, IEnumerable<string> touched, string? filePath = null) => new()
+    private static ProjectFileEditOutcome Applied(EditRun run, ProjectFileEdit edit, int line, IEnumerable<string> touched, string? filePath = null, string? note = null) => new()
     {
         Edit = edit,
         FilePath = filePath ?? run.ProjectPath,
         Line = line,
         Changes = [.. touched.Distinct(StringComparer.Ordinal).Select(run.ToChange).OfType<ProjectFileChange>()],
+        Note = note,
     };
 
-    private static ProjectFileEditOutcome Manual(EditRun run, ProjectFileEdit edit, int line, string reason, string? filePath = null) =>
-        new() { Edit = edit, FilePath = filePath ?? run.ProjectPath, Line = line, ManualReason = reason };
+    private static ProjectFileEditOutcome Manual(EditRun run, ProjectFileEdit edit, int line, string reason, string? filePath = null, string? code = null) =>
+        new() { Edit = edit, FilePath = filePath ?? run.ProjectPath, Line = line, ManualReason = reason, ManualCode = code };
+
+    // A shared file that declares a package: edit Declared in File, unless Blocked says why not (G3).
+    private class SharedDeclaration
+    {
+        public SharedDeclaration(ProjectFile file, XElement declared, ProjectFileEditOutcome? blocked)
+        {
+            File = file;
+            Declared = declared;
+            Blocked = blocked;
+        }
+
+        public ProjectFile File { get; }
+
+        public XElement Declared { get; }
+
+        public ProjectFileEditOutcome? Blocked { get; }
+    }
 }

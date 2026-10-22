@@ -8,9 +8,10 @@ internal class EditRun
 {
     private readonly Dictionary<string, FileState> _files;
 
-    public EditRun(string projectPath, IEnumerable<ProjectFileChange> earlier, StringComparer pathComparer)
+    public EditRun(string projectPath, IEnumerable<ProjectFileChange> earlier, ProjectFileEditContext context, StringComparer pathComparer)
     {
         ProjectPath = projectPath;
+        Context = context;
         _files = new Dictionary<string, FileState>(pathComparer);
         foreach (ProjectFileChange change in earlier)
         {
@@ -24,6 +25,9 @@ internal class EditRun
     }
 
     public string ProjectPath { get; }
+
+    // The loaded and blocked projects of the solution (council round 10, G2/G3).
+    public ProjectFileEditContext Context { get; }
 
     public bool TryGet(string path, [NotNullWhen(true)] out FileState? state) => _files.TryGetValue(path, out state);
 

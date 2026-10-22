@@ -57,6 +57,9 @@ internal static class UsingDirectives
         // Swap in place, so position and surrounding trivia stay as the user had them; the other unused ones go.
         int swapCount = Math.Min(unused.Count, missing.Count);
         CompilationUnitSyntax updated = Qualify(root.TrackNodes(unused.Cast<SyntaxNode>().Concat(clashing)), clashing, model);
+        // Council round 10, C3: a removed using on the first line of the file leaves the blank line after it as the new first line.
+        bool removesFirstLine = unused.Skip(swapCount).Any(u => u.SpanStart == 0
+            && !u.GetLeadingTrivia().Any(t => t.IsDirective || t.IsKind(SyntaxKind.DisabledTextTrivia)));
         // A using that carries #if/#else directives (and the disabled text between them) keeps its leading trivia, so the pairs stay
         // whole: dropping it would leave the #endif without its #if (TAAK-281).
         foreach (bool conditional in (bool[])[true, false])
@@ -99,14 +102,37 @@ internal static class UsingDirectives
             IEnumerable<UsingDirectiveSyntax> added = missing.Select(ns => SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(ns).WithLeadingTrivia(SyntaxFactory.Space))
                 .WithLeadingTrivia(indentation)
                 .WithTrailingTrivia(endOfLine));
-            return document.WithSyntaxRoot(Resort(root, updated.ReplaceNode(target, target.WithUsings(target.Usings.AddRange(added))), originalMinimum: 2)).Project.Solution;
+            return document.WithSyntaxRoot(WithoutBlankFirstLine(
+                Resort(root, updated.ReplaceNode(target, target.WithUsings(target.Usings.AddRange(added))), originalMinimum: 2), removesFirstLine)).Project.Solution;
         }
 
         // New usings go after the existing ones (or on top of the file); a list that was sorted is sorted again (SA1210, TAAK-212).
         usings.AddRange(missing.Select(ns => SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(ns).WithLeadingTrivia(SyntaxFactory.Space))
             .WithTrailingTrivia(root.Usings.Count == 0 ? SyntaxFactory.TriviaList(endOfLine, endOfLine) : SyntaxFactory.TriviaList(endOfLine))));
 
-        return document.WithSyntaxRoot(Resort(root, updated.WithUsings([.. usings]), originalMinimum: 2)).Project.Solution;
+        return document.WithSyntaxRoot(WithoutBlankFirstLine(Resort(root, updated.WithUsings([.. usings]), originalMinimum: 2), removesFirstLine)).Project.Solution;
+    }
+
+    // Council round 10, C3: only the blank line a removed first-line using left on top goes (whitespace, then one line break); any other
+    // leading trivia (a comment, a second blank line) stays. A file that starts with code again is left alone, so a second run changes nothing.
+    internal static CompilationUnitSyntax WithoutBlankFirstLine(CompilationUnitSyntax updated, bool removesFirstLine)
+    {
+        if (!removesFirstLine)
+        {
+            return updated;
+        }
+
+        SyntaxToken first = updated.GetFirstToken(includeZeroWidth: true);
+        SyntaxTriviaList leading = first.LeadingTrivia;
+        int blank = 0;
+        while (blank < leading.Count && leading[blank].IsKind(SyntaxKind.WhitespaceTrivia))
+        {
+            blank++;
+        }
+
+        return blank < leading.Count && leading[blank].IsKind(SyntaxKind.EndOfLineTrivia)
+            ? updated.ReplaceToken(first, first.WithLeadingTrivia(leading.Skip(blank + 1)))
+            : updated;
     }
 
     // A swapped name may land out of order (using Shouldly; before using NUnit.Framework;, SA1210): each using list that was sorted

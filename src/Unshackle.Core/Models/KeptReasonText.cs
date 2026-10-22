@@ -24,6 +24,7 @@ public static class KeptReasonText
     public static string Rendered(ManualResult manual)
     {
         ArgumentNullException.ThrowIfNull(manual);
-        return Prefix(manual.Kept) + manual.Reason;
+        // The reason code (council round 10, C1) goes after the kept prefix, as the fixes wrote it in the text before.
+        return Prefix(manual.Kept) + (manual.Code is null ? string.Empty : manual.Code + ": ") + manual.Reason;
     }
 }

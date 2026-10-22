@@ -340,7 +340,7 @@ public class ProjectFileEditTests
 
         // Act
         IReadOnlyList<ProjectFileEditOutcome> outcomes = await new XmlProjectFileStore(_fileSystem).ApplyAsync(
-            Project, [new PackageRemoveEdit { Name = "SpecFlow.xUnit" }], [earlier], TestContext.Current.CancellationToken);
+            Project, [new PackageRemoveEdit { Name = "SpecFlow.xUnit" }], [earlier], ProjectFileEditContext.None, TestContext.Current.CancellationToken);
 
         // Assert
         ProjectFileChange change = Change(outcomes.ShouldHaveSingleItem(), Project);
@@ -384,5 +384,5 @@ public class ProjectFileEditTests
     private string Text(ProjectFileEditOutcome outcome, string path) => Change(outcome, path).NewText;
 
     private Task<IReadOnlyList<ProjectFileEditOutcome>> ApplyAsync(IEnumerable<ProjectFileEdit> edits) =>
-        new XmlProjectFileStore(_fileSystem).ApplyAsync(Project, edits, [], TestContext.Current.CancellationToken);
+        new XmlProjectFileStore(_fileSystem).ApplyAsync(Project, edits, [], ProjectFileEditContext.None, TestContext.Current.CancellationToken);
 }

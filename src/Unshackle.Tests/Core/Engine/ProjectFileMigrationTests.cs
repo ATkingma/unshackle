@@ -29,7 +29,7 @@ public class ProjectFileMigrationTests
     {
         // Arrange
         ProjectFileChange change = new() { FilePath = ProjectPath, OldText = "a", NewText = "b" };
-        Editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>())
+        Editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>())
             .Returns([new ProjectFileEditOutcome { Edit = s_rename, FilePath = ProjectPath, Line = 6, Changes = [change] }]);
         var fixer = new Fixer([CreateFix(PatternResult.Fixed(SyntaxFactory.ParseExpression("System.Console.WriteLine()")), s_rename)], _store);
 
@@ -37,7 +37,7 @@ public class ProjectFileMigrationTests
         FixReport report = await FixAsync(fixer);
 
         // Assert
-        await Editor.Received(1).ApplyAsync(ProjectPath, Arg.Is<IEnumerable<ProjectFileEdit>>(e => e.Single() == s_rename), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>());
+        await Editor.Received(1).ApplyAsync(ProjectPath, Arg.Is<IEnumerable<ProjectFileEdit>>(e => e.Single() == s_rename), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>());
         report.ProjectFileChanges.ShouldBe([change]);
         Finding row = report.Findings.Single(f => f.PatternId == Fixer.ProjectFilePatternId);
         row.FilePath.ShouldBe(ProjectPath);
@@ -57,7 +57,7 @@ public class ProjectFileMigrationTests
         FixReport report = await FixAsync(fixer);
 
         // Assert
-        await Editor.DidNotReceive().ApplyAsync(Arg.Any<string>(), Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>());
+        await Editor.DidNotReceive().ApplyAsync(Arg.Any<string>(), Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>());
         report.ProjectFileChanges.ShouldBeEmpty();
         Finding row = report.Findings.Single(f => f.PatternId == Fixer.ProjectFilePatternId);
         ((ManualResult)row.Result).Reason.ShouldStartWith("Project-file edits not applied");
@@ -67,7 +67,7 @@ public class ProjectFileMigrationTests
     public async Task FixAsync_KeptManualFinding_DoesNotBlock()
     {
         // Arrange
-        Editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>())
+        Editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>())
             .Returns([]);
         var fixer = new Fixer([CreateFix(PatternResult.KeptManual(KeptReason.MapKept, "kept"), s_rename)], _store);
 
@@ -75,7 +75,7 @@ public class ProjectFileMigrationTests
         await FixAsync(fixer);
 
         // Assert
-        await Editor.Received(1).ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>());
+        await Editor.Received(1).ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>());
     }
 
     [Theory]
@@ -86,7 +86,7 @@ public class ProjectFileMigrationTests
     {
         // Arrange
         var edit = new PropertyEdit { Name = name, Value = "x" };
-        Editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>())
+        Editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>())
             .Returns([new ProjectFileEditOutcome { Edit = edit, FilePath = ProjectPath, Line = 3, Changes = [] }]);
         var fixer = new Fixer([CreateFix(PatternResult.Note("ok"), edit)], _store);
 
@@ -102,7 +102,7 @@ public class ProjectFileMigrationTests
     public async Task FixAsync_ManualOutcome_ReportsManualOnItsFileAndLine()
     {
         // Arrange
-        Editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>())
+        Editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>())
             .Returns([new ProjectFileEditOutcome { Edit = s_rename, FilePath = "/repo/Directory.Build.props", Line = 4, ManualReason = "shared" }]);
         var fixer = new Fixer([CreateFix(PatternResult.Note("ok"), s_rename)], _store);
 
@@ -120,7 +120,7 @@ public class ProjectFileMigrationTests
     public async Task FixAsync_EditorThrows_ReportsManualAndKeepsRunning()
     {
         // Arrange
-        Editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<CancellationToken>())
+        Editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new IOException("locked"));
         var fixer = new Fixer([CreateFix(PatternResult.Note("ok"), s_rename)], _store);
 
@@ -139,7 +139,7 @@ public class ProjectFileMigrationTests
         ProjectFileChange packageChange = new() { FilePath = ProjectPath, OldText = "a", NewText = "b" };
         ProjectFileChange edited = new() { FilePath = ProjectPath, OldText = "a", NewText = "c" };
         _store.EditAsync(Arg.Any<IEnumerable<ProjectMigration>>(), Arg.Any<CancellationToken>()).Returns([packageChange]);
-        Editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Is<IEnumerable<ProjectFileChange>>(e => e.Single() == packageChange), Arg.Any<CancellationToken>())
+        Editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Is<IEnumerable<ProjectFileChange>>(e => e.Single() == packageChange), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>())
             .Returns([new ProjectFileEditOutcome { Edit = s_rename, FilePath = ProjectPath, Line = 1, Changes = [edited] }]);
         IFix fix = CreateFix(PatternResult.Note("ok"), s_rename);
         fix.Package.Returns(new PackageMigration { RemovedPackage = "FluentAssertions", AddedPackages = [new() { Name = "Shouldly", Version = "4.3.0" }] });

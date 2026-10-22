@@ -14,6 +14,10 @@ public abstract record PatternResult
 
     public static PatternResult Manual(string reason) => new ManualResult(reason);
 
+    // A Manual result with a typed reason code (council round 10, C1): each fix keeps its own enum of codes; the report prints "Code: reason".
+    public static PatternResult Manual<TCode>(TCode code, string reason)
+        where TCode : struct, Enum => new ManualResult(reason) { Code = code.ToString() };
+
     // A note that needs no change (council round 8, S2), e.g. a row of a report-only inventory.
     public static PatternResult Note(string text) => new InfoResult(text);
 

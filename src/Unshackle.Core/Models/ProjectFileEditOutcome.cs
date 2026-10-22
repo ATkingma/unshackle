@@ -15,4 +15,13 @@ public class ProjectFileEditOutcome
 
     // Why the edit was not made; null when it was.
     public string? ManualReason { get; init; }
+
+    // The reason code of ManualReason (council round 10, C1), for example a ProjectBlockingReason; null without one.
+    public string? ManualCode { get; init; }
+
+    // Something the report adds to an applied edit (council round 10, G2), for example why an old PackageVersion stays; null without one.
+    public string? Note { get; init; }
+
+    // Why the edit was deliberately not made (council round 10, P8), reported as an Info row; null when it was made or is Manual.
+    public string? KeptInfo { get; init; }
 }

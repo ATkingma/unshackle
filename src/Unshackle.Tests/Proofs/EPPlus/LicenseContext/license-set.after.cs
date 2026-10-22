@@ -1,4 +1,3 @@
-
 namespace Reports;
 
 public static class Startup

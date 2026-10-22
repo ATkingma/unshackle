@@ -93,9 +93,10 @@ public class Fixer : IFixer
         Solution original = solution;
         // TAAK-320: a project with a blocking project-level row (G4) keeps its documents as they are; its rows come first.
         Dictionary<string, string> blockedFiles = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, string> blockedProjects = new(StringComparer.OrdinalIgnoreCase);
         if (fix is IProjectFileMigration blockingMigration)
         {
-            (List<Finding> blockerRows, blockedFiles) = ProjectFileMigrations.Blockers(fix, blockingMigration, original);
+            (List<Finding> blockerRows, blockedFiles, blockedProjects) = ProjectFileMigrations.Blockers(fix, blockingMigration, original);
             findings.AddRange(blockerRows);
         }
 
@@ -188,7 +189,7 @@ public class Fixer : IFixer
         if (_projectFiles is not null && fix.Package is PackageMigration package)
         {
             (solution, projectFileChanges) = await MigrateProjectFilesAsync(
-                _projectFiles, original, solution, fix, package, swappedTypes, vendored.Migrations, findings, cancellationToken);
+                _projectFiles, original, solution, fix, package, swappedTypes, vendored.Migrations, blockedProjects, findings, cancellationToken);
         }
 
         projectFileChanges = [.. vendored.Files, .. projectFileChanges];
@@ -400,12 +401,25 @@ public class Fixer : IFixer
         PackageMigration package,
         HashSet<string> swappedTypes,
         IReadOnlyList<ProjectMigration> vendoredMigrations,
+        Dictionary<string, string> blockedProjects,
         List<Finding> findings,
         CancellationToken cancellationToken)
     {
         // One edit for both: the store reads each file once, so the second swap does not overwrite the first.
         IReadOnlyList<ProjectMigration> migrations =
             [.. await ProjectPackages.PlanAsync(original, solution, fix, package, swappedTypes, cancellationToken), .. vendoredMigrations];
+        // TAAK-321: a blocked project (G4) gets no package edit at all: it keeps the old package and gets no new one next to it.
+        if (blockedProjects.Count > 0)
+        {
+            foreach (string project in migrations.Select(m => m.ProjectPath).Where(blockedProjects.ContainsKey).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                findings.Add(FindingFactory.CreateProjectFinding(project, fix, PatternResult.Manual(
+                    $"{package.RemovedPackage} package kept: blocked by {blockedProjects[project]}. Resolve that first, then run the fix again.")));
+            }
+
+            migrations = [.. migrations.Where(m => !blockedProjects.ContainsKey(m.ProjectPath))];
+        }
+
         if (migrations.Count == 0)
         {
             return (solution, []);

@@ -1,6 +1,6 @@
 # TAAK-321 — Project blockers also stop the package swap
 
-**Status**: step 1/2 — not started
+**Status**: step 2/2 — done (engine-2)
 **Created**: 2026-10-22
 **Goal**: A project with a `ProjectBlockingReason` row keeps its old package and gets no new package from `fix.Package` (`MigrateProjectFilesAsync`), so no target package is added next to a kept old one.
 
@@ -11,12 +11,13 @@
 
 ## Steps
 
-- [ ] 1. Package migration skips projects with blocking rows (both remove and add); the report row says "package kept: blocked by <code>"
-- [ ] 2. Tests (fake fix with a blocker), `core.md`; build 0 warnings, all tests green
+- [x] 1. Package migration skips projects with blocking rows (both remove and add); the report row says "package kept: blocked by <code>"
+- [x] 2. Tests (fake fix with a blocker), `core.md`; build 0 warnings, all tests green
 
 ## Progress log
 
 - 2026-10-22: created after Moq Q3.
+- 2026-10-22: done. Blocked projects are filtered out of the package migrations, with a Manual "package kept: blocked by <code>" row; 2202 tests green.
 
 ## See also
 

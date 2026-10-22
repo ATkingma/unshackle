@@ -181,6 +181,30 @@ public class RoundTenEngineTests
         }
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task FixAsync_ProjectBlocker_SkipsThePackageMigrationOfThatProject(bool blocking)
+    {
+        // Arrange (TAAK-321: no new package next to a kept old one)
+        IProjectFileStore store = Substitute.For<IProjectFileStore>();
+        store.EditAsync(Arg.Any<IEnumerable<ProjectMigration>>(), Arg.Any<CancellationToken>()).Returns([]);
+        IFix fix = CreateFix(PatternResult.Fixed(SyntaxFactory.ParseExpression("System.Console.WriteLine()")));
+        fix.Package.Returns(new PackageMigration { RemovedPackage = "FluentAssertions", AddedPackages = [new() { Name = "Shouldly", Version = "4.3.0" }] });
+        ManualResult blocker = blocking
+            ? (ManualResult)PatternResult.Manual(ProjectBlockingReason.TargetFrameworkUnsupported, "net45 is not supported.")
+            : (ManualResult)PatternResult.Manual("only a note-like Manual row.");
+        ((IProjectFileMigration)fix).ProjectBlockers(Arg.Any<Project>()).Returns([blocker]);
+
+        // Act
+        FixReport report = await new Fixer([fix], store).FixAsync(CreateSolution(), new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        await store.Received(blocking ? 0 : 1).EditAsync(Arg.Any<IEnumerable<ProjectMigration>>(), Arg.Any<CancellationToken>());
+        report.Findings.Any(f => f.Result is ManualResult { Reason: var reason }
+            && reason == "FluentAssertions package kept: blocked by TargetFrameworkUnsupported. Resolve that first, then run the fix again.").ShouldBe(blocking);
+    }
+
     private static IPattern CreatePattern(PatternResult result)
     {
         IPattern pattern = Substitute.For<IPattern>();

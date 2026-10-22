@@ -7,22 +7,26 @@ using Xunit;
 namespace Unshackle.Tests.Core.Polly;
 
 // Council round 8, general rule: a Fixed shape needs a proof that pins the behaviour that could change. Each Fixed proof in
-// Proofs/Polly/WaitAndRetryAsync runs before (Polly v7) and after (Polly.Core 8); Proof.RunAsync returns a trace of attempts,
+// Proofs/Polly/<Pattern> runs before (Polly v7) and after (Polly.Core 8); Proof.RunAsync returns a trace of attempts,
 // delay arguments and the outcome, and both traces must be equal.
 public class PollyBehaviourProofTests
 {
-    private static readonly string s_directory = Path.Combine(AppContext.BaseDirectory, "Proofs", "Polly", "WaitAndRetryAsync");
+    private static readonly string s_directory = Path.Combine(AppContext.BaseDirectory, "Proofs", "Polly");
 
     [Theory]
-    [InlineData("local-block-delay", "delay 1, delay 2, delay 3, caught call 4, calls 4")]
-    [InlineData("inline-result", "call 1, call 2, call 3, result 30")]
-    [InlineData("typed-local-not-handled", "caught call 1, calls 1")]
-    [InlineData("filter-or-predicate", "throw t, throw go, throw stop, caught InvalidOperationException stop")]
-    [InlineData("filter-handle-result", "got -1, got 0, got 5, result 5, got -2, got -3, got -4, result -4")]
-    [InlineData("filter-policy-of-t", "result ok left 0")]
-    [InlineData("on-retry-attempt", "delay 1, retry 1 after 1 call 1, delay 2, retry 2 after 2 call 2, caught call 3")]
-    [InlineData("on-retry-async", "retry after call 1, retry after call 2, result 3")]
-    [InlineData("on-retry-result", "retry -1 none, retry 0 TimeoutException, result 7")]
+    [InlineData("WaitAndRetryAsync/local-block-delay", "delay 1, delay 2, delay 3, caught call 4, calls 4")]
+    [InlineData("WaitAndRetryAsync/inline-result", "call 1, call 2, call 3, result 30")]
+    [InlineData("WaitAndRetryAsync/typed-local-not-handled", "caught call 1, calls 1")]
+    [InlineData("WaitAndRetryAsync/filter-or-predicate", "throw t, throw go, throw stop, caught InvalidOperationException stop")]
+    [InlineData("WaitAndRetryAsync/filter-handle-result", "got -1, got 0, got 5, result 5, got -2, got -3, got -4, result -4")]
+    [InlineData("WaitAndRetryAsync/filter-policy-of-t", "result ok left 0")]
+    [InlineData("WaitAndRetryAsync/on-retry-attempt", "delay 1, retry 1 after 1 call 1, delay 2, retry 2 after 2 call 2, caught call 3")]
+    [InlineData("WaitAndRetryAsync/on-retry-async", "retry after call 1, retry after call 2, result 3")]
+    [InlineData("RetryVariants/retry-count", "retry 1 call 1, retry 2 call 2, caught call 3")]
+    [InlineData("RetryVariants/retry-default", "call 1, call 2, caught call 2")]
+    [InlineData("RetryVariants/wait-forever", "delay 1, delay 2, delay 3, delay 4, result 5 calls 9")]
+    [InlineData("RetryVariants/durations", "wait 0, wait 1, wait 2, caught call 4")]
+    [InlineData("WaitAndRetryAsync/on-retry-result", "retry -1 none, retry 0 TimeoutException, result 7")]
     public async Task Proof_BeforeAndAfter_SameTrace(string proof, string expected)
     {
         // Arrange
@@ -42,7 +46,7 @@ public class PollyBehaviourProofTests
     public async Task Proof_WithoutAttemptOffset_DifferentTrace()
     {
         // Arrange: the proof must fail when the 0-based AttemptNumber is passed on as is.
-        string after = await File.ReadAllTextAsync(Path.Combine(s_directory, "local-block-delay.after.cs"), TestContext.Current.CancellationToken);
+        string after = await File.ReadAllTextAsync(Path.Combine(s_directory, "WaitAndRetryAsync", "local-block-delay.after.cs"), TestContext.Current.CancellationToken);
         string mutated = after.Replace("args.AttemptNumber + 1", "args.AttemptNumber", StringComparison.Ordinal);
 
         // Act

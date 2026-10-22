@@ -16,7 +16,7 @@ TAAK number (340–349) when claimed. Order by projects first, hits second in `d
 | 4   | `polly.sync-retry` | `WaitAndRetry`/`Retry` + `Execute` (sync) | same pipeline, `Execute(_ => ...)` | 11 / 2; Execute 12 / 3 | open |
 | 5   | `polly.policy-member` | `IAsyncPolicy(<T>)`/`AsyncRetryPolicy` fields, properties, return types, parameters | `ResiliencePipeline(<T>)`, all uses in the solution rewritten or all Manual | 39 / 9; 23 / 6 | open |
 | 6   | `polly.add-policy-handler` | `AddPolicyHandler(...)`, `AddTransientHttpErrorPolicy`, `HttpPolicyExtensions.HandleTransientHttpError()` | `AddResilienceHandler(name, b => ...)` with `HttpClientResiliencePredicates`; adds `Microsoft.Extensions.Http.Resilience` | 32 / 8; 18 / 7 | open |
-| 7   | `polly.retry-variants` | `RetryAsync(n)`, `RetryForever(Async)`, `WaitAndRetryForever(Async)`, `WaitAndRetryAsync(IEnumerable<TimeSpan>)` | `MaxRetryAttempts = int.MaxValue` / indexed `DelayGenerator` | 11 / 7; 4 / 3 | open |
+| 7   | `polly.retry-variants` | `RetryAsync(n)`, `RetryForever(Async)`, `WaitAndRetryForever(Async)`, `WaitAndRetryAsync(IEnumerable<TimeSpan>)` | `MaxRetryAttempts = int.MaxValue` / indexed `DelayGenerator` | 11 / 7; 4 / 3 | done (TAAK-308) |
 | 8   | `polly.circuit-breaker` | `CircuitBreaker(Async)` | `AddCircuitBreaker` only where the v7 count-based semantics are proven equal; else Manual | 5 / 3 | open |
 | 9   | `polly.timeout` | `Policy.Timeout(Async)`, `TimeoutRejectedException` | `AddTimeout`; optimistic/pessimistic difference Manual | 7 / 5 | open |
 | 10  | `polly.wrap` | `Policy.Wrap(Async)` / `.WrapAsync` | builder adds outermost first; proof per arity 2 and 3 (P4), else Manual `WrapOrderNotProvable` | 17 / 9 | open |

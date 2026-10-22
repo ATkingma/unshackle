@@ -17,4 +17,5 @@ public enum PollyReason
     TargetFrameworkUnsupported,
     OnRetryUsesContext,
     OnRetryNotMappable,
+    SleepDurationsNotLiteral,
 }

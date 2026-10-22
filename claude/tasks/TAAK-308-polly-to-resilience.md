@@ -1,6 +1,6 @@
 # TAAK-308 — Polly v7 → Microsoft.Extensions.Resilience (roadmap step 8)
 
-**Status**: step 5/6 — steps 1–4 done, queue rows 2–3 done; next: queue row 7
+**Status**: step 5/6 — steps 1–4 done, queue rows 1–3 and 7 done; next: row 5 (policy members), then 6
 **Created**: 2026-10-22
 **Goal**: A `polly` fix that rewrites Polly v7 policy code to v8 resilience pipelines via Microsoft.Extensions.Resilience / Http.Resilience, at 100% on a Polly corpus.
 
@@ -55,6 +55,9 @@ references (MEHP itself depends on Polly 7) and the v7 API; staying on Polly 8.x
   P9 (`PollyTargetFramework`, Manual `TargetFrameworkUnsupported`) and P10 (`FreshName`: args1.. after a Roslyn lookup). 1812/1812 green.
 - 2026-10-22 (polly-skeleton): queue row 3 (`PollyOnRetry`): onRetry/onRetryAsync, positional or named, mapped 1:1 into a local
   function (council P3); a Context read is Manual `OnRetryUsesContext`. Arguments are now matched by parameter name.
+- 2026-10-22 (polly-skeleton): queue row 7, new pattern `polly.retry-variants` (`RetryAsync`, `RetryForeverAsync`,
+  `WaitAndRetryForeverAsync`, `WaitAndRetryAsync(literal durations)`); `PollyRetry.IsVariant` splits calls between the two
+  patterns. 1836/1836 green. Open: council P8 (direct Polly.Core removal) needs package-level code outside this claim.
 
 ## Changes
 

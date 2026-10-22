@@ -58,6 +58,10 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/TAAK-304-release-0-3-0.md` | Release 0.3.0 (after the user's go) |
 | `claude/tasks/TAAK-305-readytorun-tool.md` | Measure and maybe ship ReadyToRun tool packages |
 | `claude/tasks/TAAK-306-manual-reduction-round-2.md` | Rank MediatR/AutoMapper Manual blockers in the corpus |
+| `claude/tasks/TAAK-307-moq-to-nsubstitute.md` | Moq → NSubstitute (roadmap step 7) |
+| `claude/tasks/TAAK-308-polly-to-resilience.md` | Polly v7 → Microsoft.Extensions.Resilience (roadmap step 8) |
+| `claude/tasks/TAAK-309-epplus-to-closedxml.md` | EPPlus → ClosedXML (roadmap step 9) |
+| `claude/tasks/TAAK-310-masstransit-v8.md` | MassTransit v8 → open-source bus (roadmap step 10) |
 | `claude/tasks/archief/TAAK-298-performance.md` | Faster `scan --fix`: measure, caches, pre-filter, parallel files with ordered merge |
 | `claude/tasks/archief/TAAK-299-split-large-files.md` | ✅ Split `CreateMapPattern.cs` and `Fixer.cs` along the TAAK-297 proposal (`FileFixer` seam for TAAK-298) |
 | `claude/tasks/archief/TAAK-300-council-round-6-followups.md` | ✅ Council round 6 follow-ups: one kept prefix in Core, MediatR kept code, stable IMapper example, §7 entry points |

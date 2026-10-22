@@ -90,7 +90,8 @@ internal class WorkbookUses
         {
             _unknownVersion ??= Models.PatternResult.Manual(EPPlusReason.CellReadDiffers,
                 $"'{Shorten(read.Parent ?? read)}' (line {Line(read)}) reads a cell: EPPlus .Text of a bool is \"1\" where ClosedXML's GetFormattedString() is \"TRUE\", "
-                + "GetValue<string>() of an empty cell is null where ClosedXML returns \"\", and .Value is object where ClosedXML has XLCellValue. Rewrite the read by hand.");
+                + "GetValue<string>() of an empty cell is null where ClosedXML returns \"\", and .Value is object where ClosedXML has XLCellValue. GetValue<T> for int, long, double, decimal, DateTime and bool differs on an empty cell at least "
+                + "(EPPlus returns default(T), ClosedXML throws; council round 12 E12, GetValueMatrixTests). Rewrite the read by hand.");
             return false;
         }
 

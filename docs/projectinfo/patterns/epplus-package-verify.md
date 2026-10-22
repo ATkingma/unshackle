@@ -24,14 +24,15 @@
 | REQ-11 | Met    | proof `Package/worksheet-index`; `WorksheetIndexTests` (EPPlus 5 stub, assembly version 5.8.0.0; unknown version); `Harness_EPPlus4OnNetStandard_IsZeroBased` |
 | REQ-12 | Partly met | `FontsLicenceTests` (Warning; 1.x Fixed; 2.x Manual `LicensedDependency`). The `PackageAddEdit` pin is not done: there is no assets-file reader behind a Core interface (engine work). |
 | REQ-13 | Met    | proofs `Package/cells-values`, `Package/used-worksheet` (harness equal), `Package/cell-range` |
-| REQ-14 | Met    | `CellValueHarnessTests` (covered types equal; `Value_UncoveredType_Differs` pins float 0.1f, 0.1 + 0.2, decimal.MaxValue and DateTime); proofs `uncovered-datetime`, `uncovered-double` |
-| REQ-15 | Met    | `EPPlusFixTests.Fix_CellValuesAndStyles_RewrittenTogetherAndSameWorkbook` |
+| REQ-14 | Met    | proof `_Combined/value-types` (covered types, harness equal); `CellValueHarnessTests.Value_UncoveredType_Differs` pins float 0.1f, 0.1 + 0.2, decimal.MaxValue and DateTime); proofs `uncovered-datetime`, `uncovered-double` |
+| REQ-15 | Met    | proof `_Combined/cells-and-styles` |
 | REQ-16 | Met    | `WorksheetIndexTests`: `RewriteAsync_EPPlus4OneFamily_ByFamily` (net4x, netcore), `RewriteAsync_EPPlus4NotProvable_Manual` (netstandard pinned, unknown, packable, mixed, dependent of another family), `Harness_EPPlus4OnNetCore_IsZeroBased` |
 | REQ-17 | Met    | `WorksheetIndexTests`: `RewriteAsync_KeyInConfig_WorksheetIndexConfigured`, `RewriteAsync_KeyInCode_WorksheetIndexConfigured`, `RewriteAsync_NoConfigSearch_WorksheetIndexConfigured`, Info on `RewriteAsync_EPPlus5Index_ZeroBasedToPosition`; proof `Package/worksheet-index` |
-| REQ-18 | Met    | proof `Package/cell-range` (harness equal); `CellReadHarnessTests.Read_SameResult` (range value, range bold); `EPPlusFixTests.Fix_RangeMergeAndStyleAndRowHeight_SameWorkbook` |
+| REQ-18 | Met    | proof `Package/cell-range` (harness equal); proof `_Combined/range-merge-layout` |
 | REQ-19 | Met    | proof `Package/cell-read`; `CellReadHarnessTests.Read_Differs` |
 | REQ-20 | Met    | proofs `Package/byte-array`, `Package/byte-array-file`, `Package/save-stream` (harness equal), `Package/byte-array-lambda`; `SaveHarnessTests` |
-| REQ-7 | Met     | `EPPlusFixTests.Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles` |
+| REQ-21 | Met    | `GetValueMatrixTests` (12 rows: 6 types x 2 contexts, differing cells pinned); proof `Package/existing-file` |
+| REQ-7 | Met     | proof `_Combined/license-and-package` |
 
 ## Build and tests
 

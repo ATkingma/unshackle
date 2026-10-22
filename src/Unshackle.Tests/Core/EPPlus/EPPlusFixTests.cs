@@ -34,42 +34,6 @@ public class EPPlusFixTests
     }
 
     [Fact]
-    public async Task Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles()
-    {
-        // Arrange
-        const string before = """
-            using System.IO;
-            using OfficeOpenXml;
-
-            namespace Reports;
-
-            public static class Report
-            {
-                public static void Write(string path)
-                {
-                    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-                    using (var package = new ExcelPackage())
-                    {
-                        package.Workbook.Worksheets.Add("Report");
-                        package.SaveAs(new FileInfo(path));
-                    }
-                }
-            }
-            """;
-
-        // Act
-        (FixReport report, string after) = await FixAsync(before);
-
-        // Assert
-        report.Findings.ShouldAllBe(f => f.Result is FixedResult);
-        report.Findings.Count.ShouldBe(2);
-        after.ShouldNotContain("OfficeOpenXml");
-        after.ShouldContain("new XLWorkbook()");
-        TestSolution.CompileErrors(after, EPPlusReferences.ClosedXml).ShouldBeEmpty();
-        CellCompare.Differences(before, after).ShouldBeEmpty();
-    }
-
-    [Fact]
     public async Task Fix_OwnTypesNamedLikeEPPlus_NothingFound()
     {
         // Arrange
@@ -241,75 +205,5 @@ public class EPPlusFixTests
         // Assert
         report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Code == "UnmigratedEPPlusApi");
         report.Findings.ShouldNotContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Code == "PublicApiExposesOldLibrary");
-    }
-
-    // Rows 4, 5 and 8 together: StylesPattern migrates the style tail first, then PackagePattern rewrites the cell receiver.
-    [Fact]
-    public async Task Fix_CellValuesAndStyles_RewrittenTogetherAndSameWorkbook()
-    {
-        // Arrange
-        const string before = """
-            using System.Drawing;
-            using System.IO;
-            using OfficeOpenXml;
-            using OfficeOpenXml.Style;
-
-            public static class Report
-            {
-                public static void Write(string path)
-                {
-                    using var package = new ExcelPackage();
-                    var sheet = package.Workbook.Worksheets.Add("Orders");
-                    sheet.Cells[1, 1].Value = "Name";
-                    sheet.Cells[1, 1].Style.Font.Bold = true;
-                    sheet.Cells[1, 2].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                    sheet.Cells[1, 2].Style.Fill.BackgroundColor.SetColor(Color.Red);
-                    sheet.Cells[2, 1].Value = 42;
-                    package.SaveAs(new FileInfo(path));
-                }
-            }
-            """;
-
-        // Act
-        (FixReport report, string after) = await FixAsync(before);
-
-        // Assert
-        report.Findings.ShouldAllBe(f => f.Result is FixedResult, string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
-        after.ShouldNotContain("OfficeOpenXml");
-        TestSolution.CompileErrors(after, EPPlusReferences.ClosedXml).ShouldBeEmpty();
-        CellCompare.Differences(before, after).ShouldBeEmpty();
-    }
-
-    // Rows 4 and 9 together: LayoutPattern writes range.Merge(), PackagePattern rewrites the range receiver; a styled range too.
-    [Fact]
-    public async Task Fix_RangeMergeAndStyleAndRowHeight_SameWorkbook()
-    {
-        // Arrange
-        const string before = """
-            using System.IO;
-            using OfficeOpenXml;
-
-            public static class Report
-            {
-                public static void Write(string path)
-                {
-                    using var package = new ExcelPackage();
-                    var sheet = package.Workbook.Worksheets.Add("Orders");
-                    sheet.Cells["A1:C1"].Merge = true;
-                    sheet.Cells[1, 1].Value = "Title";
-                    sheet.Cells["A2:C2"].Style.Font.Bold = true;
-                    sheet.Row(2).Height = 30;
-                    package.SaveAs(new FileInfo(path));
-                }
-            }
-            """;
-
-        // Act
-        (FixReport report, string after) = await FixAsync(before);
-
-        // Assert
-        report.Findings.ShouldAllBe(f => f.Result is FixedResult, string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
-        TestSolution.CompileErrors(after, EPPlusReferences.ClosedXml).ShouldBeEmpty();
-        CellCompare.Differences(before, after).ShouldBeEmpty();
     }
 }

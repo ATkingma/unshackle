@@ -20,7 +20,7 @@ public class WaitAndRetryAsyncPattern : IPattern
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().OfType<InvocationExpressionSyntax>()
-            .Where(i => PollyRetry.IsRetryCreation(i, model) && !PollyRetry.IsVariant(i, model))
+            .Where(i => PollyRetry.IsRetryCreation(i, model) && !PollyRetry.IsSync(i, model) && !PollyRetry.IsVariant(i, model))
             .SelectMany(i => PollyRetry.Targets(i, model))
             .Distinct();
 

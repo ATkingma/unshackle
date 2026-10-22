@@ -1,6 +1,6 @@
 # TAAK-308 — Polly v7 → Microsoft.Extensions.Resilience (roadmap step 8)
 
-**Status**: step 5/6 — steps 1–4 done, queue rows 1–3 and 7 done; next: row 6 slice 2 (policy from a method), row 10 (Wrap), row 4 (sync)
+**Status**: step 5 — queue rows 1-12 done (13 corpus open, main session); pool agent L1 finished rows 4, 8, 9, 11, 12
 **Created**: 2026-10-22
 **Goal**: A `polly` fix that rewrites Polly v7 policy code to v8 resilience pipelines via Microsoft.Extensions.Resilience / Http.Resilience, at 100% on a Polly corpus.
 
@@ -26,14 +26,14 @@
 
 ## Step 1 — verified facts (2026-10-22)
 
-| Claim | Verdict | Source |
-| --- | --- | --- |
-| Polly adopts the OSMF; US $20/month per organisation with >= US $20,000 revenue from a product using Polly | confirmed | [announcement 2026-07-14 (update 2026-10-12)](https://www.thepollyproject.org/2026/07/14/polly-osmf-announcement.html), [README](https://github.com/App-vNext/Polly/blob/main/README.md) |
-| Applies only to the next major version released after 2026-11-16; existing versions (7.x/8.x) are not subject | confirmed | same |
-| Only direct references are subject; Polly via `Microsoft.Extensions.(Http.)Resilience` is exempt | confirmed (named explicitly) | same; maintainer "That is my understanding, yes" in [discussion #3183](https://github.com/App-vNext/Polly/discussions/3183) |
-| `Microsoft.Extensions.Http.Resilience` builds on Polly.Core | confirmed: M.E.Resilience 10.11.0 (MIT) -> Polly.Extensions + Polly.RateLimiting 8.4.2 | [nuget M.E.Resilience](https://www.nuget.org/packages/Microsoft.Extensions.Resilience), [nuget M.E.Http.Resilience](https://www.nuget.org/packages/Microsoft.Extensions.Http.Resilience) |
-| Licence unchanged | **conflicting**: blog update says "Polly's license is not changing"; in #3183 a maintainer said the licence changes with the new version | both above |
-| Calling Polly APIs with only a transitive / CPM-pinned reference | **unanswered** in #3183 | #3183 |
+| Claim                                                                                                         | Verdict                                                                                                                                  | Source                                                                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Polly adopts the OSMF; US $20/month per organisation with >= US $20,000 revenue from a product using Polly    | confirmed                                                                                                                                | [announcement 2026-07-14 (update 2026-10-12)](https://www.thepollyproject.org/2026/07/14/polly-osmf-announcement.html), [README](https://github.com/App-vNext/Polly/blob/main/README.md) |
+| Applies only to the next major version released after 2026-11-16; existing versions (7.x/8.x) are not subject | confirmed                                                                                                                                | same                                                                                                                                                                                     |
+| Only direct references are subject; Polly via `Microsoft.Extensions.(Http.)Resilience` is exempt              | confirmed (named explicitly)                                                                                                             | same; maintainer "That is my understanding, yes" in [discussion #3183](https://github.com/App-vNext/Polly/discussions/3183)                                                              |
+| `Microsoft.Extensions.Http.Resilience` builds on Polly.Core                                                   | confirmed: M.E.Resilience 10.11.0 (MIT) -> Polly.Extensions + Polly.RateLimiting 8.4.2                                                   | [nuget M.E.Resilience](https://www.nuget.org/packages/Microsoft.Extensions.Resilience), [nuget M.E.Http.Resilience](https://www.nuget.org/packages/Microsoft.Extensions.Http.Resilience) |
+| Licence unchanged                                                                                             | **conflicting**: blog update says "Polly's license is not changing"; in #3183 a maintainer said the licence changes with the new version | both above                                                                                                                                                                               |
+| Calling Polly APIs with only a transitive / CPM-pinned reference                                              | **unanswered** in #3183                                                                                                                  | #3183                                                                                                                                                                                    |
 
 Consequence: the fix must remove direct `Polly`, `Polly.Core`, `Polly.Extensions.Http`, `Microsoft.Extensions.Http.Polly`
 references (MEHP itself depends on Polly 7) and the v7 API; staying on Polly 8.x is fee-free today, so the selling point is
@@ -65,13 +65,16 @@ references (MEHP itself depends on Polly 7) and the v7 API; staying on Polly 8.x
   Row 5 slice 2: constructor-assigned private fields (REQ-16).
   Row 6 slice 2 (handler policy method), row 10 `polly.wrap` (retry operands, P4 order proofs). 2240/2240 green.
   STOPPED here (session end). Next: row 4 (sync Retry/Execute), not started; README row for polly.wrap pending (main).
+- 2026-10-22 (pool L1): row 4 polly.sync-retry done: shared PollyRetry, Execute kept as written (v8 has Execute(Action) and Execute<T>(Func<T>)); 4 Fixed proofs with equal traces, 2 Manual (Context overload, policy used beyond Execute), unit tests, docs.
+
+- 2026-10-22 (pool L1): rows 9, 11 done: PollyRetry also holds Timeout and NoOp; the token overload `ExecuteAsync(async ct => ..., token)` only for timeouts; 8 Fixed proofs with equal traces. Row 8 is Manual-only: probe (corpus folder probe-l1) shows the sequence F S F F F F breaks v7 at call 6 but not v8 with FailureRatio 1.0 / MinimumThroughput 3 (test `CircuitBreaker_V8RatioMapping_BreaksOnDifferentCalls`); v8 also needs BreakDuration >= 500 ms and MinimumThroughput >= 2. Timeout range: v8 rejected 5 ms, 0, 30 days and infinite in the probe, so Fixed only for 100 ms..1 day. Row 12: Manual reason codes (Cache and Contrib Backoff have no proof). Council question: circuit breaker by hand-chosen v8 mapping or Manual.
 
 ## Changes
 
-| Field     | Content |
-| --------- | ------- |
-| **Where** | new `Fixes/Polly/`, tests, docs |
-| **How**   | New fix |
+| Field     | Content                                                          |
+| --------- | ---------------------------------------------------------------- |
+| **Where** | new `Fixes/Polly/`, tests, docs                                  |
+| **How**   | New fix                                                          |
 | **Why**   | Timely (fee from 2026-11-16) and a migration teams avoid by hand |
 
 ## See also

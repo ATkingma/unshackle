@@ -1,6 +1,6 @@
 # TAAK-430 — Scout EF bulk extensions → EF Core ExecuteUpdate/Delete
 
-**Status**: step 1/3 — in progress (agent scout-efbulk)
+**Status**: step 3/3 — done, report delivered (agent scout-efbulk)
 **Created**: 2026-10-22
 **Goal**: A go/no-go recommendation for a new `efbulk` fix, backed by primary sources and a source-level corpus survey, in `docs/projectinfo/architectuur/candidate-efbulk.md`.
 
@@ -12,13 +12,14 @@
 
 ## Steps
 
-- [ ] 1. Facts from primary sources (license/EOL, dates, links) and API distance; Fixed vs Manual sketch; behaviour-proof idea
-- [ ] 2. Survey: 8-15 repos with pinned shas, grep counts per API shape, demand and effort (S/M/L) in `candidate-efbulk.md`
-- [ ] 3. Recommendation + council questions; if go, a draft follow-up task (number 431–439)
+- [x] 1. Facts from primary sources (license/EOL, dates, links) and API distance; Fixed vs Manual sketch; behaviour-proof idea
+- [x] 2. Survey: 8-15 repos with pinned shas, grep counts per API shape, demand and effort (S/M/L) in `candidate-efbulk.md`
+- [x] 3. Recommendation + council questions; if go, a draft follow-up task (number 431–439)
 
 ## Progress log
 
 - 2026-10-22: created; agent scout-efbulk started.
+- 2026-10-22: scout done: conditional go, effort M, demand low-medium; 13 EF repos + 6 false positives cloned under corpus-candidates/efbulk; report in candidate-efbulk.md; draft TAAK-431 inside it.
 
 ## Changes
 

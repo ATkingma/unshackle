@@ -95,6 +95,7 @@ public static class ArgMatchers
 
         string type = name is GenericNameSyntax { TypeArgumentList.Arguments: [var written] } ? written.ToString()
             : TypeText(parameterType, model, expression.SpanStart);
+        type = AnyTypeText(parameterType, model, expression.SpanStart) ?? type;
         SeparatedSyntaxList<ArgumentSyntax> arguments = invocation.ArgumentList.Arguments;
 
         // Row 12: It.IsAnyType is Arg.AnyType; a predicate over it sees the state as an object (measured equal for ToString()).
@@ -161,7 +162,7 @@ public static class ArgMatchers
             return null;
         }
 
-        string text = TypeText(type, model, position);
+        string text = TypeText(type, model, position).Replace("Exception?", "Exception", StringComparison.Ordinal); // no nullable annotation: the file may not enable them
         return text.Contains("It.IsAnyType", StringComparison.Ordinal) && !text.Replace("Moq.It.IsAnyType", "It.IsAnyType", StringComparison.Ordinal)
             .Replace("It.IsAnyType", string.Empty, StringComparison.Ordinal).Contains("Moq", StringComparison.Ordinal)
             ? text.Replace("Moq.It.IsAnyType", "Arg.AnyType", StringComparison.Ordinal).Replace("It.IsAnyType", "Arg.AnyType", StringComparison.Ordinal) : null;

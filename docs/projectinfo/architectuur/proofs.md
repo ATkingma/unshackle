@@ -6,48 +6,9 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1072 proofs (excluding `_Pending`).
+Total: 1262 proofs (excluding `_Pending`).
 
 ## AutoMapper
-
-### _Combined (34)
-
-| Proof | Outcome | What it proves |
-| --- | --- | --- |
-| `collection-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
-| `collection-nullable-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
-| `condition-map-call` | Fixed | `CreateMap<Line, LineDto>() .ForMember(d => d.Id, o => o.Condition(s => s.Id != Guid.Empty))` → `} public static class LineProfileExtensions` |
-| `configuration-maps-map-call` | Fixed | `cfg.CreateMap<Department, DepartmentDto>().ReverseMap(); cfg.CreateMap<Doctor, DoctorDto>()` → `} public static class MapperConfigExtensions` |
-| `configuration-test-fixture` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IConfigurationProvider _configuration;` → `} public static class OrderProfileExtensions` |
-| `constructor-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
-| `conversion-map-into` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} }` |
-| `convert-using-map-call` | Fixed | `CreateMap<SigningKey, PublicKeyDto>() .ConvertUsing(src => new PublicKeyDto` → `} }` |
-| `convert-using-string` | Fixed | `CreateMap<Money, string>().ConvertUsing<MoneyToStringConverter>(); CreateMap<Product, ProductDto>();` → `} public static class ProductProfileExtensions` |
-| `cycle-destination-only` | Fixed | `CreateMap<OrderDto, OrderModel>().ReverseMap(); CreateMap<BoxModel, BoxDto>().ReverseMap();` → `} public static class OrderMappingExtensions` |
-| `flattening-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
-| `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
-| `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
-| `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
-| `may-be-null-profile` | Fixed | `CreateMap<BookmarkPair, BookmarkDto>() .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Bookmark.Id))` → `} public static class AppProfilesExtensions` |
-| `member-list-map-call` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Destination); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
-| `method-group-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
-| `nested-map-call` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `} public static class OrderProfileExtensions` |
-| `nested-profile-map-call` | Fixed | `CreateMap<CustomerDto,AddEditCustomerCommand>(MemberList.None); CreateMap<AddEditCustomerCommand,Customer>(Mem…` → `} }` |
-| `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
-| `nested-profiles-nested-map` | Fixed | `CreateMap<TodoList, TodoListDto>(); CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority,` → `} public static class TodoListDtoMappingExtensions` |
-| `partial-closure` | Fixed | `CreateMap<Customer, CustomerDto>(); public CustomerDto Customer(Customer customer) => _mapper.Map<CustomerDto>…` → `} public static class ShopProfileExtensions` |
-| `partial-cycle-source` | Fixed | `CreateMap<OrderDto, OrderModel>(); CreateMap<BoxDto, BoxModel>();` → `} public static class ShopMappingExtensions` |
-| `partial-mocked-class-under-test` | Fixed | `private readonly IMapper _mapper; public ReportService(IMapper mapper)` → `public static class CustomerProfileExtensions {` |
-| `partial-statement` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Order(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class ShopProfileExtensions` |
-| `partial-untyped-source` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Order(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class ShopProfileExtensions` |
-| `project-to-query` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} public static class OrderProfileExtensions` |
-| `project-to-required` | Fixed | `CreateMap<Note, NoteEntity>(); notes.ProjectTo<NoteEntity>(mapper.ConfigurationProvider);` → `} public static class NoteProfileExtensions` |
-| `projection-parameters` | Fixed | `int userId = 0; // Placeholder, will be replaced at runtime CreateMap<Series, SeriesDto>()` → `} public static class SeriesProfileExtensions` |
-| `region-directives` | Fixed | `#region Orders CreateMap<Order, OrderDto>();` → `public static class ShopProfileExtensions {` |
-| `required-members` | Fixed | `CreateMap<NoteDto, NoteEntity>();` → `public static class NoteProfileExtensions {` |
-| `reverse-map-call` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} }` |
-| `unused-imapper-registration` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
-| `value-resolver-map-call` | Fixed | `CreateMap<ToDoTask, TaskDto>() .ForMember(x => x.IsPrivate, opt => opt.MapFrom<IsPrivateResolver>())` → `} public static class TaskProfileExtensions` |
 
 ### AddAutoMapper (4)
 
@@ -240,7 +201,7 @@ Total: 1072 proofs (excluding `_Pending`).
 | --- | --- | --- |
 | `trimmed-profile` | Manual | `CreateMap<Invoice, InvoiceDto>().BeforeMap((s, d) => d.Id = 1);` — reason: Stays on AutoMapper: CreateMap<Invoice, InvoiceDto> stays in the profile, the rest of it is migrated: 'CreateMap<Invoice, InvoiceDto>().BeforeMap((s, d) => d.Id = 1);' in Profile ShopProfile: BeforeMap |
 
-### MapCall (12)
+### MapCall (13)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -252,6 +213,7 @@ Total: 1072 proofs (excluding `_Pending`).
 | `method-group` | Fixed | `public List<OrderDto> List(IEnumerable<Order> orders) => orders.Select(_mapper.Map<OrderDto>).ToList();` → `public List<OrderDto> List(IEnumerable<Order> orders) => orders.Select(source => source.ToOrderDto()).ToList()…` |
 | `method-group-two-parameters` | Manual | `CreateMap<Order, OrderDto>();` — reason: passed as a method group in a form this fix does not rewrite |
 | `mocked-class-under-test` | Manual | `CreateMap<Customer, CustomerDto>();` — reason: keeps calling IMapper |
+| `mocked-verify` | Manual | `CreateMap<Customer, CustomerDto>();` — reason: assert the mapped result instead |
 | `object-source` | Manual |  — reason: no type of its own |
 | `receiver-call` | Manual |  — reason: not called as mapper.Map on a plain field |
 | `several-profiles` | Manual | `// Kavita: CreateMap<Series, SeriesDto> in AutoMapperProfiles and again in AutoMapperSeriesProfile.` — reason: Several profiles map Series to SeriesDto; AutoMapper uses the one registered last |
@@ -304,32 +266,140 @@ Total: 1072 proofs (excluding `_Pending`).
 | `member-resolver` | Fixed | `CreateMap<Post, NoteObject>() .ForMember(d => d.MediaType, opt => opt.MapFrom<MediaTypeResolver, Content?>(s =…` → `public static class PostProfileExtensions {` |
 | `resolver-class` | Fixed | `CreateMap<ToDoList, ListDto>() .ForMember(x => x.IsShared, opt => opt.MapFrom<IsSharedResolver>())` → `public static class ToDoProfileExtensions {` |
 
-## FluentAssertions
-
-### _Combined (20)
+### _Combined (37)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
-| `akka-own-kit-mixed` | Fixed | `reply.Should().NotBeNull(); members.Should().Contain("node-1");` → `reply.ShouldNotBeNull(); members.ShouldContain("node-1");` |
-| `all-satisfy-be` | Fixed | `orders.Should().AllSatisfy(o => o.Total.Should().Be(20m));` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
-| `all-satisfy-other` | Fixed | `orders.Should().AllSatisfy(o => o.Note.Should().NotBeNull();` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
-| `custom-assertion-class` | Fixed | `// Custom assertion extension: user code built on FluentAssertions' extension model. public static class Order…` → `public static class OrderAssertions public static void ShouldBeCancelled(this Order subject, string customMess…` |
-| `directives-in-chain` | Fixed | `x.Should().Be(1);` → `x.ShouldBe(1);` |
-| `discard-assignment` | Fixed | `_ = a.Should().Be(3); _ = items.Should().NotBeNull().And.HaveCount(2);` → `a.ShouldBe(3); items.ShouldNotBeNull();` |
-| `invoking-local` | Fixed | `var act = _other.Invoking(x => x.Fail(1)); var withResult = _other.Invoking(x => x.Get(1));` → `Action act = () => _other.Fail(1); Func<int> withResult = () => _other.Get(1);` |
-| `lambda-overload-one-run` | Fixed | `ctx.Should().Be(context); maybe2.HasValue.Should().BeTrue();` → `ctx.ShouldBe(context); maybe2.HasValue.ShouldBeTrue();` |
-| `litedb-bson-assertions` | Fixed | `docs.Length.Should().BeOneOf(1, 101); first.Should().BeOneOf("owner1", "owner2");` → `docs.Length.ShouldBeOneOf(1, 101); first.ShouldBeOneOf("owner1", "owner2");` |
-| `manual-and-fixed` | Fixed | `y.Should().Be(1); y.Should().Be(2);` → `y.ShouldBe(1); y.ShouldBe(2);` |
-| `mixed` | Fixed | `order.Id.Should().Be(1); order.Total.Should().BeGreaterThan(10m).And.BeLessThan(30m);` → `order.Id.ShouldBe(1); order.Total.ShouldBeGreaterThan(10m);` |
-| `scope-using-block` | Fixed | `{ x.Should().Be(1);` → `x.ShouldSatisfyAllConditions( () => { x.ShouldBe(1); },` |
-| `scope-using-var` | Fixed | `y.Should().Be(2); name.Should().StartWith("a");` → `y.ShouldSatisfyAllConditions( () => { y.ShouldBe(2); },` |
-| `steeltoe-http-client` | Fixed | `httpClient.Timeout.Should().Be(30.Seconds()); httpClient.DefaultRequestHeaders.UserAgent.Should().ContainSingl…` → `httpClient.Timeout.ShouldBe(TimeSpan.FromSeconds(30)); httpClient.DefaultRequestHeaders.UserAgent.ShouldHaveSi…` |
-| `using-in-conditional` | Fixed | usings only |
-| `using-sub-namespace` | Fixed | `x.Should().Be(1);` → `x.ShouldBe(1);` |
-| `usings` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
-| `usings-existing` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
-| `usings-sorted` | Fixed | `Calc.Sum(values).Should().Be(3);` → `Calc.Sum(values).ShouldBe(3);` |
-| `usings-unsorted` | Fixed | `Calc.Sum(values).Should().Be(3);` → `Calc.Sum(values).ShouldBe(3);` |
+| `collection-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
+| `collection-nullable-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
+| `condition-map-call` | Fixed | `CreateMap<Line, LineDto>() .ForMember(d => d.Id, o => o.Condition(s => s.Id != Guid.Empty))` → `} public static class LineProfileExtensions` |
+| `configuration-maps-map-call` | Fixed | `cfg.CreateMap<Department, DepartmentDto>().ReverseMap(); cfg.CreateMap<Doctor, DoctorDto>()` → `} public static class MapperConfigExtensions` |
+| `configuration-test-fixture` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IConfigurationProvider _configuration;` → `} public static class OrderProfileExtensions` |
+| `constructor-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
+| `conversion-map-into` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} }` |
+| `convert-using-map-call` | Fixed | `CreateMap<SigningKey, PublicKeyDto>() .ConvertUsing(src => new PublicKeyDto` → `} }` |
+| `convert-using-string` | Fixed | `CreateMap<Money, string>().ConvertUsing<MoneyToStringConverter>(); CreateMap<Product, ProductDto>();` → `} public static class ProductProfileExtensions` |
+| `cycle-destination-only` | Fixed | `CreateMap<OrderDto, OrderModel>().ReverseMap(); CreateMap<BoxModel, BoxDto>().ReverseMap();` → `} public static class OrderMappingExtensions` |
+| `flattening-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
+| `map-call-global` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Id, o => o.MapFrom(s => s.Id + 1));` → `} public static class OrderProfileExtensions` |
+| `map-call-profile` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
+| `map-into-profile` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore());` → `} }` |
+| `may-be-null-profile` | Fixed | `CreateMap<BookmarkPair, BookmarkDto>() .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Bookmark.Id))` → `} public static class AppProfilesExtensions` |
+| `member-list-map-call` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Destination); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
+| `method-group-map-call` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
+| `mocked-matcher-stub-removed` | Fixed | `CreateMap<Customer, CustomerDto>(); private readonly IMapper _mapper;` → `} public static class CustomerProfileExtensions` |
+| `mocked-no-stubs` | Fixed | `CreateMap<Customer, CustomerDto>(); private readonly IMapper _mapper;` → `} public static class CustomerProfileExtensions` |
+| `mocked-stub-removed` | Fixed | `CreateMap<Customer, CustomerDto>(); private readonly IMapper _mapper;` → `} public static class CustomerProfileExtensions` |
+| `nested-map-call` | Fixed | `CreateMap<Order, OrderDto>(); CreateMap<Address, AddressDto>();` → `} public static class OrderProfileExtensions` |
+| `nested-profile-map-call` | Fixed | `CreateMap<CustomerDto,AddEditCustomerCommand>(MemberList.None); CreateMap<AddEditCustomerCommand,Customer>(Mem…` → `} }` |
+| `nested-profile-rewritten-earlier` | Fixed | `CreateMap<Address, AddressDto>(); CreateMap<Order, OrderDto>()` → `} public static class AddressProfileExtensions` |
+| `nested-profiles-nested-map` | Fixed | `CreateMap<TodoList, TodoListDto>(); CreateMap<TodoItem, TodoItemDto>().ForMember(d => d.Priority,` → `} public static class TodoListDtoMappingExtensions` |
+| `partial-closure` | Fixed | `CreateMap<Customer, CustomerDto>(); public CustomerDto Customer(Customer customer) => _mapper.Map<CustomerDto>…` → `} public static class ShopProfileExtensions` |
+| `partial-cycle-source` | Fixed | `CreateMap<OrderDto, OrderModel>(); CreateMap<BoxDto, BoxModel>();` → `} public static class ShopMappingExtensions` |
+| `partial-mocked-class-under-test` | Fixed | `private readonly IMapper _mapper; public ReportService(IMapper mapper)` → `public static class CustomerProfileExtensions {` |
+| `partial-statement` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Order(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class ShopProfileExtensions` |
+| `partial-untyped-source` | Fixed | `CreateMap<Order, OrderDto>(); public OrderDto Order(Order order) => _mapper.Map<OrderDto>(order);` → `} public static class ShopProfileExtensions` |
+| `project-to-query` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} public static class OrderProfileExtensions` |
+| `project-to-required` | Fixed | `CreateMap<Note, NoteEntity>(); notes.ProjectTo<NoteEntity>(mapper.ConfigurationProvider);` → `} public static class NoteProfileExtensions` |
+| `projection-parameters` | Fixed | `int userId = 0; // Placeholder, will be replaced at runtime CreateMap<Series, SeriesDto>()` → `} public static class SeriesProfileExtensions` |
+| `region-directives` | Fixed | `#region Orders CreateMap<Order, OrderDto>();` → `public static class ShopProfileExtensions {` |
+| `required-members` | Fixed | `CreateMap<NoteDto, NoteEntity>();` → `public static class NoteProfileExtensions {` |
+| `reverse-map-call` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Note, o => o.Ignore())` → `} }` |
+| `unused-imapper-registration` | Fixed | `CreateMap<Order, OrderDto>(); private readonly IMapper _mapper;` → `} public static class OrderProfileExtensions` |
+| `value-resolver-map-call` | Fixed | `CreateMap<ToDoTask, TaskDto>() .ForMember(x => x.IsPrivate, opt => opt.MapFrom<IsPrivateResolver>())` → `} public static class TaskProfileExtensions` |
+
+## EPPlus
+
+### Dimension (2)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `address` | Manual |  — reason: [UnmappedDimension] EPPlus 'Dimension' used as 'sheet.Dimension.Address' |
+| `null-check` | Manual |  — reason: [UnmappedDimension] EPPlus 'Dimension' used as 'sheet.Dimension' |
+
+### Layout (4)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `auto-fit-columns` | Manual |  — reason: [AutoFitDiffers] EPPlus layout 'AutoFit': the width auto-fit computes depends on the fonts |
+| `column-width` | Manual |  — reason: [ColumnWidthDiffers] EPPlus layout 'Column(i).Width' |
+| `freeze-variable` | Manual |  — reason: [UnmappedEPPlusLayout] EPPlus layout 'View.FreezePanes' |
+| `unmerge` | Manual |  — reason: [UnmappedEPPlusLayout] EPPlus layout 'Merge' |
+
+### LicenseContext (5)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `embedded-if` | Manual |  — reason: not a statement of its own in a block |
+| `expression-bodied` | Manual |  — reason: not a statement of its own in a block |
+| `license-set` | Fixed | `ExcelPackage.License.SetNonCommercialPersonal(owner);` →  |
+| `qualified` | Fixed | `OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.Commercial;` →  |
+| `statement` | Fixed | `ExcelPackage.LicenseContext = LicenseContext.NonCommercial;` →  |
+
+### LoadFrom (3)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `data-table` | Manual |  — reason: [UncoveredRuntimeType] EPPlus 'LoadFromDataTable' |
+| `datetime-property` | Manual |  — reason: [LoadFromTypeDiffers] EPPlus 'LoadFromCollection': Order.Placed (System.DateTime) |
+| `with-headers` | Manual |  — reason: [LoadFromHeadersNotMapped] |
+
+### Package (22)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `byte-array` | Fixed | `package.Workbook.Worksheets.Add("Report"); return package.GetAsByteArray();` → `package.Worksheets.Add("Report"); package.SaveAs(workbookStream);` |
+| `byte-array-file` | Fixed | `package.Workbook.Worksheets.Add("Report"); File.WriteAllBytes(path, package.GetAsByteArray());` → `package.Worksheets.Add("Report"); package.SaveAs(workbookStream);` |
+| `byte-array-lambda` | Manual |  — reason: is used as |
+| `cell-range` | Fixed | `var sheet = package.Workbook.Worksheets.Add("Orders"); sheet.Cells[1, 1, 2, 2].Value = "x";` → `var sheet = package.Worksheets.Add("Orders"); sheet.Range(1, 1, 2, 2).Value = "x";` |
+| `cell-read` | Manual |  — reason: CellReadDiffers: |
+| `cells-values` | Fixed | `var sheet = package.Workbook.Worksheets.Add("Orders"); sheet.Cells[1, 1].Value = "Name";` → `var sheet = package.Worksheets.Add("Orders"); sheet.Cell(1, 1).Value = "Name";` |
+| `conditional-add` | Manual |  — reason: is used as |
+| `existing-file` | Manual |  — reason: CellReadDiffers: new ExcelPackage(...) with arguments |
+| `field` | Manual |  — reason: not a local |
+| `invalid-sheet-name` | Manual |  — reason: is used as |
+| `name-missing` | Manual |  — reason: is used as |
+| `plain-local` | Fixed | `var package = new ExcelPackage(); package.Workbook.Worksheets.Add("Report");` → `var package = new XLWorkbook(); package.Worksheets.Add("Report");` |
+| `rename-to-existing` | Manual |  — reason: is used as |
+| `save-stream` | Fixed | `package.Workbook.Worksheets.Add("Report");` → `package.Worksheets.Add("Report");` |
+| `uncovered-datetime` | Manual |  — reason: UncoveredRuntimeType: cell value |
+| `uncovered-double` | Manual |  — reason: UncoveredRuntimeType: cell value |
+| `used-worksheet` | Fixed | `ExcelWorksheet sheet = package.Workbook.Worksheets.Add("Report"); sheet.Cells[1, 1].Value = "Name";` → `IXLWorksheet sheet = package.Worksheets.Add("Report"); sheet.Cell(1, 1).Value = "Name";` |
+| `using-declaration` | Fixed | `package.Workbook.Worksheets.Add("Orders"); package.Workbook.Worksheets.Add("Customers");` → `package.Worksheets.Add("Orders"); package.Worksheets.Add("Customers");` |
+| `using-statement` | Fixed | `package.Workbook.Worksheets.Add("Report"); package.SaveAs(new FileInfo(path));` → `package.Worksheets.Add("Report"); package.SaveAs(path);` |
+| `worksheet-index` | Manual |  — reason: WorksheetIndexConfigured: |
+| `worksheet-local` | Fixed | `var sheet = package.Workbook.Worksheets.Add("Orders"); package.SaveAs(new FileInfo(path));` → `var sheet = package.Worksheets.Add("Orders"); package.SaveAs(path);` |
+| `worksheet-name` | Fixed | `package.Workbook.Worksheets.Add("Orders"); ExcelWorksheet sheet = package.Workbook.Worksheets["Orders"];` → `package.Worksheets.Add("Orders"); IXLWorksheet sheet = package.Worksheet("Orders");` |
+
+### Styles (4)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `alignment-variable` | Manual |  — reason: UnmappedEPPlusStyle: EPPlus style 'HorizontalAlignment' |
+| `border-around` | Manual |  — reason: UnmappedEPPlusStyle: EPPlus style 'Border.BorderAround' |
+| `fill-without-color` | Manual |  — reason: FillWithoutSolidPattern: |
+| `underline` | Manual |  — reason: UnmappedEPPlusStyle: EPPlus style 'Font.UnderLine' |
+
+### Unsupported (4)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `cells` | Manual |  — reason: UnmigratedEPPlusApi: EPPlus API not migrated (line 7): ExcelWorksheet (row 3), ExcelWorksheet.Cells (row 4), ExcelRangeBase.Value (row 5). |
+| `chart` | Manual |  — reason: ExcelDrawings.AddChart (no row planned, by hand) |
+| `internal-api` | Manual |  — reason: UnmigratedEPPlusApi: |
+| `public-api` | Manual |  — reason: PublicApiExposesOldLibrary: SheetFactory.Create(ExcelPackage, string) |
+
+### _Combined (5)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `cells-and-styles` | Fixed | `var sheet = package.Workbook.Worksheets.Add("Orders"); sheet.Cells[1, 1].Value = "Name";` → `var sheet = package.Worksheets.Add("Orders"); sheet.Cell(1, 1).Value = "Name";` |
+| `license-and-package` | Fixed | `ExcelPackage.LicenseContext = LicenseContext.NonCommercial; package.Workbook.Worksheets.Add("Report");` → `package.Worksheets.Add("Report"); package.SaveAs(path);` |
+| `range-merge-layout` | Fixed | `var sheet = package.Workbook.Worksheets.Add("Orders"); sheet.Cells["A1:C1"].Merge = true;` → `var sheet = package.Worksheets.Add("Orders"); sheet.Range("A1:C1").Merge();` |
+| `save-variants` | Fixed | `var sheet = package.Workbook.Worksheets.Add("Orders"); sheet.Cells[1, 1].Value = "Name";` → `var sheet = package.Worksheets.Add("Orders"); sheet.Cell(1, 1).Value = "Name";` |
+| `value-types` | Fixed | `var sheet = package.Workbook.Worksheets.Add("Data"); sheet.Cells[1, 1].Value = "Widget";` → `var sheet = package.Worksheets.Add("Data"); sheet.Cell(1, 1).Value = "Widget";` |
+
+## FluentAssertions
 
 ### AllSatisfy (15)
 
@@ -1207,29 +1277,92 @@ Total: 1072 proofs (excluding `_Pending`).
 | `steeltoe-arithmetic` | Fixed | `public TimeSpan Test(bool slow) => slow ? 1.Minutes() + 30.Seconds() : 250.Milliseconds();` → `public TimeSpan Test(bool slow) => slow ? TimeSpan.FromMinutes(1) + TimeSpan.FromSeconds(30) : TimeSpan.FromMi…` |
 | `steeltoe-assert-argument` | Fixed | `httpClient.Timeout.Should().Be(30.Seconds());` → `httpClient.Timeout.Should().Be(TimeSpan.FromSeconds(30));` |
 
-## MediatR
-
-### _Combined (15)
+### _Combined (20)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
-| `add-mediatr-internal-handlers-other-project` | Fixed | `public Task Handle(ContributorDeletedEvent domainEvent, CancellationToken cancellationToken) => Task.Completed…` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Clean.Architecture.Web")] public ValueTask Hand…` |
-| `autofac-mediator-module` | Fixed | `where TCommand : ICommand public class AddMeetingCommentCommand : ICommand` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyMeetings.Modules.Meetings.Infrastructure")] w…` |
-| `generic-decorator-marker-without-using` | Fixed | `where TCommand : ICommand public class CreateMeetingCommand : ICommand` → `where TCommand : global::App.ICommand public class CreateMeetingCommand : global::App.ICommand` |
-| `generic-decorators-kgrzybek` | Fixed | `public class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : ICommand` → `public abstract class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : global::Proofs.…` |
-| `generic-notification-nadirbad` | Fixed | `public class DomainEventNotification<TDomainEvent> : INotification public Task Handle(DomainEventNotification<…` → `public abstract class DomainEventNotification<TDomainEvent> : INotification public class DomainEventNotificati…` |
-| `handler-handle-direct` | Fixed | `public Task<int> Handle(GetUser request, CancellationToken cancellationToken) => Task.FromResult(request.Id); …` → `public ValueTask<int> Handle(GetUser request, CancellationToken cancellationToken) => ValueTask.FromResult(req…` |
-| `host-references-host` | Fixed | `public Task Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Task.CompletedTask; bu…` → `public ValueTask<Unit> Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Unit.ValueT…` |
-| `identified-command-eshop` | Fixed | `public class IdentifiedCommand<T, R> : IRequest<R> public async Task<R> Handle(IdentifiedCommand<T, R> message…` → `public abstract class IdentifiedCommand<T, R> : IRequest<R> }` |
-| `internal-message-access` | Fixed | `public Task Handle(CancelMeetingCommand request, CancellationToken cancellationToken) => Task.CompletedTask; b…` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyMeetings.Modules.Meetings.Infrastructure")] p…` |
-| `qualified-request-afripay` | Fixed | `: MediatR.IRequest<string>; public class GetMerchantHandler : MediatR.IRequestHandler<GetMerchantQuery, string…` → `: Mediator.IRequest<string>; public class GetMerchantHandler : Mediator.IRequestHandler<GetMerchantQuery, stri…` |
-| `request-handler-delegate` | Fixed | `public async Task<int> Handle(Register command, RequestHandlerDelegate<int> next, CancellationToken token) ret…` → `public async ValueTask<int> Handle(Register command, MessageHandlerDelegate<Register, int> next, CancellationT…` |
-| `request-handler-delegate-lambda` | Fixed | `public async Task<int> Handle(Register command, RequestHandlerDelegate<int> next, CancellationToken token) ret…` → `public async ValueTask<int> Handle(Register command, MessageHandlerDelegate<Register, int> next, CancellationT…` |
-| `request-handler-delegate-moq` | Fixed | `public async Task<string> Handle(AddProduct request, RequestHandlerDelegate<string> next, CancellationToken ca…` → `public async ValueTask<string> Handle(AddProduct request, MessageHandlerDelegate<AddProduct, string> next, Can…` |
-| `request-handler-delegate-shared-field` | Fixed | `public async Task<Response> Handle(TRequest request, RequestHandlerDelegate<Response> next, CancellationToken …` → `public async ValueTask<Response> Handle(TRequest request, MessageHandlerDelegate<TRequest, Response> next, Can…` |
-| `request-processor-callers` | Fixed | `public class LoggingBehaviour<TRequest> : IRequestPreProcessor<TRequest> where TRequest : notnull public Task …` → `public class LoggingBehaviour<TRequest, TResponse> : MessagePreProcessor<TRequest, TResponse> where TRequest :…` |
+| `akka-own-kit-mixed` | Fixed | `reply.Should().NotBeNull(); members.Should().Contain("node-1");` → `reply.ShouldNotBeNull(); members.ShouldContain("node-1");` |
+| `all-satisfy-be` | Fixed | `orders.Should().AllSatisfy(o => o.Total.Should().Be(20m));` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
+| `all-satisfy-other` | Fixed | `orders.Should().AllSatisfy(o => o.Note.Should().NotBeNull();` → `orders.ShouldNotBeEmpty(); foreach (var o in orders)` |
+| `custom-assertion-class` | Fixed | `// Custom assertion extension: user code built on FluentAssertions' extension model. public static class Order…` → `public static class OrderAssertions public static void ShouldBeCancelled(this Order subject, string customMess…` |
+| `directives-in-chain` | Fixed | `x.Should().Be(1);` → `x.ShouldBe(1);` |
+| `discard-assignment` | Fixed | `_ = a.Should().Be(3); _ = items.Should().NotBeNull().And.HaveCount(2);` → `a.ShouldBe(3); items.ShouldNotBeNull();` |
+| `invoking-local` | Fixed | `var act = _other.Invoking(x => x.Fail(1)); var withResult = _other.Invoking(x => x.Get(1));` → `Action act = () => _other.Fail(1); Func<int> withResult = () => _other.Get(1);` |
+| `lambda-overload-one-run` | Fixed | `ctx.Should().Be(context); maybe2.HasValue.Should().BeTrue();` → `ctx.ShouldBe(context); maybe2.HasValue.ShouldBeTrue();` |
+| `litedb-bson-assertions` | Fixed | `docs.Length.Should().BeOneOf(1, 101); first.Should().BeOneOf("owner1", "owner2");` → `docs.Length.ShouldBeOneOf(1, 101); first.ShouldBeOneOf("owner1", "owner2");` |
+| `manual-and-fixed` | Fixed | `y.Should().Be(1); y.Should().Be(2);` → `y.ShouldBe(1); y.ShouldBe(2);` |
+| `mixed` | Fixed | `order.Id.Should().Be(1); order.Total.Should().BeGreaterThan(10m).And.BeLessThan(30m);` → `order.Id.ShouldBe(1); order.Total.ShouldBeGreaterThan(10m);` |
+| `scope-using-block` | Fixed | `{ x.Should().Be(1);` → `x.ShouldSatisfyAllConditions( () => { x.ShouldBe(1); },` |
+| `scope-using-var` | Fixed | `y.Should().Be(2); name.Should().StartWith("a");` → `y.ShouldSatisfyAllConditions( () => { y.ShouldBe(2); },` |
+| `steeltoe-http-client` | Fixed | `httpClient.Timeout.Should().Be(30.Seconds()); httpClient.DefaultRequestHeaders.UserAgent.Should().ContainSingl…` → `httpClient.Timeout.ShouldBe(TimeSpan.FromSeconds(30)); httpClient.DefaultRequestHeaders.UserAgent.ShouldHaveSi…` |
+| `using-in-conditional` | Fixed | usings only |
+| `using-sub-namespace` | Fixed | `x.Should().Be(1);` → `x.ShouldBe(1);` |
+| `usings` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
+| `usings-existing` | Fixed | `x.Should().HaveCount(2); y.Should().Contain(3);` → `x.Count().ShouldBe(2); y.ShouldContain(3);` |
+| `usings-sorted` | Fixed | `Calc.Sum(values).Should().Be(3);` → `Calc.Sum(values).ShouldBe(3);` |
+| `usings-unsorted` | Fixed | `Calc.Sum(values).Should().Be(3);` → `Calc.Sum(values).ShouldBe(3);` |
 
-### AddMediatR (17)
+## MassTransit
+
+### Consumer (3)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `consumer` | Manual |  — reason: ConsumerHeaders: MassTransit consumer |
+| `consumer-publish` | Manual |  — reason: ConsumerPublish: MassTransit consumer |
+| `consumer-respond` | Manual |  — reason: ConsumerRespond: MassTransit consumer |
+
+### ConsumerDefinition (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `definition` | Manual |  — reason: MassTransit consumer definition |
+
+### Outbox (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `in-memory-inbox-outbox` | Manual |  — reason: MassTransit outbox |
+
+### Registration (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `add-mass-transit` | Manual |  — reason: MassTransit bus registration (AddMassTransit) |
+
+### RequestClient (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `request-client-field` | Manual |  — reason: MassTransit request/response |
+
+### Retry (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `message-retry` | Manual |  — reason: MassTransit retry or redelivery policy |
+
+### Saga (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `state-machine` | Manual |  — reason: MassTransit saga |
+
+### TestHarness (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `add-test-harness` | Manual |  — reason: MassTransit test harness |
+
+### Transport (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `using-in-memory` | Manual |  — reason: MassTransit transport (Using...) |
+
+## MediatR
+
+### AddMediatR (20)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1249,6 +1382,9 @@ Total: 1072 proofs (excluding `_Pending`).
 | `no-lambda` | Manual | `services.AddMediatR(configuration);` — reason: AddMediatR is not called as services.AddMediatR(cfg => ...) |
 | `processors` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => // logging` |
 | `publisher` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Registration).Assembly);` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient;` |
+| `resolved-type-parameter` | Fixed | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TAssemblyOfType>());` → `services.AddMediator(cfg => cfg.ServiceLifetime = ServiceLifetime.Transient);` |
+| `type-parameter-different-assemblies` | Manual | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TAssemblyOfType>());` — reason: AssemblyNotStaticallyKnown: callers pass different assemblies |
+| `type-parameter-inactive-caller` | Manual | `services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining<TAssemblyOfType>());` — reason: AssemblyNotStaticallyKnown: Registration.AddPipeline may be called in inactive #if code |
 | `unknown-call` | Manual | `services.AddMediatR(cfg =>` — reason: cfg.AddOpenBehaviors(...) has no direct Mediator equivalent |
 
 ### AutofacMediatorModule (3)
@@ -1447,6 +1583,197 @@ Total: 1072 proofs (excluding `_Pending`).
 | `explicit` | Manual | `Task IRequestHandler<Command>.Handle(Command request, CancellationToken cancellationToken) => Task.CompletedTa…` — reason: explicit interface |
 | `other-return` | Manual | `public Task Handle(Command request, CancellationToken cancellationToken) =>` — reason: not Task.CompletedTask |
 | `throw-at-end` | Fixed | `public async Task Handle(Command request, CancellationToken cancellationToken)` → `public async ValueTask<Unit> Handle(Command request, CancellationToken cancellationToken)` |
+
+### _Combined (15)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `add-mediatr-internal-handlers-other-project` | Fixed | `public Task Handle(ContributorDeletedEvent domainEvent, CancellationToken cancellationToken) => Task.Completed…` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Clean.Architecture.Web")] public ValueTask Hand…` |
+| `autofac-mediator-module` | Fixed | `where TCommand : ICommand public class AddMeetingCommentCommand : ICommand` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyMeetings.Modules.Meetings.Infrastructure")] w…` |
+| `generic-decorator-marker-without-using` | Fixed | `where TCommand : ICommand public class CreateMeetingCommand : ICommand` → `where TCommand : global::App.ICommand public class CreateMeetingCommand : global::App.ICommand` |
+| `generic-decorators-kgrzybek` | Fixed | `public class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : ICommand` → `public abstract class DomainNotificationBase<T> : IDomainEventNotification<T> where TCommand : global::Proofs.…` |
+| `generic-notification-nadirbad` | Fixed | `public class DomainEventNotification<TDomainEvent> : INotification public Task Handle(DomainEventNotification<…` → `public abstract class DomainEventNotification<TDomainEvent> : INotification public class DomainEventNotificati…` |
+| `handler-handle-direct` | Fixed | `public Task<int> Handle(GetUser request, CancellationToken cancellationToken) => Task.FromResult(request.Id); …` → `public ValueTask<int> Handle(GetUser request, CancellationToken cancellationToken) => ValueTask.FromResult(req…` |
+| `host-references-host` | Fixed | `public Task Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Task.CompletedTask; bu…` → `public ValueTask<Unit> Handle(ProcessInboxCommand request, CancellationToken cancellationToken) => Unit.ValueT…` |
+| `identified-command-eshop` | Fixed | `public class IdentifiedCommand<T, R> : IRequest<R> public async Task<R> Handle(IdentifiedCommand<T, R> message…` → `public abstract class IdentifiedCommand<T, R> : IRequest<R> }` |
+| `internal-message-access` | Fixed | `public Task Handle(CancelMeetingCommand request, CancellationToken cancellationToken) => Task.CompletedTask; b…` → `[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyMeetings.Modules.Meetings.Infrastructure")] p…` |
+| `qualified-request-afripay` | Fixed | `: MediatR.IRequest<string>; public class GetMerchantHandler : MediatR.IRequestHandler<GetMerchantQuery, string…` → `: Mediator.IRequest<string>; public class GetMerchantHandler : Mediator.IRequestHandler<GetMerchantQuery, stri…` |
+| `request-handler-delegate` | Fixed | `public async Task<int> Handle(Register command, RequestHandlerDelegate<int> next, CancellationToken token) ret…` → `public async ValueTask<int> Handle(Register command, MessageHandlerDelegate<Register, int> next, CancellationT…` |
+| `request-handler-delegate-lambda` | Fixed | `public async Task<int> Handle(Register command, RequestHandlerDelegate<int> next, CancellationToken token) ret…` → `public async ValueTask<int> Handle(Register command, MessageHandlerDelegate<Register, int> next, CancellationT…` |
+| `request-handler-delegate-moq` | Fixed | `public async Task<string> Handle(AddProduct request, RequestHandlerDelegate<string> next, CancellationToken ca…` → `public async ValueTask<string> Handle(AddProduct request, MessageHandlerDelegate<AddProduct, string> next, Can…` |
+| `request-handler-delegate-shared-field` | Fixed | `public async Task<Response> Handle(TRequest request, RequestHandlerDelegate<Response> next, CancellationToken …` → `public async ValueTask<Response> Handle(TRequest request, MessageHandlerDelegate<TRequest, Response> next, Can…` |
+| `request-processor-callers` | Fixed | `public class LoggingBehaviour<TRequest> : IRequestPreProcessor<TRequest> where TRequest : notnull public Task …` → `public class LoggingBehaviour<TRequest, TResponse> : MessagePreProcessor<TRequest, TResponse> where TRequest :…` |
+
+## Moq
+
+### Callback (8)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `callback-before-returns-function` | Manual |  — reason: CallbackOrder |
+| `callback-method-group` | Manual |  — reason: CallbackShape |
+| `callback-then-returns` | Fixed | `repo.Setup(r => r.Count("a")).Callback(() => _calls++).Returns(1);` → `repo.Object.Count("a").Returns(1).AndDoes(ci => _calls++);` |
+| `callback-with-throws` | Manual |  — reason: CallbackOrder |
+| `overlapping-setups` | Manual |  — reason: SetupsOverlap |
+| `returns-function-then-callback` | Manual |  — reason: CallbackOrder |
+| `returns-then-callback` | Fixed | `repo.Setup(r => r.Count(It.IsAny<string>())).Returns(1).Callback((string n) => _seen.Add(n));` → `repo.Object.Count(Arg.Any<string>()).Returns(1).AndDoes(ci => _seen.Add(ci.ArgAt<string>(0)));` |
+| `void-callback` | Fixed | `repo.Setup(r => r.Save(It.IsAny<int>(), It.IsAny<string>())).Callback((int id, string text) => _seen.Add(text …` → `repo.Object.When(r => r.Save(Arg.Any<int>(), Arg.Any<string>())).Do(ci => _seen.Add(ci.ArgAt<string>(1) + ci.A…` |
+
+### ClassMocks (10)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `abstract` | Manual |  — reason: ClassMockAbstract |
+| `callbase` | Fixed | `var repo = new Mock<Repo>(5) { CallBase = true }; var name = repo.Object.Name();` → `var repo = Substitute.ForPartsOf<Repo>(5); var name = repo.Name();` |
+| `callbase-behavior` | Fixed | `var repo = new Mock<Repo>(MockBehavior.Loose, 5, 6) { CallBase = true }; var name = repo.Object.Name();` → `var repo = Substitute.ForPartsOf<Repo>(5, 6); var name = repo.Name();` |
+| `callbase-field` | Fixed | `private readonly Mock<Repo> _repo = new Mock<Repo>(5) { CallBase = true }; var name = _repo.Object.Name();` → `private readonly Repo _repo = Substitute.ForPartsOf<Repo>(5); var name = _repo.Name();` |
+| `callbase-inline` | Fixed | `var name = new Mock<Repo>(5) { CallBase = true }.Object.Name();` → `var name = Substitute.ForPartsOf<Repo>(5).Name();` |
+| `delegate` | Manual |  — reason: ClassMock |
+| `mock-of` | Manual |  — reason: ClassMock |
+| `no-callbase` | Manual |  — reason: ClassMockNoCallBase |
+| `other-options` | Manual |  — reason: MockOptions |
+| `setup` | Manual |  — reason: ClassMockSetup |
+
+### Create (14)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `explicit-loose` | Fixed | `var clock = new Mock<IClock>(MockBehavior.Loose); var sut = new Service(clock.Object);` → `var clock = Substitute.For<IClock>(); var sut = new Service(clock);` |
+| `field` | Fixed | `private readonly Mock<IClock> _clock = new Mock<IClock>(); var sut = new Service(_clock.Object);` → `private readonly IClock _clock = Substitute.For<IClock>(); var sut = new Service(_clock);` |
+| `field-assigned` | Fixed | `private Mock<IClock> _clock; _clock = new Mock<IClock>();` → `private IClock _clock; _clock = Substitute.For<IClock>();` |
+| `inline-object` | Fixed | `var sut = new Service(new Mock<IClock>().Object);` → `var sut = new Service(Substitute.For<IClock>());` |
+| `local-object` | Fixed | `var clock = new Mock<IClock>(); var sut = new Service(clock.Object);` → `var clock = Substitute.For<IClock>(); var sut = new Service(clock);` |
+| `mock-of` | Fixed | `var sut = new Service(Mock.Of<IClock>());` → `var sut = new Service(Substitute.For<IClock>());` |
+| `setter` | Manual |  — reason: DefaultValueDiffers |
+| `setup-all-properties` | Fixed | `var settings = new Mock<ISettings>(); settings.SetupAllProperties();` → `var settings = Substitute.For<ISettings>(); settings.Name.ReturnsNull();` |
+| `setup-property-initial` | Fixed | `var settings = new Mock<ISettings>(); settings.SetupProperty(s => s.Name, "init");` → `var settings = Substitute.For<ISettings>(); settings.Name.Returns("init");` |
+| `setup-set` | Manual |  — reason: PropertySetup |
+| `setup-used` | Manual |  — reason: MockUsedBeyondObject |
+| `strict` | Manual |  — reason: StrictBehaviour |
+| `string-return` | Fixed | `var names = new Mock<INames>(); var sut = names.Object.Name();` → `var names = Substitute.For<INames>(); names.Name().ReturnsNull();` |
+| `typed-local` | Fixed | `Mock<IClock> clock = new(); var sut = new Service(clock.Object);` → `IClock clock = Substitute.For<IClock>(); var sut = new Service(clock);` |
+
+### Properties (3)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `setup-get` | Fixed | `settings.SetupGet(s => s.Created).Returns(System.DateTime.MinValue);` → `settings.Object.Created.Returns(System.DateTime.MinValue);` |
+| `verify-get` | Fixed | `settings.VerifyGet(s => s.Created, Times.Once());` → `_ = settings.Object.Received(1).Created;` |
+| `verify-set` | Fixed | `settings.VerifySet(s => s.Level = It.IsAny<int>(), Times.Once()); settings.VerifySet(s => s.Name = "a", Times.…` → `settings.Object.Received(1).Level = Arg.Any<int>(); settings.Object.DidNotReceive().Name = "a";` |
+
+### ReturnsLambda (6)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `async-block` | Manual |  — reason: ReturnsLambda |
+| `changes-parameter` | Manual |  — reason: ReturnsLambda |
+| `no-parameters` | Fixed | `repo.Setup(r => r.Count("a")).Returns(() => _counter++);` → `repo.Object.Count("a").Returns(ci => _counter++);` |
+| `parameter` | Fixed | `repo.Setup(r => r.Count(It.IsAny<string>())).Returns((string n) => n.Length);` → `repo.Object.Count(Arg.Any<string>()).Returns(ci => ci.ArgAt<string>(0).Length);` |
+| `returns-async` | Fixed | `repo.Setup(r => r.TotalAsync(It.IsAny<int>())).ReturnsAsync((int year) => year * 2);` → `repo.Object.TotalAsync(Arg.Any<int>()).Returns(ci => Task.FromResult<int>(ci.ArgAt<int>(0) * 2));` |
+| `two-parameters` | Fixed | `repo.Setup(r => r.Find(It.IsAny<int>(), It.IsAny<string>())).Returns((int id, string name) => name + id);` → `repo.Object.Find(Arg.Any<int>(), Arg.Any<string>()).Returns(ci => ci.ArgAt<string>(1) + ci.ArgAt<int>(0));` |
+
+### SetupReturns (9)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `any-argument` | Fixed | `repo.Setup(r => r.Count(It.IsAny<string>())).Returns(3);` → `repo.Object.Count(Arg.Any<string>()).Returns(3);` |
+| `literal-arguments` | Fixed | `repo.Setup(r => r.Find(1, "a")).Returns("found");` → `repo.Object.Find(1, "a").Returns("found");` |
+| `mixed-arguments` | Fixed | `repo.Setup(r => r.Find(1, It.Is<string>(n => n.Length > 2))).Returns("found");` → `repo.Object.Find(Arg.Is<int>(1), Arg.Is<string>(n => n.Length > 2)).Returns("found");` |
+| `other-use-blocks` | Manual |  — reason: MockUsedBeyondObject |
+| `property` | Fixed | `repo.Setup(r => r.Now).Returns(System.DateTime.MinValue);` → `repo.Object.Now.Returns(System.DateTime.MinValue);` |
+| `property-order` | Manual |  — reason: PropertyOrder |
+| `returns-async` | Fixed | `repo.Setup(r => r.TotalAsync(2020)).ReturnsAsync(5);` → `repo.Object.TotalAsync(2020).Returns(Task.FromResult<int>(5));` |
+| `returns-method-group` | Manual |  — reason: ReturnsLambda |
+| `strict` | Manual |  — reason: StrictBehaviour |
+
+### Throws (5)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `throws-async` | Fixed | `service.Setup(s => s.TotalAsync(1)).ThrowsAsync(new TimeoutException());` → `service.Object.TotalAsync(1).ThrowsAsync(new TimeoutException());` |
+| `throws-generic` | Fixed | `service.Setup(s => s.Count(It.IsAny<string>())).Throws<InvalidOperationException>();` → `service.Object.Count(Arg.Any<string>()).Throws<InvalidOperationException>();` |
+| `throws-value` | Fixed | `service.Setup(s => s.Count("a")).Throws(new InvalidOperationException("boom"));` → `service.Object.Count("a").Throws(new InvalidOperationException("boom"));` |
+| `throws-void` | Fixed | `service.Setup(s => s.Send(1, It.IsAny<string>())).Throws(new InvalidOperationException());` → `service.Object.When(s => s.Send(Arg.Is<int>(1), Arg.Any<string>())).Do(_ => throw new InvalidOperationExceptio…` |
+| `throws-void-call` | Manual |  — reason: ThrowsShape |
+
+### Verify (9)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `at-least` | Manual |  — reason: TimesRange |
+| `exactly` | Fixed | `bus.Verify(b => b.Send(It.IsAny<int>(), It.IsAny<string>()), Times.Exactly(1));` → `bus.Object.Received(1).Send(Arg.Any<int>(), Arg.Any<string>());` |
+| `message` | Manual |  — reason: VerifyMessage |
+| `never` | Fixed | `bus.Verify(b => b.Publish(It.IsAny<string>()), Times.Never());` → `bus.Object.DidNotReceive().Publish(Arg.Any<string>());` |
+| `no-times` | Fixed | `bus.Verify(b => b.Send(1, "a"));` → `bus.Object.Received().Send(1, "a");` |
+| `once` | Fixed | `bus.Verify(b => b.Send(1, It.IsAny<string>()), Times.Once());` → `bus.Object.Received(1).Send(Arg.Is<int>(1), Arg.Any<string>());` |
+| `once-method-group` | Fixed | `bus.Verify(b => b.Send(1, "a"), Times.Once);` → `bus.Object.Received(1).Send(1, "a");` |
+| `property` | Fixed | `bus.Verify(b => b.Size, Times.Never());` → `_ = bus.Object.DidNotReceive().Size;` |
+| `verify-all-blocks` | Manual |  — reason: VerifyNoOtherCalls |
+
+### VerifyAll (6)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `conditional-setup` | Manual |  — reason: VerifyScopeNotLocal |
+| `field-mock` | Manual |  — reason: VerifyScopeNotLocal |
+| `no-other-calls` | Manual |  — reason: VerifyNoOtherCalls |
+| `overlap` | Manual |  — reason: SetupsOverlap |
+| `verify-all` | Fixed | `bus.VerifyAll();` → `bus.Object.Received().Publish(Arg.Any<string>()); bus.Object.Received().Send(1, "a");` |
+| `verify-verifiable` | Fixed | `bus.Verify();` → `bus.Object.Received().Publish(Arg.Any<string>()); bus.Object.Received().Send(1, "a");` |
+
+## Polly
+
+### AddPolicyHandler (4)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `inline-transient` | Fixed | `.AddPolicyHandler(HttpPolicyExtensions.HandleTransientHttpError().WaitAndRetryAsync(3, attempt => TimeSpan.Fro…` → `.AddResilienceHandler("retry", builder => builder.AddRetry(new RetryStrategyOptions<HttpResponseMessage> {` |
+| `policy-method` | Fixed | `.AddPolicyHandler(GetRetryPolicy()); }` → `.AddResilienceHandler("retry", builder => builder.AddRetry(new RetryStrategyOptions<HttpResponseMessage> {` |
+| `transient-lambda-429` | Fixed | `.AddTransientHttpErrorPolicy(p => p.OrResult(r => r.StatusCode == HttpStatusCode.NotFound).RetryAsync(3, (outc…` → `.AddResilienceHandler("retry", builder => builder.AddRetry(new RetryStrategyOptions<HttpResponseMessage> {` |
+| `two-handlers` | Manual |  — reason: HandlerOrderNotProvable |
+
+### RetryVariants (6)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `durations` | Fixed | `var policy = Policy.Handle<TimeoutException>().WaitAndRetryAsync(new[] { TimeSpan.Zero, TimeSpan.FromMilliseco…` → `var policy = new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
+| `durations-variable` | Manual |  — reason: SleepDurationsNotLiteral |
+| `field-instance` | Fixed | `private readonly AsyncRetryPolicy<int> _policy = Policy.HandleResult<int>(r => r < 0).RetryAsync(2); int first…` → `private readonly ResiliencePipeline<int> _policy = new ResiliencePipelineBuilder<int>() .AddRetry(new RetryStr…` |
+| `retry-count` | Fixed | `var policy = Policy.Handle<TimeoutException>().RetryAsync(2, (exception, retryCount) => trace.Add("retry " + r…` → `var policy = new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
+| `retry-default` | Fixed | `await Policy.Handle<TimeoutException>().RetryAsync().ExecuteAsync(() => FailAsync(trace, ++calls));` → `await new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
+| `wait-forever` | Fixed | `var policy = Policy.HandleResult<int>(r => r < 5).WaitAndRetryForeverAsync(attempt => Delay(trace, attempt)); …` → `var policy = new ResiliencePipelineBuilder<int>() .AddRetry(new RetryStrategyOptions<int>` |
+
+### WaitAndRetryAsync (19)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `field-constructor` | Fixed | `private readonly AsyncRetryPolicy _policy; this._policy = Policy.Handle<TimeoutException>().WaitAndRetryAsync(…` → `private readonly ResiliencePipeline _policy; this._policy = new ResiliencePipelineBuilder()` |
+| `field-passed-on` | Manual |  — reason: PolicyUsedBeyondExecute |
+| `field-public` | Manual |  — reason: PolicyMemberNotPrivate |
+| `field-static` | Fixed | `private static readonly IAsyncPolicy Retry = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, attempt =>…` → `private static readonly ResiliencePipeline Retry = new ResiliencePipelineBuilder() .AddRetry(new RetryStrategy…` |
+| `filter-handle-inner` | Manual |  — reason: ExceptionFilterNotSupported |
+| `filter-handle-result` | Fixed | `var policy = Policy.HandleResult<int>(r => r < 0).Or<TimeoutException>().WaitAndRetryAsync(2, attempt => TimeS…` → `var policy = new ResiliencePipelineBuilder<int>() .AddRetry(new RetryStrategyOptions<int>` |
+| `filter-or-predicate` | Fixed | `var policy = Policy.Handle<InvalidOperationException>(e => e.Message != "stop").Or<TimeoutException>().WaitAnd…` → `var policy = new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
+| `filter-policy-of-t` | Fixed | `IAsyncPolicy<string> policy = Policy<string>.Handle<TimeoutException>().OrResult(s => string.IsNullOrEmpty(s))…` → `ResiliencePipeline<string> policy = new ResiliencePipelineBuilder<string>() .AddRetry(new RetryStrategyOptions…` |
+| `inline-result` | Fixed | `int result = await Policy.Handle<TimeoutException>().WaitAndRetryAsync(5, attempt => TimeSpan.FromMilliseconds…` → `int result = await new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
+| `local-block-delay` | Fixed | `var policy = Policy .Handle<InvalidOperationException>()` → `var policy = new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
+| `on-retry-async` | Fixed | `var policy = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, attempt => TimeSpan.Zero, async (exception…` → `var policy = new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
+| `on-retry-attempt` | Fixed | `var policy = Policy .Handle<InvalidOperationException>()` → `var policy = new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
+| `on-retry-context` | Manual |  — reason: OnRetryUsesContext |
+| `on-retry-result` | Fixed | `var policy = Policy.HandleResult<int>(r => r < 0).Or<TimeoutException>().WaitAndRetryAsync(3, attempt => TimeS…` → `var policy = new ResiliencePipelineBuilder<int>() .AddRetry(new RetryStrategyOptions<int>` |
+| `policy-returned` | Manual |  — reason: PolicyNotLocal |
+| `property` | Manual |  — reason: PolicyNotLocal |
+| `result-not-awaited` | Manual |  — reason: ResultNotAwaited |
+| `retry-count-variable` | Manual |  — reason: RetryCountNotLiteral |
+| `typed-local-not-handled` | Fixed | `IAsyncPolicy policy = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, _ => TimeSpan.Zero); await policy…` → `ResiliencePipeline policy = new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
+
+### Wrap (3)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `operand-reused` | Manual |  — reason: WrapOrderNotProvable |
+| `three-inline` | Fixed | `await Policy.WrapAsync( Policy.Handle<TimeoutException>().RetryAsync(1, (exception, retryCount) => trace.Add("…` → `await new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
+| `two-locals` | Fixed | `var outer = Policy.Handle<TimeoutException>().RetryAsync(1, (exception, retryCount) => trace.Add("outer " + re…` → `var policy = new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
 
 ## See also
 

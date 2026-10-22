@@ -17,4 +17,7 @@ public enum PollyReason
     OnRetryNotMappable,
     SleepDurationsNotLiteral,
     PolicyMemberNotPrivate,
+    HandlerOverloadNotSupported,
+    HandlerOrderNotProvable,
+    HandlerPolicyNotInline,
 }

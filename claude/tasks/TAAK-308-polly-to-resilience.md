@@ -60,6 +60,8 @@ references (MEHP itself depends on Polly 7) and the v7 API; staying on Polly 8.x
   patterns. 1836/1836 green. Open: council P8 (direct Polly.Core removal) needs package-level code outside this claim.
 - 2026-10-22 (polly-skeleton): C1 (ManualResult.Code), P9 (`PollyFix.ProjectBlockers`, per-rewrite check kept until TAAK-320),
   P8 (`PollyFix.EditsFor`: add M.E.Resilience, remove Polly.Core <= 8.4.2). Row 5 first slice: private fields (REQ-15 / REQ-7).
+- 2026-10-22 (polly-skeleton): P9 only via ProjectBlockers (TAAK-320); found that the pre-filter skipped every file
+  (RemovedNamespaces lacked Polly) -> `FindsOnlyOldLibraryCode => false`. Row 6 first slice: `polly.add-policy-handler`.
 
 ## Changes
 

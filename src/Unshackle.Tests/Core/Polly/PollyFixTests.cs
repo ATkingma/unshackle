@@ -22,7 +22,9 @@ public class PollyFixTests
 
         // Assert
         removed.ShouldBe(["Polly", "Polly.Extensions.Http", "Microsoft.Extensions.Http.Polly"]);
-        fix.Package.AddedPackages.ShouldHaveSingleItem().Name.ShouldBe("Microsoft.Extensions.Resilience");
+        fix.Package.AddedPackages.Select(p => p.Name).ShouldBe(["Microsoft.Extensions.Resilience", "Microsoft.Extensions.Http.Resilience"]);
+        fix.Package.AddedPackages[0].OnlyWithCallTo.ShouldBeEmpty();
+        fix.Package.AddedPackages[1].OnlyWithCallTo.ShouldBe(["AddPolicyHandler", "AddTransientHttpErrorPolicy"]);
     }
 
     [Fact]

@@ -20,13 +20,14 @@ public class PollyFix : IFix, IProjectFileMigration
 
     public string Id => "polly";
 
-    // Polly v7 and Polly.Core share the namespaces Polly and Polly.Retry, so no using is removed: the rewritten code binds to them.
-    public IReadOnlyList<string> RemovedNamespaces { get; } = [];
+    // Polly v7 and Polly.Core share the namespaces Polly and Polly.Retry, which the rewritten code binds to; only the HttpPolicyExtensions
+    // namespace of Polly.Extensions.Http goes (left behind it does not bind once the package is gone).
+    public IReadOnlyList<string> RemovedNamespaces { get; } = ["Polly.Extensions.Http"];
 
     // Each rewrite names the namespaces it needs; an unchanged file gets nothing.
     public IReadOnlyList<string> AddedNamespaces { get; } = [];
 
-    // The pre-filter (TAAK-298) finds old-library files by RemovedNamespaces, which is empty here (Polly v7 and Polly.Core share
+    // The pre-filter (TAAK-298) finds old-library files by RemovedNamespaces, which here lacks Polly (Polly v7 and Polly.Core share
     // the namespace Polly): with it every file would be skipped. The patterns are cheap without a Polly call, so all files run.
     public bool FindsOnlyOldLibraryCode => false;
 
@@ -40,7 +41,12 @@ public class PollyFix : IFix, IProjectFileMigration
         RemovedPackage = "Polly",
         // Both build on Polly v7; left behind they keep the fee-relevant direct reference.
         AlsoRemovedPackages = ["Polly.Extensions.Http", "Microsoft.Extensions.Http.Polly"],
-        AddedPackages = [new() { Name = "Microsoft.Extensions.Resilience", Version = ResilienceVersion }],
+        AddedPackages =
+        [
+            new() { Name = "Microsoft.Extensions.Resilience", Version = ResilienceVersion },
+            // AddResilienceHandler, only where the code had an HttpClient handler (queue row 6).
+            new() { Name = "Microsoft.Extensions.Http.Resilience", Version = ResilienceVersion, OnlyWithCallTo = ["AddPolicyHandler", "AddTransientHttpErrorPolicy"] },
+        ],
     };
 
     // Council round 10, P9/G4: a target framework Microsoft.Extensions.Resilience does not support blocks the project's file edits.
@@ -67,5 +73,5 @@ public class PollyFix : IFix, IProjectFileMigration
         project.MetadataReferences.OfType<PortableExecutableReference>()
             .Any(r => r.FilePath is string path && s_v7Assemblies.Contains(Path.GetFileNameWithoutExtension(path)));
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new WaitAndRetryAsyncPattern(), new RetryVariantsPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new WaitAndRetryAsyncPattern(), new RetryVariantsPattern(), new AddPolicyHandlerPattern()];
 }

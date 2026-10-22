@@ -38,6 +38,12 @@ internal static class PollyRetry
     // ExecuteAsync, or the holder's declaration (local or private field) with every ExecuteAsync on it, or the call itself (Manual).
     public static IEnumerable<SyntaxNode> Targets(InvocationExpressionSyntax creation, SemanticModel model)
     {
+        // The policy of an HttpClient handler is polly.add-policy-handler's node (it rewrites the whole call).
+        if (IsHandlerPolicy(creation))
+        {
+            return [];
+        }
+
         if (ExecuteOn(creation) is InvocationExpressionSyntax inline)
         {
             return [inline];
@@ -50,6 +56,13 @@ internal static class PollyRetry
 
         return [creation];
     }
+
+    private static bool IsHandlerPolicy(InvocationExpressionSyntax creation) => creation.Parent switch
+    {
+        ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "AddPolicyHandler" } } } => true,
+        SimpleLambdaExpressionSyntax { Parent: ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "AddTransientHttpErrorPolicy" } } } } => true,
+        _ => false,
+    };
 
     // A local declaration statement or a field declaration that holds the policy.
     public static PollyPlan PlanDeclaration(SyntaxNode declarationNode, SemanticModel model)
@@ -128,6 +141,23 @@ internal static class PollyRetry
     // The builder expression for Policy.Handle<E>().WaitAndRetryAsync(n, attempt => delay).
     public static PollyPlan PlanPipeline(InvocationExpressionSyntax creation, SemanticModel model)
     {
+        string indent = Indent(creation);
+        PollyPlan options = PlanOptions(creation, model, indent);
+        if (options.Text is not string optionsText)
+        {
+            return options;
+        }
+
+        string newLine = NewLine(creation);
+        string generic = ResultType(creation, model) is string result ? $"<{result}>" : string.Empty;
+        return PollyPlan.Of(SyntaxFactory.ParseExpression(
+            $"new ResiliencePipelineBuilder{generic}(){newLine}{indent}    .AddRetry({optionsText}){newLine}{indent}    .Build()"));
+    }
+
+    // The `new RetryStrategyOptions(<T>) { ... }` text for a v7 retry call; its braces sit at indent + 4. The filter chain may start
+    // at the HttpPolicyExtensions transient-error filter, written out (queue row 6).
+    public static PollyPlan PlanOptions(InvocationExpressionSyntax creation, SemanticModel model, string indent)
+    {
         if (model.GetSymbolInfo(creation).Symbol is not IMethodSymbol method
             || ArgumentsByName(creation, method) is not { } arguments
             || !arguments.Keys.All(s_rewrittenParameters.Contains)
@@ -139,7 +169,12 @@ internal static class PollyRetry
         }
 
         string? resultType = ResultType(creation, model);
-        PollyPlan predicate = PollyPredicate.Plan(((MemberAccessExpressionSyntax)creation.Expression).Expression, resultType, model);
+        if (FreshName(creation, model, PollyPredicate.ResponseName) is not string response)
+        {
+            return NameClash(creation);
+        }
+
+        PollyPlan predicate = PollyPredicate.Plan(((MemberAccessExpressionSyntax)creation.Expression).Expression, resultType, model, response);
         if (predicate.Text is not string shouldHandle)
         {
             return predicate;
@@ -154,7 +189,6 @@ internal static class PollyRetry
 
         string generic = resultType is null ? string.Empty : $"<{resultType}>";
         string newLine = NewLine(creation);
-        string indent = Indent(creation);
         string inner = indent + "        ";
 
         string maxRetryAttempts;
@@ -239,16 +273,14 @@ internal static class PollyRetry
         }
 
         string text =
-            $"new ResiliencePipelineBuilder{generic}(){newLine}"
-            + $"{indent}    .AddRetry(new RetryStrategyOptions{generic}{newLine}"
+            $"new RetryStrategyOptions{generic}{newLine}"
             + $"{indent}    {{{newLine}"
             + $"{indent}        ShouldHandle = {shouldHandle},{newLine}"
             + $"{indent}        MaxRetryAttempts = {maxRetryAttempts},{newLine}"
             + delayLines
             + onRetry
-            + $"{indent}    }}){newLine}"
-            + $"{indent}    .Build()";
-        return PollyPlan.Of(SyntaxFactory.ParseExpression(text));
+            + $"{indent}    }}";
+        return PollyPlan.OfText(text);
     }
 
     // The elements of new[] { ... }, new TimeSpan[] { ... } or [ ... ] when each is TimeSpan.Zero or TimeSpan.FromX(numeric literal):
@@ -301,7 +333,7 @@ internal static class PollyRetry
     }
 
     // T of a v7 PolicyBuilder<T> receiver (HandleResult, Policy<T>): the pipeline becomes ResiliencePipeline<T>; null for exceptions only.
-    private static string? ResultType(InvocationExpressionSyntax creation, SemanticModel model) =>
+    public static string? ResultType(InvocationExpressionSyntax creation, SemanticModel model) =>
         model.GetSymbolInfo(creation).Symbol is IMethodSymbol { ReceiverType: INamedTypeSymbol { Name: "PolicyBuilder", TypeArguments: [ITypeSymbol result] } }
             ? result.ToMinimalDisplayString(model, creation.SpanStart)
             : null;
@@ -461,10 +493,10 @@ internal static class PollyRetry
     private static bool UsesName(SyntaxNode body, string name) =>
         body.DescendantTokens().Any(t => t.IsKind(SyntaxKind.IdentifierToken) && t.ValueText == name);
 
-    private static string NewLine(SyntaxNode node) =>
+    public static string NewLine(SyntaxNode node) =>
         node.SyntaxTree.GetText().ToString().Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
 
-    private static string Indent(SyntaxNode node)
+    public static string Indent(SyntaxNode node)
     {
         Microsoft.CodeAnalysis.Text.SourceText text = node.SyntaxTree.GetText();
         string line = text.Lines.GetLineFromPosition(node.SpanStart).ToString();

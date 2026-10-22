@@ -20,6 +20,12 @@ public class MockCall
     // Every argument is It.IsAny (or there are none): the call is set up or verified for every argument.
     public bool ForAnyArguments { get; init; }
 
+    // A Setup statement that goes (a void member set up without anything to do).
+    public bool Removed { get; init; }
+
+    // A Setup marked .Verifiable() (council round 8, M4).
+    public bool Verifiable { get; init; }
+
     public static MockCall Blocked(MoqBlocker blocker) => new() { Blocker = blocker };
 
     public static MockCall Blocked(MoqReason code, string reason) => Blocked(MoqBlocker.Of(code, reason));

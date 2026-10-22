@@ -21,9 +21,12 @@ public enum MoqReason
     RefOutOrParams,
     ReturnsLambda,
     SetupShape,
+    SetupsOverlap,
     StrictBehaviour,
     TargetFrameworkUnsupported,
     TimesRange,
     TooManyDefaultPins,
     VerifyMessage,
+    VerifyNoOtherCalls,
+    VerifyScopeNotLocal,
 }

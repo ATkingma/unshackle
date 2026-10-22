@@ -35,6 +35,7 @@ public class SetupReturnsPattern : IPattern
 
         MockCall plan = SetupReturnsSyntax.Plan(setup, model);
         return plan.Blocker is not null ? plan.Blocker.ToResult()
+            : plan.Removed ? PatternResult.Fixed(Array.Empty<SyntaxNode>())
             : plan.Type is not null ? PatternResult.Fixed(plan.Node!, "NSubstitute", SetupReturnsSyntax.TasksNamespace)
             : PatternResult.Fixed(plan.Node!, "NSubstitute");
     }

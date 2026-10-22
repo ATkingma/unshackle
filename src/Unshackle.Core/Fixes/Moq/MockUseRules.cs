@@ -22,6 +22,13 @@ public static class MockUseRules
             return plan.Blocker;
         }
 
+        // Row 10 (council M4): m.Verify(); m.VerifyAll(); m.VerifyNoOtherCalls();
+        if (pendingUses && use.Parent is MemberAccessExpressionSyntax { Parent: InvocationExpressionSyntax verifyAll } verifyAllAccess
+            && verifyAllAccess.Expression == use && VerifyAllSyntax.IsVerifyAll(verifyAll, model))
+        {
+            return VerifyAllSyntax.Plan(verifyAll, model).Blocker;
+        }
+
         // Row 4: m.Verify(x => .., Times);
         if (pendingUses && use.Parent is MemberAccessExpressionSyntax { Name.Identifier.Text: "Verify", Parent: InvocationExpressionSyntax verify } verifyAccess
             && verifyAccess.Expression == use && VerifySyntax.IsVerify(verify, model))

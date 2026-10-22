@@ -41,13 +41,14 @@ flowchart TD
     D -- yes --> F2[Fixed: SheetView.Freeze(r-1, c-1)]
     D -- no --> MU
     B -- Height --> F3[Fixed: same text]
-    B -- Width / AutoFit --> MW[Manual ColumnWidthDiffers, E8]
+    B -- Width --> MW[Manual ColumnWidthDiffers, E8]
+    B -- AutoFit --> MA[Manual AutoFitDiffers, E13: font dependent]
 ```
 
 | Question | Leaf | Proof / test |
 | -------- | ---- | ------------ |
 | merge, freeze, height | Fixed, harness equal, wrong variant detected | `LayoutHarnessTests` (4 cases) |
-| width, auto-fit | Manual `ColumnWidthDiffers` | `column-width`, `auto-fit-columns`, `UnprovenShape_IsManualAndUnchanged` |
+| width; auto-fit | Manual `ColumnWidthDiffers`; `AutoFitDiffers` (E13) | `column-width`, `auto-fit-columns`, `UnprovenShape_IsManualAndUnchanged` |
 | unmerge, variable freeze | Manual `UnmappedEPPlusLayout` | `unmerge`, `freeze-variable` |
 
 ## See also

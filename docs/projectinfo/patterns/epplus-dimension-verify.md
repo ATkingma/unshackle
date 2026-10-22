@@ -16,6 +16,7 @@
 | REQ-2 | Met     | same test, the three `?.` cases |
 | REQ-3 | Met     | same test, wrong variant |
 | REQ-4 | Met     | proofs `Dimension/address`, `Dimension/null-check`; `OtherDimensionUse_IsManual` (3 cases) |
+| REQ-5 | Met     | `DimensionShape_RewrittenByPattern_WritesSameWorkbook`, the four `Styled` cases (wrong variant: without `All`) |
 
 ## Build and tests
 
@@ -25,7 +26,7 @@
 ## Deviations
 
 - Fixed shapes are proven with a hand-translated scaffold, like epplus.styles and epplus.layout.
-- `epplus.unsupported` still names the rewritten `LastRowUsed` etc. as unresolved members of the EPPlus sheet until row 3 migrates the sheet (no skip for row 7; claim request).
+- `epplus.unsupported` skips the rewritten `LastRowUsed` etc. and names only the sheet (`DimensionUnsupportedTests`).
 - Diagrams are inline Mermaid instead of D2/PNG under `img/`.
 
 ## See also

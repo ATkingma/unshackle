@@ -47,6 +47,8 @@ public partial class LoadFromHarnessTests
         { "public bool Flag { get; set; }", "new Item { Flag = true }, new Item { Flag = false }" },
         { "public decimal Price { get; set; }", "new Item { Price = 12.34m }" },
         { "public int? Maybe { get; set; }", "new Item { Maybe = 3 }, new Item { Maybe = null }" },
+        { "public System.DayOfWeek Day { get; set; }", "new Item { Day = System.DayOfWeek.Friday }, new Item()" },
+        { "public System.DayOfWeek? Day { get; set; }", "new Item { Day = System.DayOfWeek.Monday }, new Item { Day = null }" },
         {
             "public string Name { get; set; } public int Count { get; set; } public double Ratio { get; set; } public bool Flag { get; set; }",
             "new Item { Name = \"x\", Count = 2, Ratio = 2.5, Flag = true }, new Item { Name = \"y\" }"
@@ -72,7 +74,8 @@ public partial class LoadFromHarnessTests
     }
 
     [Theory]
-    [InlineData("public System.DateTime When { get; set; }", "sheet.Cells[\"B2\"].LoadFromCollection(items);", LoadFromPattern.UncoveredCode)]
+    [InlineData("public System.DateTime When { get; set; }", "sheet.Cells[\"B2\"].LoadFromCollection(items);", LoadFromPattern.TypeDiffersCode)]
+    [InlineData("public System.DateTime? When { get; set; }", "sheet.Cells[\"B2\"].LoadFromCollection(items);", LoadFromPattern.TypeDiffersCode)]
     [InlineData("public string Name { get; set; }", "sheet.Cells[\"B2\"].LoadFromCollection(items, true);", LoadFromPattern.HeadersCode)]
     [InlineData("public string Name;", "sheet.Cells[\"B2\"].LoadFromCollection(items);", LoadFromPattern.UncoveredCode)]
     [InlineData("public string Name { get; set; }", "var range = sheet.Cells[\"B2\"].LoadFromCollection(items);", LoadFromPattern.UnmappedCode)]
@@ -87,6 +90,23 @@ public partial class LoadFromHarnessTests
 
         // Assert
         ((ManualResult)report.Findings.ShouldHaveSingleItem().Result).Reason.ShouldContain(code);
+    }
+
+    // Council round 12, E15: a DateTime property written by hand as InsertData differs in the harness, so the pattern keeps it Manual
+    // (LoadFromTypeDiffers). Enum properties compare equal and are in Shapes.
+    [Theory]
+    [InlineData("public System.DateTime When { get; set; }", "new Item { When = new System.DateTime(2024, 3, 1, 13, 30, 0) }")]
+    public void DateTime_HarnessReportsDifference(string properties, string items)
+    {
+        // Arrange
+        string before = Before.Replace("PROPERTIES", "    " + properties, StringComparison.Ordinal).Replace("ITEMS", items, StringComparison.Ordinal);
+        string after = Translate(before.ReplaceLineEndings("\n").Replace(".LoadFromCollection(items)", ".InsertData(items)", StringComparison.Ordinal));
+
+        // Act
+        IReadOnlyList<string> differences = CellCompare.Differences(before, after);
+
+        // Assert
+        differences.ShouldNotBeEmpty();
     }
 
     private static async Task<(FixReport Report, string After)> RewriteAsync(string before)

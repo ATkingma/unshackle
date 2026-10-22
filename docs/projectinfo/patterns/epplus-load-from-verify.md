@@ -12,11 +12,12 @@
 
 | REQ   | Verdict | Evidence |
 | ----- | ------- | -------- |
-| REQ-1 | Met     | `LoadFromHarnessTests.LoadFromCollection_RewrittenByPattern_WritesSameWorkbook` (8 cases) |
+| REQ-1 | Met     | `LoadFromHarnessTests.LoadFromCollection_RewrittenByPattern_WritesSameWorkbook` (10 cases, enums included) |
 | REQ-2 | Met     | same test, wrong variant |
 | REQ-3 | Met     | proof `LoadFrom/with-headers`; `UnprovenShape_IsManual` |
 | REQ-4 | Met     | proofs `LoadFrom/datetime-property`, `LoadFrom/data-table`; `UnprovenShape_IsManual` |
 | REQ-5 | Met     | `UnprovenShape_IsManual` |
+| REQ-6 | Met     | proof `LoadFrom/datetime-property`; `DateTime_HarnessReportsDifference`; `UnprovenShape_IsManual` (DateTime, DateTime?) |
 
 ## Build and tests
 
@@ -26,8 +27,8 @@
 ## Deviations
 
 - Fixed shapes are proven with a hand-translated scaffold, like the other EPPlus rows.
-- DateTime is not covered yet: no harness case was written for it, so it stays Manual (E4).
-- `epplus.unsupported` still names the rewritten `InsertData` as an unresolved member of the EPPlus range until row 4 migrates the range (claim request).
+- Council round 12 E15: enums compare equal and are Fixed; DateTime differs and is Manual `LoadFromTypeDiffers`.
+- `epplus.unsupported` skips the rewritten `InsertData` and names only the range (`DimensionUnsupportedTests`).
 - Diagrams are inline Mermaid instead of D2/PNG under `img/`.
 
 ## See also

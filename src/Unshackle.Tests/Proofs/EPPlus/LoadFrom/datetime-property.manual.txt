@@ -1,1 +1,1 @@
-[UncoveredRuntimeType] EPPlus 'LoadFromCollection': Order.Placed (System.DateTime)
+[LoadFromTypeDiffers] EPPlus 'LoadFromCollection': Order.Placed (System.DateTime)

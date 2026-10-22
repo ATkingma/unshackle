@@ -9,10 +9,10 @@ internal static class DimensionMapping
     // (End|Start, Row|Column) → ClosedXML call chain after the sheet.
     private static readonly Dictionary<(string Corner, string Part), (string Used, string Number)> s_calls = new()
     {
-        [("End", "Row")] = ("LastRowUsed()", "RowNumber()"),
-        [("End", "Column")] = ("LastColumnUsed()", "ColumnNumber()"),
-        [("Start", "Row")] = ("FirstRowUsed()", "RowNumber()"),
-        [("Start", "Column")] = ("FirstColumnUsed()", "ColumnNumber()"),
+        [("End", "Row")] = ("LastRowUsed(XLCellsUsedOptions.All)", "RowNumber()"),
+        [("End", "Column")] = ("LastColumnUsed(XLCellsUsedOptions.All)", "ColumnNumber()"),
+        [("Start", "Row")] = ("FirstRowUsed(XLCellsUsedOptions.All)", "RowNumber()"),
+        [("Start", "Column")] = ("FirstColumnUsed(XLCellsUsedOptions.All)", "ColumnNumber()"),
     };
 
     // sheet.Dimension with sheet an EPPlus ExcelWorksheet.
@@ -43,6 +43,14 @@ internal static class DimensionMapping
             $"{dimension.Expression.WithoutTrivia()}.{call.Used}?.{call.Number}",
         _ => null,
     };
+
+    // Names rows 7 and 10 write onto an EPPlus receiver (sheet.LastRowUsed(), range.InsertData(..)); they bind to nothing until rows 3-4
+    // migrate the receiver. epplus.unsupported skips them and reports the receiver only.
+    private static readonly HashSet<string> s_rewrittenNames =
+        new(["LastRowUsed", "LastColumnUsed", "FirstRowUsed", "FirstColumnUsed", "RowNumber", "ColumnNumber", "InsertData"], StringComparer.Ordinal);
+
+    public static bool IsRewrittenName(SyntaxNode name, SemanticModel model) =>
+        name is SimpleNameSyntax simple && s_rewrittenNames.Contains(simple.Identifier.ValueText) && model.GetSymbolInfo(name).Symbol is null;
 
     private static bool IsEPPlus(INamedTypeSymbol type)
     {

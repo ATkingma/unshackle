@@ -54,9 +54,9 @@ The receiver in front of `.Style` (rows 3–4) is not touched.
 ClosedXML enum. Every rewritten statement carries `StylesPattern.MigratedAnnotationKind`, so `epplus.unsupported` can skip it once it
 looks for the annotation (claim request: today it still names `ExcelRangeBase.Style` because the receiver is EPPlus).
 
-**Behaviour proof (E1).** `StylesHarnessTests` runs `StylesPattern` alone on a workbook program, translates only the scaffold
-(package, sheet, cell, save) to ClosedXML, and requires 0 cell differences; each case also changes its rewritten style (value,
-colour, enum member or border side) and requires the harness to report a difference.
+**Behaviour proof (E1, E14).** Each Fixed shape has a full proof in `Proofs/EPPlus/Styles/_Combined/`: the real `EPPlusFix` output
+(`StylesCombinedProofTests`), which the harness compares with its before (`EPPlusHarnessProofTests`). `StylesHarnessTests` changes each
+after's style (value, colour, enum member or border side) and requires the harness to report a difference.
 
 ## Requirements
 

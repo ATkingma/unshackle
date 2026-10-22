@@ -20,6 +20,8 @@ public class LoadFromPattern : IPattern
 
     public const string UnmappedCode = "UnmappedLoadFrom";
 
+    public const string TypeDiffersCode = "LoadFromTypeDiffers";
+
     public string Id => "epplus.load-from";
 
     public string Description => "range.LoadFromCollection(items); → range.InsertData(items); (no headers, covered property types only)";
@@ -48,6 +50,11 @@ public class LoadFromPattern : IPattern
         if (invocation.Parent is not ExpressionStatementSyntax)
         {
             return Manual(UnmappedCode, method.Name, "its result (the filled range) is used, and ClosedXML returns a different range type");
+        }
+
+        if (LoadFromMapping.DifferingMember(method.TypeArguments[0]) is string differing)
+        {
+            return Manual(TypeDiffersCode, method.Name, $"{differing}: the harness shows ClosedXML writes this type with another value or number format (council round 12, E15)");
         }
 
         if (LoadFromMapping.UncoveredMember(method.TypeArguments[0]) is string uncovered)

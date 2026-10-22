@@ -28,7 +28,7 @@ public class DimensionPattern : IPattern
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
         DimensionMapping.Rewrite(node) is string text
-            ? PatternResult.Fixed(SyntaxFactory.ParseExpression(text))
+            ? PatternResult.Fixed(SyntaxFactory.ParseExpression(text), "ClosedXML.Excel")
             : PatternResult.Manual($"[{UnmappedCode}] EPPlus 'Dimension' used as '{Shorten(node)}': only .End/.Start .Row/.Column are mapped "
                 + "(queue row 7). Migrate it by hand (LastCellUsed/RangeUsed in ClosedXML; Dimension is null on an empty sheet).");
 

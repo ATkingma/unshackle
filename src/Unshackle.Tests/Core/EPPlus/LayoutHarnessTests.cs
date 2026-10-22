@@ -12,9 +12,9 @@ using Xunit;
 
 namespace Unshackle.Tests.Core.EPPlus;
 
-// Council round 8, E1 and E8 for queue row 9 (epplus.layout). Like StylesHarnessTests: the layout statement is rewritten by LayoutPattern,
-// the scaffold (rows 2-4) is translated here. WorkbookSnapshot has no freeze panes or row heights, so this test adds those two facts
-// (read back with ClosedXML from both files) to the harness differences. Each case also fails when the layout is wrong.
+// Council round 8 E1/E8 and round 12 E13/E14 for queue row 9 (epplus.layout). The Fixed shapes have full proofs in
+// Proofs/EPPlus/Layout/_Combined (StylesCombinedProofTests, EPPlusHarnessProofTests); this test shows the harness sees a wrong layout,
+// pins the E8 width difference, and checks the Manual shapes. The scaffold translation below is only used for the E8 and snapshot checks.
 public class LayoutHarnessTests
 {
     private const string Before = """
@@ -35,35 +35,37 @@ public class LayoutHarnessTests
         }
         """;
 
+    private static readonly string s_directory = Path.Combine(AppContext.BaseDirectory, "Proofs", "EPPlus", "Layout", "_Combined");
+
+    // Proof (Proofs/EPPlus/Layout/_Combined, the Fixer's real output, E14), the rewritten text, and a change that makes the layout wrong.
     public static TheoryData<string, string, string> Shapes() => new()
     {
-        { "sheet.Cells[\"A1:B2\"].Merge = true;", "Range(\"A1:B2\")", "Range(\"A1:C2\")" },
-        { "sheet.View.FreezePanes(2, 1);", "Freeze(1, 0)", "Freeze(2, 0)" },
-        { "sheet.View.FreezePanes(3, 2);", "Freeze(2, 1)", "Freeze(2, 2)" },
-        { "sheet.Row(3).Height = 30;", "Height = 30", "Height = 31" },
+        { "merge", "Range(\"A1:B2\")", "Range(\"A1:C2\")" },
+        { "freeze-top-row", "Freeze(1, 0)", "Freeze(2, 0)" },
+        { "freeze-row-column", "Freeze(2, 1)", "Freeze(2, 2)" },
+        { "row-height", "Height = 30", "Height = 31" },
     };
 
     [Theory]
     [MemberData(nameof(Shapes))]
-    public async Task LayoutShape_RewrittenByPattern_WritesSameWorkbook(string layout, string right, string wrong)
+    public async Task LayoutProof_WrongLayout_IsSeenByHarness(string proof, string right, string wrong)
     {
         // Arrange
-        string before = Before.Replace("LAYOUT", "        " + layout, StringComparison.Ordinal);
+        string before = await File.ReadAllTextAsync(Path.Combine(s_directory, proof + ".before.cs"), TestContext.Current.CancellationToken);
+        string after = await File.ReadAllTextAsync(Path.Combine(s_directory, proof + ".after.cs"), TestContext.Current.CancellationToken);
 
         // Act
-        (FixReport report, string after) = await RewriteAsync(before);
+        IReadOnlyList<string> differences = CellCompare.Differences(before, after.Replace(right, wrong, StringComparison.Ordinal));
 
         // Assert
-        report.Findings.ShouldAllBe(f => f.Result is FixedResult, string.Join(" | ", report.Findings.Select(f => f.Result.ToString())));
         after.ShouldContain(right);
-        Differences(before, after).ShouldBeEmpty();
-        Differences(before, after.Replace(right, wrong, StringComparison.Ordinal)).ShouldNotBeEmpty("a wrong layout must show in the harness");
+        differences.ShouldNotBeEmpty("a wrong layout must show in the harness");
     }
 
     [Theory]
     [InlineData("sheet.Column(1).Width = 20;", LayoutPattern.WidthCode)]
-    [InlineData("sheet.Cells[\"A1:B3\"].AutoFitColumns();", LayoutPattern.WidthCode)]
-    [InlineData("sheet.Column(2).AutoFit();", LayoutPattern.WidthCode)]
+    [InlineData("sheet.Cells[\"A1:B3\"].AutoFitColumns();", LayoutPattern.AutoFitCode)]
+    [InlineData("sheet.Column(2).AutoFit();", LayoutPattern.AutoFitCode)]
     [InlineData("sheet.Cells[\"A1:B2\"].Merge = false;", LayoutPattern.UnmappedCode)]
     public async Task UnprovenShape_IsManualAndUnchanged(string layout, string code)
     {

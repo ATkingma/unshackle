@@ -12,10 +12,10 @@
 
 | REQ   | Verdict | Evidence |
 | ----- | ------- | -------- |
-| REQ-1 | Met     | `LayoutHarnessTests.LayoutShape_RewrittenByPattern_WritesSameWorkbook` (merge case) |
-| REQ-2 | Met     | same test, `FreezePanes(2, 1)` and `(3, 2)` cases |
-| REQ-3 | Met     | same test, row height case |
-| REQ-4 | Met     | proofs `Layout/column-width`, `Layout/auto-fit-columns`; `UnprovenShape_IsManualAndUnchanged`; `ColumnWidth_SameNumber_DiffersInHarness` |
+| REQ-1 | Met     | proof `Layout/_Combined/merge` (`StylesCombinedProofTests`, `EPPlusHarnessProofTests`); `LayoutProof_WrongLayout_IsSeenByHarness` |
+| REQ-2 | Met     | proofs `Layout/_Combined/freeze-top-row`, `freeze-row-column`; same wrong-layout test |
+| REQ-3 | Met     | proof `Layout/_Combined/row-height`; same wrong-layout test |
+| REQ-4 | Met     | proofs `Layout/column-width`, `Layout/auto-fit-columns` (`AutoFitDiffers`, E13); `UnprovenShape_IsManualAndUnchanged`; `ColumnWidth_SameNumber_DiffersInHarness` |
 | REQ-5 | Met     | proofs `Layout/unmerge`, `Layout/freeze-variable` |
 
 ## Build and tests
@@ -25,10 +25,9 @@
 
 ## Deviations
 
-- Like epplus.styles, Fixed shapes are proven with a hand-translated scaffold, not `Proofs/EPPlus/Layout/*.after.cs` (the receiver is still
-  EPPlus until rows 3–4).
-- `WorkbookSnapshot` has no freeze-pane or row-height facts; `LayoutHarnessTests` adds them itself (harness files are read-only for
-  this row). Adding them to `WorkbookSnapshot` would put them in every harness proof.
+- Council round 12, E14: the Fixed shapes have full proofs in `Proofs/EPPlus/Layout/_Combined/` (real `EPPlusFix` output); the scaffold
+  proofs are gone.
+- `WorkbookSnapshot` now has freeze-pane and row-height facts (additive), so every harness proof compares them.
 - `epplus.unsupported` skips the layout part of row-9 statements (`LayoutMapping.Receiver`), before or after the rewrite, and names only the sheet or range
   (`LayoutUnsupportedTests`).
 - Diagrams are inline Mermaid instead of D2/PNG under `img/`.

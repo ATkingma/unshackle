@@ -19,6 +19,9 @@ public class LayoutPattern : IPattern
 
     public const string UnmappedCode = "UnmappedEPPlusLayout";
 
+    // Council round 12, E13: auto-fit is Manual for good.
+    public const string AutoFitCode = "AutoFitDiffers";
+
     public string Id => "epplus.layout";
 
     public string Description => "Merge = true / View.FreezePanes / Row(i).Height → ClosedXML; column width and auto-fit Manual (E8)";
@@ -43,9 +46,11 @@ public class LayoutPattern : IPattern
                 when Literal(row.Expression) is int r && Literal(column.Expression) is int c && r >= 1 && c >= 1 =>
                 PatternResult.Fixed(SyntaxFactory.ParseStatement($"{target}.SheetView.Freeze({r - 1}, {c - 1});")),
             (LayoutShape.FreezePanes, _) => Manual(UnmappedCode, "View.FreezePanes", "only literal row and column numbers (1 or more) are mapped"),
-            (LayoutShape.Width or LayoutShape.AutoFit, _) => Manual(WidthCode, shape == LayoutShape.Width ? "Column(i).Width" : "AutoFit",
-                "EPPlus and ClosedXML store a different column width for the same number, and auto-fit measures fonts differently; "
-                + "set the width in ClosedXML by hand and check it (council round 8, E8)"),
+            (LayoutShape.Width, _) => Manual(WidthCode, "Column(i).Width",
+                "EPPlus and ClosedXML store a different column width for the same number; set the width in ClosedXML by hand and check it (council round 8, E8)"),
+            (LayoutShape.AutoFit, _) => Manual(AutoFitCode, "AutoFit",
+                "the width auto-fit computes depends on the fonts installed on the machine and on each library's text measuring, so the result "
+                + "cannot be proven equal; use AdjustToContents() and check the widths by hand (council round 12, E13)"),
             _ => Manual(UnmappedCode, shape.ToString(), "this layout statement is not mapped yet"),
         };
     }

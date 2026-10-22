@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "moq-create"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12]
 files_expected:
   - src/Unshackle.Core/Fixes/Moq/MoqFix.cs
   - src/Unshackle.Core/Fixes/Moq/MoqSyntax.cs
@@ -52,7 +52,10 @@ mock and substitute provably answer the same.
 - **REQ-5**: WHEN `Mock.Of<T>()` has no arguments THE SYSTEM SHALL rewrite it to `Substitute.For<T>()` (proof `mock-of`).
 - **REQ-6**: WHEN the behaviour is a literal `MockBehavior.Loose`/`Default` THE SYSTEM SHALL drop it (proof `explicit-loose`); IF it is `Strict` THEN Manual `StrictBehaviour` (proof `strict`).
 - **REQ-7**: IF the mock is used other than as `.Object` THEN THE SYSTEM SHALL give Manual `MockUsedBeyondObject` and leave every `.Object` of it alone (proof `setup-used`).
-- **REQ-8**: IF an unconfigured mock and substitute of `T` can answer differently (a member returns `string`, an interface or delegate for `new Mock<T>()`, a non-sealed class for `Mock.Of<T>()`, a type parameter; a settable property for `new Mock<T>()`) THEN THE SYSTEM SHALL give Manual `DefaultValueDiffers` naming the member (proofs `string-return`, `setter`).
+- **REQ-8**: IF an unconfigured mock and substitute of `T` answer differently in a way that has no known pin (a type parameter, a pure-virtual class; for `Mock.Of<T>()` an interface or non-sealed class; a settable property for `new Mock<T>()`) THEN THE SYSTEM SHALL give Manual `DefaultValueDiffers` naming the member (proof `setter`).
+- **REQ-10** (council round 9, Q1): WHEN a member's Moq default is a known null (string, interface, delegate, also inside `Task<T>`/`ValueTask<T>`) THE SYSTEM SHALL pin it right after the creation statement with `m.M(Arg.Any<A>()...).ReturnsNull();` / `m.P.ReturnsNull();` and an Info line; members set up for every argument get no pin and do not count; more than `MockDefaults.MaxPins` (10) → Manual `TooManyDefaultPins`; a creation that is not a statement (field initializer, inline, `Mock.Of`) cannot take pins → Manual `DefaultValueDiffers` (proof `string-return`, run-time `create-pinned-local`, `create-pinned-field`).
+- **REQ-11** (Q4): WHEN a mock is never used THE SYSTEM SHALL still rewrite it and add the Info line "mock never used" (run-time `create-unused`).
+- **REQ-12** (Q2): Every Fixed shape SHALL have a run-time proof in `src/Unshackle.Tests/Proofs/Moq/_Runtime/` (`MoqRuntimeProofTests`): before on Moq, after on NSubstitute, same outcome; `create-must-fail` fails under both.
 - **REQ-9**: IF the mock is a parameter, property, non-private field, several variables in one declaration, `Mock.Get(x)`, `Mock.Of(predicate)`, a class mock or has constructor arguments/initializer THEN Manual (`MockPassedAround`, `MockDeclaration`, `MockGet`, `MockOfSetup`, `ClassMock`, `ConstructorArguments`, `MockOptions`; unit tests in `CreatePatternTests`).
 
 ## Assumptions
@@ -62,7 +65,8 @@ mock and substitute provably answer the same.
 
 ## Risks
 
-- The defaults table is from the libraries' source, not from a run-time proof: proofs compile before/after but do not run both mocks. A run-time harness (like EPPlus E1) is a council question.
+- The defaults table is checked by the run-time harness (council round 9, Q2) for the shapes in `_Runtime/`.
+- `TargetFrameworkUnsupported` (Q3) needs the project's TFM, which a pattern does not see: open for the Fixer/project-file step.
 - The strict defaults check makes many corpus mocks Manual until the setup rows land; that is intended.
 
 ## Models
@@ -71,4 +75,4 @@ Class diagram, sequence and decision tree: [moq-create-modellen.md](moq-create-m
 
 ## Open questions
 
-- See the council questions in `claude/tasks/TAAK-307-moq-to-nsubstitute.md` (defaults, NSubstitute version, run-time proof).
+- Answered by council round 9 (Q1-Q4).

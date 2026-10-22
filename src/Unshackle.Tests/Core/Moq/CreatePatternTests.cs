@@ -22,7 +22,7 @@ public class CreatePatternTests
         string[] results = [.. pattern.Find(root, model).Select(n => pattern.Rewrite(n, model)).Select(Text)];
 
         // Assert
-        results.ShouldBe(["var m = Substitute.For<IClock>()", "m"]);
+        results.ShouldBe(["var m = Substitute.For<IClock>();", "m"]);
     }
 
     [Fact]
@@ -70,9 +70,9 @@ public class CreatePatternTests
     }
 
     [Fact]
-    public void Rewrite_InterfaceReturningInterface_ManualForNewMockButFixedForMockOf()
+    public void Rewrite_InlineInterfaceReturningInterface_ManualForBoth()
     {
-        // Arrange: new Mock<T>() answers null for an interface, NSubstitute and Mock.Of a recursive mock.
+        // Arrange: inline, new Mock<T>() needs a pin (no statement for it); Mock.Of answers a recursive mock (no known pin).
         const string code = "using Moq;\n" + Clock + "public interface IFactory { IClock Create(); }\n"
             + "class C { object A() => new Mock<IFactory>().Object; object B() => Mock.Of<IFactory>(); }";
         (CreatePattern pattern, SemanticModel model, SyntaxNode root) = Arrange(code);
@@ -81,8 +81,8 @@ public class CreatePatternTests
         PatternResult[] results = [.. pattern.Find(root, model).Select(n => pattern.Rewrite(n, model))];
 
         // Assert
-        results[0].ShouldBeOfType<ManualResult>().Reason.ShouldStartWith("DefaultValueDiffers");
-        results[1].ShouldBeOfType<FixedResult>();
+        results[0].ShouldBeOfType<ManualResult>().Reason.ShouldContain("needs the mock in a local or field");
+        results[1].ShouldBeOfType<ManualResult>().Reason.ShouldContain("cannot be pinned");
     }
 
     [Fact]
@@ -112,6 +112,69 @@ public class CreatePatternTests
 
         // Assert
         results.ShouldHaveSingleItem().ShouldBeOfType<ManualResult>().Reason.ShouldStartWith("MockDeclaration");
+    }
+
+    [Fact]
+    public void Rewrite_ElevenStringMembers_TooManyDefaultPins()
+    {
+        // Arrange: council round 9, Q1: at most MockDefaults.MaxPins (10) pins.
+        string members = string.Concat(Enumerable.Range(0, 11).Select(i => $"string M{i}(); "));
+        string code = "using Moq;\npublic interface IWide { " + members + "}\nclass C { object T() { var m = new Mock<IWide>(); return m.Object; } }";
+        (CreatePattern pattern, SemanticModel model, SyntaxNode root) = Arrange(code);
+        SyntaxNode node = pattern.Find(root, model).First();
+
+        // Act
+        PatternResult result = pattern.Rewrite(node, model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldStartWith("TooManyDefaultPins");
+    }
+
+    [Fact]
+    public void Rewrite_PinnedFieldInitializer_ManualAndObjectLeftAlone()
+    {
+        // Arrange: a pin needs a statement after the creation.
+        const string code = "using Moq;\npublic interface INames { string Name(); }\nclass C { private readonly Mock<INames> _m = new(); object T() => _m.Object; }";
+        (CreatePattern pattern, SemanticModel model, SyntaxNode root) = Arrange(code);
+
+        // Act
+        PatternResult[] results = [.. pattern.Find(root, model).Select(n => pattern.Rewrite(n, model))];
+
+        // Assert
+        results.ShouldHaveSingleItem().ShouldBeOfType<ManualResult>().Reason.ShouldContain("not a field initializer");
+    }
+
+    [Fact]
+    public void Rewrite_UnusedMock_FixedWithInfo()
+    {
+        // Arrange: council round 9, Q4.
+        const string code = "using Moq;\n" + Clock + "class C { void T() { var m = new Mock<IClock>(); } }";
+        (CreatePattern pattern, SemanticModel model, SyntaxNode root) = Arrange(code);
+        SyntaxNode node = pattern.Find(root, model).Single();
+
+        // Act
+        PatternResult result = pattern.Rewrite(node, model);
+
+        // Assert
+        result.ShouldBeOfType<FixedResult>().Info.ShouldBe("mock never used");
+    }
+
+    [Fact]
+    public void Rewrite_StringMember_PinsMoqDefault()
+    {
+        // Arrange
+        const string code = "using Moq;\npublic interface INames { string Name(int id); }\nclass C { object T() { var m = new Mock<INames>(); return m.Object; } }";
+        (CreatePattern pattern, SemanticModel model, SyntaxNode root) = Arrange(code);
+        SyntaxNode node = pattern.Find(root, model).First();
+
+        // Act
+        PatternResult result = pattern.Rewrite(node, model);
+
+        // Assert
+        FixedResult fixedResult = result.ShouldBeOfType<FixedResult>();
+        fixedResult.NewNodes.Select(n => n.ToString()).ShouldBe(["var m = Substitute.For<INames>();", "m.Name(Arg.Any<int>()).ReturnsNull();"]);
+        fixedResult.RequiredNamespaces.ShouldContain("NSubstitute.ReturnsExtensions");
+        fixedResult.Info.ShouldBe("pinned Moq's default null for Name");
     }
 
     [Fact]

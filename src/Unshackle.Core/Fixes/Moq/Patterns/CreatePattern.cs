@@ -6,11 +6,14 @@ using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.Moq.Patterns;
 
-// A mock that is only ever used as .Object becomes the substitute itself: the declaration gets the mocked type and
-// Substitute.For<T>(), each .Object goes. Any other use (Setup, Verify, passing the Mock<T>) waits for its own queue row.
+// A mock whose every remaining use is .Object becomes the substitute itself: the declaration gets the mocked type and
+// Substitute.For<T>(), each .Object goes. Moq's null defaults that NSubstitute answers differently are pinned right after the
+// creation (council round 9, Q1). The patterns for Setup/Verify run first and turn their uses into .Object uses.
 public class CreatePattern : IPattern
 {
     private const string NSubstitute = "NSubstitute";
+
+    private const string ReturnsExtensions = "NSubstitute.ReturnsExtensions";
 
     public string Id => "moq.create";
 
@@ -23,18 +26,19 @@ public class CreatePattern : IPattern
             switch (node)
             {
                 case VariableDeclarationSyntax declaration when MoqSyntax.IsMockOfT(model.GetTypeInfo(declaration.Type).Type):
-                    yield return declaration;
+                    yield return declaration.Parent is LocalDeclarationStatementSyntax statement ? statement : declaration;
                     break;
-                case BaseObjectCreationExpressionSyntax creation when MoqSyntax.IsMockOfT(model.GetTypeInfo(creation).Type)
-                        && !InMockDeclaration(creation, model):
-                    yield return MoqSyntax.IsObjectAccess(creation.Parent, creation) ? creation.Parent! : creation;
+                case BaseObjectCreationExpressionSyntax creation when MoqSyntax.IsMockOfT(model.GetTypeInfo(creation).Type) && !InMockDeclaration(creation, model):
+                    yield return MoqSyntax.IsObjectAccess(creation.Parent, creation) ? creation.Parent!
+                        : creation.Parent is AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax assignment } ? assignment
+                        : creation;
                     break;
                 case InvocationExpressionSyntax invocation when IsMockStatic(invocation, model):
                     yield return invocation;
                     break;
                 case MemberAccessExpressionSyntax { Name.Identifier.Text: "Object" } access
-                        when Holder(access.Expression, model) is { } holder && MoqSyntax.IsMockOfT(Type(holder))
-                            && Blocker(holder, model) is null:
+                        when MockUsage.Holder(access.Expression, model) is { } holder && MoqSyntax.IsMockOfT(MockUsage.Type(holder))
+                            && MockUsage.Analyze(holder, model).Blocker is null:
                     yield return access;
                     break;
                 case ParameterSyntax { Type: not null } parameter when MoqSyntax.IsMockOfT(model.GetTypeInfo(parameter.Type).Type):
@@ -51,28 +55,32 @@ public class CreatePattern : IPattern
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model) => node switch
     {
-        VariableDeclarationSyntax declaration => RewriteDeclaration(declaration, model),
+        LocalDeclarationStatementSyntax statement => RewriteDeclaration(statement.Declaration, model, statement),
+        VariableDeclarationSyntax declaration => RewriteDeclaration(declaration, model, null),
+        ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax { Right: BaseObjectCreationExpressionSyntax creation } } statement =>
+            RewriteAssigned(creation, model, statement),
         MemberAccessExpressionSyntax { Expression: BaseObjectCreationExpressionSyntax creation } => RewriteInline(creation, model),
         MemberAccessExpressionSyntax access => PatternResult.Fixed(access.Expression.WithoutTrivia()),
-        BaseObjectCreationExpressionSyntax creation => RewriteAssigned(creation, model),
+        BaseObjectCreationExpressionSyntax creation => RewriteAssigned(creation, model, null),
         InvocationExpressionSyntax invocation => RewriteStatic(invocation, model),
         ParameterSyntax => PatternResult.Manual("MockPassedAround: a Mock<T> parameter; the caller's mock and its setups move together, not yet supported"),
         _ => PatternResult.Manual("MockPassedAround: a Mock<T> property; its users can be anywhere, not yet supported"),
     };
 
-    private static PatternResult RewriteDeclaration(VariableDeclarationSyntax declaration, SemanticModel model)
+    private static PatternResult RewriteDeclaration(VariableDeclarationSyntax declaration, SemanticModel model, LocalDeclarationStatementSyntax? statement)
     {
         if (declaration.Variables.Count != 1 || model.GetDeclaredSymbol(declaration.Variables[0]) is not { } symbol)
         {
             return PatternResult.Manual("MockDeclaration: several mocks in one declaration; split it first");
         }
 
-        if (Blocker(symbol, model) is { } blocker)
+        MockAnalysis analysis = MockUsage.Analyze(symbol, model);
+        if (analysis.Blocker is not null)
         {
-            return PatternResult.Manual(blocker);
+            return PatternResult.Manual(analysis.Blocker);
         }
 
-        ITypeSymbol mocked = MoqSyntax.MockedType(Type(symbol)!);
+        ITypeSymbol mocked = analysis.Mocked!;
         VariableDeclaratorSyntax variable = declaration.Variables[0];
         TypeSyntax written = declaration.Type.IsVar ? (variable.Initializer?.Value as ObjectCreationExpressionSyntax)?.Type ?? declaration.Type : declaration.Type;
         TypeSyntax mockedType = MoqSyntax.TypeArgument(written, mocked, model, declaration.SpanStart);
@@ -83,7 +91,39 @@ public class CreatePattern : IPattern
                 MoqSyntax.SubstituteFor(mockedType).WithTriviaFrom(variable.Initializer.Value)));
         }
 
-        return PatternResult.Fixed(declaration.WithType(newType).WithVariables(SyntaxFactory.SingletonSeparatedList(variable)), NSubstitute);
+        VariableDeclarationSyntax newDeclaration = declaration.WithType(newType).WithVariables(SyntaxFactory.SingletonSeparatedList(variable));
+        if (statement is null || variable.Initializer is null || analysis.Pins.Count == 0)
+        {
+            return WithInfo(statement is null ? newDeclaration : statement.WithDeclaration(newDeclaration), [], analysis);
+        }
+
+        return WithInfo(statement.WithDeclaration(newDeclaration), Pins(SyntaxFactory.IdentifierName(symbol.Name), analysis.Pins, model, statement.SpanStart), analysis);
+    }
+
+    // `_mock = new Mock<T>()`: the target's declaration and .Object uses are rewritten with it, so it follows the target.
+    private static PatternResult RewriteAssigned(BaseObjectCreationExpressionSyntax creation, SemanticModel model, ExpressionStatementSyntax? statement)
+    {
+        if (creation.Parent is not AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment
+            || assignment.Right != creation || MockUsage.Holder(assignment.Left, model) is not { } target)
+        {
+            return PatternResult.Manual("MockPassedAround: the mock is passed or returned as Mock<T>, not yet supported");
+        }
+
+        MockAnalysis analysis = MockUsage.Analyze(target, model);
+        if (analysis.Blocker is not null)
+        {
+            return PatternResult.Manual(analysis.Blocker);
+        }
+
+        TypeSyntax? written = (creation as ObjectCreationExpressionSyntax)?.Type;
+        ExpressionSyntax substitute = MoqSyntax.SubstituteFor(MoqSyntax.TypeArgument(written, analysis.Mocked!, model, creation.SpanStart)).WithTriviaFrom(creation);
+        if (statement is null)
+        {
+            return WithInfo(substitute, [], analysis);
+        }
+
+        SyntaxNode newStatement = statement.ReplaceNode(creation, substitute);
+        return WithInfo(newStatement, Pins(assignment.Left.WithoutTrivia(), analysis.Pins, model, statement.SpanStart), analysis);
     }
 
     private static PatternResult RewriteInline(BaseObjectCreationExpressionSyntax creation, SemanticModel model)
@@ -94,30 +134,11 @@ public class CreatePattern : IPattern
         }
 
         ITypeSymbol mocked = MoqSyntax.MockedType(model.GetTypeInfo(creation).Type!);
-        if (MockedBlocker(mocked, mockOf: false) is { } typeBlocker)
+        if (InlineBlocker(mocked, mockOf: false) is { } typeBlocker)
         {
             return PatternResult.Manual(typeBlocker);
         }
 
-        TypeSyntax? written = (creation as ObjectCreationExpressionSyntax)?.Type;
-        return PatternResult.Fixed(MoqSyntax.SubstituteFor(MoqSyntax.TypeArgument(written, mocked, model, creation.SpanStart)), NSubstitute);
-    }
-
-    // `_mock = new Mock<T>()`: the target's declaration and .Object uses are rewritten with it, so it follows the target.
-    private static PatternResult RewriteAssigned(BaseObjectCreationExpressionSyntax creation, SemanticModel model)
-    {
-        if (creation.Parent is not AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment
-            || assignment.Right != creation || Holder(assignment.Left, model) is not { } target)
-        {
-            return PatternResult.Manual("MockPassedAround: the mock is passed or returned as Mock<T>, not yet supported");
-        }
-
-        if (Blocker(target, model) is { } blocker)
-        {
-            return PatternResult.Manual(blocker);
-        }
-
-        ITypeSymbol mocked = MoqSyntax.MockedType(Type(target)!);
         TypeSyntax? written = (creation as ObjectCreationExpressionSyntax)?.Type;
         return PatternResult.Fixed(MoqSyntax.SubstituteFor(MoqSyntax.TypeArgument(written, mocked, model, creation.SpanStart)), NSubstitute);
     }
@@ -144,7 +165,7 @@ public class CreatePattern : IPattern
         }
 
         ITypeSymbol mocked = method.TypeArguments[0];
-        if (MockedBlocker(mocked, mockOf: true) is { } typeBlocker)
+        if (InlineBlocker(mocked, mockOf: true) is { } typeBlocker)
         {
             return PatternResult.Manual(typeBlocker);
         }
@@ -153,112 +174,50 @@ public class CreatePattern : IPattern
         return PatternResult.Fixed(MoqSyntax.SubstituteFor(MoqSyntax.TypeArgument(written, mocked, model, invocation.SpanStart)), NSubstitute);
     }
 
-    private static bool InMockDeclaration(BaseObjectCreationExpressionSyntax creation, SemanticModel model) =>
-        creation.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } }
-        && MoqSyntax.IsMockOfT(model.GetTypeInfo(declaration.Type).Type);
-
-    private static bool IsMockStatic(InvocationExpressionSyntax invocation, SemanticModel model) =>
-        model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { IsStatic: true, Name: "Of" or "Get" } method && MoqSyntax.IsMockClass(method.ContainingType);
-
-    // The local or field an expression names (`m`, `_m`, `this._m`), or null.
-    private static ISymbol? Holder(ExpressionSyntax expression, SemanticModel model) =>
-        expression is IdentifierNameSyntax or MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax }
-            && model.GetSymbolInfo(expression).Symbol is ILocalSymbol or IFieldSymbol ? model.GetSymbolInfo(expression).Symbol : null;
-
-    private static ITypeSymbol? Type(ISymbol symbol) => symbol switch
-    {
-        ILocalSymbol local => local.Type,
-        IFieldSymbol field => field.Type,
-        _ => null,
-    };
-
-    private static string? MockedBlocker(ITypeSymbol mocked, bool mockOf)
+    // An inline mock has no statement to pin defaults after, so any difference blocks it.
+    private static string? InlineBlocker(ITypeSymbol mocked, bool mockOf)
     {
         if (mocked.TypeKind != TypeKind.Interface)
         {
             return "ClassMock: only interface mocks are converted; a class or delegate mock is moq-queue.md row 9";
         }
 
-        return MockDefaults.Difference(mocked, mockOf) is { } difference
-            ? $"DefaultValueDiffers: an unconfigured {mocked.Name} answers differently in NSubstitute: {difference}"
-            : null;
+        DefaultsPlan plan = MockDefaults.Plan(mocked, mockOf, []);
+        return plan.Blocker ?? (plan.Pins.Count == 0 ? null
+            : $"DefaultValueDiffers: an unconfigured {mocked.Name} answers differently in NSubstitute ({string.Join(", ", plan.Pins.Select(p => p.Name))}); "
+                + "pinning Moq's default needs the mock in a local or field");
     }
 
-    // Null when the local or field is only created as a plain loose mock and only used as .Object; otherwise the Manual reason.
-    private static string? Blocker(ISymbol symbol, SemanticModel model)
+    // `m.M(Arg.Any<A>(), ...).ReturnsNull();` / `m.P.ReturnsNull();` per pinned member.
+    private static IReadOnlyList<StatementSyntax> Pins(ExpressionSyntax receiver, IReadOnlyList<ISymbol> pins, SemanticModel model, int position) =>
+        [.. pins.Select(pin => SyntaxFactory.ParseStatement(pin switch
+        {
+            IMethodSymbol method => $"{receiver}.{method.Name}({string.Join(", ", method.Parameters.Select(p => $"Arg.Any<{p.Type.ToMinimalDisplayString(model, position)}>()"))}).ReturnsNull();",
+            _ => $"{receiver}.{pin.Name}.ReturnsNull();",
+        }))];
+
+    private static PatternResult WithInfo(SyntaxNode node, IReadOnlyList<StatementSyntax> pins, MockAnalysis analysis)
     {
-        if (symbol.DeclaringSyntaxReferences is not [var reference] || reference.SyntaxTree != model.SyntaxTree)
+        var info = new List<string>();
+        if (analysis.Unused)
         {
-            return "MockPassedAround: the mock is declared in another file";
+            info.Add("mock never used");
         }
 
-        SyntaxNode declarator = reference.GetSyntax();
-        if (declarator.Parent is VariableDeclarationSyntax { Variables.Count: > 1 })
+        if (pins.Count > 0)
         {
-            return "MockDeclaration: several mocks in one declaration; split it first";
+            info.Add("pinned Moq's default null for " + string.Join(", ", analysis.Pins.Select(p => p.Name)));
         }
 
-        SyntaxNode? scope;
-        if (symbol is IFieldSymbol field)
-        {
-            if (field.DeclaredAccessibility != Accessibility.Private || field.ContainingType.DeclaringSyntaxReferences.Length != 1)
-            {
-                return "MockPassedAround: a non-private field (or one of a partial class) can be used outside this file";
-            }
-
-            scope = field.ContainingType.DeclaringSyntaxReferences[0].GetSyntax();
-        }
-        else
-        {
-            scope = declarator.FirstAncestorOrSelf<MemberDeclarationSyntax>() ?? declarator.SyntaxTree.GetRoot();
-        }
-
-        ITypeSymbol mocked = MoqSyntax.MockedType(Type(symbol)!);
-        var creations = new List<BaseObjectCreationExpressionSyntax>();
-        if (declarator is VariableDeclaratorSyntax { Initializer.Value: var initial })
-        {
-            if (initial is not BaseObjectCreationExpressionSyntax creation)
-            {
-                return "MockPassedAround: the mock comes from another expression than new Mock<T>()";
-            }
-
-            creations.Add(creation);
-        }
-
-        foreach (IdentifierNameSyntax identifier in scope.DescendantNodes().OfType<IdentifierNameSyntax>()
-            .Where(i => i.Identifier.Text == symbol.Name && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(i).Symbol, symbol)))
-        {
-            ExpressionSyntax use = identifier.Parent is MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } self && self.Name == identifier ? self : identifier;
-            if (MoqSyntax.IsObjectAccess(use.Parent, use))
-            {
-                continue;
-            }
-
-            if (use.Parent is AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Right: BaseObjectCreationExpressionSyntax assigned } assignment
-                && assignment.Left == use)
-            {
-                creations.Add(assigned);
-                continue;
-            }
-
-            string shown = (use.Parent as MemberAccessExpressionSyntax)?.ToString() ?? use.Parent?.ToString() ?? symbol.Name;
-            return $"MockUsedBeyondObject: {symbol.Name} is used as a Mock<T> (`{Shorten(shown)}`); that use needs a later moq-queue.md row";
-        }
-
-        foreach (BaseObjectCreationExpressionSyntax creation in creations)
-        {
-            if (MoqSyntax.CreationBlocker(creation, model) is { } blocker)
-            {
-                return blocker;
-            }
-        }
-
-        return MockedBlocker(mocked, mockOf: false);
+        PatternResult result = pins.Count == 0 ? PatternResult.Fixed(node, NSubstitute)
+            : PatternResult.Fixed([node, .. pins], NSubstitute, ReturnsExtensions);
+        return info.Count == 0 ? result : (FixedResult)result with { Info = string.Join("; ", info) };
     }
 
-    private static string Shorten(string text)
-    {
-        string line = text.ReplaceLineEndings(" ");
-        return line.Length <= 60 ? line : line[..57] + "...";
-    }
+    private static bool InMockDeclaration(BaseObjectCreationExpressionSyntax creation, SemanticModel model) =>
+        creation.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } }
+        && MoqSyntax.IsMockOfT(model.GetTypeInfo(declaration.Type).Type);
+
+    private static bool IsMockStatic(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { IsStatic: true, Name: "Of" or "Get" } method && MoqSyntax.IsMockClass(method.ContainingType);
 }

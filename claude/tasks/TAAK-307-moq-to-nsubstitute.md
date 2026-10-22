@@ -1,6 +1,6 @@
 # TAAK-307 — Moq → NSubstitute (roadmap step 7)
 
-**Status**: step 1/6 done (survey); step 2 (council) next
+**Status**: steps 1-3/6 done (survey, council round 8, skeleton + `moq.create`); step 4 next (queue row 3)
 **Created**: 2026-10-22
 **Goal**: A `moq` fix that rewrites Moq 4.x test code to NSubstitute, at 100% on a Moq corpus (all builds, 0 regressions) and a blind round.
 
@@ -17,8 +17,8 @@
 ## Steps
 
 - [x] 1. Survey: 10-20 open-source repos with Moq 4.x tests (pinned shas, build status); API frequency per call shape; `docs/projectinfo/architectuur/corpus-moq.md`
-- [ ] 2. Council: Fixed/Manual line for strict mocks, sequences, protected members, VerifyAll
-- [ ] 3. `MoqFix` skeleton (+ registration, old/new package swap, using swap) with proofs; `claude/tasks/moq-queue.md` ranked by frequency
+- [x] 2. Council: Fixed/Manual line for strict mocks, sequences, protected members, VerifyAll
+- [x] 3. `MoqFix` skeleton (+ registration, old/new package swap, using swap) with proofs; `claude/tasks/moq-queue.md` ranked by frequency
 - [ ] 4. Patterns from the queue (one task per row via taak-start), each with plan/verify docs and proofs
 - [ ] 5. Corpus round to 100% (all build after fix, 0 regressions), `claude/tasks/CORPUSRUN-moq.md`
 - [ ] 6. Blind round (unseen repos), roadmap row in `docs/projectinfo/project.md`, README/NuGet text
@@ -37,9 +37,19 @@
   `claude/tools/corpus-moq-repos.txt`, results in `docs/projectinfo/architectuur/corpus-moq.md` (frequencies, draft queue,
   council questions). Radarr build blocked by a full `C:` disk (retry later); EventFlow not built.
 
+- 2026-10-22 (agent moq-skeleton): steps 2-3 done. Council round 8 answered M1-M5. `MoqFix` (id `moq`, Moq → NSubstitute 6.2.0,
+  usings `Moq*` → `NSubstitute`) and `moq.create` (`src/Unshackle.Core/Fixes/Moq/`): a local/private-field mock used only as
+  `.Object`, `new Mock<T>().Object` and `Mock.Of<T>()` become `Substitute.For<T>()`, only for interfaces whose unconfigured answers
+  provably match (`MockDefaults`); else Manual with a reason code (`StrictBehaviour`, `MockUsedBeyondObject`, `DefaultValueDiffers`,
+  `MockPassedAround`, `MockGet`, `MockOfSetup`, `ClassMock`, `ConstructorArguments`, `MockOptions`, `MockDeclaration`). 11 proofs in
+  `src/Unshackle.Tests/Proofs/Moq/Create/`, 10 unit tests in `src/Unshackle.Tests/Core/Moq/`, plan/modellen/verify
+  `docs/projectinfo/patterns/moq-create-*`, queue `claude/tasks/moq-queue.md`. `ProofTests` got a `Moq` entry (granted by the
+  coordinator). Open for the main session: `Cli.cs` registration, README row, INDEX line. Council questions in the final report.
+
 ## See also
 
 - `claude/docs/INDEX.md` — documentation index
 - `docs/projectinfo/project.md` — roadmap
 - `claude/tasks/automapper-queue.md` — the route this follows
+- `claude/tasks/moq-queue.md` — the Moq pattern queue
 - Library licence overview: https://dariusz-wozniak.github.io/fossed/

@@ -22,13 +22,17 @@ using Xunit;
 namespace Unshackle.Tests;
 
 // Runs every proof in Proofs/<Fix>/<Pattern>/<case>.before.cs through the Fixer with only that pattern.
-// Expected: <case>.after.cs (exact text) or <case>.manual.txt (every finding Manual, reason contains the text).
+// Expected: <case>.after.cs (exact text), <case>.manual.txt (every finding Manual, reason contains the text) or <case>.info.txt (every
+// finding Info, text contains the file's content; the code stays as it is).
 public class ProofTests
 {
     private static readonly string s_proofsDirectory = Path.Combine(AppContext.BaseDirectory, "Proofs");
 
     // Proofs of known pattern bugs: kept as documentation, not run until the bug's task is done.
     private const string PendingFolderName = "_Pending";
+
+    // The expectation files of a proof; exactly one exists.
+    private static readonly string[] s_expectations = [".after.cs", ".manual.txt", ".info.txt"];
 
     private static readonly Dictionary<string, ProofFix> s_fixes = new(StringComparer.Ordinal)
     {
@@ -97,8 +101,9 @@ public class ProofTests
         IPattern? pattern = proofFix.Fix.Patterns.SingleOrDefault(p => p.GetType().Name == parts[1] + "Pattern");
         pattern.ShouldNotBeNull($"no pattern {parts[1]}Pattern for proof {proof}");
         string basePath = Path.Combine(s_proofsDirectory, proof);
-        (File.Exists(basePath + ".after.cs") && File.Exists(basePath + ".manual.txt"))
-            .ShouldBeFalse($"{proof} has both .after.cs and .manual.txt; one of them is dead");
+        s_expectations.Count(e => File.Exists(basePath + e))
+            .ShouldBe(1, $"{proof} needs exactly one of .after.cs, .manual.txt and .info.txt");
+        bool unchanged = File.Exists(basePath + ".manual.txt") || File.Exists(basePath + ".info.txt");
         string before = Normalize(await File.ReadAllTextAsync(basePath + ".before.cs", TestContext.Current.CancellationToken));
         TestSolution.CompileErrors(before, proofFix.Before).ShouldBeEmpty("before must compile against the old library");
 
@@ -108,7 +113,7 @@ public class ProofTests
         fix.RemovedNamespaces.Returns(proofFix.Fix.RemovedNamespaces);
         fix.AddedNamespaces.Returns(proofFix.Fix.AddedNamespaces);
         // A manual proof checks that the pattern leaves the code alone; the using swap of swapped types would still run.
-        fix.SwappedTypes.Returns(File.Exists(basePath + ".manual.txt") ? [] : proofFix.Fix.SwappedTypes);
+        fix.SwappedTypes.Returns(unchanged ? [] : proofFix.Fix.SwappedTypes);
         fix.AddedTypes.Returns(proofFix.Fix.AddedTypes);
         // Like the real fix: a rewrite that leaves the old library's calls on its result (`Should.Throw<T>(act).P.Should()`)
         // only binds with the new library in the model, and keeps the old using.
@@ -129,6 +134,14 @@ public class ProofTests
             reason.ShouldNotBeNullOrWhiteSpace("manual.txt must name the reason");
             report.Findings.ShouldAllBe(f => f.Result is ManualResult && ReportRow.ReasonOf((ManualResult)f.Result).Contains(reason),
                 string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.Result.GetType().Name)));
+            actual.ShouldBe(before);
+        }
+        else if (File.Exists(basePath + ".info.txt"))
+        {
+            string text = (await File.ReadAllTextAsync(basePath + ".info.txt", TestContext.Current.CancellationToken)).Trim();
+            text.ShouldNotBeNullOrWhiteSpace("info.txt must name the text");
+            report.Findings.ShouldAllBe(f => f.Result is InfoResult && ((InfoResult)f.Result).Text.Contains(text),
+                string.Join(" | ", report.Findings.Select(f => f.Result.ToString())));
             actual.ShouldBe(before);
         }
         else

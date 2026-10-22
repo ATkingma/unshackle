@@ -22,7 +22,7 @@
 
 ## Deviations
 
-- No proof file: `ProofTests` has no Info kind (`.info.txt`); requested from the main session. Unit tests use MassTransit 8.5.12.
+- Proof `MassTransit/PublishSend/publish-send` (`.info.txt`, the Info proof kind added to `ProofTests`). Unit tests use MassTransit 8.5.12.
 - Diagrams are inline Mermaid.
 
 ## See also

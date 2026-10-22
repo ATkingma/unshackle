@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Shouldly;
+using Unshackle.Core;
 using Unshackle.Core.Fixes.Polly;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
@@ -99,6 +100,37 @@ public class PollyFixTests
         PackageRemoveEdit remove = edits[1].ShouldBeOfType<PackageRemoveEdit>();
         remove.Name.ShouldBe("Polly.Core");
         remove.AtMostVersion.ShouldBe("8.4.2");
+    }
+
+    [Theory]
+    [InlineData("NETCOREAPP;NETCOREAPP3_0", true)]
+    [InlineData("NETCOREAPP;NET8_0_OR_GREATER", false)]
+    public async Task FixAsync_UnsupportedFramework_LeavesTheCodeOnPollyV7(string symbols, bool blocked)
+    {
+        // Arrange (council round 10, P9; TAAK-320: the project blocker alone keeps the documents unrewritten)
+        const string code = "using System;\nusing System.Threading.Tasks;\nusing Polly;\n"
+            +"public class W { public async Task M() { await Policy.Handle<TimeoutException>().RetryAsync(1).ExecuteAsync(() => Task.CompletedTask); } }";
+        var projectId = ProjectId.CreateNewId();
+        Solution solution = TestSolution.NewEmpty()
+            .AddProject(ProjectInfo.Create(projectId, VersionStamp.Default, "P", "P", LanguageNames.CSharp, filePath: "P.csproj", compilationOptions: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary),
+                parseOptions: new CSharpParseOptions(preprocessorSymbols: symbols.Split(';')), metadataReferences: PollyReferences.Before))
+            .AddDocument(DocumentId.CreateNewId(projectId), "W.cs", code, filePath: "W.cs");
+
+        // Act
+        FixReport report = await new Fixer([new PollyFix()]).FixAsync(solution, new FixRequest { FixId = "polly" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        string text = (await report.Solution.Projects.Single().Documents.Single().GetTextAsync(TestContext.Current.CancellationToken)).ToString();
+        if (blocked)
+        {
+            text.ShouldBe(code);
+            report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Code == nameof(ProjectBlockingReason.TargetFrameworkUnsupported));
+            report.Findings.ShouldNotContain(f => f.Result is FixedResult);
+        }
+        else
+        {
+            text.ShouldContain("new ResiliencePipelineBuilder()", Case.Sensitive, string.Join(" | ", report.Findings.Select(f => f.PatternId + " " + f.Result)));
+        }
     }
 
     internal static Project CreateProject(string[] symbols, IEnumerable<MetadataReference> references)

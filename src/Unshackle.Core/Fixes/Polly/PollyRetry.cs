@@ -128,11 +128,6 @@ internal static class PollyRetry
     // The builder expression for Policy.Handle<E>().WaitAndRetryAsync(n, attempt => delay).
     public static PollyPlan PlanPipeline(InvocationExpressionSyntax creation, SemanticModel model)
     {
-        if (PollyTargetFramework.Unsupported(creation) is string framework)
-        {
-            return PollyPlan.Manual(PollyReason.TargetFrameworkUnsupported, PollyTargetFramework.Reason(framework));
-        }
-
         if (model.GetSymbolInfo(creation).Symbol is not IMethodSymbol method
             || ArgumentsByName(creation, method) is not { } arguments
             || !arguments.Keys.All(s_rewrittenParameters.Contains)

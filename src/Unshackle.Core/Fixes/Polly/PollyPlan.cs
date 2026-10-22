@@ -9,11 +9,13 @@ public class PollyPlan
 
     public string? Text { get; init; }
 
+    public PollyReason? Code { get; init; }
+
     public string? Reason { get; init; }
 
     public static PollyPlan Of(SyntaxNode node) => new() { Node = node };
 
     public static PollyPlan OfText(string text) => new() { Text = text };
 
-    public static PollyPlan Manual(PollyReason code, string text) => new() { Reason = $"{code}: {text}" };
+    public static PollyPlan Manual(PollyReason code, string text) => new() { Code = code, Reason = text };
 }

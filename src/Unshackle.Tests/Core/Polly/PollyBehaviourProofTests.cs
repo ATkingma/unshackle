@@ -26,6 +26,7 @@ public class PollyBehaviourProofTests
     [InlineData("WaitAndRetryAsync/field-constructor", "retry after 1, retry after 2, calls 3")]
     [InlineData("RetryVariants/field-instance", "first 3, second -6, left 0")]
     [InlineData("AddPolicyHandler/inline-transient", "send 500, send 0, send 408, send 200, final 200")]
+    [InlineData("AddPolicyHandler/policy-method", "send 502, send 504, final 504")]
     [InlineData("AddPolicyHandler/transient-lambda-429", "send 503, retry 1 503, send 429, final 429")]
     [InlineData("RetryVariants/retry-count", "retry 1 call 1, retry 2 call 2, caught call 3")]
     [InlineData("RetryVariants/retry-default", "call 1, call 2, caught call 2")]

@@ -73,10 +73,19 @@ internal static class PollyRetry
 
     private static bool IsHandlerPolicy(InvocationExpressionSyntax creation) => creation.Parent switch
     {
+        ArrowExpressionClauseSyntax { Parent: MethodDeclarationSyntax method } => ReturnsHandlerPolicy(method),
+        ReturnStatementSyntax { Parent: BlockSyntax { Statements.Count: 1, Parent: MethodDeclarationSyntax method } } => ReturnsHandlerPolicy(method),
         ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "AddPolicyHandler" } } } => true,
         SimpleLambdaExpressionSyntax { Parent: ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "AddTransientHttpErrorPolicy" } } } } => true,
         _ => false,
     };
+
+    // A method whose only references are AddPolicyHandler(M()) arguments in its own type.
+    private static bool ReturnsHandlerPolicy(MethodDeclarationSyntax method) =>
+        method.Parent is TypeDeclarationSyntax type
+        && type.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(i =>
+            i is { Expression: IdentifierNameSyntax name, ArgumentList.Arguments.Count: 0, Parent: ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "AddPolicyHandler" } } } }
+            && name.Identifier.ValueText == method.Identifier.ValueText);
 
     // A local declaration statement or a field declaration that holds the policy.
     public static PollyPlan PlanDeclaration(SyntaxNode declarationNode, SemanticModel model)
@@ -169,7 +178,7 @@ internal static class PollyRetry
 
     // The `new RetryStrategyOptions(<T>) { ... }` text for a v7 retry call; its braces sit at indent + 4. The filter chain may start
     // at the HttpPolicyExtensions transient-error filter, written out (queue row 6).
-    public static PollyPlan PlanOptions(InvocationExpressionSyntax creation, SemanticModel model, string indent)
+    public static PollyPlan PlanOptions(InvocationExpressionSyntax creation, SemanticModel model, string indent, SyntaxNode? site = null)
     {
         if (model.GetSymbolInfo(creation).Symbol is not IMethodSymbol method
             || ArgumentsByName(creation, method) is not { } arguments
@@ -182,7 +191,7 @@ internal static class PollyRetry
         }
 
         string? resultType = ResultType(creation, model);
-        if (FreshName(creation, model, PollyPredicate.ResponseName) is not string response)
+        if (FreshName(creation, model, PollyPredicate.ResponseName, site) is not string response)
         {
             return NameClash(creation);
         }
@@ -193,9 +202,9 @@ internal static class PollyRetry
             return predicate;
         }
 
-        if (FreshName(creation, model, ArgsName) is not string args
-            || FreshName(creation, model, DelayFunctionName) is not string sleep
-            || FreshName(creation, model, PollyOnRetry.CallbackName) is not string callback)
+        if (FreshName(creation, model, ArgsName, site) is not string args
+            || FreshName(creation, model, DelayFunctionName, site) is not string sleep
+            || FreshName(creation, model, PollyOnRetry.CallbackName, site) is not string callback)
         {
             return NameClash(creation);
         }
@@ -529,12 +538,14 @@ internal static class PollyRetry
 
     // The name, or the first of name1..name9, that no symbol in scope at the node and no identifier inside it (nested lambdas
     // and local functions included) already uses; null when all are taken.
-    public static string? FreshName(SyntaxNode node, SemanticModel model, string name)
+    // With a site (code moved there, e.g. a handler policy from a method), the name must be free at both places.
+    public static string? FreshName(SyntaxNode node, SemanticModel model, string name, SyntaxNode? site = null)
     {
         for (int i = 0; i < MaxFreshNameTries; i++)
         {
             string candidate = i == 0 ? name : name + i;
-            if (model.LookupSymbols(node.SpanStart, name: candidate).IsEmpty && !UsesName(node, candidate))
+            if (model.LookupSymbols(node.SpanStart, name: candidate).IsEmpty && !UsesName(node, candidate)
+                && (site is null || (model.LookupSymbols(site.SpanStart, name: candidate).IsEmpty && !UsesName(site, candidate))))
             {
                 return candidate;
             }

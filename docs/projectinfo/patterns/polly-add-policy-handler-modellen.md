@@ -56,7 +56,8 @@ flowchart TD
 | --- | --- |
 | Fixed | `inline-transient`, `transient-lambda-429` (+ traces) |
 | `HandlerOrderNotProvable` | `two-handlers` |
-| `HandlerPolicyNotInline` | `policy-from-method` |
+| `HandlerPolicyNotInline` | unit tests |
+| method inlined and removed | `policy-method` |
 | `HandlerOverloadNotSupported`, retry codes | `AddPolicyHandlerPatternTests` |
 
 ## See also

@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "polly-add-policy-handler"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
 files_expected:
     - src/Unshackle.Core/Fixes/Polly/Patterns/AddPolicyHandlerPattern.cs
     - src/Unshackle.Core/Fixes/Polly/PollyPredicate.cs
@@ -32,8 +32,7 @@ RetryStrategyOptions<HttpResponseMessage> { ... }))` with the same filter, count
 `AddTransientHttpErrorPolicy(p => p.<retry>)`; every retry form of `polly.wait-and-retry-async` and `polly.retry-variants`
 (filters, onRetry); `HttpPolicyExtensions.HandleTransientHttpError()`, `.OrTransientHttpError()`, `.OrTransientHttpStatusCode()`.
 
-**Out of scope (Manual)**: a request-based selector or registry overload (`HandlerOverloadNotSupported`), a policy from a method,
-field or registry (`HandlerPolicyNotInline`, next slice), a client with more than one handler (`HandlerOrderNotProvable`).
+**Out of scope (Manual)**: a request-based selector or registry overload (`HandlerOverloadNotSupported`), a policy from a field or registry, or from a method used elsewhere (`HandlerPolicyNotInline`), a client with more than one handler (`HandlerOrderNotProvable`).
 
 ## Requirements
 
@@ -47,10 +46,15 @@ field or registry (`HandlerPolicyNotInline`, next slice), a client with more tha
 - **REQ-4**: THE SYSTEM SHALL give equal run-time traces before (Microsoft.Extensions.Http.Polly 10.0.13, Polly 7.2.4) and after
   (Microsoft.Extensions.Http.Resilience 10.11.0) with a fake primary handler (proofs `inline-transient`, `transient-lambda-429`).
 - **REQ-5**: WHEN the client chain has another handler call THE SYSTEM SHALL report Manual `HandlerOrderNotProvable` (proof `two-handlers`).
-- **REQ-6**: WHEN the policy is not written in place THE SYSTEM SHALL report Manual `HandlerPolicyNotInline` (proof `policy-from-method`);
+- **REQ-6**: WHEN the policy is neither written in place nor a handler-only method (REQ-8) THE SYSTEM SHALL report Manual `HandlerPolicyNotInline`;
   the retry patterns leave a handler's policy to this pattern (`Find_HandlerPolicy_OnlyTheHandlerPatternReportsIt`).
 - **REQ-7**: THE SYSTEM SHALL add `Microsoft.Extensions.Http.Resilience` only to projects that called `AddPolicyHandler` or
   `AddTransientHttpErrorPolicy`, and remove the `Polly.Extensions.Http` using once nothing binds to it.
+
+- **REQ-8** (slice 2): WHEN the policy is `M()`, a private parameterless method of the same (non-partial) type whose body only returns
+  a retry chain and whose every reference is an `AddPolicyHandler(M())` argument THE SYSTEM SHALL inline the options at each call and
+  remove the method (`Fixed([])`); helper names must be free at both places (council P10). Otherwise the call and the method are
+  Manual `HandlerPolicyNotInline` (proof `policy-method` + trace; `Rewrite_PolicyMethodAlsoUsedElsewhere_HandlerAndMethodManual`).
 
 ## Assumptions
 

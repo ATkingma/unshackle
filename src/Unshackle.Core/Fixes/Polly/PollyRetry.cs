@@ -199,6 +199,16 @@ internal static class PollyRetry
             return PollyWrap.Plan(creation, model);
         }
 
+        if (IsNoOp(creation, model))
+        {
+            return PollyPlan.Of(SyntaxFactory.ParseExpression(ResultType(creation, model) is string noOpResult ? $"ResiliencePipeline<{noOpResult}>.Empty" : "ResiliencePipeline.Empty"));
+        }
+
+        if (IsTimeout(creation, model))
+        {
+            return PollyTimeout.Plan(creation, model);
+        }
+
         string indent = Indent(creation);
         PollyPlan options = PlanOptions(creation, model, indent);
         if (options.Text is not string optionsText)
@@ -401,6 +411,11 @@ internal static class PollyRetry
                 : null;
         }
 
+        if (model.GetSymbolInfo(creation).Symbol is IMethodSymbol { IsGenericMethod: true, TypeArguments: [ITypeSymbol generic], Name: "Timeout" or "TimeoutAsync" or "NoOp" or "NoOpAsync" })
+        {
+            return generic.ToMinimalDisplayString(model, creation.SpanStart);
+        }
+
         return model.GetSymbolInfo(creation).Symbol is IMethodSymbol { ReceiverType: INamedTypeSymbol { Name: "PolicyBuilder", TypeArguments: [ITypeSymbol result] } }
             ? result.ToMinimalDisplayString(model, creation.SpanStart)
             : null;
@@ -421,8 +436,8 @@ internal static class PollyRetry
         {
             return !IsAwaited(execute)
                 ? PollyPlan.Manual(PollyReason.ResultNotAwaited, "the ExecuteAsync result is not awaited directly; v8 returns a ValueTask, which may only be awaited once.")
-                : execute.ArgumentList.Arguments[0].Expression is LambdaExpressionSyntax lambda && lambda.Modifiers.Any(m => m.IsKind(SyntaxKind.AsyncKeyword)) && Parameter(lambda) is not null
-                    ? PollyPlan.Of(lambda)
+                : execute.ArgumentList.Arguments[0].Expression is LambdaExpressionSyntax tokenLambda && tokenLambda.Modifiers.Any(m => m.IsKind(SyntaxKind.AsyncKeyword)) && Parameter(tokenLambda) is not null
+                    ? PollyPlan.Of(tokenLambda)
                     : PollyPlan.Manual(PollyReason.ExecuteNotLambda, "the ExecuteAsync callback is not an async lambda with one CancellationToken parameter.");
         }
 

@@ -1,6 +1,6 @@
 # TAAK-309 — EPPlus → ClosedXML (roadmap step 9)
 
-**Status**: step 3/5 — harness, skeleton and queue rows 1–2 done; queue rows 1, 2 and 11 done; next row 3 (`epplus.worksheets`)
+**Status**: step 3/5 — harness, skeleton and queue rows 1–2 done; queue rows 1, 2, 3 and 11 done; next E7 (SixLabors.Fonts pin), then row 4 (`epplus.cells`)
 **Created**: 2026-10-22
 **Goal**: An `epplus` fix that rewrites EPPlus code (LGPL 4.5.3.3 and commercial 5+ API shapes) to ClosedXML, at 100% on an EPPlus corpus.
 
@@ -64,6 +64,15 @@
   packable project; unresolved 5+ members named with their receiver; licence/package findings not reported twice). 4 proofs, 2 unit
   tests, KingmaDoc docs. `dotnet build` 0 warnings; `dotnet test` 1809 passed, 0 failed. Council round 10 decided E7–E9, C1, C3
   (see council.md): E9 (plain local) goes with row 3; E7 (SixLabors.Fonts warning/pin) needs TAAK-317's IProjectFileMigration.
+- 2026-10-22 (epplus-skeleton, row 3 + E9): row 3 widens `epplus.package` through `WorkbookUses`:
+  - `Worksheets.Add` results kept in a worksheet local, and `Worksheets["name"]` only when that literal was added before in the scope's own block.
+  - `Worksheets[i]` only for EPPlus 5+ (E3, 0-based) and only within the added sheets.
+  - Worksheet `Name` read, and rename to a valid new name.
+  - E9: a plain local without `using`.
+  - Harness finding: EPPlus 4.5.3.3's .NET Standard build is 0-based, which contradicts E3's "4.x 1-based". 4.x integer indexes are therefore
+    Manual `[WorksheetIndexBaseNotProvable]` (council question).
+  - Tests: 8 new proofs plus field.manual.txt updated; `WorksheetIndexTests` (harness fact, EPPlus 5 stub).
+  - `dotnet test` 1862 passed, 0 failed.
 
 ## See also
 

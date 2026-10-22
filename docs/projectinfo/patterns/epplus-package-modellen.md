@@ -51,7 +51,9 @@ flowchart TD
     C -- no --> M2[Manual: not a using local / several locals]
     C -- yes --> D{every use of p mapped?}
     D -- no --> M3[Manual: p is used as '...' line N]
-    D -- yes --> F[Fixed: XLWorkbook; Worksheets.Add; SaveAs path]
+    D -- yes --> F[Fixed: XLWorkbook; Worksheets.Add; Worksheet name/position; SaveAs path]
+    D -- index, EPPlus 4.x --> M4[Manual: WorksheetIndexBaseNotProvable]
+    D -- index, version unknown --> M5[Manual: UnknownEPPlusVersion]
 ```
 
 | Question | Leaf | Proof / test |
@@ -62,6 +64,10 @@ flowchart TD
 | `GetAsByteArray()` / `SaveAs(Stream)` | Manual | `byte-array`, `Fix_SaveAsStream_ManualAndSolutionUntouched` |
 | invalid sheet name | Manual | `invalid-sheet-name` |
 | constructor argument | Manual | `existing-file` |
+| plain local (E9) | Fixed, harness equal | `plain-local` |
+| worksheet local / name lookup, Name only | Fixed, harness equal | `worksheet-local`, `worksheet-name` |
+| name not added before, added in a branch, rename to an existing name | Manual | `name-missing`, `conditional-add`, `rename-to-existing` |
+| integer index, EPPlus 4.x / 5+ / unknown | Manual / Fixed / Manual | `worksheet-index`, `WorksheetIndexTests` |
 | field / two in one block | Manual | `field`, `Fix_TwoPackagesInOneBlock_Manual` |
 
 ## See also

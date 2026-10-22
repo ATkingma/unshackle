@@ -1,0 +1,201 @@
+using System.Buffers;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace Unshackle.Core.Fixes.EPPlus.Patterns;
+
+// The uses of one ExcelPackage local that PackagePattern maps (queue rows 2 and 3), collected as replacements for its scope. Worksheets are
+// only known from the Worksheets.Add("literal") statements of the scope itself (the package starts empty), so a lookup by name or index is
+// Fixed only when it provably finds one of them; E3 decides the index base from the EPPlus version the project references.
+internal class WorkbookUses
+{
+    private static readonly SearchValues<char> s_invalidSheetNameCharacters = SearchValues.Create(@"[]:*?/\");
+
+    private readonly SemanticModel _model;
+    private readonly SyntaxNode _scope;
+    private readonly ILocalSymbol _package;
+    private readonly List<ILocalSymbol> _worksheets = [];
+    private string? _unknownVersion;
+
+    public WorkbookUses(SemanticModel model, SyntaxNode scope, ILocalSymbol package)
+    {
+        _model = model;
+        _scope = scope;
+        _package = package;
+    }
+
+    public Dictionary<SyntaxNode, SyntaxNode> Replacements { get; } = [];
+
+    // Null when every use is mapped; otherwise why not.
+    public string? Map()
+    {
+        foreach (IdentifierNameSyntax use in UsesOf(_package))
+        {
+            if (!MapPackageUse(use))
+            {
+                return _unknownVersion ?? $"ExcelPackage local {_package.Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue).";
+            }
+        }
+
+        // A worksheet local found above: only its Name is mapped yet (cells are row 4).
+        for (int i = 0; i < _worksheets.Count; i++)
+        {
+            foreach (IdentifierNameSyntax use in UsesOf(_worksheets[i]))
+            {
+                if (!IsNameAccess(use))
+                {
+                    return $"Worksheet local {_worksheets[i].Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue row 4+).";
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private IEnumerable<IdentifierNameSyntax> UsesOf(ILocalSymbol local) =>
+        _scope.DescendantNodes().OfType<IdentifierNameSyntax>()
+            .Where(i => i.Identifier.ValueText == local.Name && SymbolEqualityComparer.Default.Equals(_model.GetSymbolInfo(i).Symbol, local));
+
+    private bool MapPackageUse(IdentifierNameSyntax use)
+    {
+        // p.SaveAs(new FileInfo(path)); → p.SaveAs(path);
+        if (use.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "SaveAs" } saveAs
+            && saveAs.Parent is InvocationExpressionSyntax { ArgumentList.Arguments: [{ Expression: ObjectCreationExpressionSyntax { ArgumentList.Arguments: [var path] } file }], Parent: ExpressionStatementSyntax } invocation
+            && _model.GetTypeInfo(file).Type is INamedTypeSymbol { Name: "FileInfo", ContainingNamespace: { Name: "IO", ContainingNamespace.Name: "System" } }
+            && _model.GetTypeInfo(path.Expression).Type is { SpecialType: SpecialType.System_String })
+        {
+            Replacements[invocation.ArgumentList] = SyntaxFactory.ArgumentList([path.WithoutTrivia()]).WithTriviaFrom(invocation.ArgumentList);
+            return true;
+        }
+
+        if (use.Parent is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Workbook" } workbook
+            || workbook.Parent is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Worksheets" } worksheets)
+        {
+            return false;
+        }
+
+        // p.Workbook.Worksheets.Add("name") → p.Worksheets.Add("name")
+        if (worksheets.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Add" } add
+            && add.Parent is InvocationExpressionSyntax { ArgumentList.Arguments: [{ Expression: LiteralExpressionSyntax name }] } addCall
+            && name.IsKind(SyntaxKind.StringLiteralExpression) && IsValidSheetName(name.Token.ValueText)
+            && (addCall.Parent is ExpressionStatementSyntax || IsWorksheetContext(addCall)))
+        {
+            Replacements[worksheets] = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, use, worksheets.Name);
+            return true;
+        }
+
+        // p.Workbook.Worksheets["name"] / [index] → p.Worksheet("name") / p.Worksheet(position)
+        if (worksheets.Parent is ElementAccessExpressionSyntax { ArgumentList.Arguments: [{ Expression: var key }] } lookup
+            && IsWorksheetContext(lookup) && Position(lookup, key) is ExpressionSyntax position)
+        {
+            Replacements[lookup] = SyntaxFactory.InvocationExpression(
+                SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, use, SyntaxFactory.IdentifierName("Worksheet")),
+                SyntaxFactory.ArgumentList([SyntaxFactory.Argument(position)]));
+            return true;
+        }
+
+        return false;
+    }
+
+    // Where a worksheet expression may stand: .Name, or the initializer of a single worksheet local in a block.
+    private bool IsWorksheetContext(ExpressionSyntax worksheet)
+    {
+        if (IsNameAccess(worksheet))
+        {
+            return true;
+        }
+
+        if (worksheet.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator }
+            && declarator.Parent is VariableDeclarationSyntax { Variables.Count: 1, Parent: LocalDeclarationStatementSyntax { UsingKeyword.RawKind: (int)SyntaxKind.None, Parent: BlockSyntax } } declaration
+            && _model.GetDeclaredSymbol(declarator) is ILocalSymbol local)
+        {
+            _worksheets.Add(local);
+            if (!declaration.Type.IsVar)
+            {
+                Replacements[declaration.Type] = SyntaxFactory.ParseTypeName("IXLWorksheet").WithTriviaFrom(declaration.Type);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    // x.Name read, or x.Name = "literal" with a valid name no added sheet has.
+    private bool IsNameAccess(SyntaxNode worksheet)
+    {
+        if (worksheet.Parent is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Name" } access || access.Expression != worksheet)
+        {
+            return false;
+        }
+
+        return access.Parent is not AssignmentExpressionSyntax assignment || assignment.Left != access
+            || assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) && assignment.Right is LiteralExpressionSyntax value
+                && value.IsKind(SyntaxKind.StringLiteralExpression) && IsValidSheetName(value.Token.ValueText)
+                && !AddedBefore(_scope.FullSpan.End).Contains(value.Token.ValueText, StringComparer.OrdinalIgnoreCase);
+    }
+
+    // The ClosedXML position (1-based) or name for a lookup that provably finds an added sheet; null otherwise.
+    private ExpressionSyntax? Position(ElementAccessExpressionSyntax lookup, ExpressionSyntax key)
+    {
+        IReadOnlyList<string> added = AddedBefore(lookup.SpanStart);
+        if (key is LiteralExpressionSyntax text && text.IsKind(SyntaxKind.StringLiteralExpression))
+        {
+            return added.Contains(text.Token.ValueText, StringComparer.Ordinal) ? key.WithoutTrivia() : null;
+        }
+
+        if (key is not LiteralExpressionSyntax { Token.Value: int index })
+        {
+            return null;
+        }
+
+        // E3: EPPlus 5+ is 0-based; ClosedXML's Worksheet(position) is 1-based. EPPlus 4.x is not provable: the cell-compare harness shows
+        // 4.5.3.3's .NET Standard build is 0-based while its .NET Framework builds default to 1-based, and both read an override from
+        // configuration (EPPlus:ExcelPackage.Compatibility.IsWorksheets1Based). Council question, TAAK-309.
+        Version? version = EPPlusSyntax.Version(_model);
+        if (version is null || version.Major < 5)
+        {
+            _unknownVersion = version is null
+                ? $"[UnknownEPPlusVersion] Worksheets[{index}] (line {Line(lookup)}): the referenced EPPlus version is unknown, so its index base is (4.x 0- or 1-based, 5+ 0-based)."
+                : $"[WorksheetIndexBaseNotProvable] Worksheets[{index}] (line {Line(lookup)}): EPPlus {version.Major}.x is 0-based on .NET Standard/Core and 1-based on .NET Framework by default, "
+                    + "and configuration can switch it (EPPlus:ExcelPackage.Compatibility.IsWorksheets1Based); use the sheet name or rewrite by hand.";
+            return null;
+        }
+
+        int? first = 0;
+        int position = index - first.Value + 1;
+        return position >= 1 && position <= added.Count
+            ? SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(position))
+            : null;
+    }
+
+    // Names of the p.Workbook.Worksheets.Add("literal") calls that surely ran before a position: directly in the scope's own block, not
+    // in a nested statement (a branch or loop).
+    private IReadOnlyList<string> AddedBefore(int position) =>
+        [.. UsesOf(_package)
+            .Where(u => u.SpanStart < position)
+            .Select(u => u.Parent?.Parent?.Parent?.Parent)
+            .OfType<InvocationExpressionSyntax>()
+            .Where(i => i.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Add", Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Worksheets" } }
+                && i.ArgumentList.Arguments is [{ Expression: LiteralExpressionSyntax { RawKind: (int)SyntaxKind.StringLiteralExpression } }]
+                && IsTopLevel(i))
+            .Select(i => ((LiteralExpressionSyntax)i.ArgumentList.Arguments[0].Expression).Token.ValueText)];
+
+    private bool IsTopLevel(SyntaxNode node)
+    {
+        StatementSyntax? statement = node.AncestorsAndSelf().OfType<StatementSyntax>().FirstOrDefault();
+        return statement?.Parent is BlockSyntax block && (block == _scope || block.Parent == _scope);
+    }
+
+    private static bool IsValidSheetName(string name) =>
+        name.Length is > 0 and <= 31 && name.AsSpan().IndexOfAny(s_invalidSheetNameCharacters) < 0 && name[0] != '\'' && name[^1] != '\'';
+
+    private static int Line(SyntaxNode node) => node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+
+    private static string Shorten(SyntaxNode node)
+    {
+        string text = node.ToString().ReplaceLineEndings(" ");
+        return text.Length <= 60 ? text : text[..57] + "...";
+    }
+}

@@ -189,6 +189,27 @@ Questions: `claude/tasks/COUNCIL-round-11.md`. Two rounds; all joint (amendments
 | T6 | `Publish`/`Send` | Info rows, only when the symbol resolves to a MassTransit type (`IPublishEndpoint`, `ISendEndpoint`, `ISendEndpointProvider`, `ConsumeContext`, `IBus`); name-only matches never reported. |
 | T7 | Easy vs hard | Info only for a consumer using nothing but `ctx.Message` and cancellation; headers, Respond, Redeliver, Publish, a definition or any filter → Manual with a per-feature code. Classification table in the fix docs. Never Fixed. |
 
+### 2026-10-22 — round 12: EPPlus reads and proofs, engine G6–G9, Moq, TAAK-311/310
+
+Questions: `claude/tasks/COUNCIL-round-12.md`. Two rounds; all joint. Engine follow-up: TAAK-322.
+
+| # | Decision | Joint rule |
+| --- | --- | --- |
+| E12 | Reading cells | `GetValue<T>()` with T ∈ {int, long, double, decimal, DateTime, bool}, read into a typed target (no `object`, no `ToString()`), is Fixed only with the full harness matrix (empty, null, bool, number, date, string cells: same result or same exception). `.Text`, `.Value` and `GetValue<string>()` stay Manual `CellReadDiffers`. Opening an existing workbook is Fixed only when every read in that method is Fixed. Allowed shapes listed in the pattern docs. |
+| E13 | AutoFit | Manual for good (`AutoFitDiffers`); the reason names the font dependency. |
+| E14 | Scaffold proofs | Full `.after.cs` proofs (the Fixer's real output) per Fixed shape; existing scaffold proofs are replaced before their patterns ship. |
+| E15 | LoadFrom DateTime/enum | Harness cases per property type; Fixed only where value and number format compare equal; otherwise Manual `LoadFromTypeDiffers`. |
+| E16 | Dimension with styled empty cells | Harness case with `XLCellsUsedOptions.All`; if equal to EPPlus, always rewrite with `All`; otherwise Manual when the file sets any style (`DimensionWithStyles`). No silent "values only". |
+| G6 | Shared-declaration block | A blocked project gets no package migration at all (with TAAK-321). |
+| G7 | CPM old version | A solution-level pass: plan all projects, decide once per `Directory.Packages.props`, then write; every row states the final outcome. |
+| G8 | Comment before a removed first using | Kept: the leading trivia moves to the next node; idempotent, tested together with C3. |
+| G9 | Pre-filter | Each fix can declare its old-library assemblies (or package ids); the pre-filter matches on referenced assembly, namespace as fallback. `FindsOnlyOldLibraryCode => false` stays an escape hatch. A contract test runs every fix with the pre-filter on and off (round 7 D5). |
+| M6 | `SetupsOverlap` | Stays Manual. |
+| M7 | Properties id | Row 5 gets its own `moq.properties` id (rename only). |
+| A9 | Member read on the mapped value | Stays Manual (A8 strict). |
+| A10 | `A` created in place | Counts as built in the test only when it is the only `A` in the method, created with literal or no arguments, and every asserted member still meets A7 (default-constructed members read by the test → Manual). |
+| T8 | Filters outside the solution | Accepted; an Info line says filters registered outside the solution are not seen. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

@@ -90,6 +90,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/TAAK-320-blockers-stop-rewrites.md` | Project blockers also stop document rewrites; inventory-only console summary |
 | `claude/tasks/TAAK-321-blockers-stop-package-swap.md` | Project blockers also stop the package swap |
 | `claude/tasks/COUNCIL-round-12.md` | Council round 12 questions (EPPlus reads/AutoFit/proofs, engine G6–G9, Moq, TAAK-311/310) |
+| `claude/tasks/TAAK-322-engine-round-12.md` | Engine follow-ups from council round 12 (pre-filter on assemblies, solution-level CPM, comment trivia) |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |
 | `claude/tasks/TAAK-380-scout-identityserver.md` | Scout IdentityServer4 → OpenIddict/Duende (go/no-go research) |

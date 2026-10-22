@@ -65,6 +65,7 @@ references (MEHP itself depends on Polly 7) and the v7 API; staying on Polly 8.x
   Row 5 slice 2: constructor-assigned private fields (REQ-16).
   Row 6 slice 2 (handler policy method), row 10 `polly.wrap` (retry operands, P4 order proofs). 2240/2240 green.
   STOPPED here (session end). Next: row 4 (sync Retry/Execute), not started; README row for polly.wrap pending (main).
+- 2026-10-22 (pool L1): row 4 polly.sync-retry done: shared PollyRetry, Execute kept as written (v8 has Execute(Action) and Execute<T>(Func<T>)); 4 Fixed proofs with equal traces, 2 Manual (Context overload, policy used beyond Execute), unit tests, docs.
 
 ## Changes
 

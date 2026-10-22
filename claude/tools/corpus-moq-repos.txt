@@ -1,0 +1,16 @@
+# Moq corpus (TAAK-307 step 1). name repo ref(short sha) solution
+# Clones: D:/playground/corpus-moq/src/<name>; the last 8 rows reuse the AutoMapper/FA corpus clones at the same sha
+# (D:/playground/corpus-automapper/src/<name>, D:/playground/corpus-fa/src/eventflow).
+fluentmigrator fluentmigrator/fluentmigrator c7a11e9ec0ae FluentMigrator.sln
+jellyfin jellyfin/jellyfin c7ce6a1b56ee Jellyfin.sln
+ocelot ThreeMammals/Ocelot 7adbbcabeeff Ocelot.slnx
+orchardcore OrchardCMS/OrchardCore 0f7975917a53 OrchardCore.slnx
+radarr Radarr/Radarr 56f6168bb6f2 src/Radarr.sln
+altinnauth Altinn/altinn-auth 2355aed31457 Altinn.Authorization.slnx
+ombi Ombi-app/Ombi 697d35647bf8 src/Ombi.sln
+personalasst davidtimovski/personal-assistant ac7e1085c3db PersonalAssistant.sln
+letterbook Letterbook/Letterbook dace8fbfb156 Letterbook.sln
+xipona Velociraptor45/Xipona 12677f35f17a Api/Xipona.Api.sln
+cats ministryofjustice/CFO-CaseAssessmentTrackingSystem 8e93a2a650e1 cats.slnx
+skoruba skoruba/Duende.IdentityServer.Admin 3fee47255860 Skoruba.Duende.IdentityServer.Admin.sln
+eventflow eventflow/EventFlow e544b7629124 EventFlow.sln

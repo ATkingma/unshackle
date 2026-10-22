@@ -1,0 +1,21 @@
+# name repo ref(short sha)   -- Polly v7 API corpus (TAAK-308 survey, 2026-10-22); clones in D:/playground/corpus-polly/src/<name>
+aerosharp wayfair-incubator/AeroSharp a7f15b43ce3c
+babylon-gateway radixdlt/babylon-gateway c4ac0e5f84d3
+deepl-dotnet DeepL/deepl-dotnet 5541f8c3fcfd
+eventualshop AntonioFalcaoJr/EventualShop d63e424fb770
+fergun d4n3436/Fergun e2824365241d
+gpr jcansdale/gpr b2773c3cbf84
+heappe It4innovations/HEAppE 97afa4d61586
+igdb-dotnet kamranayub/igdb-dotnet fdbc037017d6
+listenarr Listenarrs/Listenarr 4cd3455c636a
+logshark tableau/Logshark d39594a8b5f3
+okta-sdk-dotnet okta/okta-sdk-dotnet 5755dfdc348f
+recfluence markledwich2/Recfluence d64c2790ebba
+seedwork.cqrs.bus tiagor87/Seedwork.CQRS.Bus 91f74ad95514
+sme-novosgp prefeiturasp/SME-NovoSGP c7c06015d2be
+sme-servidorrelatorios prefeiturasp/SME-ServidorRelatorios 73a137880602
+squidlr rgueldenpfennig/Squidlr 0349007daa43
+starnight StarnightLibrary/starnight f9166f9d94d6
+suucat ebubekirdinc/SuuCat aa467180a315
+trader JorgeCandeias/Trader 90ce56f3443d
+uno.check unoplatform/uno.check cd4ed86d5a0a

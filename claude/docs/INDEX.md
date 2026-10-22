@@ -64,6 +64,14 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `docs/projectinfo/architectuur/candidate-newtonsoft.md` | Scout TAAK-420: Newtonsoft → STJ, no-go blanket, narrow fix possible |
 | `docs/projectinfo/architectuur/candidate-efbulk.md` | Scout TAAK-430: EF bulk extensions → ExecuteUpdate/Delete, conditional go (narrow) |
 | `docs/projectinfo/architectuur/candidate-testfw.md` | Scout TAAK-440: xUnit v3 conditional go, NUnit 4 no-go |
+| `claude/tasks/COUNCIL-round-8.md` | Council round 8 question list (Moq, Polly, EPPlus, MassTransit, TAAK-311..315, scouts) |
+| `docs/projectinfo/architectuur/corpus-moq.md` | Moq 4.x survey: 13 repos, call-shape frequencies, draft queue (TAAK-307) |
+| `claude/tools/corpus-moq-repos.txt` | Moq corpus repos with pinned shas |
+| `docs/projectinfo/architectuur/corpus-polly.md` | Polly v7 API survey (20 repos, OSMF facts) for TAAK-308 |
+| `claude/tools/corpus-polly-repos.txt` | Polly corpus repo list |
+| `docs/projectinfo/architectuur/corpus-epplus.md` | EPPlus 4.5–8 usage in 42 repos, draft queue (TAAK-309); builds partial |
+| `claude/tools/corpus-epplus-repos.txt` | EPPlus corpus repos and commits |
+| `docs/projectinfo/architectuur/candidate-swashbuckle.md` | Scout TAAK-410: Swashbuckle, no-go for now |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |
 | `claude/tasks/TAAK-380-scout-identityserver.md` | Scout IdentityServer4 → OpenIddict/Duende (go/no-go research) |

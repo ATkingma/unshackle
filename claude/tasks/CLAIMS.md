@@ -15,10 +15,7 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 
 | # | Agent | Task | Files (owned, write) | Reserved task nrs | Since |
 | --- | --- | --- | --- | --- | --- |
-| 4 | moq | TAAK-307 st 1 | `docs/projectinfo/architectuur/corpus-moq.md`, `claude/tools/corpus-moq-repos.txt`, `claude/tasks/TAAK-307-*.md` | 320–339 | 2026-10-22 |
-| 5 | polly | TAAK-308 st 1–2 | `docs/projectinfo/architectuur/corpus-polly.md`, `claude/tools/corpus-polly-repos.txt`, `claude/tasks/TAAK-308-*.md` | 340–349 | 2026-10-22 |
-| 6 | epplus | TAAK-309 st 1 | `docs/projectinfo/architectuur/corpus-epplus.md`, `claude/tools/corpus-epplus-repos.txt`, `claude/tasks/TAAK-309-*.md` | 350–359 | 2026-10-22 |
-| 12 | scout-swashbuckle | candidate: Swashbuckle → Microsoft.AspNetCore.OpenApi | `docs/projectinfo/architectuur/candidate-swashbuckle.md` (new), `claude/tasks/TAAK-410-scout-swashbuckle.md` | 411–419 | 2026-10-22 |
+| 16–18 | council-guardian, council-pragmatist, council-architect | round 8 | read-only; answers go to the main session | — | 2026-10-22 |
 | — | main | TAAK-303, 305 st 1 | git branches/worktrees, `claude/tasks/TAAK-303-*.md`, `claude/tasks/TAAK-305-*.md` | — | 2026-10-22 |
 
 ## Released claims
@@ -35,11 +32,15 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 | scout-newtonsoft | TAAK-420 | no-go blanket (council) | 2026-10-22 |
 | scout-efbulk | TAAK-430 | conditional go narrow (council) | 2026-10-22 |
 | scout-testfw | TAAK-440 | xUnit go / NUnit no-go (council) | 2026-10-22 |
+| moq | TAAK-307 st 1 | done, council | 2026-10-22 |
+| polly | TAAK-308 st 1–2 | done, council | 2026-10-22 |
+| epplus | TAAK-309 st 1 | done (builds partial), council | 2026-10-22 |
+| scout-swashbuckle | TAAK-410 | no-go for now (council) | 2026-10-22 |
 | scout-pdf | TAAK-400 | iTextSharp slice conditional, rest no-go (council) | 2026-10-22 |
 
 ## Spawn log
 
-Agents spawned: 15 / 25 (7 wave 1, 8 library scouts).
+Agents spawned: 18 / 25 (7 wave 1, 8 library scouts, 3 council round 8).
 
 ## See also
 

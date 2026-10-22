@@ -23,11 +23,16 @@ internal static class PollyRetry
     private static readonly HashSet<string> s_rewrittenParameters = new(["retryCount", SleepDurationProvider, SleepDurations, "onRetry", "onRetryAsync"], StringComparer.Ordinal);
 
     // The v7 async retry methods; WaitAndRetryAsync with a provider is polly.wait-and-retry-async, the rest polly.retry-variants.
-    private static readonly HashSet<string> s_retryMethods = new(["WaitAndRetryAsync", "RetryAsync", "RetryForeverAsync", "WaitAndRetryForeverAsync"], StringComparer.Ordinal);
+    // The sync twins (polly.sync-retry, queue row 4) share the options mapping; only the Execute call differs.
+    private static readonly HashSet<string> s_retryMethods = new(["WaitAndRetryAsync", "RetryAsync", "RetryForeverAsync", "WaitAndRetryForeverAsync", "WaitAndRetry", "Retry", "RetryForever", "WaitAndRetryForever"], StringComparer.Ordinal);
 
     public static bool IsRetryCreation(InvocationExpressionSyntax invocation, SemanticModel model) =>
         invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: string name } && s_retryMethods.Contains(name)
         && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { ContainingAssembly.Name: PollyAssembly };
+
+    // A sync retry call (WaitAndRetry, Retry, ...): polly.sync-retry's, never the async patterns'.
+    public static bool IsSync(InvocationExpressionSyntax creation, SemanticModel model) =>
+        model.GetSymbolInfo(creation).Symbol is IMethodSymbol method && !method.Name.EndsWith("Async", StringComparison.Ordinal);
 
     // A call that creates a pipeline: a retry call or a wrap of them (queue row 10).
     public static bool IsPipelineCreation(InvocationExpressionSyntax invocation, SemanticModel model) =>
@@ -395,6 +400,13 @@ internal static class PollyRetry
     // The v8 callback for policy.ExecuteAsync(() => ...): Func<CancellationToken, ValueTask(<T>)>, awaited by the caller.
     private static PollyPlan PlanCallback(InvocationExpressionSyntax execute, SemanticModel model)
     {
+        // Sync Execute(Action) / Execute<T>(Func<T>): v8 has the same two overloads, so the argument stays as it is (queue row 4).
+        if (execute.ArgumentList.Arguments.Count == 1
+            && model.GetSymbolInfo(execute).Symbol is IMethodSymbol { Name: "Execute", Parameters: [{ Type: INamedTypeSymbol { DelegateInvokeMethod.Parameters.Length: 0 } }], ContainingAssembly.Name: PollyAssembly })
+        {
+            return PollyPlan.Of(execute.ArgumentList.Arguments[0].Expression);
+        }
+
         if (model.GetSymbolInfo(execute).Symbol is not IMethodSymbol { Name: "ExecuteAsync", Parameters.Length: 1, ContainingAssembly.Name: PollyAssembly }
             || execute.ArgumentList.Arguments.Count != 1)
         {
@@ -549,7 +561,7 @@ internal static class PollyRetry
     };
 
     private static InvocationExpressionSyntax? ExecuteOn(ExpressionSyntax receiver) =>
-        receiver.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ExecuteAsync", Parent: InvocationExpressionSyntax execute } access
+        receiver.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ExecuteAsync" or "Execute", Parent: InvocationExpressionSyntax execute } access
         && access.Expression == receiver
             ? execute
             : null;

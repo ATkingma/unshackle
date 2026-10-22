@@ -72,5 +72,5 @@ public class PollyFix : IFix, IProjectFileMigration
         project.MetadataReferences.OfType<PortableExecutableReference>()
             .Any(r => r.FilePath is string path && s_v7Assemblies.Contains(Path.GetFileNameWithoutExtension(path)));
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new WaitAndRetryAsyncPattern(), new RetryVariantsPattern(), new WrapPattern(), new AddPolicyHandlerPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new WaitAndRetryAsyncPattern(), new RetryVariantsPattern(), new WrapPattern(), new AddPolicyHandlerPattern(), new SyncRetryPattern()];
 }

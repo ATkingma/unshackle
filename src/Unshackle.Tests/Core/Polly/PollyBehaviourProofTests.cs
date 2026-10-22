@@ -35,6 +35,10 @@ public class PollyBehaviourProofTests
     [InlineData("RetryVariants/wait-forever", "delay 1, delay 2, delay 3, delay 4, result 5 calls 9")]
     [InlineData("RetryVariants/durations", "wait 0, wait 1, wait 2, caught call 4")]
     [InlineData("WaitAndRetryAsync/on-retry-result", "retry -1 none, retry 0 TimeoutException, result 7")]
+    [InlineData("SyncRetry/wait-and-retry", "delay 1, delay 2, delay 3, caught call 4, value 5")]
+    [InlineData("SyncRetry/retry-on-retry", "retry 1 call 1, retry 2 call 2, caught call 3")]
+    [InlineData("SyncRetry/handle-result", "got -2, got -1, got 0, result 0")]
+    [InlineData("SyncRetry/forever", "delay 1, delay 2, delay 3, calls 4")]
     public async Task Proof_BeforeAndAfter_SameTrace(string proof, string expected)
     {
         // Arrange

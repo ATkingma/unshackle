@@ -46,5 +46,5 @@ public class MoqFix : IFix, IProjectFileMigration
     // No project-file edits besides the package swap (Package).
     public IReadOnlyList<ProjectFileEdit> EditsFor(Project project) => [];
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new VerifyAllPattern(), new SetupReturnsPattern(), new ReturnsLambdaPattern(), new ThrowsPattern(), new SetupSequencePattern(), new CallbackPattern(), new VerifyPattern(), new PropertiesPattern(), new ClassMocksPattern(), new CreatePattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new VerifyAllPattern(), new SetupReturnsPattern(), new ReturnsLambdaPattern(), new ThrowsPattern(), new SetupSequencePattern(), new CallbackPattern(), new LoggerVerifyPattern(), new VerifyPattern(), new PropertiesPattern(), new ClassMocksPattern(), new CreatePattern()];
 }

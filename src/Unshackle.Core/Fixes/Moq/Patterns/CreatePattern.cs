@@ -224,7 +224,7 @@ public class CreatePattern : IPattern
     private static IReadOnlyList<StatementSyntax> Pins(ExpressionSyntax receiver, IReadOnlyList<ISymbol> pins, SemanticModel model, int position) =>
         [.. pins.Select(pin => SyntaxFactory.ParseStatement(pin switch
         {
-            IMethodSymbol method => $"{receiver}.{method.Name}({string.Join(", ", method.Parameters.Select(p => $"Arg.Any<{p.Type.ToMinimalDisplayString(model, position)}>()"))}).ReturnsNull();",
+            IMethodSymbol method => $"{receiver}.{method.Name}({string.Join(", ", method.Parameters.Select(p => p.Type is ITypeParameterSymbol ? "Arg.Any<Arg.AnyType>()" : $"Arg.Any<{p.Type.ToMinimalDisplayString(model, position)}>()"))}).ReturnsNull();",
             _ => $"{receiver}.{pin.Name}.ReturnsNull();",
         }))];
 

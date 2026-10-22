@@ -108,11 +108,14 @@ internal static class ProjectFileMigrations
     }
 
     // TAAK-320: the ProjectBlockers rows of every project file, and per document file of a project with a blocking code (G4) the text
-    // "<code> on <project>". Those documents are not rewritten, so no fix half-migrates a blocked project.
-    internal static (List<Finding> Rows, Dictionary<string, string> BlockedFiles) Blockers(IFix fix, IProjectFileMigration migration, Solution original)
+    // "<code> on <project>". Those documents are not rewritten, so no fix half-migrates a blocked project. TAAK-321: per blocked project
+    // file its code, so the package migration leaves that project alone.
+    internal static (List<Finding> Rows, Dictionary<string, string> BlockedFiles, Dictionary<string, string> BlockedProjects) Blockers(
+        IFix fix, IProjectFileMigration migration, Solution original)
     {
         List<Finding> rows = [];
         var blockedFiles = new Dictionary<string, string>(s_pathComparer);
+        var blockedProjects = new Dictionary<string, string>(s_pathComparer);
         foreach (IGrouping<string, Project> project in original.Projects
             .Where(p => p.Language == LanguageNames.CSharp && p.FilePath is not null).GroupBy(p => p.FilePath!, s_pathComparer))
         {
@@ -120,6 +123,7 @@ internal static class ProjectFileMigrations
             rows.AddRange(blockers.Select(b => FindingFactory.CreateProjectFinding(project.Key, fix, b)));
             if (blockers.FirstOrDefault(b => b.Code is string code && s_blockingCodes.Contains(code)) is { Code: string blocking })
             {
+                blockedProjects[project.Key] = blocking;
                 foreach (string file in project.SelectMany(p => p.Documents).Select(d => d.FilePath ?? d.Name))
                 {
                     blockedFiles.TryAdd(file, $"{blocking} on {project.Key}");
@@ -127,7 +131,7 @@ internal static class ProjectFileMigrations
             }
         }
 
-        return (rows, blockedFiles);
+        return (rows, blockedFiles, blockedProjects);
     }
 
     // Why the project's file edits are blocked (G4), or null: blocking Manual rows in its documents, or a project-level row with a blocking code.

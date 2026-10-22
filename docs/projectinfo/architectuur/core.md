@@ -278,6 +278,10 @@ edits per project from a closed set (`ProjectFileEdit` has a private-protected c
   document pass. That includes a file it shares with another project. Each Fixed row in those documents becomes Manual:
   `Not rewritten: blocked by <code> on <project>. ...`.
 - The package step then sees the old code, so that project keeps the old package. Fixes without blockers produce the same output as before.
+- TAAK-321: the package migration (`fix.Package`) leaves a blocked project out entirely. Nothing is removed and nothing is added, so no new
+  package lands next to the kept old one. The project gets a Manual row:
+  `<old package> package kept: blocked by <code>. Resolve that first, then run the fix again.`
+  A shared props file stays as well, because the existing on-disk check for unmigrated users still sees the blocked project.
 - Console: a report-only run starts its summary with "Inventory only: nothing was changed.", and the header row stays out of the table and
   the counts. A dry run shows a deleted file as one line, `--- <path> (deleted)`, instead of a diff.
 

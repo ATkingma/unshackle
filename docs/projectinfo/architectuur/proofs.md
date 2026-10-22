@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1270 proofs (excluding `_Pending`).
+Total: 1273 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -1652,6 +1652,14 @@ Total: 1270 proofs (excluding `_Pending`).
 | `strict` | Manual |  — reason: StrictBehaviour |
 | `string-return` | Fixed | `var names = new Mock<INames>(); var sut = names.Object.Name();` → `var names = Substitute.For<INames>(); names.Name().ReturnsNull();` |
 | `typed-local` | Fixed | `Mock<IClock> clock = new(); var sut = new Service(clock.Object);` → `IClock clock = Substitute.For<IClock>(); var sut = new Service(clock);` |
+
+### LoggerVerify (3)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `never` | Fixed | `logger.Verify(l => l.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(),…` → `logger.Object.DidNotReceive().Log(Arg.Is<LogLevel>(LogLevel.Error), Arg.Any<EventId>(), Arg.Any<Arg.AnyType>()…` |
+| `once` | Fixed | `logger.Verify(l => l.Log(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => v.ToString()…` → `logger.Object.Received(1).Log(Arg.Is<LogLevel>(LogLevel.Information), Arg.Any<EventId>(), Arg.Is<Arg.AnyType>(…` |
+| `state-cast` | Manual |  — reason: MatcherUnsupported |
 
 ### Properties (3)
 

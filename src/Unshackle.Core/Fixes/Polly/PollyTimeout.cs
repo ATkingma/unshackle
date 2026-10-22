@@ -50,7 +50,7 @@ internal static class PollyTimeout
 
     private static TimeSpan? Literal(ExpressionSyntax value, SemanticModel model)
     {
-        if (model.GetConstantValue(value).Value is int seconds)
+        if (model.GetConstantValue(value).Value is int seconds and >= 0 and <= 1_000_000)
         {
             return TimeSpan.FromSeconds(seconds);
         }
@@ -58,7 +58,8 @@ internal static class PollyTimeout
         if (value is InvocationExpressionSyntax { ArgumentList.Arguments: [{ Expression: LiteralExpressionSyntax number }] } call
             && model.GetSymbolInfo(call).Symbol is IMethodSymbol { ContainingType: { Name: "TimeSpan", ContainingNamespace.Name: "System" }, Name: string name }
             && model.GetConstantValue(number).Value is int or double
-            && Convert.ToDouble(model.GetConstantValue(number).Value, System.Globalization.CultureInfo.InvariantCulture) is double amount)
+            && Convert.ToDouble(model.GetConstantValue(number).Value, System.Globalization.CultureInfo.InvariantCulture) is double amount
+            && amount is >= 0 and <= 1_000_000)
         {
             return name switch
             {

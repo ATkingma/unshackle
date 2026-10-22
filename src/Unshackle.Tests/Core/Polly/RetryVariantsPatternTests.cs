@@ -29,6 +29,35 @@ public class RetryVariantsPatternTests
         second.ShouldBe(variants);
     }
 
+    [Fact]
+    public void Find_WrapOperands_LeftToTheWrapPattern()
+    {
+        // Arrange (queue row 10)
+        (SyntaxNode root, SemanticModel model) = Parse("var a = Policy.Handle<TimeoutException>().RetryAsync(1); await a.WrapAsync(Policy.Handle<ArgumentException>().RetryAsync(2)).ExecuteAsync(() => Task.CompletedTask);");
+
+        // Act
+        int retry = new RetryVariantsPattern().Find(root, model).Count();
+        List<SyntaxNode> wrap = [.. new WrapPattern().Find(root, model)];
+
+        // Assert
+        retry.ShouldBe(0);
+        wrap.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public void Rewrite_GenericWrap_FixedWithTypedBuilder()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Parse("await Policy.WrapAsync<int>(Policy.HandleResult<int>(r => r < 0).RetryAsync(1), Policy<int>.Handle<TimeoutException>().RetryAsync(1)).ExecuteAsync(() => Task.FromResult(1));");
+        var pattern = new WrapPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).Single(), model);
+
+        // Assert
+        result.ShouldBeOfType<FixedResult>().NewNodes.ShouldHaveSingleItem().ToString().ShouldStartWith("new ResiliencePipelineBuilder<int>()");
+    }
+
     [Theory]
     [InlineData("var d = TimeSpan.Zero; var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(new[] { d }); await p.ExecuteAsync(() => Task.CompletedTask);", nameof(PollyReason.SleepDurationsNotLiteral))]
     [InlineData("var n = 2; var p = Policy.Handle<TimeoutException>().RetryAsync(n); await p.ExecuteAsync(() => Task.CompletedTask);", nameof(PollyReason.RetryCountNotLiteral))]

@@ -28,6 +28,8 @@ public class PollyBehaviourProofTests
     [InlineData("AddPolicyHandler/inline-transient", "send 500, send 0, send 408, send 200, final 200")]
     [InlineData("AddPolicyHandler/policy-method", "send 502, send 504, final 504")]
     [InlineData("AddPolicyHandler/transient-lambda-429", "send 503, retry 1 503, send 429, final 429")]
+    [InlineData("Wrap/two-locals", "inner 1, inner 2, outer 1, inner 1, done")]
+    [InlineData("Wrap/three-inline", "argument 1, invalid 1, timeout 1, argument 1, invalid 1, done")]
     [InlineData("RetryVariants/retry-count", "retry 1 call 1, retry 2 call 2, caught call 3")]
     [InlineData("RetryVariants/retry-default", "call 1, call 2, caught call 2")]
     [InlineData("RetryVariants/wait-forever", "delay 1, delay 2, delay 3, delay 4, result 5 calls 9")]
@@ -60,6 +62,34 @@ public class PollyBehaviourProofTests
 
         // Assert
         trace.ShouldBe("delay 0, delay 1, delay 2, caught call 4, calls 4");
+    }
+
+    // Council round 8, P4: each wrap proof pins the order, so it would fail if a rewrite reversed it.
+    [Theory]
+    [InlineData("two-locals", "var policy = outer.WrapAsync(inner);", "var policy = inner.WrapAsync(outer);")]
+    [InlineData("three-inline", "Policy.Handle<TimeoutException>().RetryAsync(1, (exception, retryCount) => trace.Add(\"timeout \" + retryCount)),", "Policy.Handle<ArgumentException>().RetryAsync(1, (exception, retryCount) => trace.Add(\"argument \" + retryCount)),")]
+    public async Task WrapProof_OrderReversed_DifferentTrace(string proof, string original, string reversed)
+    {
+        // Arrange
+        string before = await File.ReadAllTextAsync(Path.Combine(s_directory, "Wrap", proof + ".before.cs"), TestContext.Current.CancellationToken);
+        string swapped = Reverse(before, original, reversed);
+
+        // Act
+        string trace = await RunAsync(before, PollyReferences.Before);
+        string reversedTrace = await RunAsync(swapped, PollyReferences.Before);
+
+        // Assert
+        swapped.ShouldNotBe(before);
+        reversedTrace.ShouldNotBe(trace);
+    }
+
+    // Swaps the first and last operand (two-locals: the receiver and argument; three-inline: the first and third line).
+    private static string Reverse(string code, string original, string reversed)
+    {
+        const string Marker = "@@SWAP@@";
+        return code.Replace(original, Marker, StringComparison.Ordinal)
+            .Replace(reversed.TrimEnd(','), original.TrimEnd(','), StringComparison.Ordinal)
+            .Replace(Marker, reversed, StringComparison.Ordinal);
     }
 
     private static async Task<string> RunAsync(string code, IEnumerable<MetadataReference> references)

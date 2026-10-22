@@ -29,6 +29,10 @@ internal static class PollyRetry
         invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: string name } && s_retryMethods.Contains(name)
         && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { ContainingAssembly.Name: PollyAssembly };
 
+    // A call that creates a pipeline: a retry call or a wrap of them (queue row 10).
+    public static bool IsPipelineCreation(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        IsRetryCreation(invocation, model) || PollyWrap.IsWrap(invocation, model);
+
     // RetryAsync, the Forever methods and WaitAndRetryAsync over a sleep-duration list (queue row 7).
     public static bool IsVariant(InvocationExpressionSyntax creation, SemanticModel model) =>
         model.GetSymbolInfo(creation).Symbol is IMethodSymbol method
@@ -38,8 +42,8 @@ internal static class PollyRetry
     // ExecuteAsync, or the holder's declaration (local or private field) with every ExecuteAsync on it, or the call itself (Manual).
     public static IEnumerable<SyntaxNode> Targets(InvocationExpressionSyntax creation, SemanticModel model)
     {
-        // The policy of an HttpClient handler is polly.add-policy-handler's node (it rewrites the whole call).
-        if (IsHandlerPolicy(creation))
+        // The policy of an HttpClient handler is polly.add-policy-handler's node (it rewrites the whole call); a wrap operand is polly.wrap's.
+        if (IsHandlerPolicy(creation) || (IsRetryCreation(creation, model) && PollyWrap.IsOperand(creation, model)))
         {
             return [];
         }
@@ -57,6 +61,19 @@ internal static class PollyRetry
         }
 
         return [creation];
+    }
+
+    // How the wrap's own use rewrites (inline ExecuteAsync, holder, or Manual): its operand locals go only when it does.
+    public static PollyPlan PlanWrapUse(InvocationExpressionSyntax wrap, SemanticModel model)
+    {
+        if (ExecuteOn(wrap) is InvocationExpressionSyntax inline)
+        {
+            return PlanExecute(inline, model);
+        }
+
+        return HolderOf(wrap, model) is (SyntaxNode declaration, _) && declaration.Contains(wrap)
+            ? PlanDeclaration(declaration, model)
+            : PlanCreation(wrap, model);
     }
 
     // The retry call node itself: a constructor-assigned field's value (queue row 5), otherwise a policy stored or passed on (Manual).
@@ -124,7 +141,7 @@ internal static class PollyRetry
     public static PollyPlan PlanExecute(InvocationExpressionSyntax execute, SemanticModel model)
     {
         var access = (MemberAccessExpressionSyntax)execute.Expression;
-        if (access.Expression is InvocationExpressionSyntax creation && IsRetryCreation(creation, model))
+        if (access.Expression is InvocationExpressionSyntax creation && IsPipelineCreation(creation, model))
         {
             PollyPlan pipeline = PlanPipeline(creation, model);
             PollyPlan inlineCallback = PlanCallback(execute, model);
@@ -136,7 +153,7 @@ internal static class PollyRetry
             ArgumentSyntax argument = execute.ArgumentList.Arguments[0];
             return PollyPlan.Of(execute.ReplaceNodes(
                 [creation, argument.Expression],
-                (original, _) => original == creation ? pipeline.Node : inlineCallback.Node));
+                (original, _) => original == creation ? pipeline.Node.WithTriviaFrom(original) : inlineCallback.Node));
         }
 
         if (model.GetSymbolInfo(access.Expression).Symbol is ISymbol { Kind: SymbolKind.Local or SymbolKind.Field } holder
@@ -163,6 +180,11 @@ internal static class PollyRetry
     // The builder expression for Policy.Handle<E>().WaitAndRetryAsync(n, attempt => delay).
     public static PollyPlan PlanPipeline(InvocationExpressionSyntax creation, SemanticModel model)
     {
+        if (PollyWrap.IsWrap(creation, model))
+        {
+            return PollyWrap.Plan(creation, model);
+        }
+
         string indent = Indent(creation);
         PollyPlan options = PlanOptions(creation, model, indent);
         if (options.Text is not string optionsText)
@@ -355,10 +377,20 @@ internal static class PollyRetry
     }
 
     // T of a v7 PolicyBuilder<T> receiver (HandleResult, Policy<T>): the pipeline becomes ResiliencePipeline<T>; null for exceptions only.
-    public static string? ResultType(InvocationExpressionSyntax creation, SemanticModel model) =>
-        model.GetSymbolInfo(creation).Symbol is IMethodSymbol { ReceiverType: INamedTypeSymbol { Name: "PolicyBuilder", TypeArguments: [ITypeSymbol result] } }
+    // A wrap takes its first operand's (PollyWrap.Plan checks that all agree).
+    public static string? ResultType(InvocationExpressionSyntax creation, SemanticModel model)
+    {
+        if (PollyWrap.IsWrap(creation, model))
+        {
+            return PollyWrap.Operands(creation, model) is [ExpressionSyntax first, ..] && PollyWrap.OperandCreation(first, creation, model) is InvocationExpressionSyntax operand
+                ? ResultType(operand, model)
+                : null;
+        }
+
+        return model.GetSymbolInfo(creation).Symbol is IMethodSymbol { ReceiverType: INamedTypeSymbol { Name: "PolicyBuilder", TypeArguments: [ITypeSymbol result] } }
             ? result.ToMinimalDisplayString(model, creation.SpanStart)
             : null;
+    }
 
     // The v8 callback for policy.ExecuteAsync(() => ...): Func<CancellationToken, ValueTask(<T>)>, awaited by the caller.
     private static PollyPlan PlanCallback(InvocationExpressionSyntax execute, SemanticModel model)
@@ -490,7 +522,7 @@ internal static class PollyRetry
 
         if (declarator.Initializer is { } initializer)
         {
-            return initializer.Value is InvocationExpressionSyntax value && IsRetryCreation(value, model) ? (declaration, value) : null;
+            return initializer.Value is InvocationExpressionSyntax value && IsPipelineCreation(value, model) ? (declaration, value) : null;
         }
 
         if (holder is not IFieldSymbol || holder.ContainingType.DeclaringSyntaxReferences is not [SyntaxReference type] || type.SyntaxTree != declaration.SyntaxTree)
@@ -504,7 +536,7 @@ internal static class PollyRetry
                 .Where(a => SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(a.Left).Symbol, holder)),
         ];
         return assignments is [{ Right: InvocationExpressionSyntax right, Parent: ExpressionStatementSyntax { Parent: BlockSyntax { Parent: ConstructorDeclarationSyntax } } } only]
-            && only.IsKind(SyntaxKind.SimpleAssignmentExpression) && IsRetryCreation(right, model)
+            && only.IsKind(SyntaxKind.SimpleAssignmentExpression) && IsPipelineCreation(right, model)
             ? (declaration, right)
             : null;
     }

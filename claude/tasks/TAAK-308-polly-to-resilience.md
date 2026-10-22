@@ -63,6 +63,8 @@ references (MEHP itself depends on Polly 7) and the v7 API; staying on Polly 8.x
 - 2026-10-22 (polly-skeleton): P9 only via ProjectBlockers (TAAK-320); found that the pre-filter skipped every file
   (RemovedNamespaces lacked Polly) -> `FindsOnlyOldLibraryCode => false`. Row 6 first slice: `polly.add-policy-handler`.
   Row 5 slice 2: constructor-assigned private fields (REQ-16).
+  Row 6 slice 2 (handler policy method), row 10 `polly.wrap` (retry operands, P4 order proofs). 2240/2240 green.
+  STOPPED here (session end). Next: row 4 (sync Retry/Execute), not started; README row for polly.wrap pending (main).
 
 ## Changes
 

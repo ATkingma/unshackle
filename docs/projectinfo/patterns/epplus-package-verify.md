@@ -22,11 +22,12 @@
 | REQ-9 | Met     | proofs `Package/worksheet-local`, `Package/worksheet-name` (harness equal), `Package/used-worksheet` |
 | REQ-10 | Met    | proofs `Package/name-missing`, `Package/conditional-add`, `Package/rename-to-existing` |
 | REQ-11 | Met    | proof `Package/worksheet-index`; `WorksheetIndexTests` (EPPlus 5 stub, assembly version 5.8.0.0; unknown version); `Harness_EPPlus4OnNetStandard_IsZeroBased` |
+| REQ-12 | Partly met | `FontsLicenceTests` (Warning; 1.x Fixed; 2.x Manual `[LicensedDependency]`). The `PackageAddEdit` pin is not done: there is no assets-file reader behind a Core interface (engine work). |
 | REQ-7 | Met     | `EPPlusFixTests.Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles` |
 
 ## Build and tests
 
-- `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1707 passed, 0 failed (rows 1-2); 1862 passed, 0 failed (row 3, after merging main).
+- `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1707 passed, 0 failed (rows 1-2); 1862 passed, 0 failed (row 3, after merging main); 1865 passed, 0 failed (E7).
 - No corpus run yet (TAAK-309 step 5).
 
 ## Deviations

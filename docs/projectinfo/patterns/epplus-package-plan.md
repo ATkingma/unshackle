@@ -2,12 +2,14 @@
 kingmadoc: 1
 feature: "epplus-package"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12]
 files_expected:
     - src/Unshackle.Core/Fixes/EPPlus/EPPlusFix.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/PackagePattern.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/EPPlusSyntax.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/WorkbookUses.cs
+    - src/Unshackle.Core/Fixes/EPPlus/Patterns/FontsLicence.cs
+    - src/Unshackle.Tests/Core/EPPlus/FontsLicenceTests.cs
     - src/Unshackle.Tests/Core/EPPlus/WorksheetIndexTests.cs
     - src/Unshackle.Tests/Proofs/EPPlus/Package/
     - src/Unshackle.Tests/Core/EPPlus/EPPlusFixTests.cs
@@ -82,6 +84,7 @@ file.
 | REQ-9 | Row 3: `var ws = p.Workbook.Worksheets.Add("x")` / `ExcelWorksheet ws = p.Workbook.Worksheets["x"]` used only for `Name` → `IXLWorksheet`, `p.Worksheet("x")` (proofs `worksheet-local`, `worksheet-name`); any other worksheet use is Manual (`used-worksheet`). |
 | REQ-10 | Row 3: a name lookup only when the exact literal was added before in the scope's own block (not in a branch or loop) (proofs `name-missing`, `conditional-add`); a rename only to a valid name no added sheet has (`rename-to-existing`). |
 | REQ-11 | Row 3 / E3: `Worksheets[i]` with a literal index is Fixed only for EPPlus 5+ (0-based → `Worksheet(i + 1)`) and only within the added sheets (`WorksheetIndexTests`); EPPlus 4.x is Manual `[WorksheetIndexBaseNotProvable]` (proof `worksheet-index`, harness fact `Harness_EPPlus4OnNetStandard_IsZeroBased`); no EPPlus reference → `[UnknownEPPlusVersion]`. |
+| REQ-12 | E7 (council round 10): every Fixed package carries a Warning naming the SixLabors.Fonts 2.x licence and the `< 2.0` pin; a project whose compilation already references SixLabors.Fonts 2.x is Manual `[LicensedDependency]` (`FontsLicenceTests`). The pin itself is not written yet: it needs a current assets file, which Core cannot read (engine request). |
 | REQ-7 | With the licence pattern in the same file, both are rewritten, the result compiles against ClosedXML and compares equal (`Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles`). |
 
 ## See also

@@ -1,0 +1,17 @@
+using Microsoft.CodeAnalysis;
+
+namespace Unshackle.Core.Fixes.EPPlus.Patterns;
+
+// Council round 10, E7: ClosedXML 0.105.x depends on SixLabors.Fonts [1.0.0, 3.0.0). 1.x is Apache-2.0; 2.x is under the Six Labors Split
+// License. Every migrated package gets this warning. The pin itself (a PackageAddEdit) needs a current assets file, which Core cannot read yet.
+internal static class FontsLicence
+{
+    public const string Code = "LicensedDependency";
+
+    public const string Warning = "ClosedXML depends on SixLabors.Fonts [1.0.0, 3.0.0); 2.x is under the Six Labors Split License (paid for some "
+        + "commercial use). Pin it below 2.0 with <PackageReference Include=\"SixLabors.Fonts\" Version=\"1.0.0\" /> unless you have a licence.";
+
+    // The SixLabors.Fonts version the project's compilation references (restored from its assets file), or null when none.
+    public static Version? Resolved(SemanticModel model) =>
+        model.Compilation.ReferencedAssemblyNames.FirstOrDefault(a => a.Name == "SixLabors.Fonts")?.Version;
+}

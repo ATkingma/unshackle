@@ -1,6 +1,6 @@
 # TAAK-309 — EPPlus → ClosedXML (roadmap step 9)
 
-**Status**: step 3/5 — harness, skeleton and queue rows 1–2 done; queue rows 1, 2, 3 and 11 done; next E7 (SixLabors.Fonts pin), then row 4 (`epplus.cells`)
+**Status**: step 3/5 — harness, skeleton and queue rows 1–2 done; queue rows 1, 2, 3 and 11 done; E7 partly done (warning + LicensedDependency; pin waits for an assets-file reader); next row 4 (`epplus.cells`)
 **Created**: 2026-10-22
 **Goal**: An `epplus` fix that rewrites EPPlus code (LGPL 4.5.3.3 and commercial 5+ API shapes) to ClosedXML, at 100% on an EPPlus corpus.
 
@@ -73,6 +73,12 @@
     Manual `[WorksheetIndexBaseNotProvable]` (council question).
   - Tests: 8 new proofs plus field.manual.txt updated; `WorksheetIndexTests` (harness fact, EPPlus 5 stub).
   - `dotnet test` 1862 passed, 0 failed.
+- 2026-10-22 (epplus-skeleton, E7): `FontsLicence`. Every Fixed `epplus.package` row warns about SixLabors.Fonts 2.x (Six Labors Split License)
+  and how to pin `< 2.0`. A compilation that already references SixLabors.Fonts 2.x is Manual `[LicensedDependency]`; this uses the
+  restored references as a proxy for the assets file. The `PackageAddEdit` pin is NOT written: E7 requires the assets file to be present and
+  current with no requirement >= 2.0, and Core has no reader for it (I/O belongs in DataAccess behind a Core interface; engine/main files).
+  Under E7 a missing check means "Warning only", which is the current behaviour. `FontsLicenceTests` (3).
+  `dotnet test` 1865 passed, 0 failed.
 
 ## See also
 

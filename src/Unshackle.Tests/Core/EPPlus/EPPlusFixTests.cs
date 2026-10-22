@@ -134,7 +134,7 @@ public class EPPlusFixTests
     }
 
     [Fact]
-    public async Task Fix_SaveAsStream_ManualAndSolutionUntouched()
+    public async Task Fix_SaveWithoutFile_ManualAndSolutionUntouched()
     {
         // Arrange: AllOrNothing, so the licence line stays too.
         const string before = """
@@ -149,7 +149,7 @@ public class EPPlusFixTests
                     using (var package = new ExcelPackage())
                     {
                         package.Workbook.Worksheets.Add("Report");
-                        package.SaveAs(stream);
+                        package.Save();
                     }
                 }
             }
@@ -159,7 +159,7 @@ public class EPPlusFixTests
         (FixReport report, string after) = await FixAsync(before);
 
         // Assert
-        report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains("package.SaveAs"));
+        report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains("package.Save"));
         after.ShouldBe(before);
     }
 

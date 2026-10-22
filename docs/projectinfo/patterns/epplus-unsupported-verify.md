@@ -17,7 +17,7 @@
 | REQ-3 | Met     | proof `Unsupported/public-api` |
 | REQ-4 | Met     | proof `Unsupported/internal-api`; `EPPlusFixTests.UnsupportedPattern_PublicApiInTestProject_NotE6` |
 | REQ-5 | Met     | `EPPlusFixTests.UnsupportedPattern_UnresolvedEPPlus5Member_NamedWithItsReceiver` |
-| REQ-6 | Met     | `EPPlusFixTests.Fix_SaveAsStream_ManualAndSolutionUntouched`, `Fix_TwoPackagesInOneBlock_Manual` |
+| REQ-6 | Met     | `EPPlusFixTests.Fix_SaveWithoutFile_ManualAndSolutionUntouched`, `Fix_TwoPackagesInOneBlock_Manual` |
 
 ## Build and tests
 

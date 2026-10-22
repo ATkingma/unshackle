@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "epplus-package"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20]
 files_expected:
     - src/Unshackle.Core/Fixes/EPPlus/EPPlusFix.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/PackagePattern.cs
@@ -14,6 +14,7 @@ files_expected:
     - src/Unshackle.Tests/Core/EPPlus/FontsLicenceTests.cs
     - src/Unshackle.Tests/Core/EPPlus/CellValueHarnessTests.cs
     - src/Unshackle.Tests/Core/EPPlus/CellReadHarnessTests.cs
+    - src/Unshackle.Tests/Core/EPPlus/SaveHarnessTests.cs
     - src/Unshackle.Tests/Core/EPPlus/WorksheetIndexTests.cs
     - src/Unshackle.Tests/Proofs/EPPlus/Package/
     - src/Unshackle.Tests/Core/EPPlus/EPPlusFixTests.cs
@@ -80,7 +81,7 @@ file.
 | --- | ----------- |
 | REQ-1 | `using (var p = new ExcelPackage())` with Add + SaveAs(FileInfo) → `XLWorkbook`, same workbook in the harness (proof `using-statement`). |
 | REQ-2 | Using declaration with explicit type and two sheets → `XLWorkbook` type and creation, same workbook (proof `using-declaration`). |
-| REQ-3 | Any unmapped use is Manual naming the use and line (proofs `used-worksheet`, `byte-array`, `invalid-sheet-name`; `Fix_SaveAsStream_ManualAndSolutionUntouched`). |
+| REQ-3 | Any unmapped use is Manual naming the use and line (proofs `used-worksheet`, `byte-array`, `invalid-sheet-name`; `Fix_SaveWithoutFile_ManualAndSolutionUntouched`). |
 | REQ-4 | Constructor arguments are Manual (proof `existing-file`). |
 | REQ-5 | A package that is not a using local is Manual (proof `field`); two in one scope are Manual (`Fix_TwoPackagesInOneBlock_Manual`). |
 | REQ-6 | Every Fixed proof passes the cell-compare harness, and the harness fails on a deliberate difference in each compared aspect (`CellCompareTests`). |
@@ -96,6 +97,7 @@ file.
 | REQ-17 | E11: `IsWorksheets1Based` in any document of the solution (identifier or string literal) or in a config file (`IConfigKeySearch`) makes every integer index Manual `WorksheetIndexConfigured`, also on 5+, naming file:line and saying that removing it makes the index fixable. Without a config search the index is Manual too. A Fixed index carries the Info line "IsWorksheets1Based was looked for in the solution's config files and code only." |
 | REQ-18 | Row 4, ranges: `ws.Cells[r1, c1, r2, c2]` (four ints) and `ws.Cells["A1:C2"]` (a literal range address) become `ws.Range(...)` as the target of a covered `Value` assignment, as the receiver of a migrated style statement, or of `Merge();` as `epplus.layout` writes it. `ws.Row(i).Height = h;` and `ws.SheetView.Freeze(r, c);` from `epplus.layout` are accepted on a worksheet local (proof `cell-range`; `Fix_RangeMergeAndStyleAndRowHeight_SameWorkbook`). |
 | REQ-19 | Row 5, reads: `.Text`, `GetValue<T>()` and a `.Value` read are Manual `CellReadDiffers`. The harness shows EPPlus `.Text` of a bool is "1" (ClosedXML "TRUE") and `GetValue<string>()` of an empty cell is null (ClosedXML ""); `.Value` is `object` against `XLCellValue` (proof `cell-read`; `CellReadHarnessTests.Read_Differs`). |
+| REQ-20 | Row 6 (`epplus.save`, inside this pattern):<br>- `p.SaveAs(stream)` with a `Stream` argument stays the same call; `SaveHarnessTests` shows both libraries leave the stream open at its end.<br>- `p.GetAsByteArray()` inside a statement of a block, and not in a lambda, gets `using var workbookStream = new MemoryStream(); p.SaveAs(workbookStream);` before that statement and becomes `workbookStream.ToArray()`. The name is made unique, and `System.IO` is added.<br>- `Save()` and `GetAsByteArray` in a lambda stay Manual.<br>Proofs: `byte-array`, `byte-array-file`, `save-stream`, `byte-array-lambda`. |
 | REQ-7 | With the licence pattern in the same file, both are rewritten, the result compiles against ClosedXML and compares equal (`Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles`). |
 
 ## See also

@@ -99,7 +99,17 @@ public class PackagePattern : ISolutionPattern
                 + "ClosedXML would use it. Pin SixLabors.Fonts below 2.0 (or license it) and run the fix again.");
         }
 
-        return new FixedResult([scope.ReplaceNodes(replacements.Keys, (original, _) => replacements[original])], [AddedNamespace])
+        SyntaxNode result = scope.TrackNodes(replacements.Keys.Concat(uses.Insertions.Keys));
+        var byCurrent = replacements.ToDictionary(r => result.GetCurrentNode(r.Key)!, r => r.Value);
+        result = result.ReplaceNodes(byCurrent.Keys, (current, _) => byCurrent[current]);
+
+        foreach ((StatementSyntax statement, List<StatementSyntax> before) in uses.Insertions)
+        {
+            SyntaxNode current = result.GetCurrentNode(statement)!;
+            result = result.InsertNodesBefore(current, before.Select(b => b.WithLeadingTrivia(current.GetLeadingTrivia()).WithTrailingTrivia(current.GetTrailingTrivia())));
+        }
+
+        return new FixedResult([result], uses.UsesSystemIO ? [AddedNamespace, "System.IO"] : [AddedNamespace])
         {
             Warning = FontsLicence.Warning,
             Info = uses.UsesIndex ? WorksheetIndexBase.Checked : null,

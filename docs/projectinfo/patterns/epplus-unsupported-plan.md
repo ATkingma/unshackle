@@ -59,7 +59,7 @@ solution as it is.
 | REQ-3 | A public signature in a packable project exposing EPPlus is `PublicApiExposesOldLibrary` (proof `Unsupported/public-api`). |
 | REQ-4 | The same signature that is internal, or in a test project, is `UnmigratedEPPlusApi` (proof `Unsupported/internal-api`, `UnsupportedPattern_PublicApiInTestProject_NotE6`). |
 | REQ-5 | An unresolved EPPlus 5+ member is named with its receiver (`UnsupportedPattern_UnresolvedEPPlus5Member_NamedWithItsReceiver`). |
-| REQ-6 | Code the licence or package pattern reports is not reported again (`Fix_SaveAsStream_ManualAndSolutionUntouched`, `Fix_TwoPackagesInOneBlock_Manual`). |
+| REQ-6 | Code the licence or package pattern reports is not reported again (`Fix_SaveWithoutFile_ManualAndSolutionUntouched`, `Fix_TwoPackagesInOneBlock_Manual`). |
 
 ## See also
 

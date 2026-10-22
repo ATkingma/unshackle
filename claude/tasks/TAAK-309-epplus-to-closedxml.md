@@ -1,6 +1,6 @@
 # TAAK-309 — EPPlus → ClosedXML (roadmap step 9)
 
-**Status**: step 1/5 — not started
+**Status**: step 1/5 — survey done (builds partial: C: full), awaiting council (step 2)
 **Created**: 2026-10-22
 **Goal**: An `epplus` fix that rewrites EPPlus code (LGPL 4.5.3.3 and commercial 5+ API shapes) to ClosedXML, at 100% on an EPPlus corpus.
 
@@ -17,7 +17,7 @@
 
 ## Steps
 
-- [ ] 1. Survey: repos with EPPlus (4.5.3.3 and 5-7), API frequency, what their tests cover; `docs/projectinfo/architectuur/corpus-epplus.md`
+- [x] 1. Survey: repos with EPPlus (4.5.3.3 and 5-7), API frequency, what their tests cover; `docs/projectinfo/architectuur/corpus-epplus.md`
 - [ ] 2. Decide the behaviour proof (cell-compare harness or not) with the council
 - [ ] 3. `EPPlusFix` skeleton with proofs; `claude/tasks/epplus-queue.md`
 - [ ] 4. Patterns from the queue, each with docs and proofs
@@ -30,6 +30,15 @@
 | **Where** | new `Fixes/EPPlus/`, tests, docs |
 | **How**   | New fix |
 | **Why**   | Common commercial-license pain in enterprise code |
+
+## Progress log
+
+- 2026-10-22 (agent epplus): step 1 done. 42 repos (16 on 4.x, 7 on 5, 7 on 6, 9 on 7, 3 on 8) measured with a regex
+  script; results in `docs/projectinfo/architectuur/corpus-epplus.md`, repos in `claude/tools/corpus-epplus-repos.txt`,
+  clones/scripts/logs in `D:/playground/corpus-epplus/`. Builds stopped after 5 repos (C: full): excelchop, bookfx,
+  zserver, xlobjmapper build; dexiom fails (net40); the rest "not built (C: full)". Draft queue and 6 council questions
+  (cell-compare harness, type pin, worksheet index base, object values, ClosedXML version, wrapper libraries) in the doc.
+  Next: step 2 (council round 8); re-run builds when disk space allows.
 
 ## See also
 

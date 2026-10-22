@@ -35,6 +35,18 @@ public class PollyBehaviourProofTests
     [InlineData("RetryVariants/wait-forever", "delay 1, delay 2, delay 3, delay 4, result 5 calls 9")]
     [InlineData("RetryVariants/durations", "wait 0, wait 1, wait 2, caught call 4")]
     [InlineData("WaitAndRetryAsync/on-retry-result", "retry -1 none, retry 0 TimeoutException, result 7")]
+    [InlineData("SyncRetry/wait-and-retry", "delay 1, delay 2, delay 3, caught call 4, value 5")]
+    [InlineData("SyncRetry/retry-on-retry", "retry 1 call 1, retry 2 call 2, caught call 3")]
+    [InlineData("SyncRetry/handle-result", "got -2, got -1, got 0, result 0")]
+    [InlineData("SyncRetry/forever", "delay 1, delay 2, delay 3, calls 4")]
+    [InlineData("Timeout/token-honoured", "timed out, fast 7")]
+    [InlineData("Timeout/token-ignored", "completed, value 4")]
+    [InlineData("Timeout/int-seconds", "timed out")]
+    [InlineData("Timeout/sync", "value 5")]
+    [InlineData("Timeout/typed", "timed out")]
+    [InlineData("NoOp/async", "value 3, ran")]
+    [InlineData("NoOp/typed", "value 9")]
+    [InlineData("NoOp/sync-inline", "value 6")]
     public async Task Proof_BeforeAndAfter_SameTrace(string proof, string expected)
     {
         // Arrange
@@ -48,6 +60,30 @@ public class PollyBehaviourProofTests
         // Assert
         beforeTrace.ShouldBe(expected);
         afterTrace.ShouldBe(beforeTrace);
+    }
+
+    // Queue row 8: why polly.circuit-breaker is Manual. v7 breaks on the third consecutive failure; the nearest v8 mapping (failure ratio
+    // 1.0, minimum throughput 3) keeps the earlier success in its window and does not break on the same calls. If these traces ever
+    // become equal, the pattern may be revisited.
+    [Fact]
+    public async Task CircuitBreaker_V8RatioMapping_BreaksOnDifferentCalls()
+    {
+        // Arrange
+        const string Loop = "foreach (char c in \"FSFFFF\") { try { @CALL@ trace.Add(\"S\"); } catch (BrokenCircuitException) { trace.Add(\"B\"); } catch (InvalidOperationException) { trace.Add(\"F\"); } }";
+        const string Head = "using System; using System.Collections.Generic; using System.Threading.Tasks; using Polly; using Polly.CircuitBreaker;\npublic static class Proof { public static async Task<string> RunAsync() { var trace = new List<string>();\n";
+        const string Tail = "\nreturn string.Join(\",\", trace); } }";
+        string v7 = Head + "var breaker = Policy.Handle<InvalidOperationException>().CircuitBreakerAsync(3, TimeSpan.FromSeconds(1));\n"
+            + Loop.Replace("@CALL@", "await breaker.ExecuteAsync(() => { if (c == 'F') throw new InvalidOperationException(); return Task.CompletedTask; });", StringComparison.Ordinal) + Tail;
+        string v8 = Head + "var breaker = new ResiliencePipelineBuilder().AddCircuitBreaker(new CircuitBreakerStrategyOptions { ShouldHandle = new PredicateBuilder().Handle<InvalidOperationException>(), FailureRatio = 1.0, MinimumThroughput = 3, SamplingDuration = TimeSpan.FromSeconds(30), BreakDuration = TimeSpan.FromSeconds(1) }).Build();\n"
+            + Loop.Replace("@CALL@", "await breaker.ExecuteAsync(async _ => { if (c == 'F') throw new InvalidOperationException(); await Task.CompletedTask; });", StringComparison.Ordinal) + Tail;
+
+        // Act
+        string before = await RunAsync(v7, PollyReferences.Before);
+        string after = await RunAsync(v8, PollyReferences.After);
+
+        // Assert
+        before.ShouldBe("F,S,F,F,F,B");
+        after.ShouldBe("F,S,F,F,F,F");
     }
 
     [Fact]

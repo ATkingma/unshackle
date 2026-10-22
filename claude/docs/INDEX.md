@@ -52,6 +52,12 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/TAAK-019-lancering.md` | Next step: launch (real case, NuGet, public, README GIF) |
 | `docs/projectinfo/lancering/reddit-post.md` | Draft r/dotnet launch post (user posts it) |
 | `claude/tasks/archief/TAAK-295-kept-reason-codes.md` | Typed reason codes for every kept AutoMapper finding instead of the `Stays on AutoMapper:` prefix (done) |
+| `claude/tasks/TAAK-301-document-parallel-options.md` | Document `--sequential` / `--max-degree` for users |
+| `claude/tasks/TAAK-302-verify-head-pattern-check.md` | verify-head must not pass when the pattern-docs check could not run (jq) |
+| `claude/tasks/TAAK-303-cleanup-worktrees.md` | Remove stale agent worktrees and merged branches |
+| `claude/tasks/TAAK-304-release-0-3-0.md` | Release 0.3.0 (after the user's go) |
+| `claude/tasks/TAAK-305-readytorun-tool.md` | Measure and maybe ship ReadyToRun tool packages |
+| `claude/tasks/TAAK-306-manual-reduction-round-2.md` | Rank MediatR/AutoMapper Manual blockers in the corpus |
 | `claude/tasks/archief/TAAK-298-performance.md` | Faster `scan --fix`: measure, caches, pre-filter, parallel files with ordered merge |
 | `claude/tasks/archief/TAAK-299-split-large-files.md` | ✅ Split `CreateMapPattern.cs` and `Fixer.cs` along the TAAK-297 proposal (`FileFixer` seam for TAAK-298) |
 | `claude/tasks/archief/TAAK-300-council-round-6-followups.md` | ✅ Council round 6 follow-ups: one kept prefix in Core, MediatR kept code, stable IMapper example, §7 entry points |

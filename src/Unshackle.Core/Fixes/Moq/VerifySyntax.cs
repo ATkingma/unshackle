@@ -20,13 +20,13 @@ public static class VerifySyntax
         SeparatedSyntaxList<ArgumentSyntax> arguments = verify.ArgumentList.Arguments;
         if (method.Parameters.Any(p => p.Type.SpecialType == SpecialType.System_String) || arguments.Count > 2)
         {
-            return MockCall.Blocked("VerifyMessage: Verify with a failure message; NSubstitute's Received has none");
+            return MockCall.Blocked(MoqReason.VerifyMessage, "Verify with a failure message; NSubstitute's Received has none");
         }
 
         string? received = arguments.Count == 1 ? "Received()" : Received(arguments[1].Expression, model);
         if (received is null)
         {
-            return MockCall.Blocked("TimesRange: only Times.Once, Never, Exactly(n) and AtLeastOnce have an exact NSubstitute form");
+            return MockCall.Blocked(MoqReason.TimesRange, "only Times.Once, Never, Exactly(n) and AtLeastOnce have an exact NSubstitute form");
         }
 
         var receiver = (MemberAccessExpressionSyntax)verify.Expression;

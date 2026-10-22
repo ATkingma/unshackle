@@ -24,12 +24,12 @@ public static class SetupReturnsSyntax
     {
         if (Statement(setup) is not { Expression: InvocationExpressionSyntax returns } statement)
         {
-            return MockCall.Blocked("SetupShape: only `m.Setup(..).Returns(v);` or `.ReturnsAsync(v);` as a statement; Callback, Throws, Verifiable and sequences are later moq-queue.md rows");
+            return MockCall.Blocked(MoqReason.SetupShape, "only `m.Setup(..).Returns(v);` or `.ReturnsAsync(v);` as a statement; Callback, Throws, Verifiable and sequences are later moq-queue.md rows");
         }
 
         if (setup.ArgumentList.Arguments is not [var lambda] || setup.Expression is not MemberAccessExpressionSyntax { Expression: var receiver })
         {
-            return MockCall.Blocked("SetupShape: a Setup without a single lambda argument");
+            return MockCall.Blocked(MoqReason.SetupShape, "a Setup without a single lambda argument");
         }
 
         ExpressionSyntax objectAccess = SyntaxFactory.MemberAccessExpression(
@@ -46,7 +46,7 @@ public static class SetupReturnsSyntax
             || parameter.Type.TypeKind == TypeKind.Delegate && call.Type!.TypeKind != TypeKind.Delegate
             || value is AnonymousFunctionExpressionSyntax)
         {
-            return MockCall.Blocked($"ReturnsLambda: {name} with a function or several arguments computes its value per call; see moq-queue.md row 7");
+            return MockCall.Blocked(MoqReason.ReturnsLambda, $"{name} with a function or several arguments computes its value per call; see moq-queue.md row 7");
         }
 
         ExpressionSyntax returned = value.WithoutTrivia();
@@ -56,7 +56,7 @@ public static class SetupReturnsSyntax
             if (call.Type is not INamedTypeSymbol { TypeArguments: [var result] } task
                 || task.OriginalDefinition.ToDisplayString() is not ("System.Threading.Tasks.Task<TResult>" or "System.Threading.Tasks.ValueTask<TResult>"))
             {
-                return MockCall.Blocked("ReturnsLambda: ReturnsAsync on a member that is not Task<T>/ValueTask<T>");
+                return MockCall.Blocked(MoqReason.ReturnsLambda, "ReturnsAsync on a member that is not Task<T>/ValueTask<T>");
             }
 
             string resultType = result.ToMinimalDisplayString(model, setup.SpanStart);

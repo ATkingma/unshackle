@@ -19,11 +19,11 @@ public static class MoqSyntax
         node is MemberAccessExpressionSyntax { Name.Identifier.Text: "Object" } access && access.Expression == receiver;
 
     // Null when the creation is a plain loose mock; otherwise the Manual reason.
-    public static string? CreationBlocker(BaseObjectCreationExpressionSyntax creation, SemanticModel model)
+    public static MoqBlocker? CreationBlocker(BaseObjectCreationExpressionSyntax creation, SemanticModel model)
     {
         if (creation.Initializer is not null)
         {
-            return "MockOptions: the mock sets options in an object initializer (CallBase, DefaultValue, ...); see moq-queue.md row 9";
+            return MoqBlocker.Of(MoqReason.MockOptions, "the mock sets options in an object initializer (CallBase, DefaultValue, ...); see moq-queue.md row 9");
         }
 
         SeparatedSyntaxList<ArgumentSyntax> arguments = creation.ArgumentList?.Arguments ?? default;
@@ -33,19 +33,19 @@ public static class MoqSyntax
         }
 
         return arguments.Count == 1 ? BehaviorBlocker(arguments[0].Expression, model)
-            : "ConstructorArguments: a mock with constructor arguments is a class mock; see moq-queue.md row 9";
+            : MoqBlocker.Of(MoqReason.ConstructorArguments, "a mock with constructor arguments is a class mock; see moq-queue.md row 9");
     }
 
     // MockBehavior.Loose/Default is dropped (council round 8, M1); Strict and anything not literal stays Manual.
-    public static string? BehaviorBlocker(ExpressionSyntax argument, SemanticModel model)
+    public static MoqBlocker? BehaviorBlocker(ExpressionSyntax argument, SemanticModel model)
     {
         if (model.GetSymbolInfo(argument).Symbol is IFieldSymbol { ContainingType: { Name: "MockBehavior", ContainingNamespace.Name: "Moq" } } field)
         {
             return field.Name is "Loose" or "Default" ? null
-                : "StrictBehaviour: NSubstitute has no strict mocks; a strict mock throws on calls without a setup (council round 8, M1)";
+                : MoqBlocker.Of(MoqReason.StrictBehaviour, "NSubstitute has no strict mocks; a strict mock throws on calls without a setup (council round 8, M1)");
         }
 
-        return "ConstructorArguments: the argument is not a literal MockBehavior.Loose/Default; see moq-queue.md row 9";
+        return MoqBlocker.Of(MoqReason.ConstructorArguments, "the argument is not a literal MockBehavior.Loose/Default; see moq-queue.md row 9");
     }
 
     // The mocked type as the user wrote it, so aliases and short names stay.

@@ -24,17 +24,17 @@ public class SetupReturnsPattern : IPattern
         InvocationExpressionSyntax setup = statement.DescendantNodes().OfType<InvocationExpressionSyntax>().First(i => SetupReturnsSyntax.IsSetup(i, model));
         if (setup.Expression is not MemberAccessExpressionSyntax { Expression: var receiver } || MockUsage.Holder(receiver, model) is not { } holder)
         {
-            return PatternResult.Manual("MockPassedAround: the Setup is on a mock that is not a local or private field of this file");
+            return PatternResult.Manual(MoqReason.MockPassedAround, "the Setup is on a mock that is not a local or private field of this file");
         }
 
         MockAnalysis analysis = MockUsage.Analyze(holder, model, pendingUses: true);
         if (analysis.Blocker is not null)
         {
-            return PatternResult.Manual(analysis.Blocker);
+            return analysis.Blocker.ToResult();
         }
 
         MockCall plan = SetupReturnsSyntax.Plan(setup, model);
-        return plan.Blocker is not null ? PatternResult.Manual(plan.Blocker)
+        return plan.Blocker is not null ? plan.Blocker.ToResult()
             : plan.Type is not null ? PatternResult.Fixed(plan.Node!, "NSubstitute", SetupReturnsSyntax.TasksNamespace)
             : PatternResult.Fixed(plan.Node!, "NSubstitute");
     }

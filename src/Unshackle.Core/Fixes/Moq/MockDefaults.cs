@@ -42,13 +42,13 @@ public static class MockDefaults
                 };
                 if (blocker is not null)
                 {
-                    return new() { Blocker = "DefaultValueDiffers: an unconfigured " + mocked.Name + " answers differently in NSubstitute: " + blocker };
+                    return new() { Blocker = MoqBlocker.Of(MoqReason.DefaultValueDiffers, "an unconfigured " + mocked.Name + " answers differently in NSubstitute: " + blocker) };
                 }
             }
         }
 
         return pins.Count > MaxPins
-            ? new() { Blocker = $"TooManyDefaultPins: {pins.Count} members of {mocked.Name} would need Moq's default pinned (max {MaxPins})" }
+            ? new() { Blocker = MoqBlocker.Of(MoqReason.TooManyDefaultPins, $"{pins.Count} members of {mocked.Name} would need Moq's default pinned (max {MaxPins})") }
             : new() { Pins = pins };
     }
 

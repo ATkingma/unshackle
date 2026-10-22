@@ -7,7 +7,7 @@ namespace Unshackle.Core.Fixes.Moq;
 // otherwise why the mock stays Moq. A rule adds the members it sets up for every argument to setUp (no pin for them).
 public static class MockUseRules
 {
-    public static string? Blocker(ExpressionSyntax use, SemanticModel model, List<ISymbol> setUp, bool pendingUses)
+    public static MoqBlocker? Blocker(ExpressionSyntax use, SemanticModel model, List<ISymbol> setUp, bool pendingUses)
     {
         // Row 3: m.Setup(..).Returns(v);
         if (pendingUses && use.Parent is MemberAccessExpressionSyntax { Name.Identifier.Text: "Setup", Parent: InvocationExpressionSyntax setup } access
@@ -30,7 +30,7 @@ public static class MockUseRules
         }
 
         string shown = (use.Parent as MemberAccessExpressionSyntax)?.ToString() ?? use.Parent?.ToString() ?? use.ToString();
-        return $"MockUsedBeyondObject: {use} is used as a Mock<T> (`{Shorten(shown)}`); that use needs a later moq-queue.md row";
+        return MoqBlocker.Of(MoqReason.MockUsedBeyondObject, $"{use} is used as a Mock<T> (`{Shorten(shown)}`); that use needs a later moq-queue.md row");
     }
 
     private static string Shorten(string text)

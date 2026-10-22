@@ -14,18 +14,18 @@ public static class MockUsage
     {
         if (Type(symbol) is not { } mockType || !MoqSyntax.IsMockOfT(mockType))
         {
-            return MockAnalysis.Blocked("MockPassedAround: not a Mock<T> local or field");
+            return MockAnalysis.Blocked(MoqReason.MockPassedAround, "not a Mock<T> local or field");
         }
 
         if (symbol.DeclaringSyntaxReferences is not [var reference] || reference.SyntaxTree != model.SyntaxTree)
         {
-            return MockAnalysis.Blocked("MockPassedAround: the mock is declared in another file");
+            return MockAnalysis.Blocked(MoqReason.MockPassedAround, "the mock is declared in another file");
         }
 
         SyntaxNode declarator = reference.GetSyntax();
         if (declarator.Parent is VariableDeclarationSyntax { Variables.Count: > 1 })
         {
-            return MockAnalysis.Blocked("MockDeclaration: several mocks in one declaration; split it first");
+            return MockAnalysis.Blocked(MoqReason.MockDeclaration, "several mocks in one declaration; split it first");
         }
 
         SyntaxNode scope;
@@ -33,7 +33,7 @@ public static class MockUsage
         {
             if (field.DeclaredAccessibility != Accessibility.Private || field.ContainingType.DeclaringSyntaxReferences.Length != 1)
             {
-                return MockAnalysis.Blocked("MockPassedAround: a non-private field (or one of a partial class) can be used outside this file");
+                return MockAnalysis.Blocked(MoqReason.MockPassedAround, "a non-private field (or one of a partial class) can be used outside this file");
             }
 
             scope = field.ContainingType.DeclaringSyntaxReferences[0].GetSyntax();
@@ -46,7 +46,7 @@ public static class MockUsage
         ITypeSymbol mocked = MoqSyntax.MockedType(mockType);
         if (mocked.TypeKind != TypeKind.Interface)
         {
-            return MockAnalysis.Blocked("ClassMock: only interface mocks are converted; a class or delegate mock is moq-queue.md row 9");
+            return MockAnalysis.Blocked(MoqReason.ClassMock, "only interface mocks are converted; a class or delegate mock is moq-queue.md row 9");
         }
 
         var creations = new List<BaseObjectCreationExpressionSyntax>();
@@ -54,7 +54,7 @@ public static class MockUsage
         {
             if (initial is not BaseObjectCreationExpressionSyntax creation)
             {
-                return MockAnalysis.Blocked("MockPassedAround: the mock comes from another expression than new Mock<T>()");
+                return MockAnalysis.Blocked(MoqReason.MockPassedAround, "the mock comes from another expression than new Mock<T>()");
             }
 
             creations.Add(creation);
@@ -106,7 +106,7 @@ public static class MockUsage
 
         if (plan.Pins.Count > 0 && !creations.All(IsStatementCreation))
         {
-            return MockAnalysis.Blocked($"DefaultValueDiffers: an unconfigured {mocked.Name} answers differently in NSubstitute ("
+            return MockAnalysis.Blocked(MoqReason.DefaultValueDiffers, $"an unconfigured {mocked.Name} answers differently in NSubstitute ("
                 + string.Join(", ", plan.Pins.Select(p => p.Name)) + "); pinning Moq's default needs the creation as a statement, not a field initializer");
         }
 

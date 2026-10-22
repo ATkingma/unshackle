@@ -9,7 +9,7 @@ public class MockCall
 {
     public SyntaxNode? Node { get; init; }
 
-    public string? Blocker { get; init; }
+    public MoqBlocker? Blocker { get; init; }
 
     // The type of the mocked member's value (the method's return type or the property type).
     public ITypeSymbol? Type { get; init; }
@@ -20,7 +20,9 @@ public class MockCall
     // Every argument is It.IsAny (or there are none): the call is set up or verified for every argument.
     public bool ForAnyArguments { get; init; }
 
-    public static MockCall Blocked(string blocker) => new() { Blocker = blocker };
+    public static MockCall Blocked(MoqBlocker blocker) => new() { Blocker = blocker };
+
+    public static MockCall Blocked(MoqReason code, string reason) => Blocked(MoqBlocker.Of(code, reason));
 
     public static MockCall Done(SyntaxNode node) => new() { Node = node };
 
@@ -29,7 +31,7 @@ public class MockCall
         if (lambdaExpression is not SimpleLambdaExpressionSyntax { ExpressionBody: { } body } lambda
             || model.GetDeclaredSymbol(lambda.Parameter) is not { } parameter)
         {
-            return Blocked("CallShape: the mocked call is not a lambda x => x.Member(...)");
+            return Blocked(MoqBlocker.Of(MoqReason.CallShape, "the mocked call is not a lambda x => x.Member(...)"));
         }
 
         switch (body)
@@ -62,7 +64,7 @@ public class MockCall
                     ForAnyArguments = true,
                 };
             default:
-                return Blocked("CallShape: only x => x.Method(...) or x => x.Property on the mock itself (no extension method, chain or indexer)");
+                return Blocked(MoqBlocker.Of(MoqReason.CallShape, "only x => x.Method(...) or x => x.Property on the mock itself (no extension method, chain or indexer)"));
         }
     }
 }

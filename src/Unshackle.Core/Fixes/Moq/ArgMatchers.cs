@@ -13,7 +13,7 @@ public static class ArgMatchers
     {
         if (method.Parameters.Any(p => p.IsParams || p.RefKind != RefKind.None))
         {
-            return MockCall.Blocked("RefOutOrParams: the mocked method has a ref, out or params parameter");
+            return MockCall.Blocked(MoqReason.RefOutOrParams, "the mocked method has a ref, out or params parameter");
         }
 
         var matchers = new ExpressionSyntax?[list.Arguments.Count];
@@ -22,16 +22,16 @@ public static class ArgMatchers
             ArgumentSyntax argument = list.Arguments[i];
             if (argument.NameColon is not null)
             {
-                return MockCall.Blocked("NamedArgument: a named argument in a mocked call");
+                return MockCall.Blocked(MoqReason.NamedArgument, "a named argument in a mocked call");
             }
 
             if (argument.Expression.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()
                 .Any(id => SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(id).Symbol, lambdaParameter)))
             {
-                return MockCall.Blocked("ArgumentUsesMock: an argument refers to the mocked object itself");
+                return MockCall.Blocked(MoqReason.ArgumentUsesMock, "an argument refers to the mocked object itself");
             }
 
-            if (Matcher(argument.Expression, method.Parameters[i].Type, model, out string? blocker) is { } matcher)
+            if (Matcher(argument.Expression, method.Parameters[i].Type, model, out MoqBlocker? blocker) is { } matcher)
             {
                 matchers[i] = matcher;
             }
@@ -51,7 +51,7 @@ public static class ArgMatchers
     }
 
     // The NSubstitute form of a Moq It.* call, or null (blocker null: a plain value; blocker set: cannot be expressed).
-    private static ExpressionSyntax? Matcher(ExpressionSyntax expression, ITypeSymbol parameterType, SemanticModel model, out string? blocker)
+    private static ExpressionSyntax? Matcher(ExpressionSyntax expression, ITypeSymbol parameterType, SemanticModel model, out MoqBlocker? blocker)
     {
         blocker = null;
         if (expression is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name: var name } } invocation
@@ -60,7 +60,7 @@ public static class ArgMatchers
             if (expression.DescendantNodes().OfType<InvocationExpressionSyntax>().Any(i => model.GetSymbolInfo(i).Symbol is IMethodSymbol
                 { ContainingType: { Name: "It", ContainingNamespace.Name: "Moq" } }))
             {
-                blocker = "MatcherNested: a Moq matcher inside a larger argument expression";
+                blocker = MoqBlocker.Of(MoqReason.MatcherNested, "a Moq matcher inside a larger argument expression");
             }
 
             return null;
@@ -68,7 +68,7 @@ public static class ArgMatchers
 
         if (matcher.TypeArguments.Length != 1 || !SymbolEqualityComparer.Default.Equals(matcher.TypeArguments[0], parameterType))
         {
-            blocker = $"MatcherTypeDiffers: It.{matcher.Name} is not of the parameter type {parameterType.ToDisplayString()}";
+            blocker = MoqBlocker.Of(MoqReason.MatcherTypeDiffers, $"It.{matcher.Name} is not of the parameter type {parameterType.ToDisplayString()}");
             return null;
         }
 
@@ -84,7 +84,7 @@ public static class ArgMatchers
             case "IsNotNull" when arguments.Count == 0 && (!parameterType.IsValueType || parameterType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T):
                 return SyntaxFactory.ParseExpression($"Arg.Is<{type}>(a => a != null)");
             default:
-                blocker = $"MatcherUnsupported: It.{matcher.Name}{(arguments.Count > 0 && matcher.Name == "Is" ? " with a non-literal predicate" : string.Empty)} has no proven NSubstitute form";
+                blocker = MoqBlocker.Of(MoqReason.MatcherUnsupported, $"It.{matcher.Name}{(arguments.Count > 0 && matcher.Name == "Is" ? " with a non-literal predicate" : string.Empty)} has no proven NSubstitute form");
                 return null;
         }
     }

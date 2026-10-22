@@ -15,6 +15,9 @@ public class PollyFix : IFix, IProjectFileMigration
     // The version our proofs compile every rewrite against (Directory.Packages.props): MIT, brings Polly.Core 8.
     public const string ResilienceVersion = "10.11.0";
 
+    // The Polly.Core that Microsoft.Extensions.Resilience 10.11.0 brings in (via Polly.Extensions 8.4.2, checked in the nuspecs).
+    public const string BundledPollyCoreVersion = "8.4.2";
+
     public string Id => "polly";
 
     // Polly v7 and Polly.Core share the namespaces Polly and Polly.Retry, so no using is removed: the rewritten code binds to them.
@@ -47,7 +50,12 @@ public class PollyFix : IFix, IProjectFileMigration
     public IReadOnlyList<ProjectFileEdit> EditsFor(Project project)
     {
         ArgumentNullException.ThrowIfNull(project);
-        return [];
+        // Council round 10, P8: a direct Polly.Core reference goes once Microsoft.Extensions.Resilience brings it in, only when the
+        // declared version is at most the bundled one (the engine keeps a higher or unknown one with an Info row). The add is a
+        // no-op where the package migration already added it; both are blocked while the project has blocking rows (G4).
+        return ReferencesPollyV7(project)
+            ? [new PackageAddEdit { Name = "Microsoft.Extensions.Resilience", Version = ResilienceVersion }, new PackageRemoveEdit { Name = "Polly.Core", AtMostVersion = BundledPollyCoreVersion }]
+            : [];
     }
 
     // Package references show up as metadata references to the package's assembly; a Polly.Core-only (v8) project is not ours.

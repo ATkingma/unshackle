@@ -76,6 +76,31 @@ public class PollyFixTests
         }
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void EditsFor_PollyV7Project_AddsResilienceAndRemovesBundledPollyCore(bool referencesPolly)
+    {
+        // Arrange (council round 10, P8)
+        Project project = CreateProject(["NETCOREAPP", "NET8_0_OR_GREATER"], referencesPolly ? PollyReferences.Before : PollyReferences.After);
+
+        // Act
+        IReadOnlyList<ProjectFileEdit> edits = new PollyFix().EditsFor(project);
+
+        // Assert
+        if (!referencesPolly)
+        {
+            edits.ShouldBeEmpty();
+            return;
+        }
+
+        edits.Count.ShouldBe(2);
+        edits[0].ShouldBeOfType<PackageAddEdit>().Name.ShouldBe("Microsoft.Extensions.Resilience");
+        PackageRemoveEdit remove = edits[1].ShouldBeOfType<PackageRemoveEdit>();
+        remove.Name.ShouldBe("Polly.Core");
+        remove.AtMostVersion.ShouldBe("8.4.2");
+    }
+
     internal static Project CreateProject(string[] symbols, IEnumerable<MetadataReference> references)
     {
         var projectId = ProjectId.CreateNewId();

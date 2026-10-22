@@ -174,30 +174,30 @@ public class AddMediatRPattern : ISolutionPattern
             })
             .FirstOrDefault(t => model.GetTypeInfo(t).Type is ITypeParameterSymbol p && !resolution.Resolved.ContainsKey(p)) is TypeSyntax typeParameter)
         {
-            return PatternResult.Manual(
-                $"{resolution.Why(model.GetTypeInfo(typeParameter).Type!)}. AddMediatR scans the assembly of type parameter '{typeParameter}': Mediator's source generator needs the assemblies at compile time (MSG0007). "
+            return resolution.Manual(model.GetTypeInfo(typeParameter).Type!,
+                $"AddMediatR scans the assembly of type parameter '{typeParameter}': Mediator's source generator needs the assemblies at compile time (MSG0007). "
                 + "Call AddMediator once in the host project (with Mediator.SourceGenerator) instead of in this generic method.");
         }
 
         // Mediator's generator only sees this project and its references, and its code only reaches public handlers there (TAAK-144).
         if (CallerAssemblyParameter(dropped, model, IsVisibleOutside, resolution) is IParameterSymbol parameter)
         {
-            return PatternResult.Manual(
-                $"{resolution.Why(parameter)}. AddMediatR scans the assembly passed in '{parameter.Name}' of a public method: its handlers live in the caller's project, which Mediator's source generator in this project cannot see. "
+            return resolution.Manual(parameter,
+                $"AddMediatR scans the assembly passed in '{parameter.Name}' of a public method: its handlers live in the caller's project, which Mediator's source generator in this project cannot see. "
                 + "Call AddMediator once in the host project (with Mediator.SourceGenerator) instead of in this shared method.");
         }
 
         if (caller is not null && CallerAssemblyParameter(dropped, model, _ => true, resolution) is IParameterSymbol internalParameter)
         {
-            return PatternResult.Manual(
-                $"{resolution.Why(internalParameter)}. AddMediatR scans the assembly passed in '{internalParameter.Name}' of an internal method that {caller} (InternalsVisibleTo): its handlers would live in that project, which Mediator's source generator in this project cannot see. "
+            return resolution.Manual(internalParameter,
+                $"AddMediatR scans the assembly passed in '{internalParameter.Name}' of an internal method that {caller} (InternalsVisibleTo): its handlers would live in that project, which Mediator's source generator in this project cannot see. "
                 + "Call AddMediator once in that project (with Mediator.SourceGenerator) instead.");
         }
 
         if (forwarder is not null && CallerAssemblyParameter(dropped, model, _ => true, resolution) is IParameterSymbol forwardedParameter)
         {
-            return PatternResult.Manual(
-                $"{resolution.Why(forwardedParameter)}. AddMediatR scans the assembly passed in '{forwardedParameter.Name}', which comes from a parameter of the public method {forwarder}: its handlers live in the caller's project and are only known at run time, "
+            return resolution.Manual(forwardedParameter,
+                $"AddMediatR scans the assembly passed in '{forwardedParameter.Name}', which comes from a parameter of the public method {forwarder}: its handlers live in the caller's project and are only known at run time, "
                 + "which Mediator's source generator in this project cannot see. Call AddMediator once in the host project (with Mediator.SourceGenerator) instead of in this shared method.");
         }
 

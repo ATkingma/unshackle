@@ -16,9 +16,6 @@ public class PackagePattern : IPattern
 {
     public const string AddedNamespace = "ClosedXML.Excel";
 
-    // Excel's sheet-name rules; a name breaking them throws in both libraries, but not provably with the same exception.
-    private static readonly System.Buffers.SearchValues<char> s_invalidSheetNameCharacters = System.Buffers.SearchValues.Create(@"[]:*?/\");
-
     public string Id => "epplus.package";
 
     public string Description => "using var p = new ExcelPackage() with Worksheets.Add/SaveAs(FileInfo) uses only → new XLWorkbook()";
@@ -49,25 +46,19 @@ public class PackagePattern : IPattern
 
         if (creation.Parent is not EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator }
             || declarator.Parent is not VariableDeclarationSyntax { Variables.Count: 1 } declaration
-            || !IsUsingLocal(declaration, out SyntaxNode? scope)
+            || !IsLocal(declaration, out SyntaxNode? scope)
             || model.GetDeclaredSymbol(declarator) is not ILocalSymbol local)
         {
-            return PatternResult.Manual("ExcelPackage that is not a using local (field, argument, return value or a local without using); not mapped yet (epplus-queue).");
+            return PatternResult.Manual("ExcelPackage that is not a local (field, argument, return value); not mapped yet (epplus-queue).");
         }
 
-        var replacements = new Dictionary<SyntaxNode, SyntaxNode>();
-        foreach (IdentifierNameSyntax use in scope.DescendantNodes().OfType<IdentifierNameSyntax>()
-            .Where(i => i.Identifier.ValueText == local.Name && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(i).Symbol, local)))
+        var uses = new WorkbookUses(model, scope, local);
+        if (uses.Map() is string blocked)
         {
-            if (Replacement(use, model) is not (SyntaxNode old, SyntaxNode replacement))
-            {
-                int line = use.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-                return PatternResult.Manual($"ExcelPackage local {local.Name} is used as '{Shorten(use.Parent ?? use)}' (line {line}), which is not mapped yet (epplus-queue).");
-            }
-
-            replacements[old] = replacement;
+            return PatternResult.Manual(blocked);
         }
 
+        Dictionary<SyntaxNode, SyntaxNode> replacements = uses.Replacements;
         TypeSyntax workbook = SyntaxFactory.ParseTypeName("XLWorkbook");
         replacements[creation] = creation is ObjectCreationExpressionSyntax explicitCreation
             ? explicitCreation.WithType(workbook.WithTriviaFrom(explicitCreation.Type))
@@ -88,10 +79,10 @@ public class PackagePattern : IPattern
 
     private static SyntaxNode? Scope(BaseObjectCreationExpressionSyntax creation) =>
         creation.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } }
-            && IsUsingLocal(declaration, out SyntaxNode scope) ? scope : null;
+            && IsLocal(declaration, out SyntaxNode scope) ? scope : null;
 
-    // using (var p = new ExcelPackage()) { ... } → the using statement; using var p = new ExcelPackage(); → the block it is declared in.
-    private static bool IsUsingLocal(VariableDeclarationSyntax declaration, out SyntaxNode scope)
+    // using (var p = new ExcelPackage()) { ... } → the using statement; a using or plain local declaration (E9) → the block it is declared in.
+    private static bool IsLocal(VariableDeclarationSyntax declaration, out SyntaxNode scope)
     {
         scope = declaration;
         switch (declaration.Parent)
@@ -99,45 +90,11 @@ public class PackagePattern : IPattern
             case UsingStatementSyntax statement:
                 scope = statement;
                 return true;
-            case LocalDeclarationStatementSyntax { UsingKeyword.RawKind: (int)SyntaxKind.UsingKeyword, Parent: BlockSyntax block }:
+            case LocalDeclarationStatementSyntax { Parent: BlockSyntax block }:
                 scope = block;
                 return true;
             default:
                 return false;
         }
-    }
-
-    // The node of one use of the package local and what replaces it, or null when the use is not mapped.
-    private static (SyntaxNode Old, SyntaxNode New)? Replacement(IdentifierNameSyntax use, SemanticModel model)
-    {
-        // p.Workbook.Worksheets.Add("name"); → p.Worksheets.Add("name"); — the result unused (a used worksheet is a later queue row).
-        if (use.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Workbook" } workbook
-            && workbook.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Worksheets" } worksheets
-            && worksheets.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Add" } add
-            && add.Parent is InvocationExpressionSyntax { ArgumentList.Arguments: [{ Expression: LiteralExpressionSyntax name }], Parent: ExpressionStatementSyntax }
-            && name.IsKind(SyntaxKind.StringLiteralExpression) && IsValidSheetName(name.Token.ValueText))
-        {
-            return (worksheets, SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, use, worksheets.Name));
-        }
-
-        // p.SaveAs(new FileInfo(path)); → p.SaveAs(path);
-        if (use.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "SaveAs" } saveAs
-            && saveAs.Parent is InvocationExpressionSyntax { ArgumentList.Arguments: [{ Expression: ObjectCreationExpressionSyntax { ArgumentList.Arguments: [var path] } file }], Parent: ExpressionStatementSyntax } invocation
-            && model.GetTypeInfo(file).Type is INamedTypeSymbol { Name: "FileInfo", ContainingNamespace: { Name: "IO", ContainingNamespace.Name: "System" } }
-            && model.GetTypeInfo(path.Expression).Type is { SpecialType: SpecialType.System_String })
-        {
-            return (invocation.ArgumentList, SyntaxFactory.ArgumentList([path.WithoutTrivia()]).WithTriviaFrom(invocation.ArgumentList));
-        }
-
-        return null;
-    }
-
-    private static bool IsValidSheetName(string name) =>
-        name.Length is > 0 and <= 31 && name.IndexOfAny(s_invalidSheetNameCharacters) < 0 && name[0] != '\'' && name[^1] != '\'';
-
-    private static string Shorten(SyntaxNode node)
-    {
-        string text = node.ToString().ReplaceLineEndings(" ");
-        return text.Length <= 60 ? text : text[..57] + "...";
     }
 }

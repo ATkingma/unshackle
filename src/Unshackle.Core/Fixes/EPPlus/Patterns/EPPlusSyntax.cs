@@ -34,4 +34,8 @@ internal static class EPPlusSyntax
 
     public static bool IsPackageType(ITypeSymbol? type) =>
         type is INamedTypeSymbol { Name: PackageType, ContainingNamespace: { Name: Namespace, ContainingNamespace.IsGlobalNamespace: true } };
+
+    // E3: the version of the EPPlus assembly the project references (4.x: 1-based worksheet index, 5+: 0-based), or null when unknown.
+    public static Version? Version(SemanticModel model) =>
+        model.Compilation.GetTypeByMetadataName($"{Namespace}.{PackageType}")?.ContainingAssembly.Identity.Version;
 }

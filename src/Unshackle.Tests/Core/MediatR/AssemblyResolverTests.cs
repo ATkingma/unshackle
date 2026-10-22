@@ -87,7 +87,8 @@ public class AssemblyResolverTests
 
         // Assert
         ManualResult manualResult = result.ShouldBeOfType<ManualResult>();
-        manualResult.Reason.ShouldStartWith(AssemblyResolution.AssemblyNotStaticallyKnown + ": ");
+        manualResult.Code.ShouldBe(nameof(MediatRReason.AssemblyNotStaticallyKnown));
+        KeptReasonText.Rendered(manualResult).ShouldStartWith(AssemblyResolution.AssemblyNotStaticallyKnown + ": ");
         manualResult.Reason.ShouldContain("public method Publisher.Add");
     }
 
@@ -100,7 +101,8 @@ public class AssemblyResolverTests
         else
         {
             ManualResult manualResult = result.ShouldBeOfType<ManualResult>();
-            manualResult.Reason.ShouldStartWith(AssemblyResolution.AssemblyNotStaticallyKnown + ": ");
+            manualResult.Code.ShouldBe(nameof(MediatRReason.AssemblyNotStaticallyKnown));
+        KeptReasonText.Rendered(manualResult).ShouldStartWith(AssemblyResolution.AssemblyNotStaticallyKnown + ": ");
             manualResult.Reason.ShouldContain(manual);
         }
     }

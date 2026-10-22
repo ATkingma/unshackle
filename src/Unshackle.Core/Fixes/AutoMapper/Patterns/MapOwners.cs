@@ -38,7 +38,8 @@ internal class MapOwners
     private readonly Dictionary<string, string> _underTestWhere = new(StringComparer.Ordinal);
     private readonly HashSet<string> _discharged = new(StringComparer.Ordinal);
     private readonly HashSet<string> _dischargedCalls = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, string> _stubReasons = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, MockReason> _stubReasons = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _checks = new(StringComparer.Ordinal);
     private string? _all;
 
     /// <summary>The plan without a solution: nothing stays.</summary>
@@ -93,9 +94,30 @@ internal class MapOwners
     {
         if (IsMockSetUp(call, model))
         {
-            return _dischargedCalls.Contains(CallKey(call)) ? null
-                : PatternResult.KeptManual(KeptReason.MockSetUpKept, "a mock set-up of IMapper in a test stays as it is: the class under test it is handed to keeps calling IMapper for the maps it stubs (other classes use the generated methods once the test constructs that class itself)."
-                    + (_stubReasons.GetValueOrDefault(CallKey(call)) is { } why ? $" The stub at {Where(call)} is not removed: {why}." : ""));
+            string key = CallKey(call);
+            if (_checks.Contains(key))
+            {
+                // Council A6: Verify / Received of a Map call stays; no Received() equivalent remains for the generated method.
+                return new ManualResult($"the check of IMapper.Map at {Where(call)} stays as it is: once the class under test calls the generated method there is no "
+                    + "Received() equivalent left to verify, so its class keeps calling IMapper; assert the mapped result instead, then run the fix again.")
+                {
+                    Kept = KeptReason.MockSetUpKept,
+                    Code = nameof(MockSetUpCode.VerifyOnMapper),
+                };
+            }
+
+            if (_dischargedCalls.Contains(key))
+            {
+                return null;
+            }
+
+            MockReason? why = _stubReasons.GetValueOrDefault(key);
+            return new ManualResult("a mock set-up of IMapper in a test stays as it is: the class under test it is handed to keeps calling IMapper for the maps it stubs (other classes use the generated methods once the test constructs that class itself)."
+                + (why is not null ? $" The stub at {Where(call)} is not removed: {why}." : ""))
+            {
+                Kept = KeptReason.MockSetUpKept,
+                Code = why?.Code?.ToString(),
+            };
         }
 
         return (CallReason(call, model) ?? UnderTestReason(call, model)) is string reason
@@ -329,23 +351,23 @@ internal class MapOwners
     // TAAK-311: a mock that turns out not to qualify once the plan is stable is vetoed (with the reason) and the plan is built again.
     private static async Task<MapOwners> BuildAsync(Solution solution, CancellationToken cancellationToken)
     {
-        Dictionary<string, string> vetoed = new(StringComparer.Ordinal);
+        Dictionary<string, MockReason> vetoed = new(StringComparer.Ordinal);
         while (true)
         {
-            (MapOwners owners, Dictionary<string, string> failures) = await BuildOnceAsync(solution, vetoed, cancellationToken);
+            (MapOwners owners, Dictionary<string, MockReason> failures) = await BuildOnceAsync(solution, vetoed, cancellationToken);
             if (failures.Count == 0)
             {
                 return owners;
             }
 
-            foreach ((string key, string reason) in failures)
+            foreach ((string key, MockReason reason) in failures)
             {
                 vetoed.TryAdd(key, reason);
             }
         }
     }
 
-    private static async Task<(MapOwners Owners, Dictionary<string, string> Failures)> BuildOnceAsync(Solution solution, IReadOnlyDictionary<string, string> vetoed,
+    private static async Task<(MapOwners Owners, Dictionary<string, MockReason> Failures)> BuildOnceAsync(Solution solution, IReadOnlyDictionary<string, MockReason> vetoed,
         CancellationToken cancellationToken)
     {
         var owners = new MapOwners();
@@ -397,9 +419,11 @@ internal class MapOwners
             Dictionary<ISymbol, string> reasons = new(SymbolEqualityComparer.Default);
             foreach (MockedMapper mock in MockedMappers.Find(root, model))
             {
-                string? why = mock.Problem ?? vetoed.GetValueOrDefault(mock.Key)
-                    ?? (mock.Classes.Count == 0 ? "the test does not construct its class under test with this mock" : null)
-                    ?? (mock.Stubs.Count == 0 ? "the mock stubs no map (a loose mock answers Map with null, the generated method does not)" : null)
+                owners._checks.UnionWith(mock.Checks.Select(c => CallKey(c)));
+
+                // A mock without stubs is a candidate too (council A8): Undischarged checks that its classes never read what Map returns.
+                MockReason? why = mock.Problem ?? vetoed.GetValueOrDefault(mock.Key)
+                    ?? (mock.Classes.Count == 0 ? MockReason.Of("the test does not construct its class under test with this mock") : null)
                     ?? mock.Stubs.Select(s => MockedMappers.Disproof(s, model, (a, b) => plain.Contains(Key(a) + "|" + Key(b)))).FirstOrDefault(r => r is not null);
                 if (why is null)
                 {
@@ -487,10 +511,10 @@ internal class MapOwners
         while (owners.Count != count);
 
         owners.Rewrites.Clear();
-        Dictionary<string, string> failures = new(StringComparer.Ordinal);
+        Dictionary<string, MockReason> failures = new(StringComparer.Ordinal);
         foreach ((string key, MockedMapper mock) in candidates)
         {
-            if (owners.Undischarged(mock, calls, sources) is string failure)
+            if (owners.Undischarged(mock, calls, sources) is { } failure)
             {
                 failures[key] = failure;
                 continue;
@@ -572,17 +596,17 @@ internal class MapOwners
 
     // Why a candidate mock does not qualify once the plan is stable, or null: one of its classes stays under test, hands its IMapper on,
     // or makes a Map call that is kept, not migrated, or not stubbed by this mock; or a stubbed map stays on AutoMapper.
-    private string? Undischarged(MockedMapper mock, List<(SyntaxNode Call, SemanticModel Model, ISolutionPattern? Pattern)> calls, List<(SyntaxNode Root, SemanticModel Model)> sources)
+    private MockReason? Undischarged(MockedMapper mock, List<(SyntaxNode Call, SemanticModel Model, ISolutionPattern? Pattern)> calls, List<(SyntaxNode Root, SemanticModel Model)> sources)
     {
         HashSet<string> classes = [.. mock.Classes.SelectMany(WithBases)];
         if (mock.Classes.FirstOrDefault(c => _underTest.Contains(Key(c.OriginalDefinition))) is { } kept)
         {
-            return $"{kept.Name} stays a class under test of another mock ({_underTestWhere.GetValueOrDefault(Key(kept.OriginalDefinition))})";
+            return MockReason.Of($"{kept.Name} stays a class under test of another mock ({_underTestWhere.GetValueOrDefault(Key(kept.OriginalDefinition))})");
         }
 
         if (Targets(sources, classes).FirstOrDefault(t => !classes.Contains(Key(t.OriginalDefinition))) is { } target)
         {
-            return $"a class it is handed to passes its IMapper on to {target.Name}";
+            return MockReason.Of($"a class it is handed to passes its IMapper on to {target.Name}");
         }
 
         HashSet<string> stubbed = new(StringComparer.Ordinal);
@@ -590,7 +614,7 @@ internal class MapOwners
         {
             if (Reason(stub.From, stub.To) is string reason)
             {
-                return $"the stubbed map {Name(stub.From)} → {stub.To.Name} stays on AutoMapper ({reason})";
+                return MockReason.Of($"the stubbed map {Name(stub.From)} → {stub.To.Name} stays on AutoMapper ({reason})");
             }
 
             stubbed.Add(Key(stub.From!) + "|" + Key(stub.To));
@@ -606,16 +630,55 @@ internal class MapOwners
 
             if (pattern is null || KeptCall(call, model) is ManualResult)
             {
-                return $"the call at {Where(call)} keeps using IMapper";
+                return MockReason.Of($"the call at {Where(call)} keeps using IMapper");
+            }
+
+            if (mock.Stubs.Count == 0)
+            {
+                // Council A8: the loose mock answers null, the generated method a real object; only a value nobody reads hides the difference.
+                if (ValueUse(call, model, pattern) is string use)
+                {
+                    return MockReason.Of(MockSetUpCode.MockWithoutStubsNotProvable,
+                        $"the mock stubs no map (it answers Map with null, the generated method returns a real object), and the value of the call at {Where(call)} {use}");
+                }
+
+                continue;
             }
 
             if (CallPairs(call, model) is [(ITypeSymbol source, ITypeSymbol destination), ..] && !stubbed.Contains(Key(source) + "|" + Key(destination)))
             {
-                return $"the map {source.Name} → {destination.Name} at {Where(call)} is not stubbed by this mock (the mock answers it with null, the generated method does not)";
+                return MockReason.Of($"the map {source.Name} → {destination.Name} at {Where(call)} is not stubbed by this mock (the mock answers it with null, the generated method does not)");
             }
         }
 
         return null;
+    }
+
+    // Council A8: how the class under test uses the value of a Map call (read, null-checked, returned, passed or stored, with file:line), or null
+    // when nothing reads it: the call is a statement of its own, a discard, or the initializer of a local that is never read. Only a plain Map
+    // call qualifies (Map into an existing object fills it, which the mock does not).
+    private static string? ValueUse(SyntaxNode call, SemanticModel model, ISolutionPattern pattern)
+    {
+        if (pattern is not MapCallPattern || call is not InvocationExpressionSyntax invocation)
+        {
+            return "is not a plain Map call";
+        }
+
+        switch (invocation.Parent)
+        {
+            case ExpressionStatementSyntax:
+                return null;
+            case AssignmentExpressionSyntax { Left: IdentifierNameSyntax { Identifier.ValueText: "_" } discard, Parent: ExpressionStatementSyntax } when model.GetSymbolInfo(discard).Symbol is IDiscardSymbol or null:
+                return null;
+            case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator } when model.GetDeclaredSymbol(declarator) is ILocalSymbol local
+                && declarator.FirstAncestorOrSelf<MemberDeclarationSyntax>() is { } member:
+                return member.DescendantNodes().OfType<IdentifierNameSyntax>()
+                    .FirstOrDefault(n => n.Identifier.ValueText == local.Name && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(n).Symbol, local)) is { } read
+                    ? $"is read at {Where(read)}"
+                    : null;
+            default:
+                return "is used there (returned, passed, stored, checked or read)";
+        }
     }
 
     // Why this call stays: the reason of its pair (or element pair), or null.

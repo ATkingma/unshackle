@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 
@@ -20,8 +21,14 @@ internal class MockedMapper
     /// <summary>The statements that stub a Map call of the mock with a fixed value.</summary>
     public required IReadOnlyList<MapStub> Stubs { get; init; }
 
+    /// <summary>The Map calls the test checks on the mock (Verify, Received, DidNotReceive): they stay (council A6).</summary>
+    public required IReadOnlyList<InvocationExpressionSyntax> Checks { get; init; }
+
     /// <summary>Why the mock serves more than stubs and constructor arguments (with file:line), or null.</summary>
-    public required string? Problem { get; init; }
+    public required MockReason? Problem { get; init; }
+
+    /// <summary>The node that declares or creates the mock: where the Info line of a mock without stubs goes (council A8).</summary>
+    public required SyntaxNode Declaration { get; init; }
 
     /// <summary>File:line of the mock's declaration.</summary>
     public required string Where { get; init; }

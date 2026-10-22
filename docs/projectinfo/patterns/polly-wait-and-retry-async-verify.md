@@ -29,6 +29,7 @@ Proofs: `src/Unshackle.Tests/Proofs/Polly/WaitAndRetryAsync/` (text: `ProofTests
 | REQ-12 | Met | `Rewrite_NameTakenInScope_UsesFreshName` (`args1`) |
 | REQ-13 | Met | `on-retry-attempt` (named `onRetry:`, unused Context; trace pins delay → onRetry order and the 1-based count), `on-retry-async`, `on-retry-result` |
 | REQ-15 | Met | `field-static` (+ trace), `field-public`, `field-passed-on`; `RetryVariantsPatternTests.Rewrite_FieldNotProvablyLocal_Manual` |
+| REQ-16 | Met | `field-constructor` (+ trace), `property`; `RetryVariantsPatternTests.Rewrite_FieldNotProvablyLocal_Manual` (assignment in a branch) |
 | REQ-14 | Met | `on-retry-context`; unit test `OnRetryNotMappable` (DelegateResult passed on) |
 
 ## Deviations

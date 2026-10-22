@@ -90,6 +90,22 @@ MediatR still is (a single root Manual blocks the whole solution: miru 98 rows, 
   (main session: rerun those corpora, CPU-heavy).
 - Rows counted per pattern; one root can cascade into many rows (miru: 2 root rows → 98 Manual rows).
 
+## Re-measure 2026-10-22 (WIP, stopped at session end)
+
+Scan only (`unshackle scan --max-degree 4`), tool published from main db9238f, copies under `D:/playground/pool-tmp/remeasure/`.
+
+| Set | Repo | Build | Fixed | Manual | TAAK-313 rows | TAAK-314 rows |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| mediatr | kgr | ok | 217 | 0 | – | – |
+| mediatr | eshop | fails (partial; scan ran) | 52 | 0 | – | – |
+
+- kgr was 90 Manual (generic messages, project file) in the stale set; eshop did not load before. Both are now 0 Manual.
+- Not done: mediatr jason (stopped mid-scan), eshoponweb; every AutoMapper repo (altinnauth, bitwarden, cats, dasblog, devarch,
+  eshoponweb, gnomeshade, jason, jhipster, kavita, lancommander, letterbook, neozhu, nop, ombi, personalasst, skoruba, xipona).
+- MediatR sources ardalis, amantin, nadir, evo1 and evo2 are gone from `corpus-mediatr/src` (`peek/` is empty); they need a re-clone.
+- So no verdict yet on A3/A4 (TAAK-313/314): those counts come only from the AutoMapper corpus. Resume with
+  `run.sh list.txt` minus the done lines, then `agg.py` (both in `D:/playground/pool-tmp/remeasure/`).
+
 ## See also
 
 - `claude/tasks/TAAK-306-manual-reduction-round-2.md` — the task this analysis belongs to

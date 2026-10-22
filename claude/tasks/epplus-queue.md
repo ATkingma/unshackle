@@ -33,7 +33,8 @@ padding (reads EPPlus's 20 back as 19.289), so row 9 cannot be a rename (`CellCo
 culture-invariant ones); (c) an invalid or duplicate sheet name throws in both, with different exceptions (row 3: Manual unless literal and valid);
 (d) EPPlus 4.5.3.3's .NET Standard build is 0-based for `Worksheets[i]` (`WorksheetIndexTests.Harness_EPPlus4OnNetStandard_IsZeroBased`), not 1-based as
 council E3 assumed. Its .NET Framework builds default to 1-based, and configuration can switch both, so 4.x integer indexes are Manual
-`WorksheetIndexBaseNotProvable` (council question).
+`WorksheetIndexBaseNotProvable` (council question). Council round 11 decided E10/E11: 4.x is Fixed by target framework family when not packable,
+with dependents of the same family and no `IsWorksheets1Based` override (implemented in `WorksheetIndexBase`).
 (e) Numbers: ClosedXML writes 15 significant digits, EPPlus 17, so a non-constant double/float/decimal/long value is Manual
 `UncoveredRuntimeType`; EPPlus writes a DateTime as a General serial number (ClosedXML: date format), so DateTime is Manual too
 (`CellValueHarnessTests`).

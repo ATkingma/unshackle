@@ -11,4 +11,5 @@ public enum EPPlusReason
     UnmappedEPPlusStyle,
     FillWithoutSolidPattern,
     UncoveredRuntimeType,
+    WorksheetIndexConfigured,
 }

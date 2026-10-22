@@ -2,13 +2,15 @@
 kingmadoc: 1
 feature: "epplus-package"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17]
 files_expected:
     - src/Unshackle.Core/Fixes/EPPlus/EPPlusFix.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/PackagePattern.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/EPPlusSyntax.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/WorkbookUses.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/FontsLicence.cs
+    - src/Unshackle.Core/Fixes/EPPlus/Patterns/WorksheetIndexBase.cs
+    - src/Unshackle.Core/Fixes/EPPlus/IConfigKeySearch.cs
     - src/Unshackle.Tests/Core/EPPlus/FontsLicenceTests.cs
     - src/Unshackle.Tests/Core/EPPlus/CellValueHarnessTests.cs
     - src/Unshackle.Tests/Core/EPPlus/WorksheetIndexTests.cs
@@ -89,6 +91,8 @@ file.
 | REQ-13 | Row 4: on a worksheet local, `ws.Cells[r, c]` (two `int` expressions) and `ws.Cells["A1"]` (a literal single-cell address) → `ws.Cell(r, c)` / `ws.Cell("A1")`, as the target of a covered `Value` assignment or as the receiver of a style statement `epplus.styles` already migrated. Ranges (`Cells[r1, c1, r2, c2]`, `"A1:B2"`) and any other cell use are Manual (proofs `cells-values`, `used-worksheet`, `cell-range`). |
 | REQ-14 | Row 5 / E4: `Value = x` is Fixed for string, bool and the int types (int, short, byte, sbyte, ushort) always, and for double, float, decimal and long only as a constant that round-trips in 15 significant digits. Every other type (DateTime, enum, object, a non-constant double, `null`) is Manual `UncoveredRuntimeType` (`CellValueHarnessTests`; proofs `uncovered-datetime`, `uncovered-double`). |
 | REQ-15 | `epplus.styles` runs before `epplus.package`, so a cell that is both styled and given a value is migrated in one run, and the result is equal in the harness (`Fix_CellValuesAndStyles_RewrittenTogetherAndSameWorkbook`). |
+| REQ-16 | E10 (council round 11, supersedes the 4.x part of E3 and REQ-11's 4.x rule): a 4.x integer index is Fixed only when the project is not packable (`IProjectProperties`, R1), all its target frameworks are one family (net4x → `Worksheet(i)`, netcore/net5+ → `Worksheet(i + 1)`), every project that transitively depends on it is in the same family, and E11 is clean. Otherwise it is Manual `WorksheetIndexBaseNotProvable`, naming the family (netstandard, mixed, unknown, packable, or a dependent of another family). The family comes from the project's preprocessor symbols (`NETFRAMEWORK`, `NETCOREAPP`, `NETSTANDARD`), over every Roslyn project with the same file path. |
+| REQ-17 | E11: `IsWorksheets1Based` in any document of the solution (identifier or string literal) or in a config file (`IConfigKeySearch`) makes every integer index Manual `WorksheetIndexConfigured`, also on 5+, naming file:line and saying that removing it makes the index fixable. Without a config search the index is Manual too. A Fixed index carries the Info line "IsWorksheets1Based was looked for in the solution's config files and code only." |
 | REQ-7 | With the licence pattern in the same file, both are rewritten, the result compiles against ClosedXML and compares equal (`Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles`). |
 
 ## See also

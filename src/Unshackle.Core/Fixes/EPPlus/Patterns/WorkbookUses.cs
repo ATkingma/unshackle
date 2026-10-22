@@ -20,14 +20,20 @@ internal class WorkbookUses
     private readonly List<ILocalSymbol> _worksheets = [];
     private Models.PatternResult? _unknownVersion;
 
-    public WorkbookUses(SemanticModel model, SyntaxNode scope, ILocalSymbol package)
+    private readonly WorksheetIndexBase _indexBase;
+
+    public WorkbookUses(SemanticModel model, SyntaxNode scope, ILocalSymbol package, WorksheetIndexBase indexBase)
     {
+        _indexBase = indexBase;
         _model = model;
         _scope = scope;
         _package = package;
     }
 
     public Dictionary<SyntaxNode, SyntaxNode> Replacements { get; } = [];
+
+    // True when an integer worksheet index was rewritten (the result then says where IsWorksheets1Based was looked for, E11).
+    public bool UsesIndex { get; private set; }
 
     // Null when every use is mapped; otherwise the Manual result that says why not.
     public Models.PatternResult? Map()
@@ -214,21 +220,15 @@ internal class WorkbookUses
             return null;
         }
 
-        // E3: EPPlus 5+ is 0-based; ClosedXML's Worksheet(position) is 1-based. EPPlus 4.x is not provable: the cell-compare harness shows
-        // 4.5.3.3's .NET Standard build is 0-based while its .NET Framework builds default to 1-based, and both read an override from
-        // configuration (EPPlus:ExcelPackage.Compatibility.IsWorksheets1Based). Council question, TAAK-309.
-        Version? version = EPPlusSyntax.Version(_model);
-        if (version is null || version.Major < 5)
+        // E3 for 5+, E10/E11 for 4.x (WorksheetIndexBase); ClosedXML's Worksheet(position) is 1-based.
+        if (_indexBase.First is not int first)
         {
-            _unknownVersion = version is null
-                ? Models.PatternResult.Manual(EPPlusReason.UnknownEPPlusVersion, $"Worksheets[{index}] (line {Line(lookup)}): the referenced EPPlus version is unknown, so its index base is (4.x 0- or 1-based, 5+ 0-based).")
-                : Models.PatternResult.Manual(EPPlusReason.WorksheetIndexBaseNotProvable, $"Worksheets[{index}] (line {Line(lookup)}): EPPlus {version.Major}.x is 0-based on .NET Standard/Core and 1-based on .NET Framework by default, "
-                    + "and configuration can switch it (EPPlus:ExcelPackage.Compatibility.IsWorksheets1Based); use the sheet name or rewrite by hand.");
+            _unknownVersion = _indexBase.Blocked;
             return null;
         }
 
-        int? first = 0;
-        int position = index - first.Value + 1;
+        UsesIndex = true;
+        int position = index - first + 1;
         return position >= 1 && position <= added.Count
             ? SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(position))
             : null;

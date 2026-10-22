@@ -1,0 +1,3 @@
+# name repo ref(branch, tag or sha) -- MediatR set of the round-2 re-measure (TAAK-306); jason and eshoponweb come from corpus-am-repos.txt
+kgr kgrzybek/modular-monolith-with-ddd 91c8ef24b4cb6ef558c95d8267fa07d68c7059f8
+eshop dotnet/eShop 913acea66708a59595351174cee9b29f37179d29

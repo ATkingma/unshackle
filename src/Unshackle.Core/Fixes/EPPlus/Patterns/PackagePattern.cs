@@ -12,8 +12,22 @@ namespace Unshackle.Core.Fixes.EPPlus.Patterns;
 /// finds an added sheet (<c>Worksheets["name"]</c>; <c>Worksheets[i]</c> for EPPlus 5+ only, E3), a worksheet's <c>Name</c>, a worksheet local
 /// used only for its <c>Name</c>, and <c>SaveAs(new FileInfo(path))</c>. Anything else is Manual with the first use that blocks it.
 /// </summary>
-public class PackagePattern : IPattern
+public class PackagePattern : ISolutionPattern
 {
+    private readonly IProjectProperties? _projectProperties;
+    private readonly IConfigKeySearch? _configSearch;
+
+    public PackagePattern()
+    {
+    }
+
+    // Council round 11, E10/E11: packability and the config files decide whether a 4.x integer worksheet index is provable.
+    public PackagePattern(IProjectProperties? projectProperties, IConfigKeySearch? configSearch)
+    {
+        _projectProperties = projectProperties;
+        _configSearch = configSearch;
+    }
+
     public const string AddedNamespace = "ClosedXML.Excel";
 
     public string Id => "epplus.package";
@@ -28,7 +42,17 @@ public class PackagePattern : IPattern
         return creations.Select(c => Scope(c) is { } scope && creations.Count(other => scope.Span.Contains(other.Span)) == 1 ? scope : (SyntaxNode)c);
     }
 
-    public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
+    public PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
+        Rewrite(node, model, WorksheetIndexBase.Unknown($"line {node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}"));
+
+    public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
+    {
+        WorksheetIndexBase indexBase = await WorksheetIndexBase.ForAsync(model, solution, _projectProperties, _configSearch,
+            $"{node.SyntaxTree.FilePath}:{node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}", cancellationToken);
+        return Rewrite(node, model, indexBase);
+    }
+
+    private static PatternResult Rewrite(SyntaxNode node, SemanticModel model, WorksheetIndexBase indexBase)
     {
         if (node is not BaseObjectCreationExpressionSyntax creation)
         {
@@ -52,7 +76,7 @@ public class PackagePattern : IPattern
             return PatternResult.Manual("ExcelPackage that is not a local (field, argument, return value); not mapped yet (epplus-queue).");
         }
 
-        var uses = new WorkbookUses(model, scope, local);
+        var uses = new WorkbookUses(model, scope, local, indexBase);
         if (uses.Map() is PatternResult blocked)
         {
             return blocked;
@@ -75,7 +99,11 @@ public class PackagePattern : IPattern
                 + "ClosedXML would use it. Pin SixLabors.Fonts below 2.0 (or license it) and run the fix again.");
         }
 
-        return new FixedResult([scope.ReplaceNodes(replacements.Keys, (original, _) => replacements[original])], [AddedNamespace]) { Warning = FontsLicence.Warning };
+        return new FixedResult([scope.ReplaceNodes(replacements.Keys, (original, _) => replacements[original])], [AddedNamespace])
+        {
+            Warning = FontsLicence.Warning,
+            Info = uses.UsesIndex ? WorksheetIndexBase.Checked : null,
+        };
     }
 
     private static bool IsPackageCreation(BaseObjectCreationExpressionSyntax creation, SemanticModel model) => creation switch

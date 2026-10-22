@@ -84,6 +84,12 @@
   covered `Value =` (E4: string, bool, int types; double/float/decimal/long only as 15-digit constants) or as the receiver of a migrated style
   statement. `epplus.styles` now runs before `epplus.package`. EPPlus sub-namespaces are added to `RemovedNamespaces`. Harness findings
   (15 vs 17 digits; DateTime serial) are in the queue. `dotnet test` 2020 passed, 0 failed.
+- 2026-10-22 (epplus-skeleton, E10/E11): `WorksheetIndexBase`. `PackagePattern` is now an `ISolutionPattern`.
+  - 4.x integer index by target framework family (preprocessor symbols over every project with the same file path); not packable (`IProjectProperties`); dependents in the same family.
+  - E11: the `IsWorksheets1Based` override found in code (identifier or literal) or in config (`IConfigKeySearch`, a new Core interface in `Fixes/EPPlus/`) → Manual `WorksheetIndexConfigured`, also on 5+.
+  - `EPPlusFix(IProjectProperties?, IConfigKeySearch?)` constructor added.
+  - Needs: a DataAccess `IConfigKeySearch` and the `Cli.cs` wiring (main/engine).
+  - `dotnet test` 2030 passed, 0 failed.
 
 ## See also
 

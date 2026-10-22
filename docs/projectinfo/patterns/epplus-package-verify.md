@@ -26,11 +26,13 @@
 | REQ-13 | Met    | proofs `Package/cells-values`, `Package/used-worksheet` (harness equal), `Package/cell-range` |
 | REQ-14 | Met    | `CellValueHarnessTests` (covered types equal; `Value_UncoveredType_Differs` pins float 0.1f, 0.1 + 0.2, decimal.MaxValue and DateTime); proofs `uncovered-datetime`, `uncovered-double` |
 | REQ-15 | Met    | `EPPlusFixTests.Fix_CellValuesAndStyles_RewrittenTogetherAndSameWorkbook` |
+| REQ-16 | Met    | `WorksheetIndexTests`: `RewriteAsync_EPPlus4OneFamily_ByFamily` (net4x, netcore), `RewriteAsync_EPPlus4NotProvable_Manual` (netstandard pinned, unknown, packable, mixed, dependent of another family), `Harness_EPPlus4OnNetCore_IsZeroBased` |
+| REQ-17 | Met    | `WorksheetIndexTests`: `RewriteAsync_KeyInConfig_WorksheetIndexConfigured`, `RewriteAsync_KeyInCode_WorksheetIndexConfigured`, `RewriteAsync_NoConfigSearch_WorksheetIndexConfigured`, Info on `RewriteAsync_EPPlus5Index_ZeroBasedToPosition`; proof `Package/worksheet-index` |
 | REQ-7 | Met     | `EPPlusFixTests.Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles` |
 
 ## Build and tests
 
-- `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1707 passed, 0 failed (rows 1-2); 1862 passed, 0 failed (row 3, after merging main); 1865 passed, 0 failed (E7); 2020 passed, 0 failed (rows 4-5).
+- `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1707 passed, 0 failed (rows 1-2); 1862 passed, 0 failed (row 3, after merging main); 1865 passed, 0 failed (E7); 2020 passed, 0 failed (rows 4-5); 2030 passed, 0 failed (E10/E11).
 - No corpus run yet (TAAK-309 step 5).
 
 ## Deviations
@@ -49,6 +51,9 @@
   decimal.MaxValue differ in the file. EPPlus writes a DateTime as a serial number with General format, where ClosedXML writes a date format.
 - `RemovedNamespaces` also lists the common EPPlus sub-namespaces (`OfficeOpenXml.Style`, `.Drawing`, `.Drawing.Chart`, `.Table`, `.DataValidation`,
   `.ConditionalFormatting`); each is removed only when nothing binds to it.
+- E11 "projects that can see it" is approximated by the whole solution: an override anywhere blocks every integer index (the cautious side).
+- `IConfigKeySearch` is a Core interface in `Fixes/EPPlus/`. Until its DataAccess implementation is wired in `Cli.cs`, every integer index is Manual
+  `WorksheetIndexConfigured`.
 - Diagrams are inline Mermaid instead of D2/PNG under `img/`.
 
 ## See also

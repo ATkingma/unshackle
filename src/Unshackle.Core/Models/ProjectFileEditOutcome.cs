@@ -24,4 +24,7 @@ public class ProjectFileEditOutcome
 
     // Why the edit was deliberately not made (council round 10, P8), reported as an Info row; null when it was made or is Manual.
     public string? KeptInfo { get; init; }
+
+    // Old <PackageVersion> elements the edit left for the solution-level pass (council round 12, G7).
+    public IReadOnlyList<OldPackageVersion> PendingOldVersions { get; init; } = [];
 }

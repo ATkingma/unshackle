@@ -49,6 +49,7 @@ internal static class ProjectFileMigrations
             }
         }
 
+        List<OldPackageVersion> pending = [];
         var context = new ProjectFileEditContext { LoadedProjects = new HashSet<string>(projects.Select(p => p.Key), s_pathComparer), BlockedProjects = blocked };
         foreach (IGrouping<string, Project> project in projects)
         {
@@ -89,22 +90,50 @@ internal static class ProjectFileMigrations
                     continue;
                 }
 
-                foreach (ProjectFileChange change in outcome.Changes)
-                {
-                    int index = changes.FindIndex(c => s_pathComparer.Equals(c.FilePath, change.FilePath));
-                    if (index >= 0)
-                    {
-                        changes[index] = change;
-                    }
-                    else
-                    {
-                        changes.Add(change);
-                    }
-                }
+                pending.AddRange(outcome.PendingOldVersions);
+                Merge(changes, outcome);
+            }
+        }
+
+        // Council round 12, G7: one decision per Directory.Packages.props, on the final texts of every project.
+        List<OldPackageVersion> distinct = [.. pending.DistinctBy(v => (v.PropsPath.ToUpperInvariant(), v.Package.ToUpperInvariant()))];
+        if (distinct.Count > 0)
+        {
+            IReadOnlyList<ProjectFileEditOutcome> outcomes;
+            try
+            {
+                outcomes = await editor.RemoveOldVersionsAsync(distinct, changes, context, cancellationToken) ?? [];
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                findings.AddRange(distinct.Select(v => FindingFactory.CreateProjectFinding(v.PropsPath, fix, PatternResult.Manual($"Could not edit the project files: {ex.Message}"))));
+                return changes;
+            }
+
+            foreach (ProjectFileEditOutcome outcome in outcomes)
+            {
+                findings.Add(FindingFactory.CreateFinding(outcome.FilePath, outcome.Line, fix, Fixer.ProjectFilePatternId, Result(outcome)));
+                Merge(changes, outcome);
             }
         }
 
         return changes;
+    }
+
+    private static void Merge(List<ProjectFileChange> changes, ProjectFileEditOutcome outcome)
+    {
+        foreach (ProjectFileChange change in outcome.Changes)
+        {
+            int index = changes.FindIndex(c => s_pathComparer.Equals(c.FilePath, change.FilePath));
+            if (index >= 0)
+            {
+                changes[index] = change;
+            }
+            else
+            {
+                changes.Add(change);
+            }
+        }
     }
 
     // TAAK-320: the ProjectBlockers rows of every project file, and per document file of a project with a blocking code (G4) the text

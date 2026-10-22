@@ -93,8 +93,9 @@ public partial class XmlProjectFileStore
             touched.Add(run.Store(versions!));
         }
 
-        string? note = versions is null ? null : await RemoveOldVersionAsync(run, versions, edit.OldName, touched, cancellationToken);
-        return Applied(run, edit, line, touched, filePath, note);
+        return Applied(run, edit, line, touched, filePath) is var applied && versions is not null && Find(versions, PackageVersion, edit.OldName) is not null
+            ? WithPending(applied, versions.Path, edit.OldName)
+            : applied;
     }
 
     private async Task<ProjectFileEditOutcome?> RemovePackageAsync(EditRun run, PackageRemoveEdit edit, CancellationToken cancellationToken)
@@ -137,10 +138,8 @@ public partial class XmlProjectFileStore
 
         RemoveWithIndentation(reference);
         List<string> touched = [run.Store(file)];
-        string? note = central is ProjectFile versions
-            ? await RemoveOldVersionAsync(run, versions, edit.Name, touched, cancellationToken)
-            : null;
-        return Applied(run, edit, line, touched, filePath, note);
+        ProjectFileEditOutcome removed = Applied(run, edit, line, touched, filePath);
+        return central is not null && Find(central, PackageVersion, edit.Name) is not null ? WithPending(removed, central.Path, edit.Name) : removed;
     }
 
     private async Task<ProjectFileEditOutcome?> AddPackageAsync(EditRun run, PackageAddEdit edit, CancellationToken cancellationToken)
@@ -322,14 +321,60 @@ public partial class XmlProjectFileStore
             .Order(StringComparer.Ordinal);
     }
 
-    // Council round 10, G2: the old <PackageVersion> goes only when it is no GlobalPackageReference, every project under the
-    // Directory.Packages.props is loaded, and none of them (nor its Directory.Build.props) still references the package. Returns why it stays.
-    private async Task<string?> RemoveOldVersionAsync(EditRun run, ProjectFile versions, string package, List<string> touched, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ProjectFileEditOutcome>> RemoveOldVersionsAsync(
+        IEnumerable<OldPackageVersion> versions, IEnumerable<ProjectFileChange> earlier, ProjectFileEditContext context, CancellationToken cancellationToken)
     {
-        if (Find(versions, PackageVersion, package) is not XElement old)
+        ArgumentNullException.ThrowIfNull(versions);
+        ArgumentNullException.ThrowIfNull(earlier);
+        ArgumentNullException.ThrowIfNull(context);
+        List<ProjectFileEditOutcome> outcomes = [];
+        foreach (IGrouping<string, OldPackageVersion> props in versions.GroupBy(v => _fileSystem.Path.GetFullPath(v.PropsPath), s_pathComparer))
         {
-            return null;
+            // One run per Directory.Packages.props: its removals build on each other and on every earlier change.
+            var run = new EditRun(props.Key, earlier, context, s_pathComparer);
+            foreach (OldPackageVersion version in props)
+            {
+                if ((await StateAsync(run, props.Key, cancellationToken)).Current is not string text)
+                {
+                    continue;
+                }
+
+                var file = new ProjectFile(props.Key, text);
+                var edit = new PackageVersionRemoveEdit { Name = version.Package };
+                if (Find(file, PackageVersion, version.Package) is not XElement old)
+                {
+                    continue;
+                }
+
+                int line = LineOf(old);
+                outcomes.Add(await WhyOldVersionStaysAsync(run, file, version.Package, cancellationToken) is string why
+                    ? new ProjectFileEditOutcome { Edit = edit, FilePath = props.Key, Line = line, KeptInfo = $"The PackageVersion of {version.Package} stays in {props.Key}: {why}." }
+                    : RemoveVersion(run, file, old, edit, line));
+            }
         }
+
+        return outcomes;
+    }
+
+    private static ProjectFileEditOutcome RemoveVersion(EditRun run, ProjectFile file, XElement old, PackageVersionRemoveEdit edit, int line)
+    {
+        RemoveWithIndentation(old);
+        return Applied(run, edit, line, [run.Store(file)], file.Path);
+    }
+
+    private static ProjectFileEditOutcome WithPending(ProjectFileEditOutcome outcome, string propsPath, string package) => new()
+    {
+        Edit = outcome.Edit,
+        FilePath = outcome.FilePath,
+        Line = outcome.Line,
+        Changes = outcome.Changes,
+        PendingOldVersions = [new OldPackageVersion { PropsPath = propsPath, Package = package }],
+    };
+
+    // Council rounds 10 and 12, G2/G7: the old <PackageVersion> goes only when it is no GlobalPackageReference, every project under the
+    // Directory.Packages.props is loaded, and none of them (nor its Directory.Build.props) still references the package. Returns why it stays.
+    private async Task<string?> WhyOldVersionStaysAsync(EditRun run, ProjectFile versions, string package, CancellationToken cancellationToken)
+    {
 
         string? why = null;
         if (Find(versions, "GlobalPackageReference", package) is not null)
@@ -362,14 +407,7 @@ public partial class XmlProjectFileStore
             }
         }
 
-        if (why is not null)
-        {
-            return $"The PackageVersion of {package} stays in {versions.Path}: {why}.";
-        }
-
-        RemoveWithIndentation(old);
-        touched.Add(run.Store(versions));
-        return null;
+        return why;
     }
 
     // G5: null when the text parses as its file kind (JSON, or XML for .xml/.config/.props/.targets); other files are not checked.

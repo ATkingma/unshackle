@@ -205,6 +205,31 @@ public class RoundTenEngineTests
             && reason == "FluentAssertions package kept: blocked by TargetFrameworkUnsupported. Resolve that first, then run the fix again.").ShouldBe(blocking);
     }
 
+    [Fact]
+    public async Task FixAsync_EditLeavesOldVersion_DecidesItOnceAfterEveryProject()
+    {
+        // Arrange (council round 12, G7)
+        IProjectFileStore store = Substitute.For<IProjectFileStore, IProjectFileEditor>();
+        var edit = new PackageRenameEdit { OldName = "SpecFlow", NewName = "Reqnroll", Version = "2.4.1" };
+        var pending = new OldPackageVersion { PropsPath = "/repo/Directory.Packages.props", Package = "SpecFlow" };
+        IFix fix = CreateFix(PatternResult.Note("ok"));
+        ((IProjectFileMigration)fix).EditsFor(Arg.Any<Project>()).Returns([edit]);
+        var editor = (IProjectFileEditor)store;
+        editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>())
+            .Returns([new ProjectFileEditOutcome { Edit = edit, FilePath = ProjectPath, Line = 3, PendingOldVersions = [pending] }]);
+        editor.RemoveOldVersionsAsync(Arg.Any<IEnumerable<OldPackageVersion>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>())
+            .Returns([new ProjectFileEditOutcome { Edit = new PackageVersionRemoveEdit { Name = "SpecFlow" }, FilePath = pending.PropsPath, Line = 4, KeptInfo = "stays." }]);
+
+        // Act
+        FixReport report = await new Fixer([fix], store).FixAsync(CreateSolution(), new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        await editor.Received(1).RemoveOldVersionsAsync(
+            Arg.Is<IEnumerable<OldPackageVersion>>(v => v.Single() == pending), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>());
+        Finding row = report.Findings.Single(f => f.FilePath == pending.PropsPath);
+        row.Result.ShouldBeOfType<InfoResult>().Text.ShouldBe("stays.");
+    }
+
     private static IPattern CreatePattern(PatternResult result)
     {
         IPattern pattern = Substitute.For<IPattern>();

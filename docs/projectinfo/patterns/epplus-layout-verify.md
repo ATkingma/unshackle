@@ -15,7 +15,7 @@
 | REQ-1 | Met     | `LayoutHarnessTests.LayoutShape_RewrittenByPattern_WritesSameWorkbook` (merge case) |
 | REQ-2 | Met     | same test, `FreezePanes(2, 1)` and `(3, 2)` cases |
 | REQ-3 | Met     | same test, row height case |
-| REQ-4 | Met     | proofs `Layout/column-width`, `Layout/auto-fit-columns`; `UnprovenShape_IsManualAndUnchanged`; `ColumnWidth_SameNumber_DiffersInHarness` |
+| REQ-4 | Met     | proofs `Layout/column-width`, `Layout/auto-fit-columns` (`AutoFitDiffers`, E13); `UnprovenShape_IsManualAndUnchanged`; `ColumnWidth_SameNumber_DiffersInHarness` |
 | REQ-5 | Met     | proofs `Layout/unmerge`, `Layout/freeze-variable` |
 
 ## Build and tests

@@ -62,8 +62,8 @@ public class LayoutHarnessTests
 
     [Theory]
     [InlineData("sheet.Column(1).Width = 20;", LayoutPattern.WidthCode)]
-    [InlineData("sheet.Cells[\"A1:B3\"].AutoFitColumns();", LayoutPattern.WidthCode)]
-    [InlineData("sheet.Column(2).AutoFit();", LayoutPattern.WidthCode)]
+    [InlineData("sheet.Cells[\"A1:B3\"].AutoFitColumns();", LayoutPattern.AutoFitCode)]
+    [InlineData("sheet.Column(2).AutoFit();", LayoutPattern.AutoFitCode)]
     [InlineData("sheet.Cells[\"A1:B2\"].Merge = false;", LayoutPattern.UnmappedCode)]
     public async Task UnprovenShape_IsManualAndUnchanged(string layout, string code)
     {

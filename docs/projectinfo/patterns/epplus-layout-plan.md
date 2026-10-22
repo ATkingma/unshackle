@@ -37,9 +37,9 @@ ClosedXML statements, each proven by the harness; column widths and auto-fit are
 | `S.View.FreezePanes(r, c);` (int literals ≥ 1) | `S.SheetView.Freeze(r - 1, c - 1);` | EPPlus names the first unfrozen cell, ClosedXML counts frozen rows/columns; harness: same split |
 | `S.Row(i).Height = h;` | same text | both in points; harness: same height |
 
-**Out of scope (Manual)**: `ColumnWidthDiffers` for `Column(i).Width = w`, `AutoFitColumns(..)` and `Column(i).AutoFit(..)` (E8: the same
-number gives a different column, pinned by `ColumnWidth_SameNumber_DiffersInHarness`; auto-fit depends on font metrics, so no tolerance
-is claimed). `UnmappedEPPlusLayout` for `Merge = false` or a computed value, `FreezePanes` with non-literal arguments, and any other
+**Out of scope (Manual)**: `ColumnWidthDiffers` for `Column(i).Width = w` (E8: the same number gives a different column, pinned by
+`ColumnWidth_SameNumber_DiffersInHarness`); `AutoFitDiffers` for `AutoFitColumns(..)` and `Column(i).AutoFit(..)`, for good (council
+round 12, E13: the result depends on the installed fonts and each library's text measuring). `UnmappedEPPlusLayout` for `Merge = false` or a computed value, `FreezePanes` with non-literal arguments, and any other
 row-height form.
 
 ## Design

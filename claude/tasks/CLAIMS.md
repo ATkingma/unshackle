@@ -13,14 +13,16 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 
 ## Active claims
 
+Pool restarted 2026-10-22 on the Linux machine (max 5 agents; corpus under `<corpus>` on the data disk, never `/tmp`). Earlier claims 24b/22c/25 closed (their work is on main or on `pool/remeasure-wip`).
+
 | # | Agent | Task | Files (owned, write) | Reserved task nrs | Since |
 | --- | --- | --- | --- | --- | --- |
-| 24b | mr-assembly-scan → engine-2 | TAAK-318/319/320 done; TAAK-321 done; now TAAK-322 (+ one line in `Fixes/Polly/PollyFix.cs` for G9) | `src/Unshackle.Core/*.cs` (root), `src/Unshackle.Core/Abstractions/**`, `src/Unshackle.Core/Models/**`, `src/Unshackle.DataAccess/**`, `src/Unshackle.Tests/Core/Engine/**`, `src/Unshackle.Tests/DataAccess/**`, `docs/projectinfo/architectuur/core.md`, `claude/tasks/TAAK-318-*.md` | — | 2026-10-22 |
-| 22c | masstransit-detector → epplus-styles | TAAK-309 row 8 | `src/Unshackle.Core/Fixes/EPPlus/Patterns/Styles*.cs` (new), `src/Unshackle.Tests/Core/EPPlus/Styles*` (new), `src/Unshackle.Tests/Proofs/EPPlus/Styles/**`, `docs/projectinfo/patterns/epplus-styles-*`; one line in `EPPlusFix.cs` (pattern list); granted after the fact: the pattern list in `EPPlusFixTests.cs`, the migrated-annotation skip in `UnsupportedPattern.cs`; row 9 `Layout*` done; granted: the row-9 skip in `UnsupportedPattern.cs`, additive freeze/row-height facts in `WorkbookSnapshot.cs`; next: rows 7 (`Dimension*`) and 10 (`LoadFrom*`) | 356–359 | 2026-10-22 |
-| 25 | am-mt-followups | round 11 + info proofs + smoke tests done; A10/T8 done; now corpus re-measure for TAAK-313/314: `claude/tasks/ANALYSE-manual-round-2.md` (append a section), corpus copies under `D:/playground/pool-tmp/remeasure/` (read-only originals) | `src/Unshackle.Core/Fixes/AutoMapper/**`, AutoMapper tests/proofs/docs, `claude/tasks/TAAK-311-*.md`; then `src/Unshackle.Core/Fixes/MassTransit/**`, MassTransit tests/proofs/docs, `claude/tasks/TAAK-310-*.md` | — | 2026-10-22 |
-| — | main | TAAK-303, 305 st 1 | git branches/worktrees, `claude/tasks/TAAK-303-*.md`, `claude/tasks/TAAK-305-*.md` | — | 2026-10-22 |
-
-Shared grant (2026-10-22): `src/Unshackle.Tests/ProofTests.cs` — moq-, polly- and epplus-skeleton may each add only their own `s_fixes` entry; the main session resolves merge conflicts.
+| L1 | polly | TAAK-308 rows 4, 8, 9, 11, 12 | `src/Unshackle.Core/Fixes/Polly/**`, Polly tests/proofs/docs, `claude/tasks/polly-queue.md`, `claude/tasks/TAAK-308-*.md` | 340–349 | 2026-10-22 |
+| L2 | moq | TAAK-307 rows 9, 11, 12, 13 | `src/Unshackle.Core/Fixes/Moq/**`, Moq tests/proofs/docs, `claude/tasks/moq-queue.md`, `claude/tasks/TAAK-307-*.md` | 320–339 | 2026-10-22 |
+| L3 | engine | TAAK-322 step 4, then TAAK-305 | `src/Unshackle.Core/*.cs` (root), `Abstractions/**`, `Models/**`, `src/Unshackle.DataAccess/**`, `src/Unshackle.Tests/Core/Engine/**`, `docs/projectinfo/architectuur/core.md`, `claude/tasks/TAAK-322-*.md`, `TAAK-305-*.md`; packaging in `src/Unshackle.Interface/Unshackle.Interface.csproj` | — | 2026-10-22 |
+| L4 | epplus-corpus | TAAK-309 queue status, then corpus rounds EPPlus + MassTransit | `src/Unshackle.Core/Fixes/EPPlus/**` (only bug fixes found by the corpus, with proof), EPPlus/MassTransit tests/proofs, `claude/tasks/epplus-queue.md`, `claude/tasks/TAAK-309-*.md`, `TAAK-310-*.md`, `claude/tasks/CORPUSRUN-epplus.md`, `CORPUSRUN-masstransit.md` (new), `claude/tools/corpus-epplus-*`, `corpus-masstransit-*` | 350–359, 360–369 | 2026-10-22 |
+| L5 | remeasure | finish `pool/remeasure-wip`, then TAAK-313, 314, 315 | `src/Unshackle.Core/Fixes/AutoMapper/**`, `src/Unshackle.Core/Fixes/MediatR/**`, their tests/proofs/docs, `claude/tasks/ANALYSE-manual-round-2.md`, `claude/tasks/TAAK-313..315-*.md` | 311–319 | 2026-10-22 |
+| — | main | merges, INDEX/overdracht/council, archive finished tasks (301, 302, 311, 312, 316–321), TAAK-303 | shared files | — | 2026-10-22 |
 
 ## Released claims
 

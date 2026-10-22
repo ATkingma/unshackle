@@ -99,7 +99,9 @@ public class KeptReasonTextTests
     public void AllowsPartial_MediatRKept_SameAsThePlainManual()
     {
         // Arrange
+#pragma warning disable CA1859 // AllowsPartial is a default interface member: MediatRFix does not override it, so only IFix can call it
         IFix fix = new MediatRFix();
+#pragma warning restore CA1859
 
         // Act
         bool coded = fix.AllowsPartial(Coded(15));

@@ -271,6 +271,16 @@ edits per project from a closed set (`ProjectFileEdit` has a private-protected c
   `Microsoft.NET.Test.Sdk` or `IsTestProject` makes a project not packable, and every other project is packable. A conditional value,
   a computed value or an unreadable file counts as packable. `MediatRFix(IProjectProperties)` uses it in `AssemblyResolver`.
 
+## Blocked projects stay untouched (TAAK-320)
+
+- The Fixer asks `IProjectFileMigration.ProjectBlockers` before the document pass, and the rows come first in the report.
+- If a project has a row with a `ProjectBlockingReason` code, every document of that project goes back to its original text after the
+  document pass. That includes a file it shares with another project. Each Fixed row in those documents becomes Manual:
+  `Not rewritten: blocked by <code> on <project>. ...`.
+- The package step then sees the old code, so that project keeps the old package. Fixes without blockers produce the same output as before.
+- Console: a report-only run starts its summary with "Inventory only: nothing was changed.", and the header row stays out of the table and
+  the counts. A dry run shows a deleted file as one line, `--- <path> (deleted)`, instead of a diff.
+
 ## Package assets (TAAK-319)
 
 - `IPackageAssetsReader.Read(projectPath)` returns `PackageAssets` and is implemented by DataAccess `JsonPackageAssetsReader`, which reads

@@ -2,7 +2,24 @@
 
 Read this first if you are taking over this session. Then `CLAUDE.md` and `claude/docs/INDEX.md`.
 
-## Current state (2026-10-22) — start here
+## Current state (2026-10-22, end of session) — start here
+
+**Agent pool (POOL-2026-10-22) stopped for a device switch.** Main is green and pushed (`b4eb28b` + this handover; verify-head OK, 2244 tests + 38 SampleShop). 25/25 agents of the budget used; finished agents were reused per queue row.
+
+On main now:
+- **Moq** (TAAK-307): create, arg-matchers, setup-returns, verify, verify-all (M4), throws, properties (`moq.properties`), returns-lambda, callback; run-time harness (`Core/Moq/MoqRuntimeProofTests`); Moq default pins (round 9); NSubstitute 6.2.0. Next queue rows: 9 class-mocks, 11 setup-sequence, 12–13; then corpus round (main session). Harness found NSubstitute config-call side effects → `Configure()` for overlapping setups (council question open).
+- **Polly** (TAAK-308): wait-and-retry-async (+filters, onRetry, private fields), retry-variants, add-policy-handler (+private method); P8/P9; run-time traces. **Corpus results before `c803b5a` are invalid** (pre-filter skipped every file). Next: row 10 Wrap (P4), row 4 sync, properties/parameters.
+- **EPPlus** (TAAK-309): license-context, styles, layout, dimension, load-from, package (worksheets, cells, ranges, values E4, save, index base E10/E11), unsupported; cell-compare harness; E7 warning. All reads Manual (E12 matrix: no `GetValue<T>` qualifies). Next: E13/E15/E16 + full proofs for styles/layout/dimension/load-from (E14); E7 pin via TAAK-319 reader.
+- **MassTransit** (TAAK-310): report-only detector (10 patterns, Info/Manual, T6–T8). Next: corpus run, roadmap row.
+- **Engine**: TAAK-316 report-only, 317 project-file migrations, 318 round-10 rules, 319 assets reader, 320/321 blockers stop rewrites and package swap. In progress: TAAK-322 (pre-filter on assemblies G9, solution-level CPM G7, comment trivia G8).
+- **AutoMapper/MediatR**: TAAK-311 (A1, A6–A10), 312 (A2); TAAK-313/314 wait for the corpus re-measure (started, see below).
+- **Council** rounds 8–12 in `claude/docs/council.md`. Open questions for round 13: Moq per-result pattern id (M7 partly), `Configure()` in output; EPPlus read mapping keeping EPPlus semantics.
+
+**Unmerged WIP branches pushed to origin** (`pool/*`, see `claude/tasks/CLAIMS.md` "Active claims"): merge each after build + tests + verify-head, or continue it. **Never clear `~/.nuget/packages` on the work laptop** (Profit); corpus runs use NuGet caches under `D:/playground/...`.
+
+**Left for the main session**: corpus rounds (Moq, Polly, EPPlus, MassTransit) with NuGet cache on D:, TAAK-303 (worktree cleanup, after merging the pool branches), TAAK-305 (ReadyToRun), TAAK-304 release 0.3.0 (user go).
+
+## Earlier state (2026-10-22, morning)
 
 **TAAK-298 (performance) done and merged to main:** pre-filter per file (`OldLibraryFiles`, hidden `--check-every-file` to
 turn it off), parallel files for FA and MediatR (`--sequential`, `--max-degree N`, default min(cores, 8)), AutoMapper

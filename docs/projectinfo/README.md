@@ -200,6 +200,7 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `masstransit.consumer-definition` | [plan](patterns/masstransit-consumer-definition-plan.md) | [models](patterns/masstransit-consumer-definition-modellen.md) | [verify](patterns/masstransit-consumer-definition-verify.md) | TAAK-310 |
 | `masstransit.saga` | [plan](patterns/masstransit-saga-plan.md) | [models](patterns/masstransit-saga-modellen.md) | [verify](patterns/masstransit-saga-verify.md) | TAAK-310 |
 | `masstransit.request-client` | [plan](patterns/masstransit-request-client-plan.md) | [models](patterns/masstransit-request-client-modellen.md) | [verify](patterns/masstransit-request-client-verify.md) | TAAK-310 |
+| `masstransit.publish-send` | [plan](patterns/masstransit-publish-send-plan.md) | [models](patterns/masstransit-publish-send-modellen.md) | [verify](patterns/masstransit-publish-send-verify.md) | TAAK-310 |
 
 ## See also
 

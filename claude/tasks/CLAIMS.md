@@ -15,9 +15,7 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 
 | # | Agent | Task | Files (owned, write) | Reserved task nrs | Since |
 | --- | --- | --- | --- | --- | --- |
-| 1 | docs | TAAK-301 | `README.md`, `docs/` except `docs/projectinfo/`, `claude/tasks/TAAK-301-*.md` | — | 2026-10-22 |
 | 2 | tooling | TAAK-302 | `claude/tools/verify-head.sh`, `.claude/hooks/check-pattern-docs.sh`, `claude/tools/check_pattern_docs.py` (new), `claude/tasks/TAAK-302-*.md` | — | 2026-10-22 |
-| 3 | analysis | TAAK-306 st 1–2 | `claude/tasks/ANALYSE-manual-round-2.md` (new), `claude/tasks/TAAK-306-*.md` | 311–319 | 2026-10-22 |
 | 4 | moq | TAAK-307 st 1 | `docs/projectinfo/architectuur/corpus-moq.md`, `claude/tools/corpus-moq-repos.txt`, `claude/tasks/TAAK-307-*.md` | 320–339 | 2026-10-22 |
 | 5 | polly | TAAK-308 st 1–2 | `docs/projectinfo/architectuur/corpus-polly.md`, `claude/tools/corpus-polly-repos.txt`, `claude/tasks/TAAK-308-*.md` | 340–349 | 2026-10-22 |
 | 6 | epplus | TAAK-309 st 1 | `docs/projectinfo/architectuur/corpus-epplus.md`, `claude/tools/corpus-epplus-repos.txt`, `claude/tasks/TAAK-309-*.md` | 350–359 | 2026-10-22 |
@@ -36,6 +34,8 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 
 | Agent | Task | Result | Released |
 | --- | --- | --- | --- |
+| docs | TAAK-301 | done, merged 470c734 | 2026-10-22 |
+| analysis | TAAK-306 st 1–2 | done, TAAK-311..315 created, merged 470c734 | 2026-10-22 |
 
 ## Spawn log
 

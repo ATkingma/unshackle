@@ -28,11 +28,13 @@
 | REQ-15 | Met    | `EPPlusFixTests.Fix_CellValuesAndStyles_RewrittenTogetherAndSameWorkbook` |
 | REQ-16 | Met    | `WorksheetIndexTests`: `RewriteAsync_EPPlus4OneFamily_ByFamily` (net4x, netcore), `RewriteAsync_EPPlus4NotProvable_Manual` (netstandard pinned, unknown, packable, mixed, dependent of another family), `Harness_EPPlus4OnNetCore_IsZeroBased` |
 | REQ-17 | Met    | `WorksheetIndexTests`: `RewriteAsync_KeyInConfig_WorksheetIndexConfigured`, `RewriteAsync_KeyInCode_WorksheetIndexConfigured`, `RewriteAsync_NoConfigSearch_WorksheetIndexConfigured`, Info on `RewriteAsync_EPPlus5Index_ZeroBasedToPosition`; proof `Package/worksheet-index` |
+| REQ-18 | Met    | proof `Package/cell-range` (harness equal); `CellReadHarnessTests.Read_SameResult` (range value, range bold); `EPPlusFixTests.Fix_RangeMergeAndStyleAndRowHeight_SameWorkbook` |
+| REQ-19 | Met    | proof `Package/cell-read`; `CellReadHarnessTests.Read_Differs` |
 | REQ-7 | Met     | `EPPlusFixTests.Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles` |
 
 ## Build and tests
 
-- `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1707 passed, 0 failed (rows 1-2); 1862 passed, 0 failed (row 3, after merging main); 1865 passed, 0 failed (E7); 2020 passed, 0 failed (rows 4-5); 2030 passed, 0 failed (E10/E11).
+- `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1707 passed, 0 failed (rows 1-2); 1862 passed, 0 failed (row 3, after merging main); 1865 passed, 0 failed (E7); 2020 passed, 0 failed (rows 4-5); 2030 passed, 0 failed (E10/E11); 2093 passed, 0 failed (rows 4-5 remainder).
 - No corpus run yet (TAAK-309 step 5).
 
 ## Deviations

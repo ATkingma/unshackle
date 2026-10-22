@@ -90,6 +90,10 @@
   - `EPPlusFix(IProjectProperties?, IConfigKeySearch?)` constructor added.
   - Needs: a DataAccess `IConfigKeySearch` and the `Cli.cs` wiring (main/engine).
   - `dotnet test` 2030 passed, 0 failed.
+- 2026-10-22 (epplus-skeleton, rows 4-5 rest): ranges (`Cells[r1, c1, r2, c2]`, `Cells["A1:C2"]` → `Range(..)`) for covered values, migrated
+  styles and `Merge();` (from `epplus.layout`); `Row(i).Height` and `SheetView.Freeze` on a worksheet local accepted. Reads (`.Text`, `GetValue<T>`, a
+  `.Value` read) are Manual `CellReadDiffers` (harness: bool text "1" vs "TRUE", empty GetValue<string> null vs ""). Pattern order after the merge
+  (license, styles, layout, package, unsupported) suits this: package runs after both tail patterns.
 
 ## See also
 

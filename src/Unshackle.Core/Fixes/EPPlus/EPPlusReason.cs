@@ -12,4 +12,5 @@ public enum EPPlusReason
     FillWithoutSolidPattern,
     UncoveredRuntimeType,
     WorksheetIndexConfigured,
+    CellReadDiffers,
 }

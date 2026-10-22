@@ -68,6 +68,11 @@
   for no-CallBase (null vs ""), a Setup on a partial (NSubstitute runs the real member once), abstract members. `ClassMocksPattern` derives
   from `CreatePattern` (own id); new reasons `ClassMockNoCallBase`, `ClassMockAbstract`, `ClassMockSetup`. 10 proofs + 2 run-time proofs.
 
+- 2026-10-22 (agent L2): rows 11-13 done. Row 11 `moq.setup-sequence` (all-Returns steps become `Returns(a, b)` with the exhaustion warning). Row 12
+  `moq.logger-verify`: `ILogger.Log` verifies become `Received(n).Log(.. Arg.AnyType ..)`; fixed the formatter type argument (`It.IsAny<Func<It.IsAnyType,..>>`
+  was left as Moq, nullable annotation stripped). Row 13 `moq.unsupported`: reason codes `ProtectedMember`, `MockAs`, `MockInvocations`, `MockReset`,
+  `MockRaise`, `AutoMocker` (class mocks too); `Reset`/`Raise` stay Manual (not proven). Next: step 5 corpus round (L6).
+
 ## See also
 
 - `claude/docs/INDEX.md` — documentation index

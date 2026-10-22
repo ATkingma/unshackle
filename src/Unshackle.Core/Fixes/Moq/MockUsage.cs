@@ -92,6 +92,11 @@ public static class MockUsage
 
             if (isClass)
             {
+                if (use.Parent is MemberAccessExpressionSyntax { Name.Identifier.Text: var classMember } && MockUseRules.Unsupported(classMember) is { } unsupported)
+                {
+                    return MockAnalysis.Blocked(unsupported);
+                }
+
                 return MockAnalysis.Blocked(MoqReason.ClassMockSetup,
                     "a use of a class mock besides .Object (Setup, Verify, ...): NSubstitute runs the real member when it configures a partial substitute (measured: 2 calls, Moq 1)");
             }

@@ -16,7 +16,7 @@ public class SetupProof
     {
         var repo = new Mock<IRepo>();
         repo.Setup(r => r.Count("a")).Returns(1);
-        repo.Reset();
+        repo.DefaultValue = DefaultValue.Mock;
         var sut = repo.Object;
     }
 }

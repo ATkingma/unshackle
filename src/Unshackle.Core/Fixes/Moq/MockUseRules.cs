@@ -63,9 +63,25 @@ public static class MockUseRules
             return VerifySyntax.Plan(verify, model).Blocker;
         }
 
+        // Row 13: uses with no proven NSubstitute form, each with its own reason code.
+        if (use.Parent is MemberAccessExpressionSyntax { Name.Identifier.Text: var member2 } && Unsupported(member2) is { } unsupported)
+        {
+            return unsupported;
+        }
+
         string shown = (use.Parent as MemberAccessExpressionSyntax)?.ToString() ?? use.Parent?.ToString() ?? use.ToString();
         return MoqBlocker.Of(MoqReason.MockUsedBeyondObject, $"{use} is used as a Mock<T> (`{Shorten(shown)}`); that use needs a later moq-queue.md row");
     }
+
+    public static MoqBlocker? Unsupported(string member) => member switch
+    {
+        "Protected" => MoqBlocker.Of(MoqReason.ProtectedMember, "Protected() reaches a non-public member; NSubstitute cannot configure it. For an HttpMessageHandler write a small fake handler (council round 8, M3)"),
+        "As" => MoqBlocker.Of(MoqReason.MockAs, "As<T>() adds an interface to the mock; NSubstitute needs Substitute.For<A, B>() at creation"),
+        "Invocations" => MoqBlocker.Of(MoqReason.MockInvocations, "Invocations lists the calls the mock saw; NSubstitute has ReceivedCalls() with another shape"),
+        "Reset" => MoqBlocker.Of(MoqReason.MockReset, "Reset() clears setups and calls; ClearReceivedCalls() clears only the calls (not proven the same)"),
+        "Raise" or "RaiseAsync" => MoqBlocker.Of(MoqReason.MockRaise, "Raise(..) fires an event; Raise.EventWith(..) is not proven the same"),
+        _ => null,
+    };
 
     private static string Shorten(string text)
     {

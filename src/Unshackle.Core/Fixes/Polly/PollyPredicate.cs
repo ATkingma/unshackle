@@ -8,16 +8,46 @@ namespace Unshackle.Core.Fixes.Polly;
 // chain of clauses is an OR in both, so the clauses carry over in order with their arguments verbatim (queue row 2).
 internal static class PollyPredicate
 {
-    public static PollyPlan Plan(ExpressionSyntax receiver, string? resultType, SemanticModel model)
+    // The lambda parameter of the written-out transient-error filter; FreshName picks response1.. when taken.
+    public const string ResponseName = "response";
+
+    public static PollyPlan Plan(ExpressionSyntax receiver, string? resultType, SemanticModel model, string response)
     {
         var clauses = new List<string>();
         ExpressionSyntax current = receiver;
         while (true)
         {
+            // The PolicyBuilder<HttpResponseMessage> parameter of AddTransientHttpErrorPolicy(p => ...) is HandleTransientHttpError().
+            if (current is IdentifierNameSyntax && model.GetSymbolInfo(current).Symbol is IParameterSymbol { ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.AnonymousFunction } lambda }
+                && IsTransientPolicyLambda(lambda))
+            {
+                return PollyPlan.OfText($"new PredicateBuilder<{resultType}>(){Transient(response)}" + string.Concat(clauses));
+            }
+
             if (current is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } invocation
-                || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: PollyRetry.PollyAssembly } method)
+                || model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { ContainingAssembly.Name: PollyRetry.PollyAssembly or HttpExtensionsAssembly } method)
             {
                 return Unsupported();
+            }
+
+            // Polly.Extensions.Http 3.0.0: HttpRequestException, or a status code of 500 and up, or 408.
+            if (method.ContainingType.Name == "HttpPolicyExtensions" && invocation.ArgumentList.Arguments.Count == 0)
+            {
+                switch (method.Name)
+                {
+                    case "HandleTransientHttpError" when method.IsStatic && method.Parameters.Length == 0:
+                        return PollyPlan.OfText($"new PredicateBuilder<{resultType}>(){Transient(response)}" + string.Concat(clauses));
+                    case "OrTransientHttpError":
+                        clauses.Insert(0, Transient(response));
+                        current = access.Expression;
+                        continue;
+                    case "OrTransientHttpStatusCode":
+                        clauses.Insert(0, TransientStatus(response));
+                        current = access.Expression;
+                        continue;
+                    default:
+                        return Unsupported();
+                }
             }
 
             string arguments = invocation.ArgumentList.ToString();
@@ -51,6 +81,16 @@ internal static class PollyPredicate
             current = access.Expression;
         }
     }
+
+    private const string HttpExtensionsAssembly = "Polly.Extensions.Http";
+
+    private static string Transient(string response) => $".Handle<HttpRequestException>(){TransientStatus(response)}";
+
+    private static string TransientStatus(string response) =>
+        $".HandleResult({response} => (int){response}.StatusCode >= 500 || {response}.StatusCode == HttpStatusCode.RequestTimeout)";
+
+    private static bool IsTransientPolicyLambda(IMethodSymbol lambda) =>
+        lambda.DeclaringSyntaxReferences.SingleOrDefault()?.GetSyntax() is { Parent: ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "AddTransientHttpErrorPolicy" } } } };
 
     private static PollyPlan Unsupported() => PollyPlan.Manual(PollyReason.ExceptionFilterNotSupported,
         "the filter is not a chain of Policy.Handle<E>/HandleResult and Or<E>/OrResult with at most a predicate; HandleInner, OrInner and HandleResult(value) stay Manual.");

@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "polly-retry-variants"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7]
 files_expected:
     - src/Unshackle.Core/Fixes/Polly/Patterns/RetryVariantsPattern.cs
     - src/Unshackle.Core/Fixes/Polly/PollyRetry.cs
@@ -46,6 +46,9 @@ so one call never belongs to both), Context- or outcome-taking sleep-duration pr
 - **REQ-4**: THE SYSTEM SHALL map `onRetry`, including `Action<Exception, int>` of `RetryAsync`, like `polly.wait-and-retry-async` REQ-13/14.
 - **REQ-5**: THE SYSTEM SHALL give equal run-time traces before (Polly 7.2.4) and after (Polly.Core) for every Fixed proof (`PollyBehaviourProofTests`).
 - **REQ-6**: WHEN the retry count is not an integer literal ≥ 1 THE SYSTEM SHALL report Manual `RetryCountNotLiteral`.
+
+- **REQ-7** (queue row 5): THE SYSTEM SHALL apply the private-field rule of `polly.wait-and-retry-async` REQ-15 (proof
+  `field-instance`: `AsyncRetryPolicy<int>` field used as `this._policy` and `_policy`, + behaviour trace).
 
 ## Assumptions
 

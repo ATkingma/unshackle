@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "polly-wait-and-retry-async"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15]
 files_expected:
     - src/Unshackle.Core/Fixes/Polly/Patterns/WaitAndRetryAsyncPattern.cs
     - src/Unshackle.Core/Fixes/Polly/PollyRetry.cs
@@ -84,6 +84,12 @@ pipeline, with the delay lambda kept as the `DelayGenerator`.
   (proofs `on-retry-attempt`, `on-retry-async`, `on-retry-result` + behaviour traces).
 - **REQ-14** (queue row 3): WHEN the body reads the `Context` THE SYSTEM SHALL report Manual `OnRetryUsesContext` (proof
   `on-retry-context`); any other parameter use or type is Manual `OnRetryNotMappable`.
+
+- **REQ-15** (queue row 5): WHEN the policy is held in a private field initialised at its declaration, in a type declared in one
+  place, and every use (`_f` or `this._f`) is an awaited rewritable `ExecuteAsync` THE SYSTEM SHALL rewrite the field (type →
+  `ResiliencePipeline(<T>)`) and every call (proof `field-static` + behaviour trace); a non-private field or a partial type is Manual
+  `PolicyMemberNotPrivate` (proof `field-public`), any other use Manual `PolicyUsedBeyondExecute` (proof `field-passed-on`).
+  Properties, return values, parameters and fields assigned elsewhere stay Manual `PolicyNotLocal`.
 
 ## Assumptions
 

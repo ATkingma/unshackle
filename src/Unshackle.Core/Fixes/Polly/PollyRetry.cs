@@ -34,7 +34,8 @@ internal static class PollyRetry
         model.GetSymbolInfo(creation).Symbol is IMethodSymbol method
         && (method.Name != "WaitAndRetryAsync" || method.Parameters.Any(p => p.Name == SleepDurations));
 
-    // The nodes the pattern reports for one WaitAndRetryAsync call, outer nodes only (the Fixer replaces them independently).
+    // The nodes the pattern reports for one retry call, outer nodes only (the Fixer replaces them independently): the inline
+    // ExecuteAsync, or the holder's declaration (local or private field) with every ExecuteAsync on it, or the call itself (Manual).
     public static IEnumerable<SyntaxNode> Targets(InvocationExpressionSyntax creation, SemanticModel model)
     {
         if (ExecuteOn(creation) is InvocationExpressionSyntax inline)
@@ -42,23 +43,26 @@ internal static class PollyRetry
             return [inline];
         }
 
-        if (LocalOf(creation, model) is (LocalDeclarationStatementSyntax statement, ILocalSymbol local))
+        if (HolderOf(creation, model) is (SyntaxNode declaration, ISymbol holder))
         {
-            return [statement, .. Uses(statement, local, model).Select(ExecuteOn).OfType<InvocationExpressionSyntax>()];
+            return [declaration, .. Uses(declaration, holder, model).Select(u => ExecuteOn(Receiver(u))).OfType<InvocationExpressionSyntax>()];
         }
 
         return [creation];
     }
 
-    public static PollyPlan PlanDeclaration(LocalDeclarationStatementSyntax statement, SemanticModel model)
+    // A local declaration statement or a field declaration that holds the policy.
+    public static PollyPlan PlanDeclaration(SyntaxNode declarationNode, SemanticModel model)
     {
-        if (statement.Declaration.Variables.Single().Initializer?.Value is not InvocationExpressionSyntax creation
-            || LocalOf(creation, model) is not (_, ILocalSymbol local))
+        VariableDeclarationSyntax declaration = Declaration(declarationNode);
+        if (declaration.Variables.Count != 1
+            || declaration.Variables[0].Initializer?.Value is not InvocationExpressionSyntax creation
+            || HolderOf(creation, model) is not (_, ISymbol holder))
         {
-            return PollyPlan.Manual(PollyReason.PolicyNotLocal, "the policy is not a single local initialised with WaitAndRetryAsync.");
+            return PollyPlan.Manual(PollyReason.PolicyNotLocal, "the declaration does not hold exactly one policy initialised with a retry call.");
         }
 
-        if (PlanLocalUses(statement, local, model) is PollyPlan blocked)
+        if (PlanHolderUses(declarationNode, holder, model) is PollyPlan blocked)
         {
             return blocked;
         }
@@ -69,11 +73,13 @@ internal static class PollyRetry
             return pipeline;
         }
 
-        LocalDeclarationStatementSyntax rewritten = statement.ReplaceNode(creation, pipeline.Node);
-        if (!rewritten.Declaration.Type.IsVar)
+        SyntaxNode rewritten = declarationNode.ReplaceNode(creation, pipeline.Node);
+        VariableDeclarationSyntax rewrittenDeclaration = Declaration(rewritten);
+        if (!rewrittenDeclaration.Type.IsVar)
         {
-            rewritten = rewritten.WithDeclaration(rewritten.Declaration.WithType(
-                SyntaxFactory.ParseTypeName(ResultType(creation, model) is string result ? $"ResiliencePipeline<{result}>" : "ResiliencePipeline").WithTriviaFrom(rewritten.Declaration.Type)));
+            TypeSyntax type = SyntaxFactory.ParseTypeName(ResultType(creation, model) is string result ? $"ResiliencePipeline<{result}>" : "ResiliencePipeline")
+                .WithTriviaFrom(rewrittenDeclaration.Type);
+            rewritten = rewritten.ReplaceNode(rewrittenDeclaration.Type, type);
         }
 
         return PollyPlan.Of(rewritten);
@@ -97,18 +103,16 @@ internal static class PollyRetry
                 (original, _) => original == creation ? pipeline.Node : inlineCallback.Node));
         }
 
-        if (model.GetSymbolInfo(access.Expression).Symbol is ILocalSymbol local
-            && local.DeclaringSyntaxReferences.SingleOrDefault()?.GetSyntax() is VariableDeclaratorSyntax
-            {
-                Initializer.Value: InvocationExpressionSyntax localCreation, Parent.Parent: LocalDeclarationStatementSyntax statement,
-            })
+        if (model.GetSymbolInfo(access.Expression).Symbol is ISymbol { Kind: SymbolKind.Local or SymbolKind.Field } symbol
+            && symbol.DeclaringSyntaxReferences.SingleOrDefault()?.GetSyntax() is VariableDeclaratorSyntax { Initializer.Value: InvocationExpressionSyntax holderCreation }
+            && HolderOf(holderCreation, model) is (SyntaxNode declaration, ISymbol holder))
         {
-            if (PlanLocalUses(statement, local, model) is PollyPlan blocked)
+            if (PlanHolderUses(declaration, holder, model) is PollyPlan blocked)
             {
                 return blocked;
             }
 
-            PollyPlan pipeline = PlanPipeline(localCreation, model);
+            PollyPlan pipeline = PlanPipeline(holderCreation, model);
             if (pipeline.Node is null)
             {
                 return pipeline;
@@ -118,7 +122,7 @@ internal static class PollyRetry
             return callback.Node is null ? callback : PollyPlan.Of(execute.ReplaceNode(execute.ArgumentList.Arguments[0].Expression, callback.Node));
         }
 
-        return PollyPlan.Manual(PollyReason.PolicyNotLocal, "ExecuteAsync is called on a policy that is not a local or inline WaitAndRetryAsync.");
+        return PollyPlan.Manual(PollyReason.PolicyNotLocal, "ExecuteAsync is called on a policy that is not a local, a private field or an inline retry call.");
     }
 
     // The builder expression for Policy.Handle<E>().WaitAndRetryAsync(n, attempt => delay).
@@ -359,20 +363,27 @@ internal static class PollyRetry
         return PollyPlan.Of(SyntaxFactory.SimpleLambdaExpression(discard, wrapped).WithArrowToken(lambda.ArrowToken).WithTriviaFrom(lambda));
     }
 
-    // Every use of the local must be the receiver of a rewritable ExecuteAsync; null when they all are.
-    private static PollyPlan? PlanLocalUses(LocalDeclarationStatementSyntax statement, ILocalSymbol local, SemanticModel model)
+    // Every use of the holder must be the receiver of a rewritable ExecuteAsync; null when they all are. A field must be private in a
+    // type declared in one place (not partial), so every use is in that declaration (queue row 5).
+    private static PollyPlan? PlanHolderUses(SyntaxNode declarationNode, ISymbol holder, SemanticModel model)
     {
-        if (statement.Declaration.Variables.Count != 1 || statement.UsingKeyword.IsKind(SyntaxKind.UsingKeyword) || statement.IsConst)
+        switch (declarationNode)
         {
-            return PollyPlan.Manual(PollyReason.PolicyNotLocal, "the policy declaration declares more than one variable.");
+            case LocalDeclarationStatementSyntax statement when statement.Declaration.Variables.Count != 1 || statement.UsingKeyword.IsKind(SyntaxKind.UsingKeyword) || statement.IsConst:
+                return PollyPlan.Manual(PollyReason.PolicyNotLocal, "the policy declaration declares more than one variable.");
+            case FieldDeclarationSyntax field when field.Declaration.Variables.Count != 1:
+                return PollyPlan.Manual(PollyReason.PolicyNotLocal, "the policy field declaration declares more than one variable.");
+            case FieldDeclarationSyntax when holder.DeclaredAccessibility != Accessibility.Private || holder.ContainingType.DeclaringSyntaxReferences.Length != 1:
+                return PollyPlan.Manual(PollyReason.PolicyMemberNotPrivate,
+                    $"the policy field '{holder.Name}' is not private or its type is partial; uses outside this declaration cannot be checked.");
         }
 
-        foreach (IdentifierNameSyntax use in Uses(statement, local, model))
+        foreach (IdentifierNameSyntax use in Uses(declarationNode, holder, model))
         {
-            if (ExecuteOn(use) is not InvocationExpressionSyntax execute)
+            if (ExecuteOn(Receiver(use)) is not InvocationExpressionSyntax execute)
             {
                 return PollyPlan.Manual(PollyReason.PolicyUsedBeyondExecute,
-                    $"'{local.Name}' is used at line {use.GetLocation().GetLineSpan().StartLinePosition.Line + 1} for more than ExecuteAsync (assigned, passed on or another member called).");
+                    $"'{holder.Name}' is used at line {use.GetLocation().GetLineSpan().StartLinePosition.Line + 1} for more than ExecuteAsync (assigned, passed on or another member called).");
             }
 
             if (PlanCallback(execute, model) is { Code: not null } callbackBlocked)
@@ -384,15 +395,34 @@ internal static class PollyRetry
         return null;
     }
 
-    private static IEnumerable<IdentifierNameSyntax> Uses(LocalDeclarationStatementSyntax statement, ILocalSymbol local, SemanticModel model) =>
-        statement.SyntaxTree.GetRoot().DescendantNodes().OfType<IdentifierNameSyntax>()
-            .Where(n => n.Identifier.ValueText == local.Name && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(n).Symbol, local));
+    // A local: the whole tree; a private field: its (single) type declaration.
+    private static IEnumerable<IdentifierNameSyntax> Uses(SyntaxNode declarationNode, ISymbol holder, SemanticModel model)
+    {
+        SyntaxNode scope = declarationNode is FieldDeclarationSyntax && holder.ContainingType.DeclaringSyntaxReferences is [SyntaxReference type]
+            && type.SyntaxTree == declarationNode.SyntaxTree
+            ? type.GetSyntax()
+            : declarationNode.SyntaxTree.GetRoot();
+        return scope.DescendantNodes().OfType<IdentifierNameSyntax>()
+            .Where(n => n.Identifier.ValueText == holder.Name && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(n).Symbol, holder));
+    }
 
-    private static (LocalDeclarationStatementSyntax, ILocalSymbol)? LocalOf(InvocationExpressionSyntax creation, SemanticModel model) =>
-        creation.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator, Parent.Parent.Parent: LocalDeclarationStatementSyntax statement }
-        && model.GetDeclaredSymbol(declarator) is ILocalSymbol local
-            ? (statement, local)
+    // this._policy counts as _policy.
+    private static ExpressionSyntax Receiver(IdentifierNameSyntax use) =>
+        use.Parent is MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } access && access.Name == use ? access : use;
+
+    private static (SyntaxNode, ISymbol)? HolderOf(InvocationExpressionSyntax creation, SemanticModel model) =>
+        creation.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator, Parent.Parent.Parent: SyntaxNode holder }
+        && holder is LocalDeclarationStatementSyntax or FieldDeclarationSyntax
+        && model.GetDeclaredSymbol(declarator) is ISymbol { Kind: SymbolKind.Local or SymbolKind.Field } symbol
+            ? (holder, symbol)
             : null;
+
+    private static VariableDeclarationSyntax Declaration(SyntaxNode declarationNode) => declarationNode switch
+    {
+        LocalDeclarationStatementSyntax statement => statement.Declaration,
+        FieldDeclarationSyntax field => field.Declaration,
+        _ => throw new System.Diagnostics.UnreachableException(),
+    };
 
     private static InvocationExpressionSyntax? ExecuteOn(ExpressionSyntax receiver) =>
         receiver.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ExecuteAsync", Parent: InvocationExpressionSyntax execute } access

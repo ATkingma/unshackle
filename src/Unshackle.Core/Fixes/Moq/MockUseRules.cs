@@ -36,6 +36,19 @@ public static class MockUseRules
             return plan.Blocker;
         }
 
+        // Row 11 (council M2): m.SetupSequence(..).Returns(a).Returns(b);
+        if (pendingUses && use.Parent is MemberAccessExpressionSyntax { Name.Identifier.Text: "SetupSequence", Parent: InvocationExpressionSyntax sequence } sequenceAccess
+            && sequenceAccess.Expression == use && SetupSequenceSyntax.IsSequence(sequence, model) && SetupSequenceSyntax.Statement(sequence) is not null)
+        {
+            MockCall plan = SetupSequenceSyntax.Plan(sequence, model);
+            if (plan is { Blocker: null, ForAnyArguments: true, Member: { } member })
+            {
+                context.SetUp.Add(member);
+            }
+
+            return plan.Blocker;
+        }
+
         // Row 10 (council M4): m.Verify(); m.VerifyAll(); m.VerifyNoOtherCalls();
         if (pendingUses && use.Parent is MemberAccessExpressionSyntax { Parent: InvocationExpressionSyntax verifyAll } verifyAllAccess
             && verifyAllAccess.Expression == use && VerifyAllSyntax.IsVerifyAll(verifyAll, model))

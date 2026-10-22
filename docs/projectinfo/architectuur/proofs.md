@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1262 proofs (excluding `_Pending`).
+Total: 1270 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -1685,6 +1685,19 @@ Total: 1262 proofs (excluding `_Pending`).
 | `returns-async` | Fixed | `repo.Setup(r => r.TotalAsync(2020)).ReturnsAsync(5);` → `repo.Object.TotalAsync(2020).Returns(Task.FromResult<int>(5));` |
 | `returns-method-group` | Manual |  — reason: ReturnsLambda |
 | `strict` | Manual |  — reason: StrictBehaviour |
+
+### SetupSequence (8)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `function-step` | Manual |  — reason: SequenceStep |
+| `overlap` | Manual |  — reason: SetupsOverlap |
+| `property` | Fixed | `repo.SetupSequence(r => r.Label).Returns("a").Returns("b");` → `repo.Object.Label.Returns("a", "b");` |
+| `returns` | Fixed | `repo.SetupSequence(r => r.Count("a")).Returns(1).Returns(2).Returns(3);` → `repo.Object.Count("a").Returns(1, 2, 3);` |
+| `returns-async` | Fixed | `repo.SetupSequence(r => r.TotalAsync(2020)).ReturnsAsync(1).ReturnsAsync(2);` → `repo.Object.TotalAsync(2020).Returns(Task.FromResult<int>(1), Task.FromResult<int>(2));` |
+| `single` | Fixed | `repo.SetupSequence(r => r.Count(It.IsAny<string>())).Returns(1);` → `repo.Object.Count(Arg.Any<string>()).Returns(1);` |
+| `throws-step` | Manual |  — reason: SequenceStep |
+| `void-member` | Manual |  — reason: SequenceStep |
 
 ### Throws (5)
 

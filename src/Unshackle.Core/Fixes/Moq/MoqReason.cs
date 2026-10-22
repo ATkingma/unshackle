@@ -28,6 +28,7 @@ public enum MoqReason
     PropertyShape,
     RefOutOrParams,
     ReturnsLambda,
+    SequenceStep,
     SetupShape,
     SetupsOverlap,
     StrictBehaviour,

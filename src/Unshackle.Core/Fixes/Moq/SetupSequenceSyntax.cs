@@ -41,7 +41,7 @@ public static class SetupSequenceSyntax
 
         ExpressionSyntax objectAccess = SyntaxFactory.MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression, receiver.WithoutTrivia(), SyntaxFactory.IdentifierName("Object"));
-        MockCall call = MockCall.Rewrite(lambda.Expression, objectAccess, model);
+        var call = MockCall.Rewrite(lambda.Expression, objectAccess, model);
         if (call.Blocker is not null)
         {
             return call;

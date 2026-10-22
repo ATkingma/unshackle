@@ -1,0 +1,27 @@
+# MassTransit 8 survey corpus (TAAK-310 step 2). owner/repo, one per line.
+# Found via GitHub code search for PackageReference/PackageVersion Include="MassTransit" Version="8.
+# Source-level survey only (no build); clones live under D:/playground/corpus-masstransit/.
+Altinn/altinn-auth
+AntonioFalcaoJr/Reminders
+ardalis/VerticalCleanModularMicroservices
+baranacikgoz/modular-monolith-ddd-vsa-webapi
+elsa-workflows/elsa-extensions
+evolutionary-architecture/evolutionary-architecture-by-example
+firebend/auto-crud
+firebend/jobba
+Letterbook/Letterbook
+marinasundstrom/YourBrand
+NikiforovAll/social-media-app-aspire
+nkz-soft/microservice-template
+onebeyond/monaco
+thangchung/coffeeshop-on-nomad
+thecodewrapper/CH.CleanArchitectureBlazor
+xilapa/SiteWatcher
+EdwinVW/cloud-native-net
+iblazhko/eventsourced-processmanager
+sloweyyy/cloud-native-ecommerce-platform
+SwissLife-OSS/Confix-Unloaded
+gncyyldz/Saga-Orchestration
+jokk-itu/MassTransit-Outbox-Sample
+NoxOrg/Nox
+iongritco/ModularMonolith

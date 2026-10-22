@@ -27,17 +27,21 @@ public class SharedFileEditTests
     private readonly MockFileSystem _fileSystem = new();
 
     [Fact]
-    public async Task ApplyAsync_CentralRenameLastUser_RemovesOldPackageVersion()
+    public async Task RemoveOldVersionsAsync_CentralRenameLastUser_RemovesOldPackageVersionOnce()
     {
-        // Arrange
+        // Arrange (council round 12, G7: the rename leaves the old version for one solution-level decision)
         _fileSystem.AddFile(Specs, new MockFileData(Unversioned));
         _fileSystem.AddFile(PackagesProps, new MockFileData(Versions));
+        var store = new XmlProjectFileStore(_fileSystem);
+        ProjectFileEditOutcome rename = (await ApplyAsync(Specs, s_rename, Loaded(Specs))).ShouldHaveSingleItem();
 
         // Act
-        ProjectFileEditOutcome outcome = (await ApplyAsync(Specs, s_rename, Loaded(Specs))).ShouldHaveSingleItem();
+        ProjectFileEditOutcome outcome = (await store.RemoveOldVersionsAsync(rename.PendingOldVersions, rename.Changes, Loaded(Specs), TestContext.Current.CancellationToken)).ShouldHaveSingleItem();
 
         // Assert
-        outcome.Note.ShouldBeNull();
+        rename.PendingOldVersions.ShouldHaveSingleItem().Package.ShouldBe("SpecFlow");
+        outcome.KeptInfo.ShouldBeNull();
+        outcome.Edit.Describe().ShouldBe("PackageVersion SpecFlow removed");
         Text(outcome, PackagesProps).ShouldBe("<Project>\n  <ItemGroup>\n    <PackageVersion Include=\"Reqnroll\" Version=\"2.4.1\" />\n  </ItemGroup>\n</Project>\n");
     }
 
@@ -45,7 +49,7 @@ public class SharedFileEditTests
     [InlineData(true, false, "still references it")]
     [InlineData(false, false, "is not loaded")]
     [InlineData(true, true, "GlobalPackageReference")]
-    public async Task ApplyAsync_CentralRenameWithOtherUse_KeepsOldPackageVersionWithNote(bool otherLoaded, bool global, string why)
+    public async Task RemoveOldVersionsAsync_OtherUse_KeepsOldPackageVersionWithInfo(bool otherLoaded, bool global, string why)
     {
         // Arrange
         _fileSystem.AddFile(Specs, new MockFileData(Unversioned));
@@ -53,13 +57,16 @@ public class SharedFileEditTests
         _fileSystem.AddFile(PackagesProps, new MockFileData(global
             ? Versions.Replace("</ItemGroup>", "  <GlobalPackageReference Include=\"SpecFlow\" Version=\"3.9.74\" />\n  </ItemGroup>", StringComparison.Ordinal)
             : Versions));
+        ProjectFileEditContext context = otherLoaded ? Loaded(Specs, Other) : Loaded(Specs);
+        ProjectFileEditOutcome rename = (await ApplyAsync(Specs, s_rename, context)).ShouldHaveSingleItem();
 
         // Act
-        ProjectFileEditOutcome outcome = (await ApplyAsync(Specs, s_rename, otherLoaded ? Loaded(Specs, Other) : Loaded(Specs))).ShouldHaveSingleItem();
+        ProjectFileEditOutcome outcome = (await new XmlProjectFileStore(_fileSystem).RemoveOldVersionsAsync(
+            rename.PendingOldVersions, rename.Changes, context, TestContext.Current.CancellationToken)).ShouldHaveSingleItem();
 
         // Assert
-        outcome.Note.ShouldNotBeNull().ShouldContain(why);
-        Text(outcome, PackagesProps).ShouldContain("<PackageVersion Include=\"SpecFlow\"");
+        outcome.KeptInfo.ShouldNotBeNull().ShouldContain(why);
+        outcome.Changes.ShouldBeEmpty();
     }
 
     [Fact]

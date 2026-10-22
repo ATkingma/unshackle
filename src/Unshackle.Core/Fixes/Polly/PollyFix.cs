@@ -27,9 +27,8 @@ public class PollyFix : IFix, IProjectFileMigration
     // Each rewrite names the namespaces it needs; an unchanged file gets nothing.
     public IReadOnlyList<string> AddedNamespaces { get; } = [];
 
-    // The pre-filter (TAAK-298) finds old-library files by RemovedNamespaces, which here lacks Polly (Polly v7 and Polly.Core share
-    // the namespace Polly): with it every file would be skipped. The patterns are cheap without a Polly call, so all files run.
-    public bool FindsOnlyOldLibraryCode => false;
+    // The pre-filter matches the v7 assemblies (council round 12, G9): RemovedNamespaces lacks Polly, which Polly.Core shares.
+    public IReadOnlyList<string> OldLibraryAssemblies { get; } = [.. s_v7Assemblies];
 
     // Stateless patterns.
     public bool FixesFilesInParallel => true;

@@ -23,4 +23,15 @@ public interface IProjectFileEditor
         IEnumerable<ProjectFileChange> earlier,
         ProjectFileEditContext context,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Council round 12, G7: after every project's edits, decides once per <c>Directory.Packages.props</c> whether each old <c>PackageVersion</c>
+    /// goes (no GlobalPackageReference, every importer loaded, none still references it) and removes it; one outcome per version.
+    /// </summary>
+    /// <param name="versions">The old versions the edits left behind.</param>
+    /// <param name="earlier">All changes of the run so far.</param>
+    /// <param name="context">The loaded and the blocked projects.</param>
+    /// <param name="cancellationToken">Cancels the pass.</param>
+    Task<IReadOnlyList<ProjectFileEditOutcome>> RemoveOldVersionsAsync(
+        IEnumerable<OldPackageVersion> versions, IEnumerable<ProjectFileChange> earlier, ProjectFileEditContext context, CancellationToken cancellationToken);
 }

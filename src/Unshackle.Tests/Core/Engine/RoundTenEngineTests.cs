@@ -94,8 +94,10 @@ public class RoundTenEngineTests
     [InlineData("using System.Text;\n\npublic class C { }\n", "public class C { }\n")]
     [InlineData("using System.Text;\n\n\npublic class C { }\n", "\npublic class C { }\n")]
     [InlineData("using System.Text;\n\n// header\npublic class C { }\n", "// header\npublic class C { }\n")]
-    // A using with a comment in front is not on the first line itself: as before, nothing extra goes.
-    [InlineData("// header\nusing System.Text;\n\npublic class C { }\n", "\npublic class C { }\n")]
+    // Council round 12, G8: the comment in front of a removed first using moves to the next node that stays (C3 does not apply).
+    [InlineData("// header\nusing System.Text;\n\npublic class C { }\n", "// header\n\npublic class C { }\n")]
+    [InlineData("// header\nusing System.Text;\nusing System;\n\npublic class C { }\n", "// header\nusing System;\n\npublic class C { }\n")]
+    [InlineData("/* licence */\nusing System.Text;\nusing System.Text;\npublic class C { }\n", "/* licence */\npublic class C { }\n")]
     public async Task FixAsync_RemovedFirstLineUsing_RemovesOnlyTheBlankLineItLeft(string code, string expected)
     {
         // Arrange
@@ -203,6 +205,31 @@ public class RoundTenEngineTests
         await store.Received(blocking ? 0 : 1).EditAsync(Arg.Any<IEnumerable<ProjectMigration>>(), Arg.Any<CancellationToken>());
         report.Findings.Any(f => f.Result is ManualResult { Reason: var reason }
             && reason == "FluentAssertions package kept: blocked by TargetFrameworkUnsupported. Resolve that first, then run the fix again.").ShouldBe(blocking);
+    }
+
+    [Fact]
+    public async Task FixAsync_EditLeavesOldVersion_DecidesItOnceAfterEveryProject()
+    {
+        // Arrange (council round 12, G7)
+        IProjectFileStore store = Substitute.For<IProjectFileStore, IProjectFileEditor>();
+        var edit = new PackageRenameEdit { OldName = "SpecFlow", NewName = "Reqnroll", Version = "2.4.1" };
+        var pending = new OldPackageVersion { PropsPath = "/repo/Directory.Packages.props", Package = "SpecFlow" };
+        IFix fix = CreateFix(PatternResult.Note("ok"));
+        ((IProjectFileMigration)fix).EditsFor(Arg.Any<Project>()).Returns([edit]);
+        var editor = (IProjectFileEditor)store;
+        editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>())
+            .Returns([new ProjectFileEditOutcome { Edit = edit, FilePath = ProjectPath, Line = 3, PendingOldVersions = [pending] }]);
+        editor.RemoveOldVersionsAsync(Arg.Any<IEnumerable<OldPackageVersion>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>())
+            .Returns([new ProjectFileEditOutcome { Edit = new PackageVersionRemoveEdit { Name = "SpecFlow" }, FilePath = pending.PropsPath, Line = 4, KeptInfo = "stays." }]);
+
+        // Act
+        FixReport report = await new Fixer([fix], store).FixAsync(CreateSolution(), new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        await editor.Received(1).RemoveOldVersionsAsync(
+            Arg.Is<IEnumerable<OldPackageVersion>>(v => v.Single() == pending), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>());
+        Finding row = report.Findings.Single(f => f.FilePath == pending.PropsPath);
+        row.Result.ShouldBeOfType<InfoResult>().Text.ShouldBe("stays.");
     }
 
     private static IPattern CreatePattern(PatternResult result)

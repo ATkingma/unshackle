@@ -97,6 +97,16 @@ internal static partial class OldLibraryFiles
                 continue;
             }
 
+            // Council round 12, G9: the old library's assemblies by name; the removed namespaces below are the fallback.
+            foreach (IAssemblySymbol assembly in compilation.SourceModule.ReferencedAssemblySymbols
+                .Where(a => fix.OldLibraryAssemblies.Contains(a.Name, StringComparer.OrdinalIgnoreCase)))
+            {
+                if (seen.Add(assembly))
+                {
+                    AddAssembly(assembly.GlobalNamespace, names);
+                }
+            }
+
             foreach (INamespaceSymbol ns in RemovedNamespaceSymbols(compilation.GlobalNamespace, removed))
             {
                 foreach (INamedTypeSymbol type in ns.GetTypeMembers())

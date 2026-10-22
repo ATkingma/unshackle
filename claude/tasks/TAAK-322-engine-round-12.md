@@ -1,6 +1,6 @@
 # TAAK-322 — Engine follow-ups from council round 12 (G6–G9)
 
-**Status**: step 1/4 — not started
+**Status**: step 3/4 — G9, G7, G8 done; step 4 (G6 test, core.md) open
 **Created**: 2026-10-22
 **Goal**: Solution-level CPM decision, comment kept before a removed first using, and a pre-filter that matches old-library assemblies, with existing output byte-identical except where a rule changes it on purpose.
 
@@ -19,6 +19,7 @@
 ## Progress log
 
 - 2026-10-22: created after council round 12.
+- 2026-10-22 (engine-2, session end): G9 (030368a), G7 (f4d5e7e) and G8 (this commit) done, 3439 tests green. Next: step 4: a G6 test (shared-declaration block gives no package migration; TAAK-321 covers most of it) and core.md sections for G7, G8, G9.
 
 ## See also
 

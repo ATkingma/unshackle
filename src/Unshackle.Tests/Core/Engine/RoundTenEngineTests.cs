@@ -94,8 +94,10 @@ public class RoundTenEngineTests
     [InlineData("using System.Text;\n\npublic class C { }\n", "public class C { }\n")]
     [InlineData("using System.Text;\n\n\npublic class C { }\n", "\npublic class C { }\n")]
     [InlineData("using System.Text;\n\n// header\npublic class C { }\n", "// header\npublic class C { }\n")]
-    // A using with a comment in front is not on the first line itself: as before, nothing extra goes.
-    [InlineData("// header\nusing System.Text;\n\npublic class C { }\n", "\npublic class C { }\n")]
+    // Council round 12, G8: the comment in front of a removed first using moves to the next node that stays (C3 does not apply).
+    [InlineData("// header\nusing System.Text;\n\npublic class C { }\n", "// header\n\npublic class C { }\n")]
+    [InlineData("// header\nusing System.Text;\nusing System;\n\npublic class C { }\n", "// header\nusing System;\n\npublic class C { }\n")]
+    [InlineData("/* licence */\nusing System.Text;\nusing System.Text;\npublic class C { }\n", "/* licence */\npublic class C { }\n")]
     public async Task FixAsync_RemovedFirstLineUsing_RemovesOnlyTheBlankLineItLeft(string code, string expected)
     {
         // Arrange

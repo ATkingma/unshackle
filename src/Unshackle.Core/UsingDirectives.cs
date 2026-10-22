@@ -60,6 +60,7 @@ internal static class UsingDirectives
         // Council round 10, C3: a removed using on the first line of the file leaves the blank line after it as the new first line.
         bool removesFirstLine = unused.Skip(swapCount).Any(u => u.SpanStart == 0
             && !u.GetLeadingTrivia().Any(t => t.IsDirective || t.IsKind(SyntaxKind.DisabledTextTrivia)));
+        updated = KeepFirstUsingComment(updated, [.. unused.Skip(swapCount)]);
         // A using that carries #if/#else directives (and the disabled text between them) keeps its leading trivia, so the pairs stay
         // whole: dropping it would leave the #endif without its #if (TAAK-281).
         foreach (bool conditional in (bool[])[true, false])
@@ -111,6 +112,32 @@ internal static class UsingDirectives
             .WithTrailingTrivia(root.Usings.Count == 0 ? SyntaxFactory.TriviaList(endOfLine, endOfLine) : SyntaxFactory.TriviaList(endOfLine))));
 
         return document.WithSyntaxRoot(WithoutBlankFirstLine(Resort(root, updated.WithUsings([.. usings]), originalMinimum: 2), removesFirstLine)).Project.Solution;
+    }
+
+    // Council round 12, G8: a removed first using of the file with a comment in front (a file header) hands that leading trivia to the next
+    // node that stays, so the comment is kept. Only the first line of the file; directives keep their own rule (TAAK-281). Idempotent: a
+    // second run has no such using to remove.
+    private static CompilationUnitSyntax KeepFirstUsingComment(CompilationUnitSyntax updated, List<UsingDirectiveSyntax> removed)
+    {
+        if (removed.FirstOrDefault(u => u.FullSpan.Start == 0 && u.SpanStart > 0
+            && u.GetLeadingTrivia().Any(t => t.IsKind(SyntaxKind.SingleLineCommentTrivia) || t.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                || t.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia) || t.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia))
+            && !u.GetLeadingTrivia().Any(t => t.IsDirective || t.IsKind(SyntaxKind.DisabledTextTrivia))) is not UsingDirectiveSyntax first)
+        {
+            return updated;
+        }
+
+        HashSet<SyntaxNode> gone = [.. removed.Select(u => updated.GetCurrentNode(u)).OfType<SyntaxNode>()];
+        UsingDirectiveSyntax current = updated.GetCurrentNode(first)!;
+        SyntaxToken next = current.GetLastToken().GetNextToken(includeZeroWidth: true);
+        while (next.Parent?.FirstAncestorOrSelf<UsingDirectiveSyntax>() is UsingDirectiveSyntax goneUsing && gone.Contains(goneUsing))
+        {
+            next = goneUsing.GetLastToken().GetNextToken(includeZeroWidth: true);
+        }
+
+        return next.IsKind(SyntaxKind.None)
+            ? updated
+            : updated.ReplaceToken(next, next.WithLeadingTrivia(current.GetLeadingTrivia().AddRange(next.LeadingTrivia)));
     }
 
     // Council round 10, C3: only the blank line a removed first-line using left on top goes (whitespace, then one line break); any other

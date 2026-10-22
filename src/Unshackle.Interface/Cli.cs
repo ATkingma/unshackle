@@ -7,6 +7,7 @@ using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.FluentAssertions;
 using Unshackle.Core.Fixes.MediatR;
+using Unshackle.Core.Fixes.Moq;
 using Unshackle.Core.Models;
 using Unshackle.DataAccess.Projects;
 using Unshackle.DataAccess.Reports;
@@ -30,6 +31,7 @@ public static class Cli
             new FluentAssertionsFix([MetadataReference.CreateFromFile(Path.Combine(AppContext.BaseDirectory, "References", "Shouldly.dll"))]),
             new MediatRFix(),
             new AutoMapperFix(),
+            new MoqFix(),
         ];
         var fileSystem = new FileSystem();
         IReportWriter[] reportWriters =

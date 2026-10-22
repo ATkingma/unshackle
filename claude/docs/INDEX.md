@@ -74,6 +74,8 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `docs/projectinfo/architectuur/candidate-swashbuckle.md` | Scout TAAK-410: Swashbuckle, no-go for now |
 | `claude/tasks/TAAK-316-report-only-fix.md` | Report-only fix kind (council round 8 S2) |
 | `claude/tasks/TAAK-317-project-file-migrations.md` | IProjectFileMigration: typed project/config-file edits (council round 8 S3) |
+| `claude/tasks/moq-queue.md` | Moq → NSubstitute pattern queue (ranked, council round 8) |
+| `src/Unshackle.Core/Fixes/Moq/` | MoqFix, CreatePattern, MockDefaults (where Moq and NSubstitute defaults differ) |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |
 | `claude/tasks/TAAK-380-scout-identityserver.md` | Scout IdentityServer4 → OpenIddict/Duende (go/no-go research) |

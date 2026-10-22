@@ -20,4 +20,5 @@ public enum PollyReason
     HandlerOverloadNotSupported,
     HandlerOrderNotProvable,
     HandlerPolicyNotInline,
+    WrapOrderNotProvable,
 }

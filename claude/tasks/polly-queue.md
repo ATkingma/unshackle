@@ -19,7 +19,7 @@ TAAK number (340–349) when claimed. Order by projects first, hits second in `d
 | 7   | `polly.retry-variants` | `RetryAsync(n)`, `RetryForever(Async)`, `WaitAndRetryForever(Async)`, `WaitAndRetryAsync(IEnumerable<TimeSpan>)` | `MaxRetryAttempts = int.MaxValue` / indexed `DelayGenerator` | 11 / 7; 4 / 3 | done (TAAK-308) |
 | 8   | `polly.circuit-breaker` | `CircuitBreaker(Async)` | `AddCircuitBreaker` only where the v7 count-based semantics are proven equal; else Manual | 5 / 3 | open |
 | 9   | `polly.timeout` | `Policy.Timeout(Async)`, `TimeoutRejectedException` | `AddTimeout`; optimistic/pessimistic difference Manual | 7 / 5 | open |
-| 10  | `polly.wrap` | `Policy.Wrap(Async)` / `.WrapAsync` | builder adds outermost first; proof per arity 2 and 3 (P4), else Manual `WrapOrderNotProvable` | 17 / 9 | open |
+| 10  | `polly.wrap` | `Policy.Wrap(Async)` / `.WrapAsync` | builder adds outermost first; proof per arity 2 and 3 (P4), else Manual `WrapOrderNotProvable` | 17 / 9 | partly done (TAAK-308): wraps of retry operands (in place or operand-only locals); timeout/circuit-breaker operands wait for rows 8/9 |
 | 11  | `polly.no-op` | `Policy.NoOp(Async)` | `ResiliencePipeline.Empty` | 2 / 2 | open |
 | 12  | `polly.unsupported` | `Fallback`, `Bulkhead`, `Cache`, `RateLimit`, `PolicyRegistry`, `Context`, `ExecuteAndCapture`, Contrib `Backoff` | Manual with reason code | 1+1+2+3+29+14+4+1 | open |
 | 13  | _corpus run_ | build + tests before/after on the 20-repo corpus | 0 regressions; Manual only where justified | — | open (TAAK-308 st 6) |

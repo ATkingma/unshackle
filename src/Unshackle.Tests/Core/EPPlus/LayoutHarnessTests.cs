@@ -5,6 +5,7 @@ using NSubstitute;
 using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
+using Unshackle.Core.Fixes.EPPlus;
 using Unshackle.Core.Fixes.EPPlus.Patterns;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
@@ -63,10 +64,10 @@ public class LayoutHarnessTests
     }
 
     [Theory]
-    [InlineData("sheet.Column(1).Width = 20;", LayoutPattern.WidthCode)]
-    [InlineData("sheet.Cells[\"A1:B3\"].AutoFitColumns();", LayoutPattern.AutoFitCode)]
-    [InlineData("sheet.Column(2).AutoFit();", LayoutPattern.AutoFitCode)]
-    [InlineData("sheet.Cells[\"A1:B2\"].Merge = false;", LayoutPattern.UnmappedCode)]
+    [InlineData("sheet.Column(1).Width = 20;", nameof(EPPlusReason.ColumnWidthDiffers))]
+    [InlineData("sheet.Cells[\"A1:B3\"].AutoFitColumns();", nameof(EPPlusReason.AutoFitDiffers))]
+    [InlineData("sheet.Column(2).AutoFit();", nameof(EPPlusReason.AutoFitDiffers))]
+    [InlineData("sheet.Cells[\"A1:B2\"].Merge = false;", nameof(EPPlusReason.UnmappedEPPlusLayout))]
     public async Task UnprovenShape_IsManualAndUnchanged(string layout, string code)
     {
         // Arrange

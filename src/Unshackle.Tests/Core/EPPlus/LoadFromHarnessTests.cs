@@ -4,6 +4,7 @@ using NSubstitute;
 using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
+using Unshackle.Core.Fixes.EPPlus;
 using Unshackle.Core.Fixes.EPPlus.Patterns;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
@@ -74,11 +75,11 @@ public partial class LoadFromHarnessTests
     }
 
     [Theory]
-    [InlineData("public System.DateTime When { get; set; }", "sheet.Cells[\"B2\"].LoadFromCollection(items);", LoadFromPattern.TypeDiffersCode)]
-    [InlineData("public System.DateTime? When { get; set; }", "sheet.Cells[\"B2\"].LoadFromCollection(items);", LoadFromPattern.TypeDiffersCode)]
-    [InlineData("public string Name { get; set; }", "sheet.Cells[\"B2\"].LoadFromCollection(items, true);", LoadFromPattern.HeadersCode)]
-    [InlineData("public string Name;", "sheet.Cells[\"B2\"].LoadFromCollection(items);", LoadFromPattern.UncoveredCode)]
-    [InlineData("public string Name { get; set; }", "var range = sheet.Cells[\"B2\"].LoadFromCollection(items);", LoadFromPattern.UnmappedCode)]
+    [InlineData("public System.DateTime When { get; set; }", "sheet.Cells[\"B2\"].LoadFromCollection(items);", nameof(EPPlusReason.LoadFromTypeDiffers))]
+    [InlineData("public System.DateTime? When { get; set; }", "sheet.Cells[\"B2\"].LoadFromCollection(items);", nameof(EPPlusReason.LoadFromTypeDiffers))]
+    [InlineData("public string Name { get; set; }", "sheet.Cells[\"B2\"].LoadFromCollection(items, true);", nameof(EPPlusReason.LoadFromHeadersNotMapped))]
+    [InlineData("public string Name;", "sheet.Cells[\"B2\"].LoadFromCollection(items);", nameof(EPPlusReason.UncoveredRuntimeType))]
+    [InlineData("public string Name { get; set; }", "var range = sheet.Cells[\"B2\"].LoadFromCollection(items);", nameof(EPPlusReason.UnmappedLoadFrom))]
     public async Task UnprovenShape_IsManual(string properties, string call, string code)
     {
         // Arrange

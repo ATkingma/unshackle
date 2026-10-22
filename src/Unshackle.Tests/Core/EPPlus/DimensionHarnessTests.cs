@@ -4,6 +4,7 @@ using NSubstitute;
 using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
+using Unshackle.Core.Fixes.EPPlus;
 using Unshackle.Core.Fixes.EPPlus.Patterns;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
@@ -85,7 +86,7 @@ public partial class DimensionHarnessTests
         (FixReport report, _) = await RewriteAsync(before);
 
         // Assert
-        ((ManualResult)report.Findings.ShouldHaveSingleItem().Result).Reason.ShouldContain(DimensionPattern.UnmappedCode);
+        ((ManualResult)report.Findings.ShouldHaveSingleItem().Result).Reason.ShouldContain(nameof(EPPlusReason.UnmappedDimension));
     }
 
     private static async Task<(FixReport Report, string After)> RewriteAsync(string before)

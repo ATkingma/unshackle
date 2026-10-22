@@ -1,6 +1,8 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using NSubstitute;
 using Shouldly;
+using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.EPPlus.Patterns;
 using Unshackle.Core.Models;
 using Xunit;
@@ -71,6 +73,60 @@ public class FontsLicenceTests
         // Assert
         blockers.Count.ShouldBe(expected);
         blockers.ShouldAllBe(b => b.Code == nameof(ProjectBlockingReason.LicensedDependency));
+    }
+
+    // TAAK-319, E7: the pin needs current assets of a project that declares EPPlus and nothing requiring Fonts 2.0.
+    [Theory]
+    [InlineData(AssetsState.Current, "EPPlus", "[1.0.0, )", 1)]
+    [InlineData(AssetsState.Current, "EPPlus", "[2.0.0, )", 0)]
+    [InlineData(AssetsState.Current, "Other", "[1.0.0, )", 0)]
+    [InlineData(AssetsState.Stale, "EPPlus", "[1.0.0, )", 0)]
+    [InlineData(AssetsState.Missing, "EPPlus", "[1.0.0, )", 0)]
+    public void EditsFor_Assets_PinFontsOnlyWhenSafe(AssetsState state, string declared, string fontsRange, int expected)
+    {
+        // Arrange
+        PackageAssets assets = Assets(state, "1.0.1", new PackageRequirement { Package = declared, RequiredBy = "project", Range = "4.5.3.3" },
+            new PackageRequirement { Package = "SixLabors.Fonts", RequiredBy = "ClosedXML/0.105.1", Range = fontsRange });
+
+        // Act
+        IReadOnlyList<ProjectFileEdit> edits = Fix(assets).EditsFor(ProjectAt("/r/P.csproj"));
+
+        // Assert
+        edits.Count.ShouldBe(expected);
+        edits.OfType<PackageAddEdit>().ShouldAllBe(e => e.Name == "SixLabors.Fonts" && e.Version == "1.0.0");
+    }
+
+    [Theory]
+    [InlineData(AssetsState.Current, "2.1.0", 1)]
+    [InlineData(AssetsState.Current, "1.0.1", 0)]
+    [InlineData(AssetsState.Missing, "2.1.0", 0)]
+    public void ProjectBlockers_Assets_LicensedDependencyFromTwo(AssetsState state, string fonts, int expected)
+    {
+        // Arrange
+        PackageAssets assets = Assets(state, fonts);
+
+        // Act
+        IReadOnlyList<ManualResult> blockers = Fix(assets).ProjectBlockers(ProjectAt("/r/P.csproj"));
+
+        // Assert
+        blockers.Count.ShouldBe(expected);
+        blockers.ShouldAllBe(b => b.Code == nameof(ProjectBlockingReason.LicensedDependency));
+    }
+
+    private static Unshackle.Core.Fixes.EPPlus.EPPlusFix Fix(PackageAssets assets)
+    {
+        IPackageAssetsReader reader = Substitute.For<IPackageAssetsReader>();
+        reader.Read(Arg.Any<string>()).Returns(assets);
+        return new Unshackle.Core.Fixes.EPPlus.EPPlusFix(null, null, reader);
+    }
+
+    private static PackageAssets Assets(AssetsState state, string fonts, params PackageRequirement[] requirements) =>
+        new() { State = state, Resolved = new Dictionary<string, string> { ["SixLabors.Fonts"] = fonts }, Requirements = requirements };
+
+    private static Project ProjectAt(string path)
+    {
+        var workspace = new AdhocWorkspace();
+        return workspace.AddProject(ProjectInfo.Create(ProjectId.CreateNewId(), VersionStamp.Default, "P", "P", LanguageNames.CSharp, filePath: path));
     }
 
     private static PatternResult Rewrite(IEnumerable<MetadataReference> extra)

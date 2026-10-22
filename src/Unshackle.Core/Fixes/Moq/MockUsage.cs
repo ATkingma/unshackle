@@ -12,20 +12,25 @@ public static class MockUsage
     // such use still there was not rewritten and the mock must stay Moq.
     public static MockAnalysis Analyze(ISymbol symbol, SemanticModel model, bool pendingUses)
     {
+        if (symbol.DeclaringSyntaxReferences is [var declared, ..] && MoqTargetFramework.Unsupported(declared.GetSyntax()) is { } framework)
+        {
+            return MockAnalysis.Blocked(MoqReason.TargetFrameworkUnsupported, MoqTargetFramework.Reason(framework));
+        }
+
         if (Type(symbol) is not { } mockType || !MoqSyntax.IsMockOfT(mockType))
         {
-            return MockAnalysis.Blocked("MockPassedAround: not a Mock<T> local or field");
+            return MockAnalysis.Blocked(MoqReason.MockPassedAround, "not a Mock<T> local or field");
         }
 
         if (symbol.DeclaringSyntaxReferences is not [var reference] || reference.SyntaxTree != model.SyntaxTree)
         {
-            return MockAnalysis.Blocked("MockPassedAround: the mock is declared in another file");
+            return MockAnalysis.Blocked(MoqReason.MockPassedAround, "the mock is declared in another file");
         }
 
         SyntaxNode declarator = reference.GetSyntax();
         if (declarator.Parent is VariableDeclarationSyntax { Variables.Count: > 1 })
         {
-            return MockAnalysis.Blocked("MockDeclaration: several mocks in one declaration; split it first");
+            return MockAnalysis.Blocked(MoqReason.MockDeclaration, "several mocks in one declaration; split it first");
         }
 
         SyntaxNode scope;
@@ -33,7 +38,7 @@ public static class MockUsage
         {
             if (field.DeclaredAccessibility != Accessibility.Private || field.ContainingType.DeclaringSyntaxReferences.Length != 1)
             {
-                return MockAnalysis.Blocked("MockPassedAround: a non-private field (or one of a partial class) can be used outside this file");
+                return MockAnalysis.Blocked(MoqReason.MockPassedAround, "a non-private field (or one of a partial class) can be used outside this file");
             }
 
             scope = field.ContainingType.DeclaringSyntaxReferences[0].GetSyntax();
@@ -46,7 +51,7 @@ public static class MockUsage
         ITypeSymbol mocked = MoqSyntax.MockedType(mockType);
         if (mocked.TypeKind != TypeKind.Interface)
         {
-            return MockAnalysis.Blocked("ClassMock: only interface mocks are converted; a class or delegate mock is moq-queue.md row 9");
+            return MockAnalysis.Blocked(MoqReason.ClassMock, "only interface mocks are converted; a class or delegate mock is moq-queue.md row 9");
         }
 
         var creations = new List<BaseObjectCreationExpressionSyntax>();
@@ -54,13 +59,13 @@ public static class MockUsage
         {
             if (initial is not BaseObjectCreationExpressionSyntax creation)
             {
-                return MockAnalysis.Blocked("MockPassedAround: the mock comes from another expression than new Mock<T>()");
+                return MockAnalysis.Blocked(MoqReason.MockPassedAround, "the mock comes from another expression than new Mock<T>()");
             }
 
             creations.Add(creation);
         }
 
-        var setUp = new List<ISymbol>();
+        var context = new MockUseContext();
         int uses = 0;
         foreach (IdentifierNameSyntax identifier in scope.DescendantNodes().OfType<IdentifierNameSyntax>()
             .Where(i => i.Identifier.Text == symbol.Name && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(i).Symbol, symbol)))
@@ -78,13 +83,13 @@ public static class MockUsage
             {
                 if (SetUpForAnyArguments(use.Parent!, model) is { } member)
                 {
-                    setUp.Add(member);
+                    context.SetUp.Add(member);
                 }
 
                 continue;
             }
 
-            if (MockUseRules.Blocker(use, model, setUp, pendingUses) is { } blocker)
+            if (MockUseRules.Blocker(use, model, context, pendingUses) is { } blocker)
             {
                 return MockAnalysis.Blocked(blocker);
             }
@@ -98,7 +103,12 @@ public static class MockUsage
             }
         }
 
-        DefaultsPlan plan = MockDefaults.Plan(mocked, mockOf: false, setUp);
+        if (context.TrackingPositions.Any(p => p > context.FirstConfiguration))
+        {
+            return MockAnalysis.Blocked(MoqReason.PropertyOrder, "SetupProperty/SetupAllProperties after another setup or verify of the mock; Moq may then reset that setup");
+        }
+
+        DefaultsPlan plan = MockDefaults.Plan(mocked, mockOf: false, context.SetUp, context.Tracked, context.AllTracked);
         if (plan.Blocker is not null)
         {
             return MockAnalysis.Blocked(plan.Blocker);
@@ -106,7 +116,7 @@ public static class MockUsage
 
         if (plan.Pins.Count > 0 && !creations.All(IsStatementCreation))
         {
-            return MockAnalysis.Blocked($"DefaultValueDiffers: an unconfigured {mocked.Name} answers differently in NSubstitute ("
+            return MockAnalysis.Blocked(MoqReason.DefaultValueDiffers, $"an unconfigured {mocked.Name} answers differently in NSubstitute ("
                 + string.Join(", ", plan.Pins.Select(p => p.Name)) + "); pinning Moq's default needs the creation as a statement, not a field initializer");
         }
 

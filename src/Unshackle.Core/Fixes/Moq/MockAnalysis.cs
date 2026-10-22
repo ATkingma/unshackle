@@ -5,7 +5,7 @@ namespace Unshackle.Core.Fixes.Moq;
 // The answer of MockUsage for one mock: why it stays Moq, or the defaults to pin when it becomes a substitute.
 public class MockAnalysis
 {
-    public string? Blocker { get; init; }
+    public MoqBlocker? Blocker { get; init; }
 
     public IReadOnlyList<ISymbol> Pins { get; init; } = [];
 
@@ -14,5 +14,7 @@ public class MockAnalysis
 
     public ITypeSymbol? Mocked { get; init; }
 
-    public static MockAnalysis Blocked(string blocker) => new() { Blocker = blocker };
+    public static MockAnalysis Blocked(MoqBlocker blocker) => new() { Blocker = blocker };
+
+    public static MockAnalysis Blocked(MoqReason code, string reason) => Blocked(MoqBlocker.Of(code, reason));
 }

@@ -47,7 +47,7 @@ public class ArgMatchersTests
         var call = MockCall.Rewrite(node, SyntaxFactory.ParseExpression("m.Object"), model);
 
         // Assert
-        call.Blocker.ShouldNotBeNull().ShouldStartWith(code);
+        call.Blocker.ShouldNotBeNull().Code.ToString().ShouldBe(code);
     }
 
     private static (ExpressionSyntax Lambda, SemanticModel Model) Arrange(string lambda)

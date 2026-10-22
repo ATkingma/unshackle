@@ -21,16 +21,16 @@ public class VerifyPattern : IPattern
         var verify = (InvocationExpressionSyntax)((ExpressionStatementSyntax)node).Expression;
         if (verify.Expression is not MemberAccessExpressionSyntax { Expression: var receiver } || MockUsage.Holder(receiver, model) is not { } holder)
         {
-            return PatternResult.Manual("MockPassedAround: the Verify is on a mock that is not a local or private field of this file");
+            return PatternResult.Manual(MoqReason.MockPassedAround, "the Verify is on a mock that is not a local or private field of this file");
         }
 
         MockAnalysis analysis = MockUsage.Analyze(holder, model, pendingUses: true);
         if (analysis.Blocker is not null)
         {
-            return PatternResult.Manual(analysis.Blocker);
+            return analysis.Blocker.ToResult();
         }
 
         MockCall plan = VerifySyntax.Plan(verify, model);
-        return plan.Blocker is not null ? PatternResult.Manual(plan.Blocker) : PatternResult.Fixed(plan.Node!, "NSubstitute");
+        return plan.Blocker is not null ? plan.Blocker.ToResult() : PatternResult.Fixed(plan.Node!, "NSubstitute");
     }
 }

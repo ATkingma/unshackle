@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
+using static Unshackle.Core.Fixes.Moq.SetupReturnsSyntax;
 
 namespace Unshackle.Core.Fixes.Moq.Patterns;
 
@@ -9,14 +10,17 @@ namespace Unshackle.Core.Fixes.Moq.Patterns;
 // (MockUsage): a NSubstitute Returns on a mock that stays Moq would throw at run time. moq.create then drops the .Object.
 public class SetupReturnsPattern : IPattern
 {
-    public string Id => "moq.setup-returns";
+    public virtual string Id => "moq.setup-returns";
 
-    public string Description => "m.Setup(x => x.M(..)).Returns(v) → m.Object.M(..).Returns(v), ReturnsAsync(v) → Returns(Task.FromResult(v))";
+    public virtual string Description => "m.Setup(x => x.M(..)).Returns(v) → m.Object.M(..).Returns(v), ReturnsAsync(v) → Returns(Task.FromResult(v))";
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().OfType<InvocationExpressionSyntax>()
-            .Where(i => SetupReturnsSyntax.IsSetup(i, model) && SetupReturnsSyntax.Statement(i) is not null)
+            .Where(i => SetupReturnsSyntax.IsSetup(i, model) && SetupReturnsSyntax.Statement(i) is not null && IsThrows(i) == FindsThrows)
             .Select(i => (SyntaxNode)SetupReturnsSyntax.Statement(i)!);
+
+    // moq.throws reuses this pattern for the Throws/ThrowsAsync setups.
+    protected virtual bool FindsThrows => false;
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
@@ -24,17 +28,19 @@ public class SetupReturnsPattern : IPattern
         InvocationExpressionSyntax setup = statement.DescendantNodes().OfType<InvocationExpressionSyntax>().First(i => SetupReturnsSyntax.IsSetup(i, model));
         if (setup.Expression is not MemberAccessExpressionSyntax { Expression: var receiver } || MockUsage.Holder(receiver, model) is not { } holder)
         {
-            return PatternResult.Manual("MockPassedAround: the Setup is on a mock that is not a local or private field of this file");
+            return PatternResult.Manual(MoqReason.MockPassedAround, "the Setup is on a mock that is not a local or private field of this file");
         }
 
         MockAnalysis analysis = MockUsage.Analyze(holder, model, pendingUses: true);
         if (analysis.Blocker is not null)
         {
-            return PatternResult.Manual(analysis.Blocker);
+            return analysis.Blocker.ToResult();
         }
 
         MockCall plan = SetupReturnsSyntax.Plan(setup, model);
-        return plan.Blocker is not null ? PatternResult.Manual(plan.Blocker)
+        return plan.Blocker is not null ? plan.Blocker.ToResult()
+            : plan.Removed ? PatternResult.Fixed(Array.Empty<SyntaxNode>())
+            : plan.Throws ? PatternResult.Fixed(plan.Node!, "NSubstitute", SetupReturnsSyntax.ExceptionsNamespace)
             : plan.Type is not null ? PatternResult.Fixed(plan.Node!, "NSubstitute", SetupReturnsSyntax.TasksNamespace)
             : PatternResult.Fixed(plan.Node!, "NSubstitute");
     }

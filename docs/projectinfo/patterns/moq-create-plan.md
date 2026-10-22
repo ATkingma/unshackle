@@ -66,7 +66,7 @@ mock and substitute provably answer the same.
 ## Risks
 
 - The defaults table is checked by the run-time harness (council round 9, Q2) for the shapes in `_Runtime/`.
-- `TargetFrameworkUnsupported` (Q3) needs the project's TFM, which a pattern does not see: open for the Fixer/project-file step.
+- `TargetFrameworkUnsupported` (Q3): a project row through `IProjectFileMigration.ProjectBlockers` plus Manual in every pattern (from the preprocessor symbols); the project row does not yet block the `Package` swap (engine).
 - The strict defaults check makes many corpus mocks Manual until the setup rows land; that is intended.
 
 ## Models

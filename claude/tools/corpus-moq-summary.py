@@ -1,11 +1,11 @@
 #!/usr/bin/env python3 -I
-"""Markdown tables for CORPUSRUN-moq.md from $CORPUS/_results (default /mnt/dikkeschijf/unshackle-corpus/corpus-moq).
+"""Markdown tables for CORPUSRUN-moq.md from <corpus root>/_results.
 
-Usage: python3 -I claude/tools/corpus-moq-summary.py [corpus root]
+Usage: python3 -I claude/tools/corpus-moq-summary.py <corpus root>
 """
 import collections, json, pathlib, sys
 
-root = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else '/mnt/dikkeschijf/unshackle-corpus/corpus-moq') / '_results'
+root = pathlib.Path(sys.argv[1]) / '_results'
 
 
 def load(path):

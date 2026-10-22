@@ -2,8 +2,8 @@
 
 Tool: `main` 0842b542 (all Moq rows 0-13), published to `corpus-moq/tool-0842b542`. Harness: `claude/tools/corpus-moq-run.sh` (base, scan, after per repo,
 one at a time) over `corpus-moq-am.sh` (a copy of `corpus-am.sh` with `RUNNER_FORCE=vstest` for solutions that mix VSTest projects with an MTP marker:
-fluentmigrator). Repos: `claude/tools/corpus-moq-list.txt`. Tables: `python3 -I claude/tools/corpus-moq-summary.py`.
-Results and logs on the corpus disk: `/mnt/dikkeschijf/unshackle-corpus/corpus-moq/_results/{base,scan,after}/<repo>`.
+fluentmigrator). Repos: `claude/tools/corpus-moq-list.txt`. Tables: `python3 -I claude/tools/corpus-moq-summary.py <corpus root>`.
+Results and logs on the corpus disk: `<corpus-moq root>/_results/{base,scan,after}/<repo>` (the corpus disk, never /tmp).
 
 Status: WIP, the run is long (one repo takes 1.5 h or more at the current machine load of ~40) and continues in the background.
 

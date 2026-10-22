@@ -53,6 +53,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `docs/projectinfo/lancering/reddit-post.md` | Draft r/dotnet launch post (user posts it) |
 | `claude/tasks/archief/TAAK-295-kept-reason-codes.md` | Typed reason codes for every kept AutoMapper finding instead of the `Stays on AutoMapper:` prefix (done) |
 | `claude/tasks/POOL-2026-10-22.md` | Agent pool plan: waves, file ownership and reserved task numbers for TAAK-301..310 |
+| `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-301-document-parallel-options.md` | Document `--sequential` / `--max-degree` for users |
 | `claude/tasks/TAAK-302-verify-head-pattern-check.md` | verify-head must not pass when the pattern-docs check could not run (jq) |
 | `claude/tasks/TAAK-303-cleanup-worktrees.md` | Remove stale agent worktrees and merged branches |

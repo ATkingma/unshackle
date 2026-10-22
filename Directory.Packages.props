@@ -24,6 +24,12 @@
     <PackageVersion Include="FluentAssertions" Version="7.2.2" />
     <PackageVersion Include="MediatR" Version="12.5.0" />
     <PackageVersion Include="AutoMapper" Version="14.0.0" />
+    <!-- Roadmap 7-9 (council round 8): last free/old versions as types for proofs, and the targets -->
+    <PackageVersion Include="Moq" Version="4.18.4" />
+    <PackageVersion Include="Polly" Version="7.2.4" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.11.0" />
+    <PackageVersion Include="EPPlus" Version="4.5.3.3" />
+    <PackageVersion Include="ClosedXML" Version="0.105.1" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />
     <!-- A package that builds on MediatR (TAAK-194): the version of the ardalis corpus case, only as types for proofs -->

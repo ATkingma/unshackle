@@ -23,6 +23,11 @@
     <!-- 14.0.0 is bewust de laatste vrije versie; alleen nodig als types voor proofs -->
     <PackageReference Include="AutoMapper" NoWarn="NU1903" />
     <PackageReference Include="Mediator.Abstractions" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="Polly" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+    <PackageReference Include="EPPlus" />
+    <PackageReference Include="ClosedXML" />
     <!-- Bouwt op MediatR; de fix zet de broncode ervan in de oplossing (TAAK-194) -->
     <PackageReference Include="Ardalis.SharedKernel" />
     <PackageReference Include="Autofac" />

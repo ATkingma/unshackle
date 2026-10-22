@@ -99,6 +99,47 @@ Follow-up: TAAK-300.
 | D4 | Proof of identical output | unit + corpus + 5× varied / unit + corpus (+ files) / unit + SampleShop + corpus | **All of it:** unit tests on multi-file solutions of all three fixes (pre-filter on/off, sequential, parallel at degrees 2, 3, 4, 8 and default), the inactive-branch cleanup over two target frameworks, a shuffled-completion test repeated 5× at varied degrees; a SampleShop integration test (scan sequential vs parallel, all three fixes); the corpus compares report.json and the rewritten files byte for byte between sequential and parallel. |
 | D5 | Pre-filter contract `IFix.FindsOnlyOldLibraryCode` | true, reluctantly / true / true | **Default true**, the contract in the XML doc, with a guard: the identity tests and the corpus compare `CheckEveryFile` on and off for every fix, so a fix that breaks the contract fails loudly. |
 
+### 2026-10-22 — round 8: Moq, Polly, EPPlus, MassTransit, manual reduction, new libraries
+
+Questions: `claude/tasks/COUNCIL-round-8.md` (sources linked there; Polly P1–P7 in `corpus-polly.md`). Two rounds; all joint.
+
+**General rule (all fixes).** Fixed means the behaviour is proven the same. A shape is Fixed only when it is literal and visible in
+one place, and a proof pins the behaviour that could change (a proof that passes either way proves nothing). Everything else is
+`Manual` with a typed reason code and file:line. The old package is removed per project only when that project has 0 Manual rows.
+
+| # | Decision | Joint rule |
+| --- | --- | --- |
+| M1 | Moq `MockBehavior.Strict` | Manual (`StrictBehaviour`); explicit `Loose`/`Default` is dropped. |
+| M2 | `SetupSequence` | Fixed to `Returns(a, b, c)` only when every step is `Returns`/`ReturnsAsync`, with a warning that NSubstitute repeats the last value after the sequence; any other step makes it Manual. |
+| M3 | `Protected()` | Manual; the reason names the `HttpMessageHandler.SendAsync` fake-handler recipe. |
+| M4 | Verify family | `Verifiable()`+`Verify()` and `VerifyAll` expand to one `Received()` per covered setup (VerifyAll: all setups) only when every setup on that mock is in the same test method, the mock is not set up elsewhere (constructor, `[SetUp]`, helper, base class, field) and no setup is conditional or in a loop; each expansion warns with file:line. Otherwise Manual (`VerifyScopeNotLocal`). `VerifyNoOtherCalls` is Manual. |
+| M5 | Target / AutoMocker | NSubstitute only. AutoMocker/AutoMoq Manual; its own design later. |
+| P1 | Polly target | `Microsoft.Extensions.(Http.)Resilience` (Polly.Core via Microsoft), not a fork. |
+| P2 | Delays | The v7 delay lambda is carried over as `DelayGenerator`; a backoff enum only for a constant delay. |
+| P3 | `onRetry` | Fixed only with a 1:1 parameter mapping, emitting `args.AttemptNumber + 1`; a body using `context` is Manual. |
+| P4 | `Wrap` order | Fixed only when every operand is a policy built inline or in a once-assigned local from a literal chain; the builder adds them outermost first; a proof per arity (2, 3) fails if the order is reversed. Otherwise Manual (`WrapOrderNotProvable`). |
+| P5 | Polly 8 still on the v7 API | In scope: fixes apply to the API shape, not the package version; the report states the version found. |
+| P6 | Transitive or CPM-only reference | In scope for the code rewrite; only declared references are edited (CPM through the project-file step, S3); an Info line says the OSMF status of transitive use is unconfirmed (#3183). |
+| P7 | README wording | "Future majors plus v7 API debt"; no "fee from 16 Nov" claim; note the conflicting licence statements. |
+| E1 | Cell-compare harness | Mandatory proof part for every pattern touching values or styles, in Unshackle.Tests (never Core): before on EPPlus 4.5.3.3, after on ClosedXML, compare per cell. |
+| E2 | Test types | EPPlus 4.5.3.3 only; 5+ members matched by syntax when the symbol does not resolve; unresolved 5+ members Manual. |
+| E3 | Integer worksheet index | Rewritten by the project's declared EPPlus version (4.x 1-based, 5+ 0-based); unknown or range version → Manual (`UnknownEPPlusVersion`). |
+| E4 | `object` values | Fixed only when the static type, or a provably closed set of run-time types, is covered by harness proofs (string, double, int, bool, DateTime, decimal, enum, null); otherwise Manual (`UncoveredRuntimeType`). |
+| E5 | Target | ClosedXML 0.105.x (MIT; confirm no licence check from a primary source before the skeleton ships). |
+| E6 | Wrapper libraries | Manual by design when a public/protected signature in a packable project exposes EPPlus (`PublicApiExposesOldLibrary`). |
+| T1–T2 | MassTransit target and timing | A report-only detector now; a package-ID swap to OpenTransit only once it ships on NuGet; re-check in Q1 2027. |
+| T3–T4 | Consumer rewrites | No rewrite without working registration, no TODO skeletons; a routing change is never Fixed. |
+| T5 | Test types | MassTransit 8.5.x (Apache-2.0) only; no Wolverine/Rebus until a target is chosen. |
+| A1 | TAAK-311 mocked IMapper | Rewrite the `Setup(m => m.Map<X>(..))` only when the mock serves just maps that are all rewritten and the mocked return provably equals the generated mapping's result (or the test only asserts pass-through); each rewritten test warns. Otherwise keep the mock, Manual row naming the test. |
+| A2 | TAAK-312 assembly scan | Fixed when every caller in the solution passes the same literal `typeof(X).Assembly` and the method is non-public or in a non-packable project; callers in inactive `#if` or unknown lambdas count as unknown. Otherwise Manual (`AssemblyNotStaticallyKnown`). |
+| A3 | TAAK-313 nullable source | `src is null ? null! : src.ToX()` only where AutoMapper provably returns null; config like `AllowNullDestinationValues` → Manual. Re-measure the corpus first. |
+| A4 | TAAK-314 config-lambda maps | Fixed: a lambda passed directly to `new MapperConfiguration` is treated as a profile body (round 3 Q3(b) rule); stored or conditional lambdas Manual. Re-measure first. |
+| A5 | TAAK-315 generic messages | Stays justified Manual until Mediator's generator supports generics. |
+| S1 | Scope | In: licence, sponsor and EOL/abandoned ("a third party forces you off this library"). Out: forced upgrades without that trigger (xUnit v3, NUnit 4) and preference migrations (Swashbuckle, Newtonsoft). |
+| S2 | Report-only fixes | Allowed as their own kind: the fix declares itself report-only, its patterns return only Manual/Info, the Fixer touches no packages, the report header says "inventory only"; not counted as Fixed. |
+| S3 | Non-C# edits | An `IProjectFileMigration` Strategy per fix, a closed set of exact typed edits (package rename/remove/add, one MSBuild property, known config file rename/transform), applied by the Fixer after the document pass and only when the project's C# part has 0 blocking Manual rows; each edit reported with file:line; `OutputType`/`IsTestProject` always warn; a before/after snapshot proof per edit kind. Patterns never write files. |
+| S4 | Order after step 10 | 11 SpecFlow → Reqnroll, 12 IdentityServer4 detector. iTextSharp 5 slice next only after a scout proves the read/extract/merge slice provable; EF bulk parked (Pragmatist accepted parking). No new library before Moq, Polly and EPPlus are at 100% and the MassTransit detector is done. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

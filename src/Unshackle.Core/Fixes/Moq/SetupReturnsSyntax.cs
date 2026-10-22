@@ -317,7 +317,7 @@ public static class SetupReturnsSyntax
         return false;
     }
 
-    private static bool HasOtherSetup(InvocationExpressionSyntax setup, SemanticModel model)
+    public static bool HasOtherSetup(InvocationExpressionSyntax setup, SemanticModel model)
     {
         if (setup.Expression is not MemberAccessExpressionSyntax { Expression: var receiver } || MockUsage.Holder(receiver, model) is not { } holder
             || SetupMember(setup, model) is not { } member)
@@ -329,7 +329,7 @@ public static class SetupReturnsSyntax
             ? field.ContainingType.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax()
             : holder.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax().FirstAncestorOrSelf<MemberDeclarationSyntax>();
         return (scope ?? setup.SyntaxTree.GetRoot()).DescendantNodes().OfType<InvocationExpressionSyntax>().Any(other =>
-            other != setup && IsSetup(other, model)
+            other != setup && (IsSetup(other, model) || SetupSequenceSyntax.IsSequence(other, model))
             && other.Expression is MemberAccessExpressionSyntax { Expression: var otherReceiver }
             && SymbolEqualityComparer.Default.Equals(MockUsage.Holder(otherReceiver, model), holder)
             && SymbolEqualityComparer.Default.Equals(SetupMember(other, model), member));

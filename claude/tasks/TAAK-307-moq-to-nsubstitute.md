@@ -63,6 +63,16 @@
   (now `Configure()` when a member has several setups, rows 3/6/7/8), AndDoes runs before a Returns function, and AndDoes/Do runs for
   every matching configuration (both Manual).
 
+- 2026-10-22 (agent L2): row 9 `moq.class-mocks` done. Probe (`<corpus>/l2/probe`, Moq 4.18.4 vs NSubstitute 6.2.0): `CallBase = true` class
+  mock equals `ForPartsOf<C>(args)` for ctor, virtual/non-virtual/protected members, properties, ToString/Equals, ctor virtual calls; differs
+  for no-CallBase (null vs ""), a Setup on a partial (NSubstitute runs the real member once), abstract members. `ClassMocksPattern` derives
+  from `CreatePattern` (own id); new reasons `ClassMockNoCallBase`, `ClassMockAbstract`, `ClassMockSetup`. 10 proofs + 2 run-time proofs.
+
+- 2026-10-22 (agent L2): rows 11-13 done. Row 11 `moq.setup-sequence` (all-Returns steps become `Returns(a, b)` with the exhaustion warning). Row 12
+  `moq.logger-verify`: `ILogger.Log` verifies become `Received(n).Log(.. Arg.AnyType ..)`; fixed the formatter type argument (`It.IsAny<Func<It.IsAnyType,..>>`
+  was left as Moq, nullable annotation stripped). Row 13 `moq.unsupported`: reason codes `ProtectedMember`, `MockAs`, `MockInvocations`, `MockReset`,
+  `MockRaise`, `AutoMocker` (class mocks too); `Reset`/`Raise` stay Manual (not proven). Next: step 5 corpus round (L6).
+
 ## See also
 
 - `claude/docs/INDEX.md` — documentation index

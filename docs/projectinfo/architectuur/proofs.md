@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1280 proofs (excluding `_Pending`).
+Total: 1307 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -1619,7 +1619,23 @@ Total: 1280 proofs (excluding `_Pending`).
 | `returns-then-callback` | Fixed | `repo.Setup(r => r.Count(It.IsAny<string>())).Returns(1).Callback((string n) => _seen.Add(n));` → `repo.Object.Count(Arg.Any<string>()).Returns(1).AndDoes(ci => _seen.Add(ci.ArgAt<string>(0)));` |
 | `void-callback` | Fixed | `repo.Setup(r => r.Save(It.IsAny<int>(), It.IsAny<string>())).Callback((int id, string text) => _seen.Add(text …` → `repo.Object.When(r => r.Save(Arg.Any<int>(), Arg.Any<string>())).Do(ci => _seen.Add(ci.ArgAt<string>(1) + ci.A…` |
 
-### Create (14)
+### ClassMocks (11)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `abstract` | Manual |  — reason: ClassMockAbstract |
+| `callbase` | Fixed | `var repo = new Mock<Repo>(5) { CallBase = true }; var name = repo.Object.Name();` → `var repo = Substitute.ForPartsOf<Repo>(5); var name = repo.Name();` |
+| `callbase-behavior` | Fixed | `var repo = new Mock<Repo>(MockBehavior.Loose, 5, 6) { CallBase = true }; var name = repo.Object.Name();` → `var repo = Substitute.ForPartsOf<Repo>(5, 6); var name = repo.Name();` |
+| `callbase-field` | Fixed | `private readonly Mock<Repo> _repo = new Mock<Repo>(5) { CallBase = true }; var name = _repo.Object.Name();` → `private readonly Repo _repo = Substitute.ForPartsOf<Repo>(5); var name = _repo.Name();` |
+| `callbase-inline` | Fixed | `var name = new Mock<Repo>(5) { CallBase = true }.Object.Name();` → `var name = Substitute.ForPartsOf<Repo>(5).Name();` |
+| `delegate` | Manual |  — reason: ClassMock |
+| `mock-of` | Manual |  — reason: ClassMock |
+| `no-callbase` | Manual |  — reason: ClassMockNoCallBase |
+| `other-options` | Manual |  — reason: MockOptions |
+| `setup` | Manual |  — reason: ClassMockSetup |
+| `unsupported-protected` | Manual |  — reason: ProtectedMember |
+
+### Create (18)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -1637,6 +1653,18 @@ Total: 1280 proofs (excluding `_Pending`).
 | `strict` | Manual |  — reason: StrictBehaviour |
 | `string-return` | Fixed | `var names = new Mock<INames>(); var sut = names.Object.Name();` → `var names = Substitute.For<INames>(); names.Name().ReturnsNull();` |
 | `typed-local` | Fixed | `Mock<IClock> clock = new(); var sut = new Service(clock.Object);` → `IClock clock = Substitute.For<IClock>(); var sut = new Service(clock);` |
+| `unsupported-as` | Manual |  — reason: MockAs |
+| `unsupported-invocations` | Manual |  — reason: MockInvocations |
+| `unsupported-raise` | Manual |  — reason: MockRaise |
+| `unsupported-reset` | Manual |  — reason: MockReset |
+
+### LoggerVerify (3)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `never` | Fixed | `logger.Verify(l => l.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(),…` → `logger.Object.DidNotReceive().Log(Arg.Is<LogLevel>(LogLevel.Error), Arg.Any<EventId>(), Arg.Any<Arg.AnyType>()…` |
+| `once` | Fixed | `logger.Verify(l => l.Log(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => v.ToString()…` → `logger.Object.Received(1).Log(Arg.Is<LogLevel>(LogLevel.Information), Arg.Any<EventId>(), Arg.Is<Arg.AnyType>(…` |
+| `state-cast` | Manual |  — reason: MatcherUnsupported |
 
 ### Properties (3)
 
@@ -1671,6 +1699,19 @@ Total: 1280 proofs (excluding `_Pending`).
 | `returns-method-group` | Manual |  — reason: ReturnsLambda |
 | `strict` | Manual |  — reason: StrictBehaviour |
 
+### SetupSequence (8)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `function-step` | Manual |  — reason: SequenceStep |
+| `overlap` | Manual |  — reason: SetupsOverlap |
+| `property` | Fixed | `repo.SetupSequence(r => r.Label).Returns("a").Returns("b");` → `repo.Object.Label.Returns("a", "b");` |
+| `returns` | Fixed | `repo.SetupSequence(r => r.Count("a")).Returns(1).Returns(2).Returns(3);` → `repo.Object.Count("a").Returns(1, 2, 3);` |
+| `returns-async` | Fixed | `repo.SetupSequence(r => r.TotalAsync(2020)).ReturnsAsync(1).ReturnsAsync(2);` → `repo.Object.TotalAsync(2020).Returns(Task.FromResult<int>(1), Task.FromResult<int>(2));` |
+| `single` | Fixed | `repo.SetupSequence(r => r.Count(It.IsAny<string>())).Returns(1);` → `repo.Object.Count(Arg.Any<string>()).Returns(1);` |
+| `throws-step` | Manual |  — reason: SequenceStep |
+| `void-member` | Manual |  — reason: SequenceStep |
+
 ### Throws (5)
 
 | Proof | Outcome | What it proves |
@@ -1680,6 +1721,12 @@ Total: 1280 proofs (excluding `_Pending`).
 | `throws-value` | Fixed | `service.Setup(s => s.Count("a")).Throws(new InvalidOperationException("boom"));` → `service.Object.Count("a").Throws(new InvalidOperationException("boom"));` |
 | `throws-void` | Fixed | `service.Setup(s => s.Send(1, It.IsAny<string>())).Throws(new InvalidOperationException());` → `service.Object.When(s => s.Send(Arg.Is<int>(1), Arg.Any<string>())).Do(_ => throw new InvalidOperationExceptio…` |
 | `throws-void-call` | Manual |  — reason: ThrowsShape |
+
+### Unsupported (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `auto-mocker` | Manual |  — reason: AutoMocker |
 
 ### Verify (9)
 

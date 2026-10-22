@@ -20,7 +20,7 @@ public class WaitAndRetryAsyncPattern : IPattern
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().OfType<InvocationExpressionSyntax>()
-            .Where(i => PollyRetry.IsWaitAndRetryAsync(i, model))
+            .Where(i => PollyRetry.IsRetryCreation(i, model) && !PollyRetry.IsVariant(i, model))
             .SelectMany(i => PollyRetry.Targets(i, model))
             .Distinct();
 
@@ -29,7 +29,7 @@ public class WaitAndRetryAsyncPattern : IPattern
         PollyPlan plan = node switch
         {
             LocalDeclarationStatementSyntax statement => PollyRetry.PlanDeclaration(statement, model),
-            InvocationExpressionSyntax invocation when PollyRetry.IsWaitAndRetryAsync(invocation, model) =>
+            InvocationExpressionSyntax invocation when PollyRetry.IsRetryCreation(invocation, model) =>
                 PollyPlan.Manual(PollyReason.PolicyNotLocal,
                     "the policy is stored or passed on (field, property, return value or argument); only a local or inline policy used by awaited ExecuteAsync calls is rewritten so far."),
             InvocationExpressionSyntax execute => PollyRetry.PlanExecute(execute, model),

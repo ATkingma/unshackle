@@ -32,5 +32,5 @@ public class PollyFix : IFix
         AddedPackages = [new() { Name = "Microsoft.Extensions.Resilience", Version = ResilienceVersion }],
     };
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new WaitAndRetryAsyncPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new WaitAndRetryAsyncPattern(), new RetryVariantsPattern()];
 }

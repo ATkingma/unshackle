@@ -17,11 +17,22 @@ internal static class PollyRetry
     private const int MaxFreshNameTries = 10;
 
     // Parameters of the v7 retry methods this rewrite maps; any other (Context-taking providers, sleep-duration lists) is Manual.
-    private static readonly HashSet<string> s_rewrittenParameters = new(["retryCount", "sleepDurationProvider", "onRetry", "onRetryAsync"], StringComparer.Ordinal);
+    private const string SleepDurationProvider = "sleepDurationProvider";
+    private const string SleepDurations = "sleepDurations";
 
-    public static bool IsWaitAndRetryAsync(InvocationExpressionSyntax invocation, SemanticModel model) =>
-        invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "WaitAndRetryAsync" }
+    private static readonly HashSet<string> s_rewrittenParameters = new(["retryCount", SleepDurationProvider, SleepDurations, "onRetry", "onRetryAsync"], StringComparer.Ordinal);
+
+    // The v7 async retry methods; WaitAndRetryAsync with a provider is polly.wait-and-retry-async, the rest polly.retry-variants.
+    private static readonly HashSet<string> s_retryMethods = new(["WaitAndRetryAsync", "RetryAsync", "RetryForeverAsync", "WaitAndRetryForeverAsync"], StringComparer.Ordinal);
+
+    public static bool IsRetryCreation(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: string name } && s_retryMethods.Contains(name)
         && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { ContainingAssembly.Name: PollyAssembly };
+
+    // RetryAsync, the Forever methods and WaitAndRetryAsync over a sleep-duration list (queue row 7).
+    public static bool IsVariant(InvocationExpressionSyntax creation, SemanticModel model) =>
+        model.GetSymbolInfo(creation).Symbol is IMethodSymbol method
+        && (method.Name != "WaitAndRetryAsync" || method.Parameters.Any(p => p.Name == SleepDurations));
 
     // The nodes the pattern reports for one WaitAndRetryAsync call, outer nodes only (the Fixer replaces them independently).
     public static IEnumerable<SyntaxNode> Targets(InvocationExpressionSyntax creation, SemanticModel model)
@@ -71,7 +82,7 @@ internal static class PollyRetry
     public static PollyPlan PlanExecute(InvocationExpressionSyntax execute, SemanticModel model)
     {
         var access = (MemberAccessExpressionSyntax)execute.Expression;
-        if (access.Expression is InvocationExpressionSyntax creation && IsWaitAndRetryAsync(creation, model))
+        if (access.Expression is InvocationExpressionSyntax creation && IsRetryCreation(creation, model))
         {
             PollyPlan pipeline = PlanPipeline(creation, model);
             PollyPlan inlineCallback = PlanCallback(execute, model);
@@ -122,12 +133,11 @@ internal static class PollyRetry
         if (model.GetSymbolInfo(creation).Symbol is not IMethodSymbol method
             || ArgumentsByName(creation, method) is not { } arguments
             || !arguments.Keys.All(s_rewrittenParameters.Contains)
-            || !arguments.TryGetValue("retryCount", out (ExpressionSyntax Expression, IParameterSymbol Parameter) retryCount)
-            || !arguments.TryGetValue("sleepDurationProvider", out (ExpressionSyntax Expression, IParameterSymbol Parameter) provider)
-            || provider.Parameter.Type is not INamedTypeSymbol { Name: "Func", TypeArguments: [{ SpecialType: SpecialType.System_Int32 }, { Name: "TimeSpan" }] })
+            || (arguments.TryGetValue(SleepDurationProvider, out (ExpressionSyntax Expression, IParameterSymbol Parameter) checkedProvider)
+                && checkedProvider.Parameter.Type is not INamedTypeSymbol { Name: "Func", TypeArguments: [{ SpecialType: SpecialType.System_Int32 }, { Name: "TimeSpan" }] }))
         {
             return PollyPlan.Manual(PollyReason.OverloadNotSupported,
-                "only WaitAndRetryAsync(int retryCount, Func<int, TimeSpan> sleepDurationProvider[, onRetry/onRetryAsync]) is rewritten so far; a Context-taking sleep-duration provider or a sleep-duration list is Manual.");
+                "this retry overload is not rewritten: a Context- or outcome-taking sleep-duration provider is Manual.");
         }
 
         string? resultType = ResultType(creation, model);
@@ -137,20 +147,6 @@ internal static class PollyRetry
             return predicate;
         }
 
-        ExpressionSyntax count = retryCount.Expression;
-        if (count is not LiteralExpressionSyntax || model.GetConstantValue(count).Value is not int retries || retries < 1)
-        {
-            return PollyPlan.Manual(PollyReason.RetryCountNotLiteral,
-                $"the retry count '{count}' is not an integer literal of at least 1 (MaxRetryAttempts must be 1 or more).");
-        }
-
-        if (provider.Expression is not LambdaExpressionSyntax { Modifiers.Count: 0 } delay
-            || Parameter(delay) is not ParameterSyntax parameter)
-        {
-            return PollyPlan.Manual(PollyReason.DelayNotLambda, "the sleep-duration provider is not a plain one-parameter lambda.");
-        }
-
-        string attempt = parameter.Identifier.ValueText;
         if (FreshName(creation, model, ArgsName) is not string args
             || FreshName(creation, model, DelayFunctionName) is not string sleep
             || FreshName(creation, model, PollyOnRetry.CallbackName) is not string callback)
@@ -162,6 +158,75 @@ internal static class PollyRetry
         string newLine = NewLine(creation);
         string indent = Indent(creation);
         string inner = indent + "        ";
+
+        string maxRetryAttempts;
+        string delayLines;
+        if (arguments.TryGetValue(SleepDurations, out (ExpressionSyntax Expression, IParameterSymbol Parameter) durations))
+        {
+            // v7 retries once per listed duration, waiting duration[i - 1] before retry i; AttemptNumber is i - 1.
+            if (LiteralDurations(durations.Expression, model) is not { Count: > 0 } items)
+            {
+                return PollyPlan.Manual(PollyReason.SleepDurationsNotLiteral,
+                    "the sleep durations are not an array or collection literal of TimeSpan.Zero / TimeSpan.FromX(literal) elements.");
+            }
+
+            maxRetryAttempts = items.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            string listed = items.Count == 1
+                ? items[0]
+                : $"{args}.AttemptNumber switch {{ {string.Concat(items.SkipLast(1).Select((d, i) => $"{i} => {d}, "))}_ => {items[^1]} }}";
+            delayLines = $"{indent}        DelayGenerator = {args} => new ValueTask<TimeSpan?>({listed}),{newLine}";
+        }
+        else
+        {
+            if (method.Name.Contains("Forever", StringComparison.Ordinal))
+            {
+                // v8 documents int.MaxValue as retrying indefinitely.
+                maxRetryAttempts = "int.MaxValue";
+            }
+            else if (!arguments.TryGetValue("retryCount", out (ExpressionSyntax Expression, IParameterSymbol Parameter) retryCount))
+            {
+                // RetryAsync() and RetryAsync(onRetry) retry once.
+                maxRetryAttempts = "1";
+            }
+            else if (retryCount.Expression is not LiteralExpressionSyntax || model.GetConstantValue(retryCount.Expression).Value is not int retries || retries < 1)
+            {
+                return PollyPlan.Manual(PollyReason.RetryCountNotLiteral,
+                    $"the retry count '{retryCount.Expression}' is not an integer literal of at least 1 (MaxRetryAttempts must be 1 or more).");
+            }
+            else
+            {
+                maxRetryAttempts = retries.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+
+            if (!arguments.TryGetValue(SleepDurationProvider, out (ExpressionSyntax Expression, IParameterSymbol Parameter) provider))
+            {
+                // RetryAsync/RetryForeverAsync retry without waiting.
+                delayLines = $"{indent}        Delay = TimeSpan.Zero,{newLine}";
+            }
+            else if (provider.Expression is not LambdaExpressionSyntax { Modifiers.Count: 0 } delay || Parameter(delay) is not ParameterSyntax parameter)
+            {
+                return PollyPlan.Manual(PollyReason.DelayNotLambda, "the sleep-duration provider is not a plain one-parameter lambda.");
+            }
+            else
+            {
+                string attempt = parameter.Identifier.ValueText;
+                string function = delay.Body switch
+                {
+                    BlockSyntax block => $"TimeSpan {sleep}(int {attempt}){newLine}{inner}    {Reindent(block, inner + "    ", newLine)}",
+                    ExpressionSyntax expression => $"TimeSpan {sleep}(int {attempt}) => {expression};",
+                    _ => throw new System.Diagnostics.UnreachableException(),
+                };
+
+                // v7 passes the 1-based retry number to the provider; v8's AttemptNumber is 0-based for the first retry (council P2).
+                delayLines =
+                    $"{indent}        DelayGenerator = {args} =>{newLine}"
+                    + $"{indent}        {{{newLine}"
+                    + $"{inner}    {function}{newLine}"
+                    + $"{inner}    return new ValueTask<TimeSpan?>({sleep}({args}.AttemptNumber + 1));{newLine}"
+                    + $"{indent}        }},{newLine}";
+            }
+        }
+
         string onRetry = string.Empty;
         if (arguments.TryGetValue("onRetry", out (ExpressionSyntax Expression, IParameterSymbol Parameter) onRetryArgument)
             || arguments.TryGetValue("onRetryAsync", out onRetryArgument))
@@ -175,30 +240,48 @@ internal static class PollyRetry
             onRetry = onRetryPlan.Text;
         }
 
-        string function = delay.Body switch
-        {
-            BlockSyntax block => $"TimeSpan {sleep}(int {attempt}){newLine}{inner}    {Reindent(block, inner + "    ", newLine)}",
-            ExpressionSyntax expression => $"TimeSpan {sleep}(int {attempt}) => {expression};",
-            _ => throw new System.Diagnostics.UnreachableException(),
-        };
-
-        // v7 passes the 1-based retry number to the provider; v8's AttemptNumber is 0-based for the first retry (council P2).
         string text =
             $"new ResiliencePipelineBuilder{generic}(){newLine}"
             + $"{indent}    .AddRetry(new RetryStrategyOptions{generic}{newLine}"
             + $"{indent}    {{{newLine}"
             + $"{indent}        ShouldHandle = {shouldHandle},{newLine}"
-            + $"{indent}        MaxRetryAttempts = {retries},{newLine}"
-            + $"{indent}        DelayGenerator = {args} =>{newLine}"
-            + $"{indent}        {{{newLine}"
-            + $"{inner}    {function}{newLine}"
-            + $"{inner}    return new ValueTask<TimeSpan?>({sleep}({args}.AttemptNumber + 1));{newLine}"
-            + $"{indent}        }},{newLine}"
+            + $"{indent}        MaxRetryAttempts = {maxRetryAttempts},{newLine}"
+            + delayLines
             + onRetry
             + $"{indent}    }}){newLine}"
             + $"{indent}    .Build()";
         return PollyPlan.Of(SyntaxFactory.ParseExpression(text));
     }
+
+    // The elements of new[] { ... }, new TimeSpan[] { ... } or [ ... ] when each is TimeSpan.Zero or TimeSpan.FromX(numeric literal):
+    // values fixed at the call, so evaluating them inside the generator gives the same durations.
+    private static List<string>? LiteralDurations(ExpressionSyntax expression, SemanticModel model)
+    {
+        IEnumerable<ExpressionSyntax>? elements = expression switch
+        {
+            ImplicitArrayCreationExpressionSyntax implicitArray => implicitArray.Initializer.Expressions,
+            ArrayCreationExpressionSyntax { Initializer: { } initializer } => initializer.Expressions,
+            CollectionExpressionSyntax collection when collection.Elements.All(e => e is ExpressionElementSyntax) =>
+                collection.Elements.Cast<ExpressionElementSyntax>().Select(e => e.Expression),
+            _ => null,
+        };
+        if (elements is null)
+        {
+            return null;
+        }
+
+        List<ExpressionSyntax> items = [.. elements];
+        return items.All(e => IsLiteralTimeSpan(e, model)) ? [.. items.Select(e => e.ToString())] : null;
+    }
+
+    private static bool IsLiteralTimeSpan(ExpressionSyntax expression, SemanticModel model) =>
+        model.GetSymbolInfo(expression).Symbol is ISymbol { ContainingType: { Name: "TimeSpan", ContainingNamespace.Name: "System" } } symbol
+        && expression switch
+        {
+            MemberAccessExpressionSyntax => symbol.Name == "Zero",
+            InvocationExpressionSyntax { ArgumentList.Arguments: [{ Expression: LiteralExpressionSyntax }] } => symbol.Name.StartsWith("From", StringComparison.Ordinal),
+            _ => false,
+        };
 
     // The arguments by parameter name (named arguments may come in any order); null when one does not bind to a parameter.
     private static Dictionary<string, (ExpressionSyntax Expression, IParameterSymbol Parameter)>? ArgumentsByName(InvocationExpressionSyntax invocation, IMethodSymbol method)

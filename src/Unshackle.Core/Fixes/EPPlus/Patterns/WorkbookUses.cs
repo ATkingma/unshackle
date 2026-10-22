@@ -101,10 +101,13 @@ internal class WorkbookUses
         // range.Merge(); as LayoutPattern writes it for Merge = true (row 9).
         bool merged = !single && cell.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Merge" } merge
             && merge.Parent is InvocationExpressionSyntax { ArgumentList.Arguments.Count: 0, Parent: ExpressionStatementSyntax };
+        // range.InsertData(items); as LoadFromPattern writes it for LoadFromCollection (row 10).
+        bool inserted = cell.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "InsertData" } insert
+            && insert.Parent is InvocationExpressionSyntax { ArgumentList.Arguments.Count: 1, Parent: ExpressionStatementSyntax };
         bool value = cell.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Value" } access
             && access.Parent is AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax } assignment
             && assignment.Left == access && IsCovered(assignment.Right);
-        if (!styled && !value && !merged)
+        if (!styled && !value && !merged && !inserted)
         {
             return false;
         }
@@ -125,7 +128,11 @@ internal class WorkbookUses
     };
 
     // Statements LayoutPattern wrote on the worksheet itself (row 9): ws.Row(i).Height = h; and ws.SheetView.Freeze(r, c); are the same in ClosedXML.
+    // Also the ws.LastRowUsed(XLCellsUsedOptions.All) etc. that DimensionPattern wrote (row 7).
     private static bool IsLayoutUse(IdentifierNameSyntax use) =>
+        use.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "LastRowUsed" or "LastColumnUsed" or "FirstRowUsed" or "FirstColumnUsed" } used && used.Expression == use
+            && used.Parent is InvocationExpressionSyntax { ArgumentList.Arguments: [{ Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "All" } }] }
+        ||
         use.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Row" } row && row.Expression == use
             && row.Parent is InvocationExpressionSyntax { ArgumentList.Arguments.Count: 1 } rowCall
             && rowCall.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Height" } height
@@ -149,6 +156,11 @@ internal class WorkbookUses
     private bool IsCovered(ExpressionSyntax value)
     {
         ITypeSymbol? type = _model.GetTypeInfo(value).Type;
+        if (type is null or IErrorTypeSymbol && IsRowOrColumnNumber(value))
+        {
+            return true; // sheet.LastRowUsed(XLCellsUsedOptions.All).RowNumber() from DimensionPattern: an int, but unbound in this pass
+        }
+
         switch (type?.SpecialType)
         {
             case SpecialType.System_String or SpecialType.System_Boolean or SpecialType.System_Int32 or SpecialType.System_Int16
@@ -165,6 +177,9 @@ internal class WorkbookUses
                 return false;
         }
     }
+
+    private static bool IsRowOrColumnNumber(ExpressionSyntax value) =>
+        value is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RowNumber" or "ColumnNumber", Expression: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "LastRowUsed" or "LastColumnUsed" or "FirstRowUsed" or "FirstColumnUsed" } } } };
 
     private static bool RoundTripsIn15Digits(double value) =>
         double.Parse(value.ToString("G15", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture).Equals(value);

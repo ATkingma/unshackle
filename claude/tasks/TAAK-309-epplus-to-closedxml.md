@@ -1,6 +1,6 @@
 # TAAK-309 — EPPlus → ClosedXML (roadmap step 9)
 
-**Status**: step 4/5 — queue rows 1-11 done (7 and 10 lack an E14 combined after-proof, waits for a PackagePattern change); E7 pin wired through `IPackageAssetsReader` (L4, 2026-10-22); C1 codes for layout/dimension/load-from moved to `EPPlusReason`; corpus round (row 12) in progress, see `CORPUSRUN-epplus.md`
+**Status**: step 4/5 — queue rows 1-11 done, E14 combined after-proofs for rows 7-10 done; E7 pin wired through `IPackageAssetsReader` (L4, 2026-10-22); C1 codes for layout/dimension/load-from moved to `EPPlusReason`; corpus round (row 12) in progress, see `CORPUSRUN-epplus.md`
 **Created**: 2026-10-22
 **Goal**: An `epplus` fix that rewrites EPPlus code (LGPL 4.5.3.3 and commercial 5+ API shapes) to ClosedXML, at 100% on an EPPlus corpus.
 
@@ -32,6 +32,8 @@
 | **Why**   | Common commercial-license pain in enterprise code |
 
 ## Progress log
+
+- 2026-10-22 (L4, resume): E14 done for rows 7 and 10: `WorkbookUses` accepts `sheet.LastRowUsed(XLCellsUsedOptions.All)` etc. and `range.InsertData(..)` on a mapped sheet (unbound int `.RowNumber()` counts as covered value); proofs `Proofs/EPPlus/{Dimension,LoadFrom}/_Combined`, run by `StylesCombinedProofTests` and the harness. The per-type scaffold tests stay (they cover each property/shape type).
 
 - 2026-10-22 (epplus-styles agent, stopped at session end): round 12 done for E13 (AutoFitDiffers), E15 (enum Fixed, DateTime Manual LoadFromTypeDiffers), E16 (Dimension with XLCellsUsedOptions.All) and the rows 7/10 Unsupported skip. E14 done for styles and layout (full proofs in `Proofs/EPPlus/{Styles,Layout}/_Combined`, runner `StylesCombinedProofTests`). **Next:** E14 for dimension and load-from is blocked: `epplus.package` reports the sheet local as unmapped when used as `sheet.LastRowUsed(..)` / `sheet.Cells[..].InsertData(..)` (needs a PackagePattern change, claim request); then delete their scaffold harness tests. Also open: move the Layout/Dimension/LoadFrom string codes to `EPPlusReason` (C1).
 

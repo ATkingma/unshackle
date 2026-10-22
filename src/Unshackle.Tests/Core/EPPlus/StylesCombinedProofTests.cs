@@ -16,8 +16,7 @@ public class StylesCombinedProofTests
 {
     private static readonly string s_proofsDirectory = Path.Combine(AppContext.BaseDirectory, "Proofs", "EPPlus");
 
-    // Dimension and LoadFrom follow once epplus.package maps a sheet or range that those rows rewrote (claim request).
-    private static readonly string[] s_rows = ["Styles", "Layout"];
+    private static readonly string[] s_rows = ["Styles", "Layout", "Dimension", "LoadFrom"];
 
     public static TheoryData<string> Cases() =>
         [.. s_rows.SelectMany(row => Directory.EnumerateFiles(Path.Combine(s_proofsDirectory, row, "_Combined"), "*.before.cs"))

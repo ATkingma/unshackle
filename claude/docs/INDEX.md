@@ -54,6 +54,9 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-295-kept-reason-codes.md` | Typed reason codes for every kept AutoMapper finding instead of the `Stays on AutoMapper:` prefix (done) |
 | `claude/tasks/POOL-2026-10-22.md` | Agent pool plan: waves, file ownership and reserved task numbers for TAAK-301..310 |
 | `claude/tasks/ANALYSE-manual-round-2.md` | TAAK-306 inventory and ranking of the MediatR/AutoMapper Manual blockers; tasks TAAK-311..315 |
+| `claude/tools/check_pattern_docs.py` | Pattern-docs guard (hook modes + `check` for verify-head); `.claude/hooks/check-pattern-docs.sh` wraps it |
+| `docs/projectinfo/architectuur/candidate-identityserver.md` | Scout TAAK-380: IdentityServer4, no-go for a fix, go for report-only |
+| `docs/projectinfo/architectuur/candidate-pdf.md` | Scout TAAK-400: iTextSharp narrow slice conditional, iText 7/QuestPDF no-go |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |
 | `claude/tasks/TAAK-380-scout-identityserver.md` | Scout IdentityServer4 → OpenIddict/Duende (go/no-go research) |

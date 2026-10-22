@@ -1,6 +1,6 @@
 # TAAK-309 — EPPlus → ClosedXML (roadmap step 9)
 
-**Status**: step 3/5 — harness, skeleton and queue rows 1–2 done; next queue row 11 (`epplus.unsupported`), then 3
+**Status**: step 3/5 — harness, skeleton and queue rows 1–2 done; queue rows 1, 2 and 11 done; next row 3 (`epplus.worksheets`)
 **Created**: 2026-10-22
 **Goal**: An `epplus` fix that rewrites EPPlus code (LGPL 4.5.3.3 and commercial 5+ API shapes) to ClosedXML, at 100% on an EPPlus corpus.
 
@@ -58,6 +58,12 @@
     as id only vs id + code. Both recorded in the queue.
   - `dotnet build` 0 warnings; `dotnet test` 1707 passed, 0 failed (22 EPPlus unit/harness tests + 15 EPPlus proofs).
   - Not registered in `Cli.cs` (main session); README rows pending (main session).
+
+- 2026-10-22 (epplus-skeleton, row 11): `epplus.unsupported` (runs last; every member still naming EPPlus → Manual
+  `[UnmigratedEPPlusApi]` with each API and its queue row; E6 `[PublicApiExposesOldLibrary]` for public/protected signatures in a
+  packable project; unresolved 5+ members named with their receiver; licence/package findings not reported twice). 4 proofs, 2 unit
+  tests, KingmaDoc docs. `dotnet build` 0 warnings; `dotnet test` 1809 passed, 0 failed. Council round 10 decided E7–E9, C1, C3
+  (see council.md): E9 (plain local) goes with row 3; E7 (SixLabors.Fonts warning/pin) needs TAAK-317's IProjectFileMigration.
 
 ## See also
 

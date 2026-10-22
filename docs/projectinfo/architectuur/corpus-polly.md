@@ -127,6 +127,18 @@ Hits = regex matches over all 20 repos; "Projects" = repos with at least one hit
 - Long tail with no clean v8 equivalent: `Cache`, `Bulkhead`, `Fallback`, `PolicyRegistry`, `Context`,
   `ExecuteAndCapture`, Contrib `Backoff` — Manual first.
 
+## Council questions
+
+Recorded by the main session from the TAAK-308 agent report (2026-10-22), for council round 8.
+
+- **P1.** Target library: `Microsoft.Extensions.Resilience` / `Microsoft.Extensions.Http.Resilience`, or a fork such as Fences?
+- **P2.** Delay mapping: always keep the v7 lambda as `DelayGenerator`, or map `Math.Pow(2, n)` to `DelayBackoffType.Exponential` (timing changes 2/4/8 s to 1/2/4 s)?
+- **P3.** Is an `onRetry` callback with a non-trivial body Fixed or Manual (v8 `AttemptNumber` is 0-based)?
+- **P4.** `Policy.Wrap` / `WrapAsync`: the order inverts in a single builder. Fixed or Manual?
+- **P5.** Repos already on Polly 8 (7 of 20) that still use the v7 API: in scope?
+- **P6.** A `using Polly` with only a transitive or CPM-pinned reference: in scope, given the open OSMF question whether that counts as direct use?
+- **P7.** README wording, given the conflicting licence statements (blog: "license is not changing"; maintainer in #3183: it changes with the new major).
+
 ## See also
 
 - `claude/tasks/TAAK-308-polly-to-resilience.md` — the task

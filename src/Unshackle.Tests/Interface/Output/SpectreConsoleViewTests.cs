@@ -46,6 +46,31 @@ public class SpectreConsoleViewTests
         writer.ToString().ShouldNotContain("wait on");
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ShowSummary_ReportOnlyHeader_SaysInventoryOnlyAndLeavesTheHeaderOutOfTheTable(bool reportOnly)
+    {
+        // Arrange (TAAK-320)
+        var writer = new StringWriter();
+        IAnsiConsole console = AnsiConsole.Create(new AnsiConsoleSettings { Out = new AnsiConsoleOutput(writer), Ansi = AnsiSupport.No });
+        console.Profile.Width = 200;
+        List<Finding> findings = [Finding("Consumer.cs", 4, "Consumer found.")];
+        if (reportOnly)
+        {
+            findings.Insert(0, new Finding { FilePath = "x.sln", Line = 0, FixId = "mediatr", PatternId = Fixer.InventoryOnlyPatternId, Result = new InfoResult("Inventory only.") { Kind = InfoKind.Header } });
+        }
+
+        // Act
+        new SpectreConsoleView(console, console).ShowSummary(findings);
+
+        // Assert
+        string output = writer.ToString();
+        output.Contains(SpectreConsoleView.InventoryOnlyLine, StringComparison.Ordinal).ShouldBe(reportOnly);
+        output.ShouldNotContain(Fixer.InventoryOnlyPatternId);
+        output.ShouldContain("0 fixed (0 with a warning), 1 manual.");
+    }
+
     private static Finding Finding(string file, int line, string reason) => new()
     {
         FilePath = file,

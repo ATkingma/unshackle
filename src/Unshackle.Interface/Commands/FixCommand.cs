@@ -76,7 +76,15 @@ public class FixCommand
 
                 foreach (ProjectFileChange change in projectFileChanges)
                 {
-                    _view.ShowDiff(change.FilePath, LineDiff.Compute(change.OldText, change.NewText));
+                    // A deleted file (the old name of a renamed config file) is one line, not a diff of every line removed (TAAK-320).
+                    if (change.Deletes)
+                    {
+                        _view.ShowMessage($"--- {change.FilePath} (deleted)");
+                    }
+                    else
+                    {
+                        _view.ShowDiff(change.FilePath, LineDiff.Compute(change.OldText, change.NewText));
+                    }
                 }
 
                 _view.ShowMessage($"Dry run: {fileCount} file(s) would change, nothing written.");

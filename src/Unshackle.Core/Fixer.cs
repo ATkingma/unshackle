@@ -91,6 +91,14 @@ public class Fixer : IFixer
     {
         var findings = new List<Finding>(seed);
         Solution original = solution;
+        // TAAK-320: a project with a blocking project-level row (G4) keeps its documents as they are; its rows come first.
+        Dictionary<string, string> blockedFiles = new(StringComparer.OrdinalIgnoreCase);
+        if (fix is IProjectFileMigration blockingMigration)
+        {
+            (List<Finding> blockerRows, blockedFiles) = ProjectFileMigrations.Blockers(fix, blockingMigration, original);
+            findings.AddRange(blockerRows);
+        }
+
         Solution baseline = FileFixer.AddReferences(original, fix.AddedReferences, fix.AddedNamespaces);
         HashSet<string> swappedTypes = [.. fix.SwappedTypes];
         // A file that is not UTF-8 stays as it is, with one Manual row (TAAK-167). It still names the old library, so its
@@ -167,6 +175,11 @@ public class Fixer : IFixer
         }
 
         solution = await SolutionChecks.SwapGlobalUsingsAsync(solution, fix, globalProjects, swappedTypes, notUtf8, findings, cancellationToken);
+        if (blockedFiles.Count > 0)
+        {
+            solution = await KeepBlockedFilesAsync(original, solution, blockedFiles, findings, cancellationToken);
+        }
+
         // A package that builds on the old library: its source goes in, the package goes out with the others (TAAK-194).
         VendoredPlan vendored = await VendoredPackages.PlanAsync(original, fix, cancellationToken);
         findings.AddRange(vendored.Findings);
@@ -187,6 +200,29 @@ public class Fixer : IFixer
 
         findings.AddRange(ProjectInfo(fix, original));
         return new FixReport { Solution = solution, Findings = findings, ProjectFileChanges = projectFileChanges };
+    }
+
+    // TAAK-320: every document of a blocked project gets its original text back, and each Fixed row in it becomes Manual naming the blocker.
+    // A file shared with an unblocked project stays too: half a file would not build in the blocked one. The package step then sees the old
+    // code and keeps the old package in that project.
+    private static async Task<Solution> KeepBlockedFilesAsync(
+        Solution original, Solution solution, Dictionary<string, string> blockedFiles, List<Finding> findings, CancellationToken cancellationToken)
+    {
+        foreach (Document document in original.Projects.Where(p => p.Language == LanguageNames.CSharp).SelectMany(p => p.Documents)
+            .Where(d => blockedFiles.ContainsKey(d.FilePath ?? d.Name)))
+        {
+            solution = solution.WithDocumentText(document.Id, await document.GetTextAsync(cancellationToken));
+        }
+
+        for (int i = 0; i < findings.Count; i++)
+        {
+            if (findings[i].Result is FixedResult && blockedFiles.TryGetValue(findings[i].FilePath, out string? blocker))
+            {
+                findings[i] = FindingFactory.CreateFinding(findings[i], PatternResult.Manual($"{NotRewrittenPrefix}blocked by {blocker}. Resolve that first, or migrate this project by hand."));
+            }
+        }
+
+        return solution;
     }
 
     // Council round 10, C2: the fix-level Info rows, once per project file (a multi-target project asks its first copy), in project order.

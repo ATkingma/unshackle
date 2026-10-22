@@ -18,11 +18,15 @@
 | REQ-4 | Met     | proof `Package/existing-file` |
 | REQ-5 | Met     | proof `Package/field`; `EPPlusFixTests.Fix_TwoPackagesInOneBlock_Manual` |
 | REQ-6 | Met     | `CellCompareTests.Differences_SameWorkbook_IsEmpty`; `Differences_DeliberateDifference_IsReported` (10 rows: value, type, text, number format, font, fill, borders, merges, widths, sheet name); `HarnessProofs_CoverEveryFixedPackageProof`; `Proof_SaveAsOverExistingFile_BothOverwrite` |
+| REQ-8 | Met     | proof `Package/plain-local` (harness equal) |
+| REQ-9 | Met     | proofs `Package/worksheet-local`, `Package/worksheet-name` (harness equal), `Package/used-worksheet` |
+| REQ-10 | Met    | proofs `Package/name-missing`, `Package/conditional-add`, `Package/rename-to-existing` |
+| REQ-11 | Met    | proof `Package/worksheet-index`; `WorksheetIndexTests` (EPPlus 5 stub, assembly version 5.8.0.0; unknown version); `Harness_EPPlus4OnNetStandard_IsZeroBased` |
 | REQ-7 | Met     | `EPPlusFixTests.Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles` |
 
 ## Build and tests
 
-- `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1707 passed, 0 failed.
+- `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1707 passed, 0 failed (rows 1-2); 1862 passed, 0 failed (row 3, after merging main).
 - No corpus run yet (TAAK-309 step 5).
 
 ## Deviations
@@ -31,6 +35,12 @@
   (EPPlus) or as id + code (ClosedXML) is normalised to the id for the 15 culture-invariant built-ins; the formatted text is compared separately.
 - Found by the harness: `Column(i).Width = 20` is not the same column in both libraries (EPPlus 4.5.3.3 stores 20, ClosedXML adds the
   padding and reads EPPlus's back as 19.289); pinned by `Differences_SameColumnWidthNumber_IsReported`, input for queue row 9.
+- Deviation from council E3 (needs the council): E3 says 4.x is 1-based, but the harness shows EPPlus 4.5.3.3's .NET Standard build (the
+  one .NET Core and .NET 5+ load) is 0-based by default. Its .NET Framework builds default to 1-based, and both read an override from
+  configuration. So 4.x integer indexes are Manual `[WorksheetIndexBaseNotProvable]`. 5+ is rewritten as decided, although 5+ also reads
+  that configuration key.
+- Row 3 widens this pattern instead of being a pattern of its own: a worksheet only exists through its package local, so one rewrite of the
+  scope covers both (the queue said rows 3-9 widen the use set).
 - Diagrams are inline Mermaid instead of D2/PNG under `img/`.
 
 ## See also

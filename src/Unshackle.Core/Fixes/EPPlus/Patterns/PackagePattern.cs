@@ -7,10 +7,10 @@ using Unshackle.Core.Models;
 namespace Unshackle.Core.Fixes.EPPlus.Patterns;
 
 /// <summary>
-/// TAAK-309 (queue row 2): <c>new ExcelPackage()</c> in a using local → <c>new XLWorkbook()</c>, only where every use of the local is one
-/// the cell-compare harness proves: <c>p.Workbook.Worksheets.Add("name");</c> as a statement (→ <c>p.Worksheets.Add("name");</c>) and
-/// <c>p.SaveAs(new FileInfo(path));</c> (→ <c>p.SaveAs(path);</c>). Any other use, a constructor argument, or a package outside a using
-/// local is Manual with the first use that blocks it; later queue rows widen the set of uses.
+/// TAAK-309 (queue rows 2 and 3, E9): <c>new ExcelPackage()</c> in a local (using or plain) → <c>new XLWorkbook()</c>, only where every use
+/// of the local is one the cell-compare harness proves (<see cref="WorkbookUses"/>): <c>Worksheets.Add("name")</c>, a lookup that provably
+/// finds an added sheet (<c>Worksheets["name"]</c>; <c>Worksheets[i]</c> for EPPlus 5+ only, E3), a worksheet's <c>Name</c>, a worksheet local
+/// used only for its <c>Name</c>, and <c>SaveAs(new FileInfo(path))</c>. Anything else is Manual with the first use that blocks it.
 /// </summary>
 public class PackagePattern : IPattern
 {
@@ -18,7 +18,7 @@ public class PackagePattern : IPattern
 
     public string Id => "epplus.package";
 
-    public string Description => "using var p = new ExcelPackage() with Worksheets.Add/SaveAs(FileInfo) uses only → new XLWorkbook()";
+    public string Description => "new ExcelPackage() local with Worksheets.Add/lookup/Name and SaveAs(FileInfo) uses only → new XLWorkbook()";
 
     // The scope of the package local (the using statement, or the block of a using declaration) when it holds just this package;
     // otherwise the creation itself, which is then Manual.

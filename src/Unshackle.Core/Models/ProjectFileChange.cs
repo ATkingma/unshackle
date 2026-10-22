@@ -11,6 +11,9 @@ public class ProjectFileChange
     // A new file (OldText is empty): it must not exist yet, for example the source of a vendored package (TAAK-194).
     public bool Creates { get; init; }
 
+    // The file is deleted (NewText is empty), for example the old name of a renamed config file (TAAK-317).
+    public bool Deletes { get; init; }
+
     // A shared file that keeps the removed package because this project on disk (not migrated, e.g. not loaded) still uses it.
     public string? KeptRemovedPackageFor { get; init; }
 }

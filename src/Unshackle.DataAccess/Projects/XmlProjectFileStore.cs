@@ -9,7 +9,7 @@ namespace Unshackle.DataAccess.Projects;
 // Edits the project file, the nearest Directory.Build.props and the nearest Directory.Packages.props of each project.
 // shortcut: imported props/targets and <PackageReference Update> are left alone; add them when users need it.
 // A <Using> with Alias or Static of a removed namespace throws (Manual), it would not compile without the package.
-public class XmlProjectFileStore : IProjectFileStore
+public partial class XmlProjectFileStore : IProjectFileStore, IProjectFileEditor
 {
     private const string BuildProps = "Directory.Build.props";
     private const string PackagesProps = "Directory.Packages.props";
@@ -196,6 +196,14 @@ public class XmlProjectFileStore : IProjectFileStore
                 {
                     _fileSystem.Directory.CreateDirectory(directory);
                     createdDirectories.Add(directory);
+                }
+
+                // The old name of a renamed config file (TAAK-317); restored from its original bytes when a later write fails.
+                if (change.Deletes)
+                {
+                    _fileSystem.File.Delete(change.FilePath);
+                    written.Add((change.FilePath, original));
+                    continue;
                 }
 
                 byte[] bytes = (latin1 ? s_latin1 : Encoding.UTF8).GetBytes(change.NewText);

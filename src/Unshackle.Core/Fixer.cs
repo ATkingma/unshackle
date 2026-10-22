@@ -179,6 +179,12 @@ public class Fixer : IFixer
         }
 
         projectFileChanges = [.. vendored.Files, .. projectFileChanges];
+        // TAAK-317: the fix's typed project/config-file edits, after the document pass and on top of the package migration.
+        if (fix is IProjectFileMigration fileMigration && _projectFiles is IProjectFileEditor editor)
+        {
+            projectFileChanges = await ProjectFileMigrations.ApplyAsync(fix, fileMigration, editor, original, findings, projectFileChanges, cancellationToken);
+        }
+
         return new FixReport { Solution = solution, Findings = findings, ProjectFileChanges = projectFileChanges };
     }
 

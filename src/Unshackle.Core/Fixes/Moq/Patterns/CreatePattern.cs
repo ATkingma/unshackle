@@ -38,7 +38,7 @@ public class CreatePattern : IPattern
                     break;
                 case MemberAccessExpressionSyntax { Name.Identifier.Text: "Object" } access
                         when MockUsage.Holder(access.Expression, model) is { } holder && MoqSyntax.IsMockOfT(MockUsage.Type(holder))
-                            && MockUsage.Analyze(holder, model).Blocker is null:
+                            && MockUsage.Analyze(holder, model, pendingUses: false).Blocker is null:
                     yield return access;
                     break;
                 case ParameterSyntax { Type: not null } parameter when MoqSyntax.IsMockOfT(model.GetTypeInfo(parameter.Type).Type):
@@ -74,7 +74,7 @@ public class CreatePattern : IPattern
             return PatternResult.Manual("MockDeclaration: several mocks in one declaration; split it first");
         }
 
-        MockAnalysis analysis = MockUsage.Analyze(symbol, model);
+        MockAnalysis analysis = MockUsage.Analyze(symbol, model, pendingUses: false);
         if (analysis.Blocker is not null)
         {
             return PatternResult.Manual(analysis.Blocker);
@@ -109,7 +109,7 @@ public class CreatePattern : IPattern
             return PatternResult.Manual("MockPassedAround: the mock is passed or returned as Mock<T>, not yet supported");
         }
 
-        MockAnalysis analysis = MockUsage.Analyze(target, model);
+        MockAnalysis analysis = MockUsage.Analyze(target, model, pendingUses: false);
         if (analysis.Blocker is not null)
         {
             return PatternResult.Manual(analysis.Blocker);

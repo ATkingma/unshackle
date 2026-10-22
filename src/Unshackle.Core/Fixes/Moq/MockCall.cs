@@ -14,6 +14,12 @@ public class MockCall
     // The type of the mocked member's value (the method's return type or the property type).
     public ITypeSymbol? Type { get; init; }
 
+    // The mocked method or property.
+    public ISymbol? Member { get; init; }
+
+    // Every argument is It.IsAny (or there are none): the call is set up or verified for every argument.
+    public bool ForAnyArguments { get; init; }
+
     public static MockCall Blocked(string blocker) => new() { Blocker = blocker };
 
     public static MockCall Done(SyntaxNode node) => new() { Node = node };
@@ -43,6 +49,8 @@ public class MockCall
                         SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, receiver, access.Name.WithoutTrivia()),
                         (ArgumentListSyntax)arguments.Node!),
                     Type = method.ReturnType,
+                    Member = method,
+                    ForAnyArguments = arguments.ForAnyArguments,
                 };
             case MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax target } property
                     when target.Identifier.Text == parameter.Name && model.GetSymbolInfo(property).Symbol is IPropertySymbol { IsStatic: false } symbol:
@@ -50,6 +58,8 @@ public class MockCall
                 {
                     Node = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, receiver, property.Name.WithoutTrivia()),
                     Type = symbol.Type,
+                    Member = symbol,
+                    ForAnyArguments = true,
                 };
             default:
                 return Blocked("CallShape: only x => x.Method(...) or x => x.Property on the mock itself (no extension method, chain or indexer)");

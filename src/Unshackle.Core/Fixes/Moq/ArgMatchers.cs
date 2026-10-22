@@ -46,7 +46,8 @@ public static class ArgMatchers
             : anyMatcher ? a.WithExpression(SyntaxFactory.ParseExpression(
                 $"Arg.Is<{TypeText(method.Parameters[i].Type, model, a.SpanStart)}>({a.Expression.WithoutTrivia()})").WithTriviaFrom(a.Expression))
             : a);
-        return MockCall.Done(list.WithArguments(SyntaxFactory.SeparatedList(arguments, list.Arguments.GetSeparators())));
+        bool forAny = list.Arguments.All(a => model.GetSymbolInfo(a.Expression).Symbol is IMethodSymbol { Name: "IsAny", ContainingType: { Name: "It", ContainingNamespace.Name: "Moq" } });
+        return new() { Node = list.WithArguments(SyntaxFactory.SeparatedList(arguments, list.Arguments.GetSeparators())), ForAnyArguments = forAny };
     }
 
     // The NSubstitute form of a Moq It.* call, or null (blocker null: a plain value; blocker set: cannot be expressed).

@@ -34,5 +34,5 @@ public class MoqFix : IFix
         new() { RemovedPackage = "Moq", AddedPackages = [new() { Name = "NSubstitute", Version = NSubstituteVersion }] };
 
     // Later rows of claude/tasks/moq-queue.md (setups, verifies) go before CreatePattern: it only converts a mock used as .Object.
-    public IReadOnlyList<IPattern> Patterns { get; } = [new CreatePattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new SetupReturnsPattern(), new CreatePattern()];
 }

@@ -8,7 +8,9 @@ namespace Unshackle.Core.Fixes.Moq;
 // asks this for the same mock and gets the same answer, so a mock is rewritten everywhere or nowhere.
 public static class MockUsage
 {
-    public static MockAnalysis Analyze(ISymbol symbol, SemanticModel model)
+    // pendingUses: the uses other patterns rewrite (Setup, Verify) count as rewritten. moq.create passes false: it runs last, so any
+    // such use still there was not rewritten and the mock must stay Moq.
+    public static MockAnalysis Analyze(ISymbol symbol, SemanticModel model, bool pendingUses)
     {
         if (Type(symbol) is not { } mockType || !MoqSyntax.IsMockOfT(mockType))
         {
@@ -82,7 +84,7 @@ public static class MockUsage
                 continue;
             }
 
-            if (MockUseRules.Blocker(use, model, setUp) is { } blocker)
+            if (MockUseRules.Blocker(use, model, setUp, pendingUses) is { } blocker)
             {
                 return MockAnalysis.Blocked(blocker);
             }

@@ -9,6 +9,9 @@ turn it off), parallel files for FA and MediatR (`--sequential`, `--max-degree N
 sequential. akka 547 s → 201 s, eShop 35 → 23 s, nop 86 → ~78 s. Corpus: 36/36 ok, all reports byte-identical to main
 (`claude/tasks/CORPUSRUN-blind.md`, "TAAK-298"). Open: ReadyToRun tool packaging (see the task, step 2).
 
+**Next (2026-10-22):** roadmap steps 7-10 chosen by the user (Moq, Polly, EPPlus, MassTransit; TAAK-307..310) and follow-ups
+TAAK-301..306. A pool of sub-agents runs them per `claude/tasks/POOL-2026-10-22.md` (waves, file ownership, reserved numbers).
+
 ## State on 2026-10-21 (end of day)
 
 **Done today, all on main with CI green:** TAAK-297 (code standards), TAAK-295 (typed kept reason codes), council round 6 +

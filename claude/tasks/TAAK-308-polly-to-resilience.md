@@ -1,6 +1,6 @@
 # TAAK-308 — Polly v7 → Microsoft.Extensions.Resilience (roadmap step 8)
 
-**Status**: step 1/6 — not started
+**Status**: step 3/6 — steps 1–2 done, waiting for the council
 **Created**: 2026-10-22
 **Goal**: A `polly` fix that rewrites Polly v7 policy code to v8 resilience pipelines via Microsoft.Extensions.Resilience / Http.Resilience, at 100% on a Polly corpus.
 
@@ -17,12 +17,33 @@
 
 ## Steps
 
-- [ ] 1. Verify the OSMF facts and the transitive-dependency claim from primary sources; record in the task
-- [ ] 2. Survey: repos with Polly v7 (`Policy.Handle<>().WaitAndRetryAsync`, `AddPolicyHandler`, `PolicyWrap`), API frequency; `docs/projectinfo/architectuur/corpus-polly.md`
+- [x] 1. Verify the OSMF facts and the transitive-dependency claim from primary sources; record in the task
+- [x] 2. Survey: repos with Polly v7 (`Policy.Handle<>().WaitAndRetryAsync`, `AddPolicyHandler`, `PolicyWrap`), API frequency; `docs/projectinfo/architectuur/corpus-polly.md`
 - [ ] 3. Council: target library and the Fixed/Manual line
 - [ ] 4. `PollyFix` skeleton with proofs; `claude/tasks/polly-queue.md`
 - [ ] 5. Patterns from the queue, each with docs and proofs
 - [ ] 6. Corpus round to 100%, `claude/tasks/CORPUSRUN-polly.md`; blind round; roadmap row and README
+
+## Step 1 — verified facts (2026-10-22)
+
+| Claim | Verdict | Source |
+| --- | --- | --- |
+| Polly adopts the OSMF; US $20/month per organisation with >= US $20,000 revenue from a product using Polly | confirmed | [announcement 2026-07-14 (update 2026-10-12)](https://www.thepollyproject.org/2026/07/14/polly-osmf-announcement.html), [README](https://github.com/App-vNext/Polly/blob/main/README.md) |
+| Applies only to the next major version released after 2026-11-16; existing versions (7.x/8.x) are not subject | confirmed | same |
+| Only direct references are subject; Polly via `Microsoft.Extensions.(Http.)Resilience` is exempt | confirmed (named explicitly) | same; maintainer "That is my understanding, yes" in [discussion #3183](https://github.com/App-vNext/Polly/discussions/3183) |
+| `Microsoft.Extensions.Http.Resilience` builds on Polly.Core | confirmed: M.E.Resilience 10.11.0 (MIT) -> Polly.Extensions + Polly.RateLimiting 8.4.2 | [nuget M.E.Resilience](https://www.nuget.org/packages/Microsoft.Extensions.Resilience), [nuget M.E.Http.Resilience](https://www.nuget.org/packages/Microsoft.Extensions.Http.Resilience) |
+| Licence unchanged | **conflicting**: blog update says "Polly's license is not changing"; in #3183 a maintainer said the licence changes with the new version | both above |
+| Calling Polly APIs with only a transitive / CPM-pinned reference | **unanswered** in #3183 | #3183 |
+
+Consequence: the fix must remove direct `Polly`, `Polly.Core`, `Polly.Extensions.Http`, `Microsoft.Extensions.Http.Polly`
+references (MEHP itself depends on Polly 7) and the v7 API; staying on Polly 8.x is fee-free today, so the selling point is
+"future majors + v7 API debt", not "fee from 16 Nov" on current versions. README wording should say that.
+
+## Progress log
+
+- 2026-10-22 (agent polly): step 1 facts verified (table above). Step 2 survey: 38 candidates cloned, 20 kept,
+  `docs/projectinfo/architectuur/corpus-polly.md`, `claude/tools/corpus-polly-repos.txt`; builds in
+  `D:/playground/corpus-polly/logs/summary.txt`. Draft queue and council questions in the agent report.
 
 ## Changes
 

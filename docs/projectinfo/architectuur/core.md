@@ -204,6 +204,20 @@ With `--dry-run` we only show the diff; otherwise `ISolutionStore` writes the ch
   `global::MediatR.X`; such a name needs no using (`UsingDirectives.IsGlobalQualified`) and keeps the package in its project
   even for a swapped type (`ProjectPackages`).
 
+## Report-only fixes (TAAK-316)
+
+Council round 8, S2. A fix that also implements `IReportOnlyFix` (one member, `ReportOnlyReason`) only takes inventory.
+`Fixer.FixAsync` hands it to `ReportOnlyRun` before anything else: every pattern runs `Find` + `Rewrite` on the first copy of
+each candidate file (same pre-filter as a normal run), and the solution, usings and project files stay as they are
+(`FixReport.ProjectFileChanges` is empty, `IProjectFileStore` is never called, `FixReport.InventoryOnly` is true).
+
+- Patterns return `Manual` or `PatternResult.Note(text)` (`InfoResult`, neither Fixed nor Manual). A `Fixed` result is
+  reported as `Manual` with the `Not rewritten: ` prefix and not applied, so a report-only run never counts anything as Fixed.
+- The first row is the header: pattern id `Fixer.InventoryOnlyPatternId` (`inventory-only`), line 0, the solution path, an
+  Info row "Inventory only: ... " plus the fix's reason. CSV and JSON show it as a row with status `Info`; Markdown also
+  writes `**Inventory only**` above the table.
+- An ordinary fix may return `Note` too: the node stays as it is and the row has status `Info`.
+
 ## SOLID in brief
 
 | Principle | How                                                                                                                       |

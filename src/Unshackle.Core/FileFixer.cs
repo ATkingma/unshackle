@@ -268,7 +268,7 @@ internal static class FileFixer
             (newRoot, PatternResult reported) = result switch
             {
                 FixedResult fixedResult => Replace(newRoot, node, fixedResult, pattern),
-                ManualResult => (newRoot, result),
+                ManualResult or InfoResult => (newRoot, result),
                 _ => throw new UnreachableException(),
             };
 

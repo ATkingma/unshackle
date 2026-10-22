@@ -24,6 +24,9 @@ public class Fixer : IFixer
     // A non-UTF-8 single-byte file is loaded as Latin-1 and written back byte-exact, so it is migrated like any other (TAAK-285).
     public const string EncodingPatternId = "encoding";
 
+    // The header row of a report-only fix (council round 8, S2): an Info row, first in the report, that says "inventory only".
+    public const string InventoryOnlyPatternId = "inventory-only";
+
     internal const string KeptPackageReason = " is still used in this project, so its package and global usings stay. ";
 
     internal const string KeptSharedPackageReason = " is not migrated but still uses ";
@@ -61,6 +64,12 @@ public class Fixer : IFixer
         ArgumentNullException.ThrowIfNull(request);
         IFix fix = _fixes.FirstOrDefault(f => string.Equals(f.Id, request.FixId, StringComparison.OrdinalIgnoreCase))
             ?? throw new ArgumentException($"Unknown fix '{request.FixId}'.", nameof(request));
+
+        // Council round 8, S2: a report-only fix takes inventory; nothing in the solution or its project files changes.
+        if (fix is IReportOnlyFix reportOnly)
+        {
+            return await ReportOnlyRun.RunAsync(fix, reportOnly, solution, request, cancellationToken);
+        }
 
         FixReport full = await RunAsync(fix, request, solution, [], cancellationToken);
         if (!fix.AllOrNothing || !full.Findings.Any(f => f.Result is ManualResult && !fix.AllowsPartial(f)))

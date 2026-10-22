@@ -14,6 +14,9 @@ public abstract record PatternResult
 
     public static PatternResult Manual(string reason) => new ManualResult(reason);
 
+    // A note that needs no change (council round 8, S2), e.g. a row of a report-only inventory.
+    public static PatternResult Note(string text) => new InfoResult(text);
+
     // A finding that stays on the old library while the rest of the fix goes ahead (council round 3, Q2); the renderer adds the prefix.
     public static PatternResult KeptManual(KeptReason code, string reason) => new ManualResult(reason) { Kept = code };
 }

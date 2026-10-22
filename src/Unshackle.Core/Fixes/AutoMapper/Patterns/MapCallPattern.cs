@@ -14,7 +14,7 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// A collection (Map&lt;List&lt;B&gt;&gt;(items)) becomes items?.Select(x =&gt; x?.ToB()).ToList() ?? [] like a nested collection member
 /// (<see cref="MemberValues"/>); a source that may be null becomes a?.ToB() where the call's target allows null (TAAK-259).
 /// </summary>
-public class MapCallPattern : ISolutionPattern
+public class MapCallPattern : ISolutionPattern, ISolutionFinder
 {
     private const string AutoMapperAssembly = "AutoMapper";
 
@@ -27,6 +27,20 @@ public class MapCallPattern : ISolutionPattern
     // run after its CreateMap is gone, so it is either rewritten to a lambda or Manual (which blocks the whole fix).
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().Where(n => n is InvocationExpressionSyntax i ? IsMapCall(i, model) : IsMethodGroup(n, model));
+
+    // TAAK-311: the Map call of a stub that MockSetUpPattern removes is not a finding of its own.
+    public async Task<IReadOnlyList<SyntaxNode>> FindAsync(SyntaxNode root, SemanticModel model, Solution solution, CancellationToken cancellationToken)
+    {
+        List<SyntaxNode> found = [.. Find(root, model)];
+        if (!found.Any(n => MapOwners.IsMockSetUp(n, model)))
+        {
+            return found;
+        }
+
+        MapOwners owners = await MapOwners.ForAsync(solution, model, cancellationToken);
+        HashSet<SyntaxNode> removed = [.. MockedMappers.Find(root, model).Where(m => owners.IsDischarged(m.Key)).SelectMany(m => m.Stubs.Select(s => (SyntaxNode)s.Call))];
+        return [.. found.Where(n => !removed.Contains(n))];
+    }
 
     // Without the solution only an extension method the code already has counts.
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)

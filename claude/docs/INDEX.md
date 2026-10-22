@@ -59,6 +59,11 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `docs/projectinfo/architectuur/candidate-pdf.md` | Scout TAAK-400: iTextSharp narrow slice conditional, iText 7/QuestPDF no-go |
 | `docs/projectinfo/architectuur/corpus-masstransit.md` | MassTransit 8: OpenTransit/v8 support facts, distance to Wolverine and Rebus, 24-repo source survey (TAAK-310) |
 | `claude/tools/corpus-masstransit-repos.txt` | MassTransit survey repo list |
+| `docs/projectinfo/architectuur/candidate-specflow.md` | Scout TAAK-370: SpecFlow → Reqnroll, conditional go (EOL fix) |
+| `docs/projectinfo/architectuur/candidate-imagesharp.md` | Scout TAAK-390: ImageSharp, conditional no-go (park) |
+| `docs/projectinfo/architectuur/candidate-newtonsoft.md` | Scout TAAK-420: Newtonsoft → STJ, no-go blanket, narrow fix possible |
+| `docs/projectinfo/architectuur/candidate-efbulk.md` | Scout TAAK-430: EF bulk extensions → ExecuteUpdate/Delete, conditional go (narrow) |
+| `docs/projectinfo/architectuur/candidate-testfw.md` | Scout TAAK-440: xUnit v3 conditional go, NUnit 4 no-go |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |
 | `claude/tasks/TAAK-380-scout-identityserver.md` | Scout IdentityServer4 → OpenIddict/Duende (go/no-go research) |

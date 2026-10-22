@@ -19,11 +19,7 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 | 5 | polly | TAAK-308 st 1–2 | `docs/projectinfo/architectuur/corpus-polly.md`, `claude/tools/corpus-polly-repos.txt`, `claude/tasks/TAAK-308-*.md` | 340–349 | 2026-10-22 |
 | 6 | epplus | TAAK-309 st 1 | `docs/projectinfo/architectuur/corpus-epplus.md`, `claude/tools/corpus-epplus-repos.txt`, `claude/tasks/TAAK-309-*.md` | 350–359 | 2026-10-22 |
 | 8 | scout-specflow | candidate: SpecFlow → Reqnroll | `docs/projectinfo/architectuur/candidate-specflow.md` (new), `claude/tasks/TAAK-370-scout-specflow.md` | 371–379 | 2026-10-22 |
-| 10 | scout-imagesharp | candidate: ImageSharp → SkiaSharp/Magick.NET | `docs/projectinfo/architectuur/candidate-imagesharp.md` (new), `claude/tasks/TAAK-390-scout-imagesharp.md` | 391–399 | 2026-10-22 |
 | 12 | scout-swashbuckle | candidate: Swashbuckle → Microsoft.AspNetCore.OpenApi | `docs/projectinfo/architectuur/candidate-swashbuckle.md` (new), `claude/tasks/TAAK-410-scout-swashbuckle.md` | 411–419 | 2026-10-22 |
-| 13 | scout-newtonsoft | candidate: Newtonsoft.Json → System.Text.Json | `docs/projectinfo/architectuur/candidate-newtonsoft.md` (new), `claude/tasks/TAAK-420-scout-newtonsoft.md` | 421–429 | 2026-10-22 |
-| 14 | scout-efbulk | candidate: Z.EntityFramework.Extensions/EFCore.BulkExtensions → EF Core ExecuteUpdate/Delete | `docs/projectinfo/architectuur/candidate-efbulk.md` (new), `claude/tasks/TAAK-430-scout-efbulk.md` | 431–439 | 2026-10-22 |
-| 15 | scout-testfw | candidate: xUnit v2 → v3, NUnit 3 → 4 | `docs/projectinfo/architectuur/candidate-testfw.md` (new), `claude/tasks/TAAK-440-scout-testfw.md` | 441–449 | 2026-10-22 |
 | — | main | TAAK-303, 305 st 1 | git branches/worktrees, `claude/tasks/TAAK-303-*.md`, `claude/tasks/TAAK-305-*.md` | — | 2026-10-22 |
 
 ## Released claims
@@ -35,6 +31,11 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 | tooling | TAAK-302 | done, merged | 2026-10-22 |
 | masstransit | TAAK-310 st 1–2 | done, waits for council | 2026-10-22 |
 | scout-identityserver | TAAK-380 | no-go fix, go report-only (council) | 2026-10-22 |
+| scout-specflow | TAAK-370 | conditional go (council) | 2026-10-22 |
+| scout-imagesharp | TAAK-390 | conditional no-go (council) | 2026-10-22 |
+| scout-newtonsoft | TAAK-420 | no-go blanket (council) | 2026-10-22 |
+| scout-efbulk | TAAK-430 | conditional go narrow (council) | 2026-10-22 |
+| scout-testfw | TAAK-440 | xUnit go / NUnit no-go (council) | 2026-10-22 |
 | scout-pdf | TAAK-400 | iTextSharp slice conditional, rest no-go (council) | 2026-10-22 |
 
 ## Spawn log

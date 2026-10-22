@@ -14,6 +14,10 @@ public static class VerifySyntax
         && invocation.ArgumentList.Arguments.Count > 0
         && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { Name: "Verify" or "VerifyGet" or "VerifySet" } method && MoqSyntax.IsMockOfT(method.ContainingType);
 
+    // VerifyGet/VerifySet (council round 12, M7: reported as moq.properties).
+    public static bool IsPropertyVerify(InvocationExpressionSyntax verify) =>
+        verify.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "VerifyGet" or "VerifySet" };
+
     public static MockCall Plan(InvocationExpressionSyntax verify, SemanticModel model)
     {
         var method = (IMethodSymbol)model.GetSymbolInfo(verify).Symbol!;

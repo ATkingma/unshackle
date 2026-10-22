@@ -14,7 +14,7 @@ public class VerifyPattern : IPattern
     public string Description => "m.Verify(x => x.M(..), Times.Once/Never/Exactly(n)/AtLeastOnce) → m.Received(1)/DidNotReceive()/Received(n)/Received().M(..)";
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        root.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => VerifySyntax.IsVerify(i, model)).Select(i => i.Parent!);
+        root.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => VerifySyntax.IsVerify(i, model) && !VerifySyntax.IsPropertyVerify(i)).Select(i => i.Parent!);
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {

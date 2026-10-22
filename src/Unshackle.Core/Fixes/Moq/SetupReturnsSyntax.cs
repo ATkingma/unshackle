@@ -20,6 +20,10 @@ public static class SetupReturnsSyntax
         invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "Setup" or "SetupGet" }
         && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { Name: "Setup" or "SetupGet" } method && MoqSyntax.IsMockOfT(method.ContainingType);
 
+    // SetupGet (council round 12, M7: reported as moq.properties).
+    public static bool IsSetupGet(InvocationExpressionSyntax setup) =>
+        setup.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "SetupGet" };
+
     // The statement a Setup is part of, when it has a shape this fix rewrites: Setup, then optionally Returns/ReturnsAsync, then optionally Verifiable().
     public static ExpressionStatementSyntax? Statement(InvocationExpressionSyntax setup) => Chain(setup).Statement;
 

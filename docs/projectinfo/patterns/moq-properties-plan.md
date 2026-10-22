@@ -23,10 +23,10 @@ files_expected:
 
 ## One-sentence summary
 
-Moq's property API maps onto the patterns that already exist, so row 5 adds no pattern class:
+Row 5 reports as `moq.properties` (council round 12, M7), reusing the existing rewrites:
 
-- `SetupGet` joins `moq.setup-returns` (`m.P.Returns(v)`).
-- `VerifyGet`/`VerifySet` join `moq.verify` (`_ = m.Received(n).P;`, `m.Received(n).P = v;`).
+- `SetupGet` is rewritten as by `moq.setup-returns` (`m.P.Returns(v)`), reported by `PropertiesPattern`.
+- `VerifyGet`/`VerifySet` are rewritten as by `moq.verify` (`_ = m.Received(n).P;`, `m.Received(n).P = v;`), reported by `PropertiesPattern`.
 - `SetupProperty`/`SetupAllProperties` are handled by `moq.create`. These are the only ways a Moq property remembers a set value, as NSubstitute's always does, so with them a settable property is no longer a `DefaultValueDiffers` blocker.
 
 ## Scope (in / out)
@@ -43,9 +43,9 @@ Moq's property API maps onto the patterns that already exist, so row 5 adds no p
 
 ## Requirements
 
-- **REQ-1**: WHEN `SetupGet(x => x.P).Returns(v)` THE SYSTEM SHALL write `m.Object.P.Returns(v);` (proof `SetupReturns/setup-get`).
-- **REQ-2**: WHEN `VerifyGet(x => x.P, Times)` THE SYSTEM SHALL write `_ = m.Object.Received(n).P;` (proof `Verify/verify-get`).
-- **REQ-3**: WHEN `VerifySet(x => x.P = v, Times)` THE SYSTEM SHALL write `m.Object.Received(n).P = v';` with matchers rewritten (proof `Verify/verify-set`).
+- **REQ-1**: WHEN `SetupGet(x => x.P).Returns(v)` THE SYSTEM SHALL write `m.Object.P.Returns(v);` (proof `Properties/setup-get`).
+- **REQ-2**: WHEN `VerifyGet(x => x.P, Times)` THE SYSTEM SHALL write `_ = m.Object.Received(n).P;` (proof `Properties/verify-get`).
+- **REQ-3**: WHEN `VerifySet(x => x.P = v, Times)` THE SYSTEM SHALL write `m.Object.Received(n).P = v';` with matchers rewritten (proof `Properties/verify-set`).
 - **REQ-4**: WHEN `SetupAllProperties()` THE SYSTEM SHALL remove it in the same pass as the declaration, treat every settable property as remembering, and pin Moq's null default for string/interface properties (proof `Create/setup-all-properties`).
 - **REQ-5**: WHEN `SetupProperty(x => x.P[, initial])` THE SYSTEM SHALL remove it, or write `m.P.Returns(initial);`, which is a configuration and not a set call that `Received` would count (proof `Create/setup-property-initial`).
 - **REQ-6**: IF `SetupSet` THEN Manual `PropertySetup` (proof `Create/setup-set`); IF a tracking statement comes after another setup or verify THEN Manual `PropertyOrder` (proof `SetupReturns/property-order`); a settable property without tracking stays Manual `DefaultValueDiffers` (proof `Create/setter`).

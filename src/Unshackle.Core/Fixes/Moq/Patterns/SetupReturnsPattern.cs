@@ -15,7 +15,8 @@ public class SetupReturnsPattern : IPattern
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().OfType<InvocationExpressionSyntax>()
-            .Where(i => SetupReturnsSyntax.IsSetup(i, model) && SetupReturnsSyntax.Statement(i) is not null && SetupReturnsSyntax.Kind(i) == Finds)
+            .Where(i => SetupReturnsSyntax.IsSetup(i, model) && !SetupReturnsSyntax.IsSetupGet(i) && SetupReturnsSyntax.Statement(i) is not null
+                && SetupReturnsSyntax.Kind(i) == Finds)
             .Select(i => (SyntaxNode)SetupReturnsSyntax.Statement(i)!);
 
     // moq.throws and moq.returns-lambda reuse this pattern for their kind of Setup.

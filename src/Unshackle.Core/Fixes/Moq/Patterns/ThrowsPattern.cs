@@ -8,5 +8,5 @@ public class ThrowsPattern : SetupReturnsPattern
 
     public override string Description => "m.Setup(..).Throws(ex)/ThrowsAsync(ex) → m.M(..).Throws(ex)/ThrowsAsync(ex); void → m.When(..).Do(_ => throw ex)";
 
-    protected override bool FindsThrows => true;
+    protected override SetupKind Finds => SetupKind.Throws;
 }

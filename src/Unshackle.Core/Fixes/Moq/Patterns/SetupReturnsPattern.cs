@@ -2,7 +2,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
-using static Unshackle.Core.Fixes.Moq.SetupReturnsSyntax;
 
 namespace Unshackle.Core.Fixes.Moq.Patterns;
 
@@ -16,11 +15,12 @@ public class SetupReturnsPattern : IPattern
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().OfType<InvocationExpressionSyntax>()
-            .Where(i => SetupReturnsSyntax.IsSetup(i, model) && SetupReturnsSyntax.Statement(i) is not null && IsThrows(i) == FindsThrows)
+            .Where(i => SetupReturnsSyntax.IsSetup(i, model) && !SetupReturnsSyntax.IsSetupGet(i) && SetupReturnsSyntax.Statement(i) is not null
+                && SetupReturnsSyntax.Kind(i) == Finds)
             .Select(i => (SyntaxNode)SetupReturnsSyntax.Statement(i)!);
 
-    // moq.throws reuses this pattern for the Throws/ThrowsAsync setups.
-    protected virtual bool FindsThrows => false;
+    // moq.throws and moq.returns-lambda reuse this pattern for their kind of Setup.
+    protected virtual SetupKind Finds => SetupKind.Returns;
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
@@ -38,10 +38,32 @@ public class SetupReturnsPattern : IPattern
         }
 
         MockCall plan = SetupReturnsSyntax.Plan(setup, model);
-        return plan.Blocker is not null ? plan.Blocker.ToResult()
-            : plan.Removed ? PatternResult.Fixed(Array.Empty<SyntaxNode>())
-            : plan.Throws ? PatternResult.Fixed(plan.Node!, "NSubstitute", SetupReturnsSyntax.ExceptionsNamespace)
-            : plan.Type is not null ? PatternResult.Fixed(plan.Node!, "NSubstitute", SetupReturnsSyntax.TasksNamespace)
-            : PatternResult.Fixed(plan.Node!, "NSubstitute");
+        if (plan.Blocker is not null)
+        {
+            return plan.Blocker.ToResult();
+        }
+
+        if (plan.Removed)
+        {
+            return PatternResult.Fixed(Array.Empty<SyntaxNode>());
+        }
+
+        List<string> namespaces = ["NSubstitute"];
+        if (plan.Throws)
+        {
+            namespaces.Add(SetupReturnsSyntax.ExceptionsNamespace);
+        }
+
+        if (plan.Type is not null)
+        {
+            namespaces.Add(SetupReturnsSyntax.TasksNamespace);
+        }
+
+        if (plan.Configured)
+        {
+            namespaces.Add(SetupReturnsSyntax.ConfigureNamespace);
+        }
+
+        return PatternResult.Fixed(plan.Node!, [.. namespaces]);
     }
 }

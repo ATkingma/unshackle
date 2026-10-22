@@ -12,9 +12,9 @@
 
 | REQ   | Verdict | Evidence |
 | ----- | ------- | -------- |
-| REQ-1 | Met | `Proofs/Moq/SetupReturns/setup-get.*` |
-| REQ-2 | Met | `Proofs/Moq/Verify/verify-get.*` |
-| REQ-3 | Met | `Proofs/Moq/Verify/verify-set.*` |
+| REQ-1 | Met | `Proofs/Moq/Properties/setup-get.*` |
+| REQ-2 | Met | `Proofs/Moq/Properties/verify-get.*` |
+| REQ-3 | Met | `Proofs/Moq/Properties/verify-set.*` |
 | REQ-4 | Met | `Proofs/Moq/Create/setup-all-properties.*` |
 | REQ-5 | Met | `Proofs/Moq/Create/setup-property-initial.*` |
 | REQ-6 | Met | `Create/setup-set.manual.txt`, `SetupReturns/property-order.manual.txt`, `Create/setter.manual.txt` |
@@ -25,7 +25,7 @@
 
 | # | Area  | Plan says | Code does | Impact |
 | - | ----- | --------- | --------- | ------ |
-| 1 | Scope | Queue row 5 as its own pattern `moq.properties` | No pattern class of its own: findings carry the ids `moq.setup-returns`, `moq.verify` and `moq.create` | Low: report grouping |
+| 1 | Scope | Council round 12, M7: row 5 under `moq.properties` | `PropertiesPattern` reports SetupGet, VerifyGet and VerifySet; SetupProperty/SetupAllProperties still report as `moq.create`, because they must be rewritten in the same pass as its analysis and an `IPattern` has one `Id` | Low: needs a per-result pattern id in Core to finish |
 
 ## Validation results
 

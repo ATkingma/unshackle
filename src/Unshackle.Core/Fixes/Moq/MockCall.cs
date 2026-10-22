@@ -29,6 +29,9 @@ public class MockCall
     // The rewrite uses NSubstitute.ExceptionExtensions (Throws/ThrowsAsync on a value).
     public bool Throws { get; init; }
 
+    // The rewrite configures through Configure() (NSubstitute.Extensions).
+    public bool Configured { get; init; }
+
     public static MockCall Blocked(MoqBlocker blocker) => new() { Blocker = blocker };
 
     public static MockCall Blocked(MoqReason code, string reason) => Blocked(MoqBlocker.Of(code, reason));

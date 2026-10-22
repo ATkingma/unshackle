@@ -175,6 +175,20 @@ Questions: `claude/tasks/COUNCIL-round-10.md`. Two rounds; all joint (amendments
 | E8 | Column width | Manual `ColumnWidthDiffers` unless the E1 harness proves the read-back equal within a documented tolerance; no padding arithmetic. |
 | E9 | Plain local without `using` | Accepted for `epplus.package`, with a proof for that shape. |
 
+### 2026-10-22 — round 11: EPPlus index base, TAAK-311 follow-ups, MassTransit detector
+
+Questions: `claude/tasks/COUNCIL-round-11.md`. Two rounds; all joint (amendments adopted). E10/E11 supersede the 4.x part of E3.
+
+| # | Decision | Joint rule |
+| --- | --- | --- |
+| E10 | 4.x worksheet index by TFM | Fixed only when the project is not packable (R1), every TFM is one family (all net4x → 1-based `Worksheet(i)`; all netcoreapp/net5+ → 0-based `Worksheet(i + 1)`), every project that transitively depends on it is in the same family, and E11 is clean. netstandard or mixed → Manual `WorksheetIndexBaseNotProvable`. The report names the TFM; a test pins the netstandard exclusion. |
+| E11 | `IsWorksheets1Based` override | The key in any config file of the solution, or in code (string literal or assignment), makes every integer index in projects that can see it Manual `WorksheetIndexConfigured`, also on 5+, without reading the value. The row names the key's file:line and says removing it makes the index fixable on the next run; an Info line says only config files and code are checked. |
+| A6 | `Verify` on the mocked mapper | Manual `VerifyOnMapper` (no `Received()` equivalent remains); the reason suggests "assert the mapped result instead". `Times.Never`/`Exactly(n)` Manual too. |
+| A7 | Stub with argument matcher | Fixed only when the source is built in the test, every asserted member was set in the canned stub from the same source member the generated map copies, and the stub's return is never compared to a hand-built object; otherwise Manual `MockedReturnNotProvable`. |
+| A8 | Mock without stubs | Allowed only when the test asserts nothing on the mapped value, the method calling `Map` has no null check/null-conditional on it, and the value does not leave that method (not returned, passed or stored); Info "mock had no stubs; Map now returns a real object". Otherwise Manual. |
+| T6 | `Publish`/`Send` | Info rows, only when the symbol resolves to a MassTransit type (`IPublishEndpoint`, `ISendEndpoint`, `ISendEndpointProvider`, `ConsumeContext`, `IBus`); name-only matches never reported. |
+| T7 | Easy vs hard | Info only for a consumer using nothing but `ctx.Message` and cancellation; headers, Respond, Redeliver, Publish, a definition or any filter → Manual with a per-feature code. Classification table in the fix docs. Never Fixed. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

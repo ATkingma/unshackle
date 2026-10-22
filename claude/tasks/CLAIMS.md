@@ -17,6 +17,7 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 | --- | --- | --- | --- | --- | --- |
 | 24b | mr-assembly-scan → engine-2 | TAAK-318 done; now C1 for MediatR (`Fixes/MediatR/**`) | `src/Unshackle.Core/*.cs` (root), `src/Unshackle.Core/Abstractions/**`, `src/Unshackle.Core/Models/**`, `src/Unshackle.DataAccess/**`, `src/Unshackle.Tests/Core/Engine/**`, `src/Unshackle.Tests/DataAccess/**`, `docs/projectinfo/architectuur/core.md`, `claude/tasks/TAAK-318-*.md` | — | 2026-10-22 |
 | 22c | masstransit-detector → epplus-styles | TAAK-309 row 8 | `src/Unshackle.Core/Fixes/EPPlus/Patterns/Styles*.cs` (new), `src/Unshackle.Tests/Core/EPPlus/Styles*` (new), `src/Unshackle.Tests/Proofs/EPPlus/Styles/**`, `docs/projectinfo/patterns/epplus-styles-*`; one line in `EPPlusFix.cs` (pattern list); granted after the fact: the pattern list in `EPPlusFixTests.cs`, the migrated-annotation skip in `UnsupportedPattern.cs`; next: row 9 `Layout*` files | 356–359 | 2026-10-22 |
+| 25 | am-mt-followups | TAAK-311 (A6–A8), then TAAK-310 (T6/T7) | `src/Unshackle.Core/Fixes/AutoMapper/**`, AutoMapper tests/proofs/docs, `claude/tasks/TAAK-311-*.md`; then `src/Unshackle.Core/Fixes/MassTransit/**`, MassTransit tests/proofs/docs, `claude/tasks/TAAK-310-*.md` | — | 2026-10-22 |
 | — | main | TAAK-303, 305 st 1 | git branches/worktrees, `claude/tasks/TAAK-303-*.md`, `claude/tasks/TAAK-305-*.md` | — | 2026-10-22 |
 
 Shared grant (2026-10-22): `src/Unshackle.Tests/ProofTests.cs` — moq-, polly- and epplus-skeleton may each add only their own `s_fixes` entry; the main session resolves merge conflicts.
@@ -51,7 +52,7 @@ Shared grant (2026-10-22): `src/Unshackle.Tests/ProofTests.cs` — moq-, polly- 
 
 ## Spawn log
 
-Agents spawned: 24 / 25 (7 wave 1, 8 library scouts, 3 council round 8, 6 wave 2). Reserve: 1. Finished agents are reused for the next queue rows (no new spawn).
+Agents spawned: 25 / 25 (7 wave 1, 8 library scouts, 3 council round 8, 6 wave 2). Reserve: 1. Finished agents are reused for the next queue rows (no new spawn).
 
 ## See also
 

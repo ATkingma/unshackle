@@ -29,8 +29,8 @@
   EPPlus until rows 3–4).
 - `WorkbookSnapshot` has no freeze-pane or row-height facts; `LayoutHarnessTests` adds them itself (harness files are read-only for
   this row). Adding them to `WorkbookSnapshot` would put them in every harness proof.
-- `epplus.unsupported` still lists the rewritten `Merge()`/`SheetView` names as unresolved EPPlus members while the receiver is EPPlus
-  (no skip for row 9 yet; claim request).
+- `epplus.unsupported` skips the layout part of row-9 statements (`LayoutMapping.Receiver`), before or after the rewrite, and names only the sheet or range
+  (`LayoutUnsupportedTests`).
 - Diagrams are inline Mermaid instead of D2/PNG under `img/`.
 
 ## See also

@@ -190,6 +190,8 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `epplus.package` | [plan](patterns/epplus-package-plan.md) | [models](patterns/epplus-package-modellen.md) | [verify](patterns/epplus-package-verify.md) | TAAK-309 |
 | `epplus.styles` | [plan](patterns/epplus-styles-plan.md) | [models](patterns/epplus-styles-modellen.md) | [verify](patterns/epplus-styles-verify.md) | TAAK-309 |
 | `epplus.layout` | [plan](patterns/epplus-layout-plan.md) | [models](patterns/epplus-layout-modellen.md) | [verify](patterns/epplus-layout-verify.md) | TAAK-309 |
+| `epplus.dimension` | [plan](patterns/epplus-dimension-plan.md) | [models](patterns/epplus-dimension-modellen.md) | [verify](patterns/epplus-dimension-verify.md) | TAAK-309 |
+| `epplus.load-from` | [plan](patterns/epplus-load-from-plan.md) | [models](patterns/epplus-load-from-modellen.md) | [verify](patterns/epplus-load-from-verify.md) | TAAK-309 |
 | `epplus.unsupported` | [plan](patterns/epplus-unsupported-plan.md) | [models](patterns/epplus-unsupported-modellen.md) | [verify](patterns/epplus-unsupported-verify.md) | TAAK-309 |
 | `masstransit.registration` | [plan](patterns/masstransit-registration-plan.md) | [models](patterns/masstransit-registration-modellen.md) | [verify](patterns/masstransit-registration-verify.md) | TAAK-310 |
 | `masstransit.transport` | [plan](patterns/masstransit-transport-plan.md) | [models](patterns/masstransit-transport-modellen.md) | [verify](patterns/masstransit-transport-verify.md) | TAAK-310 |

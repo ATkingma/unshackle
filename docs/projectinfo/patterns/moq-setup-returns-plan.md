@@ -51,6 +51,8 @@ on `m.Object` (which `moq.create` then drops), with Moq's argument matchers rewr
 - **REQ-7**: The whole fix SHALL give the same run-time answers as Moq, including overriding setups, non-matching arguments (Moq's null pinned by `moq.create`) and setups in a constructor (run-time `setup-returns`, `setup-override`, `setup-field`; `setup-must-fail` throws under both).
 - **REQ-8**: A member set up for every argument (`It.IsAny` only, or a property) SHALL get no pin and not count toward `MaxPins`; any other set-up member keeps its pin (council round 9, Q1).
 
+- **REQ-9** (found in row 8): WHEN the member has another setup in the mock's scope THE SYSTEM SHALL configure through `m.Configure().M(..)` (`NSubstitute.Extensions`), because an NSubstitute configuration call otherwise runs the earlier matching configuration (its function, AndDoes or Throws) (run-time `setup-overlap-side-effects`).
+
 ## Assumptions
 
 - NSubstitute, like Moq, lets the last matching configuration win, and compares plain arguments with `Equals`.

@@ -1,6 +1,6 @@
 # TAAK-307 — Moq → NSubstitute (roadmap step 7)
 
-**Status**: steps 1-3/6 done; step 4 in progress (queue rows 0-6 and 10 done; row 7 next)
+**Status**: steps 1-3/6 done; step 4 in progress (queue rows 0-8 and 10 done; corpus round next, main session)
 **Created**: 2026-10-22
 **Goal**: A `moq` fix that rewrites Moq 4.x test code to NSubstitute, at 100% on a Moq corpus (all builds, 0 regressions) and a blind round.
 
@@ -57,6 +57,11 @@
   `TargetFrameworkUnsupported` via `IProjectFileMigration.ProjectBlockers` plus Manual in every pattern (engine gap: the project row does not
   block `IFix.Package`); row 10 `moq.verify-all` (M4), row 6 `moq.throws`, row 5 properties (in setup-returns/verify/create). Each with
   proofs, run-time proofs and plan/modellen/verify docs.
+
+- 2026-10-22 (agent moq-skeleton): row 7 `moq.returns-lambda` (`CallLambda`: parameters → `ci.ArgAt<T>(i)`), row 8 `moq.callback`
+  (AndDoes / When-Do). The harness found three NSubstitute differences: a configuration call runs earlier matching configurations
+  (now `Configure()` when a member has several setups, rows 3/6/7/8), AndDoes runs before a Returns function, and AndDoes/Do runs for
+  every matching configuration (both Manual).
 
 ## See also
 

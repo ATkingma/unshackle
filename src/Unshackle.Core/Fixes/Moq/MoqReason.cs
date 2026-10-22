@@ -5,6 +5,8 @@ public enum MoqReason
 {
     ArgumentUsesMock,
     CallShape,
+    CallbackOrder,
+    CallbackShape,
     ClassMock,
     ConstructorArguments,
     DefaultValueDiffers,

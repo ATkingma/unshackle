@@ -14,6 +14,8 @@ public static class SetupReturnsSyntax
 
     public const string ExceptionsNamespace = "NSubstitute.ExceptionExtensions";
 
+    public const string ConfigureNamespace = "NSubstitute.Extensions";
+
     public static bool IsSetup(InvocationExpressionSyntax invocation, SemanticModel model) =>
         invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "Setup" or "SetupGet" }
         && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { Name: "Setup" or "SetupGet" } method && MoqSyntax.IsMockOfT(method.ContainingType);
@@ -24,7 +26,7 @@ public static class SetupReturnsSyntax
     public static bool IsVerifiable(InvocationExpressionSyntax setup) => Chain(setup).Verifiable;
 
     // Which pattern rewrites the Setup: Throws/ThrowsAsync (moq.throws, row 6), Returns with a function (moq.returns-lambda, row 7), else moq.setup-returns.
-    public static SetupKind Kind(InvocationExpressionSyntax setup) => Chain(setup).Returns switch
+    public static SetupKind Kind(InvocationExpressionSyntax setup) => Chain(setup) is { Callback: not null } ? SetupKind.Callback : Chain(setup).Returns switch
     {
         { Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Throws" or "ThrowsAsync" } } => SetupKind.Throws,
         { ArgumentList.Arguments: [{ Expression: AnonymousFunctionExpressionSyntax }] } => SetupKind.ReturnsLambda,
@@ -35,7 +37,79 @@ public static class SetupReturnsSyntax
     // the rewrite needs System.Threading.Tasks.
     public static MockCall Plan(InvocationExpressionSyntax setup, SemanticModel model)
     {
-        (ExpressionStatementSyntax? statement, InvocationExpressionSyntax? returns, bool verifiable) = Chain(setup);
+        SetupChain chain = Chain(setup);
+        MockCall plan = PlanValue(setup, chain.Statement, chain.Returns, chain.Verifiable, chain.Callback is not null, model);
+        return chain.Callback is null || plan.Blocker is not null ? plan : WithCallback(setup, chain, plan, model);
+    }
+
+    // Row 8: Callback(f) runs f with the call's arguments. With a value it becomes `.AndDoes(ci => ..)` after the Returns; with a Returns function
+    // (NSubstitute runs AndDoes first), with Throws, or with another setup of the member (AndDoes/Do runs for every matching call) it is
+    // Manual. Without a value it becomes
+    // `m.Object.When(x => x.M(..)).Do(ci => ..)`, which leaves the answer as it was (Moq's default, pinned by moq.create).
+    private static MockCall WithCallback(InvocationExpressionSyntax setup, SetupChain chain, MockCall plan, SemanticModel model)
+    {
+        InvocationExpressionSyntax callback = chain.Callback!;
+        if (chain.Returns?.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "Throws" or "ThrowsAsync" })
+        {
+            return MockCall.Blocked(MoqReason.CallbackOrder, "Callback with Throws: NSubstitute's AndDoes never runs after a throw, Moq's Callback runs first");
+        }
+
+        if (chain.Returns?.ArgumentList.Arguments is [{ Expression: AnonymousFunctionExpressionSyntax }])
+        {
+            return MockCall.Blocked(MoqReason.CallbackOrder, "Callback with a Returns function: NSubstitute runs AndDoes before the function, Moq after it (proven at run time)");
+        }
+
+        if (HasOtherSetup(setup, model))
+        {
+            return MockCall.Blocked(MoqReason.SetupsOverlap,
+                "Callback on a member with another setup: NSubstitute runs an AndDoes/Do for every matching call, also the ones a later setup answers; Moq only the matched setup's callback");
+        }
+
+        var lambda = (SimpleLambdaExpressionSyntax)setup.ArgumentList.Arguments[0].Expression;
+        if (plan.Member is not IMethodSymbol method || callback.ArgumentList.Arguments is not [{ Expression: LambdaExpressionSyntax function }])
+        {
+            return MockCall.Blocked(MoqReason.CallbackShape, "Callback on a property, or with a method group or several arguments");
+        }
+
+        MockCall converted = CallLambda.Convert(function, method.Parameters, model);
+        if (converted.Blocker is not null)
+        {
+            return MockCall.Blocked(MoqReason.CallbackShape, converted.Blocker.Reason);
+        }
+
+        if (plan.Node is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax configured } valueStatement)
+        {
+            ExpressionSyntax andDoes = SyntaxFactory.InvocationExpression(
+                SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, configured, SyntaxFactory.IdentifierName("AndDoes")),
+                SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument((ExpressionSyntax)converted.Node!))));
+            return new()
+            {
+                Node = valueStatement.WithExpression(andDoes),
+                Member = plan.Member,
+                ForAnyArguments = plan.ForAnyArguments,
+                Type = plan.Type,
+                Verifiable = plan.Verifiable,
+                Configured = plan.Configured,
+            };
+        }
+
+        string parameter = lambda.Parameter.Identifier.Text;
+        var when = MockCall.Rewrite(lambda, SyntaxFactory.IdentifierName(parameter), model);
+        if (when.Blocker is not null)
+        {
+            return when;
+        }
+
+        var receiver = (MemberAccessExpressionSyntax)setup.Expression;
+        StatementSyntax rewritten = SyntaxFactory.ParseStatement($"{receiver.Expression.WithoutTrivia()}.Object.When({parameter} => {when.Node}).Do({converted.Node});");
+
+        // Not set up for the answer: the member keeps its pin.
+        return new() { Node = rewritten.WithTriviaFrom(chain.Statement!), Member = plan.Member, Verifiable = plan.Verifiable };
+    }
+
+    private static MockCall PlanValue(
+        InvocationExpressionSyntax setup, ExpressionStatementSyntax? statement, InvocationExpressionSyntax? returns, bool verifiable, bool hasCallback, SemanticModel model)
+    {
         if (statement is null)
         {
             return MockCall.Blocked(MoqReason.SetupShape, "only `m.Setup(..).Returns(v);` or `.ReturnsAsync(v);` as a statement; Callback, Throws, Verifiable and sequences are later moq-queue.md rows");
@@ -48,11 +122,39 @@ public static class SetupReturnsSyntax
 
         ExpressionSyntax objectAccess = SyntaxFactory.MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression, receiver.WithoutTrivia(), SyntaxFactory.IdentifierName("Object"));
+
+        // A configuration call in NSubstitute is a call: it runs a matching earlier configuration (its Returns function, AndDoes, Do or
+        // Throws), which a Moq Setup never does. Configure() turns that off; it is written when the member has another setup in scope.
+        bool configure = HasOtherSetup(setup, model);
+        if (configure)
+        {
+            objectAccess = SyntaxFactory.ParseExpression($"{objectAccess}.Configure()");
+        }
+
         var call = MockCall.Rewrite(lambda.Expression, objectAccess, model);
         if (call.Blocker is not null)
         {
             return call;
         }
+
+        if (returns is null && hasCallback)
+        {
+            return new() { Member = call.Member, Verifiable = verifiable };
+        }
+
+        MockCall plan = PlanAfterCall(setup, statement, returns, verifiable, call, lambda, model);
+        return configure && plan.Node is not null && plan.Blocker is null && !plan.Removed
+            ? new()
+            {
+                Node = plan.Node, Member = plan.Member, ForAnyArguments = plan.ForAnyArguments, Type = plan.Type, Verifiable = plan.Verifiable,
+                Throws = plan.Throws, Configured = plan.Node.ToString().Contains(".Configure()", StringComparison.Ordinal),
+            }
+            : plan;
+    }
+
+    private static MockCall PlanAfterCall(
+        InvocationExpressionSyntax setup, ExpressionStatementSyntax statement, InvocationExpressionSyntax? returns, bool verifiable, MockCall call, ArgumentSyntax lambda, SemanticModel model)
+    {
 
         if (returns is null)
         {
@@ -183,9 +285,9 @@ public static class SetupReturnsSyntax
                 return when;
             }
 
-            var receiver = (MemberAccessExpressionSyntax)((InvocationExpressionSyntax)call.Node!).Expression;
-            string objectAccess = ((MemberAccessExpressionSyntax)receiver.Expression).ToString();
-            rewritten = SyntaxFactory.ParseStatement($"{objectAccess}.When({parameter} => {when.Node}).Do(_ => throw {exception});");
+            // When(..) is a specification, not a call: it needs no Configure().
+            ExpressionSyntax mock = ((MemberAccessExpressionSyntax)((InvocationExpressionSyntax)lambda.Parent!.Parent!.Parent!).Expression).Expression;
+            rewritten = SyntaxFactory.ParseStatement($"{mock.WithoutTrivia()}.Object.When({parameter} => {when.Node}).Do(_ => throw {exception});");
         }
 
         return new()
@@ -211,14 +313,50 @@ public static class SetupReturnsSyntax
         return false;
     }
 
-    private static (ExpressionStatementSyntax? Statement, InvocationExpressionSyntax? Returns, bool Verifiable) Chain(InvocationExpressionSyntax setup)
+    private static bool HasOtherSetup(InvocationExpressionSyntax setup, SemanticModel model)
+    {
+        if (setup.Expression is not MemberAccessExpressionSyntax { Expression: var receiver } || MockUsage.Holder(receiver, model) is not { } holder
+            || SetupMember(setup, model) is not { } member)
+        {
+            return false;
+        }
+
+        SyntaxNode? scope = holder is IFieldSymbol field
+            ? field.ContainingType.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax()
+            : holder.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax().FirstAncestorOrSelf<MemberDeclarationSyntax>();
+        return (scope ?? setup.SyntaxTree.GetRoot()).DescendantNodes().OfType<InvocationExpressionSyntax>().Any(other =>
+            other != setup && IsSetup(other, model)
+            && other.Expression is MemberAccessExpressionSyntax { Expression: var otherReceiver }
+            && SymbolEqualityComparer.Default.Equals(MockUsage.Holder(otherReceiver, model), holder)
+            && SymbolEqualityComparer.Default.Equals(SetupMember(other, model), member));
+    }
+
+    private static ISymbol? SetupMember(InvocationExpressionSyntax setup, SemanticModel model) =>
+        setup.ArgumentList.Arguments is [{ Expression: SimpleLambdaExpressionSyntax { ExpressionBody: { } body } }] ? model.GetSymbolInfo(body).Symbol : null;
+
+    private static SetupChain Chain(InvocationExpressionSyntax setup)
     {
         ExpressionSyntax current = setup;
         InvocationExpressionSyntax? returns = null;
+        InvocationExpressionSyntax? callback = null;
+        bool callbackFirst = false;
+        if (Next(current, "Callback") is { } first)
+        {
+            callback = first;
+            callbackFirst = true;
+            current = first;
+        }
+
         if (Next(current, "Returns", "ReturnsAsync", "Throws", "ThrowsAsync") is { } next)
         {
             returns = next;
             current = next;
+        }
+
+        if (callback is null && Next(current, "Callback") is { } after)
+        {
+            callback = after;
+            current = after;
         }
 
         bool verifiable = false;
@@ -228,7 +366,9 @@ public static class SetupReturnsSyntax
             current = verified;
         }
 
-        return current.Parent is ExpressionStatementSyntax statement ? (statement, returns, verifiable) : (null, null, false);
+        return current.Parent is ExpressionStatementSyntax statement
+            ? new SetupChain { Statement = statement, Returns = returns, Callback = callback, CallbackFirst = callbackFirst, Verifiable = verifiable }
+            : new SetupChain();
     }
 
     private static InvocationExpressionSyntax? Next(ExpressionSyntax current, params string[] names) =>

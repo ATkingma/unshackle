@@ -37,10 +37,32 @@ public class SetupReturnsPattern : IPattern
         }
 
         MockCall plan = SetupReturnsSyntax.Plan(setup, model);
-        return plan.Blocker is not null ? plan.Blocker.ToResult()
-            : plan.Removed ? PatternResult.Fixed(Array.Empty<SyntaxNode>())
-            : plan.Throws ? PatternResult.Fixed(plan.Node!, "NSubstitute", SetupReturnsSyntax.ExceptionsNamespace)
-            : plan.Type is not null ? PatternResult.Fixed(plan.Node!, "NSubstitute", SetupReturnsSyntax.TasksNamespace)
-            : PatternResult.Fixed(plan.Node!, "NSubstitute");
+        if (plan.Blocker is not null)
+        {
+            return plan.Blocker.ToResult();
+        }
+
+        if (plan.Removed)
+        {
+            return PatternResult.Fixed(Array.Empty<SyntaxNode>());
+        }
+
+        List<string> namespaces = ["NSubstitute"];
+        if (plan.Throws)
+        {
+            namespaces.Add(SetupReturnsSyntax.ExceptionsNamespace);
+        }
+
+        if (plan.Type is not null)
+        {
+            namespaces.Add(SetupReturnsSyntax.TasksNamespace);
+        }
+
+        if (plan.Configured)
+        {
+            namespaces.Add(SetupReturnsSyntax.ConfigureNamespace);
+        }
+
+        return PatternResult.Fixed(plan.Node!, [.. namespaces]);
     }
 }

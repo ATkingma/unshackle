@@ -17,7 +17,7 @@ internal static class ReportOnlyRun
     {
         List<Finding> findings =
         [
-            FindingFactory.CreateFinding(solution.FilePath ?? ".", 0, fix, Fixer.InventoryOnlyPatternId, PatternResult.Note(InventoryOnlyNote + reportOnly.ReportOnlyReason)),
+            FindingFactory.CreateFinding(solution.FilePath ?? ".", 0, fix, Fixer.InventoryOnlyPatternId, new InfoResult(InventoryOnlyNote + reportOnly.ReportOnlyReason) { Kind = InfoKind.Header }),
         ];
 
         // A multi-target project has one document per target framework: a file is reported once, from its first copy.
@@ -40,6 +40,7 @@ internal static class ReportOnlyRun
             }
         }
 
+        findings.AddRange(Fixer.ProjectInfo(fix, solution));
         return new FixReport { Solution = solution, Findings = findings, ProjectFileChanges = [], InventoryOnly = true };
     }
 

@@ -283,7 +283,7 @@ public class FixerTests
 
         // Assert
         string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
-        text.ShouldStartWith("\npublic class C");
+        text.ShouldStartWith("public class C"); // council round 10, C3: the removed first-line using leaves no blank first line
         report.Findings.ShouldBeEmpty();
     }
 

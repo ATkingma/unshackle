@@ -241,6 +241,36 @@ edits per project from a closed set (`ProjectFileEdit` has a private-protected c
   that change. A renamed file is a `Deletes` change plus a `Creates` change; `SaveAsync` deletes and restores on failure.
 - An all-or-nothing fix that ends up changing nothing drops these changes like any other.
 
+## Council round 10 engine rules (TAAK-318)
+
+- **C1 reason codes.** `ManualResult.Code` (a string) is separate from `Kept`. A fix keeps its own enum and calls
+  `PatternResult.Manual(code, reason)`. `KeptReasonText.Rendered` prints `<kept prefix><Code>: <reason>`, which is the text the fixes
+  used to write by hand, so the rendered output stays byte-identical.
+- **C2 fix-level Info.** `IFix.ProjectInfo(Project)` (default empty) gives Info rows on the project file (`project-file` pattern id),
+  once per project file, at the end of a run and of a report-only run.
+- **C3 blank first line.** When a removed using has no leading trivia at position 0, `UsingDirectives.WithoutBlankFirstLine` removes the one
+  blank line it leaves on top (whitespace plus one line break). Any other leading trivia stays, and a second run changes nothing.
+- **G1 header kind.** The report-only header is an `InfoResult` with `Kind = InfoKind.Header`. `FixReport.CountedFindings` /
+  `FixReport.IsCounted` leave it out of every count.
+- **G4 what blocks.** A project's file edits are blocked by any blocking document row, and by a project-level Manual row whose `Code` is a
+  `ProjectBlockingReason` (`TargetFrameworkUnsupported`, `SharedDeclarationBlocked`, `LicensedDependency`). Fixes add such rows through
+  `IProjectFileMigration.ProjectBlockers(Project)`. An outcome with a blocking code turns the project's other edits into Manual rows, and
+  none of its changes are kept.
+- **G3 shared declarations.** A package declared only in a shared `Directory.*.props` is edited there when every `.csproj` that imports it
+  is loaded and unblocked (`ProjectFileEditContext`). Otherwise the outcome is Manual `SharedDeclarationBlocked`, naming that project.
+- **G2 old central version.** After a rename or remove under CPM, the old `<PackageVersion>` goes only when it is no `GlobalPackageReference`,
+  every importer of that `Directory.Packages.props` is loaded, and no importer (or its `Directory.Build.props`) still references it.
+  Otherwise it stays, with a `Note` added to the row's Info.
+- **G5 config transforms.** After the literal replacements, a `.json` result must parse (comments and trailing commas allowed), and so must an
+  `.xml/.config/.props/.targets` result. Otherwise the transform is Manual.
+- **P8 conditional remove.** `PackageRemoveEdit.AtMostVersion` removes the reference only when its declared version (its own, else the
+  central one) is a plain version no higher than that. Otherwise the outcome has `KeptInfo`, and the reference stays with an Info row.
+  Microsoft.Extensions.Resilience 10.11.0 brings Polly.Core 8.4.2 (via Polly.Extensions 8.4.2, checked in the nuspecs).
+- **R1 IsPackable.** `IProjectProperties` (DataAccess `XmlProjectProperties`) reads `IsPackable` from the nearest `Directory.Build.props`,
+  then the project, then `Directory.Build.targets`; the last unconditional value wins. When it is unset, the SDK default applies:
+  `Microsoft.NET.Test.Sdk` or `IsTestProject` makes a project not packable, and every other project is packable. A conditional value,
+  a computed value or an unreadable file counts as packable. `MediatRFix(IProjectProperties)` uses it in `AssemblyResolver`.
+
 ## SOLID in brief
 
 | Principle | How                                                                                                                       |

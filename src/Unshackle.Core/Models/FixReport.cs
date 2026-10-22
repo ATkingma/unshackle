@@ -13,4 +13,14 @@ public class FixReport
 
     // True for a report-only fix (IReportOnlyFix, council round 8, S2): nothing was changed, the findings are an inventory.
     public bool InventoryOnly { get; init; }
+
+    // The findings every count is made of: all rows except the header row of a report-only fix (council round 10, G1).
+    public IEnumerable<Finding> CountedFindings => Findings.Where(IsCounted);
+
+    // False only for the header row of a report-only fix (InfoKind.Header).
+    public static bool IsCounted(Finding finding)
+    {
+        ArgumentNullException.ThrowIfNull(finding);
+        return finding.Result is not InfoResult { Kind: InfoKind.Header };
+    }
 }

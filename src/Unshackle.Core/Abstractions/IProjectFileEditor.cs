@@ -12,10 +12,15 @@ public interface IProjectFileEditor
     /// <param name="projectPath">The project file.</param>
     /// <param name="edits">The edits of that project.</param>
     /// <param name="earlier">Changes from earlier in the run (package migration, earlier projects): an edit starts from their new text.</param>
+    /// <param name="context">The loaded and the blocked projects of the solution, for edits of shared files (council round 10, G2/G3).</param>
     /// <param name="cancellationToken">Cancels the edit.</param>
     /// <returns>One outcome per edit that had something to do.</returns>
     /// <exception cref="IOException">A file could not be read.</exception>
     /// <exception cref="System.Xml.XmlException">A project file is not valid XML.</exception>
     Task<IReadOnlyList<ProjectFileEditOutcome>> ApplyAsync(
-        string projectPath, IEnumerable<ProjectFileEdit> edits, IEnumerable<ProjectFileChange> earlier, CancellationToken cancellationToken);
+        string projectPath,
+        IEnumerable<ProjectFileEdit> edits,
+        IEnumerable<ProjectFileChange> earlier,
+        ProjectFileEditContext context,
+        CancellationToken cancellationToken);
 }

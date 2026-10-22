@@ -13,6 +13,18 @@ public class AddMediatRPattern : ISolutionPattern
     private static readonly HashSet<string> s_dropped =
         new(["RegisterServicesFromAssembly", "RegisterServicesFromAssemblies", "RegisterServicesFromAssemblyContaining"], StringComparer.Ordinal);
 
+    private readonly IProjectProperties? _projectProperties;
+
+    public AddMediatRPattern()
+    {
+    }
+
+    // projectProperties: IsPackable per project (council round 10, R1); null guesses it from the compilation.
+    public AddMediatRPattern(IProjectProperties? projectProperties)
+    {
+        _projectProperties = projectProperties;
+    }
+
     public string Id => "mediatr.add-mediatr";
 
     public string Description =>
@@ -50,7 +62,7 @@ public class AddMediatRPattern : ISolutionPattern
         string? forwarder = await PublicForwarderAsync(node, model, solution, cancellationToken);
 
         // A parameter or type parameter whose callers in the solution all pass the same literal assembly scans that one (council round 8, A2).
-        AssemblyResolution resolution = await AssemblyResolver.ResolveAsync(DroppedScans(node), model, solution, cancellationToken);
+        AssemblyResolution resolution = await AssemblyResolver.ResolveAsync(DroppedScans(node), model, solution, _projectProperties, cancellationToken);
 
         // A host next to another host gets GenerateTypesAsInternal and/or Assemblies (TAAK-213); its Manual reason comes after the run-time scan checks.
         MediatorHostSettings host = await MediatorHosts.SettingsAsync(node, model, solution, cancellationToken);

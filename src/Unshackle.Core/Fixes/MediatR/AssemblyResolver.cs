@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
+using Unshackle.Core.Abstractions;
 
 namespace Unshackle.Core.Fixes.MediatR;
 
@@ -25,7 +26,7 @@ public static class AssemblyResolver
 
     /// <summary>Resolves each parameter and method type parameter the given dropped scans use.</summary>
     public static async Task<AssemblyResolution> ResolveAsync(
-        IReadOnlyList<InvocationExpressionSyntax> dropped, SemanticModel model, Solution solution, CancellationToken cancellationToken)
+        IReadOnlyList<InvocationExpressionSyntax> dropped, SemanticModel model, Solution solution, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         List<ISymbol> sources = [.. Sources(dropped, model, cancellationToken)];
         if (sources.Count == 0)
@@ -37,7 +38,7 @@ public static class AssemblyResolver
         var unknown = new Dictionary<ISymbol, string>(SymbolEqualityComparer.Default);
         foreach (ISymbol source in sources)
         {
-            (IAssemblySymbol? assembly, string? why) = await ResolveAsync(source, model, solution, cancellationToken);
+            (IAssemblySymbol? assembly, string? why) = await ResolveAsync(source, model, solution, projectProperties, cancellationToken);
             if (assembly is not null)
             {
                 resolved[source] = assembly;
@@ -72,12 +73,13 @@ public static class AssemblyResolver
         return parameters.Concat(typeParameters).Distinct(SymbolEqualityComparer.Default);
     }
 
-    private static async Task<(IAssemblySymbol? Assembly, string? Why)> ResolveAsync(ISymbol source, SemanticModel model, Solution solution, CancellationToken cancellationToken)
+    private static async Task<(IAssemblySymbol? Assembly, string? Why)> ResolveAsync(
+        ISymbol source, SemanticModel model, Solution solution, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         IMethodSymbol method = (source as IParameterSymbol)?.ContainingSymbol as IMethodSymbol ?? ((ITypeParameterSymbol)source).DeclaringMethod!;
         string name = $"{method.ContainingType.Name}.{method.Name}";
         Project? project = solution.Projects.FirstOrDefault(p => p.AssemblyName == model.Compilation.AssemblyName);
-        if (Patterns.AddMediatRPattern.IsVisibleOutside(method) && (project is null || IsPackable(project)))
+        if (Patterns.AddMediatRPattern.IsVisibleOutside(method) && (project is null || IsPackable(project, projectProperties)))
         {
             return (null, $"{name} is public in a packable project, so callers outside the solution can pass any assembly");
         }
@@ -174,10 +176,12 @@ public static class AssemblyResolver
         return null;
     }
 
-    // An SDK library is packable by default; an executable or a test project is not. IsPackable itself is an MSBuild property the
-    // workspace does not expose, so a library with IsPackable=false still counts as packable (Manual rather than a wrong Fixed).
-    private static bool IsPackable(Project project) =>
-        project.CompilationOptions?.OutputKind is OutputKind.DynamicallyLinkedLibrary or null
+    // IsPackable as MSBuild sees it (council round 10, R1). Without project properties it is guessed: an SDK library is packable, an
+    // executable or a test project is not, and a library with IsPackable=false still counts as packable (Manual rather than a wrong Fixed).
+    private static bool IsPackable(Project project, IProjectProperties? projectProperties) =>
+        projectProperties is not null && project.FilePath is not null
+            ? projectProperties.IsPackable(project.FilePath)
+            : project.CompilationOptions?.OutputKind is OutputKind.DynamicallyLinkedLibrary or null
         && !project.MetadataReferences.OfType<PortableExecutableReference>()
             .Any(r => s_testFrameworks.Contains(Path.GetFileNameWithoutExtension(r.FilePath ?? r.Display ?? string.Empty)));
 }

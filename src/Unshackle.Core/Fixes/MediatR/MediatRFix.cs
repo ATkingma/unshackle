@@ -10,6 +10,19 @@ public class MediatRFix : IFix, IPartialFix
     // The version our proofs compile every rewrite against (Directory.Packages.props): latest stable, MIT.
     public const string MediatorVersion = "3.0.2";
 
+    // Without project properties (tests, a host without MSBuild) packability is guessed from the compilation (AssemblyResolver).
+    public MediatRFix()
+    {
+        Patterns = CreatePatterns(null);
+    }
+
+    // Council round 10, R1: IsPackable as MSBuild sees it decides whether a public AddMediatR method may resolve its scan.
+    public MediatRFix(IProjectProperties projectProperties)
+    {
+        ArgumentNullException.ThrowIfNull(projectProperties);
+        Patterns = CreatePatterns(projectProperties);
+    }
+
     public string Id => "mediatr";
 
     // MediatR.NotificationPublishers: left behind next to using Mediator, TaskWhenAllPublisher is ambiguous (CS0104).
@@ -100,5 +113,7 @@ public class MediatRFix : IFix, IPartialFix
     };
 
     // SendAsTask first: it must see a direct handler.Handle(...) while the handler in the same file still returns Task.
-    public IReadOnlyList<IPattern> Patterns { get; } = [new SendAsTaskPattern(), new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern(), new RequestHandlerDelegatePattern(), new PipelineBehaviorPattern(), new StreamPipelineBehaviorPattern(), new RequestProcessorCallerPattern(), new RequestProcessorPattern(), new ExceptionHandlerPattern(), new AddMediatRPattern(), new BehaviorDiRegistrationPattern(), new AutofacMediatorModulePattern(), new GenericDecoratorPattern(), new GenericRequestPattern(), new GenericNotificationPattern(), new MediatorImplementationPattern(), new UnsupportedPattern(), new InternalHandlerAccessPattern(), new QualifiedSwappedTypePattern()];
+    public IReadOnlyList<IPattern> Patterns { get; }
+
+    private static IReadOnlyList<IPattern> CreatePatterns(IProjectProperties? projectProperties) => [new SendAsTaskPattern(), new RequestHandlerPattern(), new VoidRequestHandlerPattern(), new NotificationHandlerPattern(), new RequestHandlerDelegatePattern(), new PipelineBehaviorPattern(), new StreamPipelineBehaviorPattern(), new RequestProcessorCallerPattern(), new RequestProcessorPattern(), new ExceptionHandlerPattern(), new AddMediatRPattern(projectProperties), new BehaviorDiRegistrationPattern(), new AutofacMediatorModulePattern(), new GenericDecoratorPattern(), new GenericRequestPattern(), new GenericNotificationPattern(), new MediatorImplementationPattern(), new UnsupportedPattern(), new InternalHandlerAccessPattern(), new QualifiedSwappedTypePattern()];
 }

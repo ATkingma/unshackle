@@ -86,4 +86,11 @@ public interface IFix
     /// that depends on that call (TAAK-116). Empty (the default): the patterns see only what the project references.
     /// </summary>
     IReadOnlyList<MetadataReference> AddedReferences => [];
+
+    /// <summary>
+    /// Fix-level Info rows for one project (council round 10, C2), for example the version of the old library it uses. Each text is one
+    /// Info row on the project file, rendered like <see cref="PatternResult.Note"/> and never counted as a warning. Empty (the default): none.
+    /// </summary>
+    /// <param name="project">A C# project of the original solution that lives in a file (the first copy of a multi-target project).</param>
+    IReadOnlyList<string> ProjectInfo(Project project) => [];
 }

@@ -1,4 +1,3 @@
-
 namespace Proofs;
 
 public class Order

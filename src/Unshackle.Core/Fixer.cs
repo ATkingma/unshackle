@@ -185,8 +185,16 @@ public class Fixer : IFixer
             projectFileChanges = await ProjectFileMigrations.ApplyAsync(fix, fileMigration, editor, original, findings, projectFileChanges, cancellationToken);
         }
 
+        findings.AddRange(ProjectInfo(fix, original));
         return new FixReport { Solution = solution, Findings = findings, ProjectFileChanges = projectFileChanges };
     }
+
+    // Council round 10, C2: the fix-level Info rows, once per project file (a multi-target project asks its first copy), in project order.
+    internal static IEnumerable<Finding> ProjectInfo(IFix fix, Solution solution) =>
+        solution.Projects
+            .Where(p => p.Language == LanguageNames.CSharp && p.FilePath is not null)
+            .GroupBy(p => p.FilePath!, StringComparer.OrdinalIgnoreCase)
+            .SelectMany(g => fix.ProjectInfo(g.First()).Select(text => FindingFactory.CreateProjectFinding(g.Key, fix, PatternResult.Note(text))));
 
     // One file with all its copies (one per target framework): its rows and its fixed text (null when it stays as it was).
     private static async Task<FileOutcome> FixFileCopiesAsync(

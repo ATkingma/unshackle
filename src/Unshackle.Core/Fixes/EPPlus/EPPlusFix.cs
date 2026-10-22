@@ -28,7 +28,7 @@ public class EPPlusFix : IFix, IProjectFileMigration
     // A workbook half on EPPlus and half on ClosedXML does not build (an ExcelWorksheet passed to a migrated method): any Manual finding leaves the solution as it is.
     public bool AllOrNothing => true;
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new LicenseContextPattern(), new StylesPattern(), new LayoutPattern(), new PackagePattern(), new UnsupportedPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new LicenseContextPattern(), new StylesPattern(), new LayoutPattern(), new DimensionPattern(), new PackagePattern(), new UnsupportedPattern()];
 
     // No file edits yet: the SixLabors.Fonts < 2.0 pin (E7) waits for an assets-file reader.
     public IReadOnlyList<ProjectFileEdit> EditsFor(Project project) => [];

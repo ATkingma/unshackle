@@ -184,12 +184,17 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `moq.create` | [plan](patterns/moq-create-plan.md) | [models](patterns/moq-create-modellen.md) | [verify](patterns/moq-create-verify.md) | TAAK-307 |
 | `moq.setup-returns` | [plan](patterns/moq-setup-returns-plan.md) | [models](patterns/moq-setup-returns-modellen.md) | [verify](patterns/moq-setup-returns-verify.md) | TAAK-307 |
 | `moq.verify` | [plan](patterns/moq-verify-plan.md) | [models](patterns/moq-verify-modellen.md) | [verify](patterns/moq-verify-verify.md) | TAAK-307 |
+| `moq.verify-all` | [plan](patterns/moq-verify-all-plan.md) | [models](patterns/moq-verify-all-modellen.md) | [verify](patterns/moq-verify-all-verify.md) | TAAK-307 |
+| `moq.throws` | [plan](patterns/moq-throws-plan.md) | [models](patterns/moq-throws-modellen.md) | [verify](patterns/moq-throws-verify.md) | TAAK-307 |
+| `moq.properties` | [plan](patterns/moq-properties-plan.md) | [models](patterns/moq-properties-modellen.md) | [verify](patterns/moq-properties-verify.md) | TAAK-307 |
 | `polly.wait-and-retry-async` | [plan](patterns/polly-wait-and-retry-async-plan.md) | [models](patterns/polly-wait-and-retry-async-modellen.md) | [verify](patterns/polly-wait-and-retry-async-verify.md) | TAAK-308 |
 | `polly.retry-variants` | [plan](patterns/polly-retry-variants-plan.md) | [models](patterns/polly-retry-variants-modellen.md) | [verify](patterns/polly-retry-variants-verify.md) | TAAK-308 |
 | `epplus.license-context` | [plan](patterns/epplus-license-context-plan.md) | [models](patterns/epplus-license-context-modellen.md) | [verify](patterns/epplus-license-context-verify.md) | TAAK-309 |
 | `epplus.package` | [plan](patterns/epplus-package-plan.md) | [models](patterns/epplus-package-modellen.md) | [verify](patterns/epplus-package-verify.md) | TAAK-309 |
 | `epplus.styles` | [plan](patterns/epplus-styles-plan.md) | [models](patterns/epplus-styles-modellen.md) | [verify](patterns/epplus-styles-verify.md) | TAAK-309 |
 | `epplus.layout` | [plan](patterns/epplus-layout-plan.md) | [models](patterns/epplus-layout-modellen.md) | [verify](patterns/epplus-layout-verify.md) | TAAK-309 |
+| `epplus.dimension` | [plan](patterns/epplus-dimension-plan.md) | [models](patterns/epplus-dimension-modellen.md) | [verify](patterns/epplus-dimension-verify.md) | TAAK-309 |
+| `epplus.load-from` | [plan](patterns/epplus-load-from-plan.md) | [models](patterns/epplus-load-from-modellen.md) | [verify](patterns/epplus-load-from-verify.md) | TAAK-309 |
 | `epplus.unsupported` | [plan](patterns/epplus-unsupported-plan.md) | [models](patterns/epplus-unsupported-modellen.md) | [verify](patterns/epplus-unsupported-verify.md) | TAAK-309 |
 | `masstransit.registration` | [plan](patterns/masstransit-registration-plan.md) | [models](patterns/masstransit-registration-modellen.md) | [verify](patterns/masstransit-registration-verify.md) | TAAK-310 |
 | `masstransit.transport` | [plan](patterns/masstransit-transport-plan.md) | [models](patterns/masstransit-transport-modellen.md) | [verify](patterns/masstransit-transport-verify.md) | TAAK-310 |
@@ -200,6 +205,7 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `masstransit.consumer-definition` | [plan](patterns/masstransit-consumer-definition-plan.md) | [models](patterns/masstransit-consumer-definition-modellen.md) | [verify](patterns/masstransit-consumer-definition-verify.md) | TAAK-310 |
 | `masstransit.saga` | [plan](patterns/masstransit-saga-plan.md) | [models](patterns/masstransit-saga-modellen.md) | [verify](patterns/masstransit-saga-verify.md) | TAAK-310 |
 | `masstransit.request-client` | [plan](patterns/masstransit-request-client-plan.md) | [models](patterns/masstransit-request-client-modellen.md) | [verify](patterns/masstransit-request-client-verify.md) | TAAK-310 |
+| `masstransit.publish-send` | [plan](patterns/masstransit-publish-send-plan.md) | [models](patterns/masstransit-publish-send-modellen.md) | [verify](patterns/masstransit-publish-send-verify.md) | TAAK-310 |
 
 ## See also
 

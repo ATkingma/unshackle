@@ -33,7 +33,7 @@ Code: `src/Unshackle.Core/Fixes/Moq/`. Proofs: `src/Unshackle.Tests/Proofs/Moq/C
 | # | Area  | Plan says | Code does | Impact |
 | - | ----- | --------- | --------- | ------ |
 | 1 | Scope | Q1: members the test sets up get no pin | Only a member set up for every argument (`Arg.Any` only, or no parameters) is exempt; one set up for some arguments keeps its pin, because Moq still answers null for the other arguments | Low: stricter reading |
-| 3 | Scope | Q3 `TargetFrameworkUnsupported` | Not in the pattern: it does not see the TFM | Medium: needs the Fixer/project step |
+| 3 | Scope | Q3 `TargetFrameworkUnsupported` | `MoqFix.ProjectBlockers` (G4) gives the blocking project row; every pattern is Manual `TargetFrameworkUnsupported` in such a project (`MoqTargetFrameworkTests`). Engine gap: the project row does not block `IFix.Package` (applied before the file migrations), so NSubstitute may be added next to the kept Moq | Medium: engine |
 | 2 | Scope | `Mock.Get` in draft queue row 1 | Manual `MockGet` until the setup rows exist | Low |
 
 ## Validation results

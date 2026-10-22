@@ -1,6 +1,6 @@
 # TAAK-307 — Moq → NSubstitute (roadmap step 7)
 
-**Status**: steps 1-3/6 done; step 4 in progress (queue rows 1-4 done, row 10 next)
+**Status**: steps 1-3/6 done; step 4 in progress (queue rows 0-6 and 10 done; row 7 next)
 **Created**: 2026-10-22
 **Goal**: A `moq` fix that rewrites Moq 4.x test code to NSubstitute, at 100% on a Moq corpus (all builds, 0 regressions) and a blind round.
 
@@ -52,6 +52,11 @@
   "mock never used"; shared per-mock analysis in `MockUsage`/`MockUseRules`. Row 3 `moq.setup-returns` and row 4 `moq.verify`
   with proofs, run-time proofs and plan/modellen/verify. Open: Q3 `TargetFrameworkUnsupported` needs the project TFM (Fixer/project
   step, not a pattern); README rows for moq.setup-returns and moq.verify; `Cli.cs` should pass the NSubstitute reference.
+
+- 2026-10-22 (agent moq-skeleton, round 10): C1 reason codes (`MoqReason` on `ManualResult.Code`, rendered text unchanged); Q3
+  `TargetFrameworkUnsupported` via `IProjectFileMigration.ProjectBlockers` plus Manual in every pattern (engine gap: the project row does not
+  block `IFix.Package`); row 10 `moq.verify-all` (M4), row 6 `moq.throws`, row 5 properties (in setup-returns/verify/create). Each with
+  proofs, run-time proofs and plan/modellen/verify docs.
 
 ## See also
 

@@ -19,7 +19,7 @@ public class EPPlusFix : IFix, IProjectFileMigration
     // Council round 11, E10/E11: IsPackable as MSBuild sees it (R1) and a search of the solution's config files decide a 4.x worksheet index.
     public EPPlusFix(IProjectProperties? projectProperties, IConfigKeySearch? configSearch)
     {
-        Patterns = [new LicenseContextPattern(), new StylesPattern(), new LayoutPattern(), new PackagePattern(projectProperties, configSearch), new UnsupportedPattern()];
+        Patterns = [new LicenseContextPattern(), new StylesPattern(), new LayoutPattern(), new DimensionPattern(), new LoadFromPattern(), new PackagePattern(projectProperties, configSearch), new UnsupportedPattern()];
     }
 
     public string Id => "epplus";

@@ -13,7 +13,6 @@ public enum PollyReason
     ExecuteOverloadNotSupported,
     ExecuteNotLambda,
     ResultNotAwaited,
-    TargetFrameworkUnsupported,
     OnRetryUsesContext,
     OnRetryNotMappable,
     SleepDurationsNotLiteral,

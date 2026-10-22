@@ -11,6 +11,8 @@ public class SagaPattern : DetectorPattern
 
     public override string Description => "MassTransitStateMachine<T> / ISaga → Manual (report only)";
 
+    protected override MassTransitCode Code => MassTransitCode.Saga;
+
     protected override string Reason => "MassTransit saga: the state-machine DSL (Initially/During/When/TransitionTo) has no structural mapping; a Wolverine Saga or Rebus Saga<TData> must be designed by hand.";
 
     public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) => MassTransitSyntax.FindClasses(root, model, s_names);

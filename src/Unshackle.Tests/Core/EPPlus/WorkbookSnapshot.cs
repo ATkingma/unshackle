@@ -37,6 +37,15 @@ public class WorkbookSnapshot
                 facts[key + " alignment"] = $"horizontal={style.Alignment.Horizontal} vertical={style.Alignment.Vertical} wrap={style.Alignment.WrapText}";
             }
 
+            // Added for row 9 (epplus.layout): freeze panes and the height of every row up to the last used one. New keys only.
+            facts[$"{name} freeze"] = $"rows={sheet.SheetView.SplitRow} columns={sheet.SheetView.SplitColumn}";
+            int lastRow = sheet.LastRowUsed(XLCellsUsedOptions.All)?.RowNumber() ?? 0;
+            for (int row = 1; row <= lastRow; row++)
+            {
+                facts[$"{name} row {row.ToString(CultureInfo.InvariantCulture)} height"] =
+                    sheet.Row(row).Height.ToString("0.###", CultureInfo.InvariantCulture);
+            }
+
             for (int column = 1; column <= lastColumn; column++)
             {
                 facts[$"{name} column {column.ToString(CultureInfo.InvariantCulture)} width"] =

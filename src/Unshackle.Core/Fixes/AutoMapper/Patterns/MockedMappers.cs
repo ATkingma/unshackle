@@ -38,11 +38,20 @@ internal static class MockedMappers
         {
             List<INamedTypeSymbol> classes = [];
             List<MapStub> stubs = [];
-            string? problem = null;
+            List<InvocationExpressionSyntax> checks = [];
+            MockReason? problem = null;
             foreach (IdentifierNameSyntax name in root.DescendantNodes().OfType<IdentifierNameSyntax>()
                 .Where(n => n.Identifier.ValueText == mock.Name && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(n).Symbol, mock)))
             {
-                problem ??= Use(name, model, classes, stubs);
+                MockReason? use = Use(name, model, classes, stubs, checks);
+                problem ??= use;
+            }
+
+            // Council A6: a check of a Map call has no equivalent once the class under test calls the generated method.
+            if (checks.Count > 0)
+            {
+                problem = MockReason.Of(MockSetUpCode.VerifyOnMapper,
+                    $"the test checks a Map call of the mock at {MapOwners.Where(checks[0])}, which has no Received() equivalent once the class under test calls the generated method; assert the mapped result instead");
             }
 
             mocks.Add(new MockedMapper
@@ -51,7 +60,9 @@ internal static class MockedMappers
                 Key = Key(mock, root),
                 Classes = [.. classes.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default)],
                 Stubs = stubs,
+                Checks = checks,
                 Problem = problem,
+                Declaration = declaration,
                 Where = MapOwners.Where(declaration),
             });
         }
@@ -60,10 +71,20 @@ internal static class MockedMappers
     }
 
     /// <summary>
-    /// Why the value the stub returns may differ from what the generated method returns for its source (with file:line), or null when it
+    /// Why the value the stub returns may differ from what the generated mapping method returns for its source (with file:line), or null when it
     /// provably equals it. <paramref name="isPlainMap"/> answers whether a pair is a plain CreateMap&lt;A, B&gt;() of a profile without settings.
+    /// A stub with an argument matcher (It.IsAny&lt;A&gt;(), Arg.Any&lt;A&gt;(), council A7) is compared with the one A the test member builds itself.
     /// </summary>
-    public static string? Disproof(MapStub stub, SemanticModel model, Func<ITypeSymbol, ITypeSymbol, bool> isPlainMap)
+    public static MockReason? Disproof(MapStub stub, SemanticModel model, Func<ITypeSymbol, ITypeSymbol, bool> isPlainMap) =>
+        Why(stub, model, isPlainMap) is { } why ? MockReason.Of(MockSetUpCode.MockedReturnNotProvable, why) : null;
+
+    /// <summary>Whether the expression is an argument matcher that answers any object of its type: It.IsAny&lt;A&gt;() (Moq) or Arg.Any&lt;A&gt;() (NSubstitute).</summary>
+    public static bool IsMatcher(ExpressionSyntax expression, SemanticModel model) =>
+        expression is InvocationExpressionSyntax { ArgumentList.Arguments.Count: 0 } invocation
+        && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { Name: "IsAny" or "Any", ContainingType.Name: "It" or "Arg" } method
+        && MapOwners.IsMockApi(method);
+
+    private static string? Why(MapStub stub, SemanticModel model, Func<ITypeSymbol, ITypeSymbol, bool> isPlainMap)
     {
         string where = stub.Where;
         if (stub.Statement.FirstAncestorOrSelf<MemberDeclarationSyntax>() is not { } member)
@@ -71,9 +92,21 @@ internal static class MockedMappers
             return $"the stub at {where} is not inside a member";
         }
 
-        if (Creation(stub.Source, model, member, out ILocalSymbol? source) is not { } sourceCreation || source is null)
+        BaseObjectCreationExpressionSyntax? sourceCreation = Creation(stub.Source, model, member, out ILocalSymbol? source);
+        if (sourceCreation is null || source is null)
         {
-            return $"the stub at {where} maps an object the test does not create itself with new in the same member (an argument matcher such as It.IsAny or Arg.Any answers any object with the same value)";
+            if (!IsMatcher(stub.Source, model))
+            {
+                return $"the stub at {where} maps an object the test does not create itself with new in the same member";
+            }
+
+            if (Matched(stub, model, member, out source) is not { } matched || source is null)
+            {
+                return $"the stub at {where} answers any {stub.From?.Name} (argument matcher), and the test member does not build exactly one {stub.From?.Name} itself, "
+                    + "in a local with new and nothing else of that type, for the class under test to map";
+            }
+
+            sourceCreation = matched;
         }
 
         if (Creation(stub.Value, model, member, out ILocalSymbol? value) is not { } valueCreation)
@@ -135,13 +168,20 @@ internal static class MockedMappers
     private static string Key(ISymbol mock, SyntaxNode root) =>
         $"{root.SyntaxTree.FilePath}|{mock.ContainingSymbol?.ToDisplayString()}|{mock.Name}";
 
-    // One reference to the mock: its creation, a constructor argument of a class of the solution, or a stub. Anything else: why, with file:line.
-    private static string? Use(IdentifierNameSyntax name, SemanticModel model, List<INamedTypeSymbol> classes, List<MapStub> stubs)
+    // One reference to the mock: its creation, a constructor argument of a class of the solution, a stub, or a check of a Map call (added to
+    // checks; the caller turns it into the A6 reason). Anything else: why, with file:line.
+    private static MockReason? Use(IdentifierNameSyntax name, SemanticModel model, List<INamedTypeSymbol> classes, List<MapStub> stubs, List<InvocationExpressionSyntax> checks)
     {
         ExpressionSyntax expression = name.Parent is MemberAccessExpressionSyntax { Name: var member } access && member == name ? access : name;
         if (expression.Parent is AssignmentExpressionSyntax { Left: var left, Right: var right } && left == expression)
         {
-            return IsMockCreation(right, model) ? null : $"the mock is assigned another value at {MapOwners.Where(expression)}";
+            return IsMockCreation(right, model) ? null : MockReason.Of($"the mock is assigned another value at {MapOwners.Where(expression)}");
+        }
+
+        if (Check(expression, model) is { } check)
+        {
+            checks.Add(check);
+            return null;
         }
 
         ExpressionSyntax used = expression.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Object" } moq && moq.Expression == expression ? moq : expression;
@@ -154,13 +194,30 @@ internal static class MockedMappers
 
         return used == expression && Stub(expression, model) is { } stub
             ? Add(stub)
-            : $"the mock is used another way at {MapOwners.Where(expression)} ({Shorten(expression.FirstAncestorOrSelf<StatementSyntax>()?.ToString() ?? expression.Parent?.ToString() ?? "")})";
+            : MockReason.Of($"the mock is used another way at {MapOwners.Where(expression)} ({Shorten(expression.FirstAncestorOrSelf<StatementSyntax>()?.ToString() ?? expression.Parent?.ToString() ?? "")})");
 
-        string? Add(MapStub found)
+        MockReason? Add(MapStub found)
         {
             stubs.Add(found);
             return null;
         }
+    }
+
+    // The Map call a check of the mock verifies: mock.Verify(m => m.Map<B>(..), ...) (Moq) or mock.Received(..).Map<B>(..) and its
+    // DidNotReceive / WithAnyArgs forms (NSubstitute); else null.
+    private static InvocationExpressionSyntax? Check(ExpressionSyntax mock, SemanticModel model)
+    {
+        if (mock.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Verify", Parent: InvocationExpressionSyntax { ArgumentList.Arguments: [{ Expression: SimpleLambdaExpressionSyntax { ExpressionBody: InvocationExpressionSyntax body } }, ..] } verify }
+            && MapOwners.IsMockApi(model.GetSymbolInfo(verify).Symbol) && MapCallPattern.IsMapCall(body, model))
+        {
+            return body;
+        }
+
+        return mock.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Received" or "DidNotReceive" or "ReceivedWithAnyArgs" or "DidNotReceiveWithAnyArgs", Parent: InvocationExpressionSyntax received }
+            && MapOwners.IsMockApi(model.GetSymbolInfo(received).Symbol)
+            && received.Parent is MemberAccessExpressionSyntax { Parent: InvocationExpressionSyntax map } access && map.Expression == access && MapCallPattern.IsMapCall(map, model)
+            ? map
+            : null;
     }
 
     // mock.Setup(m => m.Map<B>(source)).Returns(value); or mock.Map<B>(source).Returns(value); as a statement of its own, else null.
@@ -211,11 +268,41 @@ internal static class MockedMappers
                 .FirstOrDefault(d => SymbolEqualityComparer.Default.Equals(model.GetDeclaredSymbol(d), symbol))?.Initializer?.Value;
         }
 
-        return created is BaseObjectCreationExpressionSyntax creation && (creation.ArgumentList?.Arguments.Count ?? 0) == 0
-            && (creation.Initializer is null || creation.Initializer.IsKind(SyntaxKind.ObjectInitializerExpression)
-                && creation.Initializer.Expressions.All(e => e is AssignmentExpressionSyntax { Left: IdentifierNameSyntax }))
-            ? creation
-            : null;
+        return created is BaseObjectCreationExpressionSyntax creation && IsPlainCreation(creation) ? creation : null;
+    }
+
+    // new A() or new A { X = ..., Y = ... }: no constructor arguments, an object initializer of simple assignments at most.
+    private static bool IsPlainCreation(BaseObjectCreationExpressionSyntax creation) =>
+        (creation.ArgumentList?.Arguments.Count ?? 0) == 0
+        && (creation.Initializer is null || creation.Initializer.IsKind(SyntaxKind.ObjectInitializerExpression)
+            && creation.Initializer.Expressions.All(e => e is AssignmentExpressionSyntax { Left: IdentifierNameSyntax }));
+
+    // Council A7: the one A of a stub with an argument matcher. The member builds exactly one A itself (a local initialized with a plain new A
+    // { ... }), and holds no other expression of type A outside the stub (a field, a call, a cast), so the object the class under test maps can
+    // only be that one; else null.
+    private static BaseObjectCreationExpressionSyntax? Matched(MapStub stub, SemanticModel model, MemberDeclarationSyntax member, out ILocalSymbol? local)
+    {
+        local = null;
+        if (stub.From is not { } from)
+        {
+            return null;
+        }
+
+        List<BaseObjectCreationExpressionSyntax> created = [.. member.DescendantNodes().OfType<BaseObjectCreationExpressionSyntax>()
+            .Where(c => SymbolEqualityComparer.Default.Equals(model.GetTypeInfo(c).Type, from))];
+        if (created is not [{ Parent: EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator } } creation] || !IsPlainCreation(creation)
+            || model.GetDeclaredSymbol(declarator) is not ILocalSymbol symbol)
+        {
+            return null;
+        }
+
+        bool other = member.DescendantNodes().OfType<ExpressionSyntax>()
+            .Where(e => !stub.Statement.Span.Contains(e.Span) && !creation.Span.Contains(e.Span) && !IsMatcher(e, model) && model.GetSymbolInfo(e).Symbol is not ITypeSymbol)
+            .Where(e => e.Parent is not MemberAccessExpressionSyntax { Name: var name } || name != e)
+            .Any(e => SymbolEqualityComparer.Default.Equals(model.GetTypeInfo(e).Type, from)
+                && !SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(e).Symbol, symbol));
+        local = other ? null : symbol;
+        return other ? null : creation;
     }
 
     // The local's name when the member assigns it again, changes one of its members, or passes it by ref or out; else null.

@@ -37,7 +37,7 @@ public static class Cli
             new AutoMapperFix(),
             new MoqFix([MetadataReference.CreateFromFile(Path.Combine(AppContext.BaseDirectory, "References", "NSubstitute.dll"))]),
             new PollyFix(),
-            new EPPlusFix(),
+            new EPPlusFix(new XmlProjectProperties(fileSystem), new FileConfigKeySearch(fileSystem)),
             new MassTransitFix(),
         ];
         IReportWriter[] reportWriters =

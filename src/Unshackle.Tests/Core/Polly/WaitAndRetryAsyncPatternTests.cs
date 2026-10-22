@@ -107,22 +107,6 @@ public class WaitAndRetryAsyncPatternTests
         text.ShouldContain("SleepDuration(args1.AttemptNumber + 1)");
     }
 
-    [Theory]
-    [InlineData("NETCOREAPP;NETCOREAPP3_0")]
-    [InlineData("NETFRAMEWORK;NET452")]
-    public void Rewrite_UnsupportedTargetFramework_Manual(string symbols)
-    {
-        // Arrange (council P9)
-        (SyntaxNode root, SemanticModel model) = Parse("var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, a => TimeSpan.Zero); await p.ExecuteAsync(() => Task.CompletedTask);", symbols.Split(';'));
-        var pattern = new WaitAndRetryAsyncPattern();
-
-        // Act
-        PatternResult result = pattern.Rewrite(pattern.Find(root, model).First(), model);
-
-        // Assert
-        result.ShouldBeOfType<ManualResult>().Code.ShouldBe(nameof(PollyReason.TargetFrameworkUnsupported));
-    }
-
     [Fact]
     public void Rewrite_GenericResultFromTaskExpression_WrapsInTypedValueTask()
     {

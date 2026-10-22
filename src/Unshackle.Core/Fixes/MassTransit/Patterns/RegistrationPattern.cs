@@ -11,6 +11,8 @@ public class RegistrationPattern : DetectorPattern
 
     public override string Description => "AddMassTransit(...) registration → Manual (report only)";
 
+    protected override MassTransitCode Code => MassTransitCode.BusRegistration;
+
     protected override string Reason => "MassTransit bus registration (AddMassTransit): endpoint naming, consumer discovery and bus start-up are configuration; Wolverine uses UseWolverine on the host, Rebus AddRebus with routing.";
 
     public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) => MassTransitSyntax.FindCalls(root, model, s_names);

@@ -21,6 +21,12 @@
 - [x] 3. Council: round 8 T1–T5 — a report-only detector now; a package swap to OpenTransit only once it ships on NuGet; re-check Q1 2027
 - [ ] 4. Report-only `MassTransitFix`: 9 detector patterns, proofs and KingmaDoc docs done 2026-10-22; open: Cli registration, README rows, corpus round over the 24 repos, roadmap row
 
+- [x] 5. Council round 11 follow-ups (agent am-mt-followups, branch worktree-agent-a04c16b800e2dab3f): C1 typed codes (`MassTransitCode`,
+  one per detector, per-feature codes for consumers); T7 consumer classification (Info only for context.Message + cancellation with no
+  definition or filter in the solution; table in `docs/projectinfo/patterns/masstransit-consumer-plan.md`); T6 new pattern
+  `masstransit.publish-send` (Info, resolved MassTransit receiver types only). Proofs `Consumer/consumer` (now headers),
+  `consumer-respond`, `consumer-publish`; 15 new test cases in `MassTransitFixTests`. Open: README/patterns.md rows, Info proof kind.
+
 ## Changes
 
 | Field     | Content |

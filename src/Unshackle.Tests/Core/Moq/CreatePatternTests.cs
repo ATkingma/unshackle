@@ -37,7 +37,7 @@ public class CreatePatternTests
         PatternResult result = pattern.Rewrite(node, model);
 
         // Assert
-        result.ShouldBeOfType<ManualResult>().Reason.ShouldStartWith("MockOfSetup");
+        result.ShouldBeOfType<ManualResult>().Code.ShouldBe("MockOfSetup");
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class CreatePatternTests
         PatternResult result = pattern.Rewrite(node, model);
 
         // Assert
-        result.ShouldBeOfType<ManualResult>().Reason.ShouldStartWith("MockGet");
+        result.ShouldBeOfType<ManualResult>().Code.ShouldBe("MockGet");
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public class CreatePatternTests
         PatternResult[] results = [.. pattern.Find(root, model).Select(n => pattern.Rewrite(n, model))];
 
         // Assert
-        results.ShouldHaveSingleItem().ShouldBeOfType<ManualResult>().Reason.ShouldStartWith("MockPassedAround");
+        results.ShouldHaveSingleItem().ShouldBeOfType<ManualResult>().Code.ShouldBe("MockPassedAround");
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public class CreatePatternTests
         PatternResult[] results = [.. pattern.Find(root, model).Select(n => pattern.Rewrite(n, model))];
 
         // Assert
-        results.ShouldHaveSingleItem().ShouldBeOfType<ManualResult>().Reason.ShouldStartWith("MockDeclaration");
+        results.ShouldHaveSingleItem().ShouldBeOfType<ManualResult>().Code.ShouldBe("MockDeclaration");
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public class CreatePatternTests
         PatternResult result = pattern.Rewrite(node, model);
 
         // Assert
-        result.ShouldBeOfType<ManualResult>().Reason.ShouldStartWith("TooManyDefaultPins");
+        result.ShouldBeOfType<ManualResult>().Code.ShouldBe("TooManyDefaultPins");
     }
 
     [Fact]

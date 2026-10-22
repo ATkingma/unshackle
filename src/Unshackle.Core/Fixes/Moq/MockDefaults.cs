@@ -13,10 +13,12 @@ public static class MockDefaults
 {
     public const int MaxPins = 10;
 
-    // setUp: members the test sets up for every argument; they get no pin and do not count.
-    public static DefaultsPlan Plan(ITypeSymbol mocked, bool mockOf, IEnumerable<ISymbol> setUp)
+    // setUp: members the test sets up for every argument; they get no pin and do not count. tracked / allTracked: properties that remember
+    // a set value in Moq too (SetupProperty / SetupAllProperties); their setter is no difference.
+    public static DefaultsPlan Plan(ITypeSymbol mocked, bool mockOf, IEnumerable<ISymbol> setUp, IEnumerable<ISymbol> tracked, bool allTracked)
     {
         var exempt = new HashSet<ISymbol>(setUp, SymbolEqualityComparer.Default);
+        var remembers = new HashSet<ISymbol>(tracked, SymbolEqualityComparer.Default);
         var pins = new List<ISymbol>();
         foreach (ITypeSymbol owner in (IEnumerable<ITypeSymbol>)[mocked, .. mocked.AllInterfaces])
         {
@@ -24,7 +26,7 @@ public static class MockDefaults
             {
                 string? blocker = member switch
                 {
-                    IPropertySymbol { SetMethod: not null } p when !mockOf =>
+                    IPropertySymbol { SetMethod: not null } p when !mockOf && !allTracked && !remembers.Contains(p) =>
                         $"{p.Name} has a setter (NSubstitute remembers a set value, a Moq mock does not)",
                     IPropertySymbol { GetMethod: not null } p => Classify(p.Type, mockOf) switch
                     {
@@ -42,13 +44,13 @@ public static class MockDefaults
                 };
                 if (blocker is not null)
                 {
-                    return new() { Blocker = "DefaultValueDiffers: an unconfigured " + mocked.Name + " answers differently in NSubstitute: " + blocker };
+                    return new() { Blocker = MoqBlocker.Of(MoqReason.DefaultValueDiffers, "an unconfigured " + mocked.Name + " answers differently in NSubstitute: " + blocker) };
                 }
             }
         }
 
         return pins.Count > MaxPins
-            ? new() { Blocker = $"TooManyDefaultPins: {pins.Count} members of {mocked.Name} would need Moq's default pinned (max {MaxPins})" }
+            ? new() { Blocker = MoqBlocker.Of(MoqReason.TooManyDefaultPins, $"{pins.Count} members of {mocked.Name} would need Moq's default pinned (max {MaxPins})") }
             : new() { Pins = pins };
     }
 

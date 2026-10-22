@@ -23,5 +23,6 @@ if ! dotnet test -- --max-threads 4 --report-xunit-trx --results-directory "$res
   exit 1
 fi
 dotnet test --solution samples/SampleShop/SampleShop.slnx
-echo '{}' | bash .claude/hooks/check-pattern-docs.sh subagent-stop | grep -q . && { echo "pattern docs missing"; exit 1; }
+# Exit code, not output: a check that cannot run (missing tool) fails the run too (TAAK-302).
+bash .claude/hooks/check-pattern-docs.sh check </dev/null || { echo "pattern docs missing or check failed"; exit 1; }
 echo "VERIFY OK: $(git rev-parse --short HEAD)"

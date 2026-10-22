@@ -97,7 +97,7 @@
 - 2026-10-22 (epplus-skeleton, row 6): `SaveAs(stream)` stays the same call; `SaveHarnessTests` shows both libraries leave the stream open at its end.
   `GetAsByteArray()` becomes a `using var workbookStream = new MemoryStream(); p.SaveAs(workbookStream);` inserted before the statement, with
   `workbookStream.ToArray()` in place of the call. `Save()`, a call in a lambda, and `new ExcelPackage(stream/file)` stay Manual. The harness
-  entry point now needs exactly one parameter.
+  entry point now needs exactly one parameter. `dotnet test` 2210 passed, 0 failed (after merging main).
 
 ## See also
 

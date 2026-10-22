@@ -42,5 +42,5 @@
 ## See also
 
 - `claude/tasks/archief/TAAK-297-code-standards-cleanup.md` — the proposal
-- `claude/tasks/TAAK-298-performance.md` — uses the `FileFixer` seam
+- `claude/tasks/archief/TAAK-298-performance.md` — uses the `FileFixer` seam
 - `claude/docs/INDEX.md` — documentation index

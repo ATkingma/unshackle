@@ -89,6 +89,6 @@ Do the `Fixer` split before TAAK-298 step 5.
 ## See also
 
 - `claude/docs/code-standaarden.md` — the rules
-- `claude/tasks/TAAK-298-performance.md` — performance follow-up from the same audit
+- `claude/tasks/archief/TAAK-298-performance.md` — performance follow-up from the same audit
 - `claude/docs/INDEX.md` — documentation index
 - `docs/projectinfo/README.md` — architecture overview

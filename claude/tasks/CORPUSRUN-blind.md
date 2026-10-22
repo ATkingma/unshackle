@@ -360,3 +360,15 @@ MediatR twelve once (`_results/after-t300m`). 0 regressions, Fixed/Manual unchan
 MediatR reports identical to TAAK-296 row for row. AutoMapper reports identical to TAAK-295 except the example file in the kept
 `add-automapper` row of culinary, msb, encryptednotes and estore, now the first IMapper user by path then line (council Q4); both runs
 name the same example. This is the reviewed one-time baseline refresh.
+
+## TAAK-298 (2026-10-22): parallel file processing and pre-filter
+
+Two `after` passes over all 36 repos (`tools/list-r6.txt`, JOBS=2): tool from main `55b4cdd` (`_results/after-298main`) and
+tool from branch `taak-298-perf-wip` after merging main (`2c9330a`, `_results/after-298`). Result: 36/36 `ok` in both passes,
+**all 36 reports byte-identical** between the two tools. Test regressions: none reproducible. restapi 1 (DB integration test)
+was 0 on a rerun; bookstore 1 (main) / 2 / 2 (branch, rerun) with a different test failing each time: the known flaky shared
+database (TAAK-296). A first branch pass before the merge differed in 4 AutoMapper reports only in the example IMapper user:
+the branch lacked TAAK-300 (stable example); fixed by the merge.
+
+Fix time: summed over the corpus the branch looked slower (706 s vs 546 s) because two repos ran next to a test job. Measured
+in isolation (scan, 2 runs each): projectpulse 32 → 26 s, cleanmicro 11 → 10 s.

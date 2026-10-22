@@ -204,6 +204,7 @@ public class MassTransitFixTests
         // Assert
         Finding consumer = report.Findings.Where(f => f.PatternId == "masstransit.consumer").ShouldHaveSingleItem();
         consumer.Result.ShouldBeOfType<InfoResult>(consumer.Result.ToString()).Text.ShouldContain("Simple MassTransit consumer of OrderSubmitted");
+        ((InfoResult)consumer.Result).Text.ShouldContain("Filters registered outside the solution are not seen");
     }
 
     [Theory]

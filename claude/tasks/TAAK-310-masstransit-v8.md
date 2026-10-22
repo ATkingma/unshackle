@@ -27,6 +27,8 @@
   `masstransit.publish-send` (Info, resolved MassTransit receiver types only). Proofs `Consumer/consumer` (now headers),
   `consumer-respond`, `consumer-publish`; 15 new test cases in `MassTransitFixTests`. Open: README/patterns.md rows, Info proof kind.
 
+- [x] 6. Council round 12 T8: the simple-consumer Info row says "Filters registered outside the solution are not seen".
+
 ## Changes
 
 | Field     | Content |

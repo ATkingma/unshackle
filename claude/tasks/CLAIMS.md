@@ -15,7 +15,7 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 
 | # | Agent | Task | Files (owned, write) | Reserved task nrs | Since |
 | --- | --- | --- | --- | --- | --- |
-| 23 | am-mocked-imapper | TAAK-311 | `src/Unshackle.Core/Fixes/AutoMapper/**`, existing AutoMapper-only test files in `src/Unshackle.Tests/Core/` + new ones in `src/Unshackle.Tests/Core/AutoMapper/**`, `src/Unshackle.Tests/Proofs/AutoMapper/**`, `docs/projectinfo/patterns/automapper-*`, `claude/tasks/TAAK-311-*.md` | — | 2026-10-22 |
+| 24b | mr-assembly-scan → engine-2 | TAAK-318 | `src/Unshackle.Core/*.cs` (root), `src/Unshackle.Core/Abstractions/**`, `src/Unshackle.Core/Models/**`, `src/Unshackle.DataAccess/**`, `src/Unshackle.Tests/Core/Engine/**`, `src/Unshackle.Tests/DataAccess/**`, `docs/projectinfo/architectuur/core.md`, `claude/tasks/TAAK-318-*.md` | — | 2026-10-22 |
 | — | main | TAAK-303, 305 st 1 | git branches/worktrees, `claude/tasks/TAAK-303-*.md`, `claude/tasks/TAAK-305-*.md` | — | 2026-10-22 |
 
 Shared grant (2026-10-22): `src/Unshackle.Tests/ProofTests.cs` — moq-, polly- and epplus-skeleton may each add only their own `s_fixes` entry; the main session resolves merge conflicts.
@@ -35,6 +35,8 @@ Shared grant (2026-10-22): `src/Unshackle.Tests/ProofTests.cs` — moq-, polly- 
 | scout-efbulk | TAAK-430 | conditional go narrow (council) | 2026-10-22 |
 | scout-testfw | TAAK-440 | xUnit go / NUnit no-go (council) | 2026-10-22 |
 | moq | TAAK-307 st 1 | done, council | 2026-10-22 |
+| masstransit-detector | TAAK-310 st 4 | done: report-only detector, 9 patterns | 2026-10-22 |
+| am-mocked-imapper | TAAK-311 | done: automapper.mock-set-up (A1); 0 Manual removed on blind repos, all blockers justified | 2026-10-22 |
 | engine | TAAK-316, 317 | done: IReportOnlyFix, IProjectFileMigration | 2026-10-22 |
 | mr-assembly-scan | TAAK-312 | done: AssemblyResolver (A2) | 2026-10-22 |
 | epplus-skeleton | TAAK-309 st 2–3 | done: harness + license-context + package | 2026-10-22 |
@@ -48,7 +50,7 @@ Shared grant (2026-10-22): `src/Unshackle.Tests/ProofTests.cs` — moq-, polly- 
 
 ## Spawn log
 
-Agents spawned: 24 / 25 (7 wave 1, 8 library scouts, 3 council round 8, 6 wave 2). Reserve: 1 for the MassTransit detector after TAAK-316.
+Agents spawned: 24 / 25 (7 wave 1, 8 library scouts, 3 council round 8, 6 wave 2). Reserve: 1. Finished agents are reused for the next queue rows (no new spawn).
 
 ## See also
 

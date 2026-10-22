@@ -23,6 +23,10 @@ Proofs: `src/Unshackle.Tests/Proofs/Polly/WaitAndRetryAsync/` (text: `ProofTests
 | REQ-6 | Met | `retry-count-variable`; unit test with literal `0` |
 | REQ-7 | Met | `result-not-awaited`; unit tests `PolicyUsedBeyondExecute`, `ExecuteOverloadNotSupported`, `ExecuteNotLambda` |
 | REQ-8 | Met | `policy-returned` |
+| REQ-9 | Met | `filter-or-predicate`, `filter-handle-result`, `filter-policy-of-t` (+ behaviour traces), `filter-handle-inner`; unit tests `HandleInner`, `HandleResult(1)` |
+| REQ-10 | Met | `filter-handle-result` (trace ends `result -4`), `filter-policy-of-t` (`ResiliencePipeline<string>`) |
+| REQ-11 | Met | `Rewrite_UnsupportedTargetFramework_Manual` (netcoreapp3.0, net452) |
+| REQ-12 | Met | `Rewrite_NameTakenInScope_UsesFreshName` (`args1`) |
 
 ## Deviations
 
@@ -34,7 +38,7 @@ Proofs: `src/Unshackle.Tests/Proofs/Polly/WaitAndRetryAsync/` (text: `ProofTests
 | Check | Command | Result |
 | --- | --- | --- |
 | Build | `dotnet build` | passed (0 warnings) |
-| Tests | `dotnet test` | 1699/1699 green |
+| Tests | `dotnet test` | all green (row 2: see TAAK-308 log) |
 | Corpus | — | not run yet (TAAK-308 step 6) |
 
 ## See also

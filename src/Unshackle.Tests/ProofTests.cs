@@ -6,12 +6,14 @@ using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.EPPlus;
 using Unshackle.Core.Fixes.FluentAssertions;
+using Unshackle.Core.Fixes.MassTransit;
 using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Fixes.Moq;
 using Unshackle.Core.Fixes.Polly;
 using Unshackle.Core.Models;
 using Unshackle.DataAccess.Reports;
 using Unshackle.Tests.Core.EPPlus;
+using Unshackle.Tests.Core.MassTransit;
 using Unshackle.Tests.Core.Moq;
 using Unshackle.Tests.Core.Polly;
 using Unshackle.Tests.Helpers;
@@ -67,6 +69,13 @@ public class ProofTests
             Fix = new EPPlusFix(),
             Before = EPPlusReferences.EPPlus,
             After = EPPlusReferences.ClosedXml,
+        },
+        ["MassTransit"] = new()
+        {
+            // Report-only (council round 8, T1-T4): every proof is a manual.txt, "after" is never compiled.
+            Fix = new MassTransitFix(),
+            Before = MassTransitReferences.MassTransit,
+            After = MassTransitReferences.MassTransit,
         },
     };
 

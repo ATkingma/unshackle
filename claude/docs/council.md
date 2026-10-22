@@ -151,6 +151,30 @@ Questions from the TAAK-307 skeleton. Two rounds; all joint (amendments of all t
 | Q3 | NSubstitute version | Always 6.2.0 (netstandard2.0 + net8.0 covers what 5.3.0 covers); a TFM that is not netstandard2.0-compatible → Manual (`TargetFrameworkUnsupported`). |
 | Q4 | Unused mock | Fixed (`Substitute.For<T>()`), never removed; Info line "mock never used". |
 
+### 2026-10-22 — round 10: reason codes, engine, Polly, MediatR, EPPlus
+
+Questions: `claude/tasks/COUNCIL-round-10.md`. Two rounds; all joint (amendments adopted). Engine follow-up: TAAK-318.
+
+| # | Decision | Joint rule |
+| --- | --- | --- |
+| C1 | Typed reason codes | `ManualResult` gets a reason-code field separate from `Kept` (blocker ≠ kept). Rendered text stays byte-identical, pinned by tests; zero-diff corpus gate. Polly/EPPlus/MediatR move their text prefixes onto it. |
+| C2 | Fix-level info | An optional fix-level hook returns Info rows per project (e.g. the Polly version found); rendered like `PatternResult.Note`, never counted as a warning. |
+| C3 | Blank first line | The engine removes only the blank line left by a removed first-line using; other leading trivia stays; idempotent; corpus diff only that change. |
+| G1 | Report-only header | The header row stays for now with a distinct kind every count excludes, pinned by a test. A `FixReport` metadata field (rendered by every writer) is due before the first report-only fix ships in a release. |
+| G2 | CPM old `PackageVersion` | Removed only when no project under that `Directory.Packages.props` uses it, it is not a `GlobalPackageReference`, and every project under it is loaded; otherwise kept with an Info line. |
+| G3 | Shared `Directory.Build.props` declaration | Edited only when every project importing it is loaded and has 0 blocking rows; otherwise Manual `SharedDeclarationBlocked`, naming the blocking project. |
+| G4 | What blocks file edits | Any blocking document row, and any project-level row with its own blocking reason (`TargetFrameworkUnsupported`, `SharedDeclarationBlocked`, `LicensedDependency`). A "package kept" row that is only a consequence of a block does not count on its own. |
+| G5 | Config transforms | Literal replacements, each exactly once; the result must parse, and a proof shows the parsed JSON tree equals the original apart from the listed keys; otherwise Manual. A typed JSON-key rename edit is added when a corpus case needs it. |
+| P8 | Direct `Polly.Core` | Removed when M.E.Resilience is added, the project has 0 blocking rows, and the direct version is ≤ the Polly.Core version M.E.Resilience brings; otherwise kept with an Info line. |
+| P9 | Old TFMs | Manual per project (`TargetFrameworkUnsupported`); no older M.E.Resilience unless every proof runs against it. |
+| P10 | Introduced names | Fresh names (`args1`, …) only after a Roslyn lookup at that position, and in nested lambdas/local functions of the rewritten span, finds no symbol of that name (locals, parameters, members, base members, statics, using aliases); otherwise `NameClash` Manual. |
+| R1 | Packability | `IsPackable` read from MSBuild via DataAccess; unset → SDK default (libraries packable → Manual side). |
+| R2 | Internal method without friend caller | Stays Fixed when there is no `InternalsVisibleTo` to an unloaded project (clarifies A2: its own project is statically known). |
+| R3 | "Same literal" | Compared per resolved assembly symbol, never by type name; unresolvable → Manual. Proof with two types from one assembly. |
+| E7 | SixLabors.Fonts 2.x licence | Always a Warning naming the licence and how to pin < 2.0. Pin through the project-file step only when the assets file is present and current and shows no requirement ≥ 2.0; missing/stale assets → Warning only; project already resolving 2.x → Manual `LicensedDependency`. |
+| E8 | Column width | Manual `ColumnWidthDiffers` unless the E1 harness proves the read-back equal within a documented tolerance; no padding arithmetic. |
+| E9 | Plain local without `using` | Accepted for `epplus.package`, with a proof for that shape. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

@@ -180,10 +180,21 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `automapper.unsupported` | [plan](patterns/automapper-unsupported-plan.md) | [models](patterns/automapper-unsupported-modellen.md) | [verify](patterns/automapper-unsupported-verify.md) | TAAK-257 |
 | `automapper.kept-map` | [plan](patterns/automapper-kept-map-plan.md) | [models](patterns/automapper-kept-map-modellen.md) | [verify](patterns/automapper-kept-map-verify.md) | TAAK-272 |
 | `automapper.unused-imapper` | [plan](patterns/automapper-unused-imapper-plan.md) | [models](patterns/automapper-unused-imapper-modellen.md) | [verify](patterns/automapper-unused-imapper-verify.md) | TAAK-289 |
+| `automapper.mock-set-up` | [plan](patterns/automapper-mock-set-up-plan.md) | [models](patterns/automapper-mock-set-up-modellen.md) | [verify](patterns/automapper-mock-set-up-verify.md) | TAAK-311 |
 | `moq.create` | [plan](patterns/moq-create-plan.md) | [models](patterns/moq-create-modellen.md) | [verify](patterns/moq-create-verify.md) | TAAK-307 |
 | `polly.wait-and-retry-async` | [plan](patterns/polly-wait-and-retry-async-plan.md) | [models](patterns/polly-wait-and-retry-async-modellen.md) | [verify](patterns/polly-wait-and-retry-async-verify.md) | TAAK-308 |
 | `epplus.license-context` | [plan](patterns/epplus-license-context-plan.md) | [models](patterns/epplus-license-context-modellen.md) | [verify](patterns/epplus-license-context-verify.md) | TAAK-309 |
 | `epplus.package` | [plan](patterns/epplus-package-plan.md) | [models](patterns/epplus-package-modellen.md) | [verify](patterns/epplus-package-verify.md) | TAAK-309 |
+| `epplus.unsupported` | [plan](patterns/epplus-unsupported-plan.md) | [models](patterns/epplus-unsupported-modellen.md) | [verify](patterns/epplus-unsupported-verify.md) | TAAK-309 |
+| `masstransit.registration` | [plan](patterns/masstransit-registration-plan.md) | [models](patterns/masstransit-registration-modellen.md) | [verify](patterns/masstransit-registration-verify.md) | TAAK-310 |
+| `masstransit.transport` | [plan](patterns/masstransit-transport-plan.md) | [models](patterns/masstransit-transport-modellen.md) | [verify](patterns/masstransit-transport-verify.md) | TAAK-310 |
+| `masstransit.outbox` | [plan](patterns/masstransit-outbox-plan.md) | [models](patterns/masstransit-outbox-modellen.md) | [verify](patterns/masstransit-outbox-verify.md) | TAAK-310 |
+| `masstransit.retry` | [plan](patterns/masstransit-retry-plan.md) | [models](patterns/masstransit-retry-modellen.md) | [verify](patterns/masstransit-retry-verify.md) | TAAK-310 |
+| `masstransit.test-harness` | [plan](patterns/masstransit-test-harness-plan.md) | [models](patterns/masstransit-test-harness-modellen.md) | [verify](patterns/masstransit-test-harness-verify.md) | TAAK-310 |
+| `masstransit.consumer` | [plan](patterns/masstransit-consumer-plan.md) | [models](patterns/masstransit-consumer-modellen.md) | [verify](patterns/masstransit-consumer-verify.md) | TAAK-310 |
+| `masstransit.consumer-definition` | [plan](patterns/masstransit-consumer-definition-plan.md) | [models](patterns/masstransit-consumer-definition-modellen.md) | [verify](patterns/masstransit-consumer-definition-verify.md) | TAAK-310 |
+| `masstransit.saga` | [plan](patterns/masstransit-saga-plan.md) | [models](patterns/masstransit-saga-modellen.md) | [verify](patterns/masstransit-saga-verify.md) | TAAK-310 |
+| `masstransit.request-client` | [plan](patterns/masstransit-request-client-plan.md) | [models](patterns/masstransit-request-client-modellen.md) | [verify](patterns/masstransit-request-client-verify.md) | TAAK-310 |
 
 ## See also
 

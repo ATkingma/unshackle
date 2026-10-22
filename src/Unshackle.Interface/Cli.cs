@@ -5,7 +5,9 @@ using Spectre.Console;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.AutoMapper;
+using Unshackle.Core.Fixes.EPPlus;
 using Unshackle.Core.Fixes.FluentAssertions;
+using Unshackle.Core.Fixes.MassTransit;
 using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Fixes.Moq;
 using Unshackle.Core.Fixes.Polly;
@@ -34,6 +36,8 @@ public static class Cli
             new AutoMapperFix(),
             new MoqFix(),
             new PollyFix(),
+            new EPPlusFix(),
+            new MassTransitFix(),
         ];
         var fileSystem = new FileSystem();
         IReportWriter[] reportWriters =

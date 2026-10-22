@@ -1,0 +1,1 @@
+MassTransit bus registration (AddMassTransit)

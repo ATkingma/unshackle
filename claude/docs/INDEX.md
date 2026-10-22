@@ -80,7 +80,10 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `src/Unshackle.Core/Fixes/Polly/` | PollyFix, WaitAndRetryAsyncPattern, PollyRetry analysis, PollyReason codes |
 | `claude/tasks/epplus-queue.md` | EPPlus → ClosedXML pattern queue (ranked, council round 8) |
 | `src/Unshackle.Tests/Core/EPPlus/CellCompare.cs` | Cell-compare harness for EPPlus proofs (council E1) |
-| `src/Unshackle.Core/Fixes/EPPlus/` | EPPlusFix (not registered in Cli.cs until queue row 11), license-context and package patterns |
+| `src/Unshackle.Core/Fixes/EPPlus/` | EPPlusFix (registered), license-context, package and unsupported (catch-all Manual, E6) patterns |
+| `claude/tasks/COUNCIL-round-10.md` | Council round 10 questions (reason codes, engine, Polly, MediatR, EPPlus) |
+| `claude/tasks/TAAK-318-engine-round-10.md` | Engine follow-ups from council round 10 (reason codes, fix-level Info, IsPackable, project-file rules) |
+| `src/Unshackle.Core/Fixes/MassTransit/` | MassTransitFix: report-only detector (IReportOnlyFix), 9 feature patterns (TAAK-310) |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |
 | `claude/tasks/TAAK-380-scout-identityserver.md` | Scout IdentityServer4 → OpenIddict/Duende (go/no-go research) |

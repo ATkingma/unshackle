@@ -10,10 +10,11 @@ internal static class PollyRetry
 {
     public const string PollyAssembly = "Polly";
 
-    // Names the rewrite introduces around the user's delay lambda body; the body must not already use them.
+    // Names the rewrite introduces around the user's code; FreshName picks args1, args2, ... when one is taken (council P10).
     private const string ArgsName = "args";
     private const string DelayFunctionName = "SleepDuration";
     private const string DiscardName = "_";
+    private const int MaxFreshNameTries = 10;
 
     public static bool IsWaitAndRetryAsync(InvocationExpressionSyntax invocation, SemanticModel model) =>
         invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "WaitAndRetryAsync" }
@@ -58,7 +59,7 @@ internal static class PollyRetry
         if (!rewritten.Declaration.Type.IsVar)
         {
             rewritten = rewritten.WithDeclaration(rewritten.Declaration.WithType(
-                SyntaxFactory.IdentifierName("ResiliencePipeline").WithTriviaFrom(rewritten.Declaration.Type)));
+                SyntaxFactory.ParseTypeName(ResultType(creation, model) is string result ? $"ResiliencePipeline<{result}>" : "ResiliencePipeline").WithTriviaFrom(rewritten.Declaration.Type)));
         }
 
         return PollyPlan.Of(rewritten);
@@ -109,6 +110,12 @@ internal static class PollyRetry
     // The builder expression for Policy.Handle<E>().WaitAndRetryAsync(n, attempt => delay).
     public static PollyPlan PlanPipeline(InvocationExpressionSyntax creation, SemanticModel model)
     {
+        if (PollyTargetFramework.Unsupported(creation) is string framework)
+        {
+            return PollyPlan.Manual(PollyReason.TargetFrameworkUnsupported,
+                $"Microsoft.Extensions.Resilience {PollyFix.ResilienceVersion} does not support {framework}.");
+        }
+
         if (model.GetSymbolInfo(creation).Symbol is not IMethodSymbol method
             || method.Parameters.Length != 2
             || method.Parameters[0].Type.SpecialType != SpecialType.System_Int32
@@ -120,15 +127,11 @@ internal static class PollyRetry
                 "only WaitAndRetryAsync(int, Func<int, TimeSpan>) is rewritten so far; onRetry, Context and sleep-duration lists follow in later queue rows.");
         }
 
-        if (((MemberAccessExpressionSyntax)creation.Expression).Expression is not InvocationExpressionSyntax
-            {
-                Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax { Identifier.ValueText: "Handle", TypeArgumentList.Arguments: [TypeSyntax exception] } },
-                ArgumentList.Arguments.Count: 0,
-            } handle
-            || model.GetSymbolInfo(handle).Symbol is not IMethodSymbol { ContainingType: { Name: "Policy", Arity: 0, ContainingAssembly.Name: PollyAssembly } })
+        string? resultType = ResultType(creation, model);
+        PollyPlan predicate = PollyPredicate.Plan(((MemberAccessExpressionSyntax)creation.Expression).Expression, resultType, model);
+        if (predicate.Text is not string shouldHandle)
         {
-            return PollyPlan.Manual(PollyReason.ExceptionFilterNotSupported,
-                "only Policy.Handle<E>() without a predicate is rewritten so far; Or, HandleResult and HandleInner follow in a later queue row.");
+            return predicate;
         }
 
         ExpressionSyntax count = creation.ArgumentList.Arguments[0].Expression;
@@ -145,37 +148,44 @@ internal static class PollyRetry
         }
 
         string attempt = parameter.Identifier.ValueText;
-        if (attempt is ArgsName or DelayFunctionName || UsesName(delay.Body, ArgsName) || UsesName(delay.Body, DelayFunctionName))
+        if (FreshName(creation, model, ArgsName) is not string args || FreshName(creation, model, DelayFunctionName) is not string sleep)
         {
-            return PollyPlan.Manual(PollyReason.NameClash, $"the sleep-duration lambda already uses the name '{ArgsName}' or '{DelayFunctionName}'.");
+            return NameClash(creation);
         }
 
+        string generic = resultType is null ? string.Empty : $"<{resultType}>";
         string newLine = NewLine(creation);
         string indent = Indent(creation);
         string inner = indent + "        ";
         string function = delay.Body switch
         {
-            BlockSyntax block => $"TimeSpan {DelayFunctionName}(int {attempt}){newLine}{inner}    {Reindent(block, inner + "    ", newLine)}",
-            ExpressionSyntax expression => $"TimeSpan {DelayFunctionName}(int {attempt}) => {expression};",
+            BlockSyntax block => $"TimeSpan {sleep}(int {attempt}){newLine}{inner}    {Reindent(block, inner + "    ", newLine)}",
+            ExpressionSyntax expression => $"TimeSpan {sleep}(int {attempt}) => {expression};",
             _ => throw new System.Diagnostics.UnreachableException(),
         };
 
         // v7 passes the 1-based retry number to the provider; v8's AttemptNumber is 0-based for the first retry (council P2).
         string text =
-            $"new ResiliencePipelineBuilder(){newLine}"
-            + $"{indent}    .AddRetry(new RetryStrategyOptions{newLine}"
+            $"new ResiliencePipelineBuilder{generic}(){newLine}"
+            + $"{indent}    .AddRetry(new RetryStrategyOptions{generic}{newLine}"
             + $"{indent}    {{{newLine}"
-            + $"{indent}        ShouldHandle = new PredicateBuilder().Handle<{exception}>(),{newLine}"
+            + $"{indent}        ShouldHandle = {shouldHandle},{newLine}"
             + $"{indent}        MaxRetryAttempts = {retries},{newLine}"
-            + $"{indent}        DelayGenerator = {ArgsName} =>{newLine}"
+            + $"{indent}        DelayGenerator = {args} =>{newLine}"
             + $"{indent}        {{{newLine}"
             + $"{inner}    {function}{newLine}"
-            + $"{inner}    return new ValueTask<TimeSpan?>({DelayFunctionName}({ArgsName}.AttemptNumber + 1));{newLine}"
+            + $"{inner}    return new ValueTask<TimeSpan?>({sleep}({args}.AttemptNumber + 1));{newLine}"
             + $"{indent}        }},{newLine}"
             + $"{indent}    }}){newLine}"
             + $"{indent}    .Build()";
         return PollyPlan.Of(SyntaxFactory.ParseExpression(text));
     }
+
+    // T of a v7 PolicyBuilder<T> receiver (HandleResult, Policy<T>): the pipeline becomes ResiliencePipeline<T>; null for exceptions only.
+    private static string? ResultType(InvocationExpressionSyntax creation, SemanticModel model) =>
+        model.GetSymbolInfo(creation).Symbol is IMethodSymbol { ReceiverType: INamedTypeSymbol { Name: "PolicyBuilder", TypeArguments: [ITypeSymbol result] } }
+            ? result.ToMinimalDisplayString(model, creation.SpanStart)
+            : null;
 
     // The v8 callback for policy.ExecuteAsync(() => ...): Func<CancellationToken, ValueTask(<T>)>, awaited by the caller.
     private static PollyPlan PlanCallback(InvocationExpressionSyntax execute, SemanticModel model)
@@ -195,12 +205,12 @@ internal static class PollyRetry
 
         if (execute.ArgumentList.Arguments[0].Expression is not ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters.Count: 0 } lambda
             || lambda.Modifiers.Any(m => !m.IsKind(SyntaxKind.AsyncKeyword))
-            || UsesName(lambda.Body, DiscardName))
+            || FreshName(execute, model, DiscardName) is not string discardName)
         {
             return PollyPlan.Manual(PollyReason.ExecuteNotLambda, "the ExecuteAsync argument is not a parameterless lambda.");
         }
 
-        ParameterSyntax discard = SyntaxFactory.Parameter(SyntaxFactory.Identifier(DiscardName)).WithTrailingTrivia(lambda.ParameterList.GetTrailingTrivia());
+        ParameterSyntax discard = SyntaxFactory.Parameter(SyntaxFactory.Identifier(discardName)).WithTrailingTrivia(lambda.ParameterList.GetTrailingTrivia());
         if (lambda.AsyncKeyword.IsKind(SyntaxKind.AsyncKeyword))
         {
             return PollyPlan.Of(SyntaxFactory.SimpleLambdaExpression(lambda.Modifiers, discard, lambda.ArrowToken, lambda.Block, lambda.ExpressionBody)
@@ -283,6 +293,25 @@ internal static class PollyRetry
         ParenthesizedLambdaExpressionSyntax { ParameterList.Parameters: [ParameterSyntax only] } => only,
         _ => null,
     };
+
+    // The name, or the first of name1..name9, that no symbol in scope at the node and no identifier inside it (nested lambdas
+    // and local functions included) already uses; null when all are taken.
+    public static string? FreshName(SyntaxNode node, SemanticModel model, string name)
+    {
+        for (int i = 0; i < MaxFreshNameTries; i++)
+        {
+            string candidate = i == 0 ? name : name + i;
+            if (model.LookupSymbols(node.SpanStart, name: candidate).IsEmpty && !UsesName(node, candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    public static PollyPlan NameClash(SyntaxNode node) =>
+        PollyPlan.Manual(PollyReason.NameClash, $"no free name for the helper variables near line {node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}.");
 
     private static bool UsesName(SyntaxNode body, string name) =>
         body.DescendantTokens().Any(t => t.IsKind(SyntaxKind.IdentifierToken) && t.ValueText == name);

@@ -35,6 +35,34 @@ public class MockCall
 
     public static MockCall Done(SyntaxNode node) => new() { Node = node };
 
+    // `x => x.P = value` (VerifySet, row 5) as `receiver.P = value'`, the value rewritten like an argument.
+    public static MockCall RewriteSet(ExpressionSyntax lambdaExpression, ExpressionSyntax receiver, SemanticModel model)
+    {
+        if (lambdaExpression is not SimpleLambdaExpressionSyntax { ExpressionBody: AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Left: MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax target } property } assignment } lambda
+            || model.GetDeclaredSymbol(lambda.Parameter) is not { } parameter || target.Identifier.Text != parameter.Name
+            || model.GetSymbolInfo(property).Symbol is not IPropertySymbol { IsStatic: false, IsIndexer: false } symbol)
+        {
+            return Blocked(MoqReason.CallShape, "VerifySet without x => x.Property = value");
+        }
+
+        MockCall value = ArgMatchers.Value(assignment.Right, symbol.Type, parameter, model);
+        if (value.Blocker is not null)
+        {
+            return value;
+        }
+
+        return new()
+        {
+            // The original assignment keeps its `=` with the spacing the user wrote.
+            Node = assignment
+                .WithLeft(SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, receiver, property.Name.WithoutTrivia())
+                    .WithTrailingTrivia(assignment.Left.GetTrailingTrivia()))
+                .WithRight(((ExpressionSyntax)value.Node!).WithLeadingTrivia(assignment.Right.GetLeadingTrivia())),
+            Type = symbol.Type,
+            Member = symbol,
+        };
+    }
+
     public static MockCall Rewrite(ExpressionSyntax lambdaExpression, ExpressionSyntax receiver, SemanticModel model)
     {
         if (lambdaExpression is not SimpleLambdaExpressionSyntax { ExpressionBody: { } body } lambda

@@ -10,9 +10,9 @@ namespace Unshackle.Core.Fixes.Moq;
 public static class VerifySyntax
 {
     public static bool IsVerify(InvocationExpressionSyntax invocation, SemanticModel model) =>
-        invocation is { Parent: ExpressionStatementSyntax, Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Verify" } }
+        invocation is { Parent: ExpressionStatementSyntax, Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Verify" or "VerifyGet" or "VerifySet" } }
         && invocation.ArgumentList.Arguments.Count > 0
-        && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { Name: "Verify" } method && MoqSyntax.IsMockOfT(method.ContainingType);
+        && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { Name: "Verify" or "VerifyGet" or "VerifySet" } method && MoqSyntax.IsMockOfT(method.ContainingType);
 
     public static MockCall Plan(InvocationExpressionSyntax verify, SemanticModel model)
     {
@@ -31,15 +31,18 @@ public static class VerifySyntax
 
         var receiver = (MemberAccessExpressionSyntax)verify.Expression;
         ExpressionSyntax receivedAccess = SyntaxFactory.ParseExpression($"{receiver.Expression.WithoutTrivia()}.Object.{received}");
-        var call = MockCall.Rewrite(arguments[0].Expression, receivedAccess, model);
+        MockCall call = receiver.Name.Identifier.Text == "VerifySet"
+            ? MockCall.RewriteSet(arguments[0].Expression, receivedAccess, model)
+            : MockCall.Rewrite(arguments[0].Expression, receivedAccess, model);
         if (call.Blocker is not null)
         {
             return call;
         }
 
         var statement = (ExpressionStatementSyntax)verify.Parent!;
-        StatementSyntax rewritten = call.Node is InvocationExpressionSyntax invocation
-            ? SyntaxFactory.ExpressionStatement(invocation)
+        // A method call or a property set is a statement; a property get needs a discard.
+        StatementSyntax rewritten = call.Node is InvocationExpressionSyntax or AssignmentExpressionSyntax
+            ? SyntaxFactory.ExpressionStatement((ExpressionSyntax)call.Node)
             : SyntaxFactory.ParseStatement($"_ = {call.Node};");
         return new() { Node = rewritten.WithTriviaFrom(statement), Member = call.Member };
     }

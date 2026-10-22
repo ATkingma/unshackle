@@ -15,8 +15,8 @@ public static class SetupReturnsSyntax
     public const string ExceptionsNamespace = "NSubstitute.ExceptionExtensions";
 
     public static bool IsSetup(InvocationExpressionSyntax invocation, SemanticModel model) =>
-        invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "Setup" }
-        && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { Name: "Setup" } method && MoqSyntax.IsMockOfT(method.ContainingType);
+        invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "Setup" or "SetupGet" }
+        && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { Name: "Setup" or "SetupGet" } method && MoqSyntax.IsMockOfT(method.ContainingType);
 
     // The statement a Setup is part of, when it has a shape this fix rewrites: Setup, then optionally Returns/ReturnsAsync, then optionally Verifiable().
     public static ExpressionStatementSyntax? Statement(InvocationExpressionSyntax setup) => Chain(setup).Statement;

@@ -33,6 +33,9 @@ public class CreatePattern : IPattern
                         : creation.Parent is AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax assignment } ? assignment
                         : creation;
                     break;
+                case InvocationExpressionSyntax tracking when PropertySyntax.IsTracking(tracking, model):
+                    yield return tracking.Parent!;
+                    break;
                 case InvocationExpressionSyntax invocation when IsMockStatic(invocation, model):
                     yield return invocation;
                     break;
@@ -61,6 +64,7 @@ public class CreatePattern : IPattern
     private static PatternResult RewriteSupported(SyntaxNode node, SemanticModel model) => node switch
     {
         LocalDeclarationStatementSyntax statement => RewriteDeclaration(statement.Declaration, model, statement),
+        ExpressionStatementSyntax { Expression: InvocationExpressionSyntax tracking } when PropertySyntax.IsTracking(tracking, model) => RewriteTracking(tracking, model),
         VariableDeclarationSyntax declaration => RewriteDeclaration(declaration, model, null),
         ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax { Right: BaseObjectCreationExpressionSyntax creation } } statement =>
             RewriteAssigned(creation, model, statement),
@@ -179,6 +183,18 @@ public class CreatePattern : IPattern
         return PatternResult.Fixed(MoqSyntax.SubstituteFor(MoqSyntax.TypeArgument(written, mocked, model, invocation.SpanStart)), NSubstitute);
     }
 
+    // Row 5: SetupProperty/SetupAllProperties go (an initial value becomes Returns), in the same pass as the declaration they let through.
+    private static PatternResult RewriteTracking(InvocationExpressionSyntax tracking, SemanticModel model)
+    {
+        if (MockUsage.Holder(((MemberAccessExpressionSyntax)tracking.Expression).Expression, model) is not { } holder)
+        {
+            return PatternResult.Manual(MoqReason.MockPassedAround, "the property setup is on a mock that is not a local or private field of this file");
+        }
+
+        MockAnalysis analysis = MockUsage.Analyze(holder, model, pendingUses: false);
+        return analysis.Blocker is not null ? analysis.Blocker.ToResult() : PatternResult.Fixed(PropertySyntax.Rewrite(tracking, model), NSubstitute);
+    }
+
     // An inline mock has no statement to pin defaults after, so any difference blocks it.
     private static MoqBlocker? InlineBlocker(ITypeSymbol mocked, bool mockOf)
     {
@@ -187,7 +203,7 @@ public class CreatePattern : IPattern
             return MoqBlocker.Of(MoqReason.ClassMock, "only interface mocks are converted; a class or delegate mock is moq-queue.md row 9");
         }
 
-        DefaultsPlan plan = MockDefaults.Plan(mocked, mockOf, []);
+        DefaultsPlan plan = MockDefaults.Plan(mocked, mockOf, [], [], allTracked: false);
         return plan.Blocker ?? (plan.Pins.Count == 0 ? null
             : MoqBlocker.Of(MoqReason.DefaultValueDiffers, $"an unconfigured {mocked.Name} answers differently in NSubstitute ({string.Join(", ", plan.Pins.Select(p => p.Name))}); "
                 + "pinning Moq's default needs the mock in a local or field"));

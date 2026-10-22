@@ -7,16 +7,30 @@ namespace Unshackle.Core.Fixes.Moq;
 // otherwise why the mock stays Moq. A rule adds the members it sets up for every argument to setUp (no pin for them).
 public static class MockUseRules
 {
-    public static MoqBlocker? Blocker(ExpressionSyntax use, SemanticModel model, List<ISymbol> setUp, bool pendingUses)
+    public static MoqBlocker? Blocker(ExpressionSyntax use, SemanticModel model, MockUseContext context, bool pendingUses)
     {
+        // Row 5: SetupProperty / SetupAllProperties; moq.create rewrites them itself, so they count in both modes.
+        if (use.Parent is MemberAccessExpressionSyntax { Parent: InvocationExpressionSyntax tracking } trackingAccess
+            && trackingAccess.Expression == use && PropertySyntax.IsTracking(tracking, model))
+        {
+            return PropertySyntax.Record(tracking, model, context);
+        }
+
+        if (use.Parent is MemberAccessExpressionSyntax { Name.Identifier.Text: "SetupSet" })
+        {
+            return MoqBlocker.Of(MoqReason.PropertySetup, "SetupSet configures a setter call; NSubstitute has no equivalent setup (use VerifySet or a property that remembers)");
+        }
+
+        context.FirstConfiguration = Math.Min(context.FirstConfiguration, use.SpanStart);
+
         // Row 3: m.Setup(..).Returns(v);
-        if (pendingUses && use.Parent is MemberAccessExpressionSyntax { Name.Identifier.Text: "Setup", Parent: InvocationExpressionSyntax setup } access
+        if (pendingUses && use.Parent is MemberAccessExpressionSyntax { Name.Identifier.Text: "Setup" or "SetupGet", Parent: InvocationExpressionSyntax setup } access
             && access.Expression == use && SetupReturnsSyntax.IsSetup(setup, model) && SetupReturnsSyntax.Statement(setup) is not null)
         {
             MockCall plan = SetupReturnsSyntax.Plan(setup, model);
             if (plan is { Blocker: null, ForAnyArguments: true, Member: { } member })
             {
-                setUp.Add(member);
+                context.SetUp.Add(member);
             }
 
             return plan.Blocker;
@@ -30,7 +44,7 @@ public static class MockUseRules
         }
 
         // Row 4: m.Verify(x => .., Times);
-        if (pendingUses && use.Parent is MemberAccessExpressionSyntax { Name.Identifier.Text: "Verify", Parent: InvocationExpressionSyntax verify } verifyAccess
+        if (pendingUses && use.Parent is MemberAccessExpressionSyntax { Name.Identifier.Text: "Verify" or "VerifyGet" or "VerifySet", Parent: InvocationExpressionSyntax verify } verifyAccess
             && verifyAccess.Expression == use && VerifySyntax.IsVerify(verify, model))
         {
             return VerifySyntax.Plan(verify, model).Blocker;

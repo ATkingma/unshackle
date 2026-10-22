@@ -50,6 +50,18 @@ public static class ArgMatchers
         return new() { Node = list.WithArguments(SyntaxFactory.SeparatedList(arguments, list.Arguments.GetSeparators())), ForAnyArguments = forAny };
     }
 
+    // One value (the right side of a VerifySet): a matcher becomes its Arg form, a plain value stays.
+    public static MockCall Value(ExpressionSyntax value, ITypeSymbol type, ISymbol lambdaParameter, SemanticModel model)
+    {
+        if (value.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>().Any(id => SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(id).Symbol, lambdaParameter)))
+        {
+            return MockCall.Blocked(MoqReason.ArgumentUsesMock, "the value refers to the mocked object itself");
+        }
+
+        ExpressionSyntax? matcher = Matcher(value, type, model, out MoqBlocker? blocker);
+        return blocker is not null ? MockCall.Blocked(blocker) : MockCall.Done((matcher ?? value).WithoutTrivia());
+    }
+
     // The NSubstitute form of a Moq It.* call, or null (blocker null: a plain value; blocker set: cannot be expressed).
     private static ExpressionSyntax? Matcher(ExpressionSyntax expression, ITypeSymbol parameterType, SemanticModel model, out MoqBlocker? blocker)
     {

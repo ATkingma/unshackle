@@ -65,7 +65,7 @@ public static class MockUsage
             creations.Add(creation);
         }
 
-        var setUp = new List<ISymbol>();
+        var context = new MockUseContext();
         int uses = 0;
         foreach (IdentifierNameSyntax identifier in scope.DescendantNodes().OfType<IdentifierNameSyntax>()
             .Where(i => i.Identifier.Text == symbol.Name && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(i).Symbol, symbol)))
@@ -83,13 +83,13 @@ public static class MockUsage
             {
                 if (SetUpForAnyArguments(use.Parent!, model) is { } member)
                 {
-                    setUp.Add(member);
+                    context.SetUp.Add(member);
                 }
 
                 continue;
             }
 
-            if (MockUseRules.Blocker(use, model, setUp, pendingUses) is { } blocker)
+            if (MockUseRules.Blocker(use, model, context, pendingUses) is { } blocker)
             {
                 return MockAnalysis.Blocked(blocker);
             }
@@ -103,7 +103,12 @@ public static class MockUsage
             }
         }
 
-        DefaultsPlan plan = MockDefaults.Plan(mocked, mockOf: false, setUp);
+        if (context.TrackingPositions.Any(p => p > context.FirstConfiguration))
+        {
+            return MockAnalysis.Blocked(MoqReason.PropertyOrder, "SetupProperty/SetupAllProperties after another setup or verify of the mock; Moq may then reset that setup");
+        }
+
+        DefaultsPlan plan = MockDefaults.Plan(mocked, mockOf: false, context.SetUp, context.Tracked, context.AllTracked);
         if (plan.Blocker is not null)
         {
             return MockAnalysis.Blocked(plan.Blocker);

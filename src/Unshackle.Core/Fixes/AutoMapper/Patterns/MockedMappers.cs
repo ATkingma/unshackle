@@ -100,14 +100,17 @@ internal static class MockedMappers
                 return $"the stub at {where} maps an object the test does not create itself with new in the same member";
             }
 
-            if (Matched(stub, model, member, out source) is not { } matched || source is null)
+            if (Matched(stub, model, member, out source) is not { } matched)
             {
                 return $"the stub at {where} answers any {stub.From?.Name} (argument matcher), and the test member does not build exactly one {stub.From?.Name} itself, "
-                    + "in a local with new and nothing else of that type, for the class under test to map";
+                    + "in a local with new or in place with literal arguments, and nothing else of that type, for the class under test to map";
             }
 
             sourceCreation = matched;
         }
+
+        // Council A10: an A created in place has no local; a member it does not set is default-constructed (or set by its constructor).
+        bool inPlace = source is null;
 
         if (Creation(stub.Value, model, member, out ILocalSymbol? value) is not { } valueCreation)
         {
@@ -125,7 +128,7 @@ internal static class MockedMappers
             return $"the map {from.Name} → {to.Name} stubbed at {where} is not a plain CreateMap<{from.Name}, {to.Name}>() in a profile without settings";
         }
 
-        if ((Unchanged(member, model, source) ?? (value is null ? null : Unchanged(member, model, value))) is { } changed)
+        if (((source is null ? null : Unchanged(member, model, source)) ?? (value is null ? null : Unchanged(member, model, value))) is { } changed)
         {
             return $"the test changes {changed} after creating it ({where})";
         }
@@ -145,6 +148,11 @@ internal static class MockedMappers
             if (Property(from, property.Name) is not { } read || !SymbolEqualityComparer.Default.Equals(read.Type, property.Type) || !IsSimple(property.Type))
             {
                 return $"{to.Name}.{property.Name} is not a plain copy of a {from.Name} member of a simple type (stub at {where})";
+            }
+
+            if (inPlace && !Assigns(sourceCreation, read.Name) && UnsetRead(sourceCreation, read, member) is { } why)
+            {
+                return $"{why} (stub at {where})";
             }
 
             string? expected = Value(sourceCreation, read, model, source, null);
@@ -290,9 +298,23 @@ internal static class MockedMappers
 
         List<BaseObjectCreationExpressionSyntax> created = [.. member.DescendantNodes().OfType<BaseObjectCreationExpressionSyntax>()
             .Where(c => SymbolEqualityComparer.Default.Equals(model.GetTypeInfo(c).Type, from))];
-        if (created is not [{ Parent: EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator } } creation] || !IsPlainCreation(creation)
-            || model.GetDeclaredSymbol(declarator) is not ILocalSymbol symbol)
+        if (created is not [{ } creation])
         {
+            return null;
+        }
+
+        ILocalSymbol? symbol = null;
+        if (creation is { Parent: EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator } })
+        {
+            symbol = model.GetDeclaredSymbol(declarator) as ILocalSymbol;
+            if (symbol is null || !IsPlainCreation(creation))
+            {
+                return null;
+            }
+        }
+        else if (!IsLiteralCreation(creation))
+        {
+            // Council A10: in place only with literal or no constructor arguments.
             return null;
         }
 
@@ -300,9 +322,32 @@ internal static class MockedMappers
             .Where(e => !stub.Statement.Span.Contains(e.Span) && !creation.Span.Contains(e.Span) && !IsMatcher(e, model) && model.GetSymbolInfo(e).Symbol is not ITypeSymbol)
             .Where(e => e.Parent is not MemberAccessExpressionSyntax { Name: var name } || name != e)
             .Any(e => SymbolEqualityComparer.Default.Equals(model.GetTypeInfo(e).Type, from)
-                && !SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(e).Symbol, symbol));
+                && (symbol is null || !SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(e).Symbol, symbol)));
         local = other ? null : symbol;
         return other ? null : creation;
+    }
+
+    // new A(literal, ...) { X = ..., ... }: literal constructor arguments at most, an object initializer of simple assignments at most.
+    private static bool IsLiteralCreation(BaseObjectCreationExpressionSyntax creation) =>
+        (creation.ArgumentList?.Arguments.All(a => a.Expression is LiteralExpressionSyntax) ?? true)
+        && (creation.Initializer is null || creation.Initializer.IsKind(SyntaxKind.ObjectInitializerExpression)
+            && creation.Initializer.Expressions.All(e => e is AssignmentExpressionSyntax { Left: IdentifierNameSyntax }));
+
+    private static bool Assigns(BaseObjectCreationExpressionSyntax creation, string name) =>
+        creation.Initializer?.Expressions.OfType<AssignmentExpressionSyntax>().Any(a => a.Left is IdentifierNameSyntax { Identifier.ValueText: var left } && left == name) == true;
+
+    // Council A10: why a member the in-place A does not set blocks: its constructor may set it, or the test reads a member of that name
+    // (a default-constructed member the test reads → Manual); else null.
+    private static string? UnsetRead(BaseObjectCreationExpressionSyntax creation, IPropertySymbol read, MemberDeclarationSyntax member)
+    {
+        if (creation.ArgumentList?.Arguments.Count > 0)
+        {
+            return $"the {read.ContainingType.Name} created in place with constructor arguments does not set {read.Name} itself, so its value is not known";
+        }
+
+        return member.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Any(a => a.Name.Identifier.ValueText == read.Name && !creation.Span.Contains(a.Span))
+            ? $"the test reads {read.Name}, which the {read.ContainingType.Name} created in place leaves default-constructed"
+            : null;
     }
 
     // The local's name when the member assigns it again, changes one of its members, or passes it by ref or out; else null.
@@ -382,7 +427,7 @@ internal static class MockedMappers
 
     // The value of a member of a created object as text: "c:<constant>" for a constant (the initializer's or the property's own), "s:<name>"
     // for the value the source object holds when it is read from it (or is not constant there), null when it cannot be told.
-    private static string? Value(BaseObjectCreationExpressionSyntax creation, IPropertySymbol property, SemanticModel model, ILocalSymbol source, BaseObjectCreationExpressionSyntax? sourceCreation)
+    private static string? Value(BaseObjectCreationExpressionSyntax creation, IPropertySymbol property, SemanticModel model, ILocalSymbol? source, BaseObjectCreationExpressionSyntax? sourceCreation)
     {
         ExpressionSyntax? assigned = creation.Initializer?.Expressions.OfType<AssignmentExpressionSyntax>()
             .FirstOrDefault(a => a.Left is IdentifierNameSyntax { Identifier.ValueText: var name } && name == property.Name)?.Right;

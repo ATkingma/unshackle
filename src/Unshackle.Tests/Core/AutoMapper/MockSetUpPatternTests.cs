@@ -189,6 +189,7 @@ public class MockSetUpPatternTests
         """, "CustomerDto.Name is not provably the value the generated method copies")]
     [InlineData("""
                 mapper.Map<CustomerDto>(Arg.Any<Customer>()).Returns(new CustomerDto());
+                new ShopService(mapper).Customer(new Customer());
                 return new ShopService(mapper).Customer(new Customer());
         """, "answers any Customer (argument matcher), and the test member does not build exactly one Customer")]
     [InlineData("""
@@ -506,6 +507,58 @@ public class MockSetUpPatternTests
                 return null!;
         """, "does not build exactly one Customer")]
     public async Task FixAsync_MatcherStubNotProvable_KeepsStubWithTypedCode(string body, string reason)
+    {
+        // Arrange
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", Profile), ("Service.cs", Service), ("Test.cs", Test(body)));
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        (await TextAsync(report.Solution, "Test.cs")).ShouldContain(".Returns(");
+        report.Findings.Select(f => f.Result).OfType<ManualResult>()
+            .ShouldContain(m => m.Code == "MockedReturnNotProvable" && m.Reason.Contains(reason, StringComparison.Ordinal), string.Join(" | ", Reasons(report)));
+    }
+
+    // Council A10: an A created in place counts as built in the test when it is the only A, with literal or no arguments.
+    [Fact]
+    public async Task FixAsync_MatcherStubWithSourceCreatedInPlace_RemovesStub()
+    {
+        // Arrange
+        string test = Test("""
+                    mapper.Map<CustomerDto>(Arg.Any<Customer>()).Returns(new CustomerDto { Id = 7, Name = "Ann" });
+                    return new ShopService(mapper).Customer(new Customer { Id = 7, Name = "Ann" }).Name == "Ann";
+            """);
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", Profile), ("Service.cs", Service), ("Test.cs", test));
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        (await TextAsync(report.Solution, "Test.cs")).ShouldNotContain(".Returns(");
+        (await TextAsync(report.Solution, "Service.cs")).ShouldContain("customer.ToCustomerDto()");
+    }
+
+    [Theory]
+    [InlineData("""
+                mapper.Map<CustomerDto>(Arg.Any<Customer>()).Returns(new CustomerDto { Id = 7 });
+                return new ShopService(mapper).Customer(new Customer { Id = 7 }).Name == null;
+        """, "the test reads Name, which the Customer created in place leaves default-constructed")]
+    [InlineData("""
+                mapper.Map<CustomerDto>(Arg.Any<Customer>()).Returns(new CustomerDto { Id = 7, Name = "Ann" });
+                return new ShopService(mapper).Customer(new Customer { Id = 7, Name = Names.Ann }).Name == "Ann";
+            }
+
+            private static class Names
+            {
+                public static string Ann => "Ann";
+            }
+
+            public object Unused()
+            {
+                return null!;
+        """, "is not provably the value the generated method copies")]
+    public async Task FixAsync_MatcherStubWithSourceCreatedInPlaceNotProvable_KeepsStub(string body, string reason)
     {
         // Arrange
         Solution solution = Create(("Types.cs", Types), ("Profile.cs", Profile), ("Service.cs", Service), ("Test.cs", Test(body)));

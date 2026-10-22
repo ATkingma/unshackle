@@ -27,6 +27,8 @@
 | REQ-12 | Met    | theory `FixAsync_MatcherStubNotProvable_KeepsStubWithTypedCode`: two Customers, other constant, value compared whole, a helper call returning a Customer; all `Code == "MockedReturnNotProvable"` |
 | REQ-13 | Met    | proof `_Combined/mocked-no-stubs` (discard, Info row); theory `FixAsync_MockWithoutStubsValueNeverRead_MigratesWithInfo` (statement, discard, unread local); theory `FixAsync_MockWithoutStubsValueUsed_KeepsWithTypedCode` (null check, `?.` read, passed on); `FixAsync_MockWithoutStub_NamesTheTestOfTheClassUnderTest` (returned) |
 
+| REQ-14 | Met    | `FixAsync_MatcherStubWithSourceCreatedInPlace_RemovesStub`; theory `FixAsync_MatcherStubWithSourceCreatedInPlaceNotProvable_KeepsStub` (default-constructed `Name` read; non-constant member); theory row of `FixAsync_StubNotProvablyEqual_KeepsStubAndNamesTest` now with two in-place Customers |
+
 ## Build and tests
 
 - `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1687 total, 1686 passed, 1 failed: `PatternDocTests.PatternsDoc_MatchesListMarkdown`
@@ -45,8 +47,8 @@
 
 ## Deviations
 
-- A8 is implemented stricter than the council text: a member read or null check of the value inside the method also blocks (on the
-  loose mock it throws or branches differently). Only a value nobody reads qualifies. Council question in TAAK-311.
+- A8 is stricter than its first text: a member read or null check of the value inside the method also blocks. Council round 12 (A9)
+  keeps it that way.
 - A7 "every asserted member" is implemented as "every settable member" (as A1): stricter, never weaker.
 
 - PNG/SVG of the models not rendered (no `kingmadoc`/`d2`); the D2 sources are there.

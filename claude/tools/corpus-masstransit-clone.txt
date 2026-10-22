@@ -1,0 +1,25 @@
+# name repo ref  -- MassTransit corpus for corpus-am.sh clone (TAAK-310). Ref HEAD = default branch at clone time; pinned shas are in CORPUSRUN-masstransit.md.
+altinn Altinn/altinn-auth HEAD
+reminders AntonioFalcaoJr/Reminders HEAD
+vcmm ardalis/VerticalCleanModularMicroservices HEAD
+modmono baranacikgoz/modular-monolith-ddd-vsa-webapi HEAD
+elsa elsa-workflows/elsa-extensions HEAD
+evoarch evolutionary-architecture/evolutionary-architecture-by-example HEAD
+autocrud firebend/auto-crud HEAD
+jobba firebend/jobba HEAD
+letterbook Letterbook/Letterbook HEAD
+yourbrand marinasundstrom/YourBrand HEAD
+socialaspire NikiforovAll/social-media-app-aspire HEAD
+nkz nkz-soft/microservice-template HEAD
+monaco onebeyond/monaco HEAD
+coffeeshop thangchung/coffeeshop-on-nomad HEAD
+chclean thecodewrapper/CH.CleanArchitectureBlazor HEAD
+sitewatcher xilapa/SiteWatcher HEAD
+cloudnative EdwinVW/cloud-native-net HEAD
+procman iblazhko/eventsourced-processmanager HEAD
+ecomm sloweyyy/cloud-native-ecommerce-platform HEAD
+confix SwissLife-OSS/Confix-Unloaded HEAD
+saga gncyyldz/Saga-Orchestration HEAD
+outbox jokk-itu/MassTransit-Outbox-Sample HEAD
+nox NoxOrg/Nox HEAD
+modularmono iongritco/ModularMonolith HEAD

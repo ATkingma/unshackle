@@ -68,7 +68,14 @@ public class PackagePattern : IPattern
             replacements[declaration.Type] = workbook.WithTriviaFrom(declaration.Type);
         }
 
-        return PatternResult.Fixed(scope.ReplaceNodes(replacements.Keys, (original, _) => replacements[original]), AddedNamespace);
+        // E7: ClosedXML accepts SixLabors.Fonts [1.0.0, 3.0.0); 2.x is under the Six Labors Split License.
+        if (FontsLicence.Resolved(model) is { Major: >= 2 } fonts)
+        {
+            return PatternResult.Manual($"[{FontsLicence.Code}] this project already resolves SixLabors.Fonts {fonts.ToString(3)}, which is under the Six Labors Split License; "
+                + "ClosedXML would use it. Pin SixLabors.Fonts below 2.0 (or license it) and run the fix again.");
+        }
+
+        return new FixedResult([scope.ReplaceNodes(replacements.Keys, (original, _) => replacements[original])], [AddedNamespace]) { Warning = FontsLicence.Warning };
     }
 
     private static bool IsPackageCreation(BaseObjectCreationExpressionSyntax creation, SemanticModel model) => creation switch

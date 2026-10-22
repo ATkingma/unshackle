@@ -73,7 +73,22 @@ public class WaitAndRetryAsyncPatternTests
 
         // Assert
         results.ShouldNotBeEmpty();
-        results.ShouldAllBe(r => r is ManualResult && ((ManualResult)r).Reason.StartsWith(code + ": ", StringComparison.Ordinal));
+        results.ShouldAllBe(r => r is ManualResult && ((ManualResult)r).Code == code);
+    }
+
+    [Fact]
+    public void Rewrite_Manual_RendersCodePrefixAsBefore()
+    {
+        // Arrange (council round 10, C1: the rendered text stays "Code: reason")
+        (SyntaxNode root, SemanticModel model) = Parse("var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(0, a => TimeSpan.Zero); await p.ExecuteAsync(() => Task.CompletedTask);");
+        var pattern = new WaitAndRetryAsyncPattern();
+
+        // Act
+        var manual = (ManualResult)pattern.Rewrite(pattern.Find(root, model).First(), model);
+
+        // Assert
+        KeptReasonText.Rendered(manual).ShouldBe(
+            "RetryCountNotLiteral: the retry count '0' is not an integer literal of at least 1 (MaxRetryAttempts must be 1 or more).");
     }
 
     [Fact]
@@ -105,7 +120,7 @@ public class WaitAndRetryAsyncPatternTests
         PatternResult result = pattern.Rewrite(pattern.Find(root, model).First(), model);
 
         // Assert
-        result.ShouldBeOfType<ManualResult>().Reason.ShouldStartWith(nameof(PollyReason.TargetFrameworkUnsupported) + ": ");
+        result.ShouldBeOfType<ManualResult>().Code.ShouldBe(nameof(PollyReason.TargetFrameworkUnsupported));
     }
 
     [Fact]

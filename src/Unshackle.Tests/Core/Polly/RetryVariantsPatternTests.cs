@@ -44,7 +44,7 @@ public class RetryVariantsPatternTests
 
         // Assert
         results.ShouldNotBeEmpty();
-        results.ShouldAllBe(r => r is ManualResult && ((ManualResult)r).Reason.StartsWith(code + ": ", StringComparison.Ordinal));
+        results.ShouldAllBe(r => r is ManualResult && ((ManualResult)r).Code == code);
     }
 
     private static (SyntaxNode Root, SemanticModel Model) Parse(string statements)

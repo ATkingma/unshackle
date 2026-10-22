@@ -58,9 +58,9 @@ internal static class PollyRetry
             return PollyPlan.Manual(PollyReason.PolicyNotLocal, "the policy is not a single local initialised with WaitAndRetryAsync.");
         }
 
-        if (PlanLocalUses(statement, local, model) is string reason)
+        if (PlanLocalUses(statement, local, model) is PollyPlan blocked)
         {
-            return new PollyPlan { Reason = reason };
+            return blocked;
         }
 
         PollyPlan pipeline = PlanPipeline(creation, model);
@@ -103,9 +103,9 @@ internal static class PollyRetry
                 Initializer.Value: InvocationExpressionSyntax localCreation, Parent.Parent: LocalDeclarationStatementSyntax statement,
             })
         {
-            if (PlanLocalUses(statement, local, model) is string reason)
+            if (PlanLocalUses(statement, local, model) is PollyPlan blocked)
             {
-                return new PollyPlan { Reason = reason };
+                return blocked;
             }
 
             PollyPlan pipeline = PlanPipeline(localCreation, model);
@@ -126,8 +126,7 @@ internal static class PollyRetry
     {
         if (PollyTargetFramework.Unsupported(creation) is string framework)
         {
-            return PollyPlan.Manual(PollyReason.TargetFrameworkUnsupported,
-                $"Microsoft.Extensions.Resilience {PollyFix.ResilienceVersion} does not support {framework}.");
+            return PollyPlan.Manual(PollyReason.TargetFrameworkUnsupported, PollyTargetFramework.Reason(framework));
         }
 
         if (model.GetSymbolInfo(creation).Symbol is not IMethodSymbol method
@@ -361,11 +360,11 @@ internal static class PollyRetry
     }
 
     // Every use of the local must be the receiver of a rewritable ExecuteAsync; null when they all are.
-    private static string? PlanLocalUses(LocalDeclarationStatementSyntax statement, ILocalSymbol local, SemanticModel model)
+    private static PollyPlan? PlanLocalUses(LocalDeclarationStatementSyntax statement, ILocalSymbol local, SemanticModel model)
     {
         if (statement.Declaration.Variables.Count != 1 || statement.UsingKeyword.IsKind(SyntaxKind.UsingKeyword) || statement.IsConst)
         {
-            return PollyPlan.Manual(PollyReason.PolicyNotLocal, "the policy declaration declares more than one variable.").Reason;
+            return PollyPlan.Manual(PollyReason.PolicyNotLocal, "the policy declaration declares more than one variable.");
         }
 
         foreach (IdentifierNameSyntax use in Uses(statement, local, model))
@@ -373,12 +372,12 @@ internal static class PollyRetry
             if (ExecuteOn(use) is not InvocationExpressionSyntax execute)
             {
                 return PollyPlan.Manual(PollyReason.PolicyUsedBeyondExecute,
-                    $"'{local.Name}' is used at line {use.GetLocation().GetLineSpan().StartLinePosition.Line + 1} for more than ExecuteAsync (assigned, passed on or another member called).").Reason;
+                    $"'{local.Name}' is used at line {use.GetLocation().GetLineSpan().StartLinePosition.Line + 1} for more than ExecuteAsync (assigned, passed on or another member called).");
             }
 
-            if (PlanCallback(execute, model).Reason is string reason)
+            if (PlanCallback(execute, model) is { Code: not null } callbackBlocked)
             {
-                return reason;
+                return callbackBlocked;
             }
         }
 

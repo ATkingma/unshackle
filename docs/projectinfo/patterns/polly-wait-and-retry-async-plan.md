@@ -70,7 +70,10 @@ pipeline, with the delay lambda kept as the `DelayGenerator`.
   `RetryStrategyOptions<T>` and, for an explicitly typed local, `ResiliencePipeline<T>`; when retries run out on a handled result,
   both return that last result (behaviour proof `filter-handle-result`).
 - **REQ-11** (council P9): WHEN the file's preprocessor symbols show a target framework Microsoft.Extensions.Resilience 10.11.0
-  does not support (.NET Core before net8.0, .NET Framework before net462) THE SYSTEM SHALL report Manual `TargetFrameworkUnsupported`.
+  does not support (.NET Core before net8.0, .NET Framework before net462) THE SYSTEM SHALL report Manual `TargetFrameworkUnsupported`
+  on each rewrite, and `PollyFix.ProjectBlockers` reports the project-level row with `ProjectBlockingReason.TargetFrameworkUnsupported`
+  that blocks the project's file edits (council round 10, G4). Both stay: the project blocker alone would leave rewritten v8 code
+  in a project that keeps Polly v7 only.
 - **REQ-12** (council P10): WHEN `args`, `SleepDuration` or `_` is taken (a symbol in scope at the call, or an identifier inside the
   rewritten span) THE SYSTEM SHALL use `args1`, `args2`, ... (first free of 10), else Manual `NameClash`.
 

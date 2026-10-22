@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.Polly.Patterns;
 using Unshackle.Core.Models;
@@ -6,10 +7,16 @@ namespace Unshackle.Core.Fixes.Polly;
 
 // Polly v7 API → Polly v8 resilience pipelines through Microsoft.Extensions.Resilience (council round 8, P1): Polly then is
 // only a transitive dependency of a Microsoft package, which the OSMF exempts (TAAK-308 step 1).
-public class PollyFix : IFix
+public class PollyFix : IFix, IProjectFileMigration
 {
+    // Assemblies (= package ids) of the v7 API; a project referencing one is migrated.
+    private static readonly HashSet<string> s_v7Assemblies = new(["Polly", "Polly.Extensions.Http", "Microsoft.Extensions.Http.Polly"], StringComparer.OrdinalIgnoreCase);
+
     // The version our proofs compile every rewrite against (Directory.Packages.props): MIT, brings Polly.Core 8.
     public const string ResilienceVersion = "10.11.0";
+
+    // The Polly.Core that Microsoft.Extensions.Resilience 10.11.0 brings in (via Polly.Extensions 8.4.2, checked in the nuspecs).
+    public const string BundledPollyCoreVersion = "8.4.2";
 
     public string Id => "polly";
 
@@ -31,6 +38,30 @@ public class PollyFix : IFix
         AlsoRemovedPackages = ["Polly.Extensions.Http", "Microsoft.Extensions.Http.Polly"],
         AddedPackages = [new() { Name = "Microsoft.Extensions.Resilience", Version = ResilienceVersion }],
     };
+
+    // Council round 10, P9/G4: a target framework Microsoft.Extensions.Resilience does not support blocks the project's file edits.
+    // The patterns report the same code on each rewrite in that project, so its code stays on v7 and keeps building.
+    public IReadOnlyList<ManualResult> ProjectBlockers(Project project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        return PollyTargetFramework.Blockers(project);
+    }
+
+    public IReadOnlyList<ProjectFileEdit> EditsFor(Project project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        // Council round 10, P8: a direct Polly.Core reference goes once Microsoft.Extensions.Resilience brings it in, only when the
+        // declared version is at most the bundled one (the engine keeps a higher or unknown one with an Info row). The add is a
+        // no-op where the package migration already added it; both are blocked while the project has blocking rows (G4).
+        return ReferencesPollyV7(project)
+            ? [new PackageAddEdit { Name = "Microsoft.Extensions.Resilience", Version = ResilienceVersion }, new PackageRemoveEdit { Name = "Polly.Core", AtMostVersion = BundledPollyCoreVersion }]
+            : [];
+    }
+
+    // Package references show up as metadata references to the package's assembly; a Polly.Core-only (v8) project is not ours.
+    internal static bool ReferencesPollyV7(Project project) =>
+        project.MetadataReferences.OfType<PortableExecutableReference>()
+            .Any(r => r.FilePath is string path && s_v7Assemblies.Contains(Path.GetFileNameWithoutExtension(path)));
 
     public IReadOnlyList<IPattern> Patterns { get; } = [new WaitAndRetryAsyncPattern(), new RetryVariantsPattern()];
 }

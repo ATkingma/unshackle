@@ -37,6 +37,6 @@ public class RetryVariantsPattern : IPattern
         };
         return plan.Node is SyntaxNode replacement
             ? PatternResult.Fixed(replacement, s_pipelineNamespaces)
-            : PatternResult.Manual(plan.Reason ?? "No rewrite.");
+            : PatternResult.Manual(plan.Code ?? PollyReason.PolicyNotLocal, plan.Reason ?? "No rewrite.");
     }
 }

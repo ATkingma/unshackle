@@ -187,6 +187,8 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `moq.verify-all` | [plan](patterns/moq-verify-all-plan.md) | [models](patterns/moq-verify-all-modellen.md) | [verify](patterns/moq-verify-all-verify.md) | TAAK-307 |
 | `moq.throws` | [plan](patterns/moq-throws-plan.md) | [models](patterns/moq-throws-modellen.md) | [verify](patterns/moq-throws-verify.md) | TAAK-307 |
 | `moq.properties` | [plan](patterns/moq-properties-plan.md) | [models](patterns/moq-properties-modellen.md) | [verify](patterns/moq-properties-verify.md) | TAAK-307 |
+| `moq.returns-lambda` | [plan](patterns/moq-returns-lambda-plan.md) | [models](patterns/moq-returns-lambda-modellen.md) | [verify](patterns/moq-returns-lambda-verify.md) | TAAK-307 |
+| `moq.callback` | [plan](patterns/moq-callback-plan.md) | [models](patterns/moq-callback-modellen.md) | [verify](patterns/moq-callback-verify.md) | TAAK-307 |
 | `polly.wait-and-retry-async` | [plan](patterns/polly-wait-and-retry-async-plan.md) | [models](patterns/polly-wait-and-retry-async-modellen.md) | [verify](patterns/polly-wait-and-retry-async-verify.md) | TAAK-308 |
 | `polly.retry-variants` | [plan](patterns/polly-retry-variants-plan.md) | [models](patterns/polly-retry-variants-modellen.md) | [verify](patterns/polly-retry-variants-verify.md) | TAAK-308 |
 | `polly.add-policy-handler` | [plan](patterns/polly-add-policy-handler-plan.md) | [models](patterns/polly-add-policy-handler-modellen.md) | [verify](patterns/polly-add-policy-handler-verify.md) | TAAK-308 |

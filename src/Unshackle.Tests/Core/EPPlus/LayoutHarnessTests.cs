@@ -78,6 +78,23 @@ public class LayoutHarnessTests
         after.ShouldBe(before);
     }
 
+    // WorkbookSnapshot itself now has freeze and row-height facts: CellCompare alone sees a wrong layout.
+    [Theory]
+    [InlineData("sheet.View.FreezePanes(2, 1);", "package.Worksheets.Add(\"S\");", "package.Worksheets.Add(\"S\"); sheet.SheetView.Freeze(2, 0);", "S freeze")]
+    [InlineData("sheet.Row(2).Height = 30;", "package.Worksheets.Add(\"S\");", "package.Worksheets.Add(\"S\"); sheet.Row(2).Height = 31;", "S row 2 height")]
+    public void Snapshot_WrongLayout_IsReported(string layout, string anchor, string wrong, string key)
+    {
+        // Arrange
+        string before = Before.Replace("LAYOUT", "        " + layout, StringComparison.Ordinal);
+        string after = Translate(Before.Replace("LAYOUT", string.Empty, StringComparison.Ordinal).ReplaceLineEndings("\n")).Replace(anchor, wrong, StringComparison.Ordinal);
+
+        // Act
+        IReadOnlyList<string> differences = CellCompare.Differences(before, after);
+
+        // Assert
+        differences.ShouldContain(d => d.StartsWith(key, StringComparison.Ordinal), string.Join(Environment.NewLine, differences));
+    }
+
     // E8 evidence: the same width number is not the same column in the two libraries, so Column(i).Width stays Manual.
     [Fact]
     public void ColumnWidth_SameNumber_DiffersInHarness()

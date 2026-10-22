@@ -41,7 +41,7 @@ dotnet build && dotnet test                       # always check the result with
 CI, troubleshooting). **All supported patterns**: [docs/patterns.md](https://github.com/ATkingma/unshackle/blob/main/docs/patterns.md).
 
 `--fix` is `fluentassertions`, `mediatr` or `automapper` (`unshackle list` shows every pattern). Run one library at a time and
-commit in between, so each step is easy to review and revert.
+commit in between, so each step is easy to review and revert. Out of memory on a large solution? Add `--max-degree 2` (or `--sequential`); the result is the same, only slower.
 
 What `fix --dry-run` shows (from `samples/SampleShop`):
 

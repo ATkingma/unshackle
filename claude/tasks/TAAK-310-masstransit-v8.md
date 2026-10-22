@@ -1,6 +1,6 @@
 # TAAK-310 — MassTransit v8 → open-source bus (roadmap step 10)
 
-**Status**: step 3/4 — waiting for council (steps 1–2 done)
+**Status**: step 4/4 — report-only detector built; corpus round open
 **Created**: 2026-10-22
 **Goal**: A council decision on whether and how Unshackle migrates MassTransit v8 code, and if yes a `masstransit` fix at 100% on a corpus.
 
@@ -18,8 +18,8 @@
 
 - [x] 1. Feasibility: OpenTransit (status, API compatibility, license, maintainers) and the API distance to Wolverine/Rebus for consumers, publish/send, request/response, sagas, DI registration
 - [x] 2. Survey: repos with MassTransit 8 and the features they use; `docs/projectinfo/architectuur/corpus-masstransit.md`
-- [ ] 3. Council: target (fork swap, Wolverine, Rebus, or report-only scan) and scope
-- [ ] 4. If go: `MassTransitFix` skeleton, `claude/tasks/masstransit-queue.md`, patterns, corpus round to 100%, blind round, roadmap row
+- [x] 3. Council: round 8 T1–T5 — a report-only detector now; a package swap to OpenTransit only once it ships on NuGet; re-check Q1 2027
+- [ ] 4. Report-only `MassTransitFix`: 9 detector patterns, proofs and KingmaDoc docs done 2026-10-22; open: Cli registration, README rows, corpus round over the 24 repos, roadmap row
 
 ## Changes
 
@@ -32,6 +32,7 @@
 ## Progress log
 
 - 2026-10-22 (agent masstransit): steps 1–2 done in `docs/projectinfo/architectuur/corpus-masstransit.md` (OpenTransit unreleased, API-identical fork; v8 end-of-2026 date only from a third-party source; 24 repos surveyed source-level, list in `claude/tools/corpus-masstransit-repos.txt`). Council questions listed there.
+- 2026-10-22 (agent engine): step 4 detector. `MassTransitFix` (`masstransit`, `IReportOnlyFix`, no package) in `src/Unshackle.Core/Fixes/MassTransit/`, 9 `DetectorPattern` subclasses (registration, transport, outbox, retry, test-harness, consumer, consumer-definition, saga, request-client), each Manual with OpenTransit/Wolverine/Rebus guidance. Types: MassTransit 8.5.12. 9 manual proofs, `Core/MassTransit/MassTransitFixTests` (5), docs `docs/projectinfo/patterns/masstransit-*`. Full suite 1817 green.
 
 ## See also
 

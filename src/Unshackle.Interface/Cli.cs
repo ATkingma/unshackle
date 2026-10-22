@@ -34,7 +34,7 @@ public static class Cli
             new FluentAssertionsFix([MetadataReference.CreateFromFile(Path.Combine(AppContext.BaseDirectory, "References", "Shouldly.dll"))]),
             new MediatRFix(),
             new AutoMapperFix(),
-            new MoqFix(),
+            new MoqFix([MetadataReference.CreateFromFile(Path.Combine(AppContext.BaseDirectory, "References", "NSubstitute.dll"))]),
             new PollyFix(),
             new EPPlusFix(),
             new MassTransitFix(),

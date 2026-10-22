@@ -182,6 +182,8 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `automapper.unused-imapper` | [plan](patterns/automapper-unused-imapper-plan.md) | [models](patterns/automapper-unused-imapper-modellen.md) | [verify](patterns/automapper-unused-imapper-verify.md) | TAAK-289 |
 | `automapper.mock-set-up` | [plan](patterns/automapper-mock-set-up-plan.md) | [models](patterns/automapper-mock-set-up-modellen.md) | [verify](patterns/automapper-mock-set-up-verify.md) | TAAK-311 |
 | `moq.create` | [plan](patterns/moq-create-plan.md) | [models](patterns/moq-create-modellen.md) | [verify](patterns/moq-create-verify.md) | TAAK-307 |
+| `moq.setup-returns` | [plan](patterns/moq-setup-returns-plan.md) | [models](patterns/moq-setup-returns-modellen.md) | [verify](patterns/moq-setup-returns-verify.md) | TAAK-307 |
+| `moq.verify` | [plan](patterns/moq-verify-plan.md) | [models](patterns/moq-verify-modellen.md) | [verify](patterns/moq-verify-verify.md) | TAAK-307 |
 | `polly.wait-and-retry-async` | [plan](patterns/polly-wait-and-retry-async-plan.md) | [models](patterns/polly-wait-and-retry-async-modellen.md) | [verify](patterns/polly-wait-and-retry-async-verify.md) | TAAK-308 |
 | `epplus.license-context` | [plan](patterns/epplus-license-context-plan.md) | [models](patterns/epplus-license-context-modellen.md) | [verify](patterns/epplus-license-context-verify.md) | TAAK-309 |
 | `epplus.package` | [plan](patterns/epplus-package-plan.md) | [models](patterns/epplus-package-modellen.md) | [verify](patterns/epplus-package-verify.md) | TAAK-309 |

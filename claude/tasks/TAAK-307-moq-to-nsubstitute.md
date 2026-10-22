@@ -1,6 +1,6 @@
 # TAAK-307 — Moq → NSubstitute (roadmap step 7)
 
-**Status**: step 1/6 — not started
+**Status**: step 1/6 done (survey); step 2 (council) next
 **Created**: 2026-10-22
 **Goal**: A `moq` fix that rewrites Moq 4.x test code to NSubstitute, at 100% on a Moq corpus (all builds, 0 regressions) and a blind round.
 
@@ -16,7 +16,7 @@
 
 ## Steps
 
-- [ ] 1. Survey: 10-20 open-source repos with Moq 4.x tests (pinned shas, build status); API frequency per call shape; `docs/projectinfo/architectuur/corpus-moq.md`
+- [x] 1. Survey: 10-20 open-source repos with Moq 4.x tests (pinned shas, build status); API frequency per call shape; `docs/projectinfo/architectuur/corpus-moq.md`
 - [ ] 2. Council: Fixed/Manual line for strict mocks, sequences, protected members, VerifyAll
 - [ ] 3. `MoqFix` skeleton (+ registration, old/new package swap, using swap) with proofs; `claude/tasks/moq-queue.md` ranked by frequency
 - [ ] 4. Patterns from the queue (one task per row via taak-start), each with plan/verify docs and proofs
@@ -30,6 +30,12 @@
 | **Where** | new `Fixes/Moq/`, tests, docs |
 | **How**   | New fix |
 | **Why**   | Large user base wants off Moq; mechanical test-code rewrite proven by user tests |
+
+## Progress log
+
+- 2026-10-22 (agent moq): step 1 done. 13 repos (5 new clones in `D:/playground/corpus-moq/src`, 8 reused), list in
+  `claude/tools/corpus-moq-repos.txt`, results in `docs/projectinfo/architectuur/corpus-moq.md` (frequencies, draft queue,
+  council questions). Radarr build blocked by a full `C:` disk (retry later); EventFlow not built.
 
 ## See also
 

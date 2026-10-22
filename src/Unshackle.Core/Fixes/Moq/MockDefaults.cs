@@ -2,94 +2,114 @@ using Microsoft.CodeAnalysis;
 
 namespace Unshackle.Core.Fixes.Moq;
 
-// Where an unconfigured Moq mock and an NSubstitute substitute of the same interface answer differently. A test that
-// passes the mock without setups still lets the code under test call it, so any such member makes the rewrite unproven.
+// Where an unconfigured Moq mock and an NSubstitute substitute of the same interface answer differently (council round 9, Q1).
 //   new Mock<T>(): DefaultValue.Empty (null for string, interfaces, delegates), properties do not remember a set value.
 //   Mock.Of<T>(): DefaultValue.Mock (a mock for every mockable type, also non-sealed classes) and all properties stubbed.
 //   NSubstitute: "" for string, a substitute for interfaces, delegates and pure-virtual classes, properties remember.
-// Both give empty arrays, empty IEnumerable/IQueryable and completed tasks.
+// Both give empty arrays, empty IEnumerable/IQueryable, completed tasks and default value types.
+// A known difference (string, interface or delegate → Moq's null, also inside Task<T>/ValueTask<T>) is pinned with ReturnsNull();
+// any other difference, or a settable property, blocks the rewrite.
 public static class MockDefaults
 {
-    public static string? Difference(ITypeSymbol mocked, bool mockOf) =>
-        MembersDifference(mocked, mockOf, settersStubbed: mockOf, new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default));
+    public const int MaxPins = 10;
 
-    private static string? MembersDifference(ITypeSymbol type, bool mockOf, bool settersStubbed, HashSet<ITypeSymbol> visited)
+    // setUp: members the test sets up for every argument; they get no pin and do not count.
+    public static DefaultsPlan Plan(ITypeSymbol mocked, bool mockOf, IEnumerable<ISymbol> setUp)
     {
-        if (!visited.Add(type))
+        var exempt = new HashSet<ISymbol>(setUp, SymbolEqualityComparer.Default);
+        var pins = new List<ISymbol>();
+        foreach (ITypeSymbol owner in (IEnumerable<ITypeSymbol>)[mocked, .. mocked.AllInterfaces])
         {
-            return null;
-        }
-
-        foreach (ITypeSymbol owner in (IEnumerable<ITypeSymbol>)[type, .. type.AllInterfaces])
-        {
-            foreach (ISymbol member in owner.GetMembers())
+            foreach (ISymbol member in owner.GetMembers().Where(m => !m.IsStatic))
             {
-                string? difference = member switch
+                string? blocker = member switch
                 {
-                    IPropertySymbol { IsStatic: false } p when p.SetMethod is not null && !settersStubbed =>
+                    IPropertySymbol { SetMethod: not null } p when !mockOf =>
                         $"{p.Name} has a setter (NSubstitute remembers a set value, a Moq mock does not)",
-                    IPropertySymbol { IsStatic: false } p when p.GetMethod is not null => Returned(p.Type, mockOf, visited) is { } d ? $"{p.Name} returns {d}" : null,
-                    IMethodSymbol { IsStatic: false, MethodKind: MethodKind.Ordinary } m =>
-                        Returned(m.ReturnType, mockOf, visited) is { } d ? $"{m.Name} returns {d}" : null,
+                    IPropertySymbol { GetMethod: not null } p => Classify(p.Type, mockOf) switch
+                    {
+                        Kind.Same => null,
+                        Kind.Pin when !p.IsIndexer => Pin(p, exempt, pins),
+                        _ => $"{p.Name} returns {p.Type.ToDisplayString()}, whose default differs in a way that cannot be pinned",
+                    },
+                    IMethodSymbol { MethodKind: MethodKind.Ordinary } m => Classify(m.ReturnType, mockOf) switch
+                    {
+                        Kind.Same => null,
+                        Kind.Pin when !m.IsGenericMethod && m.Parameters.All(a => a.RefKind == RefKind.None && !a.IsParams) => Pin(m, exempt, pins),
+                        _ => $"{m.Name} returns {m.ReturnType.ToDisplayString()}, whose default differs in a way that cannot be pinned",
+                    },
                     _ => null,
                 };
-                if (difference is not null)
+                if (blocker is not null)
                 {
-                    return difference;
+                    return new() { Blocker = "DefaultValueDiffers: an unconfigured " + mocked.Name + " answers differently in NSubstitute: " + blocker };
                 }
             }
+        }
+
+        return pins.Count > MaxPins
+            ? new() { Blocker = $"TooManyDefaultPins: {pins.Count} members of {mocked.Name} would need Moq's default pinned (max {MaxPins})" }
+            : new() { Pins = pins };
+    }
+
+    private static string? Pin(ISymbol member, HashSet<ISymbol> exempt, List<ISymbol> pins)
+    {
+        if (!exempt.Contains(member))
+        {
+            pins.Add(member);
         }
 
         return null;
     }
 
-    private static string? Returned(ITypeSymbol type, bool mockOf, HashSet<ITypeSymbol> visited)
+    private enum Kind
+    {
+        Same,
+        Pin,
+        Unknown,
+    }
+
+    private static Kind Classify(ITypeSymbol type, bool mockOf)
     {
         if (type.SpecialType == SpecialType.System_Void || type is IArrayTypeSymbol)
         {
-            return null;
-        }
-
-        if (type is ITypeParameterSymbol)
-        {
-            return "a type parameter (its default differs per type)";
+            return Kind.Same;
         }
 
         if (type.SpecialType == SpecialType.System_String)
         {
-            return "string (Moq: null, NSubstitute: \"\")";
+            return Kind.Pin;
         }
 
         if (type is not INamedTypeSymbol named)
         {
-            return $"{type.ToDisplayString()} (no proven default)";
+            return Kind.Unknown;
         }
 
         string definition = named.OriginalDefinition.ToDisplayString();
         if (definition is "System.Threading.Tasks.Task<TResult>" or "System.Threading.Tasks.ValueTask<TResult>")
         {
-            return Returned(named.TypeArguments[0], mockOf, visited);
+            return Classify(named.TypeArguments[0], mockOf);
         }
 
         if (named.IsValueType || definition is "System.Threading.Tasks.Task" or "System.Collections.IEnumerable"
             or "System.Collections.Generic.IEnumerable<T>" or "System.Linq.IQueryable" or "System.Linq.IQueryable<T>")
         {
-            return null;
+            return Kind.Same;
         }
 
         if (named.TypeKind is TypeKind.Interface or TypeKind.Delegate)
         {
-            // Mock.Of: both return a recursive mock, whose own members must agree too (Moq's inner mocks do not stub properties).
-            return mockOf ? MembersDifference(named, mockOf, settersStubbed: false, visited)
-                : $"{named.ToDisplayString()} (Moq: null, NSubstitute: a substitute)";
+            // Mock.Of answers with a recursive mock, not null: no known pin.
+            return mockOf ? Kind.Unknown : Kind.Pin;
         }
 
         if (mockOf)
         {
-            return named.IsSealed ? null : $"{named.ToDisplayString()} (Moq: a mock, NSubstitute: null unless the class is pure virtual)";
+            return named.IsSealed ? Kind.Same : Kind.Unknown;
         }
 
-        return IsPureVirtual(named) ? $"{named.ToDisplayString()} (Moq: null, NSubstitute: a substitute)" : null;
+        return IsPureVirtual(named) ? Kind.Unknown : Kind.Same;
     }
 
     // NSubstitute's AutoSubstituteProvider: not sealed, a public parameterless constructor, every public member virtual or abstract.

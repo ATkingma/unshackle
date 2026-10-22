@@ -17,6 +17,7 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 | --- | --- | --- | --- | --- | --- |
 | 23 | am-mocked-imapper | TAAK-311 | `src/Unshackle.Core/Fixes/AutoMapper/**`, existing AutoMapper-only test files in `src/Unshackle.Tests/Core/` + new ones in `src/Unshackle.Tests/Core/AutoMapper/**`, `src/Unshackle.Tests/Proofs/AutoMapper/**`, `docs/projectinfo/patterns/automapper-*`, `claude/tasks/TAAK-311-*.md` | — | 2026-10-22 |
 | 22b | engine → masstransit-detector | TAAK-310 st 4 | `src/Unshackle.Core/Fixes/MassTransit/**`, `src/Unshackle.Tests/Core/MassTransit/**`, `src/Unshackle.Tests/Proofs/MassTransit/**`, `docs/projectinfo/patterns/masstransit-*`, `claude/tasks/TAAK-310-*.md`, ProofTests.cs entry | 360–369 | 2026-10-22 |
+| 24b | mr-assembly-scan → engine-2 | TAAK-318 | `src/Unshackle.Core/*.cs` (root), `src/Unshackle.Core/Abstractions/**`, `src/Unshackle.Core/Models/**`, `src/Unshackle.DataAccess/**`, `src/Unshackle.Tests/Core/Engine/**`, `src/Unshackle.Tests/DataAccess/**`, `docs/projectinfo/architectuur/core.md`, `claude/tasks/TAAK-318-*.md` | — | 2026-10-22 |
 | — | main | TAAK-303, 305 st 1 | git branches/worktrees, `claude/tasks/TAAK-303-*.md`, `claude/tasks/TAAK-305-*.md` | — | 2026-10-22 |
 
 Shared grant (2026-10-22): `src/Unshackle.Tests/ProofTests.cs` — moq-, polly- and epplus-skeleton may each add only their own `s_fixes` entry; the main session resolves merge conflicts.

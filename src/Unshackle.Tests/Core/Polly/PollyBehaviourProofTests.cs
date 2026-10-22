@@ -17,6 +17,9 @@ public class PollyBehaviourProofTests
     [InlineData("local-block-delay", "delay 1, delay 2, delay 3, caught call 4, calls 4")]
     [InlineData("inline-result", "call 1, call 2, call 3, result 30")]
     [InlineData("typed-local-not-handled", "caught call 1, calls 1")]
+    [InlineData("filter-or-predicate", "throw t, throw go, throw stop, caught InvalidOperationException stop")]
+    [InlineData("filter-handle-result", "got -1, got 0, got 5, result 5, got -2, got -3, got -4, result -4")]
+    [InlineData("filter-policy-of-t", "result ok left 0")]
     public async Task Proof_BeforeAndAfter_SameTrace(string proof, string expected)
     {
         // Arrange

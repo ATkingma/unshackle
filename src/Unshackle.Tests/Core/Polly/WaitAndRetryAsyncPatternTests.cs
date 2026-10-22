@@ -54,10 +54,9 @@ public class WaitAndRetryAsyncPatternTests
 
     [Theory]
     [InlineData("var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(0, a => TimeSpan.Zero); await p.ExecuteAsync(() => Task.CompletedTask);", nameof(PollyReason.RetryCountNotLiteral))]
-    [InlineData("var p = Policy.Handle<TimeoutException>(e => true).WaitAndRetryAsync(2, a => TimeSpan.Zero); await p.ExecuteAsync(() => Task.CompletedTask);", nameof(PollyReason.ExceptionFilterNotSupported))]
-    [InlineData("var p = Policy.Handle<TimeoutException>().Or<ArgumentException>().WaitAndRetryAsync(2, a => TimeSpan.Zero); await p.ExecuteAsync(() => Task.CompletedTask);", nameof(PollyReason.ExceptionFilterNotSupported))]
     [InlineData("var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, Delay); await p.ExecuteAsync(() => Task.CompletedTask);", nameof(PollyReason.DelayNotLambda))]
-    [InlineData("var args = 1; var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, a => TimeSpan.FromSeconds(args)); await p.ExecuteAsync(() => Task.CompletedTask);", nameof(PollyReason.NameClash))]
+    [InlineData("var p = Policy.HandleInner<TimeoutException>().WaitAndRetryAsync(2, a => TimeSpan.Zero); await p.ExecuteAsync(() => Task.CompletedTask);", nameof(PollyReason.ExceptionFilterNotSupported))]
+    [InlineData("var p = Policy.HandleResult<int>(1).WaitAndRetryAsync(2, a => TimeSpan.Zero); await p.ExecuteAsync(() => Task.FromResult(1));", nameof(PollyReason.ExceptionFilterNotSupported))]
     [InlineData("var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, a => TimeSpan.Zero); await p.ExecuteAsync(ct => Task.CompletedTask, CancellationToken.None);", nameof(PollyReason.ExecuteOverloadNotSupported))]
     [InlineData("var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, a => TimeSpan.Zero); await p.ExecuteAsync(Work);", nameof(PollyReason.ExecuteNotLambda))]
     [InlineData("var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, a => TimeSpan.Zero); await p.ExecuteAsync(() => Task.CompletedTask); Keep(p);", nameof(PollyReason.PolicyUsedBeyondExecute))]
@@ -76,6 +75,38 @@ public class WaitAndRetryAsyncPatternTests
     }
 
     [Fact]
+    public void Rewrite_NameTakenInScope_UsesFreshName()
+    {
+        // Arrange (council P10)
+        (SyntaxNode root, SemanticModel model) = Parse("var args = 1; var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, a => TimeSpan.FromSeconds(args)); await p.ExecuteAsync(() => Task.CompletedTask);");
+        var pattern = new WaitAndRetryAsyncPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).First(), model);
+
+        // Assert
+        string text = result.ShouldBeOfType<FixedResult>().NewNodes.ShouldHaveSingleItem().ToString();
+        text.ShouldContain("DelayGenerator = args1 =>");
+        text.ShouldContain("SleepDuration(args1.AttemptNumber + 1)");
+    }
+
+    [Theory]
+    [InlineData("NETCOREAPP;NETCOREAPP3_0")]
+    [InlineData("NETFRAMEWORK;NET452")]
+    public void Rewrite_UnsupportedTargetFramework_Manual(string symbols)
+    {
+        // Arrange (council P9)
+        (SyntaxNode root, SemanticModel model) = Parse("var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, a => TimeSpan.Zero); await p.ExecuteAsync(() => Task.CompletedTask);", symbols.Split(';'));
+        var pattern = new WaitAndRetryAsyncPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).First(), model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldStartWith(nameof(PollyReason.TargetFrameworkUnsupported) + ": ");
+    }
+
+    [Fact]
     public void Rewrite_GenericResultFromTaskExpression_WrapsInTypedValueTask()
     {
         // Arrange
@@ -90,13 +121,14 @@ public class WaitAndRetryAsyncPatternTests
         result.ShouldBeOfType<FixedResult>().NewNodes.ShouldHaveSingleItem().ToString().ShouldBe("p.ExecuteAsync(_ => new ValueTask<int>(Task.FromResult(1)))");
     }
 
-    private static (SyntaxNode Root, SemanticModel Model) Parse(string statements)
+    private static (SyntaxNode Root, SemanticModel Model) Parse(string statements, params string[] preprocessorSymbols)
     {
         SyntaxTree tree = CSharpSyntaxTree.ParseText(
             "using System;\nusing System.Threading;\nusing System.Threading.Tasks;\nusing Polly;\n"
             + "public static class Own { public static Task WaitAndRetryAsync(int n, Func<int, TimeSpan> f) => Task.CompletedTask; }\n"
             + "public class T { static TimeSpan Delay(int a) => TimeSpan.Zero; static Task Work() => Task.CompletedTask; static void Keep(object o) { }\n"
             + "public async Task M() { " + statements + " } }",
+            new CSharpParseOptions(preprocessorSymbols: preprocessorSymbols),
             cancellationToken: TestContext.Current.CancellationToken);
         SemanticModel model = CSharpCompilation.Create("Check", [tree], PollyReferences.Before).GetSemanticModel(tree);
         return (tree.GetRoot(TestContext.Current.CancellationToken), model);

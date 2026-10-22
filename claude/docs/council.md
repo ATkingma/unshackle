@@ -140,6 +140,17 @@ one place, and a proof pins the behaviour that could change (a proof that passes
 | S3 | Non-C# edits | An `IProjectFileMigration` Strategy per fix, a closed set of exact typed edits (package rename/remove/add, one MSBuild property, known config file rename/transform), applied by the Fixer after the document pass and only when the project's C# part has 0 blocking Manual rows; each edit reported with file:line; `OutputType`/`IsTestProject` always warn; a before/after snapshot proof per edit kind. Patterns never write files. |
 | S4 | Order after step 10 | 11 SpecFlow → Reqnroll, 12 IdentityServer4 detector. iTextSharp 5 slice next only after a scout proves the read/extract/merge slice provable; EF bulk parked (Pragmatist accepted parking). No new library before Moq, Polly and EPPlus are at 100% and the MassTransit detector is done. |
 
+### 2026-10-22 — round 9: Moq defaults, proofs, target version (moq.create)
+
+Questions from the TAAK-307 skeleton. Two rounds; all joint (amendments of all three members adopted).
+
+| # | Decision | Joint rule |
+| --- | --- | --- |
+| Q1 | Default values that differ (Moq null vs NSubstitute "" / auto-substitute) | Pin Moq's default for **every** member of the mocked type whose default differs (set from the type, deterministic), only for known defaults: string → null, interface/delegate → null. Members the test sets up explicitly get no pin and do not count. Any differing member outside the known list, or a settable property, makes the mock Manual (`DefaultValueDiffers`); never silently unpinned. More than `MockDefaults.MaxPins` (= 10) pins → Manual (`TooManyDefaultPins`), counted separately in corpus runs to revisit the threshold with numbers. Each pin is an Info line. Unresolvable type → Manual. |
+| Q2 | Run-time proof | Required for every Moq pattern whose Fixed status depends on defaults/pins, argument matching, call counting, returns or throws: `before` runs on Moq and `after` on NSubstitute against the same consumer; compare return values, exceptions and Verify/Received pass/fail; include a case that must fail under both. Compile-only only for a pure syntax rename, stated explicitly in that pattern's plan. The harness is built first (next TAAK-307 sub-task); Q1 pins ship only with it. |
+| Q3 | NSubstitute version | Always 6.2.0 (netstandard2.0 + net8.0 covers what 5.3.0 covers); a TFM that is not netstandard2.0-compatible → Manual (`TargetFrameworkUnsupported`). |
+| Q4 | Unused mock | Fixed (`Substitute.For<T>()`), never removed; Info line "mock never used". |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

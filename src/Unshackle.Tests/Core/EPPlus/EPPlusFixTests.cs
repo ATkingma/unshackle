@@ -29,7 +29,7 @@ public class EPPlusFixTests
         package.ShouldNotBeNull();
         package.RemovedPackage.ShouldBe("EPPlus");
         package.AddedPackages.Select(p => (p.Name, p.Version)).ShouldBe([("ClosedXML", typeof(global::ClosedXML.Excel.XLWorkbook).Assembly.GetName().Version!.ToString(3))]);
-        fix.Patterns.Select(p => p.Id).ShouldBe(["epplus.license-context", "epplus.package"]);
+        fix.Patterns.Select(p => p.Id).ShouldBe(["epplus.license-context", "epplus.package", "epplus.unsupported"]);
     }
 
     [Fact]
@@ -127,8 +127,8 @@ public class EPPlusFixTests
         (FixReport report, string after) = await FixAsync(before);
 
         // Assert
-        report.Findings.Count.ShouldBe(2);
-        report.Findings.ShouldAllBe(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains("Several ExcelPackage locals"));
+        report.Findings.ShouldAllBe(f => f.Result is ManualResult);
+        report.Findings.Count(f => ((ManualResult)f.Result).Reason.Contains("Several ExcelPackage locals")).ShouldBe(2);
         after.ShouldBe(before);
     }
 
@@ -192,5 +192,53 @@ public class EPPlusFixTests
         Solution solution = TestSolution.Create(code, EPPlusReferences.EPPlus);
         FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "epplus" }, TestContext.Current.CancellationToken);
         return (report, await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public void UnsupportedPattern_UnresolvedEPPlus5Member_NamedWithItsReceiver()
+    {
+        // Arrange: E2, ToCollection is EPPlus 7; against 4.5.3.3 only its receiver resolves.
+        const string code = """
+            using OfficeOpenXml;
+
+            internal static class Report
+            {
+                internal static object Read(ExcelWorksheet sheet) => sheet.Cells.ToCollection<string>();
+            }
+            """;
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(code, cancellationToken: TestContext.Current.CancellationToken);
+        SemanticModel model = CSharpCompilation.Create("Check", [tree], EPPlusReferences.EPPlus).GetSemanticModel(tree);
+        var pattern = new UnsupportedPattern();
+
+        // Act
+        SyntaxNode found = pattern.Find(tree.GetRoot(TestContext.Current.CancellationToken), model).ShouldHaveSingleItem();
+        PatternResult result = pattern.Rewrite(found, model);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("ExcelRange.ToCollection (unresolved, EPPlus 5+)");
+    }
+
+    [Fact]
+    public async Task UnsupportedPattern_PublicApiInTestProject_NotE6()
+    {
+        // Arrange: a project referencing a test framework is not packable, so a public signature is an ordinary Manual row.
+        const string code = """
+            using OfficeOpenXml;
+
+            public static class SheetFactory
+            {
+                public static ExcelWorksheet Create(ExcelPackage package) => package.Workbook.Worksheets.Add("A");
+            }
+            """;
+        var fixer = new Fixer([new EPPlusFix()]);
+        Solution solution = TestSolution.Create(code,
+            [.. EPPlusReferences.EPPlus, MetadataReference.CreateFromFile(typeof(Xunit.FactAttribute).Assembly.Location)]);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "epplus" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.StartsWith("[UnmigratedEPPlusApi]", StringComparison.Ordinal));
+        report.Findings.ShouldNotContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains("PublicApiExposesOldLibrary"));
     }
 }

@@ -57,6 +57,8 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tools/check_pattern_docs.py` | Pattern-docs guard (hook modes + `check` for verify-head); `.claude/hooks/check-pattern-docs.sh` wraps it |
 | `docs/projectinfo/architectuur/candidate-identityserver.md` | Scout TAAK-380: IdentityServer4, no-go for a fix, go for report-only |
 | `docs/projectinfo/architectuur/candidate-pdf.md` | Scout TAAK-400: iTextSharp narrow slice conditional, iText 7/QuestPDF no-go |
+| `docs/projectinfo/architectuur/corpus-masstransit.md` | MassTransit 8: OpenTransit/v8 support facts, distance to Wolverine and Rebus, 24-repo source survey (TAAK-310) |
+| `claude/tools/corpus-masstransit-repos.txt` | MassTransit survey repo list |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |
 | `claude/tasks/TAAK-380-scout-identityserver.md` | Scout IdentityServer4 → OpenIddict/Duende (go/no-go research) |

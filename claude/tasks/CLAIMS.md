@@ -18,7 +18,6 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 | 4 | moq | TAAK-307 st 1 | `docs/projectinfo/architectuur/corpus-moq.md`, `claude/tools/corpus-moq-repos.txt`, `claude/tasks/TAAK-307-*.md` | 320–339 | 2026-10-22 |
 | 5 | polly | TAAK-308 st 1–2 | `docs/projectinfo/architectuur/corpus-polly.md`, `claude/tools/corpus-polly-repos.txt`, `claude/tasks/TAAK-308-*.md` | 340–349 | 2026-10-22 |
 | 6 | epplus | TAAK-309 st 1 | `docs/projectinfo/architectuur/corpus-epplus.md`, `claude/tools/corpus-epplus-repos.txt`, `claude/tasks/TAAK-309-*.md` | 350–359 | 2026-10-22 |
-| 7 | masstransit | TAAK-310 st 1 | `docs/projectinfo/architectuur/corpus-masstransit.md`, `claude/tools/corpus-masstransit-repos.txt`, `claude/tasks/TAAK-310-*.md` | 360–369 | 2026-10-22 |
 | 8 | scout-specflow | candidate: SpecFlow → Reqnroll | `docs/projectinfo/architectuur/candidate-specflow.md` (new), `claude/tasks/TAAK-370-scout-specflow.md` | 371–379 | 2026-10-22 |
 | 10 | scout-imagesharp | candidate: ImageSharp → SkiaSharp/Magick.NET | `docs/projectinfo/architectuur/candidate-imagesharp.md` (new), `claude/tasks/TAAK-390-scout-imagesharp.md` | 391–399 | 2026-10-22 |
 | 12 | scout-swashbuckle | candidate: Swashbuckle → Microsoft.AspNetCore.OpenApi | `docs/projectinfo/architectuur/candidate-swashbuckle.md` (new), `claude/tasks/TAAK-410-scout-swashbuckle.md` | 411–419 | 2026-10-22 |
@@ -34,6 +33,7 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 | docs | TAAK-301 | done, merged 470c734 | 2026-10-22 |
 | analysis | TAAK-306 st 1–2 | done, TAAK-311..315 created, merged 470c734 | 2026-10-22 |
 | tooling | TAAK-302 | done, merged | 2026-10-22 |
+| masstransit | TAAK-310 st 1–2 | done, waits for council | 2026-10-22 |
 | scout-identityserver | TAAK-380 | no-go fix, go report-only (council) | 2026-10-22 |
 | scout-pdf | TAAK-400 | iTextSharp slice conditional, rest no-go (council) | 2026-10-22 |
 

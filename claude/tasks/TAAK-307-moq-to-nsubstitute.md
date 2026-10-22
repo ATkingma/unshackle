@@ -1,6 +1,6 @@
 # TAAK-307 — Moq → NSubstitute (roadmap step 7)
 
-**Status**: steps 1-3/6 done (survey, council round 8, skeleton + `moq.create`); step 4 next (queue row 3)
+**Status**: steps 1-3/6 done; step 4 in progress (queue rows 1-4 done, row 10 next)
 **Created**: 2026-10-22
 **Goal**: A `moq` fix that rewrites Moq 4.x test code to NSubstitute, at 100% on a Moq corpus (all builds, 0 regressions) and a blind round.
 
@@ -45,6 +45,13 @@
   `src/Unshackle.Tests/Proofs/Moq/Create/`, 10 unit tests in `src/Unshackle.Tests/Core/Moq/`, plan/modellen/verify
   `docs/projectinfo/patterns/moq-create-*`, queue `claude/tasks/moq-queue.md`. `ProofTests` got a `Moq` entry (granted by the
   coordinator). Open for the main session: `Cli.cs` registration, README row, INDEX line. Council questions in the final report.
+
+- 2026-10-22 (agent moq-skeleton, continued): council round 9 applied. Row 2 `ArgMatchers`/`MockCall` (helper, no own pattern).
+  Run-time harness `MoqRuntimeProofTests` + `Proofs/Moq/_Runtime/` (before on Moq, after on NSubstitute via the real fix, same outcome,
+  `// Expect:` cases that fail under both). `moq.create` now pins Moq's null defaults (`ReturnsNull`, max 10, Info line), Info
+  "mock never used"; shared per-mock analysis in `MockUsage`/`MockUseRules`. Row 3 `moq.setup-returns` and row 4 `moq.verify`
+  with proofs, run-time proofs and plan/modellen/verify. Open: Q3 `TargetFrameworkUnsupported` needs the project TFM (Fixer/project
+  step, not a pattern); README rows for moq.setup-returns and moq.verify; `Cli.cs` should pass the NSubstitute reference.
 
 ## See also
 

@@ -22,6 +22,13 @@ public static class MockUseRules
             return plan.Blocker;
         }
 
+        // Row 4: m.Verify(x => .., Times);
+        if (pendingUses && use.Parent is MemberAccessExpressionSyntax { Name.Identifier.Text: "Verify", Parent: InvocationExpressionSyntax verify } verifyAccess
+            && verifyAccess.Expression == use && VerifySyntax.IsVerify(verify, model))
+        {
+            return VerifySyntax.Plan(verify, model).Blocker;
+        }
+
         string shown = (use.Parent as MemberAccessExpressionSyntax)?.ToString() ?? use.Parent?.ToString() ?? use.ToString();
         return $"MockUsedBeyondObject: {use} is used as a Mock<T> (`{Shorten(shown)}`); that use needs a later moq-queue.md row";
     }

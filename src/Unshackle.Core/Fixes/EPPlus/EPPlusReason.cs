@@ -10,4 +10,5 @@ public enum EPPlusReason
     WorksheetIndexBaseNotProvable,
     UnmappedEPPlusStyle,
     FillWithoutSolidPattern,
+    UncoveredRuntimeType,
 }

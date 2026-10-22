@@ -1,4 +1,6 @@
 using System.Buffers;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -38,20 +40,82 @@ internal class WorkbookUses
             }
         }
 
-        // A worksheet local found above: only its Name is mapped yet (cells are row 4).
+        // A worksheet local found above: its Name and its single cells (rows 4-5).
         for (int i = 0; i < _worksheets.Count; i++)
         {
             foreach (IdentifierNameSyntax use in UsesOf(_worksheets[i]))
             {
-                if (!IsNameAccess(use))
+                if (!IsNameAccess(use) && !MapCellUse(use))
                 {
-                    return Models.PatternResult.Manual($"Worksheet local {_worksheets[i].Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue row 4+).");
+                    return _unknownVersion ?? Models.PatternResult.Manual($"Worksheet local {_worksheets[i].Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue row 4+).");
                 }
             }
         }
 
         return null;
     }
+
+    // ws.Cells[r, c] / ws.Cells["A1"] → ws.Cell(r, c) / ws.Cell("A1"), as the target of a covered Value assignment (row 5, E4) or as the
+    // receiver of a style statement StylesPattern already migrated (row 8).
+    private bool MapCellUse(IdentifierNameSyntax use)
+    {
+        if (use.Parent is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Cells" } cells || cells.Expression != use
+            || cells.Parent is not ElementAccessExpressionSyntax { ArgumentList.Arguments: var arguments } cell || !IsSingleCell(arguments))
+        {
+            return false;
+        }
+
+        StatementSyntax? statement = cell.FirstAncestorOrSelf<StatementSyntax>();
+        bool styled = statement is not null && statement.HasAnnotations(StylesPattern.MigratedAnnotationKind)
+            && cell.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Style" };
+        bool value = cell.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Value" } access
+            && access.Parent is AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax } assignment
+            && assignment.Left == access && IsCovered(assignment.Right);
+        if (!styled && !value)
+        {
+            return false;
+        }
+
+        Replacements[cell] = SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, use, SyntaxFactory.IdentifierName("Cell")),
+            SyntaxFactory.ArgumentList(arguments));
+        return true;
+    }
+
+    // Two int row/column expressions (both libraries are 1-based), or one literal single-cell address.
+    private bool IsSingleCell(SeparatedSyntaxList<ArgumentSyntax> arguments) => arguments switch
+    {
+        [var row, var column] => _model.GetTypeInfo(row.Expression).Type?.SpecialType == SpecialType.System_Int32
+            && _model.GetTypeInfo(column.Expression).Type?.SpecialType == SpecialType.System_Int32,
+        [{ Expression: LiteralExpressionSyntax address }] => address.IsKind(SyntaxKind.StringLiteralExpression)
+            && Regex.IsMatch(address.Token.ValueText, "^[A-Z]{1,3}[1-9][0-9]{0,6}$", RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1)),
+        _ => false,
+    };
+
+    // E4: the value types the harness proves equal (CellValueHarnessTests). ClosedXML writes numbers with 15 significant digits and EPPlus 4.5.3.3
+    // with 17, and EPPlus writes a DateTime as a General serial number: those, and every other type, are Manual (UncoveredRuntimeType).
+    private bool IsCovered(ExpressionSyntax value)
+    {
+        ITypeSymbol? type = _model.GetTypeInfo(value).Type;
+        switch (type?.SpecialType)
+        {
+            case SpecialType.System_String or SpecialType.System_Boolean or SpecialType.System_Int32 or SpecialType.System_Int16
+                or SpecialType.System_Byte or SpecialType.System_SByte or SpecialType.System_UInt16:
+                return true;
+            case SpecialType.System_Double or SpecialType.System_Single or SpecialType.System_Decimal or SpecialType.System_Int64
+                when _model.GetConstantValue(value) is { HasValue: true, Value: { } constant } && RoundTripsIn15Digits(Convert.ToDouble(constant, CultureInfo.InvariantCulture)):
+                return true;
+            default:
+                _unknownVersion ??= Models.PatternResult.Manual(EPPlusReason.UncoveredRuntimeType,
+                    $"cell value '{Shorten(value)}' (line {Line(value)}) has type {type?.ToDisplayString() ?? "unknown"}, which the cell-compare harness does not prove equal "
+                    + "(string, bool and int types always; double, float, decimal and long only as a constant that round-trips in 15 digits; DateTime is written as a "
+                    + "General serial number by EPPlus 4.5.3.3). Write it by hand.");
+                return false;
+        }
+    }
+
+    private static bool RoundTripsIn15Digits(double value) =>
+        double.Parse(value.ToString("G15", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture).Equals(value);
 
     private IEnumerable<IdentifierNameSyntax> UsesOf(ILocalSymbol local) =>
         _scope.DescendantNodes().OfType<IdentifierNameSyntax>()

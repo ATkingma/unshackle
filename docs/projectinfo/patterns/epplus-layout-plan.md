@@ -45,9 +45,9 @@ row-height form.
 ## Design
 
 `LayoutMapping.Shape` recognises the statement by the EPPlus type of its receiver (`ExcelRange(Base)`, `ExcelRow`, `ExcelColumn`,
-`ExcelWorksheetView`); `LayoutPattern.Rewrite` maps it per `LayoutShape`. **Behaviour proof (E1)**: `LayoutHarnessTests` runs the pattern
-alone, translates the scaffold of rows 2–4 by hand, and compares with `CellCompare` plus two facts the snapshot lacks (freeze split, row
-heights 1–5, read back with ClosedXML from both files); each case also fails when the layout is changed (range, freeze count, height).
+`ExcelWorksheetView`); `LayoutPattern.Rewrite` maps it per `LayoutShape`. **Behaviour proof (E1, E14)**: full proofs in
+`Proofs/EPPlus/Layout/_Combined/` (real `EPPlusFix` output), compared by the harness, whose snapshot has freeze and row-height facts;
+`LayoutHarnessTests` changes each after (range, freeze count, height) and requires a difference.
 
 ## Requirements
 

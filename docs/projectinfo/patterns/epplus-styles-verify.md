@@ -12,8 +12,8 @@
 
 | REQ   | Verdict | Evidence |
 | ----- | ------- | -------- |
-| REQ-1 | Met     | `StylesHarnessTests.StyleShape_RewrittenByPattern_WritesSameWorkbook` (15 cases, 0 differences) |
-| REQ-2 | Met     | same test: the wrong-style variant of every case has differences |
+| REQ-1 | Met     | `Proofs/EPPlus/Styles/_Combined/*` (15): `StylesCombinedProofTests`, `EPPlusHarnessProofTests` (0 differences) |
+| REQ-2 | Met     | `StylesHarnessTests.StyleProof_WrongStyle_IsSeenByHarness` (15 cases) |
 | REQ-3 | Met     | proofs `Styles/underline`, `Styles/border-around`, `Styles/alignment-variable` |
 | REQ-4 | Met     | proof `Styles/fill-without-color`; `StylesHarnessTests.FillPatternWithoutColor_IsManual` |
 | REQ-5 | Met     | `StylesUnsupportedTests.Rewrite_FixedStatement_CarriesMigratedAnnotation`, `Fix_StyleStatementWithEPPlusReceiver_StaysManualAllOrNothing` |
@@ -26,9 +26,9 @@
 
 ## Deviations
 
-- Fixed shapes have no `Proofs/EPPlus/Styles/*.after.cs`: with the receiver still on EPPlus (rows 3–4 open), a file rewritten by this
-  pattern alone does not compile on either library, so `ProofTests` cannot check it. The harness test proves the rewritten statement
-  with a hand-translated scaffold instead; the proofs folder holds the Manual shapes.
+- Council round 12, E14: every Fixed shape has a full proof in `Proofs/EPPlus/Styles/_Combined/` (15 cases): the real `EPPlusFix` output,
+  compiled against ClosedXML (`StylesCombinedProofTests`) and equal in the harness (`EPPlusHarnessProofTests`). The scaffold proofs are gone;
+  `StylesHarnessTests` now changes each proof's after.cs to show the harness sees a wrong style.
 - `epplus.unsupported` skips the style tail (from `.Style` on) of every statement that starts from an `ExcelStyle`
   (`StylesMapping.StyleOf`): StylesPattern rewrote or reported it. Only the receiver is still listed
   (`StylesUnsupportedTests.Fix_MigratedStyleStatement_UnsupportedNamesOnlyTheReceiver`). The `MigratedAnnotationKind` annotation turned out

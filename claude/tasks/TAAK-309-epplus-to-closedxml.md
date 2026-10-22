@@ -33,6 +33,8 @@
 
 ## Progress log
 
+- 2026-10-22 (epplus-styles agent, stopped at session end): round 12 done for E13 (AutoFitDiffers), E15 (enum Fixed, DateTime Manual LoadFromTypeDiffers), E16 (Dimension with XLCellsUsedOptions.All) and the rows 7/10 Unsupported skip. E14 done for styles and layout (full proofs in `Proofs/EPPlus/{Styles,Layout}/_Combined`, runner `StylesCombinedProofTests`). **Next:** E14 for dimension and load-from is blocked: `epplus.package` reports the sheet local as unmapped when used as `sheet.LastRowUsed(..)` / `sheet.Cells[..].InsertData(..)` (needs a PackagePattern change, claim request); then delete their scaffold harness tests. Also open: move the Layout/Dimension/LoadFrom string codes to `EPPlusReason` (C1).
+
 - 2026-10-22 (agent epplus): step 1 done. 42 repos (16 on 4.x, 7 on 5, 7 on 6, 9 on 7, 3 on 8) measured with a regex
   script; results in `docs/projectinfo/architectuur/corpus-epplus.md`, repos in `claude/tools/corpus-epplus-repos.txt`,
   clones/scripts/logs in `D:/playground/corpus-epplus/`. Builds stopped after 5 repos (C: full): excelchop, bookfx,

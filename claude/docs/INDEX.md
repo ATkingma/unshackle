@@ -88,6 +88,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `src/Unshackle.Tests/Core/Moq/MoqRuntimeProofTests.cs` | Moq run-time proof harness over `Proofs/Moq/_Runtime/` (council round 9, Q2) |
 | `claude/tasks/TAAK-319-assets-file-reader.md` | IPackageAssetsReader / JsonPackageAssetsReader: obj/project.assets.json state and resolved versions (for EPPlus E7) |
 | `claude/tasks/TAAK-320-blockers-stop-rewrites.md` | Project blockers also stop document rewrites; inventory-only console summary |
+| `claude/tasks/TAAK-321-blockers-stop-package-swap.md` | Project blockers also stop the package swap |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |
 | `claude/tasks/TAAK-380-scout-identityserver.md` | Scout IdentityServer4 → OpenIddict/Duende (go/no-go research) |

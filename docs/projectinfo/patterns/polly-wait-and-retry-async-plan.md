@@ -2,10 +2,12 @@
 kingmadoc: 1
 feature: "polly-wait-and-retry-async"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12]
 files_expected:
     - src/Unshackle.Core/Fixes/Polly/Patterns/WaitAndRetryAsyncPattern.cs
     - src/Unshackle.Core/Fixes/Polly/PollyRetry.cs
+    - src/Unshackle.Core/Fixes/Polly/PollyPredicate.cs
+    - src/Unshackle.Core/Fixes/Polly/PollyTargetFramework.cs
     - src/Unshackle.Core/Fixes/Polly/PollyFix.cs
     - src/Unshackle.Tests/Proofs/Polly/WaitAndRetryAsync/
 ---
@@ -37,7 +39,7 @@ pipeline, with the delay lambda kept as the `DelayGenerator`.
 
 **Out of scope (Manual, typed reason code, later queue rows)**
 
-- `Or<E>()`, `HandleResult`, `HandleInner`, `Handle<E>(predicate)` (row 2), `onRetry` and other overloads (row 3), fields,
+- `HandleInner`/`OrInner` and `HandleResult(value)`/`OrResult(value)` (row 2 keeps them Manual), `onRetry` and other overloads (row 3), fields,
   properties, return values and arguments holding the policy (row 5), sync `WaitAndRetry`/`Execute` (row 4).
 
 ## Requirements
@@ -58,6 +60,18 @@ pipeline, with the delay lambda kept as the `DelayGenerator`.
 - **REQ-7**: WHEN any use of the policy local is not an awaited, rewritable `ExecuteAsync` THE SYSTEM SHALL report the declaration and
   every call Manual with the same reason (all or none per local; proof `result-not-awaited`, unit tests).
 - **REQ-8**: WHEN the policy is stored or passed on outside a local THE SYSTEM SHALL report Manual `PolicyNotLocal` (proof `policy-returned`).
+
+- **REQ-9** (queue row 2): WHEN the receiver is a chain of `Policy.Handle<E>(pred?)`, `Policy.HandleResult<T>(pred)`, `Policy<T>.Handle<E>(pred?)`,
+  `.Or<E>(pred?)` and `.OrResult(pred)` THE SYSTEM SHALL emit the same clauses in order on `new PredicateBuilder(<T>)()`
+  (`.Handle<E>(pred?)`, `.HandleResult(pred)`); `HandleInner`, `OrInner` and a value instead of a predicate are Manual
+  `ExceptionFilterNotSupported` (proofs `filter-or-predicate`, `filter-handle-result`, `filter-policy-of-t`, `filter-handle-inner`).
+- **REQ-10** (queue row 2): WHEN the v7 builder is `PolicyBuilder<T>` THE SYSTEM SHALL emit `ResiliencePipelineBuilder<T>`,
+  `RetryStrategyOptions<T>` and, for an explicitly typed local, `ResiliencePipeline<T>`; when retries run out on a handled result,
+  both return that last result (behaviour proof `filter-handle-result`).
+- **REQ-11** (council P9): WHEN the file's preprocessor symbols show a target framework Microsoft.Extensions.Resilience 10.11.0
+  does not support (.NET Core before net8.0, .NET Framework before net462) THE SYSTEM SHALL report Manual `TargetFrameworkUnsupported`.
+- **REQ-12** (council P10): WHEN `args`, `SleepDuration` or `_` is taken (a symbol in scope at the call, or an identifier inside the
+  rewritten span) THE SYSTEM SHALL use `args1`, `args2`, ... (first free of 10), else Manual `NameClash`.
 
 ## Assumptions
 

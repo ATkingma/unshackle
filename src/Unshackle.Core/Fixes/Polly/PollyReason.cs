@@ -14,4 +14,5 @@ public enum PollyReason
     ExecuteOverloadNotSupported,
     ExecuteNotLambda,
     ResultNotAwaited,
+    TargetFrameworkUnsupported,
 }

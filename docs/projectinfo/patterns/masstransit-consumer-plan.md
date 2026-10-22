@@ -54,7 +54,7 @@ Never Fixed. The first matching row decides; every Manual row carries its `MassT
 | `context.Redeliver` / `Defer` | Manual | `ConsumerRedeliver` |
 | `Publish`, `Send`, `GetSendEndpoint`, `Forward`, `Schedule...`, or an injected `IPublishEndpoint`/`ISendEndpoint(Provider)`/`IBus` | Manual | `ConsumerPublish` |
 | the context handed on, any other context member, any other MassTransit symbol in the class | Manual | `ConsumerContextFeature` |
-| only `context.Message` and `context.CancellationToken` | Info ("Simple MassTransit consumer of T ...") | — |
+| only `context.Message` and `context.CancellationToken` | Info ("Simple MassTransit consumer of T ...", plus "Filters registered outside the solution are not seen", round 12 T8) | — |
 | run without the solution (`Rewrite`, not `RewriteAsync`) and otherwise simple | Manual | `ConsumerNotAnalyzable` |
 
 The other detector rows carry one code each: `BusRegistration`, `Transport`, `Outbox`, `RetryPolicy`, `TestHarness`,

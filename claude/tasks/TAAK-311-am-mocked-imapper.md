@@ -34,6 +34,13 @@
   reference, mocks without stubs, a map with options. A further reduction needs a council call (see questions below).
 - Open for the main session: add the `automapper.mock-set-up` row to `docs/patterns.md` (generated) and `docs/projectinfo/README.md`.
 
+## Result round 12 (2026-10-22, A9, A10)
+
+- A9: A8 stays strict (any read of the mapped value blocks).
+- A10: the one A of a matcher stub may be created in place (literal or no constructor arguments); a member it leaves
+  default-constructed that the test reads, or one left to constructor arguments, keeps the stub Manual `MockedReturnNotProvable`.
+  Tests: 3 new cases (31 in MockSetUpPatternTests).
+
 ## Result round 11 (2026-10-22, A6–A8)
 
 - A6: `Verify(m => m.Map..., Times.X)` (any `Times`) and NSubstitute `Received`/`DidNotReceive`(`WithAnyArgs`) of a Map call keep the mock;

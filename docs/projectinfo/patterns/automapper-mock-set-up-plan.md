@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "automapper-mock-set-up"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14]
 files_expected:
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/MockSetUpPattern.cs
     - src/Unshackle.Core/Fixes/AutoMapper/Patterns/MockedMappers.cs
@@ -48,6 +48,8 @@ equals what the generated method returns for `a`; every other stub stays and its
 - A7: a stub with an argument matcher (`It.IsAny<A>()`, `Arg.Any<A>()`) when the test member builds exactly one `A` itself (a local with
   a plain `new A { ... }`) and holds no other expression of type `A` outside the stub (a field, a helper call, a cast); that `A` is then the
   source, and every other rule of a stub applies to it unchanged.
+- A10 (council round 12): that one `A` may also be created in place (no local), with literal or no constructor arguments. A member
+  it does not set blocks when the constructor has arguments (value unknown) or the test reads a member of that name (default-constructed).
 - A8: a mock without stubs, when every Map call of its classes is a plain `Map` whose value nothing reads: a statement of its own, a
   discard `_ = ...`, or the initializer of a local that is never read. An Info row on the mock says "had no stubs; Map now returns a real
   object".
@@ -60,8 +62,8 @@ equals what the generated method returns for `a`; every other stub stays and its
   handed on, assigned another value or created in place (`new C(Substitute.For<IMapper>())`).
 - A stub whose value is not provably the generated mapping (A1/A7): Manual `MockedReturnNotProvable`.
 - A mock without stubs whose class reads, null-checks, returns, passes or stores what Map returns (the loose mock answers null, the
-  generated method a real object): Manual `MockWithoutStubsNotProvable`. This is stricter than A8's wording: a member read or null check
-  of the value inside the method is also a read, because on the mock it throws or branches differently.
+  generated method a real object): Manual `MockWithoutStubsNotProvable`. A member read or null check of the value inside the method is
+  also a read, because on the mock it throws or branches differently (confirmed by council round 12, A9).
 - Maps with options, profiles with settings, members of a non-simple type (collections, nested objects), flattening, a destination with a
   constructor with parameters or public fields.
 - A test that uses the stubbed object itself (reference comparison, another stub argument) unless the destination is a record.
@@ -106,6 +108,7 @@ the declarations of discharged mocks without stubs, which get the A8 Info row. `
 - **REQ-10** (A6): WHEN a test checks a Map call of the mock (Verify with any Times, Received, DidNotReceive) THE SYSTEM SHALL keep the mock, its stubs and its class, with Manual code `VerifyOnMapper` and the hint "assert the mapped result instead".
 - **REQ-11** (A7): WHEN a stub uses `It.IsAny<A>()` / `Arg.Any<A>()`, the test member builds exactly one `A` in a local and holds no other `A`, and the stub's value provably equals the generated mapping of that `A` THE SYSTEM SHALL remove the stub with a warning naming the matcher.
 - **REQ-12** (A7): WHEN a matcher stub does not meet REQ-11 (two or no `A`s, another `A` expression, other value, value used as a whole) THE SYSTEM SHALL keep it with Manual code `MockedReturnNotProvable` (also for A1 stubs that are not provable).
+- **REQ-14** (A10): WHEN the one `A` of a matcher stub is created in place with literal or no arguments, and every member the test reads is set in its initializer and provably copied THE SYSTEM SHALL remove the stub; a default-constructed member the test reads, or a member left to constructor arguments, keeps it Manual `MockedReturnNotProvable`.
 - **REQ-13** (A8): WHEN a mock has no stubs and no other problem, and every Map call of its classes is a plain Map whose value is never read THE SYSTEM SHALL migrate the classes and add an Info row on the mock; otherwise Manual code `MockWithoutStubsNotProvable` naming the call's file:line and the use.
 
 ## See also

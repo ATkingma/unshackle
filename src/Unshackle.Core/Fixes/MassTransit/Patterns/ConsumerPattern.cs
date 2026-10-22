@@ -39,7 +39,8 @@ public class ConsumerPattern : DetectorPattern, ISolutionPattern
         string messages = string.Join(", ", Messages(node, model).Select(m => m.Name));
         return PatternResult.Note(
             $"Simple MassTransit consumer of {messages}: it uses only context.Message and the cancellation token, and no filter or consumer definition applies, "
-            + $"so its Consume body moves as it is to a Rebus IHandleMessages<{messages}>.Handle or a Wolverine Handle({messages}) method; its registration still moves by hand (council round 11, T7)."
+            + $"so its Consume body moves as it is to a Rebus IHandleMessages<{messages}>.Handle or a Wolverine Handle({messages}) method; its registration still moves by hand (council round 11, T7). "
+            + "Filters registered outside the solution are not seen (council round 12, T8)."
             + MassTransitSyntax.Guidance);
     }
 

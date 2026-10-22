@@ -29,7 +29,7 @@
 
 - Diagrams are inline Mermaid instead of D2/PNG under `img/`.
 - The Info leaf has proof `Consumer/consumer-simple` (`.info.txt`).
-- Filters and definitions are looked up in the loaded solution only; a filter registered in a project outside it is not seen.
+- Filters and definitions are looked up in the loaded solution only; the Info row says filters registered outside it are not seen (council round 12, T8; `FixAsync_SimpleConsumer_IsInfo`).
 
 ## See also
 

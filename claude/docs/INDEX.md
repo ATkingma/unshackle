@@ -86,6 +86,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `src/Unshackle.Core/Fixes/MassTransit/` | MassTransitFix: report-only detector (IReportOnlyFix), 9 feature patterns (TAAK-310) |
 | `claude/tasks/COUNCIL-round-11.md` | Council round 11 questions (EPPlus index base, TAAK-311 follow-ups, MassTransit detector) |
 | `src/Unshackle.Tests/Core/Moq/MoqRuntimeProofTests.cs` | Moq run-time proof harness over `Proofs/Moq/_Runtime/` (council round 9, Q2) |
+| `claude/tasks/TAAK-319-assets-file-reader.md` | IPackageAssetsReader / JsonPackageAssetsReader: obj/project.assets.json state and resolved versions (for EPPlus E7) |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |
 | `claude/tasks/TAAK-380-scout-identityserver.md` | Scout IdentityServer4 → OpenIddict/Duende (go/no-go research) |

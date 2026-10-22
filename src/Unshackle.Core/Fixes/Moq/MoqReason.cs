@@ -22,6 +22,7 @@ public enum MoqReason
     ReturnsLambda,
     SetupShape,
     StrictBehaviour,
+    TargetFrameworkUnsupported,
     TimesRange,
     TooManyDefaultPins,
     VerifyMessage,

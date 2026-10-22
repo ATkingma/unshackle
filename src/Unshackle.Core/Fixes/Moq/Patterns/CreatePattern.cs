@@ -53,7 +53,12 @@ public class CreatePattern : IPattern
         }
     }
 
-    public PatternResult Rewrite(SyntaxNode node, SemanticModel model) => node switch
+    public PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
+        MoqTargetFramework.Unsupported(node) is { } framework
+            ? PatternResult.Manual(MoqReason.TargetFrameworkUnsupported, MoqTargetFramework.Reason(framework))
+            : RewriteSupported(node, model);
+
+    private static PatternResult RewriteSupported(SyntaxNode node, SemanticModel model) => node switch
     {
         LocalDeclarationStatementSyntax statement => RewriteDeclaration(statement.Declaration, model, statement),
         VariableDeclarationSyntax declaration => RewriteDeclaration(declaration, model, null),

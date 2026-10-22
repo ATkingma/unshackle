@@ -12,6 +12,11 @@ public static class MockUsage
     // such use still there was not rewritten and the mock must stay Moq.
     public static MockAnalysis Analyze(ISymbol symbol, SemanticModel model, bool pendingUses)
     {
+        if (symbol.DeclaringSyntaxReferences is [var declared, ..] && MoqTargetFramework.Unsupported(declared.GetSyntax()) is { } framework)
+        {
+            return MockAnalysis.Blocked(MoqReason.TargetFrameworkUnsupported, MoqTargetFramework.Reason(framework));
+        }
+
         if (Type(symbol) is not { } mockType || !MoqSyntax.IsMockOfT(mockType))
         {
             return MockAnalysis.Blocked(MoqReason.MockPassedAround, "not a Mock<T> local or field");

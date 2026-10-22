@@ -42,6 +42,21 @@ public class StylesUnsupportedTests
     }
 
     [Fact]
+    public async Task Fix_MigratedStyleStatement_UnsupportedNamesOnlyTheReceiver()
+    {
+        // Arrange
+        Solution solution = TestSolution.Create(Code, EPPlusReferences.EPPlus);
+
+        // Act
+        FixReport report = await new Fixer([new EPPlusFix()]).FixAsync(solution, new FixRequest { FixId = "epplus" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        string reasons = string.Join(" | ", report.Findings.Where(f => f.PatternId == "epplus.unsupported").Select(f => ((ManualResult)f.Result).Reason));
+        reasons.ShouldNotContain("row 8", Case.Sensitive, reasons);
+        reasons.ShouldContain("ExcelRange", Case.Sensitive, reasons);
+    }
+
+    [Fact]
     public async Task Rewrite_FixedStatement_CarriesMigratedAnnotation()
     {
         // Arrange

@@ -26,5 +26,5 @@ public class EPPlusFix : IFix
     // A workbook half on EPPlus and half on ClosedXML does not build (an ExcelWorksheet passed to a migrated method): any Manual finding leaves the solution as it is.
     public bool AllOrNothing => true;
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new LicenseContextPattern(), new PackagePattern(), new StylesPattern(), new UnsupportedPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new LicenseContextPattern(), new PackagePattern(), new StylesPattern(), new LayoutPattern(), new UnsupportedPattern()];
 }

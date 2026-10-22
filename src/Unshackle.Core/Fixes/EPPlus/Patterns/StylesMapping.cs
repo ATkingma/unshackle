@@ -58,6 +58,15 @@ internal static class StylesMapping
         return null;
     }
 
+    // The ExcelStyle a statement starts from (the left side of an assignment, or the method of a call), or null: the statements of row 8.
+    public static ExpressionSyntax? StyleOf(ExpressionStatementSyntax statement, SemanticModel model) =>
+        Split(statement.Expression switch
+        {
+            AssignmentExpressionSyntax assignment => assignment.Left,
+            InvocationExpressionSyntax invocation => invocation.Expression,
+            _ => null,
+        }, model)?.Style;
+
     // The ClosedXML path and value of an assignment, or null when the shape or value is not mapped.
     public static (string Target, string Value)? Assignment(string shape, ExpressionSyntax value, SemanticModel model)
     {

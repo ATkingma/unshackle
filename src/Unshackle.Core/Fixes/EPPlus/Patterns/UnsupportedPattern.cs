@@ -33,7 +33,7 @@ public class UnsupportedPattern : IPattern
         List<TextSpan> reported = [.. s_licenseContext.Find(root, model).Concat(s_package.Find(root, model)).Select(n => n.Span)];
         return root.DescendantNodes()
             .Where(n => n is SimpleNameSyntax && !n.Ancestors().Any(a => a is UsingDirectiveSyntax) && EPPlusApi.Name(n, model) is not null)
-            .Where(n => !reported.Any(span => span.Contains(n.Span)))
+            .Where(n => !reported.Any(span => span.Contains(n.Span)) && !InStyleTail(n, model))
             .Select(Anchor)
             .OfType<SyntaxNode>()
             .Distinct();
@@ -48,11 +48,18 @@ public class UnsupportedPattern : IPattern
                 + "its callers outside the solution would break. Change the signature by hand (by design, council round 8 E6).");
         }
 
-        IEnumerable<string> apis = node.DescendantNodesAndSelf().Where(n => n is SimpleNameSyntax).Select(n => EPPlusApi.Name(n, model))
+        IEnumerable<string> apis = node.DescendantNodesAndSelf().Where(n => n is SimpleNameSyntax && !InStyleTail(n, model)).Select(n => EPPlusApi.Name(n, model))
             .OfType<string>().Distinct(StringComparer.Ordinal);
         return PatternResult.Manual($"[{UnmigratedCode}] EPPlus API not migrated ({where}): "
             + string.Join(", ", apis.Select(a => $"{a} ({EPPlusApi.Row(a)})")) + ".");
     }
+
+    // Row 8: a style statement (one that starts from an ExcelStyle) was rewritten or reported by StylesPattern, which runs before this
+    // pattern; only the receiver in front of .Style is left for this one. (A syntax annotation does not survive the workspace between patterns.)
+    private static bool InStyleTail(SyntaxNode name, SemanticModel model) =>
+        name.Ancestors().OfType<ExpressionStatementSyntax>().FirstOrDefault() is { } statement
+        && StylesMapping.StyleOf(statement, model) is { } style
+        && !(style is MemberAccessExpressionSyntax access ? access.Expression : style).Span.Contains(name.Span);
 
     // The member the name belongs to; a name in a type's base list or attribute anchors to the type.
     private static SyntaxNode? Anchor(SyntaxNode name) =>

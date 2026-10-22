@@ -29,8 +29,10 @@
 - Fixed shapes have no `Proofs/EPPlus/Styles/*.after.cs`: with the receiver still on EPPlus (rows 3–4 open), a file rewritten by this
   pattern alone does not compile on either library, so `ProofTests` cannot check it. The harness test proves the rewritten statement
   with a hand-translated scaffold instead; the proofs folder holds the Manual shapes.
-- `epplus.unsupported` still lists `ExcelRangeBase.Style (row 8)` for a rewritten statement, because its receiver binds to EPPlus. It needs
-  a one-line change to skip nodes with `StylesPattern.MigratedAnnotationKind` (claim request).
+- `epplus.unsupported` skips the style tail (from `.Style` on) of every statement that starts from an `ExcelStyle`
+  (`StylesMapping.StyleOf`): StylesPattern rewrote or reported it. Only the receiver is still listed
+  (`StylesUnsupportedTests.Fix_MigratedStyleStatement_UnsupportedNamesOnlyTheReceiver`). The `MigratedAnnotationKind` annotation turned out
+  not to survive the workspace between patterns, so the skip does not use it; the annotation stays on the rewritten statements.
 - Diagrams are inline Mermaid instead of D2/PNG under `img/`.
 
 ## See also

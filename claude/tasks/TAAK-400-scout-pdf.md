@@ -1,6 +1,6 @@
 # TAAK-400 — Scout iTextSharp/iText7/QuestPDF → PDFsharp/PdfPig
 
-**Status**: step 1/3 — in progress (agent scout-pdf)
+**Status**: done (steps 1-3), awaiting council
 **Created**: 2026-10-22
 **Goal**: A go/no-go recommendation for a new `pdf` fix, backed by primary sources and a source-level corpus survey, in `docs/projectinfo/architectuur/candidate-pdf.md`.
 
@@ -12,13 +12,14 @@
 
 ## Steps
 
-- [ ] 1. Facts from primary sources (license/EOL, dates, links) and API distance; Fixed vs Manual sketch; behaviour-proof idea
-- [ ] 2. Survey: 8-15 repos with pinned shas, grep counts per API shape, demand and effort (S/M/L) in `candidate-pdf.md`
-- [ ] 3. Recommendation + council questions; if go, a draft follow-up task (number 401–409)
+- [x] 1. Facts from primary sources (license/EOL, dates, links) and API distance; Fixed vs Manual sketch; behaviour-proof idea
+- [x] 2. Survey: 8-15 repos with pinned shas, grep counts per API shape, demand and effort (S/M/L) in `candidate-pdf.md`
+- [x] 3. Recommendation + council questions; if go, a draft follow-up task (number 401–409)
 
 ## Progress log
 
 - 2026-10-22: created; agent scout-pdf started.
+- 2026-10-22: candidate-pdf.md written (15 repos; iTextSharp conditional go, iText 7 and QuestPDF no-go). Draft follow-up TAAK-401.
 
 ## Changes
 

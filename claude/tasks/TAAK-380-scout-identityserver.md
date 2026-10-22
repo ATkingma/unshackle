@@ -1,6 +1,6 @@
 # TAAK-380 — Scout IdentityServer4 → OpenIddict/Duende
 
-**Status**: step 1/3 — in progress (agent scout-identityserver)
+**Status**: done (awaiting council)
 **Created**: 2026-10-22
 **Goal**: A go/no-go recommendation for a new `identityserver` fix, backed by primary sources and a source-level corpus survey, in `docs/projectinfo/architectuur/candidate-identityserver.md`.
 
@@ -12,13 +12,14 @@
 
 ## Steps
 
-- [ ] 1. Facts from primary sources (license/EOL, dates, links) and API distance; Fixed vs Manual sketch; behaviour-proof idea
-- [ ] 2. Survey: 8-15 repos with pinned shas, grep counts per API shape, demand and effort (S/M/L) in `candidate-identityserver.md`
-- [ ] 3. Recommendation + council questions; if go, a draft follow-up task (number 381–389)
+- [x] 1. Facts from primary sources (license/EOL, dates, links) and API distance; Fixed vs Manual sketch; behaviour-proof idea
+- [x] 2. Survey: 8-15 repos with pinned shas, grep counts per API shape, demand and effort (S/M/L) in `candidate-identityserver.md`
+- [x] 3. Recommendation + council questions; if go, a draft follow-up task (number 381–389)
 
 ## Progress log
 
 - 2026-10-22: created; agent scout-identityserver started.
+- 2026-10-22: scout done: no-go for automatic fix, report-only detector proposed; see candidate-identityserver.md.
 
 ## Changes
 

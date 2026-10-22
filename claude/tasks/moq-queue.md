@@ -15,7 +15,7 @@ Order: projects first, hits second. Rows that rewrite a use of a mock (2–9) ru
 | 3   | `moq.setup-returns` | `m.Setup(x => x.M(..)).Returns(v)` / `ReturnsAsync(v)`, `Mock.Of<T>(pred)` | `m.M(..).Returns(v)` / `Returns(Task.FromResult(v))` | 4055 / 13; 3326 / 13; 1139 / 10 | done (TAAK-307; `Mock.Of(pred)` still Manual) |
 | 4   | `moq.verify` | `m.Verify(x => .., Times.Once/Never/Exactly(n)/AtLeastOnce)` | `m.Received(1).M(..)` / `DidNotReceive()` / `Received(n)` / `Received()`; ranges Manual | 1406 / 12; Times.Once 819 / 11; Never 496 / 12 | done (TAAK-307; ranges and messages Manual) |
 | 5   | `moq.properties` | `SetupGet`, `SetupSet`, `SetupProperty`, `SetupAllProperties`, `VerifyGet`/`VerifySet` | `m.P.Returns(v)`, `m.Received().P = v`; property semantics difference checked | 443 / 8; 202 / 3; 70 / 4 | open |
-| 6   | `moq.throws` | `Throws(ex)` / `ThrowsAsync(ex)` | `.Throws(ex)` / `.ThrowsAsync(ex)` (`NSubstitute.ExceptionExtensions`) | 257 / 8; 89 / 9 | open |
+| 6   | `moq.throws` | `Throws(ex)` / `ThrowsAsync(ex)` | `.Throws(ex)` / `.ThrowsAsync(ex)` (`NSubstitute.ExceptionExtensions`) | 257 / 8; 89 / 9 | done (TAAK-307; void → When/Do) |
 | 7   | `moq.returns-lambda` | `Returns((a, b) => ..)` | `Returns(ci => ..)` with `ci.ArgAt<T>(i)` | 302 / 10 | open |
 | 8   | `moq.callback` | `Callback(..)` | `AndDoes(..)` / `When(..).Do(..)` | 193 / 11 | open |
 | 9   | `moq.class-mocks` | `new Mock<T>(ctor args)`, class and delegate mocks, `CallBase = true` | `Substitute.ForPartsOf<T>(args)` where provably the same, else Manual | 23 / 6; CallBase 10 / 4 | open |
@@ -25,7 +25,7 @@ Order: projects first, hits second. Rows that rewrite a use of a mock (2–9) ru
 | 13  | `moq.unsupported` | `MockBehavior.Strict` (M1 `StrictBehaviour`), `Protected()` (M3, fake-handler recipe), `As<T>()`, `Invocations`, `Reset`, `Raise`, `It.Ref`, `AutoMocker`/AutoMoq (M5) | Manual with reason code; `Reset` → `ClearReceivedCalls` and `Raise` → `Raise.EventWith` only if proven | Strict 232 / 8; Protected 53 / 5; AutoMocker 1745 / 5; As 21 / 3 | open |
 | 14  | _corpus run_ | build + tests before/after on the 13-repo corpus (`claude/tools/corpus-am.sh FIX=moq`) | 0 regressions; Manual only where justified | — | open (TAAK-307 step 5) |
 
-**Recommended next**: row 6 (`moq.throws`), then row 5 (`moq.properties`). Every row adds
+**Recommended next**: row 5 (`moq.properties`), then row 7 (`moq.returns-lambda`) and row 8 (`moq.callback`). Every row adds
 one rule to `MockUseRules` and a pattern before `CreatePattern`; rows touching `MockUseRules` go one after another, not in parallel.
 Every row needs run-time proofs in `src/Unshackle.Tests/Proofs/Moq/_Runtime/` (council round 9, Q2).
 

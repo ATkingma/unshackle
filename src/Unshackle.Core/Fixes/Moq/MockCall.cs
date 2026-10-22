@@ -26,6 +26,9 @@ public class MockCall
     // A Setup marked .Verifiable() (council round 8, M4).
     public bool Verifiable { get; init; }
 
+    // The rewrite uses NSubstitute.ExceptionExtensions (Throws/ThrowsAsync on a value).
+    public bool Throws { get; init; }
+
     public static MockCall Blocked(MoqBlocker blocker) => new() { Blocker = blocker };
 
     public static MockCall Blocked(MoqReason code, string reason) => Blocked(MoqBlocker.Of(code, reason));

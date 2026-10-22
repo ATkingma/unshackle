@@ -24,6 +24,7 @@ public enum MoqReason
     SetupsOverlap,
     StrictBehaviour,
     TargetFrameworkUnsupported,
+    ThrowsShape,
     TimesRange,
     TooManyDefaultPins,
     VerifyMessage,

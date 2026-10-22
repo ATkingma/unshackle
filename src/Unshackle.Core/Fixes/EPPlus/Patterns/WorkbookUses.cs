@@ -32,6 +32,12 @@ internal class WorkbookUses
 
     public Dictionary<SyntaxNode, SyntaxNode> Replacements { get; } = [];
 
+    // Statements to insert before a statement of the scope (row 6: the MemoryStream that replaces GetAsByteArray).
+    public Dictionary<StatementSyntax, List<StatementSyntax>> Insertions { get; } = [];
+
+    // True when the result needs System.IO (a MemoryStream was added).
+    public bool UsesSystemIO { get; private set; }
+
     // True when an integer worksheet index was rewritten (the result then says where IsWorksheets1Based was looked for, E11).
     public bool UsesIndex { get; private set; }
 
@@ -162,12 +168,67 @@ internal class WorkbookUses
     private static bool RoundTripsIn15Digits(double value) =>
         double.Parse(value.ToString("G15", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture).Equals(value);
 
+    private static bool IsStream(ITypeSymbol? type)
+    {
+        for (ITypeSymbol? t = type; t is not null; t = t.BaseType)
+        {
+            if (t is { Name: "Stream", ContainingNamespace: { Name: "IO", ContainingNamespace.Name: "System" } })
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // A local name no symbol in reach of the statement uses, and that this rewrite has not handed out yet.
+    private string FreeName(StatementSyntax statement, string name)
+    {
+        HashSet<string> taken = [.. _model.LookupSymbols(statement.SpanStart).Select(s => s.Name),
+            .. _scope.DescendantNodes().OfType<VariableDeclaratorSyntax>().Select(v => v.Identifier.ValueText),
+            .. Insertions.Values.SelectMany(l => l).OfType<LocalDeclarationStatementSyntax>().Select(d => d.Declaration.Variables[0].Identifier.ValueText)];
+        string candidate = name;
+        for (int i = 2; taken.Contains(candidate); i++)
+        {
+            candidate = name + i.ToString(CultureInfo.InvariantCulture);
+        }
+
+        return candidate;
+    }
+
     private IEnumerable<IdentifierNameSyntax> UsesOf(ILocalSymbol local) =>
         _scope.DescendantNodes().OfType<IdentifierNameSyntax>()
             .Where(i => i.Identifier.ValueText == local.Name && SymbolEqualityComparer.Default.Equals(_model.GetSymbolInfo(i).Symbol, local));
 
     private bool MapPackageUse(IdentifierNameSyntax use)
     {
+        // Row 6: p.SaveAs(stream); is the same call (SaveHarnessTests: both leave the stream open at its end).
+        if (use.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "SaveAs" } toStream
+            && toStream.Parent is InvocationExpressionSyntax { ArgumentList.Arguments: [var target], Parent: ExpressionStatementSyntax }
+            && IsStream(_model.GetTypeInfo(target.Expression).Type))
+        {
+            return true;
+        }
+
+        // Row 6: p.GetAsByteArray() in a statement of a block → using var s = new MemoryStream(); p.SaveAs(s); before it, and s.ToArray().
+        if (use.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "GetAsByteArray" } bytes
+            && bytes.Parent is InvocationExpressionSyntax { ArgumentList.Arguments.Count: 0 } bytesCall
+            && bytesCall.FirstAncestorOrSelf<StatementSyntax>() is { Parent: BlockSyntax } statement
+            && !bytesCall.Ancestors().TakeWhile(a => a != statement).Any(a => a is AnonymousFunctionExpressionSyntax))
+        {
+            string stream = FreeName(statement, "workbookStream");
+            if (!Insertions.TryGetValue(statement, out List<StatementSyntax>? before))
+            {
+                Insertions[statement] = before = [];
+            }
+
+            before.Add(SyntaxFactory.ParseStatement($"using var {stream} = new MemoryStream();"));
+            before.Add(SyntaxFactory.ParseStatement($"{use.Identifier.ValueText}.SaveAs({stream});"));
+            Replacements[bytesCall] = SyntaxFactory.ParseExpression($"{stream}.ToArray()");
+            UsesSystemIO = true;
+            return true;
+        }
+
         // p.SaveAs(new FileInfo(path)); → p.SaveAs(path);
         if (use.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "SaveAs" } saveAs
             && saveAs.Parent is InvocationExpressionSyntax { ArgumentList.Arguments: [{ Expression: ObjectCreationExpressionSyntax { ArgumentList.Arguments: [var path] } file }], Parent: ExpressionStatementSyntax } invocation

@@ -61,7 +61,7 @@ flowchart TD
 | using statement, mapped uses | Fixed, harness equal | `using-statement` |
 | using declaration, explicit type | Fixed, harness equal | `using-declaration` |
 | worksheet result used | Manual | `used-worksheet` |
-| `GetAsByteArray()` / `SaveAs(Stream)` | Manual | `byte-array`, `Fix_SaveAsStream_ManualAndSolutionUntouched` |
+| `GetAsByteArray()` / `SaveAs(Stream)` | Manual | `byte-array`, `Fix_SaveWithoutFile_ManualAndSolutionUntouched` |
 | invalid sheet name | Manual | `invalid-sheet-name` |
 | constructor argument | Manual | `existing-file` |
 | plain local (E9) | Fixed, harness equal | `plain-local` |

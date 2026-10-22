@@ -47,5 +47,5 @@ public static class WorkbookProgram
 
     public static bool HasEntryPoint(string code) =>
         CSharpSyntaxTree.ParseText(code).GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>()
-            .Any(m => m.Identifier.ValueText == EntryPoint && m.Modifiers.Any(SyntaxKind.StaticKeyword) && m.Modifiers.Any(SyntaxKind.PublicKeyword));
+            .Any(m => m.Identifier.ValueText == EntryPoint && m.ParameterList.Parameters.Count == 1 && m.Modifiers.Any(SyntaxKind.StaticKeyword) && m.Modifiers.Any(SyntaxKind.PublicKeyword));
 }

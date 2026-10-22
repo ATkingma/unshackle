@@ -14,7 +14,7 @@
 | ----- | ------- | -------- |
 | REQ-1 | Met     | proof `Package/using-statement`; `EPPlusHarnessProofTests.Proof_AfterWritesSameWorkbook(Package/using-statement)` |
 | REQ-2 | Met     | proof `Package/using-declaration`; harness row `Package/using-declaration` |
-| REQ-3 | Met     | proofs `Package/used-worksheet`, `Package/byte-array`, `Package/invalid-sheet-name`; `EPPlusFixTests.Fix_SaveAsStream_ManualAndSolutionUntouched` |
+| REQ-3 | Met     | proofs `Package/used-worksheet`, `Package/byte-array`, `Package/invalid-sheet-name`; `EPPlusFixTests.Fix_SaveWithoutFile_ManualAndSolutionUntouched` |
 | REQ-4 | Met     | proof `Package/existing-file` |
 | REQ-5 | Met     | proof `Package/field`; `EPPlusFixTests.Fix_TwoPackagesInOneBlock_Manual` |
 | REQ-6 | Met     | `CellCompareTests.Differences_SameWorkbook_IsEmpty`; `Differences_DeliberateDifference_IsReported` (10 rows: value, type, text, number format, font, fill, borders, merges, widths, sheet name); `HarnessProofs_CoverEveryFixedPackageProof`; `Proof_SaveAsOverExistingFile_BothOverwrite` |
@@ -30,11 +30,12 @@
 | REQ-17 | Met    | `WorksheetIndexTests`: `RewriteAsync_KeyInConfig_WorksheetIndexConfigured`, `RewriteAsync_KeyInCode_WorksheetIndexConfigured`, `RewriteAsync_NoConfigSearch_WorksheetIndexConfigured`, Info on `RewriteAsync_EPPlus5Index_ZeroBasedToPosition`; proof `Package/worksheet-index` |
 | REQ-18 | Met    | proof `Package/cell-range` (harness equal); `CellReadHarnessTests.Read_SameResult` (range value, range bold); `EPPlusFixTests.Fix_RangeMergeAndStyleAndRowHeight_SameWorkbook` |
 | REQ-19 | Met    | proof `Package/cell-read`; `CellReadHarnessTests.Read_Differs` |
+| REQ-20 | Met    | proofs `Package/byte-array`, `Package/byte-array-file`, `Package/save-stream` (harness equal), `Package/byte-array-lambda`; `SaveHarnessTests` |
 | REQ-7 | Met     | `EPPlusFixTests.Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles` |
 
 ## Build and tests
 
-- `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1707 passed, 0 failed (rows 1-2); 1862 passed, 0 failed (row 3, after merging main); 1865 passed, 0 failed (E7); 2020 passed, 0 failed (rows 4-5); 2030 passed, 0 failed (E10/E11); 2093 passed, 0 failed (rows 4-5 remainder).
+- `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1707 passed, 0 failed (rows 1-2); 1862 passed, 0 failed (row 3, after merging main); 1865 passed, 0 failed (E7); 2020 passed, 0 failed (rows 4-5); 2030 passed, 0 failed (E10/E11); 2093 passed, 0 failed (rows 4-5 remainder); 2210 passed, 0 failed (row 6, after merging main).
 - No corpus run yet (TAAK-309 step 5).
 
 ## Deviations

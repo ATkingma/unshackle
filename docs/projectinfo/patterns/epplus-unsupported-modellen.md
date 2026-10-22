@@ -48,7 +48,7 @@ flowchart TD
 | public signature, library | E6 | `public-api` |
 | internal signature / test project | Unmigrated | `internal-api`, `UnsupportedPattern_PublicApiInTestProject_NotE6` |
 | unresolved 5+ member | Unmigrated, "(unresolved, EPPlus 5+)" | `UnsupportedPattern_UnresolvedEPPlus5Member_NamedWithItsReceiver` |
-| package left Manual | skipped | `Fix_SaveAsStream_ManualAndSolutionUntouched` |
+| package left Manual | skipped | `Fix_SaveWithoutFile_ManualAndSolutionUntouched` |
 
 ## See also
 

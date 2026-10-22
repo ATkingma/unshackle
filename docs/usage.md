@@ -74,6 +74,10 @@ fixed some of them is safe: code that is already migrated is left alone.
 | `--report <file>` | scan, fix | Writes every finding to `.md`, `.csv` or `.json` (format from the extension).                     |
 | `--dry-run`       | fix       | Prints the diff per file, writes nothing.                                                         |
 | `--force`         | scan, fix | `fix`: writes even when the git working tree is dirty or there is no git. Both: overwrites an existing report. |
+| `--max-degree <n>` | scan, fix | Rewrites at most `n` files at once (default: the processor count, at most 8). Lower it when memory runs out on a large solution. |
+| `--sequential`    | scan, fix | Rewrites one file at a time. Slower; use it when even `--max-degree 2` uses too much memory, or to rule out parallelism when comparing runs. |
+
+The output (code, summary, report) is identical whatever `--max-degree` or `--sequential` you choose; they only trade speed for memory.
 
 **Exit codes**: `0` done (also when there are Manual findings), `1` the solution could not be loaded or written, or `fix`
 refused because of uncommitted changes, `2` invalid arguments (unknown fix or report extension, no or several solutions found).

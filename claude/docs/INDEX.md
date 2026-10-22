@@ -78,6 +78,9 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `src/Unshackle.Core/Fixes/Moq/` | MoqFix, CreatePattern, MockDefaults (where Moq and NSubstitute defaults differ) |
 | `claude/tasks/polly-queue.md` | Polly v7 → Resilience pattern queue (ranked, council round 8) |
 | `src/Unshackle.Core/Fixes/Polly/` | PollyFix, WaitAndRetryAsyncPattern, PollyRetry analysis, PollyReason codes |
+| `claude/tasks/epplus-queue.md` | EPPlus → ClosedXML pattern queue (ranked, council round 8) |
+| `src/Unshackle.Tests/Core/EPPlus/CellCompare.cs` | Cell-compare harness for EPPlus proofs (council E1) |
+| `src/Unshackle.Core/Fixes/EPPlus/` | EPPlusFix (not registered in Cli.cs until queue row 11), license-context and package patterns |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |
 | `claude/tasks/TAAK-380-scout-identityserver.md` | Scout IdentityServer4 → OpenIddict/Duende (go/no-go research) |

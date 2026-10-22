@@ -1,5 +1,9 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Shouldly;
 using Unshackle.Core.Fixes.Polly;
+using Unshackle.Core.Models;
+using Unshackle.Tests.Helpers;
 using Xunit;
 
 namespace Unshackle.Tests.Core.Polly;
@@ -45,5 +49,40 @@ public class PollyFixTests
         // Assert
         ids.ShouldAllBe(id => id.StartsWith("polly.", StringComparison.Ordinal));
         fix.Id.ShouldBe("polly");
+    }
+
+    [Theory]
+    [InlineData("NETCOREAPP;NETCOREAPP3_0", true, true)]
+    [InlineData("NETFRAMEWORK;NET452", true, true)]
+    [InlineData("NETCOREAPP;NET8_0_OR_GREATER", true, false)]
+    [InlineData("NETFRAMEWORK;NET462_OR_GREATER", true, false)]
+    [InlineData("NETCOREAPP;NETCOREAPP3_0", false, false)]
+    public void ProjectBlockers_UnsupportedFrameworkWithPollyV7_BlocksTheProject(string symbols, bool referencesPolly, bool blocked)
+    {
+        // Arrange (council round 10, P9/G4)
+        Project project = CreateProject(symbols.Split(';'), referencesPolly ? PollyReferences.Before : PollyReferences.After);
+
+        // Act
+        IReadOnlyList<ManualResult> blockers = new PollyFix().ProjectBlockers(project);
+
+        // Assert
+        if (blocked)
+        {
+            blockers.ShouldHaveSingleItem().Code.ShouldBe(nameof(ProjectBlockingReason.TargetFrameworkUnsupported));
+        }
+        else
+        {
+            blockers.ShouldBeEmpty();
+        }
+    }
+
+    internal static Project CreateProject(string[] symbols, IEnumerable<MetadataReference> references)
+    {
+        var projectId = ProjectId.CreateNewId();
+        return TestSolution.NewEmpty()
+            .AddProject(projectId, "P", "P", LanguageNames.CSharp)
+            .WithProjectParseOptions(projectId, new CSharpParseOptions(preprocessorSymbols: symbols))
+            .AddMetadataReferences(projectId, references)
+            .GetProject(projectId)!;
     }
 }

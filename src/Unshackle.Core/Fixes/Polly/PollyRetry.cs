@@ -126,8 +126,7 @@ internal static class PollyRetry
     {
         if (PollyTargetFramework.Unsupported(creation) is string framework)
         {
-            return PollyPlan.Manual(PollyReason.TargetFrameworkUnsupported,
-                $"Microsoft.Extensions.Resilience {PollyFix.ResilienceVersion} does not support {framework}.");
+            return PollyPlan.Manual(PollyReason.TargetFrameworkUnsupported, PollyTargetFramework.Reason(framework));
         }
 
         if (model.GetSymbolInfo(creation).Symbol is not IMethodSymbol method

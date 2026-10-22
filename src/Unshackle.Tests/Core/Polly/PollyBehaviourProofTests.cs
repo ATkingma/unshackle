@@ -20,6 +20,9 @@ public class PollyBehaviourProofTests
     [InlineData("filter-or-predicate", "throw t, throw go, throw stop, caught InvalidOperationException stop")]
     [InlineData("filter-handle-result", "got -1, got 0, got 5, result 5, got -2, got -3, got -4, result -4")]
     [InlineData("filter-policy-of-t", "result ok left 0")]
+    [InlineData("on-retry-attempt", "delay 1, retry 1 after 1 call 1, delay 2, retry 2 after 2 call 2, caught call 3")]
+    [InlineData("on-retry-async", "retry after call 1, retry after call 2, result 3")]
+    [InlineData("on-retry-result", "retry -1 none, retry 0 TimeoutException, result 7")]
     public async Task Proof_BeforeAndAfter_SameTrace(string proof, string expected)
     {
         // Arrange

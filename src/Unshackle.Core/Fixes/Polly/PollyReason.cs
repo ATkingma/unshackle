@@ -15,4 +15,6 @@ public enum PollyReason
     ExecuteNotLambda,
     ResultNotAwaited,
     TargetFrameworkUnsupported,
+    OnRetryUsesContext,
+    OnRetryNotMappable,
 }

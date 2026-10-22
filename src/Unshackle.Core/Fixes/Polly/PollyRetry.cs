@@ -16,6 +16,9 @@ internal static class PollyRetry
     private const string DiscardName = "_";
     private const int MaxFreshNameTries = 10;
 
+    // Parameters of the v7 retry methods this rewrite maps; any other (Context-taking providers, sleep-duration lists) is Manual.
+    private static readonly HashSet<string> s_rewrittenParameters = new(["retryCount", "sleepDurationProvider", "onRetry", "onRetryAsync"], StringComparer.Ordinal);
+
     public static bool IsWaitAndRetryAsync(InvocationExpressionSyntax invocation, SemanticModel model) =>
         invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "WaitAndRetryAsync" }
         && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { ContainingAssembly.Name: PollyAssembly };
@@ -117,14 +120,14 @@ internal static class PollyRetry
         }
 
         if (model.GetSymbolInfo(creation).Symbol is not IMethodSymbol method
-            || method.Parameters.Length != 2
-            || method.Parameters[0].Type.SpecialType != SpecialType.System_Int32
-            || method.Parameters[1].Type is not INamedTypeSymbol { Name: "Func", TypeArguments: [{ SpecialType: SpecialType.System_Int32 }, { Name: "TimeSpan" }] }
-            || creation.ArgumentList.Arguments.Count != 2
-            || creation.ArgumentList.Arguments.Any(a => a.NameColon is not null))
+            || ArgumentsByName(creation, method) is not { } arguments
+            || !arguments.Keys.All(s_rewrittenParameters.Contains)
+            || !arguments.TryGetValue("retryCount", out (ExpressionSyntax Expression, IParameterSymbol Parameter) retryCount)
+            || !arguments.TryGetValue("sleepDurationProvider", out (ExpressionSyntax Expression, IParameterSymbol Parameter) provider)
+            || provider.Parameter.Type is not INamedTypeSymbol { Name: "Func", TypeArguments: [{ SpecialType: SpecialType.System_Int32 }, { Name: "TimeSpan" }] })
         {
             return PollyPlan.Manual(PollyReason.OverloadNotSupported,
-                "only WaitAndRetryAsync(int, Func<int, TimeSpan>) is rewritten so far; onRetry, Context and sleep-duration lists follow in later queue rows.");
+                "only WaitAndRetryAsync(int retryCount, Func<int, TimeSpan> sleepDurationProvider[, onRetry/onRetryAsync]) is rewritten so far; a Context-taking sleep-duration provider or a sleep-duration list is Manual.");
         }
 
         string? resultType = ResultType(creation, model);
@@ -134,21 +137,23 @@ internal static class PollyRetry
             return predicate;
         }
 
-        ExpressionSyntax count = creation.ArgumentList.Arguments[0].Expression;
+        ExpressionSyntax count = retryCount.Expression;
         if (count is not LiteralExpressionSyntax || model.GetConstantValue(count).Value is not int retries || retries < 1)
         {
             return PollyPlan.Manual(PollyReason.RetryCountNotLiteral,
                 $"the retry count '{count}' is not an integer literal of at least 1 (MaxRetryAttempts must be 1 or more).");
         }
 
-        if (creation.ArgumentList.Arguments[1].Expression is not LambdaExpressionSyntax { Modifiers.Count: 0 } delay
+        if (provider.Expression is not LambdaExpressionSyntax { Modifiers.Count: 0 } delay
             || Parameter(delay) is not ParameterSyntax parameter)
         {
             return PollyPlan.Manual(PollyReason.DelayNotLambda, "the sleep-duration provider is not a plain one-parameter lambda.");
         }
 
         string attempt = parameter.Identifier.ValueText;
-        if (FreshName(creation, model, ArgsName) is not string args || FreshName(creation, model, DelayFunctionName) is not string sleep)
+        if (FreshName(creation, model, ArgsName) is not string args
+            || FreshName(creation, model, DelayFunctionName) is not string sleep
+            || FreshName(creation, model, PollyOnRetry.CallbackName) is not string callback)
         {
             return NameClash(creation);
         }
@@ -157,6 +162,19 @@ internal static class PollyRetry
         string newLine = NewLine(creation);
         string indent = Indent(creation);
         string inner = indent + "        ";
+        string onRetry = string.Empty;
+        if (arguments.TryGetValue("onRetry", out (ExpressionSyntax Expression, IParameterSymbol Parameter) onRetryArgument)
+            || arguments.TryGetValue("onRetryAsync", out onRetryArgument))
+        {
+            PollyPlan onRetryPlan = PollyOnRetry.Plan(onRetryArgument.Expression, onRetryArgument.Parameter, resultType, args, callback, inner, newLine, model);
+            if (onRetryPlan.Text is null)
+            {
+                return onRetryPlan;
+            }
+
+            onRetry = onRetryPlan.Text;
+        }
+
         string function = delay.Body switch
         {
             BlockSyntax block => $"TimeSpan {sleep}(int {attempt}){newLine}{inner}    {Reindent(block, inner + "    ", newLine)}",
@@ -176,9 +194,29 @@ internal static class PollyRetry
             + $"{inner}    {function}{newLine}"
             + $"{inner}    return new ValueTask<TimeSpan?>({sleep}({args}.AttemptNumber + 1));{newLine}"
             + $"{indent}        }},{newLine}"
+            + onRetry
             + $"{indent}    }}){newLine}"
             + $"{indent}    .Build()";
         return PollyPlan.Of(SyntaxFactory.ParseExpression(text));
+    }
+
+    // The arguments by parameter name (named arguments may come in any order); null when one does not bind to a parameter.
+    private static Dictionary<string, (ExpressionSyntax Expression, IParameterSymbol Parameter)>? ArgumentsByName(InvocationExpressionSyntax invocation, IMethodSymbol method)
+    {
+        var arguments = new Dictionary<string, (ExpressionSyntax, IParameterSymbol)>(StringComparer.Ordinal);
+        for (int i = 0; i < invocation.ArgumentList.Arguments.Count; i++)
+        {
+            ArgumentSyntax argument = invocation.ArgumentList.Arguments[i];
+            IParameterSymbol? parameter = argument.NameColon is { } nameColon
+                ? method.Parameters.FirstOrDefault(p => p.Name == nameColon.Name.Identifier.ValueText)
+                : i < method.Parameters.Length ? method.Parameters[i] : null;
+            if (parameter is null || !arguments.TryAdd(parameter.Name, (argument.Expression, parameter)))
+            {
+                return null;
+            }
+        }
+
+        return arguments;
     }
 
     // T of a v7 PolicyBuilder<T> receiver (HandleResult, Policy<T>): the pipeline becomes ResiliencePipeline<T>; null for exceptions only.
@@ -327,7 +365,7 @@ internal static class PollyRetry
     }
 
     // The block's lines moved so its braces start at the new indentation, keeping the indentation inside it.
-    private static string Reindent(BlockSyntax block, string indent, string newLine)
+    public static string Reindent(BlockSyntax block, string indent, string newLine)
     {
         Microsoft.CodeAnalysis.Text.SourceText text = block.SyntaxTree.GetText();
         int column = block.OpenBraceToken.SpanStart - text.Lines.GetLineFromPosition(block.OpenBraceToken.SpanStart).Start;

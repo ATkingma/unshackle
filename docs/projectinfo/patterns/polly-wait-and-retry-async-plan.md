@@ -2,12 +2,13 @@
 kingmadoc: 1
 feature: "polly-wait-and-retry-async"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14]
 files_expected:
     - src/Unshackle.Core/Fixes/Polly/Patterns/WaitAndRetryAsyncPattern.cs
     - src/Unshackle.Core/Fixes/Polly/PollyRetry.cs
     - src/Unshackle.Core/Fixes/Polly/PollyPredicate.cs
     - src/Unshackle.Core/Fixes/Polly/PollyTargetFramework.cs
+    - src/Unshackle.Core/Fixes/Polly/PollyOnRetry.cs
     - src/Unshackle.Core/Fixes/Polly/PollyFix.cs
     - src/Unshackle.Tests/Proofs/Polly/WaitAndRetryAsync/
 ---
@@ -72,6 +73,14 @@ pipeline, with the delay lambda kept as the `DelayGenerator`.
   does not support (.NET Core before net8.0, .NET Framework before net462) THE SYSTEM SHALL report Manual `TargetFrameworkUnsupported`.
 - **REQ-12** (council P10): WHEN `args`, `SleepDuration` or `_` is taken (a symbol in scope at the call, or an identifier inside the
   rewritten span) THE SYSTEM SHALL use `args1`, `args2`, ... (first free of 10), else Manual `NameClash`.
+
+- **REQ-13** (queue row 3, council P3): WHEN `onRetry`/`onRetryAsync` (positional or named) is a lambda whose parameters are
+  `Exception`, `DelegateResult<T>` (only `.Result`/`.Exception` used), `TimeSpan`, the retry count and an unused `Context`
+  THE SYSTEM SHALL emit `OnRetry = args => { <ret> OnRetryCallback(...) <body>; ... }` called with `args.Outcome.Exception!`,
+  `args.Outcome`, `args.RetryDelay`, `args.AttemptNumber + 1`; an async callback returns `new ValueTask(...)`
+  (proofs `on-retry-attempt`, `on-retry-async`, `on-retry-result` + behaviour traces).
+- **REQ-14** (queue row 3): WHEN the body reads the `Context` THE SYSTEM SHALL report Manual `OnRetryUsesContext` (proof
+  `on-retry-context`); any other parameter use or type is Manual `OnRetryNotMappable`.
 
 ## Assumptions
 

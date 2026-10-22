@@ -4,12 +4,14 @@ using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.AutoMapper;
+using Unshackle.Core.Fixes.EPPlus;
 using Unshackle.Core.Fixes.FluentAssertions;
 using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Fixes.Moq;
 using Unshackle.Core.Fixes.Polly;
 using Unshackle.Core.Models;
 using Unshackle.DataAccess.Reports;
+using Unshackle.Tests.Core.EPPlus;
 using Unshackle.Tests.Core.Moq;
 using Unshackle.Tests.Core.Polly;
 using Unshackle.Tests.Helpers;
@@ -59,6 +61,12 @@ public class ProofTests
             Fix = new PollyFix(),
             Before = PollyReferences.Before,
             After = PollyReferences.After,
+        },
+        ["EPPlus"] = new()
+        {
+            Fix = new EPPlusFix(),
+            Before = EPPlusReferences.EPPlus,
+            After = EPPlusReferences.ClosedXml,
         },
     };
 

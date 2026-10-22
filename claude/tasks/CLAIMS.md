@@ -11,6 +11,25 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 `docs/projectinfo/README.md`, `Directory.Packages.props`, `Unshackle.slnx`, `src/Unshackle.Interface/Cli.cs`,
 `claude/tasks/POOL-2026-10-22.md`, this file.
 
+## Pool checkpoint (2026-10-22, Linux, session ended) — resume here
+
+Main `23e9cf29` is green. Each running lane's work is pushed to its own branch `pool/<lane>-wip` (never main); the
+local worktrees under `.claude/worktrees/agent-<id>` hold the same commits. To resume a lane: in a new session either
+`SendMessage` to the agent id (same machine, transcript kept) or start a new agent with `isolation: worktree`, tell it to
+`git checkout -B <lane> origin/pool/<lane>-wip`, read its task file, `/taak-oppakken`, and continue. Merge to main one
+lane at a time after `claude/tools/verify-head.sh <scratch> > log && git push` (no pipe) and a green CI.
+
+| Lane | Agent id | Branch (origin) | Last commit | Done so far | Next |
+| --- | --- | --- | --- | --- | --- |
+| L1 polly (TAAK-308) | `a66af26faa74f6463` | `pool/l1-polly-wip` | `97916d36` | row 4 `polly.sync-retry` done | rows 8 circuit-breaker, 9 timeout, 11 no-op, 12 unsupported; last WIP commit may be half done: build + test first |
+| L2 moq (TAAK-307) | `aefb5372dcf947b2d` | `pool/l2-moq-wip` | `19bd7620` | row 9 `moq.class-mocks` done (only `CallBase = true` + `.Object`) | rows 11 setup-sequence, 12 logger-verify, 13 unsupported |
+| L4 epplus-corpus (TAAK-309/310) | `a15e38fdfdc6af0c2` | `pool/l4-epplus-corpus-wip` | `f5e04024` | EPPlus queue rows 7–10 verified done; CA1859 fix (also on main) | wire `IPackageAssetsReader` into `EPPlusFix` (E7, give the main session the `Cli.cs` line), C1 codes Layout/Dimension/LoadFrom → `EPPlusReason`, E14 combined after-proofs, corpus rounds EPPlus + MassTransit (`<corpus>/corpus-epplus`, `corpus-masstransit` exist) |
+| L5 remeasure (TAAK-313–315) | `a2a0a1ac538af24ff` | `pool/l5-remeasure-wip` | `2dcc93b7` | re-measure started (ANALYSE-manual-round-2.md +16 lines, MediatR repos added); `<corpus>/corpus-mediatr` exists | finish the 22 scans (check `_results` first), then TAAK-313, 314, 315 |
+| L6 corpus-prep (TAAK-307 row 14, 308 row 13) | `ad216a88b73a4b13e` | — (no commits yet) | — | clones exist under `<corpus>/corpus-moq/src`, `corpus-polly/src` (36 dirs) | baseline + `scan` null measurement per repo; `after` round only when L1/L2 are done |
+
+Other open items: TAAK-305 ReadyToRun = council question (measured: ~1 s faster per run, package 2.3×, one package per RID; not built);
+TAAK-304 release 0.3.0 needs the user's go; council round 13 questions in `claude/docs/overdracht.md` above.
+
 ## Active claims
 
 Pool restarted 2026-10-22 on the Linux machine (max 5 agents; corpus under `<corpus>` on the data disk, never `/tmp`). Earlier claims 24b/22c/25 closed (their work is on main or on `pool/remeasure-wip`).

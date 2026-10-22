@@ -44,6 +44,14 @@ internal static class DimensionMapping
         _ => null,
     };
 
+    // Names rows 7 and 10 write onto an EPPlus receiver (sheet.LastRowUsed(), range.InsertData(..)); they bind to nothing until rows 3-4
+    // migrate the receiver. epplus.unsupported skips them and reports the receiver only.
+    private static readonly HashSet<string> s_rewrittenNames =
+        new(["LastRowUsed", "LastColumnUsed", "FirstRowUsed", "FirstColumnUsed", "RowNumber", "ColumnNumber", "InsertData"], StringComparer.Ordinal);
+
+    public static bool IsRewrittenName(SyntaxNode name, SemanticModel model) =>
+        name is SimpleNameSyntax simple && s_rewrittenNames.Contains(simple.Identifier.ValueText) && model.GetSymbolInfo(name).Symbol is null;
+
     private static bool IsEPPlus(INamedTypeSymbol type)
     {
         INamespaceSymbol? ns = type.ContainingNamespace;

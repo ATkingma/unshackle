@@ -53,8 +53,9 @@ public class UnsupportedPattern : IPattern
     // Row 8: a style statement (one that starts from an ExcelStyle) was rewritten or reported by StylesPattern, which runs before this
     // pattern; only the receiver in front of .Style is left for this one. (A syntax annotation does not survive the workspace between patterns.)
     // Row 9 likewise: a layout statement (before or after LayoutPattern) leaves only its receiver (range, row, column, sheet).
+    // Rows 7 and 10: the ClosedXML member a rewrite put on a receiver that is still EPPlus.
     private static bool InHandledTail(SyntaxNode name, SemanticModel model) =>
-        name.Ancestors().OfType<ExpressionStatementSyntax>().FirstOrDefault() is { } statement
+        DimensionMapping.IsRewrittenName(name, model) || name.Ancestors().OfType<ExpressionStatementSyntax>().FirstOrDefault() is { } statement
         && (StylesMapping.StyleOf(statement, model) is { } style
                 ? style is MemberAccessExpressionSyntax access ? access.Expression : style
                 : LayoutMapping.Receiver(statement, model)) is { } receiver

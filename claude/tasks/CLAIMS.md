@@ -23,6 +23,8 @@ grants it to you or your successor. Budget: 25 agents in total (user, 2026-10-22
 | 24 | mr-assembly-scan | TAAK-312 | `src/Unshackle.Core/Fixes/MediatR/**`, existing MediatR-only test files in `src/Unshackle.Tests/Core/` + new ones in `src/Unshackle.Tests/Core/MediatR/**`, `src/Unshackle.Tests/Proofs/MediatR/**`, `docs/projectinfo/patterns/mediatr-*`, `claude/tasks/TAAK-312-*.md` | — | 2026-10-22 |
 | — | main | TAAK-303, 305 st 1 | git branches/worktrees, `claude/tasks/TAAK-303-*.md`, `claude/tasks/TAAK-305-*.md` | — | 2026-10-22 |
 
+Shared grant (2026-10-22): `src/Unshackle.Tests/ProofTests.cs` — moq-, polly- and epplus-skeleton may each add only their own `s_fixes` entry; the main session resolves merge conflicts.
+
 ## Released claims
 
 | Agent | Task | Result | Released |

@@ -6,6 +6,9 @@ namespace Unshackle.Core.Fixes.EPPlus.Patterns;
 // License. Every migrated package gets this warning. The pin itself (a PackageAddEdit) needs a current assets file, which Core cannot read yet.
 internal static class FontsLicence
 {
+    public const string Package = "SixLabors.Fonts";
+    public const string PinVersion = "1.0.0";
+
     public const string Warning = "ClosedXML depends on SixLabors.Fonts [1.0.0, 3.0.0); 2.x is under the Six Labors Split License (paid for some "
         + "commercial use). Pin it below 2.0 with <PackageReference Include=\"SixLabors.Fonts\" Version=\"1.0.0\" /> unless you have a licence.";
 

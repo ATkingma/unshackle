@@ -14,8 +14,6 @@ namespace Unshackle.Core.Fixes.EPPlus.Patterns;
 /// </summary>
 public class DimensionPattern : IPattern
 {
-    public const string UnmappedCode = "UnmappedDimension";
-
     public string Id => "epplus.dimension";
 
     public string Description => "sheet.Dimension.End.Row / Start.Column ... → sheet.LastRowUsed().RowNumber() / FirstColumnUsed().ColumnNumber() (null kept)";
@@ -29,7 +27,7 @@ public class DimensionPattern : IPattern
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
         DimensionMapping.Rewrite(node) is string text
             ? PatternResult.Fixed(SyntaxFactory.ParseExpression(text), "ClosedXML.Excel")
-            : PatternResult.Manual($"[{UnmappedCode}] EPPlus 'Dimension' used as '{Shorten(node)}': only .End/.Start .Row/.Column are mapped "
+            : PatternResult.Manual(EPPlusReason.UnmappedDimension, $"EPPlus 'Dimension' used as '{Shorten(node)}': only .End/.Start .Row/.Column are mapped "
                 + "(queue row 7). Migrate it by hand (LastCellUsed/RangeUsed in ClosedXML; Dimension is null on an empty sheet).");
 
     private static string Shorten(SyntaxNode node)

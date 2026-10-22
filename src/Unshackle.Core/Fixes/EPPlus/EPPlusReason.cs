@@ -13,4 +13,11 @@ public enum EPPlusReason
     UncoveredRuntimeType,
     WorksheetIndexConfigured,
     CellReadDiffers,
+    ColumnWidthDiffers,
+    UnmappedEPPlusLayout,
+    AutoFitDiffers,
+    UnmappedDimension,
+    LoadFromHeadersNotMapped,
+    LoadFromTypeDiffers,
+    UnmappedLoadFrom,
 }

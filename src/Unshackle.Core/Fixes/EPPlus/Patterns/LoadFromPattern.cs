@@ -14,14 +14,6 @@ namespace Unshackle.Core.Fixes.EPPlus.Patterns;
 /// </summary>
 public class LoadFromPattern : IPattern
 {
-    public const string HeadersCode = "LoadFromHeadersNotMapped";
-
-    public const string UncoveredCode = "UncoveredRuntimeType";
-
-    public const string UnmappedCode = "UnmappedLoadFrom";
-
-    public const string TypeDiffersCode = "LoadFromTypeDiffers";
-
     public string Id => "epplus.load-from";
 
     public string Description => "range.LoadFromCollection(items); → range.InsertData(items); (no headers, covered property types only)";
@@ -36,7 +28,7 @@ public class LoadFromPattern : IPattern
         var access = (MemberAccessExpressionSyntax)invocation.Expression;
         if (method.Name != "LoadFromCollection")
         {
-            return Manual(method.Name == "LoadFromDataTable" ? UncoveredCode : UnmappedCode, method.Name, method.Name == "LoadFromDataTable"
+            return Manual(method.Name == "LoadFromDataTable" ? EPPlusReason.UncoveredRuntimeType : EPPlusReason.UnmappedLoadFrom, method.Name, method.Name == "LoadFromDataTable"
                 ? "the column types of a DataTable are only known at run time, so the harness cannot prove the values (E4)"
                 : "this load method is not mapped yet");
         }
@@ -44,27 +36,27 @@ public class LoadFromPattern : IPattern
         SeparatedSyntaxList<ArgumentSyntax> arguments = invocation.ArgumentList.Arguments;
         if (arguments.Count > 2 || (arguments.Count == 2 && !arguments[1].Expression.IsKind(SyntaxKind.FalseLiteralExpression)))
         {
-            return Manual(HeadersCode, method.Name, "headers or a table are asked for; ClosedXML's InsertTable adds a table and InsertData writes no header row");
+            return Manual(EPPlusReason.LoadFromHeadersNotMapped, method.Name, "headers or a table are asked for; ClosedXML's InsertTable adds a table and InsertData writes no header row");
         }
 
         if (invocation.Parent is not ExpressionStatementSyntax)
         {
-            return Manual(UnmappedCode, method.Name, "its result (the filled range) is used, and ClosedXML returns a different range type");
+            return Manual(EPPlusReason.UnmappedLoadFrom, method.Name, "its result (the filled range) is used, and ClosedXML returns a different range type");
         }
 
         if (LoadFromMapping.DifferingMember(method.TypeArguments[0]) is string differing)
         {
-            return Manual(TypeDiffersCode, method.Name, $"{differing}: the harness shows ClosedXML writes this type with another value or number format (council round 12, E15)");
+            return Manual(EPPlusReason.LoadFromTypeDiffers, method.Name, $"{differing}: the harness shows ClosedXML writes this type with another value or number format (council round 12, E15)");
         }
 
         if (LoadFromMapping.UncoveredMember(method.TypeArguments[0]) is string uncovered)
         {
-            return Manual(UncoveredCode, method.Name, $"{uncovered} has a type the harness does not cover (E4)");
+            return Manual(EPPlusReason.UncoveredRuntimeType, method.Name, $"{uncovered} has a type the harness does not cover (E4)");
         }
 
         return PatternResult.Fixed(SyntaxFactory.ParseExpression($"{access.Expression.WithoutTrivia()}.InsertData({arguments[0].Expression.WithoutTrivia()})"));
     }
 
-    private static PatternResult Manual(string code, string method, string why) =>
-        PatternResult.Manual($"[{code}] EPPlus '{method}': {why} (queue row 10). Migrate it by hand.");
+    private static PatternResult Manual(EPPlusReason code, string method, string why) =>
+        PatternResult.Manual(code, $"EPPlus '{method}': {why} (queue row 10). Migrate it by hand.");
 }

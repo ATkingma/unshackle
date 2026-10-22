@@ -12,15 +12,24 @@ public class EPPlusFix : IFix, IProjectFileMigration
     public const string ClosedXmlVersion = "0.105.1";
 
     public EPPlusFix()
-        : this(null, null)
+        : this(null, null, null)
+    {
+    }
+
+    public EPPlusFix(IProjectProperties? projectProperties, IConfigKeySearch? configSearch)
+        : this(projectProperties, configSearch, null)
     {
     }
 
     // Council round 11, E10/E11: IsPackable as MSBuild sees it (R1) and a search of the solution's config files decide a 4.x worksheet index.
-    public EPPlusFix(IProjectProperties? projectProperties, IConfigKeySearch? configSearch)
+    // TAAK-319: the restored assets decide the E7 pin; without a reader the references of the project are the only proxy (no pin).
+    public EPPlusFix(IProjectProperties? projectProperties, IConfigKeySearch? configSearch, IPackageAssetsReader? assetsReader)
     {
+        _assetsReader = assetsReader;
         Patterns = [new LicenseContextPattern(), new StylesPattern(), new LayoutPattern(), new DimensionPattern(), new LoadFromPattern(), new PackagePattern(projectProperties, configSearch), new UnsupportedPattern()];
     }
+
+    private readonly IPackageAssetsReader? _assetsReader;
 
     public string Id => "epplus";
 
@@ -41,17 +50,34 @@ public class EPPlusFix : IFix, IProjectFileMigration
 
     public IReadOnlyList<IPattern> Patterns { get; }
 
-    // No file edits yet: the SixLabors.Fonts < 2.0 pin (E7) waits for an assets-file reader.
-    public IReadOnlyList<ProjectFileEdit> EditsFor(Project project) => [];
+    private static readonly Version s_two = new(2, 0);
+
+    // E7: the SixLabors.Fonts pin below 2.0, only for a project that declares EPPlus itself, with current assets that show nothing needing 2.0 (else the warning stays).
+    public IReadOnlyList<ProjectFileEdit> EditsFor(Project project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        PackageAssets? assets = Assets(project);
+        return assets is { State: AssetsState.Current }
+            && assets.Requirements.Any(r => r.RequiredBy == "project" && string.Equals(r.Package, "EPPlus", StringComparison.OrdinalIgnoreCase))
+            && !assets.RequiresAtLeast(FontsLicence.Package, s_two)
+            ? [new PackageAddEdit { Name = FontsLicence.Package, Version = FontsLicence.PinVersion }]
+            : [];
+    }
 
     // E7: a project that already resolves SixLabors.Fonts 2.x would pull it into ClosedXML; that blocks the project (council round 10, C1/G4).
     public IReadOnlyList<ManualResult> ProjectBlockers(Project project)
     {
         ArgumentNullException.ThrowIfNull(project);
-        return FontsLicence.Resolved(project) is { Major: >= 2 } fonts
+        PackageAssets? assets = Assets(project);
+        Version? fonts = assets is { State: AssetsState.Current }
+            ? assets.ResolvesAtLeast(FontsLicence.Package, s_two) ? PackageRequirement.ParseVersion(assets.Resolved[FontsLicence.Package]) : null
+            : FontsLicence.Resolved(project);
+        return fonts is { Major: >= 2 }
             ? [(ManualResult)PatternResult.Manual(ProjectBlockingReason.LicensedDependency,
                 $"{project.Name} resolves SixLabors.Fonts {fonts.ToString(3)}, which is under the Six Labors Split License; ClosedXML would use it. "
                 + "Pin SixLabors.Fonts below 2.0 (or license it) and run the fix again.")]
             : [];
     }
+
+    private PackageAssets? Assets(Project project) => _assetsReader is not null && project.FilePath is string path ? _assetsReader.Read(path) : null;
 }

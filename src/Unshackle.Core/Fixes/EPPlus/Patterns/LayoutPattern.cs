@@ -15,13 +15,7 @@ namespace Unshackle.Core.Fixes.EPPlus.Patterns;
 /// </summary>
 public class LayoutPattern : IPattern
 {
-    public const string WidthCode = "ColumnWidthDiffers";
-
-    public const string UnmappedCode = "UnmappedEPPlusLayout";
-
     // Council round 12, E13: auto-fit is Manual for good.
-    public const string AutoFitCode = "AutoFitDiffers";
-
     public string Id => "epplus.layout";
 
     public string Description => "Merge = true / View.FreezePanes / Row(i).Height → ClosedXML; column width and auto-fit Manual (E8)";
@@ -38,26 +32,26 @@ public class LayoutPattern : IPattern
         {
             (LayoutShape.Merge, AssignmentExpressionSyntax { Right: LiteralExpressionSyntax { RawKind: (int)SyntaxKind.TrueLiteralExpression } }) =>
                 PatternResult.Fixed(SyntaxFactory.ParseStatement($"{target}.Merge();")),
-            (LayoutShape.Merge, _) => Manual(UnmappedCode, "Merge", "only 'Merge = true' is mapped (unmerging or a computed value is not)"),
+            (LayoutShape.Merge, _) => Manual(EPPlusReason.UnmappedEPPlusLayout, "Merge", "only 'Merge = true' is mapped (unmerging or a computed value is not)"),
             (LayoutShape.Height, AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression } assignment) =>
                 PatternResult.Fixed(SyntaxFactory.ParseStatement($"{target}.Height = {assignment.Right.WithoutTrivia()};")),
-            (LayoutShape.Height, _) => Manual(UnmappedCode, "Height", "only a plain assignment of the row height is mapped"),
+            (LayoutShape.Height, _) => Manual(EPPlusReason.UnmappedEPPlusLayout, "Height", "only a plain assignment of the row height is mapped"),
             (LayoutShape.FreezePanes, InvocationExpressionSyntax { ArgumentList.Arguments: [var row, var column] })
                 when Literal(row.Expression) is int r && Literal(column.Expression) is int c && r >= 1 && c >= 1 =>
                 PatternResult.Fixed(SyntaxFactory.ParseStatement($"{target}.SheetView.Freeze({r - 1}, {c - 1});")),
-            (LayoutShape.FreezePanes, _) => Manual(UnmappedCode, "View.FreezePanes", "only literal row and column numbers (1 or more) are mapped"),
-            (LayoutShape.Width, _) => Manual(WidthCode, "Column(i).Width",
+            (LayoutShape.FreezePanes, _) => Manual(EPPlusReason.UnmappedEPPlusLayout, "View.FreezePanes", "only literal row and column numbers (1 or more) are mapped"),
+            (LayoutShape.Width, _) => Manual(EPPlusReason.ColumnWidthDiffers, "Column(i).Width",
                 "EPPlus and ClosedXML store a different column width for the same number; set the width in ClosedXML by hand and check it (council round 8, E8)"),
-            (LayoutShape.AutoFit, _) => Manual(AutoFitCode, "AutoFit",
+            (LayoutShape.AutoFit, _) => Manual(EPPlusReason.AutoFitDiffers, "AutoFit",
                 "the width auto-fit computes depends on the fonts installed on the machine and on each library's text measuring, so the result "
                 + "cannot be proven equal; use AdjustToContents() and check the widths by hand (council round 12, E13)"),
-            _ => Manual(UnmappedCode, shape.ToString(), "this layout statement is not mapped yet"),
+            _ => Manual(EPPlusReason.UnmappedEPPlusLayout, shape.ToString(), "this layout statement is not mapped yet"),
         };
     }
 
     private static int? Literal(ExpressionSyntax expression) =>
         expression is LiteralExpressionSyntax { RawKind: (int)SyntaxKind.NumericLiteralExpression, Token.Value: int value } ? value : null;
 
-    private static PatternResult Manual(string code, string shape, string why) =>
-        PatternResult.Manual($"[{code}] EPPlus layout '{shape}': {why} (queue row 9). Migrate it by hand.");
+    private static PatternResult Manual(EPPlusReason code, string shape, string why) =>
+        PatternResult.Manual(code, $"EPPlus layout '{shape}': {why} (queue row 9). Migrate it by hand.");
 }

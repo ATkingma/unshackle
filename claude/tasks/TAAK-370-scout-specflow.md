@@ -1,6 +1,6 @@
 # TAAK-370 — Scout SpecFlow → Reqnroll
 
-**Status**: step 1/3 — in progress (agent scout-specflow)
+**Status**: step 3/3 — done, awaiting council (agent scout-specflow)
 **Created**: 2026-10-22
 **Goal**: A go/no-go recommendation for a new `specflow` fix, backed by primary sources and a source-level corpus survey, in `docs/projectinfo/architectuur/candidate-specflow.md`.
 
@@ -12,13 +12,14 @@
 
 ## Steps
 
-- [ ] 1. Facts from primary sources (license/EOL, dates, links) and API distance; Fixed vs Manual sketch; behaviour-proof idea
-- [ ] 2. Survey: 8-15 repos with pinned shas, grep counts per API shape, demand and effort (S/M/L) in `candidate-specflow.md`
-- [ ] 3. Recommendation + council questions; if go, a draft follow-up task (number 371–379)
+- [x] 1. Facts from primary sources (license/EOL, dates, links) and API distance; Fixed vs Manual sketch; behaviour-proof idea
+- [x] 2. Survey: 8-15 repos with pinned shas, grep counts per API shape, demand and effort (S/M/L) in `candidate-specflow.md`
+- [x] 3. Recommendation + council questions; if go, a draft follow-up task (number 371–379)
 
 ## Progress log
 
 - 2026-10-22: created; agent scout-specflow started.
+- 2026-10-22: report written (go, effort M, demand high); 13 repos cloned to D:/playground/corpus-candidates/specflow/src; draft task TAAK-371 in the report.
 
 ## Changes
 

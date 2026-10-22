@@ -27,7 +27,7 @@ sequenceDiagram
     UnsupportedPattern->>EPPlusApi: Name(each simple name)
     UnsupportedPattern-->>Fixer: one member per EPPlus use
     Fixer->>UnsupportedPattern: Rewrite(member)
-    UnsupportedPattern-->>Fixer: Manual [PublicApiExposesOldLibrary] or [UnmigratedEPPlusApi]
+    UnsupportedPattern-->>Fixer: Manual PublicApiExposesOldLibrary or UnmigratedEPPlusApi
 ```
 
 ## Figure 3: decision tree

@@ -79,6 +79,11 @@
   current with no requirement >= 2.0, and Core has no reader for it (I/O belongs in DataAccess behind a Core interface; engine/main files).
   Under E7 a missing check means "Warning only", which is the current behaviour. `FontsLicenceTests` (3).
   `dotnet test` 1865 passed, 0 failed.
+- 2026-10-22 (epplus-skeleton, C1): `EPPlusReason` enum; every coded Manual now uses `PatternResult.Manual(EPPlusReason.X, text)`, rendered as `Code: text` (it was `[Code] text`). `EPPlusFix` implements `IProjectFileMigration`. It has no edits yet; `ProjectBlockers` reports `ProjectBlockingReason.LicensedDependency` when the project resolves SixLabors.Fonts 2.x (read from reference metadata). `dotnet test` 1993 passed, 0 failed.
+- 2026-10-22 (epplus-skeleton, rows 4-5): single cells on a worksheet local (`Cells[r, c]`, `Cells["A1"]` → `Cell(..)`) as the target of a
+  covered `Value =` (E4: string, bool, int types; double/float/decimal/long only as 15-digit constants) or as the receiver of a migrated style
+  statement. `epplus.styles` now runs before `epplus.package`. EPPlus sub-namespaces are added to `RemovedNamespaces`. Harness findings
+  (15 vs 17 digits; DateTime serial) are in the queue. `dotnet test` 2020 passed, 0 failed.
 
 ## See also
 

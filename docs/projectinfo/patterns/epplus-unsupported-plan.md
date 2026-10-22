@@ -24,8 +24,8 @@ files_expected:
 ## One-sentence summary
 
 epplus.unsupported runs last. It reports every member that still names EPPlus as Manual with a text-prefixed reason code
-(`[UnmigratedEPPlusApi]`, listing each API and the queue row that will migrate it). A public or protected signature in a packable project
-that exposes an EPPlus type is Manual by design (`[PublicApiExposesOldLibrary]`, E6).
+(`UnmigratedEPPlusApi`, listing each API and the queue row that will migrate it). A public or protected signature in a packable project
+that exposes an EPPlus type is Manual by design (`PublicApiExposesOldLibrary`, E6).
 
 ## Scope (in / out)
 
@@ -56,8 +56,8 @@ solution as it is.
 | --- | ----------- |
 | REQ-1 | A member using unmigrated EPPlus APIs is Manual, listing each API with its row (proof `Unsupported/cells`). |
 | REQ-2 | An API with no planned row says "no row planned, by hand" (proof `Unsupported/chart`). |
-| REQ-3 | A public signature in a packable project exposing EPPlus is `[PublicApiExposesOldLibrary]` (proof `Unsupported/public-api`). |
-| REQ-4 | The same signature that is internal, or in a test project, is `[UnmigratedEPPlusApi]` (proof `Unsupported/internal-api`, `UnsupportedPattern_PublicApiInTestProject_NotE6`). |
+| REQ-3 | A public signature in a packable project exposing EPPlus is `PublicApiExposesOldLibrary` (proof `Unsupported/public-api`). |
+| REQ-4 | The same signature that is internal, or in a test project, is `UnmigratedEPPlusApi` (proof `Unsupported/internal-api`, `UnsupportedPattern_PublicApiInTestProject_NotE6`). |
 | REQ-5 | An unresolved EPPlus 5+ member is named with its receiver (`UnsupportedPattern_UnresolvedEPPlus5Member_NamedWithItsReceiver`). |
 | REQ-6 | Code the licence or package pattern reports is not reported again (`Fix_SaveAsStream_ManualAndSolutionUntouched`, `Fix_TwoPackagesInOneBlock_Manual`). |
 

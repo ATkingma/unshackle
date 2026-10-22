@@ -51,7 +51,7 @@ internal class WorkbookUses
         {
             foreach (IdentifierNameSyntax use in UsesOf(_worksheets[i]))
             {
-                if (!IsNameAccess(use) && !MapCellUse(use))
+                if (!IsNameAccess(use) && !MapCellUse(use) && !IsLayoutUse(use))
                 {
                     return _unknownVersion ?? Models.PatternResult.Manual($"Worksheet local {_worksheets[i].Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue row 4+).");
                 }
@@ -66,27 +66,66 @@ internal class WorkbookUses
     private bool MapCellUse(IdentifierNameSyntax use)
     {
         if (use.Parent is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Cells" } cells || cells.Expression != use
-            || cells.Parent is not ElementAccessExpressionSyntax { ArgumentList.Arguments: var arguments } cell || !IsSingleCell(arguments))
+            || cells.Parent is not ElementAccessExpressionSyntax { ArgumentList.Arguments: var arguments } cell)
         {
+            return false;
+        }
+
+        bool single = IsSingleCell(arguments);
+        if (!single && !IsRange(arguments))
+        {
+            return false;
+        }
+
+        // Reads differ (CellReadHarnessTests): EPPlus .Text of a bool is "1" (ClosedXML "TRUE"), GetValue<string> of an empty cell is null
+        // (ClosedXML ""), and .Value is object (ClosedXML XLCellValue).
+        if (cell.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Text" or "GetValue" or "Value" } read
+            && !(read.Parent is AssignmentExpressionSyntax { Left: var left } && left == read))
+        {
+            _unknownVersion ??= Models.PatternResult.Manual(EPPlusReason.CellReadDiffers,
+                $"'{Shorten(read.Parent ?? read)}' (line {Line(read)}) reads a cell: EPPlus .Text of a bool is \"1\" where ClosedXML's GetFormattedString() is \"TRUE\", "
+                + "GetValue<string>() of an empty cell is null where ClosedXML returns \"\", and .Value is object where ClosedXML has XLCellValue. Rewrite the read by hand.");
             return false;
         }
 
         StatementSyntax? statement = cell.FirstAncestorOrSelf<StatementSyntax>();
         bool styled = statement is not null && statement.HasAnnotations(StylesPattern.MigratedAnnotationKind)
             && cell.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Style" };
+        // range.Merge(); as LayoutPattern writes it for Merge = true (row 9).
+        bool merged = !single && cell.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Merge" } merge
+            && merge.Parent is InvocationExpressionSyntax { ArgumentList.Arguments.Count: 0, Parent: ExpressionStatementSyntax };
         bool value = cell.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Value" } access
             && access.Parent is AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax } assignment
             && assignment.Left == access && IsCovered(assignment.Right);
-        if (!styled && !value)
+        if (!styled && !value && !merged)
         {
             return false;
         }
 
         Replacements[cell] = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, use, SyntaxFactory.IdentifierName("Cell")),
+            SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, use, SyntaxFactory.IdentifierName(single ? "Cell" : "Range")),
             SyntaxFactory.ArgumentList(arguments));
         return true;
     }
+
+    // Four int expressions (from row, from column, to row, to column), or one literal range address "A1:C2".
+    private bool IsRange(SeparatedSyntaxList<ArgumentSyntax> arguments) => arguments switch
+    {
+        [_, _, _, _] => arguments.All(a => _model.GetTypeInfo(a.Expression).Type?.SpecialType == SpecialType.System_Int32),
+        [{ Expression: LiteralExpressionSyntax address }] => address.IsKind(SyntaxKind.StringLiteralExpression)
+            && Regex.IsMatch(address.Token.ValueText, "^[A-Z]{1,3}[1-9][0-9]{0,6}:[A-Z]{1,3}[1-9][0-9]{0,6}$", RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1)),
+        _ => false,
+    };
+
+    // Statements LayoutPattern wrote on the worksheet itself (row 9): ws.Row(i).Height = h; and ws.SheetView.Freeze(r, c); are the same in ClosedXML.
+    private static bool IsLayoutUse(IdentifierNameSyntax use) =>
+        use.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Row" } row && row.Expression == use
+            && row.Parent is InvocationExpressionSyntax { ArgumentList.Arguments.Count: 1 } rowCall
+            && rowCall.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Height" } height
+            && height.Parent is AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax } assignment && assignment.Left == height
+        || use.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "SheetView" } view && view.Expression == use
+            && view.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Freeze" } freeze
+            && freeze.Parent is InvocationExpressionSyntax { ArgumentList.Arguments.Count: 2, Parent: ExpressionStatementSyntax };
 
     // Two int row/column expressions (both libraries are 1-based), or one literal single-cell address.
     private bool IsSingleCell(SeparatedSyntaxList<ArgumentSyntax> arguments) => arguments switch

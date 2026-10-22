@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "epplus-package"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19]
 files_expected:
     - src/Unshackle.Core/Fixes/EPPlus/EPPlusFix.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/PackagePattern.cs
@@ -13,6 +13,7 @@ files_expected:
     - src/Unshackle.Core/Fixes/EPPlus/IConfigKeySearch.cs
     - src/Unshackle.Tests/Core/EPPlus/FontsLicenceTests.cs
     - src/Unshackle.Tests/Core/EPPlus/CellValueHarnessTests.cs
+    - src/Unshackle.Tests/Core/EPPlus/CellReadHarnessTests.cs
     - src/Unshackle.Tests/Core/EPPlus/WorksheetIndexTests.cs
     - src/Unshackle.Tests/Proofs/EPPlus/Package/
     - src/Unshackle.Tests/Core/EPPlus/EPPlusFixTests.cs
@@ -93,6 +94,8 @@ file.
 | REQ-15 | `epplus.styles` runs before `epplus.package`, so a cell that is both styled and given a value is migrated in one run, and the result is equal in the harness (`Fix_CellValuesAndStyles_RewrittenTogetherAndSameWorkbook`). |
 | REQ-16 | E10 (council round 11, supersedes the 4.x part of E3 and REQ-11's 4.x rule): a 4.x integer index is Fixed only when the project is not packable (`IProjectProperties`, R1), all its target frameworks are one family (net4x → `Worksheet(i)`, netcore/net5+ → `Worksheet(i + 1)`), every project that transitively depends on it is in the same family, and E11 is clean. Otherwise it is Manual `WorksheetIndexBaseNotProvable`, naming the family (netstandard, mixed, unknown, packable, or a dependent of another family). The family comes from the project's preprocessor symbols (`NETFRAMEWORK`, `NETCOREAPP`, `NETSTANDARD`), over every Roslyn project with the same file path. |
 | REQ-17 | E11: `IsWorksheets1Based` in any document of the solution (identifier or string literal) or in a config file (`IConfigKeySearch`) makes every integer index Manual `WorksheetIndexConfigured`, also on 5+, naming file:line and saying that removing it makes the index fixable. Without a config search the index is Manual too. A Fixed index carries the Info line "IsWorksheets1Based was looked for in the solution's config files and code only." |
+| REQ-18 | Row 4, ranges: `ws.Cells[r1, c1, r2, c2]` (four ints) and `ws.Cells["A1:C2"]` (a literal range address) become `ws.Range(...)` as the target of a covered `Value` assignment, as the receiver of a migrated style statement, or of `Merge();` as `epplus.layout` writes it. `ws.Row(i).Height = h;` and `ws.SheetView.Freeze(r, c);` from `epplus.layout` are accepted on a worksheet local (proof `cell-range`; `Fix_RangeMergeAndStyleAndRowHeight_SameWorkbook`). |
+| REQ-19 | Row 5, reads: `.Text`, `GetValue<T>()` and a `.Value` read are Manual `CellReadDiffers`. The harness shows EPPlus `.Text` of a bool is "1" (ClosedXML "TRUE") and `GetValue<string>()` of an empty cell is null (ClosedXML ""); `.Value` is `object` against `XLCellValue` (proof `cell-read`; `CellReadHarnessTests.Read_Differs`). |
 | REQ-7 | With the licence pattern in the same file, both are rewritten, the result compiles against ClosedXML and compares equal (`Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles`). |
 
 ## See also

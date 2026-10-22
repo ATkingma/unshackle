@@ -279,4 +279,37 @@ public class EPPlusFixTests
         TestSolution.CompileErrors(after, EPPlusReferences.ClosedXml).ShouldBeEmpty();
         CellCompare.Differences(before, after).ShouldBeEmpty();
     }
+
+    // Rows 4 and 9 together: LayoutPattern writes range.Merge(), PackagePattern rewrites the range receiver; a styled range too.
+    [Fact]
+    public async Task Fix_RangeMergeAndStyleAndRowHeight_SameWorkbook()
+    {
+        // Arrange
+        const string before = """
+            using System.IO;
+            using OfficeOpenXml;
+
+            public static class Report
+            {
+                public static void Write(string path)
+                {
+                    using var package = new ExcelPackage();
+                    var sheet = package.Workbook.Worksheets.Add("Orders");
+                    sheet.Cells["A1:C1"].Merge = true;
+                    sheet.Cells[1, 1].Value = "Title";
+                    sheet.Cells["A2:C2"].Style.Font.Bold = true;
+                    sheet.Row(2).Height = 30;
+                    package.SaveAs(new FileInfo(path));
+                }
+            }
+            """;
+
+        // Act
+        (FixReport report, string after) = await FixAsync(before);
+
+        // Assert
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult, string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
+        TestSolution.CompileErrors(after, EPPlusReferences.ClosedXml).ShouldBeEmpty();
+        CellCompare.Differences(before, after).ShouldBeEmpty();
+    }
 }

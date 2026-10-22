@@ -1,6 +1,6 @@
 # TAAK-420 — Scout Newtonsoft.Json → System.Text.Json
 
-**Status**: step 1/3 — in progress (agent scout-newtonsoft)
+**Status**: done (agent scout-newtonsoft); verdict in candidate-newtonsoft.md
 **Created**: 2026-10-22
 **Goal**: A go/no-go recommendation for a new `newtonsoft` fix, backed by primary sources and a source-level corpus survey, in `docs/projectinfo/architectuur/candidate-newtonsoft.md`.
 
@@ -12,13 +12,14 @@
 
 ## Steps
 
-- [ ] 1. Facts from primary sources (license/EOL, dates, links) and API distance; Fixed vs Manual sketch; behaviour-proof idea
-- [ ] 2. Survey: 8-15 repos with pinned shas, grep counts per API shape, demand and effort (S/M/L) in `candidate-newtonsoft.md`
-- [ ] 3. Recommendation + council questions; if go, a draft follow-up task (number 421–429)
+- [x] 1. Facts from primary sources (license/EOL, dates, links) and API distance; Fixed vs Manual sketch; behaviour-proof idea
+- [x] 2. Survey: 8-15 repos with pinned shas, grep counts per API shape, demand and effort (S/M/L) in `candidate-newtonsoft.md`
+- [x] 3. Recommendation + council questions; if go, a draft follow-up task (number 421–429)
 
 ## Progress log
 
 - 2026-10-22: created; agent scout-newtonsoft started.
+- 2026-10-22: 10 repos cloned, grep counts, report written (conditional no-go, effort L).
 
 ## Changes
 

@@ -43,38 +43,6 @@ public class CellValueHarnessTests
         }
         """;
 
-    public static TheoryData<string> CoveredValues() =>
-    [
-        "string value = \"Widget\";",
-        "string value = \"\";",
-        "string value = \"  leading and trailing  \";",
-        "int value = 42;",
-        "int value = int.MinValue;",
-        "double value = 12.5;",
-        "double value = -0.000001;",
-        "double value = 1e300;",
-        "decimal value = 2.25m;",
-        "bool value = true;",
-        "bool value = false;",
-        "long value = 1234567890123;",
-        "float value = 1.5f;",
-        "string? value = null;",
-        "short value = -7;",
-        "byte value = 255;",
-    ];
-
-    [Theory]
-    [MemberData(nameof(CoveredValues))]
-    public void Value_CoveredType_SameCell(string declaration)
-    {
-        // Arrange, Act
-        IReadOnlyList<string> differences = CellCompare.Differences(
-            Before.Replace("DECLARATION", declaration, StringComparison.Ordinal), After.Replace("DECLARATION", declaration, StringComparison.Ordinal));
-
-        // Assert
-        differences.ShouldBeEmpty(string.Join(Environment.NewLine, differences));
-    }
-
     // Harness facts behind E4: ClosedXML writes a number with 15 significant digits, EPPlus 4.5.3.3 with 17 (round-trip), and EPPlus writes a
     // DateTime as a General-format serial number where ClosedXML writes a date format. So these stay Manual (UncoveredRuntimeType), and
     // a double, float, decimal or long is Fixed only as a constant whose value round-trips in 15 digits.

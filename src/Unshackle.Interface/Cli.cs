@@ -77,18 +77,20 @@ public static class Cli
 
         var sequential = new Option<bool>("--sequential") { Description = "Fix one file at a time instead of several in parallel (same output)." };
         var maxDegree = new Option<int?>("--max-degree") { Description = $"Fix at most this many files at once (default: the processor count, at most {Fixer.DefaultMaxDegree}); lower it when memory runs out." };
+        var checkEveryFile = new Option<bool>("--check-every-file") { Description = "Run the patterns on every file, also those without a trace of the old library (same output; for comparison runs).", Hidden = true };
         FixRequest Request(ParseResult r) => new()
         {
             FixId = r.GetRequiredValue(fixOption), Sequential = r.GetValue(sequential), MaxDegree = r.GetValue(maxDegree),
+            CheckEveryFile = r.GetValue(checkEveryFile),
         };
         var scanCommand = new Command("scan", "Run a fix and report what it would change, without writing code.")
         {
-            solution, fixOption, report, force, sequential, maxDegree,
+            solution, fixOption, report, force, sequential, maxDegree, checkEveryFile,
         };
         scanCommand.SetAction((r, ct) => WithSolution(view, r.GetValue(solution), path => scan.ExecuteAsync(
             path, Request(r), r.GetValue(report), r.GetValue(force), ct)));
 
-        var fixCommand = new Command("fix", "Run a fix and write the changes.") { solution, fixOption, report, dryRun, force, sequential, maxDegree };
+        var fixCommand = new Command("fix", "Run a fix and write the changes.") { solution, fixOption, report, dryRun, force, sequential, maxDegree, checkEveryFile };
         fixCommand.SetAction((r, ct) => WithSolution(view, r.GetValue(solution), path => fix.ExecuteAsync(
             path, Request(r), r.GetValue(report), r.GetValue(dryRun), r.GetValue(force), ct)));
 

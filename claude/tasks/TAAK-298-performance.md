@@ -1,6 +1,6 @@
 # TAAK-298 — Performance of a fix run
 
-**Status**: step 6/7 (WIP) — steps 1–5 done; pre-filter being narrowed (see last Progress log lines); corpus round (step 6) and wrap-up (step 7) not started  
+**Status**: step 6/7 — in progress; steps 1–5 done, pre-filter narrowed and measured; corpus round (step 6) next  
 **Created**: 2026-10-20  
 **Goal**: a measurably faster `scan --fix` on large solutions, with identical output (same findings in the same order, same rewritten files) and 0 corpus regressions.
 
@@ -27,7 +27,7 @@
 - [x] 3. Pre-filter per file: skip the patterns for a file without any old-library trace; tests for global usings, swapped types and the unused-using case. Measure again.
 - [x] 4. Proposal for parallel file processing (council); `Fixer.cs` is split along the `FileFixer` seam (done, see `claude/tasks/archief/TAAK-299-split-large-files.md` for the shared state left in it): collect results per file, merge in the original order; thread safety of what is shared.
 - [x] 5. Implement parallel processing behind the merge in the same order; tests that compare findings order with the sequential run.
-- [ ] 6. Corpus round (all 36 repos): 36/36 build, 0 regressions, identical findings; final timings next to the baseline.
+- [→] 6. Corpus round (all 36 repos): 36/36 build, 0 regressions, identical findings; final timings next to the baseline.
 - [ ] 7. Worktree check → commit → push → CI green; numbers in `claude/docs/overdracht.md`.
 
 ## Measurements
@@ -62,6 +62,7 @@ Akka is the outlier: 7043 fixed, 4366 manual, ~9 minutes.
 - 2026-10-21: step 5 done (same commit). `Fixer.RunAsync` runs `FixFileCopiesAsync` per file with `Parallel.ForEachAsync`; each returns a `FileOutcome` (rows, fixed text, whether a later copy replaced an inactive-branch row); rows are merged in file order (that file's inactive-branch row is also removed from the seed rows, as before). Degree in one place (`Fixer.Degree`). Tests: `FileProcessingTests` (FA with global using / unused using / helper, MediatR with a base handler, AutoMapper, 40 files, two target frameworks; sequential vs pre-filter off vs parallel at 2, 3, 4, 8 and default; shuffled finish order 5× at degrees 2–10) and `SampleShopTests.Scan_SequentialAndParallel_WriteTheSameReport` (FA, MediatR; AutoMapper is sequential and its add-automapper example row still varies between runs, TAAK-300). CLI `--sequential`, `--max-degree` on `scan` and `fix`. Build 0 warnings, 1660 tests, SampleShop 38/38. Outside Core's own files: one line in `MediatRFix.cs` (`FixesFilesInParallel => true`), and `ConfigurationSyntax.cs`.
 - 2026-10-21: measured (tool from `1c4d326`, ProcessorCount 22). akka degree 1 / 4 / 8: 548 s / 403 s / 340 s, peak working set 1890 / 2216 / 2443 MB (1.29× at 8, so the default cap stays 8); the three reports are byte-identical. eShop (MediatR) 28 → 23 s. Pre-filter found to be nearly useless (it kept 3523 of 3557 nop files, 3191 of 3208 akka, 429 of 448 eShop: every member name of the old library, e.g. `Value`, `Name`, let almost every file in) and nop (AutoMapper, sequential) got ~30 s slower with it (79 s off vs 112 s on, same report), cause not yet found (the filter itself takes 2 s; suspicion: the `MapOwners`/`MapperCleanup` single-entry plan cache rebuilds more often when files are skipped).
 - 2026-10-21: WIP (uncommitted at the time, now committed): `OldLibraryFiles` closure as a worklist over an index (the old loop was O(n²) with `RemoveAt`), and only static members and extension methods of the old library count (instance members are reached through a value whose origin is named). Next: hidden `--check-every-file` CLI option, re-measure filter effect, decide on the pre-filter for AutoMapper (`FindsOnlyOldLibraryCode => false` if it stays slower), then the corpus round (harness copy in a local work folder), step 7.
+- 2026-10-22 (Opus 5.5, new session): hidden `--check-every-file` CLI option on `scan`/`fix` (sets `FixRequest.CheckEveryFile`). Re-measured with the narrowed filter (tool from this commit, default degree): akka filter on 201 s vs off 317 s; nop (AutoMapper) on 76/80 s vs off 92/65 s (noise, the earlier ~30 s slowdown is gone, so AutoMapper keeps the filter). Reports byte-identical on/off for akka, nop and eShop. Build and 1660 tests green. Next: corpus round (step 6).
 
 ## Changes
 

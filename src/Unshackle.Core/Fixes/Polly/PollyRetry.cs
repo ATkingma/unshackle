@@ -51,10 +51,24 @@ internal static class PollyRetry
 
         if (HolderOf(creation, model) is (SyntaxNode declaration, ISymbol holder))
         {
-            return [declaration, .. Uses(declaration, holder, model).Select(u => ExecuteOn(Receiver(u))).OfType<InvocationExpressionSyntax>()];
+            IEnumerable<InvocationExpressionSyntax> executes = Uses(declaration, holder, model).Select(u => ExecuteOn(Receiver(u))).OfType<InvocationExpressionSyntax>();
+            // A field assigned in the constructor: its declaration (type), the assignment's value and the calls are separate nodes.
+            return declaration.Contains(creation) ? [declaration, .. executes] : [declaration, creation, .. executes];
         }
 
         return [creation];
+    }
+
+    // The retry call node itself: a constructor-assigned field's value (queue row 5), otherwise a policy stored or passed on (Manual).
+    public static PollyPlan PlanCreation(InvocationExpressionSyntax creation, SemanticModel model)
+    {
+        if (HolderOf(creation, model) is not (SyntaxNode declaration, ISymbol holder) || declaration.Contains(creation))
+        {
+            return PollyPlan.Manual(PollyReason.PolicyNotLocal,
+                "the policy is stored or passed on (property, return value, argument, or a field assigned outside its declaration or constructor); only a local, a private field or an inline policy used by awaited ExecuteAsync calls is rewritten so far.");
+        }
+
+        return PlanHolderUses(declaration, holder, creation, model) is PollyPlan blocked ? blocked : PlanPipeline(creation, model);
     }
 
     private static bool IsHandlerPolicy(InvocationExpressionSyntax creation) => creation.Parent switch
@@ -69,13 +83,13 @@ internal static class PollyRetry
     {
         VariableDeclarationSyntax declaration = Declaration(declarationNode);
         if (declaration.Variables.Count != 1
-            || declaration.Variables[0].Initializer?.Value is not InvocationExpressionSyntax creation
-            || HolderOf(creation, model) is not (_, ISymbol holder))
+            || model.GetDeclaredSymbol(declaration.Variables[0]) is not ISymbol holder
+            || HolderCreation(holder, model) is not (_, InvocationExpressionSyntax creation))
         {
-            return PollyPlan.Manual(PollyReason.PolicyNotLocal, "the declaration does not hold exactly one policy initialised with a retry call.");
+            return PollyPlan.Manual(PollyReason.PolicyNotLocal, "the declaration does not hold exactly one policy created by a retry call at its declaration or in its constructor.");
         }
 
-        if (PlanHolderUses(declarationNode, holder, model) is PollyPlan blocked)
+        if (PlanHolderUses(declarationNode, holder, creation, model) is PollyPlan blocked)
         {
             return blocked;
         }
@@ -86,7 +100,7 @@ internal static class PollyRetry
             return pipeline;
         }
 
-        SyntaxNode rewritten = declarationNode.ReplaceNode(creation, pipeline.Node);
+        SyntaxNode rewritten = declarationNode.Contains(creation) ? declarationNode.ReplaceNode(creation, pipeline.Node) : declarationNode;
         VariableDeclarationSyntax rewrittenDeclaration = Declaration(rewritten);
         if (!rewrittenDeclaration.Type.IsVar)
         {
@@ -116,11 +130,10 @@ internal static class PollyRetry
                 (original, _) => original == creation ? pipeline.Node : inlineCallback.Node));
         }
 
-        if (model.GetSymbolInfo(access.Expression).Symbol is ISymbol { Kind: SymbolKind.Local or SymbolKind.Field } symbol
-            && symbol.DeclaringSyntaxReferences.SingleOrDefault()?.GetSyntax() is VariableDeclaratorSyntax { Initializer.Value: InvocationExpressionSyntax holderCreation }
-            && HolderOf(holderCreation, model) is (SyntaxNode declaration, ISymbol holder))
+        if (model.GetSymbolInfo(access.Expression).Symbol is ISymbol { Kind: SymbolKind.Local or SymbolKind.Field } holder
+            && HolderCreation(holder, model) is (SyntaxNode declaration, InvocationExpressionSyntax holderCreation))
         {
-            if (PlanHolderUses(declaration, holder, model) is PollyPlan blocked)
+            if (PlanHolderUses(declaration, holder, holderCreation, model) is PollyPlan blocked)
             {
                 return blocked;
             }
@@ -392,7 +405,7 @@ internal static class PollyRetry
 
     // Every use of the holder must be the receiver of a rewritable ExecuteAsync; null when they all are. A field must be private in a
     // type declared in one place (not partial), so every use is in that declaration (queue row 5).
-    private static PollyPlan? PlanHolderUses(SyntaxNode declarationNode, ISymbol holder, SemanticModel model)
+    private static PollyPlan? PlanHolderUses(SyntaxNode declarationNode, ISymbol holder, InvocationExpressionSyntax creation, SemanticModel model)
     {
         switch (declarationNode)
         {
@@ -407,6 +420,11 @@ internal static class PollyRetry
 
         foreach (IdentifierNameSyntax use in Uses(declarationNode, holder, model))
         {
+            if (creation.Parent is AssignmentExpressionSyntax assignment && assignment.Left == Receiver(use))
+            {
+                continue;
+            }
+
             if (ExecuteOn(Receiver(use)) is not InvocationExpressionSyntax execute)
             {
                 return PollyPlan.Manual(PollyReason.PolicyUsedBeyondExecute,
@@ -437,12 +455,50 @@ internal static class PollyRetry
     private static ExpressionSyntax Receiver(IdentifierNameSyntax use) =>
         use.Parent is MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } access && access.Name == use ? access : use;
 
-    private static (SyntaxNode, ISymbol)? HolderOf(InvocationExpressionSyntax creation, SemanticModel model) =>
-        creation.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator, Parent.Parent.Parent: SyntaxNode holder }
-        && holder is LocalDeclarationStatementSyntax or FieldDeclarationSyntax
-        && model.GetDeclaredSymbol(declarator) is ISymbol { Kind: SymbolKind.Local or SymbolKind.Field } symbol
-            ? (holder, symbol)
+    // The local or field that holds this retry call, with its declaration node; null when the call is not its only creation.
+    private static (SyntaxNode, ISymbol)? HolderOf(InvocationExpressionSyntax creation, SemanticModel model)
+    {
+        ISymbol? symbol = creation.Parent switch
+        {
+            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator } => model.GetDeclaredSymbol(declarator),
+            AssignmentExpressionSyntax { Left: ExpressionSyntax left } assignment when assignment.Right == creation => model.GetSymbolInfo(left).Symbol,
+            _ => null,
+        };
+        return symbol is { Kind: SymbolKind.Local or SymbolKind.Field } && HolderCreation(symbol, model) is (SyntaxNode declaration, InvocationExpressionSyntax found) && found == creation
+            ? (declaration, symbol)
             : null;
+    }
+
+    // The declaration node and the one retry call that creates the holder: its initializer, or (a field without one) the single
+    // `_f = <retry>;` statement directly in a constructor body of its own type, unconditional (queue row 5).
+    private static (SyntaxNode, InvocationExpressionSyntax)? HolderCreation(ISymbol holder, SemanticModel model)
+    {
+        if (holder.DeclaringSyntaxReferences.SingleOrDefault()?.GetSyntax() is not VariableDeclaratorSyntax { Parent.Parent: SyntaxNode declaration } declarator
+            || declaration is not (LocalDeclarationStatementSyntax or FieldDeclarationSyntax))
+        {
+            return null;
+        }
+
+        if (declarator.Initializer is { } initializer)
+        {
+            return initializer.Value is InvocationExpressionSyntax value && IsRetryCreation(value, model) ? (declaration, value) : null;
+        }
+
+        if (holder is not IFieldSymbol || holder.ContainingType.DeclaringSyntaxReferences is not [SyntaxReference type] || type.SyntaxTree != declaration.SyntaxTree)
+        {
+            return null;
+        }
+
+        List<AssignmentExpressionSyntax> assignments =
+        [
+            .. type.GetSyntax().DescendantNodes().OfType<AssignmentExpressionSyntax>()
+                .Where(a => SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(a.Left).Symbol, holder)),
+        ];
+        return assignments is [{ Right: InvocationExpressionSyntax right, Parent: ExpressionStatementSyntax { Parent: BlockSyntax { Parent: ConstructorDeclarationSyntax } } } only]
+            && only.IsKind(SyntaxKind.SimpleAssignmentExpression) && IsRetryCreation(right, model)
+            ? (declaration, right)
+            : null;
+    }
 
     private static VariableDeclarationSyntax Declaration(SyntaxNode declarationNode) => declarationNode switch
     {

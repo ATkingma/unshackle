@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "polly-wait-and-retry-async"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16]
 files_expected:
     - src/Unshackle.Core/Fixes/Polly/Patterns/WaitAndRetryAsyncPattern.cs
     - src/Unshackle.Core/Fixes/Polly/PollyRetry.cs
@@ -88,7 +88,11 @@ pipeline, with the delay lambda kept as the `DelayGenerator`.
   place, and every use (`_f` or `this._f`) is an awaited rewritable `ExecuteAsync` THE SYSTEM SHALL rewrite the field (type →
   `ResiliencePipeline(<T>)`) and every call (proof `field-static` + behaviour trace); a non-private field or a partial type is Manual
   `PolicyMemberNotPrivate` (proof `field-public`), any other use Manual `PolicyUsedBeyondExecute` (proof `field-passed-on`).
-  Properties, return values, parameters and fields assigned elsewhere stay Manual `PolicyNotLocal`.
+  Properties, return values, parameters and fields assigned elsewhere stay Manual `PolicyNotLocal` (proof `property`).
+- **REQ-16** (queue row 5, slice 2): WHEN such a private field has no initializer and exactly one assignment `_f = <retry>;` (or
+  `this._f = ...`), an unconditional statement directly in a constructor body of its type, THE SYSTEM SHALL rewrite the field type,
+  the assigned value and every call as three kinds of node (proof `field-constructor` + behaviour trace); an assignment inside a
+  branch, a second assignment or any other use is Manual.
 
 ## Assumptions
 

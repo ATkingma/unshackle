@@ -49,7 +49,7 @@ public class RetryVariantsPatternTests
 
     [Theory]
     [InlineData("public partial class W { private readonly IAsyncPolicy _p = Policy.Handle<TimeoutException>().RetryAsync(1); public Task M() => _p.ExecuteAsync(() => Task.CompletedTask); } public partial class W { }", nameof(PollyReason.PolicyMemberNotPrivate))]
-    [InlineData("public class W { private readonly IAsyncPolicy _p; public W() { _p = Policy.Handle<TimeoutException>().RetryAsync(1); } }", nameof(PollyReason.PolicyNotLocal))]
+    [InlineData("public class W { private readonly IAsyncPolicy _p; public W(bool b) { if (b) { _p = Policy.Handle<TimeoutException>().RetryAsync(1); } } }", nameof(PollyReason.PolicyNotLocal))]
     public void Rewrite_FieldNotProvablyLocal_Manual(string type, string code)
     {
         // Arrange (queue row 5)

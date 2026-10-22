@@ -1,6 +1,6 @@
 # TAAK-308 — Polly v7 → Microsoft.Extensions.Resilience (roadmap step 8)
 
-**Status**: step 5/6 — steps 1–4 done, queue rows 1–3 and 7 done; next: row 5 (policy members), then 6
+**Status**: step 5/6 — steps 1–4 done, queue rows 1–3 and 7 done; next: row 6 slice 2 (policy from a method), row 10 (Wrap), row 4 (sync)
 **Created**: 2026-10-22
 **Goal**: A `polly` fix that rewrites Polly v7 policy code to v8 resilience pipelines via Microsoft.Extensions.Resilience / Http.Resilience, at 100% on a Polly corpus.
 
@@ -62,6 +62,7 @@ references (MEHP itself depends on Polly 7) and the v7 API; staying on Polly 8.x
   P8 (`PollyFix.EditsFor`: add M.E.Resilience, remove Polly.Core <= 8.4.2). Row 5 first slice: private fields (REQ-15 / REQ-7).
 - 2026-10-22 (polly-skeleton): P9 only via ProjectBlockers (TAAK-320); found that the pre-filter skipped every file
   (RemovedNamespaces lacked Polly) -> `FindsOnlyOldLibraryCode => false`. Row 6 first slice: `polly.add-policy-handler`.
+  Row 5 slice 2: constructor-assigned private fields (REQ-16).
 
 ## Changes
 

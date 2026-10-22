@@ -32,5 +32,6 @@ public class MassTransitFix : IFix, IReportOnlyFix
         new ConsumerDefinitionPattern(),
         new SagaPattern(),
         new RequestClientPattern(),
+        new PublishSendPattern(),
     ];
 }

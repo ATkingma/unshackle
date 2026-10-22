@@ -74,8 +74,8 @@ public class CombinedProofTests
 
         // Assert
         string actual = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
-        // A partial-* case (TAAK-272) keeps some maps on AutoMapper: only planned keeps may be Manual.
-        report.Findings.ShouldAllBe(f => f.Result is FixedResult || (name.StartsWith("partial-", StringComparison.Ordinal) && ((ManualResult)f.Result).Kept != KeptReason.None && ReportRow.ReasonOf((ManualResult)f.Result).StartsWith("Stays on AutoMapper: ", StringComparison.Ordinal)),
+        // A partial-* case (TAAK-272) keeps some maps on AutoMapper: only planned keeps may be Manual. Info rows (council A8) are no blocker.
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult || f.Result is InfoResult || (name.StartsWith("partial-", StringComparison.Ordinal) && ((ManualResult)f.Result).Kept != KeptReason.None && ReportRow.ReasonOf((ManualResult)f.Result).StartsWith("Stays on AutoMapper: ", StringComparison.Ordinal)),
             string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
         actual.ShouldBe(expected);
         TestSolution.CompileErrors(actual, TestReferences.AutoMapper).ShouldBeEmpty("after must compile");

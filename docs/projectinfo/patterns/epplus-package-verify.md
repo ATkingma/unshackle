@@ -31,6 +31,7 @@
 | REQ-18 | Met    | proof `Package/cell-range` (harness equal); `CellReadHarnessTests.Read_SameResult` (range value, range bold); `EPPlusFixTests.Fix_RangeMergeAndStyleAndRowHeight_SameWorkbook` |
 | REQ-19 | Met    | proof `Package/cell-read`; `CellReadHarnessTests.Read_Differs` |
 | REQ-20 | Met    | proofs `Package/byte-array`, `Package/byte-array-file`, `Package/save-stream` (harness equal), `Package/byte-array-lambda`; `SaveHarnessTests` |
+| REQ-21 | Met    | `GetValueMatrixTests` (12 rows: 6 types x 2 contexts, differing cells pinned); proof `Package/existing-file` |
 | REQ-7 | Met     | `EPPlusFixTests.Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles` |
 
 ## Build and tests

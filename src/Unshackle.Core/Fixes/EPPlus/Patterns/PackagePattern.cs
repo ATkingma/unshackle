@@ -65,7 +65,8 @@ public class PackagePattern : ISolutionPattern
 
         if (creation.ArgumentList is { Arguments.Count: > 0 })
         {
-            return PatternResult.Manual("new ExcelPackage(...) with arguments (a file, stream or password) opens or decrypts a workbook; not mapped yet (epplus-queue).");
+            return PatternResult.Manual(EPPlusReason.CellReadDiffers, "new ExcelPackage(...) with arguments opens (or decrypts) an existing workbook. Council round 12, E12: that is Fixed only when every read in the method is Fixed, "
+                + "and no cell read is (GetValue<T> differs from ClosedXML for every T on an empty cell, GetValueMatrixTests). Migrate the reads by hand.");
         }
 
         if (creation.Parent is not EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator }

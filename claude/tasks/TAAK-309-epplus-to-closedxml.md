@@ -98,6 +98,11 @@
   `GetAsByteArray()` becomes a `using var workbookStream = new MemoryStream(); p.SaveAs(workbookStream);` inserted before the statement, with
   `workbookStream.ToArray()` in place of the call. `Save()`, a call in a lambda, and `new ExcelPackage(stream/file)` stay Manual. The harness
   entry point now needs exactly one parameter. `dotnet test` 2210 passed, 0 failed (after merging main).
+- 2026-10-22 (epplus-skeleton, E12): `GetValueMatrixTests` ran the full matrix: 7 cell kinds x 6 types x 2 contexts (opened file, written cells).
+  No T qualifies. Every T differs on an empty cell (EPPlus default(T), ClosedXML throws). Text cells throw FormatException in EPPlus and
+  InvalidCastException in ClosedXML. int/long of a fraction gives 42 in EPPlus and throws in ClosedXML. A date read as a number gives the
+  serial in ClosedXML and throws in EPPlus. So `GetValue<T>` stays `CellReadDiffers`, and opening an existing workbook (E12: only when every
+  read is Fixed) is Manual `CellReadDiffers`. The allowed shapes are listed in the epplus-package plan.
 
 ## See also
 

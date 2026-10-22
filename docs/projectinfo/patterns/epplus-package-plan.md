@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "epplus-package"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21]
 files_expected:
     - src/Unshackle.Core/Fixes/EPPlus/EPPlusFix.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/PackagePattern.cs
@@ -15,6 +15,7 @@ files_expected:
     - src/Unshackle.Tests/Core/EPPlus/CellValueHarnessTests.cs
     - src/Unshackle.Tests/Core/EPPlus/CellReadHarnessTests.cs
     - src/Unshackle.Tests/Core/EPPlus/SaveHarnessTests.cs
+    - src/Unshackle.Tests/Core/EPPlus/GetValueMatrixTests.cs
     - src/Unshackle.Tests/Core/EPPlus/WorksheetIndexTests.cs
     - src/Unshackle.Tests/Proofs/EPPlus/Package/
     - src/Unshackle.Tests/Core/EPPlus/EPPlusFixTests.cs
@@ -54,6 +55,27 @@ blocking use.
 - A package outside a using local (field, property, parameter, return value, a plain local), or two packages in one scope.
 - Any other use of the local: the worksheet result used (`var ws = p.Workbook.Worksheets.Add(..)`: row 3), `Worksheets[..]`,
   `GetAsByteArray()`, `Save()`, `SaveAs(Stream)` (row 6), passing `p` on.
+
+## Allowed shapes (E12)
+
+Every shape this pattern rewrites, each with a full proof and the harness:
+
+| Shape (EPPlus) | ClosedXML | Proof |
+| --- | --- | --- |
+| `new ExcelPackage()` in a using or plain local | `new XLWorkbook()` | `using-statement`, `using-declaration`, `plain-local` |
+| `p.Workbook.Worksheets.Add("valid literal")` | `p.Worksheets.Add(..)` | `using-statement`, `worksheet-local` |
+| `p.Workbook.Worksheets["added literal"]` | `p.Worksheet(..)` | `worksheet-name` |
+| `p.Workbook.Worksheets[i]` (5+, or 4.x under E10; no E11 override) | `p.Worksheet(position)` | `WorksheetIndexTests` |
+| worksheet `.Name` read, rename to a new valid literal | the same | `worksheet-name`, `worksheet-local` |
+| `ws.Cells[r, c]` / `ws.Cells["A1"]` as a covered `Value =` target or migrated style receiver | `ws.Cell(..)` | `cells-values`, `used-worksheet` |
+| `ws.Cells[r1, c1, r2, c2]` / `ws.Cells["A1:C2"]` (value, style, `Merge();`) | `ws.Range(..)` | `cell-range` |
+| `ws.Row(i).Height = h;`, `ws.SheetView.Freeze(r, c);` (from `epplus.layout`) | the same | `_Combined` |
+| `p.SaveAs(new FileInfo(path))` | `p.SaveAs(path)` | `using-statement` |
+| `p.SaveAs(stream)` | the same | `save-stream` |
+| `p.GetAsByteArray()` in a block statement | `MemoryStream` + `SaveAs` + `ToArray()` | `byte-array`, `byte-array-file` |
+
+Not allowed (Manual): every cell read (`.Text`, `.Value` read, `GetValue<T>` for every T), opening an existing workbook, `Save()`, DateTime
+and non-constant numeric values (E4).
 
 ## Design
 
@@ -98,6 +120,7 @@ file.
 | REQ-18 | Row 4, ranges: `ws.Cells[r1, c1, r2, c2]` (four ints) and `ws.Cells["A1:C2"]` (a literal range address) become `ws.Range(...)` as the target of a covered `Value` assignment, as the receiver of a migrated style statement, or of `Merge();` as `epplus.layout` writes it. `ws.Row(i).Height = h;` and `ws.SheetView.Freeze(r, c);` from `epplus.layout` are accepted on a worksheet local (proof `cell-range`; `Fix_RangeMergeAndStyleAndRowHeight_SameWorkbook`). |
 | REQ-19 | Row 5, reads: `.Text`, `GetValue<T>()` and a `.Value` read are Manual `CellReadDiffers`. The harness shows EPPlus `.Text` of a bool is "1" (ClosedXML "TRUE") and `GetValue<string>()` of an empty cell is null (ClosedXML ""); `.Value` is `object` against `XLCellValue` (proof `cell-read`; `CellReadHarnessTests.Read_Differs`). |
 | REQ-20 | Row 6 (`epplus.save`, inside this pattern):<br>- `p.SaveAs(stream)` with a `Stream` argument stays the same call; `SaveHarnessTests` shows both libraries leave the stream open at its end.<br>- `p.GetAsByteArray()` inside a statement of a block, and not in a lambda, gets `using var workbookStream = new MemoryStream(); p.SaveAs(workbookStream);` before that statement and becomes `workbookStream.ToArray()`. The name is made unique, and `System.IO` is added.<br>- `Save()` and `GetAsByteArray` in a lambda stay Manual.<br>Proofs: `byte-array`, `byte-array-file`, `save-stream`, `byte-array-lambda`. |
+| REQ-21 | E12 (council round 12): `GetValue<T>()` with T in {int, long, double, decimal, DateTime, bool} would be Fixed only if the full matrix matches: empty, bool, whole number, fraction, date, text and numeric-text cells, read both from an opened workbook and from cells the same code wrote, giving the same result or the same exception type. **No T passes**, so every read stays Manual `CellReadDiffers` (`GetValueMatrixTests` pins the differing cells per T). Opening an existing workbook (`new ExcelPackage(stream/FileInfo/path)`) is Fixed only when every read in the method is Fixed, so it is Manual `CellReadDiffers` as well (proof `existing-file`). |
 | REQ-7 | With the licence pattern in the same file, both are rewritten, the result compiles against ClosedXML and compares equal (`Fix_LicenseLineAndPackage_BothRewrittenAndAfterCompiles`). |
 
 ## See also

@@ -1,1 +1,1 @@
-[UncoveredRuntimeType] EPPlus 'LoadFromDataTable'
+UncoveredRuntimeType: EPPlus 'LoadFromDataTable'

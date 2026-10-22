@@ -86,7 +86,7 @@ public partial class DimensionHarnessTests
         (FixReport report, _) = await RewriteAsync(before);
 
         // Assert
-        ((ManualResult)report.Findings.ShouldHaveSingleItem().Result).Reason.ShouldContain(nameof(EPPlusReason.UnmappedDimension));
+        ((ManualResult)report.Findings.ShouldHaveSingleItem().Result).Code.ShouldBe(nameof(EPPlusReason.UnmappedDimension));
     }
 
     private static async Task<(FixReport Report, string After)> RewriteAsync(string before)

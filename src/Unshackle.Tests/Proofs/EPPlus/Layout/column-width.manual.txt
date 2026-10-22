@@ -1,1 +1,1 @@
-[ColumnWidthDiffers] EPPlus layout 'Column(i).Width'
+ColumnWidthDiffers: EPPlus layout 'Column(i).Width'

@@ -1,1 +1,1 @@
-[AutoFitDiffers] EPPlus layout 'AutoFit': the width auto-fit computes depends on the fonts
+AutoFitDiffers: EPPlus layout 'AutoFit': the width auto-fit computes depends on the fonts

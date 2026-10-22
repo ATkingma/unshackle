@@ -77,7 +77,7 @@ public class LayoutHarnessTests
         (FixReport report, string after) = await RewriteAsync(before, translate: false);
 
         // Assert
-        ((ManualResult)report.Findings.ShouldHaveSingleItem().Result).Reason.ShouldContain(code);
+        ((ManualResult)report.Findings.ShouldHaveSingleItem().Result).Code.ShouldBe(code);
         after.ShouldBe(before);
     }
 

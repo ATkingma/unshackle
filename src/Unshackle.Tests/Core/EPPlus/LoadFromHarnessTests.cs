@@ -90,7 +90,7 @@ public partial class LoadFromHarnessTests
         (FixReport report, _) = await RewriteAsync(before);
 
         // Assert
-        ((ManualResult)report.Findings.ShouldHaveSingleItem().Result).Reason.ShouldContain(code);
+        ((ManualResult)report.Findings.ShouldHaveSingleItem().Result).Code.ShouldBe(code);
     }
 
     // Council round 12, E15: a DateTime property written by hand as InsertData differs in the harness, so the pattern keeps it Manual

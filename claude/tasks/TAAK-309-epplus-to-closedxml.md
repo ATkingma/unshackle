@@ -1,6 +1,6 @@
 # TAAK-309 — EPPlus → ClosedXML (roadmap step 9)
 
-**Status**: step 3/5 — harness, skeleton and queue rows 1–2 done; queue rows 1, 2, 3 and 11 done; E7 partly done (warning + LicensedDependency; pin waits for an assets-file reader); next row 4 (`epplus.cells`)
+**Status**: step 4/5 — queue rows 1-11 done (7 and 10 lack an E14 combined after-proof, waits for a PackagePattern change); E7 pin wired through `IPackageAssetsReader` (L4, 2026-10-22); C1 codes for layout/dimension/load-from moved to `EPPlusReason`; corpus round (row 12) in progress, see `CORPUSRUN-epplus.md`
 **Created**: 2026-10-22
 **Goal**: An `epplus` fix that rewrites EPPlus code (LGPL 4.5.3.3 and commercial 5+ API shapes) to ClosedXML, at 100% on an EPPlus corpus.
 

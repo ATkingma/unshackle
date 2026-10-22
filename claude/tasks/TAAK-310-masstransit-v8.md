@@ -1,6 +1,6 @@
 # TAAK-310 — MassTransit v8 → open-source bus (roadmap step 10)
 
-**Status**: step 4/4 — report-only detector built; corpus round open
+**Status**: step 4/4 — report-only detector built; corpus round in progress (L4), see `CORPUSRUN-masstransit.md`
 **Created**: 2026-10-22
 **Goal**: A council decision on whether and how Unshackle migrates MassTransit v8 code, and if yes a `masstransit` fix at 100% on a corpus.
 

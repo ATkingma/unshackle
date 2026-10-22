@@ -1,1 +1,1 @@
-[UnmappedEPPlusLayout] EPPlus layout 'View.FreezePanes'
+UnmappedEPPlusLayout: EPPlus layout 'View.FreezePanes'

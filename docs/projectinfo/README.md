@@ -194,6 +194,10 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `polly.add-policy-handler` | [plan](patterns/polly-add-policy-handler-plan.md) | [models](patterns/polly-add-policy-handler-modellen.md) | [verify](patterns/polly-add-policy-handler-verify.md) | TAAK-308 |
 | `polly.wrap` | [plan](patterns/polly-wrap-plan.md) | [models](patterns/polly-wrap-modellen.md) | [verify](patterns/polly-wrap-verify.md) | TAAK-308 |
 | `polly.sync-retry` | [plan](patterns/polly-sync-retry-plan.md) | [models](patterns/polly-sync-retry-modellen.md) | [verify](patterns/polly-sync-retry-verify.md) | TAAK-308 |
+| `polly.timeout` | [plan](patterns/polly-timeout-plan.md) | [models](patterns/polly-timeout-modellen.md) | [verify](patterns/polly-timeout-verify.md) | TAAK-308 |
+| `polly.no-op` | [plan](patterns/polly-no-op-plan.md) | [models](patterns/polly-no-op-modellen.md) | [verify](patterns/polly-no-op-verify.md) | TAAK-308 |
+| `polly.circuit-breaker` | [plan](patterns/polly-circuit-breaker-plan.md) | [models](patterns/polly-circuit-breaker-modellen.md) | [verify](patterns/polly-circuit-breaker-verify.md) | TAAK-308 |
+| `polly.unsupported` | [plan](patterns/polly-unsupported-plan.md) | [models](patterns/polly-unsupported-modellen.md) | [verify](patterns/polly-unsupported-verify.md) | TAAK-308 |
 | `epplus.license-context` | [plan](patterns/epplus-license-context-plan.md) | [models](patterns/epplus-license-context-modellen.md) | [verify](patterns/epplus-license-context-verify.md) | TAAK-309 |
 | `epplus.package` | [plan](patterns/epplus-package-plan.md) | [models](patterns/epplus-package-modellen.md) | [verify](patterns/epplus-package-verify.md) | TAAK-309 |
 | `epplus.styles` | [plan](patterns/epplus-styles-plan.md) | [models](patterns/epplus-styles-modellen.md) | [verify](patterns/epplus-styles-verify.md) | TAAK-309 |

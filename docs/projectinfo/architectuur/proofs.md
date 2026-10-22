@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1258 proofs (excluding `_Pending`).
+Total: 1280 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -1717,6 +1717,22 @@ Total: 1258 proofs (excluding `_Pending`).
 | `transient-lambda-429` | Fixed | `.AddTransientHttpErrorPolicy(p => p.OrResult(r => r.StatusCode == HttpStatusCode.NotFound).RetryAsync(3, (outc…` → `.AddResilienceHandler("retry", builder => builder.AddRetry(new RetryStrategyOptions<HttpResponseMessage> {` |
 | `two-handlers` | Manual |  — reason: HandlerOrderNotProvable |
 
+### CircuitBreaker (2)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `advanced` | Manual |  — reason: CircuitBreakerNotEquivalent |
+| `consecutive` | Manual |  — reason: CircuitBreakerNotEquivalent |
+
+### NoOp (4)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `async` | Fixed | `var policy = Policy.NoOpAsync(); int value = await policy.ExecuteAsync(() => Task.FromResult(3));` → `var policy = ResiliencePipeline.Empty; int value = await policy.ExecuteAsync(_ => new ValueTask<int>(Task.From…` |
+| `returned` | Manual |  — reason: PolicyNotLocal |
+| `sync-inline` | Fixed | `int value = Policy.NoOp().Execute(() => 6);` → `int value = ResiliencePipeline.Empty.Execute(() => 6);` |
+| `typed` | Fixed | `var policy = Policy.NoOpAsync<int>(); int value = await policy.ExecuteAsync(() => Task.FromResult(9));` → `var policy = ResiliencePipeline<int>.Empty; int value = await policy.ExecuteAsync(_ => new ValueTask<int>(Task…` |
+
 ### RetryVariants (6)
 
 | Proof | Outcome | What it proves |
@@ -1738,6 +1754,32 @@ Total: 1258 proofs (excluding `_Pending`).
 | `policy-used-beyond` | Manual |  — reason: PolicyUsedBeyondExecute |
 | `retry-on-retry` | Fixed | `Policy.Handle<TimeoutException>().Retry(2, (exception, retryCount) => trace.Add("retry " + retryCount + " " + …` → `new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
 | `wait-and-retry` | Fixed | `var policy = Policy .Handle<InvalidOperationException>()` → `var policy = new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
+
+### Timeout (10)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `int-seconds` | Fixed | `await Policy.TimeoutAsync(1).ExecuteAsync(async ct => await Task.Delay(5000, ct), CancellationToken.None);` → `await new ResiliencePipelineBuilder().AddTimeout(TimeSpan.FromSeconds(1)).Build().ExecuteAsync(async ct => awa…` |
+| `on-timeout` | Manual |  — reason: OverloadNotSupported |
+| `pessimistic` | Manual |  — reason: TimeoutStrategyNotOptimistic |
+| `sync` | Fixed | `var policy = Policy.Timeout(TimeSpan.FromMilliseconds(100));` → `var policy = new ResiliencePipelineBuilder().AddTimeout(TimeSpan.FromMilliseconds(100)).Build();` |
+| `token-honoured` | Fixed | `var policy = Policy.TimeoutAsync(TimeSpan.FromMilliseconds(200));` → `var policy = new ResiliencePipelineBuilder().AddTimeout(TimeSpan.FromMilliseconds(200)).Build();` |
+| `token-ignored` | Fixed | `var policy = Policy.TimeoutAsync(TimeSpan.FromMilliseconds(100)); await policy.ExecuteAsync(async () => await …` → `var policy = new ResiliencePipelineBuilder().AddTimeout(TimeSpan.FromMilliseconds(100)).Build(); await policy.…` |
+| `token-sync-lambda` | Manual |  — reason: ExecuteNotLambda |
+| `too-small` | Manual |  — reason: TimeoutNotProvable |
+| `typed` | Fixed | `var policy = Policy.TimeoutAsync<int>(TimeSpan.FromMilliseconds(200));` → `var policy = new ResiliencePipelineBuilder<int>().AddTimeout(TimeSpan.FromMilliseconds(200)).Build();` |
+| `variable` | Manual |  — reason: TimeoutNotProvable |
+
+### Unsupported (6)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `bulkhead` | Manual |  — reason: BulkheadNotMapped |
+| `context` | Manual |  — reason: ContextNotMapped |
+| `execute-and-capture` | Manual |  — reason: ExecuteAndCaptureNotMapped |
+| `fallback` | Manual |  — reason: FallbackNotMapped |
+| `rate-limit` | Manual |  — reason: RateLimitNotMapped |
+| `registry` | Manual |  — reason: PolicyRegistryNotMapped |
 
 ### WaitAndRetryAsync (19)
 

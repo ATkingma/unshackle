@@ -11,6 +11,8 @@ public class TransportPattern : DetectorPattern
 
     public override string Description => "UsingRabbitMq / UsingAzureServiceBus / UsingAmazonSqs / UsingInMemory transport → Manual (report only)";
 
+    protected override MassTransitCode Code => MassTransitCode.Transport;
+
     protected override string Reason => "MassTransit transport (Using...): topology, exchanges and queue names change meaning on another bus; Wolverine has UseRabbitMq/UseAzureServiceBus, Rebus Transport(t => t.Use...).";
 
     public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) => MassTransitSyntax.FindCalls(root, model, s_names);

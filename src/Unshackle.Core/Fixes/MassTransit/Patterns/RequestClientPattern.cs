@@ -13,6 +13,8 @@ public class RequestClientPattern : DetectorPattern
 
     public override string Description => "IRequestClient<T> / context.RespondAsync(...) → Manual (report only)";
 
+    protected override MassTransitCode Code => MassTransitCode.RequestResponse;
+
     protected override string Reason =>
         "MassTransit request/response (IRequestClient<T>.GetResponse, RespondAsync): Wolverine IMessageBus.InvokeAsync<TResponse> with a handler that returns the response; " +
         "Rebus needs Rebus.Async; several response types (GetResponse<A, B>) have no equivalent.";

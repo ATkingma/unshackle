@@ -148,6 +148,39 @@ public class RoundTenEngineTests
         report.Findings.Any(f => f.Result is ManualResult m && m.Reason.StartsWith("Project-file edits not applied: " + code, StringComparison.Ordinal)).ShouldBe(blocks);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task FixAsync_ProjectBlocker_KeepsTheProjectsDocumentsUnrewritten(bool blocking)
+    {
+        // Arrange (TAAK-320: no fix half-migrates a blocked project)
+        IFix fix = CreateFix(PatternResult.Fixed(SyntaxFactory.ParseExpression("System.Console.WriteLine()")));
+        ManualResult blocker = blocking
+            ? (ManualResult)PatternResult.Manual(ProjectBlockingReason.TargetFrameworkUnsupported, "net45 is not supported.")
+            : (ManualResult)PatternResult.Manual("only a note-like Manual row.");
+        ((IProjectFileMigration)fix).ProjectBlockers(Arg.Any<Project>()).Returns([blocker]);
+        Solution solution = CreateSolution();
+
+        // Act
+        FixReport report = await new Fixer([fix]).FixAsync(solution, new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        Document document = report.Solution.Projects.Single().Documents.Single();
+        string text = (await document.GetTextAsync(TestContext.Current.CancellationToken)).ToString();
+        Finding row = report.Findings.Single(f => f.PatternId == "test.pattern");
+        if (blocking)
+        {
+            text.ShouldBe(Code);
+            ((ManualResult)row.Result).Reason.ShouldBe($"{Fixer.NotRewrittenPrefix}blocked by TargetFrameworkUnsupported on {ProjectPath}. Resolve that first, or migrate this project by hand.");
+            report.Findings[0].Result.ShouldBe(blocker);
+        }
+        else
+        {
+            text.ShouldNotBe(Code);
+            row.Result.ShouldBeOfType<FixedResult>();
+        }
+    }
+
     private static IPattern CreatePattern(PatternResult result)
     {
         IPattern pattern = Substitute.For<IPattern>();

@@ -14,8 +14,8 @@ eppsamples" counts). Rows 3–9 widen the set of uses `epplus.package` accepts: 
 | 1   | `epplus.license-context` | `ExcelPackage.LicenseContext = ...;`, `ExcelPackage.License.Set*(..);`                     | statement removed                                                         | 33 / 15                  | done (TAAK-309) |
 | 2   | `epplus.package`         | `using var p = new ExcelPackage()` with `Workbook.Worksheets.Add("x");` / `SaveAs(new FileInfo(path))` only | `new XLWorkbook()`, `p.Worksheets.Add("x")`, `p.SaveAs(path)` | 26 empty / 18 (of 195 / 36 creations) | done (TAAK-309, narrow; E9 plain local added) |
 | 3   | `epplus.worksheets`      | `var ws = p.Workbook.Worksheets.Add(..)` used further; `Worksheets["name"]`; `Worksheets[i]` | `IXLWorksheet ws = p.Worksheets.Add(..)`; `p.Worksheet("name")`; int index by declared version (E3: 4.x 1-based, 5+ 0-based → `Worksheet(i + 1)`), unknown → Manual `UnknownEPPlusVersion` | 147 / 27; 141 / 26 | done (TAAK-309; inside `epplus.package`; 4.x int index Manual, see harness finding d) |
-| 4   | `epplus.cells`           | `Cells[r, c]`, `Cells[r1, c1, r2, c2]`, `Cells["A1"]`                                      | `Cell(r, c)`, `Range(r1, c1, r2, c2)`, `Cell("A1")` / `Range("A1:B2")`    | 879 / 33; 140 / 15; 49 / 9 | open |
-| 5   | `epplus.values`          | `.Value = x`, `.Value` read, `.Text`, `GetValue<T>()`                                      | typed set `.Value = x` (harness per type, E4); `object` set → `SetValue` only for a covered closed type set, else Manual `UncoveredRuntimeType`; `.Text` → `GetFormattedString()` | 544 / 29; 70 / 11; 131 / 7 | open |
+| 4   | `epplus.cells`           | `Cells[r, c]`, `Cells[r1, c1, r2, c2]`, `Cells["A1"]`                                      | `Cell(r, c)`, `Range(r1, c1, r2, c2)`, `Cell("A1")` / `Range("A1:B2")`    | 879 / 33; 140 / 15; 49 / 9 | done for single cells (TAAK-309, inside `epplus.package`); ranges open |
+| 5   | `epplus.values`          | `.Value = x`, `.Value` read, `.Text`, `GetValue<T>()`                                      | typed set `.Value = x` (harness per type, E4); `object` set → `SetValue` only for a covered closed type set, else Manual `UncoveredRuntimeType`; `.Text` → `GetFormattedString()` | 544 / 29; 70 / 11; 131 / 7 | done for covered `Value =` (TAAK-309, E4); reads, `.Text`, `GetValue<T>` open |
 | 6   | `epplus.save`            | `GetAsByteArray()`, `SaveAs(Stream)`, `Save()`, `new ExcelPackage(stream / FileInfo / path)` | MemoryStream block + `ToArray()`; `SaveAs(stream)`; `Save()` on a stream package Manual | 14 / 12; 53 / 12; 80 / 12; 121 + 14 / 13 + 9 | open |
 | 7   | `epplus.dimension`       | `ws.Dimension.End.Row` / `.Column` / `.Start.*`                                            | `ws.LastRowUsed()?.RowNumber()` etc., null kept (empty sheet)             | 210 / 21                 | open |
 | 8   | `epplus.styles`          | `Style.Font.*`, `Style.Fill.*` (`SetColor(Color)`), `Style.Border.*`, `Style.Numberformat.Format`, alignment, `WrapText` | `Style.Font.*`, `Fill.BackgroundColor = XLColor.FromColor(..)` (solid implicit), `Border.*Border`, `NumberFormat.Format`, `Alignment.*` | Font 79 / 16, Fill 111 / 12, Border 76 / 8, Numberformat 40 / 11, align 55 / 9 | open |
@@ -33,7 +33,10 @@ padding (reads EPPlus's 20 back as 19.289), so row 9 cannot be a rename (`CellCo
 culture-invariant ones); (c) an invalid or duplicate sheet name throws in both, with different exceptions (row 3: Manual unless literal and valid);
 (d) EPPlus 4.5.3.3's .NET Standard build is 0-based for `Worksheets[i]` (`WorksheetIndexTests.Harness_EPPlus4OnNetStandard_IsZeroBased`), not 1-based as
 council E3 assumed. Its .NET Framework builds default to 1-based, and configuration can switch both, so 4.x integer indexes are Manual
-`[WorksheetIndexBaseNotProvable]` (council question).
+`WorksheetIndexBaseNotProvable` (council question).
+(e) Numbers: ClosedXML writes 15 significant digits, EPPlus 17, so a non-constant double/float/decimal/long value is Manual
+`UncoveredRuntimeType`; EPPlus writes a DateTime as a General serial number (ClosedXML: date format), so DateTime is Manual too
+(`CellValueHarnessTests`).
 
 ## See also
 

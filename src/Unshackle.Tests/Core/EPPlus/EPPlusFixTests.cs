@@ -25,11 +25,12 @@ public class EPPlusFixTests
         // Assert
         fix.Id.ShouldBe("epplus");
         fix.AllOrNothing.ShouldBeTrue();
-        fix.RemovedNamespaces.ShouldBe(["OfficeOpenXml"]);
+        fix.RemovedNamespaces[0].ShouldBe("OfficeOpenXml");
+        fix.RemovedNamespaces.ShouldContain("OfficeOpenXml.Style");
         package.ShouldNotBeNull();
         package.RemovedPackage.ShouldBe("EPPlus");
         package.AddedPackages.Select(p => (p.Name, p.Version)).ShouldBe([("ClosedXML", typeof(global::ClosedXML.Excel.XLWorkbook).Assembly.GetName().Version!.ToString(3))]);
-        fix.Patterns.Select(p => p.Id).ShouldBe(["epplus.license-context", "epplus.package", "epplus.styles", "epplus.layout", "epplus.unsupported"]);
+        fix.Patterns.Select(p => p.Id).ShouldBe(["epplus.license-context", "epplus.styles", "epplus.layout", "epplus.package", "epplus.unsupported"]);
     }
 
     [Fact]
@@ -238,7 +239,44 @@ public class EPPlusFixTests
         FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "epplus" }, TestContext.Current.CancellationToken);
 
         // Assert
-        report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.StartsWith("[UnmigratedEPPlusApi]", StringComparison.Ordinal));
-        report.Findings.ShouldNotContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Reason.Contains("PublicApiExposesOldLibrary"));
+        report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Code == "UnmigratedEPPlusApi");
+        report.Findings.ShouldNotContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Code == "PublicApiExposesOldLibrary");
+    }
+
+    // Rows 4, 5 and 8 together: StylesPattern migrates the style tail first, then PackagePattern rewrites the cell receiver.
+    [Fact]
+    public async Task Fix_CellValuesAndStyles_RewrittenTogetherAndSameWorkbook()
+    {
+        // Arrange
+        const string before = """
+            using System.Drawing;
+            using System.IO;
+            using OfficeOpenXml;
+            using OfficeOpenXml.Style;
+
+            public static class Report
+            {
+                public static void Write(string path)
+                {
+                    using var package = new ExcelPackage();
+                    var sheet = package.Workbook.Worksheets.Add("Orders");
+                    sheet.Cells[1, 1].Value = "Name";
+                    sheet.Cells[1, 1].Style.Font.Bold = true;
+                    sheet.Cells[1, 2].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    sheet.Cells[1, 2].Style.Fill.BackgroundColor.SetColor(Color.Red);
+                    sheet.Cells[2, 1].Value = 42;
+                    package.SaveAs(new FileInfo(path));
+                }
+            }
+            """;
+
+        // Act
+        (FixReport report, string after) = await FixAsync(before);
+
+        // Assert
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult, string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
+        after.ShouldNotContain("OfficeOpenXml");
+        TestSolution.CompileErrors(after, EPPlusReferences.ClosedXml).ShouldBeEmpty();
+        CellCompare.Differences(before, after).ShouldBeEmpty();
     }
 }

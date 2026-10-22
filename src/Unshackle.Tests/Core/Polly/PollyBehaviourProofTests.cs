@@ -22,6 +22,8 @@ public class PollyBehaviourProofTests
     [InlineData("WaitAndRetryAsync/filter-policy-of-t", "result ok left 0")]
     [InlineData("WaitAndRetryAsync/on-retry-attempt", "delay 1, retry 1 after 1 call 1, delay 2, retry 2 after 2 call 2, caught call 3")]
     [InlineData("WaitAndRetryAsync/on-retry-async", "retry after call 1, retry after call 2, result 3")]
+    [InlineData("WaitAndRetryAsync/field-static", "call 1, call 2, fail, fail, fail, caught always")]
+    [InlineData("RetryVariants/field-instance", "first 3, second -6, left 0")]
     [InlineData("RetryVariants/retry-count", "retry 1 call 1, retry 2 call 2, caught call 3")]
     [InlineData("RetryVariants/retry-default", "call 1, call 2, caught call 2")]
     [InlineData("RetryVariants/wait-forever", "delay 1, delay 2, delay 3, delay 4, result 5 calls 9")]

@@ -16,10 +16,6 @@ namespace Unshackle.Core.Fixes.EPPlus.Patterns;
 /// </summary>
 public class UnsupportedPattern : IPattern
 {
-    public const string UnmigratedCode = "UnmigratedEPPlusApi";
-
-    public const string PublicApiCode = "PublicApiExposesOldLibrary";
-
     private static readonly LicenseContextPattern s_licenseContext = new();
 
     private static readonly PackagePattern s_package = new();
@@ -44,13 +40,13 @@ public class UnsupportedPattern : IPattern
         string where = $"line {node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
         if (ExposedSignature(node, model) is string exposed)
         {
-            return PatternResult.Manual($"[{PublicApiCode}] {exposed} ({where}) is public API of a packable project and exposes EPPlus: "
+            return PatternResult.Manual(EPPlusReason.PublicApiExposesOldLibrary, $"{exposed} ({where}) is public API of a packable project and exposes EPPlus: "
                 + "its callers outside the solution would break. Change the signature by hand (by design, council round 8 E6).");
         }
 
         IEnumerable<string> apis = node.DescendantNodesAndSelf().Where(n => n is SimpleNameSyntax && !InHandledTail(n, model)).Select(n => EPPlusApi.Name(n, model))
             .OfType<string>().Distinct(StringComparer.Ordinal);
-        return PatternResult.Manual($"[{UnmigratedCode}] EPPlus API not migrated ({where}): "
+        return PatternResult.Manual(EPPlusReason.UnmigratedEPPlusApi, $"EPPlus API not migrated ({where}): "
             + string.Join(", ", apis.Select(a => $"{a} ({EPPlusApi.Row(a)})")) + ".");
     }
 

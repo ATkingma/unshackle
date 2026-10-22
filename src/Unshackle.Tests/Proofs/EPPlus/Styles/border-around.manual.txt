@@ -1,1 +1,1 @@
-[UnmappedEPPlusStyle] EPPlus style 'Border.BorderAround'
+UnmappedEPPlusStyle: EPPlus style 'Border.BorderAround'

@@ -1,6 +1,6 @@
 # TAAK-320 — Project blockers also stop document rewrites; report-only summary in the console
 
-**Status**: step 1/3 — not started
+**Status**: step 3/3 — done (engine-2)
 **Created**: 2026-10-22
 **Goal**: A project-level blocking row (`ProjectBlockingReason`) keeps that project's documents unchanged (all its rewrites become Manual with a pointer to the blocker), and the console summary says "Inventory only" for report-only fixes.
 
@@ -12,13 +12,14 @@
 
 ## Steps
 
-- [ ] 1. Fixer: evaluate `ProjectBlockers` before the document pass; documents of a blocked project are not rewritten, their findings become Manual "blocked by <code> on <project>"
-- [ ] 2. Console summary + dry-run delete display (Interface, not `Cli.cs`)
-- [ ] 3. Tests (fake fix), existing output byte-identical for fixes without blockers, `core.md`; build 0 warnings, all tests green
+- [x] 1. Fixer: evaluate `ProjectBlockers` before the document pass; documents of a blocked project are not rewritten, their findings become Manual "blocked by <code> on <project>"
+- [x] 2. Console summary + dry-run delete display (Interface, not `Cli.cs`)
+- [x] 3. Tests (fake fix), existing output byte-identical for fixes without blockers, `core.md`; build 0 warnings, all tests green
 
 ## Progress log
 
 - 2026-10-22: created after Polly P9.
+- 2026-10-22: done. Blocker rows are evaluated before the document pass; the documents of a blocked project are restored and their Fixed rows become Manual "blocked by <code> on <project>". Console shows "Inventory only" and one "(deleted)" line per deleted file in a dry run. 2006 tests green.
 
 ## Changes
 

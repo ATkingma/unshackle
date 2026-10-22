@@ -25,9 +25,10 @@ Proofs: `src/Unshackle.Tests/Proofs/Polly/WaitAndRetryAsync/` (text: `ProofTests
 | REQ-8 | Met | `policy-returned` |
 | REQ-9 | Met | `filter-or-predicate`, `filter-handle-result`, `filter-policy-of-t` (+ behaviour traces), `filter-handle-inner`; unit tests `HandleInner`, `HandleResult(1)` |
 | REQ-10 | Met | `filter-handle-result` (trace ends `result -4`), `filter-policy-of-t` (`ResiliencePipeline<string>`) |
-| REQ-11 | Met | `Rewrite_UnsupportedTargetFramework_Manual` (netcoreapp3.0, net452) |
+| REQ-11 | Met | `Rewrite_UnsupportedTargetFramework_Manual` (netcoreapp3.0, net452), `PollyFixTests.ProjectBlockers_UnsupportedFrameworkWithPollyV7_BlocksTheProject` |
 | REQ-12 | Met | `Rewrite_NameTakenInScope_UsesFreshName` (`args1`) |
 | REQ-13 | Met | `on-retry-attempt` (named `onRetry:`, unused Context; trace pins delay → onRetry order and the 1-based count), `on-retry-async`, `on-retry-result` |
+| REQ-15 | Met | `field-static` (+ trace), `field-public`, `field-passed-on`; `RetryVariantsPatternTests.Rewrite_FieldNotProvablyLocal_Manual` |
 | REQ-14 | Met | `on-retry-context`; unit test `OnRetryNotMappable` (DelegateResult passed on) |
 
 ## Deviations

@@ -10,6 +10,8 @@ namespace Unshackle.Interface.Output;
 
 public class SpectreConsoleView : IConsoleView
 {
+    public const string InventoryOnlyLine = "Inventory only: nothing was changed.";
+
     private const int MaxBlockersShown = 10;
 
     private readonly IAnsiConsole _out;
@@ -39,6 +41,14 @@ public class SpectreConsoleView : IConsoleView
 
     public void ShowSummary(IReadOnlyList<Finding> findings)
     {
+        ArgumentNullException.ThrowIfNull(findings);
+        // A report-only fix (council round 8 S2, round 10 G1): say so first; its header row is not a finding and counts nowhere.
+        if (findings.Any(f => !FixReport.IsCounted(f)))
+        {
+            _out.WriteLine(InventoryOnlyLine);
+            findings = [.. findings.Where(FixReport.IsCounted)];
+        }
+
         Table table = new Table().AddColumns("Pattern", "Fixed", "Manual");
         foreach (IGrouping<string, Finding> group in findings.GroupBy(f => f.PatternId).OrderBy(g => g.Key, StringComparer.Ordinal))
         {

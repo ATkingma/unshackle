@@ -1,1 +1,1 @@
-[PublicApiExposesOldLibrary] SheetFactory.Create(ExcelPackage, string)
+PublicApiExposesOldLibrary: SheetFactory.Create(ExcelPackage, string)

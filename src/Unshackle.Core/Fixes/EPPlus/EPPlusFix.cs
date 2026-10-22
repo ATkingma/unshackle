@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.EPPlus.Patterns;
 using Unshackle.Core.Models;
@@ -5,14 +6,15 @@ using Unshackle.Core.Models;
 namespace Unshackle.Core.Fixes.EPPlus;
 
 /// <summary>EPPlus (LGPL 4.5.3.3, commercial 5+) → ClosedXML (MIT). TAAK-309; council round 8, E1–E6.</summary>
-public class EPPlusFix : IFix
+public class EPPlusFix : IFix, IProjectFileMigration
 {
     // The version our proofs and the cell-compare harness run against (Directory.Packages.props); MIT, no licence check (E5, TAAK-309).
     public const string ClosedXmlVersion = "0.105.1";
 
     public string Id => "epplus";
 
-    public IReadOnlyList<string> RemovedNamespaces { get; } = [EPPlusSyntax.Namespace];
+    public IReadOnlyList<string> RemovedNamespaces { get; } =
+        [EPPlusSyntax.Namespace, "OfficeOpenXml.Style", "OfficeOpenXml.Drawing", "OfficeOpenXml.Drawing.Chart", "OfficeOpenXml.Table", "OfficeOpenXml.DataValidation", "OfficeOpenXml.ConditionalFormatting"];
 
     public IReadOnlyList<string> AddedNamespaces { get; } = [];
 
@@ -26,5 +28,19 @@ public class EPPlusFix : IFix
     // A workbook half on EPPlus and half on ClosedXML does not build (an ExcelWorksheet passed to a migrated method): any Manual finding leaves the solution as it is.
     public bool AllOrNothing => true;
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new LicenseContextPattern(), new PackagePattern(), new StylesPattern(), new LayoutPattern(), new UnsupportedPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } = [new LicenseContextPattern(), new StylesPattern(), new LayoutPattern(), new PackagePattern(), new UnsupportedPattern()];
+
+    // No file edits yet: the SixLabors.Fonts < 2.0 pin (E7) waits for an assets-file reader.
+    public IReadOnlyList<ProjectFileEdit> EditsFor(Project project) => [];
+
+    // E7: a project that already resolves SixLabors.Fonts 2.x would pull it into ClosedXML; that blocks the project (council round 10, C1/G4).
+    public IReadOnlyList<ManualResult> ProjectBlockers(Project project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        return FontsLicence.Resolved(project) is { Major: >= 2 } fonts
+            ? [(ManualResult)PatternResult.Manual(ProjectBlockingReason.LicensedDependency,
+                $"{project.Name} resolves SixLabors.Fonts {fonts.ToString(3)}, which is under the Six Labors Split License; ClosedXML would use it. "
+                + "Pin SixLabors.Fonts below 2.0 (or license it) and run the fix again.")]
+            : [];
+    }
 }

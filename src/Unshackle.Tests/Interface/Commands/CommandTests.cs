@@ -345,13 +345,29 @@ public class CommandTests
         _view.Received(1).ShowError(Arg.Is<string>(m => m.Contains("T.csproj changed", StringComparison.Ordinal)));
     }
 
-    private ProjectFileChange ReturnProjectFileChange()
+    [Fact]
+    public async Task FixExecuteAsync_DryRunWithDeletedFile_ShowsOneDeletedLine()
+    {
+        // Arrange (TAAK-320)
+        ReturnProjectFileChange(deletes: true);
+        FixCommand command = CreateFix();
+
+        // Act
+        await command.ExecuteAsync(SolutionPath, "fa", null, true, false, TestContext.Current.CancellationToken);
+
+        // Assert
+        _view.Received(1).ShowMessage("--- /repo/My App/tests/T.csproj (deleted)");
+        _view.DidNotReceive().ShowDiff("/repo/My App/tests/T.csproj", Arg.Any<IReadOnlyList<DiffLine>>());
+    }
+
+    private ProjectFileChange ReturnProjectFileChange(bool deletes = false)
     {
         var change = new ProjectFileChange
         {
             FilePath = "/repo/My App/tests/T.csproj",
             OldText = "<Project>\n  <A />\n</Project>\n",
-            NewText = "<Project>\n  <B />\n</Project>\n",
+            NewText = deletes ? string.Empty : "<Project>\n  <B />\n</Project>\n",
+            Deletes = deletes,
         };
         DocumentId id = _original.Projects.Single().DocumentIds.Single();
         _fixer.FixAsync(Arg.Any<Solution>(), Arg.Any<FixRequest>(), Arg.Any<CancellationToken>()).Returns(new FixReport

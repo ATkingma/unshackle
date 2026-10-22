@@ -271,6 +271,20 @@ edits per project from a closed set (`ProjectFileEdit` has a private-protected c
   `Microsoft.NET.Test.Sdk` or `IsTestProject` makes a project not packable, and every other project is packable. A conditional value,
   a computed value or an unreadable file counts as packable. `MediatRFix(IProjectProperties)` uses it in `AssemblyResolver`.
 
+## Package assets (TAAK-319)
+
+- `IPackageAssetsReader.Read(projectPath)` returns `PackageAssets` and is implemented by DataAccess `JsonPackageAssetsReader`, which reads
+  `obj/project.assets.json`. The result has a `State`, the resolved versions (the highest over all target frameworks), and every
+  requirement with its range, whether from the project or from a package.
+- `Current` means:
+  - the assets file was restored for this project file;
+  - it is not older than the project file or its nearest `Directory.Build.props` / `Directory.Packages.props`;
+  - it lists every `PackageReference` the project declares.
+
+  A file that is there but fails any of these checks is `Stale`. A missing or unreadable file is `Missing`.
+- `ResolvesAtLeast(package, v)` and `RequiresAtLeast(package, v)` answer EPPlus E7 (council round 10). A requirement whose range cannot be
+  read counts as "at least", so the pin is not made.
+
 ## SOLID in brief
 
 | Principle | How                                                                                                                       |

@@ -35,13 +35,12 @@ public class AddAutoMapperPattern : ISolutionPattern
     // Without the solution only this project's sources are checked for a mapper that is still used.
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
-        string? user = model.Compilation.SyntaxTrees
+        IEnumerable<(string File, int Line)> users = model.Compilation.SyntaxTrees
             .SelectMany(t => t.GetRoot().DescendantNodes().OfType<IdentifierNameSyntax>()
                 .Where(n => s_services.Any(s => s.EndsWith("." + n.Identifier.ValueText, StringComparison.Ordinal)))
                 .Where(n => IsService(model.Compilation.GetSemanticModel(t).GetSymbolInfo(n).Symbol))
-                .Select(n => Location(t.FilePath, n.GetLocation())))
-            .FirstOrDefault();
-        return Rewrite(node, model, user);
+                .Select(n => (t.FilePath, LineOf(n.GetLocation()))));
+        return Rewrite(node, model, First(users));
     }
 
     // With the solution every project counts: a test resolving IMapper from AddSampleShop() needs the registration too.
@@ -49,6 +48,7 @@ public class AddAutoMapperPattern : ISolutionPattern
     {
         // A use in code that UnusedMapperPattern removes (TAAK-289) does not count.
         MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, cancellationToken);
+        List<(string File, int Line)> users = [];
         foreach (INamedTypeSymbol service in s_services.Select(model.Compilation.GetTypeByMetadataName).OfType<INamedTypeSymbol>())
         {
             IEnumerable<ReferencedSymbol> references = await SymbolFinder.FindReferencesAsync(service, solution, cancellationToken);
@@ -58,12 +58,12 @@ public class AddAutoMapperPattern : ISolutionPattern
                 SemanticModel locationModel = await location.Document.GetSemanticModelAsync(cancellationToken) ?? throw new InvalidOperationException("No semantic model.");
                 if (!cleanup.Removes(root.FindNode(location.Location.SourceSpan, getInnermostNodeForTie: true), locationModel))
                 {
-                    return Rewrite(node, model, Location(location.Document.FilePath ?? location.Document.Name, location.Location));
+                    users.Add((location.Document.FilePath ?? location.Document.Name, LineOf(location.Location)));
                 }
             }
         }
 
-        return Rewrite(node, model, null);
+        return Rewrite(node, model, First(users));
     }
 
     // user: where a mapper is still used ("file:line"), or null.
@@ -108,5 +108,10 @@ public class AddAutoMapperPattern : ISolutionPattern
     private static bool IsService(ISymbol? symbol) =>
         symbol is INamedTypeSymbol type && type.ContainingAssembly?.Name == AutoMapperAssembly && s_services.Contains(type.ToDisplayString(), StringComparer.Ordinal);
 
-    private static string Location(string file, Location location) => $"{file}:{location.GetLineSpan().StartLinePosition.Line + 1}";
+    private static int LineOf(Location location) => location.GetLineSpan().StartLinePosition.Line + 1;
+
+    // The example user the reason names (council round 6, Q4): the first by file path (ordinal, '\' and '/' alike), then line, so every
+    // run and both Rewrite and RewriteAsync name the same one, whatever the order of the syntax trees or references.
+    private static string? First(IEnumerable<(string File, int Line)> users) =>
+        users.OrderBy(u => u.File.Replace('\\', '/'), StringComparer.Ordinal).ThenBy(u => u.Line).Select(u => $"{u.File}:{u.Line}").FirstOrDefault();
 }

@@ -53,7 +53,7 @@ internal static class MapBlockers
                 {
                     if (await CreateMapPattern.RewriteMethodsAsync(profile, mapModel, solution, cancellationToken) is ManualResult manual)
                     {
-                        return $"{map} is in profile {profile.Identifier.ValueText}, which this fix does not rewrite: {MapOwners.Rendered(manual)}";
+                        return $"{map} is in profile {profile.Identifier.ValueText}, which this fix does not rewrite: {KeptReasonText.Rendered(manual)}";
                     }
 
                     continue;

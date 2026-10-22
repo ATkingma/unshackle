@@ -1,0 +1,82 @@
+# TAAK-300 — Council round 6 follow-ups
+
+**Status**: done (2026-10-21), all 7 steps
+**Created**: 2026-10-21
+**Goal**: carry out the round-6 council decisions (`claude/docs/council.md`, "2026-10-21 — open questions from TAAK-295 and TAAK-297").
+Only step 4 may change rendered output.
+
+## Context for the next agent
+
+- Q1: the prefix lives in `src/Unshackle.Core/Fixes/AutoMapper/Patterns/MapOwners.cs` (`KeptPrefix`, `Rendered`) and is duplicated in
+  `src/Unshackle.DataAccess/Reports/ReportRow.cs` (`KeptPrefix`, `ReasonOf`). DataAccess may reference Core.
+- Q2: the MediatR kept row is built in `src/Unshackle.Core/Fixes/MediatR/MediatROwners.cs` (~line 525) as a plain `PatternResult.Manual`.
+  The new code needs a per-fix prefix ("Stays on MediatR next to Mediator: "), so the rendering cannot stay one AutoMapper-only constant.
+  Rendered text must remain byte-identical.
+- Q3: `MapBlockers.cs:56` keeps quoting `MapOwners.Rendered(manual)`. Only a test is added.
+- Q4: `AddAutoMapperPattern.Rewrite` (~line 38) takes `FirstOrDefault` over `Compilation.SyntaxTrees`; `RewriteAsync` has its own lookup.
+  Both must pick the first user ordered by file path (ordinal, normalize `\` and `/`), then line.
+- Q5: no code change; the `ThrowIfNull` calls stay. Only `claude/docs/code-standaarden.md` §7 gets the entry-point wording.
+- Corpus: `claude/tasks/CORPUSRUN-blind.md`, harness `corpus-am.sh after`; the last baseline is `<corpus>/corpus-blind/_results/after-t295`.
+  For MediatR, use the MediatR corpus run (`claude/tasks/CORPUSRUN-mediatr.md`).
+- Push procedure: `claude/docs/overdracht.md` "Push procedure". Never push with a failing test.
+
+## Steps
+
+- [x] 1. Q1: `ReportRow` uses the Core rendering (`MapOwners.Rendered` or a shared Core helper); delete `ReportRow.KeptPrefix`. No test expectation changes.
+- [x] 2. Q2: inventory every branch on `Kept != None` / `KeptReason` (report grouping, counts, filters, summaries, `AllOrNothing`,
+  `AllowsPartial`, partial plans) and record it here. Then add a MediatR `KeptReason` code with a per-fix prefix, rendered
+  byte-identical. Add a test that pins the rendered MediatR text, plus one test per branch that proves it behaves exactly as it did when that row had `Kept == None` (same grouping, counts, filtering, `AllOrNothing` and partial plan result). No existing expectation may change.
+- [x] 3. Q3: test that the `MapBlockers` reason contains `Stays on AutoMapper: ` exactly once.
+  Inventory (2026-10-21), every place that branches on `Kept`/`KeptReason` or reads a kept row:
+  - `KeptReasonText.Rendered` (Core, new): the only rendering; used by `ReportRow.ReasonOf` (CSV/Markdown rows) and
+    `SpectreConsoleView.ShowSummary` (blocker lines) and `MapBlockers` (quote). Test: `KeptReasonTextTests` (rows, both files, console).
+  - `AutoMapperFix.AllowsPartial` (`Kept: not None`): AutoMapper only. `MediatRFix` keeps the default `AllowsPartial => false`, so
+    `Fixer.FixAsync`'s `AllOrNothing` check is unchanged. Test: `KeptReasonTextTests.AllowsPartial_MediatRKept_SameAsThePlainManual`.
+  - `Fixer.RunPartialAsync` roots/blocking (`ManualResult` type + `Reason` prefixes `Not rewritten: `, kept global using; `plan.Findings.Contains`):
+    no `Kept` check; kept MediatR rows are created by the plan, never roots, and their raw reason never started with those prefixes. Test:
+    `MediatRPartialTests.FixAsync_MediatRRegisteredByHand_*` (same partial result, 11 kept rows, rendered prefix once).
+  - `ReportRow.FromAll` grouping (custom assertion pattern id only), `SpectreConsoleView` counts (by result type): no `Kept` check. Tests as above.
+  - `CreateMapPattern` (`Kept: None`), `MapOwners` plan loop (`Kept: None`): AutoMapper results only, never see a MediatR row.
+- [x] 4. Q4: stable first IMapper user (path ordinal, separator-independent, then line) in `Rewrite` and `RewriteAsync`; add a test with
+  two users in reverse tree order. **Changes rendered output**: the `IMapper is still used (<file>:<line>)` example in the kept
+  `add-automapper` row. Test expectations that name that example (search the tests for `IMapper is still used`: `AddAutoMapperPattern`
+  tests, `CombinedProofTests` partial-*, proofs `*.manual.txt`) are updated only where the chosen file changes; list them here.
+- [x] 5. Q5: add "fix constructors and public `IFix` members" to the entry-point list in `claude/docs/code-standaarden.md` §7.
+  Expectations changed by step 4: none. No test or proof names the example file (`UnusedMapperPatternTests` and
+  `mapper-injected.manual.txt` only match `IMapper is still used`).
+- [x] 6. Corpus rerun: `after` on the six AutoMapper repos and the MediatR repos. Steps 1–3 and 5 must give zero diff in every report
+  output (rows, counts, grouping, summaries). Step 4 may only change the example in the kept `add-automapper` row, and it must then be
+  identical across two runs. Fixed/Manual counts stay as in `after-t295`.
+- [x] 7. Build, `dotnet test`, SampleShop tests green; `claude/tools/verify-head.sh` → `VERIFY OK`; docs; archive the task.
+
+## Progress log
+
+- 2026-10-21: steps 1–3. New `Core/Models/KeptReasonText` (one prefix per fix, `Rendered`); `ReportRow.KeptPrefix` and
+  `MapOwners.KeptPrefix/Rendered` deleted; `KeptReason.MediatRNextToMediator = 13` on the `mediatr.kept` rows (raw reason without prefix).
+  Tests added: `KeptReasonTextTests` (8), `MediatRPartialTests.FixAsync_MediatRRegisteredByHand_KeptRowsRenderTheMediatRPrefix`,
+  `MapOwnersTests.FixAsync_KeptReasonQuotingMapBlockers_HasThePrefixOnce`. No expectation changed; 1663 tests green.
+  Q3 note: a probe found no input where `MapBlockers` quotes a *kept* inner result (the plan loop only uses `Kept: None` results); the
+  test pins the reachable path, a kept row quoting `MapBlockers`, which has the prefix once.
+- 2026-10-21: steps 4–5. `AddAutoMapperPattern.First`: users ordered by path (ordinal, `\` as `/`), then line, in `Rewrite` and
+  `RewriteAsync` (which now collects every user instead of returning the first reference). New `AddAutoMapperPatternTests` (2, reverse
+  tree order, mixed separators). `code-standaarden.md` §7 lists fix constructors and public `IFix` members. No expectation changed;
+  1665 tests green.
+- 2026-10-21: step 6. Tool `<corpus>/corpus-blind/_results/tool-300` (this branch), harness `corpus-am.sh after` (JOBS=1; a copy that
+  writes to `_results/<OUT>/<name>` and works in `work/<OUT>-<name>`). AutoMapper six twice (`after-t300a`, `after-t300b`), MediatR twelve
+  blind repos once (`after-t300m`). Status ok, 0 regressions everywhere. Fixed/Manual as `after-t295`: pi22317 33/0, assistiva 68/0,
+  culinary 3/70, msb 12/29, encryptednotes 10/6, estore 10/22. Reports vs `after-t295`: identical apart from exactly one row in the four
+  partial repos, the example in the kept `add-automapper` row (now the first by path: culinary `BL/Managers/Accounts/AccountManager.cs:20`,
+  msb `API/Controllers/Warehouse/WareHouseController.cs:22`, encryptednotes `Api/Controllers/AuthController.cs:15`, estore
+  `API/Controllers/AuthController.cs:12`); run a = run b row for row (work folder name stripped). MediatR reports vs `_results/after`
+  (TAAK-296, tool `0f58486`): all 12 identical row for row, incl. fullcart 27/20 with its `mediatr.kept` rows, miru 0/98, starter 0/11.
+  Note: the example path is absolute in the work copy (existing behaviour, unchanged here).
+- 2026-10-21: step 7. Build green, `dotnet test` 1665/1665, SampleShop 38/38. Docs: model text of `MapOwners` without `KeptPrefix`
+  (partial-migration models, kept-map `.d2`; SVG/PNG not re-rendered, no `d2` here), unused-imapper models name `KeptReasonText.Rendered`.
+  Task archived.
+
+## See also
+
+- `claude/docs/council.md` — round-6 decisions
+- `claude/tasks/archief/TAAK-295-kept-reason-codes.md` — origin of Q1–Q4
+- `claude/tasks/archief/TAAK-297-code-standards-cleanup.md` — origin of Q5
+- `claude/docs/INDEX.md` — documentation index

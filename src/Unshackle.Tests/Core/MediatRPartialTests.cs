@@ -207,6 +207,24 @@ public class MediatRPartialTests
         await _projectFiles.Received(2).EditAsync(Arg.Is<IEnumerable<ProjectMigration>>(m => m.Single().KeepRemovedPackage), Arg.Any<CancellationToken>());
     }
 
+    // Council round 6, Q2: the kept rows carry their code and render with the MediatR prefix exactly once; the partial plan is the one above.
+    [Fact]
+    public async Task FixAsync_MediatRRegisteredByHand_KeptRowsRenderTheMediatRPrefix()
+    {
+        // Arrange
+        var fixer = new Fixer([new MediatRFix()], _projectFiles);
+
+        // Act
+        FixReport report = await fixer.FixAsync(Create(FullCart), new FixRequest { FixId = "mediatr" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        List<ManualResult> kept = [.. report.Findings.Where(f => f.PatternId == MediatROwners.KeptPatternId).Select(f => (ManualResult)f.Result)];
+        kept.Count.ShouldBe(11);
+        kept.ShouldAllBe(m => m.Kept == KeptReason.MediatRNextToMediator && !m.Reason.StartsWith("Stays on", StringComparison.Ordinal));
+        kept.Select(KeptReasonText.Rendered).ShouldAllBe(r => r.StartsWith("Stays on MediatR next to Mediator: ", StringComparison.Ordinal)
+            && r.EndsWith(". Migrate them together by hand to drop MediatR.", StringComparison.Ordinal) && r.Split("Stays on").Length == 2);
+    }
+
     [Fact]
     public async Task FixAsync_NothingCanMove_ChangesNothing()
     {

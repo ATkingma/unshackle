@@ -352,3 +352,11 @@ JOBS=1. Results in `_results/after-t295`. Before = the TAAK-294 numbers above.
 
 The one differing row (kept `automapper.add-automapper`) names another IMapper user as its example; that example already varied
 between earlier rounds (estore t289/t292/t293), so it is pre-existing nondeterminism, not the reason-code change (council question in TAAK-295).
+
+## TAAK-300 (2026-10-21): council round 6 follow-ups
+
+Tool `<corpus>/corpus-blind/_results/tool-300`, `after` mode, JOBS=1. AutoMapper six twice (`_results/after-t300a`, `after-t300b`),
+MediatR twelve once (`_results/after-t300m`). 0 regressions, Fixed/Manual unchanged (AutoMapper as TAAK-295, MediatR as TAAK-296).
+MediatR reports identical to TAAK-296 row for row. AutoMapper reports identical to TAAK-295 except the example file in the kept
+`add-automapper` row of culinary, msb, encryptednotes and estore, now the first IMapper user by path then line (council Q4); both runs
+name the same example. This is the reviewed one-time baseline refresh.

@@ -522,7 +522,7 @@ internal static class MediatROwners
                 Line = owner.StartLine,
                 FixId = "mediatr",
                 PatternId = KeptPatternId,
-                Result = PatternResult.Manual($"Stays on MediatR next to Mediator: {why}. Migrate them together by hand to drop MediatR."),
+                Result = PatternResult.KeptManual(KeptReason.MediatRNextToMediator, $"{why}. Migrate them together by hand to drop MediatR."),
             });
         }
 

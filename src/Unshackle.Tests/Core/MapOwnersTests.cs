@@ -358,6 +358,37 @@ public class MapOwnersTests
         Reasons(report).ShouldContain(r => r.StartsWith(Fixer.NotRewrittenPrefix, StringComparison.Ordinal));
     }
 
+    // Council round 6, Q3: a reason that quotes MapBlockers ("is in profile ..., which this fix does not rewrite: <reason>") and is itself
+    // kept prints the "Stays on AutoMapper: " prefix exactly once: the quote keeps its own rendering, the prefix is never doubled.
+    [Fact]
+    public async Task FixAsync_KeptReasonQuotingMapBlockers_HasThePrefixOnce()
+    {
+        // Arrange: BeforeMap keeps Line → LineDto, so Order → OrderDto (which nests it) cannot be generated and its call quotes MapBlockers.
+        const string Nested = """
+            using AutoMapper;
+
+            namespace Shop;
+
+            public class ShopProfile : Profile
+            {
+                public ShopProfile()
+                {
+                    CreateMap<Order, OrderDto>();
+                    CreateMap<Line, LineDto>().BeforeMap((s, d) => d.Id = 1);
+                }
+            }
+            """;
+        Solution solution = Create(("Types.cs", Types), ("Profile.cs", Nested), ("Service.cs", Service));
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        List<string> quoting = [.. Reasons(report).Where(r => r.Contains("which this fix does not rewrite: ", StringComparison.Ordinal))];
+        quoting.ShouldNotBeEmpty();
+        quoting.ShouldAllBe(r => r.Split("Stays on AutoMapper: ").Length == 2);
+    }
+
     private static Task<FixReport> FixAsync(Solution solution) =>
         new Fixer([new AutoMapperFix()]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
 

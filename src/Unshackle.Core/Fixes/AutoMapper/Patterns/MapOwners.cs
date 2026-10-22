@@ -19,15 +19,6 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 internal class MapOwners
 {
-    /// <summary>
-    /// What the report prints in front of the reason of a kept finding (<see cref="ManualResult.Kept"/>); used here only where a kept reason is
-    /// quoted inside another reason, so that text reads as before.
-    /// </summary>
-    public const string KeptPrefix = "Stays on AutoMapper: ";
-
-    /// <summary>The reason of a Manual result as the report renders it: with <see cref="KeptPrefix"/> for a kept finding.</summary>
-    public static string Rendered(ManualResult manual) => manual.Kept == KeptReason.None ? manual.Reason : KeptPrefix + manual.Reason;
-
     private const string AutoMapperAssembly = "AutoMapper";
 
     private static readonly string[] s_mockAssemblies = ["Moq", "NSubstitute", "FakeItEasy"];

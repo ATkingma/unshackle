@@ -99,11 +99,11 @@ public class KeptReasonTextTests
     public void AllowsPartial_MediatRKept_SameAsThePlainManual()
     {
         // Arrange
-        IFix fix = new MediatRFix();
+        var fix = new MediatRFix();
 
         // Act
-        bool coded = fix.AllowsPartial(Coded(15));
-        bool plain = fix.AllowsPartial(Plain(15));
+        bool coded = ((IFix)fix).AllowsPartial(Coded(15));
+        bool plain = ((IFix)fix).AllowsPartial(Plain(15));
 
         // Assert
         fix.AllOrNothing.ShouldBeTrue();

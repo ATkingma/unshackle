@@ -46,9 +46,21 @@ internal static class LoadFromMapping
         return null;
     }
 
+    // The first property whose type the harness proved to differ (council round 12, E15: DateTime is written with another value or
+    // number format), as "Order.Placed (System.DateTime)", or null.
+    public static string? DifferingMember(ITypeSymbol element) =>
+        element is INamedTypeSymbol type
+            ? type.GetMembers().OfType<IPropertySymbol>().Where(p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic)
+                .Where(p => Underlying(p.Type).SpecialType == SpecialType.System_DateTime)
+                .Select(p => $"{type.Name}.{p.Name} ({p.Type.ToDisplayString()})").FirstOrDefault()
+            : null;
+
+    // Enums are covered too (E15: the harness shows the same value and format).
     private static bool IsCovered(ITypeSymbol type) =>
-        s_covered.Contains(type.SpecialType)
-        || (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable && s_covered.Contains(nullable.TypeArguments[0].SpecialType));
+        s_covered.Contains(Underlying(type).SpecialType) || Underlying(type).TypeKind == TypeKind.Enum;
+
+    private static ITypeSymbol Underlying(ITypeSymbol type) =>
+        type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable ? nullable.TypeArguments[0] : type;
 
     private static bool IsEPPlus(INamedTypeSymbol type)
     {

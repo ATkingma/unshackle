@@ -9,10 +9,10 @@ internal static class DimensionMapping
     // (End|Start, Row|Column) → ClosedXML call chain after the sheet.
     private static readonly Dictionary<(string Corner, string Part), (string Used, string Number)> s_calls = new()
     {
-        [("End", "Row")] = ("LastRowUsed()", "RowNumber()"),
-        [("End", "Column")] = ("LastColumnUsed()", "ColumnNumber()"),
-        [("Start", "Row")] = ("FirstRowUsed()", "RowNumber()"),
-        [("Start", "Column")] = ("FirstColumnUsed()", "ColumnNumber()"),
+        [("End", "Row")] = ("LastRowUsed(XLCellsUsedOptions.All)", "RowNumber()"),
+        [("End", "Column")] = ("LastColumnUsed(XLCellsUsedOptions.All)", "ColumnNumber()"),
+        [("Start", "Row")] = ("FirstRowUsed(XLCellsUsedOptions.All)", "RowNumber()"),
+        [("Start", "Column")] = ("FirstColumnUsed(XLCellsUsedOptions.All)", "ColumnNumber()"),
     };
 
     // sheet.Dimension with sheet an EPPlus ExcelWorksheet.

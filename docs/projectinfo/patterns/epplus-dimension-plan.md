@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "epplus-dimension"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5]
 files_expected:
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/DimensionPattern.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/DimensionMapping.cs
@@ -11,7 +11,7 @@ files_expected:
     - src/Unshackle.Tests/Proofs/EPPlus/Dimension/
 ---
 
-# Feature: epplus.dimension: sheet.Dimension corners → LastRowUsed()/FirstColumnUsed() …, null kept
+# Feature: epplus.dimension: sheet.Dimension corners → LastRowUsed(XLCellsUsedOptions.All)/FirstColumnUsed(XLCellsUsedOptions.All) …, null kept
 
 |               |                                                              |
 | ------------- | ------------------------------------------------------------ |
@@ -23,7 +23,7 @@ files_expected:
 
 ## One-sentence summary
 
-epplus.dimension: `sheet.Dimension.End.Row` / `.End.Column` / `.Start.Row` / `.Start.Column` become `sheet.LastRowUsed().RowNumber()` / `LastColumnUsed().ColumnNumber()` / `FirstRowUsed().RowNumber()` / `FirstColumnUsed().ColumnNumber()`, keeping the empty-sheet null behaviour; any other use of `Dimension` is Manual.
+epplus.dimension: `sheet.Dimension.End.Row` / `.End.Column` / `.Start.Row` / `.Start.Column` become `sheet.LastRowUsed(XLCellsUsedOptions.All).RowNumber()` / `LastColumnUsed(XLCellsUsedOptions.All).ColumnNumber()` / `FirstRowUsed(XLCellsUsedOptions.All).RowNumber()` / `FirstColumnUsed(XLCellsUsedOptions.All).ColumnNumber()`, keeping the empty-sheet null behaviour; any other use of `Dimension` is Manual.
 
 ## Scope (in / out)
 
@@ -31,12 +31,12 @@ epplus.dimension: `sheet.Dimension.End.Row` / `.End.Column` / `.Start.Row` / `.S
 
 | EPPlus | ClosedXML | Empty sheet |
 | --- | --- | --- |
-| `S.Dimension.End.Row` | `S.LastRowUsed().RowNumber()` | both throw `NullReferenceException` |
-| `S.Dimension?.End.Row` | `S.LastRowUsed()?.RowNumber()` | both null |
-| `.End.Column`, `.Start.Row`, `.Start.Column` | `LastColumnUsed().ColumnNumber()`, `FirstRowUsed().RowNumber()`, `FirstColumnUsed().ColumnNumber()` | same rule |
+| `S.Dimension.End.Row` | `S.LastRowUsed(XLCellsUsedOptions.All).RowNumber()` | both throw `NullReferenceException` |
+| `S.Dimension?.End.Row` | `S.LastRowUsed(XLCellsUsedOptions.All)?.RowNumber()` | both null |
+| `.End.Column`, `.Start.Row`, `.Start.Column` | `LastColumnUsed(XLCellsUsedOptions.All).ColumnNumber()`, `FirstRowUsed(XLCellsUsedOptions.All).RowNumber()`, `FirstColumnUsed(XLCellsUsedOptions.All).ColumnNumber()` | same rule |
 
 **Out of scope (Manual `UnmappedDimension`)**: `Dimension.Address`, `.Rows`, `.Columns`, a null check `S.Dimension == null`, passing `Dimension` on.
-Cells with a style but no value are not proven (EPPlus counts them in `Dimension`; ClosedXML's default `*Used()` does not).
+Cells with a style but no value count on both sides: EPPlus counts them in `Dimension`, and the rewrite passes `XLCellsUsedOptions.All` (council round 12, E16; harness cases with styled empty cells).
 
 ## Design
 
@@ -50,6 +50,7 @@ Cells with a style but no value are not proven (EPPlus counts them in `Dimension
 | REQ-2 | `Dimension?.` keeps null on an empty sheet and the value on a filled sheet. |
 | REQ-3 | Every case fails when the expression is wrong. |
 | REQ-4 | Any other use of Dimension is Manual `UnmappedDimension`. |
+| REQ-5 | A sheet with styled empty cells outside the values gives the same corners (`XLCellsUsedOptions.All`, E16); without `All` the harness differs. |
 
 ## See also
 

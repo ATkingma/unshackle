@@ -37,15 +37,22 @@ public partial class DimensionHarnessTests
 
     private const string Cells = "sheet.Cells[\"B2\"].Value = 1; sheet.Cells[\"D5\"].Value = 2;";
 
+    // Council round 12, E16: a styled cell without a value, outside the values (EPPlus counts it in Dimension).
+    private const string Styled = Cells + " sheet.Cells[\"F9\"].Style.Font.Bold = true; sheet.Cells[\"A1\"].Style.Font.Italic = true;";
+
     public static TheoryData<string, string, string, string> Shapes() => new()
     {
         { Cells, "sheet.Dimension.End.Row", "LastRowUsed", "FirstRowUsed" },
         { Cells, "sheet.Dimension.End.Column", "LastColumnUsed", "FirstColumnUsed" },
         { Cells, "sheet.Dimension.Start.Row", "FirstRowUsed", "LastRowUsed" },
         { Cells, "sheet.Dimension.Start.Column", "FirstColumnUsed", "LastColumnUsed" },
-        { Cells, "sheet.Dimension?.End.Row", "LastRowUsed()?.RowNumber()", "LastColumnUsed()?.ColumnNumber()" },
+        { Cells, "sheet.Dimension?.End.Row", "LastRowUsed(XLCellsUsedOptions.All)?.RowNumber()", "LastColumnUsed(XLCellsUsedOptions.All)?.ColumnNumber()" },
         { string.Empty, "sheet.Dimension?.End.Row", "found ?? -1", "found ?? -2" },
-        { string.Empty, "sheet.Dimension?.Start.Column", "FirstColumnUsed()?.ColumnNumber()", "FirstColumnUsed()?.ColumnNumber() ?? 0" },
+        { Styled, "sheet.Dimension.End.Row", "LastRowUsed(XLCellsUsedOptions.All)", "LastRowUsed()" },
+        { Styled, "sheet.Dimension.End.Column", "LastColumnUsed(XLCellsUsedOptions.All)", "LastColumnUsed()" },
+        { Styled, "sheet.Dimension.Start.Row", "FirstRowUsed(XLCellsUsedOptions.All)", "FirstRowUsed()" },
+        { Styled, "sheet.Dimension.Start.Column", "FirstColumnUsed(XLCellsUsedOptions.All)", "FirstColumnUsed()" },
+        { string.Empty, "sheet.Dimension?.Start.Column", "FirstColumnUsed(XLCellsUsedOptions.All)?.ColumnNumber()", "FirstColumnUsed(XLCellsUsedOptions.All)?.ColumnNumber() ?? 0" },
     };
 
     [Theory]

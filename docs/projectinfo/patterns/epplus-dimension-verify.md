@@ -16,6 +16,7 @@
 | REQ-2 | Met     | same test, the three `?.` cases |
 | REQ-3 | Met     | same test, wrong variant |
 | REQ-4 | Met     | proofs `Dimension/address`, `Dimension/null-check`; `OtherDimensionUse_IsManual` (3 cases) |
+| REQ-5 | Met     | `DimensionShape_RewrittenByPattern_WritesSameWorkbook`, the four `Styled` cases (wrong variant: without `All`) |
 
 ## Build and tests
 

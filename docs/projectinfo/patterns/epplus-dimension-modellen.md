@@ -31,8 +31,8 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     A[S.Dimension on an EPPlus sheet] --> B{.End/.Start then .Row/.Column?}
-    B -- yes, plain --> F1[Fixed: S.LastRowUsed().RowNumber() ...]
-    B -- yes, ?. --> F2[Fixed: S.LastRowUsed()?.RowNumber() ... null kept]
+    B -- yes, plain --> F1[Fixed: S.LastRowUsed(XLCellsUsedOptions.All).RowNumber() ...]
+    B -- yes, ?. --> F2[Fixed: S.LastRowUsed(XLCellsUsedOptions.All)?.RowNumber() ... null kept]
     B -- no --> M[Manual UnmappedDimension]
 ```
 

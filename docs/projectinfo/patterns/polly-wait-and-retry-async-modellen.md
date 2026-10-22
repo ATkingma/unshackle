@@ -72,7 +72,8 @@ flowchart TD
 | --- | --- |
 | Fixed | `local-block-delay`, `inline-result`, `typed-local-not-handled` (+ behaviour traces) |
 | `PolicyNotLocal` | `policy-returned` |
-| `OverloadNotSupported` | `on-retry` |
+| `OverloadNotSupported` | unit test (Context-taking provider) |
+| onRetry Fixed / `OnRetryUsesContext` | `on-retry-attempt`, `on-retry-async`, `on-retry-result` / `on-retry-context` |
 | `RetryCountNotLiteral` | `retry-count-variable` |
 | `ResultNotAwaited` | `result-not-awaited` |
 | other codes | `WaitAndRetryAsyncPatternTests.Rewrite_UnsupportedShape_EveryFindingManualWithCode` |

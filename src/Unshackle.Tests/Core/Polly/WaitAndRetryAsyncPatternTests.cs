@@ -56,6 +56,8 @@ public class WaitAndRetryAsyncPatternTests
     [InlineData("var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(0, a => TimeSpan.Zero); await p.ExecuteAsync(() => Task.CompletedTask);", nameof(PollyReason.RetryCountNotLiteral))]
     [InlineData("var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, Delay); await p.ExecuteAsync(() => Task.CompletedTask);", nameof(PollyReason.DelayNotLambda))]
     [InlineData("var p = Policy.HandleInner<TimeoutException>().WaitAndRetryAsync(2, a => TimeSpan.Zero); await p.ExecuteAsync(() => Task.CompletedTask);", nameof(PollyReason.ExceptionFilterNotSupported))]
+    [InlineData("var p = Policy.HandleResult<int>(r => r < 0).WaitAndRetryAsync(2, a => TimeSpan.Zero, (o, t) => Keep(o)); await p.ExecuteAsync(() => Task.FromResult(1));", nameof(PollyReason.OnRetryNotMappable))]
+    [InlineData("var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, (a, ctx) => TimeSpan.Zero, (e, t, ctx) => { }); await p.ExecuteAsync(() => Task.CompletedTask);", nameof(PollyReason.OverloadNotSupported))]
     [InlineData("var p = Policy.HandleResult<int>(1).WaitAndRetryAsync(2, a => TimeSpan.Zero); await p.ExecuteAsync(() => Task.FromResult(1));", nameof(PollyReason.ExceptionFilterNotSupported))]
     [InlineData("var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, a => TimeSpan.Zero); await p.ExecuteAsync(ct => Task.CompletedTask, CancellationToken.None);", nameof(PollyReason.ExecuteOverloadNotSupported))]
     [InlineData("var p = Policy.Handle<TimeoutException>().WaitAndRetryAsync(2, a => TimeSpan.Zero); await p.ExecuteAsync(Work);", nameof(PollyReason.ExecuteNotLambda))]

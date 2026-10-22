@@ -44,6 +44,12 @@ public class ProofTests
             Before = TestReferences.AutoMapper,
             After = TestReferences.AutoMapper,
         },
+        ["Polly"] = new()
+        {
+            Fix = new global::Unshackle.Core.Fixes.Polly.PollyFix(),
+            Before = global::Unshackle.Tests.Core.Polly.PollyReferences.Before,
+            After = global::Unshackle.Tests.Core.Polly.PollyReferences.After,
+        },
     };
 
     public static TheoryData<string> Proofs() =>

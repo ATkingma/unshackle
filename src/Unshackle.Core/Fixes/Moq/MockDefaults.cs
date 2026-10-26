@@ -37,7 +37,7 @@ public static class MockDefaults
                     IMethodSymbol { MethodKind: MethodKind.Ordinary } m => Classify(m.ReturnType, mockOf) switch
                     {
                         Kind.Same => null,
-                        Kind.Pin when !m.IsGenericMethod && m.Parameters.All(a => a.RefKind == RefKind.None && !a.IsParams) => Pin(m, exempt, pins),
+                        Kind.Pin when AnyTypeArguments(m) && m.Parameters.All(a => a.RefKind == RefKind.None && !a.IsParams) => Pin(m, exempt, pins),
                         _ => $"{m.Name} returns {m.ReturnType.ToDisplayString()}, whose default differs in a way that cannot be pinned",
                     },
                     _ => null,
@@ -53,6 +53,10 @@ public static class MockDefaults
             ? new() { Blocker = MoqBlocker.Of(MoqReason.TooManyDefaultPins, $"{pins.Count} members of {mocked.Name} would need Moq's default pinned (max {MaxPins})") }
             : new() { Pins = pins };
     }
+
+    // A generic method (ILogger.BeginScope<TState>(TState)) is pinned for any type argument (Arg.AnyType) when every type parameter is a parameter type.
+    public static bool AnyTypeArguments(IMethodSymbol method) =>
+        method.TypeParameters.All(tp => method.Parameters.Any(p => SymbolEqualityComparer.Default.Equals(p.Type, tp)));
 
     private static string? Pin(ISymbol member, HashSet<ISymbol> exempt, List<ISymbol> pins)
     {

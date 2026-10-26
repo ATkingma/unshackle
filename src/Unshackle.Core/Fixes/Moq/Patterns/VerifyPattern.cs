@@ -9,12 +9,19 @@ namespace Unshackle.Core.Fixes.Moq.Patterns;
 // converts (MockUsage); moq.create then drops the .Object.
 public class VerifyPattern : IPattern
 {
-    public string Id => "moq.verify";
+    public virtual string Id => "moq.verify";
 
-    public string Description => "m.Verify(x => x.M(..), Times.Once/Never/Exactly(n)/AtLeastOnce) → m.Received(1)/DidNotReceive()/Received(n)/Received().M(..)";
+    public virtual string Description => "m.Verify(x => x.M(..), Times.Once/Never/Exactly(n)/AtLeastOnce) → m.Received(1)/DidNotReceive()/Received(n)/Received().M(..)";
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        root.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => VerifySyntax.IsVerify(i, model) && !VerifySyntax.IsPropertyVerify(i)).Select(i => i.Parent!);
+        root.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => VerifySyntax.IsVerify(i, model) && !VerifySyntax.IsPropertyVerify(i) && IsLog(i, model) == Logs).Select(i => i.Parent!);
+
+    // moq.logger-verify (row 12) reuses this pattern for the Verify of ILogger.Log.
+    protected virtual bool Logs => false;
+
+    private static bool IsLog(InvocationExpressionSyntax verify, SemanticModel model) =>
+        verify.ArgumentList.Arguments[0].Expression is SimpleLambdaExpressionSyntax { ExpressionBody: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Log" } } call }
+        && model.GetSymbolInfo(call).Symbol is IMethodSymbol { ContainingType: { Name: "ILogger", ContainingNamespace: { Name: "Logging", ContainingNamespace.Name: "Extensions" } } };
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {

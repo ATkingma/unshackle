@@ -94,3 +94,69 @@ would leave every solution unchanged.
 - `claude/tasks/epplus-queue.md` — row 12
 - `claude/tasks/TAAK-309-epplus-to-closedxml.md` — the task
 - `docs/projectinfo/architectuur/corpus-epplus.md` — survey
+
+## TAAK-326 re-measure: per-project migration (council round 13, E17), 2026-10-26
+
+Tool `bf48ddc` (`tool-326c`), same 38 repos, `scan` → `<corpus>/scan-326c/`. **17 of 30 loadable repos now migrate at least one project** (round 1: 0).
+"Fixed" counts rows; most are project-file swaps in projects without blocking rows. Projects kept = `epplus.kept` rows.
+
+After-fix round (`fix --force` + `dotnet build`, sources reset after): montr (23 files), manga (3), simoona (12) build green.
+salesapi broke with the first tool (`tool-326b`): Domain declared EPPlus without EPPlus code, and the kept Application project got EPPlus only through it,
+while Infrastructure used Microsoft.Extensions.Configuration that EPPlus 7 brought in transitively (16 errors). Fixed in `bf48ddc`: a project a kept project
+references keeps EPPlus too, so salesapi now stays whole. The transitive-dependency loss itself is general: TAAK-329.
+
+| Repo | Build / scan | Fixed | Manual | Fixed % | Projects kept (TAAK-326) | Crash in log |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| bookfx | build=0 3s scan=0 22s | 2 | 160 | 1% | 2 |  |
+| excelchop | build=0 2s scan=0 6s | 0 | 17 | 0% | 0 |  |
+| xlobjmapper | build=0 2s scan=0 9s | 0 | 85 | 0% | 0 |  |
+| zserver | build=0 7s scan=0 21s | 0 | 4 | 0% | 0 |  |
+| dexiom | build=1 1s scan=1 9s | 0 | 0 | - | 0 |  |
+| dataextractor | build=0 3s scan=0 7s | 0 | 39 | 0% | 0 |  |
+| pivotdata | build=0 1s scan=0 4s | 0 | 0 | - | 0 |  |
+| excelcake | build=0 1s scan=0 7s | 1 | 57 | 2% | 2 |  |
+| griddly | build=1 3s scan=0 20s | 0 | 5 | 0% | 1 |  |
+| haohao | build=0 3s scan=0 17s | 2 | 5 | 29% | 2 |  |
+| alizhou | build=0 1s scan=0 3s | 1 | 5 | 17% | 1 |  |
+| dotnettools | build=0 3s scan=0 12s | 0 | 8 | 0% | 0 |  |
+| endurance | build=1 2s scan=0 18s | 1 | 4 | 20% | 1 |  |
+| filecontextcore | build=0 1s scan=0 12s | 3 | 20 | 13% | 1 |  |
+| nopframework | build=0 2s scan=0 26s | 0 | 18 | 0% | 0 |  |
+| qpas | build=1 2s scan=0 26s | 1 | 15 | 6% | 1 |  |
+| closetcode | build=1 0s scan=1 32s | 0 | 0 | - | 0 |  |
+| dorisoy | build=1 0s scan=1 4s | 0 | 0 | - | 0 |  |
+| geekconfig | build=0 1s scan=0 4s | 0 | 31 | 0% | 0 |  |
+| manga | build=0 4s scan=0 12s | 3 | 4 | 43% | 1 |  |
+| aistory | build=1 0s scan=1 5s | 0 | 0 | - | 0 |  |
+| lazyfurs | build=0 1s scan=0 6s | 0 | 31 | 0% | 0 |  |
+| lesi | build=2147516571 0s scan=1 0s | 0 | 0 | - | 0 |  |
+| openmirroring | build=0 1s scan=0 4s | 0 | 8 | 0% | 0 |  |
+| salesapi | build=0 2s scan=0 15s | 0 | 11 | 0% | 0 |  |
+| coreframework | build=0 6s scan=0 25s | 0 | 20 | 0% | 0 |  |
+| tunnetcom | build=0 5s scan=0 135s | 3 | 26 | 10% | 1 |  |
+| zamin | build=1 1s scan=0 8s | 0 | 0 | - | 0 |  |
+| newdcms | build=1 1s scan=0 108s | 4 | 55 | 7% | 1 |  |
+| etlast | build=0 3s scan=0 26s | 3 | 43 | 7% | 2 |  |
+| etlnet | build=0 4s scan=0 30s | 1 | 33 | 3% | 2 |  |
+| montr | build=0 9s scan=0 31s | 22 | 13 | 63% | 1 |  |
+| packt8 | build=1 4s scan=0 81s | 2 | 30 | 6% | 10 |  |
+| panda | build=0 10s scan=0 43s | 1 | 12 | 8% | 1 |  |
+| yourbrand | build=0 35s scan=0 147s | 3 | 5 | 38% | 1 |  |
+| simoona | build=0 41s scan=0 131s | 11 | 25 | 31% | 1 |  |
+| officeimo | build=0 257s scan=1 146s | 0 | 0 | - | 0 |  |
+| eppsamples | build=0 1s scan=0 11s | 0 | 474 | 0% | 0 |  |
+
+| Pattern | Status | Count |
+| --- | --- | ---: |
+| epplus.unsupported | Manual | 492 |
+| epplus.styles | Manual | 233 |
+| epplus.package | Manual | 163 |
+| epplus.dimension | Manual | 121 |
+| epplus.layout | Manual | 101 |
+| project-file | Manual | 78 |
+| project-file | Fixed | 64 |
+| epplus.kept | Manual | 32 |
+| epplus.load-from | Manual | 28 |
+| epplus.license-context | Manual | 13 |
+| usings | Manual | 2 |
+

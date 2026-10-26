@@ -1,6 +1,6 @@
 # TAAK-309 — EPPlus → ClosedXML (roadmap step 9)
 
-**Status**: step 4/5 — queue rows 1-11 done, E14 combined after-proofs for rows 7-10 done; E7 pin wired through `IPackageAssetsReader` (L4, 2026-10-22); C1 codes for layout/dimension/load-from moved to `EPPlusReason`; corpus scan round 1 done 2026-10-26 (0 Fixed, blocked by AllOrNothing; see `CORPUSRUN-epplus.md`)
+**Status**: step 4/5 — queue rows 1-11 done, E14 combined after-proofs for rows 7-10 done; E7 pin wired through `IPackageAssetsReader` (L4, 2026-10-22); C1 codes for layout/dimension/load-from moved to `EPPlusReason`; corpus scan round 1 done 2026-10-26 (0 Fixed, blocked by AllOrNothing); per-project migration TAAK-326 done 2026-10-26: 17/30 repos migrate at least one project (see `CORPUSRUN-epplus.md`)
 **Created**: 2026-10-22
 **Goal**: An `epplus` fix that rewrites EPPlus code (LGPL 4.5.3.3 and commercial 5+ API shapes) to ClosedXML, at 100% on an EPPlus corpus.
 

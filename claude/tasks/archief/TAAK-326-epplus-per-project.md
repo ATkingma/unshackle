@@ -1,6 +1,6 @@
 # TAAK-326 — EPPlus per-project migration (council round 13, E17)
 
-**Status**: step 4/5 — in progress
+**Status**: ✅ done — 2026-10-26
 **Created**: 2026-10-26
 **Goal**: the EPPlus fix migrates per project instead of all-or-nothing per solution (0% Fixed over 38 corpus repos was the trigger).
 
@@ -17,13 +17,16 @@
 - Sample `samples/ExcelReports/` (Orders migrates, Legacy stays), test `src/Unshackle.Tests/Integration/ExcelReportsTests.cs` (fix + build).
 - 2026-10-26: picked up by Claude Opus 5.5 (main session).
 
+- Corpus: 17/30 loadable repos migrate at least one project (was 0); after-fix build green on montr, manga, simoona. salesapi showed a kept
+  project getting EPPlus through a referenced project: such a project now stays too (`bf48ddc`). Transitive package loss in general: TAAK-329.
+
 ## Steps
 
 - [x] 1. Planner + Core seam (`EPPlusProjects`, `IPartialFix`)
 - [x] 2. Unit tests `src/Unshackle.Tests/Core/EPPlus/EPPlusPerProjectTests.cs` (clean + blocked, cross-project type, all blocked); docs (`core.md`, `epplus-package-plan.md`, `epplus-unsupported-plan.md`)
 - [x] 3. Two-project sample in `samples/` with an integration test
-- [→] 4. Corpus re-measure with Fixed % per repo (`CORPUSRUN-epplus.md`)
-- [ ] 5. Update TAAK-309 status, archive
+- [x] 4. Corpus re-measure with Fixed % per repo (`CORPUSRUN-epplus.md`)
+- [x] 5. Update TAAK-309 status, archive
 
 ## Changed files
 

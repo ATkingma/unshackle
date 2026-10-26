@@ -23,15 +23,29 @@ internal static class PollyRetry
     private static readonly HashSet<string> s_rewrittenParameters = new(["retryCount", SleepDurationProvider, SleepDurations, "onRetry", "onRetryAsync"], StringComparer.Ordinal);
 
     // The v7 async retry methods; WaitAndRetryAsync with a provider is polly.wait-and-retry-async, the rest polly.retry-variants.
-    private static readonly HashSet<string> s_retryMethods = new(["WaitAndRetryAsync", "RetryAsync", "RetryForeverAsync", "WaitAndRetryForeverAsync"], StringComparer.Ordinal);
+    // The sync twins (polly.sync-retry, queue row 4) share the options mapping; only the Execute call differs.
+    private static readonly HashSet<string> s_retryMethods = new(["WaitAndRetryAsync", "RetryAsync", "RetryForeverAsync", "WaitAndRetryForeverAsync", "WaitAndRetry", "Retry", "RetryForever", "WaitAndRetryForever"], StringComparer.Ordinal);
 
     public static bool IsRetryCreation(InvocationExpressionSyntax invocation, SemanticModel model) =>
         invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: string name } && s_retryMethods.Contains(name)
         && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { ContainingAssembly.Name: PollyAssembly };
 
+    // A sync retry call (WaitAndRetry, Retry, ...): polly.sync-retry's, never the async patterns'.
+    public static bool IsSync(InvocationExpressionSyntax creation, SemanticModel model) =>
+        model.GetSymbolInfo(creation).Symbol is IMethodSymbol method && !method.Name.EndsWith("Async", StringComparison.Ordinal);
+
     // A call that creates a pipeline: a retry call or a wrap of them (queue row 10).
     public static bool IsPipelineCreation(InvocationExpressionSyntax invocation, SemanticModel model) =>
-        IsRetryCreation(invocation, model) || PollyWrap.IsWrap(invocation, model);
+        IsRetryCreation(invocation, model) || IsTimeout(invocation, model) || IsNoOp(invocation, model) || PollyWrap.IsWrap(invocation, model);
+
+    // Policy.Timeout(Async) (queue row 9) and Policy.NoOp(Async) (queue row 11): a static Policy call, held and run like a retry.
+    public static bool IsTimeout(InvocationExpressionSyntax invocation, SemanticModel model) => IsPolicyCall(invocation, model, "Timeout", "TimeoutAsync");
+
+    public static bool IsNoOp(InvocationExpressionSyntax invocation, SemanticModel model) => IsPolicyCall(invocation, model, "NoOp", "NoOpAsync");
+
+    private static bool IsPolicyCall(InvocationExpressionSyntax invocation, SemanticModel model, string sync, string async) =>
+        invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: string name } && (name == sync || name == async)
+        && model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { IsStatic: true, ContainingAssembly.Name: PollyAssembly };
 
     // RetryAsync, the Forever methods and WaitAndRetryAsync over a sleep-duration list (queue row 7).
     public static bool IsVariant(InvocationExpressionSyntax creation, SemanticModel model) =>
@@ -43,7 +57,7 @@ internal static class PollyRetry
     public static IEnumerable<SyntaxNode> Targets(InvocationExpressionSyntax creation, SemanticModel model)
     {
         // The policy of an HttpClient handler is polly.add-policy-handler's node (it rewrites the whole call); a wrap operand is polly.wrap's.
-        if (IsHandlerPolicy(creation) || (IsRetryCreation(creation, model) && PollyWrap.IsOperand(creation, model)))
+        if (IsHandlerPolicy(creation) || PollyWrap.IsOperand(creation, model))
         {
             return [];
         }
@@ -144,7 +158,7 @@ internal static class PollyRetry
         if (access.Expression is InvocationExpressionSyntax creation && IsPipelineCreation(creation, model))
         {
             PollyPlan pipeline = PlanPipeline(creation, model);
-            PollyPlan inlineCallback = PlanCallback(execute, model);
+            PollyPlan inlineCallback = PlanCallback(execute, model, IsTimeout(creation, model));
             if (pipeline.Node is null || inlineCallback.Node is null)
             {
                 return pipeline.Node is null ? pipeline : inlineCallback;
@@ -170,7 +184,7 @@ internal static class PollyRetry
                 return pipeline;
             }
 
-            PollyPlan callback = PlanCallback(execute, model);
+            PollyPlan callback = PlanCallback(execute, model, IsTimeout(holderCreation, model));
             return callback.Node is null ? callback : PollyPlan.Of(execute.ReplaceNode(execute.ArgumentList.Arguments[0].Expression, callback.Node));
         }
 
@@ -183,6 +197,16 @@ internal static class PollyRetry
         if (PollyWrap.IsWrap(creation, model))
         {
             return PollyWrap.Plan(creation, model);
+        }
+
+        if (IsNoOp(creation, model))
+        {
+            return PollyPlan.Of(SyntaxFactory.ParseExpression(ResultType(creation, model) is string noOpResult ? $"ResiliencePipeline<{noOpResult}>.Empty" : "ResiliencePipeline.Empty"));
+        }
+
+        if (IsTimeout(creation, model))
+        {
+            return PollyTimeout.Plan(creation, model);
         }
 
         string indent = Indent(creation);
@@ -387,14 +411,43 @@ internal static class PollyRetry
                 : null;
         }
 
+        if (model.GetSymbolInfo(creation).Symbol is IMethodSymbol { IsGenericMethod: true, TypeArguments: [ITypeSymbol generic], Name: "Timeout" or "TimeoutAsync" or "NoOp" or "NoOpAsync" })
+        {
+            return generic.ToMinimalDisplayString(model, creation.SpanStart);
+        }
+
         return model.GetSymbolInfo(creation).Symbol is IMethodSymbol { ReceiverType: INamedTypeSymbol { Name: "PolicyBuilder", TypeArguments: [ITypeSymbol result] } }
             ? result.ToMinimalDisplayString(model, creation.SpanStart)
             : null;
     }
 
     // The v8 callback for policy.ExecuteAsync(() => ...): Func<CancellationToken, ValueTask(<T>)>, awaited by the caller.
-    private static PollyPlan PlanCallback(InvocationExpressionSyntax execute, SemanticModel model)
+    private static PollyPlan PlanCallback(InvocationExpressionSyntax execute, SemanticModel model, bool tokenOverload = false)
     {
+        // Timeouts only (queue row 9): ExecuteAsync(async ct => ..., token) has the same shape in v8 and the proof pins that the timeout
+        // cancels ct and surfaces as TimeoutRejectedException in both. Retry pipelines keep this overload Manual (cancellation not proven).
+        if (tokenOverload && execute.ArgumentList.Arguments.Count == 2
+            && model.GetSymbolInfo(execute).Symbol is IMethodSymbol
+            {
+                Name: "ExecuteAsync",
+                Parameters: [{ Type: INamedTypeSymbol { DelegateInvokeMethod.Parameters: [{ Type.Name: "CancellationToken" }] } }, { Type.Name: "CancellationToken" }],
+                ContainingAssembly.Name: PollyAssembly,
+            })
+        {
+            return !IsAwaited(execute)
+                ? PollyPlan.Manual(PollyReason.ResultNotAwaited, "the ExecuteAsync result is not awaited directly; v8 returns a ValueTask, which may only be awaited once.")
+                : execute.ArgumentList.Arguments[0].Expression is LambdaExpressionSyntax tokenLambda && tokenLambda.Modifiers.Any(m => m.IsKind(SyntaxKind.AsyncKeyword)) && Parameter(tokenLambda) is not null
+                    ? PollyPlan.Of(tokenLambda)
+                    : PollyPlan.Manual(PollyReason.ExecuteNotLambda, "the ExecuteAsync callback is not an async lambda with one CancellationToken parameter.");
+        }
+
+        // Sync Execute(Action) / Execute<T>(Func<T>): v8 has the same two overloads, so the argument stays as it is (queue row 4).
+        if (execute.ArgumentList.Arguments.Count == 1
+            && model.GetSymbolInfo(execute).Symbol is IMethodSymbol { Name: "Execute", Parameters: [{ Type: INamedTypeSymbol { DelegateInvokeMethod.Parameters.Length: 0 } }], ContainingAssembly.Name: PollyAssembly })
+        {
+            return PollyPlan.Of(execute.ArgumentList.Arguments[0].Expression);
+        }
+
         if (model.GetSymbolInfo(execute).Symbol is not IMethodSymbol { Name: "ExecuteAsync", Parameters.Length: 1, ContainingAssembly.Name: PollyAssembly }
             || execute.ArgumentList.Arguments.Count != 1)
         {
@@ -472,7 +525,7 @@ internal static class PollyRetry
                     $"'{holder.Name}' is used at line {use.GetLocation().GetLineSpan().StartLinePosition.Line + 1} for more than ExecuteAsync (assigned, passed on or another member called).");
             }
 
-            if (PlanCallback(execute, model) is { Code: not null } callbackBlocked)
+            if (PlanCallback(execute, model, IsTimeout(creation, model)) is { Code: not null } callbackBlocked)
             {
                 return callbackBlocked;
             }
@@ -549,7 +602,7 @@ internal static class PollyRetry
     };
 
     private static InvocationExpressionSyntax? ExecuteOn(ExpressionSyntax receiver) =>
-        receiver.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ExecuteAsync", Parent: InvocationExpressionSyntax execute } access
+        receiver.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ExecuteAsync" or "Execute", Parent: InvocationExpressionSyntax execute } access
         && access.Expression == receiver
             ? execute
             : null;

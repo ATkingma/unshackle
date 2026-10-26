@@ -1,0 +1,18 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Polly;
+using Polly.Timeout;
+
+public static class Proof
+{
+    public static async Task<string> RunAsync()
+    {
+        var trace = new List<string>();
+        var seconds = 3;
+        var policy = Policy.TimeoutAsync(seconds);
+        await policy.ExecuteAsync(() => Task.CompletedTask);
+        return string.Join(", ", trace);
+    }
+}

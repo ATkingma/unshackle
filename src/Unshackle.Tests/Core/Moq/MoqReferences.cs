@@ -14,7 +14,9 @@ public static class MoqReferences
         .. TestReferences.Net,
         MetadataReference.CreateFromFile(typeof(global::Moq.Mock).Assembly.Location),
         MetadataReference.CreateFromFile(typeof(global::Castle.DynamicProxy.ProxyGenerator).Assembly.Location),
+        MetadataReference.CreateFromFile(typeof(global::Microsoft.Extensions.Logging.ILogger).Assembly.Location),
     ];
 
-    public static IReadOnlyList<MetadataReference> NSubstitute { get; } = [.. TestReferences.Net, .. NSubstituteAssembly];
+    public static IReadOnlyList<MetadataReference> NSubstitute { get; } =
+        [.. TestReferences.Net, .. NSubstituteAssembly, MetadataReference.CreateFromFile(typeof(global::Microsoft.Extensions.Logging.ILogger).Assembly.Location)];
 }

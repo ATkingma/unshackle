@@ -2,6 +2,15 @@
 
 Read this first if you are taking over this session. Then `CLAUDE.md` and `claude/docs/INDEX.md`.
 
+## Pool checkpoint on Linux (2026-10-22, later) — start here first
+
+Five lanes (L1 polly, L2 moq, L4 epplus-corpus, L5 remeasure, L6 corpus-prep) were running when the session ended. State,
+agent ids, `pool/<lane>-wip` branches and next steps per lane: **`claude/tasks/CLAIMS.md`, "Pool checkpoint"**.
+Done in this session: L3 engine (TAAK-322 step 4 in `core.md`; TAAK-305 measured, not built: council question), CA1859 false
+positive on SDK 10.0.113 suppressed (`86ee846d`), tasks 301/302/311/312/316/317/320/321 archived, old worktrees removed.
+`verify-head.sh` must be gated without a pipe (memory: push-gate-no-pipe). zsh note: write `${id}` before `:` in
+refspecs (`$id:r` is a zsh modifier).
+
 ## Current state (2026-10-22, end of session) — start here
 
 **Agent pool (POOL-2026-10-22) stopped for a device switch.** Main is green and pushed (`b4eb28b` + this handover; verify-head OK, 2244 tests + 38 SampleShop). 25/25 agents of the budget used; finished agents were reused per queue row.

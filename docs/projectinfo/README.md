@@ -181,6 +181,7 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `automapper.kept-map` | [plan](patterns/automapper-kept-map-plan.md) | [models](patterns/automapper-kept-map-modellen.md) | [verify](patterns/automapper-kept-map-verify.md) | TAAK-272 |
 | `automapper.unused-imapper` | [plan](patterns/automapper-unused-imapper-plan.md) | [models](patterns/automapper-unused-imapper-modellen.md) | [verify](patterns/automapper-unused-imapper-verify.md) | TAAK-289 |
 | `automapper.mock-set-up` | [plan](patterns/automapper-mock-set-up-plan.md) | [models](patterns/automapper-mock-set-up-modellen.md) | [verify](patterns/automapper-mock-set-up-verify.md) | TAAK-311 |
+| `automapper.generic-map` | [plan](patterns/automapper-generic-map-plan.md) | [models](patterns/automapper-generic-map-modellen.md) | [verify](patterns/automapper-generic-map-verify.md) | TAAK-324 |
 | `moq.create` | [plan](patterns/moq-create-plan.md) | [models](patterns/moq-create-modellen.md) | [verify](patterns/moq-create-verify.md) | TAAK-307 |
 | `moq.setup-returns` | [plan](patterns/moq-setup-returns-plan.md) | [models](patterns/moq-setup-returns-modellen.md) | [verify](patterns/moq-setup-returns-verify.md) | TAAK-307 |
 | `moq.verify` | [plan](patterns/moq-verify-plan.md) | [models](patterns/moq-verify-modellen.md) | [verify](patterns/moq-verify-verify.md) | TAAK-307 |

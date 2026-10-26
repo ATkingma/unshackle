@@ -63,6 +63,13 @@ internal static class EPPlusProjects
             }
         }
 
+        // The crossings do not depend on what is kept: found once, applied until nothing changes.
+        List<(string User, string Declaring, string Member)> crossings = [];
+        foreach ((string user, Project project) in withEPPlus)
+        {
+            crossings.AddRange((await CrossingsAsync(project, projectsOfFile, cancellationToken)).Where(c => c.Declaring != user).Select(c => (user, c.Declaring, c.Member)));
+        }
+
         bool changed = true;
         while (changed)
         {
@@ -77,18 +84,20 @@ internal static class EPPlusProjects
                 }
             }
 
-            foreach ((string user, Project project) in withEPPlus)
+            foreach ((string user, string declaring, string member) in crossings.Where(c => kept.ContainsKey(c.User) != kept.ContainsKey(c.Declaring)))
             {
-                foreach ((string declaring, string member) in await CrossingsAsync(project, projectsOfFile, cancellationToken))
-                {
-                    if (declaring == user || kept.ContainsKey(user) == kept.ContainsKey(declaring))
-                    {
-                        continue;
-                    }
+                string moving = kept.ContainsKey(user) ? declaring : user;
+                kept[moving] = (EPPlusReason.EPPlusTypeCrossesProject,
+                    $"{member} names an EPPlus type and is used across {Path.GetFileName(user)} and {Path.GetFileName(declaring)}, and the other project stays on EPPlus");
+                changed = true;
+            }
 
-                    string moving = kept.ContainsKey(user) ? declaring : user;
-                    kept[moving] = (EPPlusReason.EPPlusTypeCrossesProject,
-                        $"{member} names an EPPlus type and is used across {Path.GetFileName(user)} and {Path.GetFileName(declaring)}, and the other project stays on EPPlus");
+            // A kept project may get EPPlus only through a project it references (corpus salesapi): that project keeps its package too.
+            foreach (string keeper in kept.Keys.ToList())
+            {
+                foreach (string provider in References(solution, projects.First(p => s_pathComparer.Equals(p.Key, keeper))).Where(r => withEPPlus.ContainsKey(r) && !kept.ContainsKey(r)))
+                {
+                    kept[provider] = (null, $"{Path.GetFileName(keeper)} references it and stays on EPPlus, and may get the EPPlus package through it");
                     changed = true;
                 }
             }
@@ -122,6 +131,31 @@ internal static class EPPlusProjects
         }
 
         return new PartialPlan { Solution = planned, Findings = rows };
+    }
+
+    // The projects (by file path) that any copy of this project references, directly or through other projects.
+    private static HashSet<string> References(Solution solution, IEnumerable<Project> copies)
+    {
+        HashSet<string> found = new(s_pathComparer);
+        Stack<ProjectId> pending = new(copies.SelectMany(p => p.ProjectReferences).Select(r => r.ProjectId));
+        HashSet<ProjectId> seen = [];
+        while (pending.TryPop(out ProjectId? id))
+        {
+            if (seen.Add(id) && solution.GetProject(id) is Project project)
+            {
+                if (project.FilePath is string path)
+                {
+                    found.Add(path);
+                }
+
+                foreach (ProjectReference reference in project.ProjectReferences)
+                {
+                    pending.Push(reference.ProjectId);
+                }
+            }
+        }
+
+        return found;
     }
 
     // Members this project uses that another project of the solution declares with an EPPlus type in their signature: (declaring project, member).

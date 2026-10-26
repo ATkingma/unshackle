@@ -97,6 +97,30 @@ public class EPPlusPerProjectTests
     }
 
     [Fact]
+    public async Task FixAsync_KeptProjectReferencesEPPlusProject_ReferencedProjectStaysToo()
+    {
+        // Arrange: corpus salesapi, the kept project may get EPPlus only through Domain, so Domain keeps it; Other moves.
+        const string domain = """
+            using OfficeOpenXml;
+
+            public static class Setup
+            {
+                public static void Configure() { ExcelPackage.LicenseContext = LicenseContext.NonCommercial; }
+            }
+            """;
+        Solution solution = Create(("Domain", [], domain), ("Blocked", ["Domain"], Blocked), ("Other", [], Clean));
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        (await TextAsync(report, "Domain")).ShouldBe(domain);
+        (await TextAsync(report, "Other")).ShouldNotContain("LicenseContext");
+        report.Findings.Where(f => f.PatternId == "epplus.kept" && f.FilePath == "Domain.csproj").ShouldHaveSingleItem()
+            .Result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("Blocked.csproj references it");
+    }
+
+    [Fact]
     public async Task FixAsync_EveryProjectBlocked_SolutionUntouched()
     {
         // Arrange

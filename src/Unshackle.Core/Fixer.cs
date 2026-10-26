@@ -420,6 +420,10 @@ public class Fixer : IFixer
             migrations = [.. migrations.Where(m => !blockedProjects.ContainsKey(m.ProjectPath))];
         }
 
+        // A project a partial plan keeps whole on the old library (EPPlus, E17) gets no new package next to the old one; its kept row explains it.
+        HashSet<string> keptProjects = new(findings.Where(f => f.Line == 0 && f.Result is ManualResult { Kept: KeptReason.EPPlusProjectKept }).Select(f => f.FilePath), StringComparer.OrdinalIgnoreCase);
+        migrations = [.. migrations.Where(m => !keptProjects.Contains(m.ProjectPath))];
+
         if (migrations.Count == 0)
         {
             return (solution, []);

@@ -106,7 +106,8 @@ internal static class EPPlusProjects
             planned = planned.WithDocumentSyntaxRoot(document.Id, root.WithAdditionalAnnotations(new SyntaxAnnotation(PartialPlan.KeptAnnotationKind)));
         }
 
-        List<Finding> rows = [.. roots];
+        // Project-file roots (G4 blockers, blocked edits) come back from the run itself; the plan does not seed them twice.
+        List<Finding> rows = [.. roots.Where(r => r.PatternId != Fixer.ProjectFilePatternId)];
         foreach ((string project, (EPPlusReason? code, string why)) in kept.Where(k => withEPPlus.ContainsKey(k.Key)).OrderBy(k => k.Key, StringComparer.Ordinal))
         {
             string reason = $"the whole project stays on EPPlus (no per-file mode): {why}. Migrate it by hand, or fix that and run the fix again.";

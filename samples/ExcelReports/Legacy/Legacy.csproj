@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="EPPlus" />
+    <!-- EPPlus 4.5.3.3 pulls System.Drawing.Common 4.7.0; the sample only writes cells. -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-rxg9-xrhp-64gj" />
+  </ItemGroup>
+</Project>

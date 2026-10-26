@@ -3,6 +3,7 @@
     <PackageVersion Include="FluentAssertions" Version="7.2.2" />
     <PackageVersion Include="MediatR" Version="12.5.0" />
     <PackageVersion Include="AutoMapper" Version="14.0.0" />
+    <PackageVersion Include="EPPlus" Version="4.5.3.3" />
   </ItemGroup>
   <ItemGroup>
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />

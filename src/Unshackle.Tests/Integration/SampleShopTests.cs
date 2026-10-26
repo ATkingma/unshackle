@@ -565,7 +565,7 @@ public class SampleShopTests
     }
 
     // bin/ and obj/ hold absolute paths of the original location; restore creates them again.
-    private static void CopyWithoutBuildOutput(string source, string target)
+    internal static void CopyWithoutBuildOutput(string source, string target)
     {
         Directory.CreateDirectory(target);
         foreach (string file in Directory.EnumerateFiles(source))
@@ -583,7 +583,7 @@ public class SampleShopTests
         }
     }
 
-    private static async Task DotnetAsync(CancellationToken cancellationToken, params string[] arguments)
+    internal static async Task DotnetAsync(CancellationToken cancellationToken, params string[] arguments)
     {
         var startInfo = new ProcessStartInfo("dotnet");
 

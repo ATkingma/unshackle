@@ -1,6 +1,6 @@
 # MassTransit 8 survey corpus (TAAK-310 step 2). owner/repo, one per line.
 # Found via GitHub code search for PackageReference/PackageVersion Include="MassTransit" Version="8.
-# Source-level survey only (no build); clones live under D:/playground/corpus-masstransit/.
+# Source-level survey only (no build); clones live under <corpus>/corpus-masstransit/.
 Altinn/altinn-auth
 AntonioFalcaoJr/Reminders
 ardalis/VerticalCleanModularMicroservices

@@ -1,4 +1,4 @@
-# name repo ref(short sha)   -- EPPlus corpus (TAAK-309 survey, 2026-10-22); clones in D:/playground/corpus-epplus/src/<name>
+# name repo ref(short sha)   -- EPPlus corpus (TAAK-309 survey, 2026-10-22); clones in <corpus>/corpus-epplus/src/<name>
 etlnet paillave/Etl.Net e31db63002ce
 officeimo EvotecIT/OfficeIMO f77fa667125a
 bookfx bookfx/bookfx 8c9b6a3de119

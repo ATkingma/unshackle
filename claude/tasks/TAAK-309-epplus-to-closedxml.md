@@ -1,6 +1,6 @@
 # TAAK-309 — EPPlus → ClosedXML (roadmap step 9)
 
-**Status**: step 4/5 — queue rows 1-11 done, E14 combined after-proofs for rows 7-10 done; E7 pin wired through `IPackageAssetsReader` (L4, 2026-10-22); C1 codes for layout/dimension/load-from moved to `EPPlusReason`; corpus round (row 12) in progress, see `CORPUSRUN-epplus.md`
+**Status**: step 4/5 — queue rows 1-11 done, E14 combined after-proofs for rows 7-10 done; E7 pin wired through `IPackageAssetsReader` (L4, 2026-10-22); C1 codes for layout/dimension/load-from moved to `EPPlusReason`; corpus scan round 1 done 2026-10-26 (0 Fixed, blocked by AllOrNothing; see `CORPUSRUN-epplus.md`)
 **Created**: 2026-10-22
 **Goal**: An `epplus` fix that rewrites EPPlus code (LGPL 4.5.3.3 and commercial 5+ API shapes) to ClosedXML, at 100% on an EPPlus corpus.
 
@@ -39,7 +39,7 @@
 
 - 2026-10-22 (agent epplus): step 1 done. 42 repos (16 on 4.x, 7 on 5, 7 on 6, 9 on 7, 3 on 8) measured with a regex
   script; results in `docs/projectinfo/architectuur/corpus-epplus.md`, repos in `claude/tools/corpus-epplus-repos.txt`,
-  clones/scripts/logs in `D:/playground/corpus-epplus/`. Builds stopped after 5 repos (C: full): excelchop, bookfx,
+  clones/scripts/logs in ``<corpus>/corpus-epplus/``. Builds stopped after 5 repos (C: full): excelchop, bookfx,
   zserver, xlobjmapper build; dexiom fails (net40); the rest "not built (C: full)". Draft queue and 6 council questions
   (cell-compare harness, type pin, worksheet index base, object values, ClosedXML version, wrapper libraries) in the doc.
   Next: step 2 (council round 8); re-run builds when disk space allows.

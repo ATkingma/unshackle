@@ -373,6 +373,7 @@ internal class MapOwners
         var owners = new MapOwners();
         s_planning.Value = owners;
         var mapCall = new MapCallPattern();
+        var genericMap = new GenericMapPattern();
         var mapInto = new MapIntoPattern();
         var projectTo = new ProjectToPattern();
         List<(ClassDeclarationSyntax Profile, SemanticModel Model, List<MapNode> Nodes)> profiles = [];
@@ -403,6 +404,7 @@ internal class MapOwners
             }
 
             calls.AddRange(mapCall.Find(root, model).Select(n => (n, model, (ISolutionPattern?)mapCall)));
+            calls.AddRange(genericMap.Find(root, model).Select(n => (n, model, (ISolutionPattern?)genericMap)));
             calls.AddRange(mapInto.Find(root, model).Select(n => (n, model, (ISolutionPattern?)mapInto)));
             calls.AddRange(projectTo.Find(root, model).Select(n => (n, model, (ISolutionPattern?)projectTo)));
             calls.AddRange(root.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => CreateMapPattern.IsOtherMapCall(i, model)).Select(n => ((SyntaxNode)n, model, (ISolutionPattern?)null)));

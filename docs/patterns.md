@@ -88,6 +88,7 @@ How to run a fix: [usage.md](usage.md). The tables below are generated (`unshack
 | `automapper.value-resolver` | ForMember(d => d.X, o => o.MapFrom<TResolver>()) and MapFrom((s, d) => expr) → X = new TResolver().Resolve(source, default!, default!, default!) or X = expr in B ToB(this A source); resolvers with DI dependencies or that use the destination, member or context stay Manual |
 | `automapper.kept-map` | CreateMap<A, B>() left in a trimmed profile by the partial migration → Manual (stays on AutoMapper), with the reason; changes nothing |
 | `automapper.map-call` | mapper.Map<B>(a) → a.ToB(), calling the extension method of CreateMap<A, B>; Map<List<B>>(items) → items.Select(x => x.ToB()).ToList(); unknown maps are Manual |
+| `automapper.generic-map` | mapper.Map<T>(x) on a type parameter → typeof(T) == typeof(B) ? (T)(object)x.ToB() : … over the closed type arguments of every caller; open sets are Manual |
 | `automapper.map-into` | mapper.Map(a, b) → a.MapInto(b), calling the MapInto that the profile rewrite writes for CreateMap<A, B>; collections, unknown maps and a maybe-null source or destination are Manual |
 | `automapper.project-to` | query.ProjectTo<B>(mapper.ConfigurationProvider) → query.Select(ProfileExtensions.AToBProjection), an Expression<Func<A, B>> the profile rewrite writes next to ToB; parameters, members to expand and unknown maps are Manual |
 | `automapper.mock-set-up` | Stub of IMapper.Map in a test whose value provably equals the generated mapping → removed (the class under test calls the generated method) |

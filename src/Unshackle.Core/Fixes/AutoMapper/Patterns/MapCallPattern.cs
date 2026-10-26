@@ -25,8 +25,9 @@ public class MapCallPattern : ISolutionPattern, ISolutionFinder
 
     // Also every Map or ProjectTo of AutoMapper used as a method group (items.Select(mapper.Map<B>), TAAK-267): left alone it would still
     // run after its CreateMap is gone, so it is either rewritten to a lambda or Manual (which blocks the whole fix).
+    // A call on a type parameter is GenericMapPattern's (TAAK-324).
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        root.DescendantNodes().Where(n => n is InvocationExpressionSyntax i ? IsMapCall(i, model) : IsMethodGroup(n, model));
+        root.DescendantNodes().Where(n => n is InvocationExpressionSyntax i ? IsMapCall(i, model) && !GenericMapPattern.IsGenericCall(i, model) : IsMethodGroup(n, model));
 
     // TAAK-311: the Map call of a stub that MockSetUpPattern removes is not a finding of its own.
     public async Task<IReadOnlyList<SyntaxNode>> FindAsync(SyntaxNode root, SemanticModel model, Solution solution, CancellationToken cancellationToken)
@@ -100,7 +101,7 @@ public class MapCallPattern : ISolutionPattern, ISolutionFinder
     }
 
     // source.ToB() through the method that exists or the one a profile of the solution gets; Manual when there is none (or several).
-    private static async Task<PatternResult> SingleAsync(SyntaxNode node, SemanticModel model, Solution solution, ExpressionSyntax source, ITypeSymbol sourceType,
+    internal static async Task<PatternResult> SingleAsync(SyntaxNode node, SemanticModel model, Solution solution, ExpressionSyntax source, ITypeSymbol sourceType,
         ITypeSymbol destination, MapCallKind kind, CancellationToken cancellationToken)
     {
         if (Existing(node, model, sourceType!, destination!, source!, kind) is { } existing)
@@ -220,7 +221,7 @@ public class MapCallPattern : ISolutionPattern, ISolutionFinder
         : result;
 
     // Why the call cannot become source.ToB(),or null with the source expression and the types of the map.
-    private static string? Check(InvocationExpressionSyntax invocation, SemanticModel model, out ExpressionSyntax? source, out ITypeSymbol? sourceType,
+    internal static string? Check(InvocationExpressionSyntax invocation, SemanticModel model, out ExpressionSyntax? source, out ITypeSymbol? sourceType,
         out ITypeSymbol? destination, out MapCallKind kind)
     {
         kind = MapCallKind.Plain;

@@ -4,7 +4,9 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Unshackle.Core.Abstractions;
+using Unshackle.Core.Generics;
 using Unshackle.Core.Models;
+using static Unshackle.Core.Generics.GenericUses;
 
 namespace Unshackle.Core.Fixes.MediatR.Patterns;
 
@@ -33,26 +35,12 @@ public class GenericRequestPattern : ISolutionPattern, ISolutionFinder
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) => FindNodes(root, model, [model.Compilation]);
 
     public async Task<IReadOnlyList<SyntaxNode>> FindAsync(SyntaxNode root, SemanticModel model, Solution solution, CancellationToken cancellationToken) =>
-        [.. FindNodes(root, model, await CompilationsAsync(solution, cancellationToken))];
+        [.. FindNodes(root, model, await GenericUses.CompilationsAsync(solution, cancellationToken))];
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model) => RewriteNode(node, model, [model.Compilation]);
 
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken) =>
-        RewriteNode(node, model, node is TypeDeclarationSyntax ? await CompilationsAsync(solution, cancellationToken) : [model.Compilation]);
-
-    private static async Task<IReadOnlyList<Compilation>> CompilationsAsync(Solution solution, CancellationToken cancellationToken)
-    {
-        var compilations = new List<Compilation>();
-        foreach (Project project in solution.Projects.Where(p => p.Language == LanguageNames.CSharp))
-        {
-            if (await project.GetCompilationAsync(cancellationToken) is Compilation compilation)
-            {
-                compilations.Add(compilation);
-            }
-        }
-
-        return compilations;
-    }
+        RewriteNode(node, model, node is TypeDeclarationSyntax ? await GenericUses.CompilationsAsync(solution, cancellationToken) : [model.Compilation]);
 
     private static bool IsGenericMessage(INamedTypeSymbol type) =>
         type is { TypeKind: TypeKind.Class, IsAbstract: false, IsStatic: false, IsGenericType: true, ContainingType: null }
@@ -99,25 +87,6 @@ public class GenericRequestPattern : ISolutionPattern, ISolutionFinder
         }
 
         return type;
-    }
-
-    private static bool ContainsTypeParameter(ITypeSymbol type) => type switch
-    {
-        ITypeParameterSymbol => true,
-        INamedTypeSymbol named => named.TypeArguments.Any(ContainsTypeParameter),
-        IArrayTypeSymbol array => ContainsTypeParameter(array.ElementType),
-        _ => false,
-    };
-
-    private static bool InDeclarationOf(SyntaxNode node, INamedTypeSymbol type, SemanticModel model) =>
-        node.Ancestors().OfType<TypeDeclarationSyntax>().Any(t => SymbolEqualityComparer.Default.Equals(model.GetDeclaredSymbol(t), type));
-
-    private static bool IsSubclassBase(GenericNameSyntax generic, INamedTypeSymbol type, SemanticModel model)
-    {
-        SyntaxNode written = generic.Parent is QualifiedNameSyntax { Right: var right } qualified && right == generic ? qualified : generic;
-        return written.Parent is SimpleBaseTypeSyntax { Parent: BaseListSyntax { Parent: TypeDeclarationSyntax declaration } }
-            && model.GetDeclaredSymbol(declaration) is INamedTypeSymbol { TypeKind: TypeKind.Class } subclass
-            && SymbolEqualityComparer.Default.Equals(subclass.BaseType, type);
     }
 
     // IRequestHandler<G<X, Y>, Y> of a concrete class that gets it from a base class, with G a generic request.
@@ -388,61 +357,33 @@ public class GenericRequestPattern : ISolutionPattern, ISolutionFinder
         type.SpecialType != SpecialType.None
         || (type.DeclaredAccessibility == Accessibility.Public && (type.ContainingType is null || IsPublic(type.ContainingType)));
 
-    private static string Prefix(INamedTypeSymbol type) =>
-        type.ContainingNamespace.IsGlobalNamespace ? "" : type.ContainingNamespace.ToDisplayString() + ".";
-
-    private static string MetadataKey(INamedTypeSymbol type) =>
-        type.ContainingType is INamedTypeSymbol outer ? MetadataKey(outer) + "+" + type.MetadataName : Prefix(type) + type.MetadataName;
-
-    private static string ArgumentsKey(INamedTypeSymbol closed) =>
-        string.Join(", ", closed.TypeArguments.Select(a => a is INamedTypeSymbol n ? MetadataKey(n) : a.ToDisplayString()));
-
-    // Every use of the generic message in the solution, by the written G<...> names and by inherited handler interfaces.
+    // Every use of the generic message in the solution, by the written G<...> names (GenericUses) and by inherited handler interfaces.
     private static GenericRequestUses Scan(INamedTypeSymbol message, IReadOnlyList<Compilation> compilations)
     {
         string key = MetadataKey(message);
         var result = new GenericRequestUses();
+        foreach (GenericUse use in GenericUses.Find(message, compilations))
+        {
+            switch (use.Kind)
+            {
+                case GenericUseKind.Unbound:
+                    result.Unbound ??= use.Where;
+                    break;
+                case GenericUseKind.SubclassBase:
+                    result.Subclassed.Add(ArgumentsKey(use.Constructed));
+                    break;
+                case GenericUseKind.OpenCreation:
+                    result.OpenCreation ??= use.Where;
+                    break;
+                case GenericUseKind.Closed:
+                    result.Closed[ArgumentsKey(use.Constructed)] = use.Constructed.TypeArguments;
+                    result.Assemblies.Add(use.AssemblyName);
+                    break;
+            }
+        }
+
         foreach (Compilation compilation in compilations)
         {
-            foreach (SyntaxTree tree in compilation.SyntaxTrees)
-            {
-                SemanticModel model = compilation.GetSemanticModel(tree);
-                foreach (GenericNameSyntax generic in tree.GetRoot().DescendantNodes().OfType<GenericNameSyntax>()
-                    .Where(g => g.Identifier.ValueText == message.Name && g.TypeArgumentList.Arguments.Count == message.Arity))
-                {
-                    if (model.GetSymbolInfo(generic).Symbol is not INamedTypeSymbol type || MetadataKey(type.OriginalDefinition) != key)
-                    {
-                        continue;
-                    }
-
-                    string where = $"{Path.GetFileName(tree.FilePath)}:{generic.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
-                    if (generic.IsUnboundGenericName)
-                    {
-                        result.Unbound ??= where;
-                    }
-                    else if (InDeclarationOf(generic, type.OriginalDefinition, model))
-                    {
-                        continue;
-                    }
-                    else if (IsSubclassBase(generic, type, model))
-                    {
-                        result.Subclassed.Add(ArgumentsKey(type));
-                    }
-                    else if (type.TypeArguments.Any(ContainsTypeParameter))
-                    {
-                        if (generic.Ancestors().TakeWhile(a => a is TypeSyntax).Prepend(generic).Last().Parent is ObjectCreationExpressionSyntax)
-                        {
-                            result.OpenCreation ??= where;
-                        }
-                    }
-                    else
-                    {
-                        result.Closed[ArgumentsKey(type)] = type.TypeArguments;
-                        result.Assemblies.Add(compilation.AssemblyName ?? "");
-                    }
-                }
-            }
-
             foreach (INamedTypeSymbol type in compilation.GetSymbolsWithName(_ => true, SymbolFilter.Type).OfType<INamedTypeSymbol>())
             {
                 foreach (INamedTypeSymbol inherited in InheritedHandlers(type))

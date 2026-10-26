@@ -1,0 +1,1 @@
+Map<TDto> from Shop.Order: typeof(Reader<>) is used at Test.cs:36 (an open generic registration or reflection)

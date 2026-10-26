@@ -155,6 +155,31 @@ public class EPPlusPerProjectTests
         plan.ShouldBeNull();
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task PlanPartialAsync_DependentWithoutEPPlusCode_IsKeptWithoutClosedXml(bool withClean)
+    {
+        // Arrange: Web only sees EPPlus through Kept (corpus round 2: such projects got ClosedXML added for nothing).
+        Solution solution = CreateSolution(withClean ? Proof("clean.before.cs") : "namespace Clean; public static class Nothing { }", Proof("kept.before.cs"), keptReferencesClean: false);
+        solution = AddProject(solution, "/repo/Web/Web.csproj", "Web.cs", "namespace Web; public static class Page { public static void Run() => Kept.Kept.Append(null!); }");
+        ProjectId web = solution.Projects.Single(p => p.FilePath == "/repo/Web/Web.csproj").Id;
+        solution = solution.AddProjectReference(web, new ProjectReference(solution.Projects.Single(p => p.FilePath == KeptPath).Id));
+
+        // Act
+        PartialPlan? plan = await new EPPlusFix().PlanPartialAsync(solution, [Root("/repo/Kept/Kept.cs")], TestContext.Current.CancellationToken);
+
+        // Assert
+        if (withClean)
+        {
+            plan.ShouldNotBeNull().KeptProjects.Keys.Order(StringComparer.Ordinal).ShouldBe([KeptPath, "/repo/Web/Web.csproj"]);
+        }
+        else
+        {
+            plan.ShouldBeNull();
+        }
+    }
+
     private static Finding Root(string path) =>
         new() { FilePath = path, Line = 9, FixId = "epplus", PatternId = "epplus.package", Result = PatternResult.Manual("kept") };
 

@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Unshackle.Core.Abstractions;
+using Unshackle.Core.Fixes.EPPlus.Patterns;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.EPPlus;
@@ -78,7 +79,30 @@ internal static class EPPlusProjectPlan
             }
         }
 
-        if (!usesEPPlus.Any(p => !kept.ContainsKey(p)))
+        // A project that only sees EPPlus through a kept project (no code of its own names it) has nothing to migrate: it gets no ClosedXML.
+        HashSet<string> ownCode = new(s_paths);
+        foreach (IGrouping<string, Project> project in projects.Where(p => usesEPPlus.Contains(p.Key)))
+        {
+            foreach (Document document in project.SelectMany(p => p.Documents))
+            {
+                if ((await document.GetTextAsync(cancellationToken)).ToString().Contains(EPPlusSyntax.Namespace, StringComparison.Ordinal))
+                {
+                    ownCode.Add(project.Key);
+                    break;
+                }
+            }
+        }
+
+        foreach (IGrouping<string, Project> project in projects.Where(p => usesEPPlus.Contains(p.Key) && !kept.ContainsKey(p.Key) && !ownCode.Contains(p.Key)))
+        {
+            HashSet<ProjectId> keptIds = [.. projects.Where(k => kept.ContainsKey(k.Key)).SelectMany(k => k).Select(k => k.Id)];
+            if (project.Any(p => DependsOn(p, keptIds)))
+            {
+                kept[project.Key] = "no EPPlus code of its own; it sees EPPlus only through a project that stays on it";
+            }
+        }
+
+        if (!usesEPPlus.Any(p => !kept.ContainsKey(p) && ownCode.Contains(p)))
         {
             return null;
         }

@@ -71,7 +71,7 @@ internal static class ReportOnlyRun
                 _ => throw new UnreachableException(),
             };
             int line = node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-            findings.Add(FindingFactory.CreateFinding(filePath, line, fix, pattern, reported));
+            findings.Add(FindingFactory.CreateFinding(filePath, line, fix, result.PatternId ?? pattern.Id, reported));
         }
     }
 }

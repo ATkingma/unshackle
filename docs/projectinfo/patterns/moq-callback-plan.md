@@ -44,7 +44,7 @@ A Callback without a value becomes `m.When(x => x.M(..)).Do(ci => ..)`. Lambda p
 - **REQ-2**: WHEN `Callback(f).Returns(v)` with a plain value THE SYSTEM SHALL write the same (proof `callback-then-returns`).
 - **REQ-3**: WHEN `Callback(f)` has no value THE SYSTEM SHALL write `m.Object.When(x => x.M(..)).Do(ci => f')`, leaving the answer to Moq's (pinned) default (proof `void-callback`; run-time `callback-only-value`).
 - **REQ-4**: IF a Returns function or Throws is in the chain THEN Manual `CallbackOrder` (proofs `callback-before-returns-function`, `returns-function-then-callback`, `callback-with-throws`).
-- **REQ-5**: IF the member has another setup THEN Manual `SetupsOverlap` (proof `overlapping-setups`).
+- **REQ-5**: IF the member has another setup THEN Manual `SetupsOverlap` (proof `overlapping-setups`); the reason names NSubstitute's `Configure()` as a manual route, never generated (council round 13, M9).
 - **REQ-6**: IF the callback is a method group THEN Manual `CallbackShape` (proof `callback-method-group`).
 - **REQ-7**: The whole fix SHALL run the same callbacks with the same arguments (run-time `callback-pass`, `callback-only-value`; `callback-must-fail` throws under both).
 

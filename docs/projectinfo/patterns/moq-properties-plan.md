@@ -27,7 +27,7 @@ Row 5 reports as `moq.properties` (council round 12, M7), reusing the existing r
 
 - `SetupGet` is rewritten as by `moq.setup-returns` (`m.P.Returns(v)`), reported by `PropertiesPattern`.
 - `VerifyGet`/`VerifySet` are rewritten as by `moq.verify` (`_ = m.Received(n).P;`, `m.Received(n).P = v;`), reported by `PropertiesPattern`.
-- `SetupProperty`/`SetupAllProperties` are handled by `moq.create`. These are the only ways a Moq property remembers a set value, as NSubstitute's always does, so with them a settable property is no longer a `DefaultValueDiffers` blocker.
+- `SetupProperty`/`SetupAllProperties` are rewritten by `moq.create` and report as `moq.properties` (council round 13, M8). These are the only ways a Moq property remembers a set value, as NSubstitute's always does, so with them a settable property is no longer a `DefaultValueDiffers` blocker.
 
 ## Scope (in / out)
 

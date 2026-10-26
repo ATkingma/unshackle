@@ -4,6 +4,9 @@ namespace Unshackle.Core.Models;
 
 public abstract record PatternResult
 {
+    // The report row id when it differs from the pattern's own Id (council round 13, M8); null: the pattern's Id.
+    public string? PatternId { get; init; }
+
     // requiredNamespaces: usings the new code needs, e.g. "System.Linq" for Count(); the Fixer adds them when missing.
     public static PatternResult Fixed(SyntaxNode newNode, params IReadOnlyList<string> requiredNamespaces) =>
         new FixedResult([newNode], requiredNamespaces);

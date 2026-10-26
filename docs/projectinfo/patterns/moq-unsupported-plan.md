@@ -35,7 +35,7 @@ a code of its own instead of the generic `MockUsedBeyondObject`.
 
 - **REQ-1**: WHEN a mock is used through `Protected`, `As`, `Invocations`, `Reset`, `Raise`/`RaiseAsync` THE SYSTEM SHALL leave the mock and report `ProtectedMember`, `MockAs`, `MockInvocations`, `MockReset`, `MockRaise` (proofs `Create/unsupported-*`, `ClassMocks/unsupported-protected`).
 - **REQ-2**: WHEN the mock is a class mock the specific code SHALL win over `ClassMockSetup` (proof `ClassMocks/unsupported-protected`).
-- **REQ-3**: WHEN `new AutoMocker()` is found THE SYSTEM SHALL report `AutoMocker` (proof `Unsupported/auto-mocker`); `MockBehavior.Strict` keeps `StrictBehaviour` (proof `Create/strict`).
+- **REQ-3**: WHEN `new AutoMocker()` is found THE SYSTEM SHALL report `AutoMocker` (proof `Unsupported/auto-mocker`); `MockBehavior.Strict` keeps `StrictBehaviour` (proof `Create/strict`). Every mock-use code (`StrictBehaviour`, `ProtectedMember`, `MockAs`, `MockInvocations`, `MockReset`, `MockRaise`) reports under `moq.unsupported`, whichever pattern met it (council round 13, M8, `SubPatternIdTests`).
 
 ## Assumptions
 

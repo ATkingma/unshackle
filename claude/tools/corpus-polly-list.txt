@@ -1,0 +1,20 @@
+aerosharp src/AeroSharp.sln
+babylon-gateway babylon-gateway.sln
+deepl-dotnet DeepL.net.sln
+eventualshop EventualShop.sln
+fergun Fergun.slnx
+gpr GprTool.sln
+heappe HEAppE Core.sln
+igdb-dotnet igdb-dotnet.sln
+listenarr listenarr.slnx
+logshark Logshark.sln
+okta-sdk-dotnet src/Okta.Sdk.sln
+recfluence App/Recfluence.sln
+seedwork.cqrs.bus Seedwork.CQRS.Bus.sln
+sme-novosgp SME.SGP.sln
+sme-servidorrelatorios SME-Servidor-Relatorios.sln
+squidlr Squidlr.sln
+starnight Starnight.sln
+suucat SuuCat.sln
+trader Trader.sln
+uno.check UnoCheck.sln

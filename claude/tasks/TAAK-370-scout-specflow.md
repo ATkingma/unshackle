@@ -7,7 +7,7 @@
 ## Context for the next agent
 
 - Unshackle migrates .NET code off libraries with license, sponsor or EOL problems; roadmap steps 7-10 (Moq, Polly, EPPlus, MassTransit) are planned. This scout looks for the next candidate (user request 2026-10-22: use spare capacity on other libraries).
-- Scouts are light: web sources and shallow clones under `D:/playground/corpus-candidates/specflow/`, grep counts only, no builds.
+- Scouts are light: web sources and shallow clones under `<corpus>/corpus-candidates/specflow/`, grep counts only, no builds.
 - Owned files and reserved numbers (371–379): see `claude/tasks/CLAIMS.md`. The go/no-go itself is a council decision (`claude/docs/council.md`).
 
 ## Steps
@@ -19,7 +19,7 @@
 ## Progress log
 
 - 2026-10-22: created; agent scout-specflow started.
-- 2026-10-22: report written (go, effort M, demand high); 13 repos cloned to D:/playground/corpus-candidates/specflow/src; draft task TAAK-371 in the report.
+- 2026-10-22: report written (go, effort M, demand high); 13 repos cloned to <corpus>/corpus-candidates/specflow/src; draft task TAAK-371 in the report.
 
 ## Changes
 

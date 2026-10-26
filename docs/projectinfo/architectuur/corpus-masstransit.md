@@ -57,7 +57,7 @@ Wolverine MIT (JasperFx), Rebus MIT; Rebus "Pro" add-ons are commercial but not 
 
 - 24 repos found by GitHub code search for `PackageReference`/`PackageVersion Include="MassTransit" Version="8`
   (list: `claude/tools/corpus-masstransit-repos.txt`), downloaded at `HEAD` (2026-10-22) as tarballs into
-  `D:/playground/corpus-masstransit/<owner>_<repo>/`. Not pinned, not built.
+  `<corpus>/corpus-masstransit/<owner>_<repo>/`. Not pinned, not built.
 - Counts are regex occurrences over `*.cs` (no comment stripping, no Roslyn). `Publish`/`Send` are **noisy**: they also
   catch MediatR `Send`, SignalR, other buses (`Nox` 2296 and `YourBrand` 825 `Send` hits are mostly not MassTransit).
   Read them as "possible", the rest as reliable to ±10%.

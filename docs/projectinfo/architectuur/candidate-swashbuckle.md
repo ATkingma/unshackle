@@ -44,9 +44,9 @@ nullable, schema ids). That is a bespoke harness, needs build and run, so slow a
 
 ## Corpus survey
 
-Shallow clones (`--depth 1`) under `D:\playground\corpus-candidates\swashbuckle\<name>`; no builds. Counts are the
+Shallow clones (`--depth 1`) under `<corpus>\corpus-candidates\swashbuckle\<name>`; no builds. Counts are the
 **number of files** matching a regex over `*.cs`, `*.csproj`, `*.props` (bin, obj, node_modules skipped). Script:
-`D:\playground\corpus-candidates\tmp\m.sh`, raw output `out.txt` next to it. 14 repos cloned; 9 use Swashbuckle.
+`<corpus>\corpus-candidates\tmp\m.sh`, raw output `out.txt` next to it. 14 repos cloned; 9 use Swashbuckle.
 
 | Repo (pinned sha) | AddSwaggerGen | SwaggerDoc | SecDef/Req | OpFilter | SchFilter | DocFilter | XmlComments | UseSwaggerUI | Annotations | Filters pkg |
 | ----------------- | -: | -: | -: | -: | -: | -: | -: | -: | -: | -: |

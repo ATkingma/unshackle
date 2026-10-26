@@ -24,7 +24,7 @@ On main now:
 - **AutoMapper/MediatR**: TAAK-311 (A1, A6–A10), 312 (A2); TAAK-313/314 wait for the corpus re-measure (started, see below).
 - **Council** rounds 8–12 in `claude/docs/council.md`. Open questions for round 13: Moq per-result pattern id (M7 partly), `Configure()` in output; EPPlus read mapping keeping EPPlus semantics.
 
-**Unmerged WIP branches pushed to origin** (`pool/*`, see `claude/tasks/CLAIMS.md` "Active claims"): merge each after build + tests + verify-head, or continue it. **Never clear `~/.nuget/packages` on the work laptop** (Profit); corpus runs use NuGet caches under `D:/playground/...`.
+**Unmerged WIP branches pushed to origin** (`pool/*`, see `claude/tasks/CLAIMS.md` "Active claims"): merge each after build + tests + verify-head, or continue it. **Never clear `~/.nuget/packages` on the work laptop** (Profit); corpus runs use NuGet caches under `<corpus>/...`.
 
 **Left for the main session**: corpus rounds (Moq, Polly, EPPlus, MassTransit) with NuGet cache on D:, TAAK-303 (worktree cleanup, after merging the pool branches), TAAK-305 (ReadyToRun), TAAK-304 release 0.3.0 (user go).
 

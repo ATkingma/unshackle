@@ -9,14 +9,14 @@ Target library under discussion: ClosedXML (MIT).
   `id="EPPlus" version="4.5.3.3"` in `packages.config` and `PackageVersion Include="EPPlus"` (central package management);
   ranked by stars, forks and non-C# repos dropped, very large repos (>200 MB: game engines, PLC/Revit toolkits) skipped.
 - 42 repos cloned shallowly (`--depth 1`) at the commit in `claude/tools/corpus-epplus-repos.txt` into
-  `D:\playground\corpus-epplus\src\<name>\` (outside the repo, read only).
+  `<corpus>\corpus-epplus\src\<name>\` (outside the repo, read only).
 - Measurement: a regex script over `*.cs` files that contain `using OfficeOpenXml` or a qualified `OfficeOpenXml.` use
   (comments stripped; `bin`, `obj`, `node_modules`, `wwwroot`, `*.g.cs`, `*.Designer.cs` skipped). No Roslyn: numbers are
-  indicative. `python -I D:\playground\corpus-epplus\tools\measure.py [names]` writes `tools\ep.json`; `agg.py` prints the
+  indicative. `python -I <corpus>\corpus-epplus\tools\measure.py [names]` writes `tools\ep.json`; `agg.py` prints the
   table. "In tests" = hits in paths containing `test`.
 - Builds: `dotnet build <solution> -m:2 -p:TreatWarningsAsErrors=false -p:NuGetAudit=false`, SDK 10.0.400, one repo at a
   time, 10 minute limit, `TEMP`/`TMP`/`NUGET_PACKAGES`/`DOTNET_CLI_HOME` on `D:` (the `C:` drive was full during the run).
-  Logs: `D:\playground\corpus-epplus\logs\<name>.log`, summary `logs\_results.txt`. Builds were planned for 20 repos (the ones
+  Logs: `<corpus>\corpus-epplus\logs\<name>.log`, summary `logs\_results.txt`. Builds were planned for 20 repos (the ones
   with tests or enough EPPlus code) but stopped after 5 because `C:` was full.
 
 ## Versions

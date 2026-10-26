@@ -70,7 +70,7 @@ format, orientation and alpha behaviour; "looks the same" is not guaranteed.
 
 ## Corpus
 
-Repos cloned shallowly (`--depth 1`) under `D:/playground/corpus-candidates/imagesharp/<name>/`, pinned at the sha cloned on
+Repos cloned shallowly (`--depth 1`) under `<corpus>/corpus-candidates/imagesharp/<name>/`, pinned at the sha cloned on
 2026-10-22 (default branch HEAD). Counting script (outside repo): scratchpad `m.py`, regex over `*.cs` that mention `SixLabors`
 (comments stripped, bin/obj/wwwroot skipped). Counts are regex matches, indicative only.
 

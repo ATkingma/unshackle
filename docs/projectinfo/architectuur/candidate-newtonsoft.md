@@ -40,7 +40,7 @@ Newtonsoft output into the STJ deserializer and assert structural equality. This
 proof is before/after source, here the proof is behavioural and needs a runnable test per type, so it is a new proof kind
 (generated tests in the user's solution, not in Unshackle). Honest ceiling: equivalence for sampled inputs, not all inputs.
 
-## Corpus (10 repos, shallow, 2026-10-22, in `D:/playground/corpus-candidates/newtonsoft/`)
+## Corpus (10 repos, shallow, 2026-10-22, in `<corpus>/corpus-candidates/newtonsoft/`)
 
 Counts are matching lines in `*.cs`. "files" = files with `using Newtonsoft`. The `[JsonProperty` column also matches
 `[JsonPropertyName`, so it is inflated (marked `*`) in repos already on STJ. "Reader" = `SelectToken`/`JsonTextReader`/`JsonTextWriter`.

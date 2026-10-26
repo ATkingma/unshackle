@@ -4,15 +4,15 @@ Measured on 2026-10-22 for TAAK-307 step 1 (survey). Model: `corpus-automapper.m
 
 ## Method
 
-- 13 repos on Moq 4.7.99–4.21.0. Five new shallow clones at a pinned commit in `D:\playground\corpus-moq\src\<name>\`;
-  eight reuse the AutoMapper/FA corpus clones at the same sha (`D:\playground\corpus-automapper\src\`,
-  `D:\playground\corpus-fa\src\eventflow`). List: `claude/tools/corpus-moq-repos.txt` (`<name> <repo> <sha> <solution>`).
+- 13 repos on Moq 4.7.99–4.21.0. Five new shallow clones at a pinned commit in `<corpus>\corpus-moq\src\<name>\`;
+  eight reuse the AutoMapper/FA corpus clones at the same sha (`<corpus>\corpus-automapper\src\`,
+  `<corpus>\corpus-fa\src\eventflow`). List: `claude/tools/corpus-moq-repos.txt` (`<name> <repo> <sha> <solution>`).
 - Measurement: a regex script over `*.cs` files that mention `Moq`, `Mock<` or `Mock.Of` (comments stripped; `bin`, `obj`,
   `wwwroot`, `*.g.cs`, `*.Designer.cs` skipped). Counting `Mock<` too catches projects with a global `using Moq;`
   (Ocelot, OrchardCore). No Roslyn: numbers are indicative. Script and raw output live outside the repo:
-  `python -I D:\playground\corpus-moq\tools\measure.py <out.json> <src dir>...` (`tools\moq.json`, `tools\table.txt`).
+  `python -I <corpus>\corpus-moq\tools\measure.py <out.json> <src dir>...` (`tools\moq.json`, `tools\table.txt`).
 - Builds: `dotnet build <solution> -m:2` with SDK 10.0.400 from inside the clone, `TEMP`/`TMP` on `D:`, 15 minute limit,
-  one repo at a time (`tools\build.sh`, logs in `D:\playground\corpus-moq\logs\`). The reused repos keep the status from
+  one repo at a time (`tools\build.sh`, logs in `<corpus>\corpus-moq\logs\`). The reused repos keep the status from
   their earlier survey (same sha).
 
 ## Repos

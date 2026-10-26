@@ -58,8 +58,8 @@ generates the code-behind during build) and run green**. For us:
 ## Survey
 
 13 repos from GitHub code search (`SpecFlow.NUnit|xUnit|MsTest` in `*.csproj`, 2026-10-22), cloned shallowly (HEAD at clone
-time) into `D:\playground\corpus-candidates\specflow\src\<name>\`. Script and raw output:
-`D:\playground\corpus-candidates\specflow\tools\measure.py`, `out.txt`. `*.feature.cs`, `*.g.cs`, `*.Designer.cs`, `bin`,
+time) into `<corpus>\corpus-candidates\specflow\src\<name>\`. Script and raw output:
+`<corpus>\corpus-candidates\specflow\tools\measure.py`, `out.txt`. `*.feature.cs`, `*.g.cs`, `*.Designer.cs`, `bin`,
 `obj`, comments excluded. Caveat: code search is biased toward small demos; company repos are private. "TT usings" =
 `using TechTalk.SpecFlow[.sub]`; ".fcs" = checked-in `*.feature.cs`.
 

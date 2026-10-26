@@ -56,7 +56,7 @@ the one thing a CLI could add, but a `global using` line plus the analyzer batch
 
 ## Corpus survey (29 clones, shallow, pinned)
 
-Clones in `D:\playground\corpus-candidates\testfw\src\<name>\`; list `D:\playground\corpus-candidates\testfw\repos.txt`; scripts
+Clones in `<corpus>\corpus-candidates\testfw\src\<name>\`; list `<corpus>\corpus-candidates\testfw\repos.txt`; scripts
 `measure.sh`, `m3.sh` next to it. Counts are lines matching a regex over `*.cs` (comments not stripped). Versions read from
 `Directory.Packages.props`/csproj; shas are the shallow HEAD of 2026-10-22.
 

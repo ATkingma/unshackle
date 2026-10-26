@@ -61,7 +61,7 @@ non-EF libraries (see false positives below).
 
 ## Survey (13 EF repos plus 6 false positives)
 
-Clones: `D:/playground/corpus-candidates/efbulk/<dir>/`, shallow, short sha = HEAD at clone time (2026-10-22). Found by GitHub code search for
+Clones: `<corpus>/corpus-candidates/efbulk/<dir>/`, shallow, short sha = HEAD at clone time (2026-10-22). Found by GitHub code search for
 `BatchDeleteAsync`, `DeleteFromQuery(Async)`, `UpdateFromQuery(Async)`, `BulkInsertAsync`, `BulkInsertOrUpdateAsync`, `BatchUpdateAsync` and csproj
 package references (biased towards C# repos GitHub indexes well; many are Chinese-community admin templates). Counts are call sites in `*.cs`
 (comments stripped, regex on `.Name(`), per API shape. "Plus" = Z.EntityFramework.Plus, "Ext" = Z.EntityFramework.Extensions, "BE" = EFCore.BulkExtensions.

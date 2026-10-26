@@ -6,12 +6,12 @@ Measured on 2026-10-14 for TAAK-244 (row 7 of `claude/tasks/automapper-queue.md`
 ## Method
 
 - 20 repos on AutoMapper 12.0–14.0.0 (14.0.0 is the last free version), cloned shallowly at a pinned commit into
-  `D:\playground\corpus-automapper\src\<name>\` (outside the repo, read only). List: `D:\playground\corpus-automapper\repos.txt`
+  `<corpus>\corpus-automapper\src\<name>\` (outside the repo, read only). List: `<corpus>\corpus-automapper\repos.txt`
   (`<name> <url> <ref> <solution path>`). Repos whose default branch is on AutoMapper 15/16 are pinned at the last commit
   before 2025-07-01 (before AutoMapper 15 went commercial); `jason` is pinned at tag `v8.0.0`, `nop` at `release-4.90.8`.
 - Measurement: a regex script over `*.cs` (comments stripped; `bin`, `obj`, `templates`, `wwwroot`, `*.g.cs`,
   `*.Designer.cs` skipped). No Roslyn: numbers are indicative. Script and raw output live outside the repo:
-  `python -I D:\playground\corpus-automapper\tools\measure.py <src dir> <out.json>`, then `agg.py <out.json>` for the table
+  `python -I <corpus>\corpus-automapper\tools\measure.py <src dir> <out.json>`, then `agg.py <out.json>` for the table
   (`tools\am.json` is this run).
 - Structural estimates (nested, flattening, conversions, constructors) use a crude type index: every
   `class`/`record`/`struct` by **simple name** with its public properties (plus base classes and positional record
@@ -32,7 +32,7 @@ Measured on 2026-10-14 for TAAK-244 (row 7 of `claude/tasks/automapper-queue.md`
 "Tests": test framework, number of test projects; "containers" = some test projects need Testcontainers/Docker.
 "partial" = every error is in one non-AutoMapper project (front-end npm/yarn step, Aspire AppHost, Rust tool);
 the rest of the solution compiles. Summary: 12 build cleanly, 6 partially, 1 does not, 1 not tried. Logs:
-`D:\playground\corpus-automapper\logs\<name>.log`.
+`<corpus>\corpus-automapper\logs\<name>.log`.
 
 | Name | Repo (ref) | AutoMapper | TFM | Tests | Builds | `CreateMap` |
 | ---- | ---------- | ---------- | --- | ----- | ------ | ----------: |

@@ -27,15 +27,15 @@ Measured on 2026-10-22 for TAAK-308 (steps 1–2). Model: `corpus-automapper.md`
 ## Method
 
 - Candidates from `gh search code` on `Include="Polly" Version="7.2` and `Include="Microsoft.Extensions.Http.Polly"`;
-  38 cloned shallowly (HEAD, 2026-10-22) into `D:\playground\corpus-polly\src\` (20 kept) and `extra\` (18 dropped:
+  38 cloned shallowly (HEAD, 2026-10-22) into `<corpus>\corpus-polly\src\` (20 kept) and `extra\` (18 dropped:
   fewer than 4 v7 hits, already on v8, or no Polly at HEAD, e.g. eShopOnContainers, AspNetCore.Diagnostics.HealthChecks,
   minio-dotnet). List: `claude/tools/corpus-polly-repos.txt`.
 - Measurement: regex over `*.cs` (comments stripped; `bin`, `obj`, `node_modules`, `wwwroot`, `*.g.cs`, `*.Designer.cs`
   skipped), only files mentioning `Polly`/`AddPolicyHandler`; `Execute*` only in files with `using Polly`. No Roslyn:
-  numbers are indicative. Scripts outside the repo: `python -I D:\playground\corpus-polly\tools\measure.py <src> <out.json>`,
+  numbers are indicative. Scripts outside the repo: `python -I <corpus>\corpus-polly\tools\measure.py <src> <out.json>`,
   then `agg.py <out.json>` (`tools\polly.json` is this run).
 - Builds: `tools\build.sh`, one repo at a time, `dotnet build <sln> -m:2` with SDK 10, from outside the repo,
-  `TEMP`/`TMP` on `D:`, 15 minute limit. Logs: `D:\playground\corpus-polly\logs\<name>.log`.
+  `TEMP`/`TMP` on `D:`, 15 minute limit. Logs: `<corpus>\corpus-polly\logs\<name>.log`.
 
 ## Repos
 
@@ -67,7 +67,7 @@ Measured on 2026-10-22 for TAAK-308 (steps 1–2). Model: `corpus-automapper.md`
 
 Summary: 15 build cleanly, 4 partially (error only in a non-Polly project or step), 1 does not (gpr). Note: the first
 build pass hit a full `C:` drive (NuGet cache); the affected repos were rebuilt with `NUGET_PACKAGES`/`NUGET_HTTP_CACHE_PATH`
-on `D:` (`tools\rebuild.sh`, `D:\playground\corpus-polly\nuget\`).
+on `D:` (`tools\rebuild.sh`, `<corpus>\corpus-polly\nuget\`).
 
 ## Frequencies
 

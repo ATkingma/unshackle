@@ -7,7 +7,7 @@
 ## Context for the next agent
 
 - Row 7 of `claude/tasks/automapper-queue.md`. The old corpus (`docs/projectinfo/architectuur/corpus-mediatr-automapper.md`) is mainly nopCommerce.
-- Repos are cloned shallowly into `D:\playground\corpus-automapper\src\<short-name>\` (outside the repo, untrusted: only read, never run their scripts). List: `D:\playground\corpus-automapper\repos.txt` (`<name> <url> <ref> <solution path>`).
+- Repos are cloned shallowly into `<corpus>\corpus-automapper\src\<short-name>\` (outside the repo, untrusted: only read, never run their scripts). List: `<corpus>\corpus-automapper\repos.txt` (`<name> <url> <ref> <solution path>`).
 - Builds (`dotnet restore`/`build`) only with `TEMP`/`TMP` = `<temp-dir>` (this machine blocks exes from `%TEMP%`). Max a few minutes per repo; otherwise "no build".
 - Measurement: regex over `*.cs` (no Roslyn), like the existing corpus doc.
 - Another agent works in `src/Unshackle.Core/Fixes/AutoMapper/` (TAAK-245): do not touch `src/`.
@@ -15,7 +15,7 @@
 - **Result**: 20 repos (12 build cleanly, 6 partially: only a front-end/AppHost/Rust project fails, 1 no build, abp not tried).
   Numbers, method and recommended order: `docs/projectinfo/architectuur/corpus-automapper.md`. Queue updated: Corpus column of rows 8–15,
   new proposed rows 17–20 (`member-list`, `configuration-test`, `convert-using`, `value-resolver`), recommended order under the table.
-- Measurement script + raw JSON: `D:\playground\corpus-automapper	ools\` (outside the repo). Build logs: `D:\playground\corpus-automapper\logs\`.
+- Measurement script + raw JSON: `<corpus>\corpus-automapper	ools\` (outside the repo). Build logs: `<corpus>\corpus-automapper\logs\`.
 
 ## Steps
 

@@ -71,7 +71,7 @@ Proofs need `before` to compile against iTextSharp 5.5.13.x (AGPL, test-only use
 
 ## Corpus (shallow clones, outside the repo)
 
-Location: `D:/playground/corpus-candidates/pdf/src/<name>/` (depth 1, pinned at the sha below, not built). Found with
+Location: `<corpus>/corpus-candidates/pdf/src/<name>/` (depth 1, pinned at the sha below, not built). Found with
 `gh search code "using iTextSharp.text.pdf"`; the GitHub search rate limit was then hit, so the iText 7 and QuestPDF searches
 returned nothing, and `itext/i7n-samples` was not found at the guessed URL. Counts are lines matching a regex over `*.cs`
 (comments not stripped).

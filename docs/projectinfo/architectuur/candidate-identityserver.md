@@ -44,7 +44,7 @@ Not verified from a primary source: the exact OpenIddict license file text (the 
 
 ## Survey (11 repos with usage, plus 1 package-only, plus 1 dropped)
 
-Clones in `D:\playground\corpus-candidates\identityserver\src\<name>\` (depth 1, pinned sha, outside repo). Counts from
+Clones in `<corpus>\corpus-candidates\identityserver\src\<name>\` (depth 1, pinned sha, outside repo). Counts from
 `scratchpad` regex script over `*.cs` (comments stripped, `bin/obj/node_modules` skipped); indicative only. `cs` = file count.
 Columns: AddIS = `AddIdentityServer(`; Mem = `AddInMemoryClients`; Res = `AddInMemoryApiResources/ApiScopes`; EF = `AddConfigurationStore/OperationalStore`;
 Id = `AddAspNetIdentity`; PS = `IProfileService`; ROPC = `IResourceOwnerPasswordValidator`; Ext = `IExtensionGrantValidator`;
@@ -128,7 +128,7 @@ table to Duende and OpenIddict and security flags (ROPC, implicit, no PKCE, deve
       in-memory config, EF stores, IProfileService, validators, custom stores, interaction service, AccessTokenValidation)
 - [ ] 2. Each pattern returns `Manual(reason)` with the replacement guidance for Duende and OpenIddict
 - [ ] 3. Proofs (`*.manual.txt`) plus KingmaDoc plan and verify per pattern, README row
-- [ ] 4. Run on the corpus in `D:/playground/corpus-candidates/identityserver/`; report counts
+- [ ] 4. Run on the corpus in `<corpus>/corpus-candidates/identityserver/`; report counts
 ```
 
 ## Council questions

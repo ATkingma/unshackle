@@ -1,6 +1,6 @@
 # Moq corpus (TAAK-307 step 1). name repo ref(short sha) solution
-# Clones: D:/playground/corpus-moq/src/<name>; the last 8 rows reuse the AutoMapper/FA corpus clones at the same sha
-# (D:/playground/corpus-automapper/src/<name>, D:/playground/corpus-fa/src/eventflow).
+# Clones: <corpus>/corpus-moq/src/<name>; the last 8 rows reuse the AutoMapper/FA corpus clones at the same sha
+# (<corpus>/corpus-automapper/src/<name>, <corpus>/corpus-fa/src/eventflow).
 fluentmigrator fluentmigrator/fluentmigrator c7a11e9ec0ae FluentMigrator.sln
 jellyfin jellyfin/jellyfin c7ce6a1b56ee Jellyfin.sln
 ocelot ThreeMammals/Ocelot 7adbbcabeeff Ocelot.slnx

@@ -33,7 +33,7 @@
 
 ## Progress log
 
-- 2026-10-22 (agent moq): step 1 done. 13 repos (5 new clones in `D:/playground/corpus-moq/src`, 8 reused), list in
+- 2026-10-22 (agent moq): step 1 done. 13 repos (5 new clones in `<corpus>/corpus-moq/src`, 8 reused), list in
   `claude/tools/corpus-moq-repos.txt`, results in `docs/projectinfo/architectuur/corpus-moq.md` (frequencies, draft queue,
   council questions). Radarr build blocked by a full `C:` disk (retry later); EventFlow not built.
 

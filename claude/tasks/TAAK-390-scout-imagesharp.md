@@ -7,7 +7,7 @@
 ## Context for the next agent
 
 - Unshackle migrates .NET code off libraries with license, sponsor or EOL problems; roadmap steps 7-10 (Moq, Polly, EPPlus, MassTransit) are planned. This scout looks for the next candidate (user request 2026-10-22: use spare capacity on other libraries).
-- Scouts are light: web sources and shallow clones under `D:/playground/corpus-candidates/imagesharp/`, grep counts only, no builds.
+- Scouts are light: web sources and shallow clones under `<corpus>/corpus-candidates/imagesharp/`, grep counts only, no builds.
 - Owned files and reserved numbers (391–399): see `claude/tasks/CLAIMS.md`. The go/no-go itself is a council decision (`claude/docs/council.md`).
 
 ## Steps

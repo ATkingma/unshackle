@@ -43,7 +43,7 @@ references (MEHP itself depends on Polly 7) and the v7 API; staying on Polly 8.x
 
 - 2026-10-22 (agent polly): step 1 facts verified (table above). Step 2 survey: 38 candidates cloned, 20 kept,
   `docs/projectinfo/architectuur/corpus-polly.md`, `claude/tools/corpus-polly-repos.txt`; builds in
-  `D:/playground/corpus-polly/logs/summary.txt`. Draft queue and council questions in the agent report.
+  `<corpus>/corpus-polly/logs/summary.txt`. Draft queue and council questions in the agent report.
 - 2026-10-22 (agent polly-skeleton): step 4. `PollyFix` (id `polly`; removes `Polly`, `Polly.Extensions.Http`,
   `Microsoft.Extensions.Http.Polly`, adds `Microsoft.Extensions.Resilience` 10.11.0; v7 code left by a Manual row binds to
   `Polly` and so keeps the package per project). Queue row 1 `polly.wait-and-retry-async` with 7 proofs and

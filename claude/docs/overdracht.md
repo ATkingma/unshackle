@@ -2,6 +2,34 @@
 
 Read this first if you are taking over this session. Then `CLAUDE.md` and `claude/docs/INDEX.md`.
 
+
+## State on 2026-10-26 (end of day, Windows) — start here
+
+Main is green (CI per push, `verify-head.sh` before each). No agents running. Pool branches `pool/*` are merged except
+`pool/taak-326-wip` (**do not merge**: it duplicates TAAK-326, which another session already finished on main, 17/30
+EPPlus repos migrate per project; that branch only has ideas worth comparing: `EpplusTypeCrossesProject`, `samples/EPPlusSplit`).
+
+Done today: L4 EPPlus/MassTransit corpus (0 bugs; E7 reader wired in `Cli.cs`), TAAK-323 (missing global.json SDK →
+clean load failure), L5 re-measure (TAAK-313/314/315 already solved, archived), MediatR re-clone (7/9 repos migrated, 0
+regressions), council round 13 (`claude/tasks/COUNCIL-round-13.md`), TAAK-328 (Moq per-result pattern ids,
+`PatternResult.PatternId`), TAAK-324 (`automapper.generic-map`; 0 Manual→Fixed in the corpus because `AutoMapperFix` has
+no `IProjectProperties`, so public members in library projects count as packable → R1 keeps the set open), TAAK-326 and
+TAAK-329 (other session), Polly and Moq corpus rounds.
+
+**Next (in order of value):**
+1. Polly corpus bugs (`claude/tasks/CORPUSRUN-polly.md`): B1/B4 the Resilience package pulls newer
+   Microsoft.Extensions.* → NU1605/NU1109/CS0433 in 6 repos (bump direct refs or Manual; relates to TAAK-329); B2
+   `add-policy-handler` breaks when the builder result is used (CS0266); B3 nullable `Outcome<T>.Exception` (CS8600).
+2. Moq corpus bugs (`claude/tasks/CORPUSRUN-moq.md`): B2 package removed from a shared test-helper project while
+   referencing projects still use Moq; B3 `using Moq;` kept unused (IDE0005); B4/B5 mocks from `out var` / tuple
+   deconstruction rewritten (must be Manual MockPassedAround); B6 emitted type names need `global::`; B7 `null` next to
+   matchers → `Arg.Is<T>(null)` ambiguous. 8 Moq repos are not cloned on this machine.
+3. Wire `IProjectProperties` into `AutoMapperFix` (`Cli.cs`) so TAAK-324 can close sets in non-packable libraries; re-measure.
+4. TAAK-325 (`ProjectTo<T>`, council A12), TAAK-327 (EPPlus flow types, E18).
+5. TAAK-304 release 0.3.0 (user go), go-candidates SpecFlow→Reqnroll, EF bulk, xUnit v3.
+
+Cleanup: `D:/tmp326` (temp copy left by the TAAK-326 agent) can be deleted by hand.
+
 ## Pool checkpoint on Linux (2026-10-22, later) — start here first
 
 Five lanes (L1 polly, L2 moq, L4 epplus-corpus, L5 remeasure, L6 corpus-prep) were running when the session ended. State,

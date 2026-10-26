@@ -1,0 +1,14 @@
+# name solution (relative to $CORPUS/src/<name>); fix id moq
+fluentmigrator FluentMigrator.sln
+jellyfin Jellyfin.sln
+ocelot Ocelot.slnx
+orchardcore OrchardCore.slnx
+radarr src/Radarr.sln
+altinnauth Altinn.Authorization.slnx
+ombi src/Ombi.sln
+personalasst PersonalAssistant.sln
+letterbook Letterbook.sln
+xipona Api/Xipona.Api.sln
+cats cats.slnx
+skoruba Skoruba.Duende.IdentityServer.Admin.sln
+eventflow EventFlow.sln

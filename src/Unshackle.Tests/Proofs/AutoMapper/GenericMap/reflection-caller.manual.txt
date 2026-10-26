@@ -1,0 +1,1 @@
+Map<TResult> from Shop.Order: MakeGenericMethod is called at Test.cs:35; a closed OrderReader.Read may be made by reflection

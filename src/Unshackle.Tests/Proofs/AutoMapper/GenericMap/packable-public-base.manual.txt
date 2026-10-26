@@ -1,0 +1,1 @@
+Map<TDto> from Shop.Order: ReaderBase is public in a packable project (Test), so callers outside the solution may close it with other types

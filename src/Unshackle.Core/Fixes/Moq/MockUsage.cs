@@ -49,9 +49,10 @@ public static class MockUsage
         }
 
         ITypeSymbol mocked = MoqSyntax.MockedType(mockType);
-        if (mocked.TypeKind != TypeKind.Interface)
+        bool isClass = mocked.TypeKind == TypeKind.Class;
+        if (mocked.TypeKind != TypeKind.Interface && !isClass)
         {
-            return MockAnalysis.Blocked(MoqReason.ClassMock, "only interface mocks are converted; a class or delegate mock is moq-queue.md row 9");
+            return MockAnalysis.Blocked(MoqReason.ClassMock, "a delegate mock has no proven NSubstitute form (moq.class-mocks)");
         }
 
         var creations = new List<BaseObjectCreationExpressionSyntax>();
@@ -89,6 +90,17 @@ public static class MockUsage
                 continue;
             }
 
+            if (isClass)
+            {
+                if (use.Parent is MemberAccessExpressionSyntax { Name.Identifier.Text: var classMember } && MockUseRules.Unsupported(classMember) is { } unsupported)
+                {
+                    return MockAnalysis.Blocked(unsupported);
+                }
+
+                return MockAnalysis.Blocked(MoqReason.ClassMockSetup,
+                    "a use of a class mock besides .Object (Setup, Verify, ...): NSubstitute runs the real member when it configures a partial substitute (measured: 2 calls, Moq 1)");
+            }
+
             if (MockUseRules.Blocker(use, model, context, pendingUses) is { } blocker)
             {
                 return MockAnalysis.Blocked(blocker);
@@ -108,7 +120,8 @@ public static class MockUsage
             return MockAnalysis.Blocked(MoqReason.PropertyOrder, "SetupProperty/SetupAllProperties after another setup or verify of the mock; Moq may then reset that setup");
         }
 
-        DefaultsPlan plan = MockDefaults.Plan(mocked, mockOf: false, context.SetUp, context.Tracked, context.AllTracked);
+        // A CallBase = true class mock runs the real members in both libraries: nothing to pin.
+        DefaultsPlan plan = isClass ? new() : MockDefaults.Plan(mocked, mockOf: false, context.SetUp, context.Tracked, context.AllTracked);
         if (plan.Blocker is not null)
         {
             return MockAnalysis.Blocked(plan.Blocker);

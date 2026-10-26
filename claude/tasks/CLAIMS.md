@@ -21,11 +21,11 @@ lane at a time after `claude/tools/verify-head.sh <scratch> > log && git push` (
 
 | Lane | Agent id | Branch (origin) | Last commit | Done so far | Next |
 | --- | --- | --- | --- | --- | --- |
-| L1 polly (TAAK-308) | `a66af26faa74f6463` | `pool/l1-polly-wip` | `97916d36` | row 4 `polly.sync-retry` done | rows 8 circuit-breaker, 9 timeout, 11 no-op, 12 unsupported; last WIP commit may be half done: build + test first |
-| L2 moq (TAAK-307) | `aefb5372dcf947b2d` | `pool/l2-moq-wip` | `19bd7620` | row 9 `moq.class-mocks` done (only `CallBase = true` + `.Object`) | rows 11 setup-sequence, 12 logger-verify, 13 unsupported |
-| L4 epplus-corpus (TAAK-309/310) | `a15e38fdfdc6af0c2` | `pool/l4-epplus-corpus-wip` | `f5e04024` | EPPlus queue rows 7–10 verified done; CA1859 fix (also on main) | wire `IPackageAssetsReader` into `EPPlusFix` (E7, give the main session the `Cli.cs` line), C1 codes Layout/Dimension/LoadFrom → `EPPlusReason`, E14 combined after-proofs, corpus rounds EPPlus + MassTransit (`<corpus>/corpus-epplus`, `corpus-masstransit` exist) |
-| L5 remeasure (TAAK-313–315) | `a2a0a1ac538af24ff` | `pool/l5-remeasure-wip` | `2dcc93b7` | re-measure started (ANALYSE-manual-round-2.md +16 lines, MediatR repos added); `<corpus>/corpus-mediatr` exists | finish the 22 scans (check `_results` first), then TAAK-313, 314, 315 |
-| L6 corpus-prep (TAAK-307 row 14, 308 row 13) | `ad216a88b73a4b13e` | — (no commits yet) | — | clones exist under `<corpus>/corpus-moq/src`, `corpus-polly/src` (36 dirs) | baseline + `scan` null measurement per repo; `after` round only when L1/L2 are done |
+| ~~L1 polly (TAAK-308)~~ | done | merged to main | `e1e29869` | rows 4, 8, 9, 11, 12 done, 3645 tests | row 13 corpus = L6; council P8 (Polly.Core removal) open |
+| ~~L2 moq (TAAK-307)~~ | done | merged to main | `9af1e75d` | rows 9, 11, 12, 13 done | row 14 corpus = L6 (Moq half); `AutoMocker` proofs use a stub |
+| L4 epplus-corpus (TAAK-309/310) | `a35be5d9a48f3449e` (resumed 2026-10-22) | `pool/l4-epplus-corpus-wip` | `9ea72a22` | EPPlus queue rows 7–10 verified done; CA1859 fix (also on main) | wire `IPackageAssetsReader` into `EPPlusFix` (E7, give the main session the `Cli.cs` line), C1 codes Layout/Dimension/LoadFrom → `EPPlusReason`, E14 combined after-proofs, corpus rounds EPPlus + MassTransit (`<corpus>/corpus-epplus`, `corpus-masstransit` exist) |
+| L5 remeasure (TAAK-313–315) | paused (no agent) | `pool/l5-remeasure-wip` | `2dcc93b7` | re-measure started (ANALYSE-manual-round-2.md +16 lines, MediatR repos added); `<corpus>/corpus-mediatr` exists | finish the 22 scans (check `_results` first), then TAAK-313, 314, 315 |
+| L6 corpus-prep (TAAK-307 row 14, 308 row 13) | `aea372f23f1a4c394` Polly half (reused from L1, branch `pool/l6-corpus-prep-wip`); `a1d1f9446e08e6453` Moq half (reused from L2, branch `pool/l6-moq-wip`) | `pool/l6-corpus-prep-wip` | `f07d3e2e` | clones exist under `<corpus>/corpus-moq/src`, `corpus-polly/src` (36 dirs) | baseline + `scan` null measurement per repo; `after` round only when L1/L2 are done |
 
 Other open items: TAAK-305 ReadyToRun = council question (measured: ~1 s faster per run, package 2.3×, one package per RID; not built);
 TAAK-304 release 0.3.0 needs the user's go; council round 13 questions in `claude/docs/overdracht.md` above.
@@ -74,7 +74,7 @@ Pool restarted 2026-10-22 on the Linux machine (max 5 agents; corpus under `<cor
 
 ## Spawn log
 
-Agents spawned: 25 / 25 (7 wave 1, 8 library scouts, 3 council round 8, 6 wave 2). Reserve: 1. Finished agents are reused for the next queue rows (no new spawn).
+Agents spawned: 28 / 28 (7 wave 1, 8 library scouts, 3 council round 8, 6 wave 2; +3 resume L1, L2, L4 on 2026-10-22, user-approved). L5 and L6 paused until the user approves more. Finished agents are reused for the next queue rows (no new spawn).
 
 ## See also
 

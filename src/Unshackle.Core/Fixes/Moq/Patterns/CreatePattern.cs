@@ -15,9 +15,14 @@ public class CreatePattern : IPattern
 
     private const string ReturnsExtensions = "NSubstitute.ReturnsExtensions";
 
-    public string Id => "moq.create";
+    public virtual string Id => "moq.create";
 
-    public string Description => "new Mock<T>() + .Object, Mock.Of<T>() → Substitute.For<T>()";
+    public virtual string Description => "new Mock<T>() + .Object, Mock.Of<T>() → Substitute.For<T>()";
+
+    // moq.create takes every mock except class and delegate mocks, which moq.class-mocks (row 9) reports under its own id; null: no type.
+    protected virtual bool Owns(ITypeSymbol? mocked) => mocked is null || mocked.TypeKind is not (TypeKind.Class or TypeKind.Delegate);
+
+    private bool OwnsMock(ITypeSymbol? mockType) => Owns(MoqSyntax.IsMockOfT(mockType) ? MoqSyntax.MockedType(mockType!) : null);
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model)
     {
@@ -25,29 +30,29 @@ public class CreatePattern : IPattern
         {
             switch (node)
             {
-                case VariableDeclarationSyntax declaration when MoqSyntax.IsMockOfT(model.GetTypeInfo(declaration.Type).Type):
+                case VariableDeclarationSyntax declaration when MoqSyntax.IsMockOfT(model.GetTypeInfo(declaration.Type).Type) && OwnsMock(model.GetTypeInfo(declaration.Type).Type):
                     yield return declaration.Parent is LocalDeclarationStatementSyntax statement ? statement : declaration;
                     break;
-                case BaseObjectCreationExpressionSyntax creation when MoqSyntax.IsMockOfT(model.GetTypeInfo(creation).Type) && !InMockDeclaration(creation, model):
+                case BaseObjectCreationExpressionSyntax creation when MoqSyntax.IsMockOfT(model.GetTypeInfo(creation).Type) && OwnsMock(model.GetTypeInfo(creation).Type) && !InMockDeclaration(creation, model):
                     yield return MoqSyntax.IsObjectAccess(creation.Parent, creation) ? creation.Parent!
                         : creation.Parent is AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax assignment } ? assignment
                         : creation;
                     break;
-                case InvocationExpressionSyntax tracking when PropertySyntax.IsTracking(tracking, model):
+                case InvocationExpressionSyntax tracking when Owns(null) && PropertySyntax.IsTracking(tracking, model):
                     yield return tracking.Parent!;
                     break;
-                case InvocationExpressionSyntax invocation when IsMockStatic(invocation, model):
+                case InvocationExpressionSyntax invocation when IsMockStatic(invocation, model) && Owns(StaticMocked(invocation, model)):
                     yield return invocation;
                     break;
                 case MemberAccessExpressionSyntax { Name.Identifier.Text: "Object" } access
-                        when MockUsage.Holder(access.Expression, model) is { } holder && MoqSyntax.IsMockOfT(MockUsage.Type(holder))
+                        when MockUsage.Holder(access.Expression, model) is { } holder && MoqSyntax.IsMockOfT(MockUsage.Type(holder)) && OwnsMock(MockUsage.Type(holder))
                             && MockUsage.Analyze(holder, model, pendingUses: false).Blocker is null:
                     yield return access;
                     break;
-                case ParameterSyntax { Type: not null } parameter when MoqSyntax.IsMockOfT(model.GetTypeInfo(parameter.Type).Type):
+                case ParameterSyntax { Type: not null } parameter when Owns(null) && MoqSyntax.IsMockOfT(model.GetTypeInfo(parameter.Type).Type):
                     yield return parameter;
                     break;
-                case PropertyDeclarationSyntax property when MoqSyntax.IsMockOfT(model.GetTypeInfo(property.Type).Type):
+                case PropertyDeclarationSyntax property when Owns(null) && MoqSyntax.IsMockOfT(model.GetTypeInfo(property.Type).Type):
                     yield return property;
                     break;
                 default:
@@ -97,7 +102,7 @@ public class CreatePattern : IPattern
         if (variable.Initializer is not null)
         {
             variable = variable.WithInitializer(variable.Initializer.WithValue(
-                MoqSyntax.SubstituteFor(mockedType).WithTriviaFrom(variable.Initializer.Value)));
+                (variable.Initializer.Value is BaseObjectCreationExpressionSyntax initial ? MoqSyntax.SubstituteFor(mockedType, initial, mocked, model) : MoqSyntax.SubstituteFor(mockedType)).WithTriviaFrom(variable.Initializer.Value)));
         }
 
         VariableDeclarationSyntax newDeclaration = declaration.WithType(newType).WithVariables(SyntaxFactory.SingletonSeparatedList(variable));
@@ -125,7 +130,7 @@ public class CreatePattern : IPattern
         }
 
         TypeSyntax? written = (creation as ObjectCreationExpressionSyntax)?.Type;
-        ExpressionSyntax substitute = MoqSyntax.SubstituteFor(MoqSyntax.TypeArgument(written, analysis.Mocked!, model, creation.SpanStart)).WithTriviaFrom(creation);
+        ExpressionSyntax substitute = MoqSyntax.SubstituteFor(MoqSyntax.TypeArgument(written, analysis.Mocked!, model, creation.SpanStart), creation, analysis.Mocked!, model).WithTriviaFrom(creation);
         if (statement is null)
         {
             return WithInfo(substitute, [], analysis);
@@ -149,7 +154,7 @@ public class CreatePattern : IPattern
         }
 
         TypeSyntax? written = (creation as ObjectCreationExpressionSyntax)?.Type;
-        return PatternResult.Fixed(MoqSyntax.SubstituteFor(MoqSyntax.TypeArgument(written, mocked, model, creation.SpanStart)), NSubstitute);
+        return PatternResult.Fixed(MoqSyntax.SubstituteFor(MoqSyntax.TypeArgument(written, mocked, model, creation.SpanStart), creation, mocked, model), NSubstitute);
     }
 
     private static PatternResult RewriteStatic(InvocationExpressionSyntax invocation, SemanticModel model)
@@ -198,9 +203,15 @@ public class CreatePattern : IPattern
     // An inline mock has no statement to pin defaults after, so any difference blocks it.
     private static MoqBlocker? InlineBlocker(ITypeSymbol mocked, bool mockOf)
     {
+        // new Mock<C>(args) { CallBase = true }.Object was accepted by CreationBlocker already.
+        if (mocked.TypeKind == TypeKind.Class && !mockOf)
+        {
+            return null;
+        }
+
         if (mocked.TypeKind != TypeKind.Interface)
         {
-            return MoqBlocker.Of(MoqReason.ClassMock, "only interface mocks are converted; a class or delegate mock is moq-queue.md row 9");
+            return MoqBlocker.Of(MoqReason.ClassMock, "Mock.Of<T>() of a class or delegate answers every member with a mock (DefaultValue.Mock); no proven NSubstitute form (moq.class-mocks)");
         }
 
         DefaultsPlan plan = MockDefaults.Plan(mocked, mockOf, [], [], allTracked: false);
@@ -213,7 +224,7 @@ public class CreatePattern : IPattern
     private static IReadOnlyList<StatementSyntax> Pins(ExpressionSyntax receiver, IReadOnlyList<ISymbol> pins, SemanticModel model, int position) =>
         [.. pins.Select(pin => SyntaxFactory.ParseStatement(pin switch
         {
-            IMethodSymbol method => $"{receiver}.{method.Name}({string.Join(", ", method.Parameters.Select(p => $"Arg.Any<{p.Type.ToMinimalDisplayString(model, position)}>()"))}).ReturnsNull();",
+            IMethodSymbol method => $"{receiver}.{method.Name}({string.Join(", ", method.Parameters.Select(p => p.Type is ITypeParameterSymbol ? "Arg.Any<Arg.AnyType>()" : $"Arg.Any<{p.Type.ToMinimalDisplayString(model, position)}>()"))}).ReturnsNull();",
             _ => $"{receiver}.{pin.Name}.ReturnsNull();",
         }))];
 
@@ -238,6 +249,9 @@ public class CreatePattern : IPattern
     private static bool InMockDeclaration(BaseObjectCreationExpressionSyntax creation, SemanticModel model) =>
         creation.Parent is EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } }
         && MoqSyntax.IsMockOfT(model.GetTypeInfo(declaration.Type).Type);
+
+    private static ITypeSymbol? StaticMocked(InvocationExpressionSyntax invocation, SemanticModel model) =>
+        model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { Name: "Of", TypeArguments: [var mocked] } ? mocked : null;
 
     private static bool IsMockStatic(InvocationExpressionSyntax invocation, SemanticModel model) =>
         model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { IsStatic: true, Name: "Of" or "Get" } method && MoqSyntax.IsMockClass(method.ContainingType);

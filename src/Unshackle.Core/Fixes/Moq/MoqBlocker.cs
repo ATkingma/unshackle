@@ -11,5 +11,15 @@ public class MoqBlocker
 
     public static MoqBlocker Of(MoqReason code, string reason) => new() { Code = code, Reason = reason };
 
-    public PatternResult ToResult() => PatternResult.Manual(Code, Reason);
+    // Council round 13, M9: Configure() is never generated (ordering semantics unproven), only named as a manual route.
+    public const string ConfigureRoute = "; manual route: NSubstitute's Configure() before the later setup, after checking which setup Moq would match (not generated, council round 13, M9)";
+
+    // Council round 13, M8: a mock-use blocker reports under moq.unsupported (row 13), whichever pattern met it.
+    public PatternResult ToResult() => PatternResult.Manual(Code, Code == MoqReason.SetupsOverlap ? Reason + ConfigureRoute : Reason) with { PatternId = RowId(Code) };
+
+    private static string? RowId(MoqReason code) => code switch
+    {
+        MoqReason.StrictBehaviour or MoqReason.ProtectedMember or MoqReason.MockAs or MoqReason.MockInvocations or MoqReason.MockReset or MoqReason.MockRaise => "moq.unsupported",
+        _ => null,
+    };
 }

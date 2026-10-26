@@ -279,7 +279,7 @@ internal static class FileFixer
             }
 
             int line = node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-            findings.Add(FindingFactory.CreateFinding(filePath, line, fix, pattern, reported));
+            findings.Add(FindingFactory.CreateFinding(filePath, line, fix, result.PatternId ?? pattern.Id, reported));
         }
 
         return changed ? newRoot : root;

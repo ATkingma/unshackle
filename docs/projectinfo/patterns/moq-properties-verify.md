@@ -25,7 +25,7 @@
 
 | # | Area  | Plan says | Code does | Impact |
 | - | ----- | --------- | --------- | ------ |
-| 1 | Scope | Council round 12, M7: row 5 under `moq.properties` | `PropertiesPattern` reports SetupGet, VerifyGet and VerifySet; SetupProperty/SetupAllProperties still report as `moq.create`, because they must be rewritten in the same pass as its analysis and an `IPattern` has one `Id` | Low: needs a per-result pattern id in Core to finish |
+| 1 | Scope | Council round 12, M7: row 5 under `moq.properties` | `PropertiesPattern` reports SetupGet, VerifyGet and VerifySet; SetupProperty/SetupAllProperties are rewritten by `CreatePattern` (same pass as its analysis) but report as `moq.properties` through `PatternResult.PatternId` (council round 13, M8, TAAK-328; `SubPatternIdTests`) | None |
 
 ## Validation results
 

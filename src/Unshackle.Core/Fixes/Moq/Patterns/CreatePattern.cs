@@ -15,6 +15,9 @@ public class CreatePattern : IPattern
 
     private const string ReturnsExtensions = "NSubstitute.ReturnsExtensions";
 
+    // Row 5: SetupProperty/SetupAllProperties are rewritten here (same pass as the analysis) but report as moq.properties (council round 13, M8).
+    private const string PropertiesId = "moq.properties";
+
     public virtual string Id => "moq.create";
 
     public virtual string Description => "new Mock<T>() + .Object, Mock.Of<T>() → Substitute.For<T>()";
@@ -175,7 +178,7 @@ public class CreatePattern : IPattern
         }
         else if (arguments.Count > 0)
         {
-            return PatternResult.Manual(MoqReason.MockOfSetup, "Mock.Of<T>(predicate) sets members up; see moq-queue.md row 3");
+            return PatternResult.Manual(MoqReason.MockOfSetup, "Mock.Of<T>(predicate) sets members up; see moq-queue.md row 3") with { PatternId = "moq.setup-returns" };
         }
 
         ITypeSymbol mocked = method.TypeArguments[0];
@@ -193,11 +196,12 @@ public class CreatePattern : IPattern
     {
         if (MockUsage.Holder(((MemberAccessExpressionSyntax)tracking.Expression).Expression, model) is not { } holder)
         {
-            return PatternResult.Manual(MoqReason.MockPassedAround, "the property setup is on a mock that is not a local or private field of this file");
+            return PatternResult.Manual(MoqReason.MockPassedAround, "the property setup is on a mock that is not a local or private field of this file") with { PatternId = PropertiesId };
         }
 
         MockAnalysis analysis = MockUsage.Analyze(holder, model, pendingUses: false);
-        return analysis.Blocker is not null ? analysis.Blocker.ToResult() : PatternResult.Fixed(PropertySyntax.Rewrite(tracking, model), NSubstitute);
+        PatternResult result = analysis.Blocker is not null ? analysis.Blocker.ToResult() : PatternResult.Fixed(PropertySyntax.Rewrite(tracking, model), NSubstitute);
+        return result.PatternId is null ? result with { PatternId = PropertiesId } : result;
     }
 
     // An inline mock has no statement to pin defaults after, so any difference blocks it.

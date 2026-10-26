@@ -14,7 +14,7 @@ classDiagram
     UnsupportedPattern --> MoqReason
 ```
 
-**Figure 2.** A mock use is reported through the mock's creation.
+**Figure 2.** A mock use is found through the mock's creation; its row reports as `moq.unsupported` (council round 13, M8).
 
 ```mermaid
 sequenceDiagram

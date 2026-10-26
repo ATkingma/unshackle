@@ -56,7 +56,7 @@ XML
   fi
   cd "$W" || return
   local TEST=(dotnet test "$SLN" --no-build --logger trx --results-directory)
-  [ "$RUNNER" = mtp ] && TEST=(dotnet test --solution "$SLN" --no-build --report-trx --results-directory)
+  [ "$RUNNER" = mtp ] && TEST=(dotnet test --solution "$SLN" --no-build ${TRX_FLAG:---report-trx} --results-directory)  # TRX_FLAG=--report-xunit-trx: xunit v3 without the TrxReport extension (orchardcore)
   local TO=1800
   status() { echo "$1" > "$D/status.txt"; echo "$(( $(date +%s)-T0 ))s" > "$D/duration.txt"; cd "$CORPUS" && rm -rf "$W"; }
   step() { local s=$1; shift; local t=$(date +%s); timeout "$TO" nice "$@" > "$L/$s.log" 2>&1; local e=$?
@@ -75,7 +75,7 @@ XML
     step scan dotnet "$TOOL" scan "$SLN" --fix "$F" --report "$D/report.json" ;;
   after)
     step build0 dotnet build "$SLN" $P --no-restore || true  # source generators must run before types resolve
-    step fix dotnet "$TOOL" fix "$SLN" --fix "$F" --force --report "$D/report.json" || { status "fix-fails"; return; }
+    TO=3600; step fix dotnet "$TOOL" fix "$SLN" --fix "$F" --force --report "$D/report.json" || { status "fix-fails"; return; }; TO=1800
     find . -name node_modules -prune -o -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +  # keep node_modules/**/bin (npm tools)
     step restore1 dotnet restore "$SLN" $P || { status "restore-after-fix-fails"; return; }
     step build1 dotnet build "$SLN" $P --no-restore || {

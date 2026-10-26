@@ -1,4 +1,4 @@
-# name repo ref(short sha)   -- Polly v7 API corpus (TAAK-308 survey, 2026-10-22); clones in D:/playground/corpus-polly/src/<name>
+# name repo ref(short sha)   -- Polly v7 API corpus (TAAK-308 survey, 2026-10-22); clones in <corpus>/src/<name>
 aerosharp wayfair-incubator/AeroSharp a7f15b43ce3c
 babylon-gateway radixdlt/babylon-gateway c4ac0e5f84d3
 deepl-dotnet DeepL/deepl-dotnet 5541f8c3fcfd

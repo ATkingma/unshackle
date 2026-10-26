@@ -11,5 +11,5 @@ grep -vE '^\s*(#|$)' "$HERE/corpus-polly-list.txt" | while read -r N SLN; do
   [ -z "$*" ] || [[ "$ONLY" == *" $N "* ]] || continue
   S=$(cat "$CORPUS/_results/$M/$N/status.txt" 2>/dev/null)
   [ -z "$S" ] || { echo "skip $N ($S)"; continue; }
-  echo "run $M $N"; bash "$HERE/corpus-am.sh" one "$M" "$N" "$SLN"
+  echo "run $M $N"; bash "$HERE/corpus-polly-am.sh" one "$M" "$N" "$SLN"
 done

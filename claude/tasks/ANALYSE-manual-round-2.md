@@ -90,21 +90,61 @@ MediatR still is (a single root Manual blocks the whole solution: miru 98 rows, 
   (main session: rerun those corpora, CPU-heavy).
 - Rows counted per pattern; one root can cascade into many rows (miru: 2 root rows → 98 Manual rows).
 
-## Re-measure 2026-10-22 (WIP, stopped at session end)
+## Re-measure 2026-10-22..26 (done)
 
-Scan only (`unshackle scan --max-degree 4`), tool published from main db9238f, copies under `D:/playground/pool-tmp/remeasure/`.
+Scan only (`unshackle scan --max-degree 4`), one repo at a time in a scratch copy (`<pool-tmp>/remeasure/`). kgr, eshop,
+eshoponweb (MediatR) and altinnauth used a tool published from main db9238f; the other 19 scans a tool published from main c544d1d
+(lane L5). "Root" = the cause inside "stays on AutoMapper (...)", normalised; a kept map and the calls it keeps share one cause.
 
-| Set | Repo | Build | Fixed | Manual | TAAK-313 rows | TAAK-314 rows |
-| --- | --- | --- | ---: | ---: | ---: | ---: |
-| mediatr | kgr | ok | 217 | 0 | – | – |
-| mediatr | eshop | fails (partial; scan ran) | 52 | 0 | – | – |
+| Set | Repo | Build | Fixed | Manual |
+| --- | --- | --- | ---: | ---: |
+| mediatr | kgr | ok | 217 | 0 |
+| mediatr | eshop | fails (scan ran) | 52 | 0 |
+| mediatr | jason | ok | 33 | 0 |
+| mediatr | eshoponweb | ok | 9 | 0 |
+| automapper | altinnauth | ok | 0 | 14 |
+| automapper | bitwarden | fails (scan ran) | 0 | 276 |
+| automapper | cats | ok | 0 | 139 |
+| automapper | dasblog | ok | 0 | 61 |
+| automapper | devarch | ok | 0 | 4 |
+| automapper | eshoponweb | ok | 7 | 0 |
+| automapper | gnomeshade | fails (scan ran) | 0 | 56 |
+| automapper | jason | ok | 0 | 13 |
+| automapper | jhipster | ok | 0 | 126 |
+| automapper | kavita | ok | 0 | 169 |
+| automapper | lancommander | fails (scan ran) | 0 | 49 |
+| automapper | letterbook | ok | 0 | 165 |
+| automapper | neozhu | ok | 0 | 64 |
+| automapper | nop | ok | 0 | 5 |
+| automapper | ombi | fails (scan ran) | 31 | 83 |
+| automapper | personalasst | ok | 0 | 52 |
+| automapper | skoruba | ok | 0 | 120 |
+| automapper | xipona | ok | 0 | 47 |
 
-- kgr was 90 Manual (generic messages, project file) in the stale set; eshop did not load before. Both are now 0 Manual.
-- Not done: mediatr jason (stopped mid-scan), eshoponweb; every AutoMapper repo (altinnauth, bitwarden, cats, dasblog, devarch,
-  eshoponweb, gnomeshade, jason, jhipster, kavita, lancommander, letterbook, neozhu, nop, ombi, personalasst, skoruba, xipona).
-- MediatR sources ardalis, amantin, nadir, evo1 and evo2 are gone from `corpus-mediatr/src` (`peek/` is empty); they need a re-clone.
-- So no verdict yet on A3/A4 (TAAK-313/314): those counts come only from the AutoMapper corpus. Resume with
-  `run.sh list.txt` minus the done lines, then `agg.py` (both in `D:/playground/pool-tmp/remeasure/`).
+Not measured: MediatR ardalis, amantin, nadir, evo1, evo2 (sources gone from `<corpus>/corpus-mediatr/src`; re-clone needed).
+
+### Verdict on ranks 3–5
+
+| Rank | Task | Rows now | Verdict |
+| --- | --- | ---: | --- |
+| 3 | TAAK-313 nullable Map source | 0 | **already solved** by TAAK-259/273 (`a?.ToB()`, with `!` where the target is non-nullable; proofs `MapCall/maybe-null*`). The only "may be null" rows left are MapFrom dereferences inside a profile (dasblog, ombi: 3 roots), a different pattern. |
+| 4 | TAAK-314 CreateMap in a MapperConfiguration lambda | 0 | **already solved** by TAAK-286 (gnomeshade, letterbook, personalasst, xipona have no such rows; their Manual comes from root A below). |
+| 5 | TAAK-315 MediatR generic messages | 0 | **already solved** by TAAK-193 (`mediatr.generic-request` / `generic-notification`): kgr 90 → 0, eshop and jason 0. nadir not measurable. |
+
+### Current ranking of AutoMapper roots
+
+| Rank | Root | Repos | Rows | Repos |
+| --- | --- | ---: | ---: | --- |
+| A | a call `Map<T>` maps a type parameter (generic repository/service base); every map it may reach stays | 8 | ~756 | bitwarden, gnomeshade, lancommander, letterbook, ombi, personalasst, skoruba, xipona |
+| B | `ProjectTo`/`Map` with no destination type of its own (type parameter) | 4 | ~363 | cats, jason, kavita, neozhu |
+| C | a source with no type of its own (`object`) | 2 | ~95 | jhipster, nop |
+| D | configuration test / test mapper stays because maps stay (follow-up of A–C) | 8 | 52 | — |
+| E | profile with several constructors | 1 | 37 | dasblog |
+| F | `AllowNullCollections = true` | 1 | 12 | altinnauth |
+
+A–C were rank 6 ("justified, run-time choice"). They are now the only large blockers: one generic call keeps **every** map whose
+types it may reach on AutoMapper. Council question: close `Map<T>` per type argument at the generic call's callers (as TAAK-193
+did for MediatR), or narrow "may reach" to the maps whose types satisfy T's constraints so the rest of the profile migrates.
 
 ## See also
 

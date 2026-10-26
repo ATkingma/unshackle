@@ -210,6 +210,21 @@ Questions: `claude/tasks/COUNCIL-round-12.md`. Two rounds; all joint. Engine fol
 | A10 | `A` created in place | Counts as built in the test only when it is the only `A` in the method, created with literal or no arguments, and every asserted member still meets A7 (default-constructed members read by the test → Manual). |
 | T8 | Filters outside the solution | Accepted; an Info line says filters registered outside the solution are not seen. |
 
+## Round 13 (2026-10-26)
+
+Full text: `claude/tasks/COUNCIL-round-13.md`.
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| A11 | Generic `Map<T>` | Close per type argument collected from callers (TAAK-193 style, depth 3); constraints only filter; else Manual `GenericMapOpenSet` (TAAK-324). |
+| A12 | Type-parameter destination | Same set; `ProjectTo<T>` Fixed only when every member is Fixed and selected by `typeof(T)` before the query (TAAK-325). |
+| E17 | EPPlus all-or-nothing | Partial migration per project, no new flag; `EpplusTypeCrossesProject` blocks (TAAK-326). |
+| E18 | EPPlus next rows | Flow types (fields/parameters/returns) → address Rows/Columns → tables → drawings (TAAK-327). |
+| M8 | Moq per-result ids | Yes, rename only (TAAK-328). |
+| M9 | `Configure()` in output | Never; M6 stands. |
+| E19 | EPPlus read mapping | E12 stands, no shim. |
+| R4 | ReadyToRun | Not built; TAAK-305 deferred. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

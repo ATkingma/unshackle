@@ -36,3 +36,5 @@
 
 - `claude/docs/INDEX.md` — documentation index
 - `claude/tasks/archief/TAAK-298-performance.md` — where these follow-ups came from
+
+- 2026-10-26: Deferred (council round 13, R4).

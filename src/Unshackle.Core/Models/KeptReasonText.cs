@@ -12,11 +12,15 @@ public static class KeptReasonText
     /// <summary>The prefix of a finding that stays on MediatR next to Mediator in a partial migration.</summary>
     public const string MediatRPrefix = "Stays on MediatR next to Mediator: ";
 
+    /// <summary>The prefix of a project that stays on EPPlus while other projects move to ClosedXML.</summary>
+    public const string EPPlusPrefix = "Stays on EPPlus: ";
+
     /// <summary>The prefix printed in front of the reason of a kept finding with this code; empty for <see cref="KeptReason.None"/>.</summary>
     public static string Prefix(KeptReason code) => code switch
     {
         KeptReason.None => string.Empty,
         KeptReason.MediatRNextToMediator => MediatRPrefix,
+        KeptReason.EPPlusProjectKept => EPPlusPrefix,
         _ => AutoMapperPrefix,
     };
 

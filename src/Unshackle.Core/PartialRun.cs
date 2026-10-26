@@ -41,7 +41,8 @@ internal static class PartialRun
                 return null;
             }
 
-            List<Finding> blocking = [.. report.Findings.Where(f => f.Result is ManualResult && !plan.Findings.Contains(f) && !IsKeptPackageRow(f))];
+            // A root the run reports again (a project-level blocker row, council round 10 G4) is planned, not new.
+            List<Finding> blocking = [.. report.Findings.Where(f => f.Result is ManualResult && !plan.Findings.Contains(f) && !IsKeptPackageRow(f) && !roots.Any(r => SameRow(r, f)))];
             if (blocking.Count == 0)
             {
                 return report;
@@ -119,6 +120,9 @@ internal static class PartialRun
 
         return finding;
     }
+
+    private static bool SameRow(Finding a, Finding b) =>
+        a.FilePath == b.FilePath && a.Line == b.Line && a.PatternId == b.PatternId && a.Result == b.Result;
 
     // The project-file rows that kept code causes: the old package stays next to the new one.
     private static bool IsKeptPackageRow(Finding finding) =>

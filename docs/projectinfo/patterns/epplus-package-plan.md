@@ -89,8 +89,8 @@ The pattern finds the scope (the using statement, or the block of a using declar
 are the identifiers bound to the local's symbol. A use outside the mapped set stops the rewrite with
 `ExcelPackage local p is used as '<use>' (line N), which is not mapped yet`.
 
-`EPPlusFix.AllOrNothing` is true: a Manual row leaves the whole solution as it is (half on EPPlus, half on ClosedXML does not build once a
-worksheet crosses a method boundary). The package swap (`EPPlus` → `ClosedXML 0.105.1`) only happens per project when nothing of EPPlus is
+`EPPlusFix.AllOrNothing` is true: a Manual row keeps its whole project on EPPlus (half on EPPlus, half on ClosedXML does not build once a
+worksheet crosses a method boundary); other projects still migrate (per-project plan, council round 13 E17, TAAK-326). The package swap (`EPPlus` → `ClosedXML 0.105.1`) only happens per project when nothing of EPPlus is
 left (general rule, round 8).
 
 **Behaviour proof (E1).** Every Fixed proof declares `public static void Write(string path)`; `EPPlusHarnessProofTests` compiles `before`

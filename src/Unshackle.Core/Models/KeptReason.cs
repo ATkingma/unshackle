@@ -47,4 +47,7 @@ public enum KeptReason
 
     /// <summary>MediatR: code tied to a finding that cannot be migrated stays on MediatR next to Mediator (partial migration, TAAK-274).</summary>
     MediatRNextToMediator = 13,
+
+    /// <summary>EPPlus: the whole project stays on EPPlus while other projects move to ClosedXML (per-project migration, council round 13, E17).</summary>
+    EPPlusProjectKept = 14,
 }

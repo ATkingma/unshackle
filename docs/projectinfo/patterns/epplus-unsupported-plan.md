@@ -47,8 +47,8 @@ that exposes an EPPlus type is Manual by design (`PublicApiExposesOldLibrary`, E
 "no row planned, by hand". E6 checks the anchor's declared symbol: public/protected/protected internal up the containing-type chain, a signature
 type (return, parameters, field/property/event type, base type, interfaces; array elements and generic arguments too) that names EPPlus, and a
 packable project. Packable uses the same rule as MediatR's `AssemblyResolver`: a library that references no test framework. The reason codes
-are text prefixes until TAAK-318 brings typed codes (council round 10, C1). Because `EPPlusFix.AllOrNothing` is true, any such row leaves the
-solution as it is.
+are text prefixes until TAAK-318 brings typed codes (council round 10, C1). Because `EPPlusFix.AllOrNothing` is true, any such row keeps its
+whole project on EPPlus (per-project plan, council round 13 E17, TAAK-326).
 
 ## Requirements
 

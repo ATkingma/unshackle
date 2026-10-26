@@ -198,11 +198,17 @@ those types and their members do not count as usage in`UsingDirectives.UsedNames
   report it. The Fixer runs again on that solution; patterns never see an annotated node.
 - A partial run is accepted when it has no Manual finding besides the plan rows and the "package stays" project-file rows,
   and every kept node is still in the fixed file with the same text. A new Manual finding becomes an extra root and the fix
-  plans again (at most 4 rounds); otherwise the all-or-nothing result stands.
+  plans again (at most 4 rounds); otherwise the all-or-nothing result stands. A root the run reports again (a G4 project-level
+  blocker row, identical file, line, pattern and result) counts as planned.
 - MediatR's plan (`Fixes/MediatR/MediatROwners.cs`, union-find in `MediatROwnerGraph.cs`): see
   [features/mediatr-partial-migration-plan.md](../features/mediatr-partial-migration-plan.md). Kept references become
   `global::MediatR.X`; such a name needs no using (`UsingDirectives.IsGlobalQualified`) and keeps the package in its project
   even for a swapped type (`ProjectPackages`).
+- EPPlus's plan (`Fixes/EPPlus/EPPlusProjects.cs`, council round 13 E17, TAAK-326) works per project, never per file: a project with
+  a root stays whole on EPPlus (every document root annotated), and so does a project that shares a file with a kept project or uses
+  or declares a member, across projects, whose signature names an EPPlus type while the other side stays (`EPPlusTypeCrossesProject`).
+  Each kept project gets one `epplus.kept` row on its project file (`KeptReason.EPPlusProjectKept`, prefix "Stays on EPPlus: "), which
+  also blocks its project-file edits (G4). When every EPPlus project is kept, the all-or-nothing result stands.
 
 ## Report-only fixes (TAAK-316)
 

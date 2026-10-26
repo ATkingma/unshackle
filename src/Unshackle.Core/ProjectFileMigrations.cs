@@ -173,7 +173,9 @@ internal static class ProjectFileMigrations
             return $"{BlockedReason} ({blocking} finding(s))";
         }
 
-        return findings.FirstOrDefault(f => s_pathComparer.Equals(f.FilePath, project.Key) && f.Result is ManualResult { Code: string code } && s_blockingCodes.Contains(code))
+        // A project a partial plan keeps whole on the old library (EPPlus, E17) gets no edits either.
+        return findings.FirstOrDefault(f => s_pathComparer.Equals(f.FilePath, project.Key)
+                && f.Result is ManualResult manual && (manual.Kept == KeptReason.EPPlusProjectKept || manual.Code is string code && s_blockingCodes.Contains(code)))
             is { Result: ManualResult manual }
             ? $"{BlockedByProjectReason}{KeptReasonText.Rendered(manual)}"
             : null;

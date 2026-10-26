@@ -20,4 +20,5 @@ public enum EPPlusReason
     LoadFromHeadersNotMapped,
     LoadFromTypeDiffers,
     UnmappedLoadFrom,
+    EPPlusTypeCrossesProject,
 }

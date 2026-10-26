@@ -1,0 +1,25 @@
+# name sln-relative-to-<corpus>/<name>  (L4 MassTransit corpus round, 2026-10-26; repos sit directly under the corpus root: CORPUS_SRC=.)
+Altinn_altinn-auth Altinn.Authorization.slnx
+AntonioFalcaoJr_Reminders Reminder.sln
+ardalis_VerticalCleanModularMicroservices 03-ModularMonolith/src/OrderDemo.Modulith.slnx
+baranacikgoz_modular-monolith-ddd-vsa-webapi ModularMonolith.sln
+EdwinVW_cloud-native-net src/CloudNativeNet.sln
+elsa-workflows_elsa-extensions Elsa.Extensions.sln
+evolutionary-architecture_evolutionary-architecture-by-example Chapter-2-modules-separation/Src/Fitnet.slnx
+firebend_auto-crud Firebend.AutoCrud.sln
+firebend_jobba jobba.sln
+gncyyldz_Saga-Orchestration Saga-Orchestration.sln
+iblazhko_eventsourced-processmanager src/EventSourcedProcessManager.slnx
+iongritco_ModularMonolith ToDoApp.slnx
+jokk-itu_MassTransit-Outbox-Sample OutboxSample.sln
+Letterbook_Letterbook Letterbook.sln
+marinasundstrom_YourBrand YourBrand.sln
+NikiforovAll_social-media-app-aspire social-media-app-aspire.sln
+nkz-soft_microservice-template NKZSoft.Template.sln
+NoxOrg_Nox Nox.sln
+onebeyond_monaco src/Content/Backend/Solution/Monaco.Template.Backend.slnx
+sloweyyy_cloud-native-ecommerce-platform Ecommerce.sln
+SwissLife-OSS_Confix-Unloaded src/Backend/Confix.sln
+thangchung_coffeeshop-on-nomad coffeeshop-on-nomad.sln
+thecodewrapper_CH.CleanArchitectureBlazor CH.CleanArchitecture.sln
+xilapa_SiteWatcher SiteWatcher.sln

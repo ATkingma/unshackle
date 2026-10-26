@@ -89,9 +89,22 @@ The pattern finds the scope (the using statement, or the block of a using declar
 are the identifiers bound to the local's symbol. A use outside the mapped set stops the rewrite with
 `ExcelPackage local p is used as '<use>' (line N), which is not mapped yet`.
 
-`EPPlusFix.AllOrNothing` is true: a Manual row leaves the whole solution as it is (half on EPPlus, half on ClosedXML does not build once a
-worksheet crosses a method boundary). The package swap (`EPPlus` → `ClosedXML 0.105.1`) only happens per project when nothing of EPPlus is
-left (general rule, round 8).
+`EPPlusFix.AllOrNothing` is true, and the partial migration is **per project, never per file** (council round 13, E17; TAAK-326,
+`EPPlusProjectPlan`): half a project on EPPlus and half on ClosedXML does not build once a worksheet crosses a method boundary, but a value
+only crosses a project boundary through a member signature, which is checkable. A project stays on EPPlus (its documents keep their text, its
+project file gets no edit, the report row reads `EPPlus package kept: blocked by <reason>`) when:
+
+- it holds a blocking Manual row (`manual findings in this project`);
+- it shares a source file with a kept project;
+- a kept project binds to a member or type it declares whose signature (return, parameters, field/property/event type, base types,
+  interfaces, generic arguments) names an EPPlus type: Manual `EpplusTypeCrossesProject` on its project file;
+- a kept project references it and is not proven to declare EPPlus itself (current restore assets, `IPackageAssetsReader`): removing EPPlus
+  here could break that project, also `EpplusTypeCrossesProject`.
+
+Every other project that uses EPPlus migrates completely; when none is left, the solution stays as it is (all-or-nothing). The package swap
+(`EPPlus` → `ClosedXML 0.105.1`) happens per migrated project, and only when nothing of EPPlus is left there (general rule, round 8); a
+migrated project in which EPPlus use remains after the run becomes a new root and is kept in the next planning round (`PartialRun`). E7 (the
+SixLabors.Fonts pin) applies per migrated project. There is no opt-out flag.
 
 **Behaviour proof (E1).** Every Fixed proof declares `public static void Write(string path)`; `EPPlusHarnessProofTests` compiles `before`
 against EPPlus 4.5.3.3 and `after` against ClosedXML in memory, runs both, reopens both files with ClosedXML and requires 0 differences per
@@ -126,6 +139,7 @@ file.
 | REQ-19 | Row 5, reads: `.Text`, `GetValue<T>()` and a `.Value` read are Manual `CellReadDiffers`. The harness shows EPPlus `.Text` of a bool is "1" (ClosedXML "TRUE") and `GetValue<string>()` of an empty cell is null (ClosedXML ""); `.Value` is `object` against `XLCellValue` (proof `cell-read`; `CellReadHarnessTests.Read_Differs`). |
 | REQ-20 | Row 6 (`epplus.save`, inside this pattern):<br>- `p.SaveAs(stream)` with a `Stream` argument stays the same call; `SaveHarnessTests` shows both libraries leave the stream open at its end.<br>- `p.GetAsByteArray()` inside a statement of a block, and not in a lambda, gets `using var workbookStream = new MemoryStream(); p.SaveAs(workbookStream);` before that statement and becomes `workbookStream.ToArray()`. The name is made unique, and `System.IO` is added.<br>- `Save()` and `GetAsByteArray` in a lambda stay Manual.<br>Proofs: `byte-array`, `byte-array-file`, `save-stream`, `byte-array-lambda`. |
 | REQ-21 | E12 (council round 12): `GetValue<T>()` with T in {int, long, double, decimal, DateTime, bool} would be Fixed only if the full matrix matches: empty, bool, whole number, fraction, date, text and numeric-text cells, read both from an opened workbook and from cells the same code wrote, giving the same result or the same exception type. **No T passes**, so every read stays Manual `CellReadDiffers` (`GetValueMatrixTests` pins the differing cells per T). Opening an existing workbook (`new ExcelPackage(stream/FileInfo/path)`) is Fixed only when every read in the method is Fixed, so it is Manual `CellReadDiffers` as well (proof `existing-file`). |
+| REQ-22 | E17 (council round 13, TAAK-326): per-project partial migration as described under Design: a clean project migrates (code and package) next to a blocked one that keeps its code and EPPlus; a project whose EPPlus-typed member a kept project uses is Manual `EpplusTypeCrossesProject`; a shared file keeps both projects; no project left to migrate leaves the solution as it is (proofs `_Combined/PerProject`; `EPPlusPerProjectTests`; sample `samples/EPPlusSplit`). |
 | REQ-7 | With the licence pattern in the same file, both are rewritten, the result compiles against ClosedXML and compares equal (proof `_Combined/license-and-package`). |
 
 ## See also

@@ -1,0 +1,6 @@
+<!-- TAAK-326: a project with EPPlus code the epplus fix cannot migrate (an opened workbook saved in place): it stays on EPPlus. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="EPPlus" NoWarn="NU1904" />
+  </ItemGroup>
+</Project>

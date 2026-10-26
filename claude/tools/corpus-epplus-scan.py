@@ -1,6 +1,7 @@
 """L4 helper (Windows): restore + `scan --report` per corpus repo. Usage:
 python -I corpus-epplus-scan.py <corpus root> <tool dir> <list file> <fix id> [names...]
 The corpus root holds src/<name> (untrusted clones), and gets nuget/, tmp/, clihome/ and scan/<name>/ (logs + report.json).
+CORPUS_SRC and CORPUS_SCAN override the src/ and scan/ folder names (TAAK-326: a second round next to the first).
 """
 import os, subprocess, sys, time
 
@@ -31,12 +32,12 @@ for line in open(listfile, encoding="utf-8"):
     if not parts or parts[0].startswith("#") or (only and parts[0] not in only):
         continue
     name, sln = parts[0], parts[1]
-    out = os.path.join(root, "scan", name)
+    out = os.path.join(root, os.environ.get("CORPUS_SCAN", "scan"), name)
     os.makedirs(out, exist_ok=True)
     src = os.path.join(root, os.environ.get("CORPUS_SRC", "src"), name)
     r1 = run(["dotnet", "build", sln, "-m:2", "-nologo", "-clp:ErrorsOnly;Summary"] + props, src, os.path.join(out, "build.log"), 1200)
     r2 = run(["dotnet", os.path.join(tool, "unshackle.dll"), "scan", sln, "--fix", fix, "--max-degree", "4",
               "--report", os.path.join(out, "report.json")], src, os.path.join(out, "scan.log"), 1800)
-    with open(os.path.join(root, "scan", "_results.txt"), "a", encoding="utf-8") as r:
+    with open(os.path.join(root, os.environ.get("CORPUS_SCAN", "scan"), "_results.txt"), "a", encoding="utf-8") as r:
         r.write(f"{name} build={r1[0]} {r1[1]}s scan={r2[0]} {r2[1]}s\n")
     print(name, r1, r2, flush=True)

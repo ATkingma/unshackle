@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Reports.Clean/Reports.Clean.csproj" />
+  <Project Path="Reports.Kept/Reports.Kept.csproj" />
+</Solution>

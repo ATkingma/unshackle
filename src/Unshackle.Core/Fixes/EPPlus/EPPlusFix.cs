@@ -6,7 +6,7 @@ using Unshackle.Core.Models;
 namespace Unshackle.Core.Fixes.EPPlus;
 
 /// <summary>EPPlus (LGPL 4.5.3.3, commercial 5+) → ClosedXML (MIT). TAAK-309; council round 8, E1–E6.</summary>
-public class EPPlusFix : IFix, IProjectFileMigration
+public class EPPlusFix : IFix, IProjectFileMigration, IPartialFix
 {
     // The version our proofs and the cell-compare harness run against (Directory.Packages.props); MIT, no licence check (E5, TAAK-309).
     public const string ClosedXmlVersion = "0.105.1";
@@ -45,8 +45,17 @@ public class EPPlusFix : IFix, IProjectFileMigration
         AddedPackages = [new AddedPackage { Name = "ClosedXML", Version = ClosedXmlVersion }],
     };
 
-    // A workbook half on EPPlus and half on ClosedXML does not build (an ExcelWorksheet passed to a migrated method): any Manual finding leaves the solution as it is.
+    // A workbook half on EPPlus and half on ClosedXML does not build (an ExcelWorksheet passed to a migrated method), so a Manual finding keeps
+    // its whole project on EPPlus; the other projects still migrate (council round 13, E17; PlanPartialAsync).
     public bool AllOrNothing => true;
+
+    // TAAK-326 (E17): per project, never per file.
+    public Task<PartialPlan?> PlanPartialAsync(Solution solution, IReadOnlyList<Finding> roots, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(solution);
+        ArgumentNullException.ThrowIfNull(roots);
+        return EPPlusProjectPlan.PlanAsync(this, _assetsReader, solution, roots, cancellationToken);
+    }
 
     public IReadOnlyList<IPattern> Patterns { get; }
 

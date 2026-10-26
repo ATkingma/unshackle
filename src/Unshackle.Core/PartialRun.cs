@@ -17,7 +17,7 @@ internal static class PartialRun
         IPartialFix partial,
         Solution solution,
         FixReport firstRun,
-        Func<Solution, IReadOnlyList<Finding>, CancellationToken, Task<FixReport>> run,
+        Func<PartialPlan, CancellationToken, Task<FixReport>> run,
         CancellationToken cancellationToken)
     {
         List<Finding> roots = [];
@@ -35,13 +35,15 @@ internal static class PartialRun
                 return null;
             }
 
-            FixReport report = await run(plan.Solution, plan.Findings, cancellationToken);
+            FixReport report = await run(plan, cancellationToken);
             if (!await KeepsKeptCodeAsync(plan.Solution, report.Solution, cancellationToken))
             {
                 return null;
             }
 
-            List<Finding> blocking = [.. report.Findings.Where(f => f.Result is ManualResult && !plan.Findings.Contains(f) && !IsKeptPackageRow(f))];
+            // TAAK-326: the rows of a kept project (its package row, a blocked file) are part of the plan, not new blockers.
+            HashSet<string> keptPaths = KeptPaths(plan);
+            List<Finding> blocking = [.. report.Findings.Where(f => f.Result is ManualResult && !plan.Findings.Contains(f) && !IsKeptPackageRow(f) && !keptPaths.Contains(f.FilePath))];
             if (blocking.Count == 0)
             {
                 return report;
@@ -118,6 +120,18 @@ internal static class PartialRun
         }
 
         return finding;
+    }
+
+    // The project files of the plan's kept projects and every document file in them.
+    private static HashSet<string> KeptPaths(PartialPlan plan)
+    {
+        HashSet<string> paths = new(plan.KeptProjects.Keys, StringComparer.OrdinalIgnoreCase);
+        foreach (Project project in plan.Solution.Projects.Where(p => p.FilePath is not null && plan.KeptProjects.ContainsKey(p.FilePath)))
+        {
+            paths.UnionWith(project.Documents.Select(d => d.FilePath ?? d.Name));
+        }
+
+        return paths;
     }
 
     // The project-file rows that kept code causes: the old package stays next to the new one.

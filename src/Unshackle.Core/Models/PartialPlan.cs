@@ -11,4 +11,8 @@ public class PartialPlan
     public required Solution Solution { get; init; }
 
     public required IReadOnlyList<Finding> Findings { get; init; }
+
+    // TAAK-326 (council round 13, E17): whole projects that stay on the old library, project file path -> why. Their documents keep their
+    // text and their project files get no package edit, like a project with a blocking project-level row (TAAK-320/321). Empty: none.
+    public IReadOnlyDictionary<string, string> KeptProjects { get; init; } = new Dictionary<string, string>();
 }

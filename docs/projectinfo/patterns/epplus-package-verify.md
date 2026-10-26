@@ -27,6 +27,7 @@
 | REQ-14 | Met    | proof `_Combined/value-types` (covered types, harness equal); `CellValueHarnessTests.Value_UncoveredType_Differs` pins float 0.1f, 0.1 + 0.2, decimal.MaxValue and DateTime); proofs `uncovered-datetime`, `uncovered-double` |
 | REQ-15 | Met    | proof `_Combined/cells-and-styles` |
 | REQ-16 | Met    | `WorksheetIndexTests`: `RewriteAsync_EPPlus4OneFamily_ByFamily` (net4x, netcore), `RewriteAsync_EPPlus4NotProvable_Manual` (netstandard pinned, unknown, packable, mixed, dependent of another family), `Harness_EPPlus4OnNetCore_IsZeroBased` |
+| REQ-22 | Met    | `EPPlusPerProjectTests`: `FixAsync_CleanAndBlockedProject_MigratesOnlyTheCleanOne` (proof `_Combined/PerProject`, clean.after.cs also through the harness), `FixAsync_EveryProjectBlocked_ChangesNothing`, `PlanPartialAsync_KeptProjectUsesAnEPPlusTypedMember_KeepsTheDeclaringProject`, `PlanPartialAsync_ThirdProjectExposesEPPlusToKeptOne_ReportsEpplusTypeCrossesProject`, `PlanPartialAsync_KeptProjectReferencesCleanOne_MigratesOnlyWhenTheKeptOneDeclaresEPPlus`, `PlanPartialAsync_FileSharedWithKeptProject_KeepsBoth`; integration `SampleShopTests.Fix_EPPlusSplit_MigratesOnlyTheCleanProject` (real CLI, then `dotnet build`) |
 | REQ-17 | Met    | `WorksheetIndexTests`: `RewriteAsync_KeyInConfig_WorksheetIndexConfigured`, `RewriteAsync_KeyInCode_WorksheetIndexConfigured`, `RewriteAsync_NoConfigSearch_WorksheetIndexConfigured`, Info on `RewriteAsync_EPPlus5Index_ZeroBasedToPosition`; proof `Package/worksheet-index` |
 | REQ-18 | Met    | proof `Package/cell-range` (harness equal); proof `_Combined/range-merge-layout` |
 | REQ-19 | Met    | proof `Package/cell-read`; `CellReadHarnessTests.Read_Differs` |
@@ -37,7 +38,7 @@
 ## Build and tests
 
 - `dotnet build`: 0 warnings, 0 errors. `dotnet test`: 1707 passed, 0 failed (rows 1-2); 1862 passed, 0 failed (row 3, after merging main); 1865 passed, 0 failed (E7); 2020 passed, 0 failed (rows 4-5); 2030 passed, 0 failed (E10/E11); 2093 passed, 0 failed (rows 4-5 remainder); 2210 passed, 0 failed (row 6, after merging main).
-- No corpus run yet (TAAK-309 step 5).
+- No corpus run yet (TAAK-309 step 5). TAAK-326 (E17): corpus re-measure in `claude/tasks/CORPUSRUN-epplus.md` (round 2).
 
 ## Deviations
 

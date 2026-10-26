@@ -87,6 +87,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/COUNCIL-round-11.md` | Council round 11 questions (EPPlus index base, TAAK-311 follow-ups, MassTransit detector) |
 | `src/Unshackle.Tests/Core/Moq/MoqRuntimeProofTests.cs` | Moq run-time proof harness over `Proofs/Moq/_Runtime/` (council round 9, Q2) |
 | `claude/tasks/TAAK-319-assets-file-reader.md` | IPackageAssetsReader / JsonPackageAssetsReader: obj/project.assets.json state and resolved versions (for EPPlus E7) |
+| `claude/tasks/TAAK-326-epplus-per-project-migration.md` | EPPlus per-project partial migration (E17): `EPPlusProjectPlan`, `PartialPlan.KeptProjects`, sample `samples/EPPlusSplit` |
 | `claude/tasks/TAAK-320-blockers-stop-rewrites.md` | Project blockers also stop document rewrites; inventory-only console summary |
 | `claude/tasks/TAAK-321-blockers-stop-package-swap.md` | Project blockers also stop the package swap |
 | `claude/tasks/COUNCIL-round-12.md` | Council round 12 questions (EPPlus reads/AutoFit/proofs, engine G6–G9, Moq, TAAK-311/310) |

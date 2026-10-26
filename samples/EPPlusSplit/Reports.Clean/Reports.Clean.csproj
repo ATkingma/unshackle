@@ -1,0 +1,6 @@
+<!-- TAAK-326: a project whose EPPlus code the epplus fix migrates completely. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="EPPlus" NoWarn="NU1904" />
+  </ItemGroup>
+</Project>

@@ -565,6 +565,39 @@ public class SampleShopTests
     }
 
     // bin/ and obj/ hold absolute paths of the original location; restore creates them again.
+    // TAAK-326 (council round 13, E17): samples/EPPlusSplit has one clean and one blocked EPPlus project. Only the clean one migrates
+    // (code and package), the blocked one keeps its code and EPPlus, and the solution still builds.
+    [Fact]
+    public async Task Fix_EPPlusSplit_MigratesOnlyTheCleanProject()
+    {
+        // Arrange
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        using var directory = new TempDirectory();
+        string samples = Path.Combine(directory.Path, "samples");
+        CopyWithoutBuildOutput(Path.Combine(RepositoryRoot.Path, "samples"), samples);
+        string split = Path.Combine(samples, "EPPlusSplit");
+        string solution = Path.Combine(split, "EPPlusSplit.slnx");
+        string kept = await File.ReadAllTextAsync(Path.Combine(split, "Reports.Kept", "Kept.cs"), cancellationToken);
+        await DotnetAsync(cancellationToken, "restore", solution);
+
+        // Act
+        int fixExit = await Cli.RunAsync(["fix", solution, "--fix", "epplus", "--force"], cancellationToken);
+
+        // Assert
+        fixExit.ShouldBe(ExitCodes.Ok);
+        string clean = await File.ReadAllTextAsync(Path.Combine(split, "Reports.Clean", "Report.cs"), cancellationToken);
+        clean.ShouldContain("using var package = new XLWorkbook();");
+        clean.ShouldNotContain("OfficeOpenXml");
+        (await File.ReadAllTextAsync(Path.Combine(split, "Reports.Kept", "Kept.cs"), cancellationToken)).ShouldBe(kept);
+        string cleanProject = await File.ReadAllTextAsync(Path.Combine(split, "Reports.Clean", "Reports.Clean.csproj"), cancellationToken);
+        cleanProject.ShouldContain("Include=\"ClosedXML\"");
+        cleanProject.ShouldNotContain("Include=\"EPPlus\"");
+        string keptProject = await File.ReadAllTextAsync(Path.Combine(split, "Reports.Kept", "Reports.Kept.csproj"), cancellationToken);
+        keptProject.ShouldContain("Include=\"EPPlus\"");
+        keptProject.ShouldNotContain("ClosedXML");
+        await DotnetAsync(cancellationToken, "build", solution);
+    }
+
     private static void CopyWithoutBuildOutput(string source, string target)
     {
         Directory.CreateDirectory(target);

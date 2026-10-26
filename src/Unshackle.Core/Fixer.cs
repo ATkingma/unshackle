@@ -71,14 +71,14 @@ public class Fixer : IFixer
             return await ReportOnlyRun.RunAsync(fix, reportOnly, solution, request, cancellationToken);
         }
 
-        FixReport full = await RunAsync(fix, request, solution, [], cancellationToken);
+        FixReport full = await RunAsync(fix, request, solution, [], s_noneBlocked, cancellationToken);
         if (!fix.AllOrNothing || !full.Findings.Any(f => f.Result is ManualResult && !fix.AllowsPartial(f)))
         {
             return full;
         }
 
         // TAAK-274: the code tied to the Manual findings stays on the old library, the rest moves; otherwise nothing changes.
-        if (fix is IPartialFix partial && await PartialRun.RunPartialAsync(partial, solution, full, (s, seed, ct) => RunAsync(fix, request, s, seed, ct), cancellationToken) is FixReport partialReport)
+        if (fix is IPartialFix partial && await PartialRun.RunPartialAsync(partial, solution, full, (plan, ct) => RunAsync(fix, request, plan.Solution, plan.Findings, plan.KeptProjects, ct), cancellationToken) is FixReport partialReport)
         {
             return partialReport;
         }
@@ -87,7 +87,9 @@ public class Fixer : IFixer
     }
 
     // One run of the fix over the solution; seed findings come first in the report (the rows of a partial plan).
-    private async Task<FixReport> RunAsync(IFix fix, FixRequest request, Solution solution, IReadOnlyList<Finding> seed, CancellationToken cancellationToken)
+    // Kept projects (a partial plan, TAAK-326) are handled like blocked ones: their documents keep their text and get no package edit.
+    private async Task<FixReport> RunAsync(
+        IFix fix, FixRequest request, Solution solution, IReadOnlyList<Finding> seed, IReadOnlyDictionary<string, string> keptProjects, CancellationToken cancellationToken)
     {
         var findings = new List<Finding>(seed);
         Solution original = solution;
@@ -98,6 +100,15 @@ public class Fixer : IFixer
         {
             (List<Finding> blockerRows, blockedFiles, blockedProjects) = ProjectFileMigrations.Blockers(fix, blockingMigration, original);
             findings.AddRange(blockerRows);
+        }
+
+        foreach ((string project, string reason) in keptProjects)
+        {
+            blockedProjects.TryAdd(project, reason);
+            foreach (Document document in original.Projects.Where(p => string.Equals(p.FilePath, project, StringComparison.OrdinalIgnoreCase)).SelectMany(p => p.Documents))
+            {
+                blockedFiles.TryAdd(document.FilePath ?? document.Name, $"{reason} on {project}");
+            }
         }
 
         Solution baseline = FileFixer.AddReferences(original, fix.AddedReferences, fix.AddedNamespaces);

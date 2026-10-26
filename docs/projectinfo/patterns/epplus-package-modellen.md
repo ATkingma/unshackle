@@ -70,6 +70,30 @@ flowchart TD
 | integer index, EPPlus 4.x / 5+ / unknown | Manual / Fixed / Manual | `worksheet-index`, `WorksheetIndexTests` |
 | field / two in one block | Manual | `field`, `Fix_TwoPackagesInOneBlock_Manual` |
 
+## Figure 4: per-project gate (council round 13, E17; TAAK-326)
+
+```mermaid
+flowchart TD
+    R[Manual rows of the full run] --> K[kept = projects holding a row]
+    K --> L{another EPPlus project P}
+    L -- shares a file with a kept project --> KP[keep P]
+    L -- a kept project uses a P member naming EPPlus --> KC[keep P: Manual EpplusTypeCrossesProject]
+    L -- a kept project references P and does not declare EPPlus --> KC
+    L -- none --> MP[P migrates: code + EPPlus to ClosedXML]
+    KP --> L
+    KC --> L
+    MP --> N{any project migrates?}
+    N -- no --> A[all-or-nothing: solution unchanged]
+    N -- yes --> P[PartialPlan.KeptProjects: kept documents annotated, no package edit]
+```
+
+| Question | Leaf | Proof / test |
+| -------- | ---- | ------------ |
+| one clean, one blocked project | clean migrates, blocked kept | `_Combined/PerProject`, `FixAsync_CleanAndBlockedProject_MigratesOnlyTheCleanOne`, sample `EPPlusSplit` |
+| EPPlus-typed member used by a kept project | Manual `EpplusTypeCrossesProject` | `PlanPartialAsync_ThirdProjectExposesEPPlusToKeptOne_ReportsEpplusTypeCrossesProject` |
+| kept project references a clean one | migrates only when the kept one declares EPPlus | `PlanPartialAsync_KeptProjectReferencesCleanOne_MigratesOnlyWhenTheKeptOneDeclaresEPPlus` |
+| shared file / every project blocked | unchanged | `PlanPartialAsync_FileSharedWithKeptProject_KeepsBoth`, `FixAsync_EveryProjectBlocked_ChangesNothing` |
+
 ## See also
 
 - [plan](epplus-package-plan.md), [verify](epplus-package-verify.md)

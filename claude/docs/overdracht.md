@@ -28,7 +28,7 @@ TAAK-329 (other session), Polly and Moq corpus rounds.
 4. TAAK-325 (`ProjectTo<T>`, council A12), TAAK-327 (EPPlus flow types, E18).
 5. TAAK-304 release 0.3.0 (user go), go-candidates SpecFlow→Reqnroll, EF bulk, xUnit v3.
 
-Cleanup: `D:/tmp326` (temp copy left by the TAAK-326 agent) can be deleted by hand.
+Cleanup: `tmp326` on the data disk (temp copy left by the TAAK-326 agent) can be deleted by hand.
 
 ## Pool checkpoint on Linux (2026-10-22, later) — start here first
 

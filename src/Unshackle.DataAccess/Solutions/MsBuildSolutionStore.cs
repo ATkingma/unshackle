@@ -59,9 +59,20 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
         });
 
         bool isProject = Path.GetExtension(fullPath).EndsWith("proj", StringComparison.OrdinalIgnoreCase);
-        Solution solution = isProject
-            ? (await _workspace.OpenProjectAsync(fullPath, cancellationToken: cancellationToken)).Solution
-            : await _workspace.OpenSolutionAsync(fullPath, cancellationToken: cancellationToken);
+        Solution solution;
+        try
+        {
+            solution = isProject
+                ? (await _workspace.OpenProjectAsync(fullPath, cancellationToken: cancellationToken)).Solution
+                : await _workspace.OpenSolutionAsync(fullPath, cancellationToken: cancellationToken);
+        }
+        catch (Exception ex) when (ex.GetType().Name == "RemoteInvocationException" && ex.Message.Contains("hostfxr_resolve_sdk2", StringComparison.Ordinal))
+        {
+            // TAAK-323: a global.json pinning an SDK that is not installed fails inside the build host, not as a workspace failure.
+            // Roslyn's RemoteInvocationException is internal, so it is matched by name.
+            throw new SolutionLoadException([MissingSdkReason(ex.Message)]);
+        }
+
         solution = await MarkNotUtf8FilesAsync(solution, cancellationToken);
 
         var errors = new List<string>();
@@ -148,6 +159,20 @@ public class MsBuildSolutionStore : ISolutionStore, IDisposable
     }
 
     public IReadOnlyList<string> Warnings { get; private set; } = [];
+
+    // hostfxr names the requested version and the global.json that asks for it; without them the raw message is the reason.
+    private static string MissingSdkReason(string message)
+    {
+        Match version = Regex.Match(message, @"Requested SDK version:\s*(\S+)");
+        if (!version.Success)
+        {
+            return $"The .NET SDK could not be resolved: {message}";
+        }
+
+        Match globalJson = Regex.Match(message, @"global\.json file:\s*(.+?)\s*$", RegexOptions.Multiline);
+        string source = globalJson.Success ? $" (requested by {globalJson.Groups[1].Value})" : "";
+        return $"The solution requires .NET SDK {version.Groups[1].Value}{source}, which is not installed. Install it or update global.json to an installed SDK.";
+    }
 
     // Roslyn decodes a file that is not valid UTF-8 with the system ANSI code page. On Windows that is 1252; on Linux and macOS
     // it is UTF-8 itself, so a Latin-1 file loads as UTF-8 with replacement characters and the fixer would rewrite it (TAAK-167,

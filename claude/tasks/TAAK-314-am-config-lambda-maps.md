@@ -1,6 +1,6 @@
 # TAAK-314 — AutoMapper: maps in a MapperConfiguration lambda
 
-**Status**: step 1/3 — not started
+**Status**: done 2026-10-26 — no change needed (re-measure: 0 rows; already solved by TAAK-286, tests `ConfigurationMapsTests`). Archive.
 **Created**: 2026-10-22
 **Goal**: Treat CreateMap calls inside `new MapperConfiguration(cfg => ...)` like a profile constructor body.
 

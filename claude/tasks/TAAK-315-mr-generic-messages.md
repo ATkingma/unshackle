@@ -1,6 +1,6 @@
 # TAAK-315 — MediatR: generic messages and handlers
 
-**Status**: step 1/3 — not started
+**Status**: done 2026-10-26 — no change needed (re-measure: kgr 90 → 0, eshop/jason 0; already solved by TAAK-193 generic-request/notification; nadir source gone, not measured). Archive.
 **Created**: 2026-10-22
 **Goal**: Decide (council) whether generic requests/handlers are closed per used type argument, or stay justified Manual.
 

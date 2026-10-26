@@ -1,6 +1,6 @@
 # TAAK-313 — AutoMapper: nullable source into a non-nullable target
 
-**Status**: step 1/3 — not started
+**Status**: done 2026-10-26 — no change needed (re-measure: 0 rows; already solved by TAAK-259/273, proofs `MapCall/maybe-null*`). Archive.
 **Created**: 2026-10-22
 **Goal**: Migrate Map calls whose source may be null by emitting a null check with AutoMapper's exact semantics.
 

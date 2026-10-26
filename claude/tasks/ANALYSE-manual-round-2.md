@@ -121,7 +121,19 @@ eshoponweb (MediatR) and altinnauth used a tool published from main db9238f; the
 | automapper | skoruba | ok | 0 | 120 |
 | automapper | xipona | ok | 0 | 47 |
 
-Not measured: MediatR ardalis, amantin, nadir, evo1, evo2 (sources gone from `<corpus>/corpus-mediatr/src`; re-clone needed).
+Re-cloned 2026-10-26 (GitHub source archives at the round-2 commits, tool published from main 75e869b; scan **and** fix with
+`--max-degree 4`, rebuild + test; details in `CORPUSRUN-mediatr.md` round 7):
+
+| Set | Repo | Build | Fixed | Manual | Tests before → after |
+| --- | --- | --- | ---: | ---: | --- |
+| mediatr | ardalis | ok → ok | 32 | 0 | 9/9 → 9/9 |
+| mediatr | amantin | ok → ok | 29 | 0 | 85/85 → 85/85 |
+| mediatr | nadir | ok → ok | 18 | 0 | 30/30 → 30/30 |
+| mediatr | evo1 | ok → ok (unchanged) | 0 | 9 | 45/45 → 45/45 |
+| mediatr | evo2 | ok → ok (unchanged) | 0 | 27 | 26/52 → 26/52 (26 DB) |
+
+Same as round 3: evo1/evo2 keep only the justified `add-mediatr` roots (assembly parameter / internal method called by the
+test project, TAAK-183/195). nadir confirms TAAK-315: the generic `DomainEventNotification<T>` migrates. No regressions, no bugs.
 
 ### Verdict on ranks 3–5
 

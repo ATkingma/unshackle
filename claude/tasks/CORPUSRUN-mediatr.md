@@ -292,6 +292,25 @@ Working tree after TAAK-213 (not committed; also contains ongoing FA work in `Fi
   they pass (ArchTests 8/8) → effectively 246/287 = baseline. No code change, so no r7.
 - TAAK-240: the fix now warns in the report (4× on the MediatorModules) that archtests must exclude the namespace `Mediator`.
 
+## Repeat round 7 (2026-10-26, ardalis, amantin, nadirbad, evo1, evo2; main 75e869b)
+
+The clones were gone from `<corpus>/corpus-mediatr/src`; re-fetched as GitHub source archives (no `.git`, no scripts run) at the
+same commits (ardalis `ccb82ba`, amantin `5822811`, nadirbad `feb3a15`, evolutionary `441a7cd` chapters 1 and 2). Tool published
+from main 75e869b. Harness as round 6 plus a `scan` step; both `scan` and `fix` with `--max-degree 4 --force`. Same flags, the
+nuget.org-only `nuget.config`, nadirbad `CA1873 = none`. Environment intervention: the archive has LF line endings, so evo1
+failed its **baseline** build with 30× IDE0055 (TWAE); its `.cs` files were converted to CRLF (what a Windows checkout gives).
+
+| Project   | Test before   | Scan F/M | Fix F/M | Root Manual | Migrated | Build after | Test after | Regressions |
+| --------- | ------------- | -------- | ------- | ----------- | -------- | ----------- | ---------- | ----------- |
+| ardalis   | 9/9           | 32/0     | 32/0    | none        | **yes**  | ok          | 9/9        | 0 |
+| amantin   | 85/85         | 29/0     | 29/0    | none        | **yes**  | ok          | 85/85      | 0 |
+| nadirbad  | 30/30         | 18/0     | 18/0    | none        | **yes**  | ok          | 30/30      | 0 |
+| evo ch. 1 | 45/45         | 0/9      | 0/9     | 1× add-mediatr (internal method, test project calls it) | no (rightly) | ok (unch.) | 45/45 | 0 |
+| evo ch. 2 | 26/52 (26 DB) | 0/27     | 0/27    | 1× add-mediatr (`Assembly` parameter, public method, packable project) | no (rightly) | ok (unch.) | 26/52 | 0 |
+
+Identical to round 3. Scan and fix reports agree. In ardalis MediatR only remains in `sample/` (separate solution).
+With rounds 4–6 and the re-measure in `ANALYSE-manual-round-2.md`: **7 of 9 fully migrated and green**, evo1/evo2 rightly Manual. No new bugs.
+
 ## See also
 
 - `claude/tasks/archief/TAAK-210-mediatr-generieke-decorator-zonder-using.md`, `claude/tasks/archief/TAAK-211-mediatr-send-as-task-nsubstitute-setup.md`, `claude/tasks/archief/TAAK-212-mediatr-kgrzybek-build-na-fix.md`, `claude/tasks/archief/TAAK-213-mediatr-host-verwijst-naar-host.md`, `claude/tasks/archief/TAAK-214-mediatr-archtests-gegenereerde-mediator.md`

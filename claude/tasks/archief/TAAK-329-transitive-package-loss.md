@@ -27,8 +27,11 @@
 ## Council questions
 
 - Q1. The new package's closure is unknown before a restore (no nuspec reader), so a pin is not checked against it. If the new package requires a higher version of a pinned package, NuGet reports NU1605 (downgrade). Conservative now: pin anyway (the exact pre-migration resolution). Option: read `<id>.nuspec` from the global packages folder via a DataAccess reader and skip/raise the pin.
+  **Decision (round 17 T1)**: keep pinning; the row text starts with "may conflict (NU1605)" with "raise the pin" as remedy; a reader is built on the first corpus NU1605. TAAK-343.
 - Q2. A dependent that itself declares the lost package still counts as a user, so the migrated project gets the pin (harmless, an extra reference). Should it be skipped?
+  **Decision (round 17 T2)**: no, keep pinning; the reason names the user project. TAAK-343.
 - Q3. A package that reached the project through another project reference (not a package) is not seen as "kept" (the assets reader keeps package libraries only); it is then pinned too (same version, harmless).
+  **Decision (round 17 T3)**: accepted and documented as a limitation; a differing version → Manual. TAAK-343.
 
 ## See also
 

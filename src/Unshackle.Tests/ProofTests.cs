@@ -10,12 +10,14 @@ using Unshackle.Core.Fixes.MassTransit;
 using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Fixes.Moq;
 using Unshackle.Core.Fixes.Polly;
+using Unshackle.Core.Fixes.SpecFlow;
 using Unshackle.Core.Models;
 using Unshackle.DataAccess.Reports;
 using Unshackle.Tests.Core.EPPlus;
 using Unshackle.Tests.Core.MassTransit;
 using Unshackle.Tests.Core.Moq;
 using Unshackle.Tests.Core.Polly;
+using Unshackle.Tests.Core.SpecFlow;
 using Unshackle.Tests.Helpers;
 using Xunit;
 
@@ -74,6 +76,13 @@ public class ProofTests
             Before = EPPlusReferences.EPPlus,
             After = EPPlusReferences.ClosedXml,
         },
+        ["SpecFlow"] = new()
+        {
+            Fix = new SpecFlowFix(),
+            Before = SpecFlowReferences.SpecFlow,
+            After = SpecFlowReferences.Reqnroll,
+            AfterRunsWholeFix = true,
+        },
         ["MassTransit"] = new()
         {
             // Report-only (council round 8, T1-T4): every proof is a manual.txt, "after" is never compiled.
@@ -109,7 +118,7 @@ public class ProofTests
 
         IFix fix = Substitute.For<IFix>();
         fix.Id.Returns(proofFix.Fix.Id);
-        fix.Patterns.Returns([pattern]);
+        fix.Patterns.Returns(proofFix.AfterRunsWholeFix && !unchanged ? proofFix.Fix.Patterns : [pattern]);
         fix.RemovedNamespaces.Returns(proofFix.Fix.RemovedNamespaces);
         fix.AddedNamespaces.Returns(proofFix.Fix.AddedNamespaces);
         // A manual proof checks that the pattern leaves the code alone; the using swap of swapped types would still run.
@@ -127,7 +136,7 @@ public class ProofTests
 
         // Assert
         string actual = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
-        report.Findings.ShouldNotBeEmpty("the pattern found nothing in the proof");
+        report.Findings.ShouldContain(f => !proofFix.AfterRunsWholeFix || unchanged || f.PatternId == pattern.Id, "the pattern found nothing in the proof");
         if (File.Exists(basePath + ".manual.txt"))
         {
             string reason = (await File.ReadAllTextAsync(basePath + ".manual.txt", TestContext.Current.CancellationToken)).Trim();

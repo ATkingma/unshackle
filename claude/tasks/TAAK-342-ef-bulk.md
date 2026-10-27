@@ -1,6 +1,6 @@
 # TAAK-342 — efbulk fix: Z.EntityFramework.Plus/Extensions batch calls → EF Core ExecuteDelete/ExecuteUpdate
 
-**Status**: step 3/9 — first slice done; council round 17 decided (B1-B8), next is step 4
+**Status**: step 7c/9 — round 19 B10-B12 done; next is step 8
 **Created**: 2026-10-27
 **Branch / worktree**: `taak-342` (agent worktree under `.claude/worktrees/`)
 **Goal**: an `efbulk` fix that rewrites batch delete/update calls of the Z libraries on EF Core queries to EF Core 7+ native
@@ -55,9 +55,9 @@
   entity-member, numeric-arithmetic, plus the existing plus-initializer); string concatenation and any binary operator on string/decimal
   operands → Manual (proofs string-concatenation, decimal-arithmetic); `DateTime.Now` stays Manual (proof static-now); `Math.*` stays Manual
   (method-call). No `DateTime.Now`/`Math.*` SQL proof was added, so neither is widened
-- [ ] 7a. Round 19 B10: string `==`/`!=` with a non-null literal or `const` → Fixed; proof + `EfBulkSqlTests` case with a NULL column row
-- [ ] 7b. Round 19 B11: proofs for captured field, instance property of a captured value, enum member, constant
-- [ ] 7c. Round 19 B12: `efbulk-update-plan.md` / `efbulk-delete-plan.md` name `EfCoreBelow7` as the B3 Warning row
+- [x] 7a. Round 19 B10: string `==`/`!=` with a non-null literal or `const` → Fixed; proofs string-equality (Fixed), string-equality-captured (Manual) + `EfBulkSqlTests.ExecuteUpdate_StringEqualityWithConstant_MatchesCSharpOnNullColumn` (NULL row: EF Core 10 on SQLite gives C# semantics)
+- [x] 7b. Round 19 B11: proofs captured-field, captured-property, enum-member, constant for captured field, instance property of a captured value, enum member, constant
+- [x] 7c. Round 19 B12: `efbulk-update-plan.md` / `efbulk-delete-plan.md` name `EfCoreBelow7` as the B3 Warning row
 - [ ] 8. `efbulk.unsupported` (Bulk*, Future, FromCache, AuditTrail as Manual rows; B8: the reason/README names
   `EFCore.BulkExtensions.MIT` as an alternative, not migrated, after checking its license/maintenance) and B5 package removal at zero Z
   usages per project (dependents counted, Plus and Extensions), else a row with the remaining usages file:line. EFCore.BulkExtensions

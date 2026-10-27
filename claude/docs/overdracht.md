@@ -10,13 +10,17 @@ Main green (CI per push, `verify-head.sh <scratch-dir-on-D:>` before each; C:-te
 (`automapper.generic-destination`, closure follows extension callers), council round 16 (`claude/tasks/COUNCIL-round-16.md`:
 E20-E26, A15-A18, G10, P1). All old agent worktrees removed (3 unmerged `worktree-agent-*` branches kept).
 
-**Agents running (branches, merge each after verify-head + green CI):** `taak-336` (EPPlus E21-E24), `taak-338` (closure
-regression proofs), `taak-329` (lost transitive package → direct PackageReference, G10), `amr-remeasure` (AutoMapper corpus:
-TAAK-325 step 6, cats/kavita), `moq-rerun` (TAAK-330 step 5), `polly-rerun` (corpus confirm), `taak-340` (SpecFlow→Reqnroll),
-`taak-341` (xUnit v3), `taak-342` (EF bulk). New fixes 340-342 all touch `Cli.cs`/README: expect merge conflicts there.
+**On main since:** TAAK-329, 338, 342 slice 1, council-18 (council 17/18, TAAK-336, 340, 341 slice 1), amr-remeasure,
+council-19 (TAAK-337, 342b/c, 343). Merge per branch: `verify-head.sh D:/vh/<n>` + green CI.
 
-**Next:** EPPlus corpus re-measure (TAAK-327 step 7), council round 17 on the
-agents' questions, TAAK-304 release 0.3.0 (user go). Agent cap: 10 until 02:10, then 8.
+**Integration branch `integ-1` (agent running):** merges taak-344, 348, 346, 346b, 341b, 349, 342d, 342e, 340b, council-20,
+unifies the blocking-projects output (340b vs 341b) and renames the SpecFlow backlog task to TAAK-353. Merge it next.
+
+**Agents running:** moq-rerun, polly-rerun (corpus rounds).
+
+**Next:** TAAK-352 (IProjectFileMigration async, council X8) after integ-1; TAAK-351 rest (E33 reason with file:line);
+council round 21 on TAAK-342 Q13-14 and TAAK-340 Q9-11; TAAK-342 step 9 and TAAK-340/341 corpus rounds; EPPlus corpus
+re-measure; regenerate `proofs.md` (LF); TAAK-304 release 0.3.0 (user go). Agent cap: 10 until 02:10, then 8.
 
 ## State on 2026-10-27 — start here
 

@@ -337,6 +337,38 @@ public class GenericMapPatternTests
         closed.Sets.Select(s => s[repo.TypeParameters[0]].ToDisplayString()).Order(StringComparer.Ordinal).ShouldBe(["int", "long", "string"]);
     }
 
+    // TAAK-338 (council round 16, A17): a generic extension method called only in reduced form is closed by those calls.
+    [Fact]
+    public void Close_ExtensionCalledOnlyReduced_CollectsTypeArguments()
+    {
+        // Arrange
+        const string Code = """
+            internal class Box { }
+
+            internal static class BoxExtensions
+            {
+                public static T? As<T>(this Box box) => default;
+            }
+
+            internal static class Uses
+            {
+                public static int First(Box box) => box.As<int>();
+
+                public static string? Second(Box box) => box.As<string>();
+            }
+            """;
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(Code, cancellationToken: TestContext.Current.CancellationToken);
+        var compilation = CSharpCompilation.Create("Test", [tree], TestReferences.AutoMapper, new CSharpCompilationOptions(OutputKind.ConsoleApplication));
+        IMethodSymbol method = compilation.GetTypeByMetadataName("BoxExtensions")!.GetMembers("As").OfType<IMethodSymbol>().Single();
+
+        // Act
+        ClosedSets closed = new TypeArgumentClosure([compilation]).Close([method.TypeParameters[0]]);
+
+        // Assert
+        closed.Unresolved.ShouldBeNull();
+        closed.Sets.Select(s => s[method.TypeParameters[0]].ToDisplayString()).Order(StringComparer.Ordinal).ShouldBe(["int", "string"]);
+    }
+
     private static Solution Single(OutputKind kind, params string[] files)
     {
         var workspace = new AdhocWorkspace();

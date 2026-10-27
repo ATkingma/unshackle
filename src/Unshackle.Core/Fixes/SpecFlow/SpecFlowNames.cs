@@ -15,6 +15,11 @@ internal static class SpecFlowNames
 
     public const string NewContainer = "Reqnroll.BoDi";
 
+    // Council round 18, S8: the Autofac plugin, the one SpecFlow plugin with a Reqnroll port (SpecFlow.Autofac → Reqnroll.Autofac).
+    public const string OldAutofac = "SpecFlow.Autofac";
+
+    public const string NewAutofac = "Reqnroll.Autofac";
+
     // Types renamed (SpecFlow → Reqnroll in the name, TableRow → DataTableRow) or moved to another namespace, as full metadata names.
     public static IReadOnlyDictionary<string, string> RenamedTypes { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -73,6 +78,8 @@ internal static class SpecFlowNames
         oldNamespace == OldRoot ? NewRoot
         : oldNamespace.StartsWith(OldRoot + ".", StringComparison.Ordinal) ? NewRoot + oldNamespace[OldRoot.Length..]
         : oldNamespace == OldContainer ? NewContainer
+        : oldNamespace == OldAutofac ? NewAutofac
+        : oldNamespace.StartsWith(OldAutofac + ".", StringComparison.Ordinal) ? NewAutofac + oldNamespace[OldAutofac.Length..]
         : null;
 
     public static bool IsOldNamespace(string name) => NewNamespace(name) is not null;

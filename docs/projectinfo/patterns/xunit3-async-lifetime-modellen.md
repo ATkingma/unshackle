@@ -44,7 +44,8 @@ flowchart TD
     A[Task InitializeAsync/DisposeAsync implementing IAsyncLifetime] --> B{class also IDisposable/IAsyncDisposable?}
     B -- yes --> M1[Manual DualDisposal]
     B -- no --> C{used as a Task somewhere?}
-    C -- yes --> M2[Manual LifetimeResultUsed]
+    C -- yes, not only direct uses --> M2[Manual LifetimeResultUsed]
+    C -- only direct uses --> D2[call sites get .AsTask, X6] --> D
     C -- no --> D{return type written as Task?}
     D -- no --> M3[Manual UnsupportedShape]
     D -- yes --> E{async?}
@@ -58,6 +59,7 @@ flowchart TD
 | Fixed non-async | `returned-task`, `explicit` |
 | Manual `DualDisposal` | `disposable` |
 | Manual `LifetimeResultUsed` | `result-used` |
+| Fixed call site `.AsTask()` | `as-task` |
 
 ## See also
 

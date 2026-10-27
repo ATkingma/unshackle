@@ -1,6 +1,6 @@
 # TAAK-342 — efbulk fix: Z.EntityFramework.Plus/Extensions batch calls → EF Core ExecuteDelete/ExecuteUpdate
 
-**Status**: step 3/9 — first slice done; council round 17 decided (B1-B8), next is step 4
+**Status**: step 8/9 — efbulk.unsupported + B5 package rule done; next is step 9
 **Created**: 2026-10-27
 **Branch / worktree**: `taak-342` (agent worktree under `.claude/worktrees/`)
 **Goal**: an `efbulk` fix that rewrites batch delete/update calls of the Z libraries on EF Core queries to EF Core 7+ native
@@ -21,7 +21,7 @@
   registered in `src/Unshackle.Interface/Cli.cs`, `ProofTests.cs`, `PreFilterContractTests.cs`.
 - Proofs: `src/Unshackle.Tests/Proofs/EfBulk/Delete/`, `.../Update/`. Unit tests: `src/Unshackle.Tests/Core/EfBulk/EfBulkFixTests.cs`.
 - Docs: `docs/projectinfo/patterns/efbulk-{delete,update}-{plan,modellen,verify}.md`, rows in `docs/projectinfo/README.md`.
-- Package policy in this slice: **no package or project file is touched** (`Package` is null); the usings `Z.EntityFramework.Plus` /
+- Package policy (step 8, B5): `EfBulkFix.Package` removes Plus and Extensions, adds nothing; the engine keeps both while any Z symbol is bound (dependents too). The usings `Z.EntityFramework.Plus` /
   `Z.EntityFramework.Extensions` go only where nothing binds to them anymore.
 
 ## Steps
@@ -55,13 +55,17 @@
   entity-member, numeric-arithmetic, plus the existing plus-initializer); string concatenation and any binary operator on string/decimal
   operands → Manual (proofs string-concatenation, decimal-arithmetic); `DateTime.Now` stays Manual (proof static-now); `Math.*` stays Manual
   (method-call). No `DateTime.Now`/`Math.*` SQL proof was added, so neither is widened
-- [ ] 7a. Round 19 B10: string `==`/`!=` with a non-null literal or `const` → Fixed; proof + `EfBulkSqlTests` case with a NULL column row
-- [ ] 7b. Round 19 B11: proofs for captured field, instance property of a captured value, enum member, constant
-- [ ] 7c. Round 19 B12: `efbulk-update-plan.md` / `efbulk-delete-plan.md` name `EfCoreBelow7` as the B3 Warning row
-- [ ] 8. `efbulk.unsupported` (Bulk*, Future, FromCache, AuditTrail as Manual rows; B8: the reason/README names
+- [x] 7a. Round 19 B10: string `==`/`!=` with a non-null literal or `const` → Fixed; proofs string-equality (Fixed), string-equality-captured (Manual) + `EfBulkSqlTests.ExecuteUpdate_StringEqualityWithConstant_MatchesCSharpOnNullColumn` (NULL row: EF Core 10 on SQLite gives C# semantics)
+- [x] 7b. Round 19 B11: proofs captured-field, captured-property, enum-member, constant for captured field, instance property of a captured value, enum member, constant
+- [x] 7c. Round 19 B12: `efbulk-update-plan.md` / `efbulk-delete-plan.md` name `EfCoreBelow7` as the B3 Warning row
+- [x] 8. `efbulk.unsupported` (Bulk*, Future, FromCache, AuditTrail as Manual rows; B8: the reason/README names
   `EFCore.BulkExtensions.MIT` as an alternative, not migrated, after checking its license/maintenance) and B5 package removal at zero Z
   usages per project (dependents counted, Plus and Extensions), else a row with the remaining usages file:line. EFCore.BulkExtensions
   stays out (B2)
+  - Done: `Patterns/UnsupportedPattern.cs` (Manual `Unsupported` per Z call/constructor outside the batch extensions, reason per family,
+    Bulk* names `EFCore.BulkExtensions.MIT`: MIT, 10.22.0 of 2025-12-09, EF Core 10, checked on nuget.org 2026-10-27); `EfBulkFix.Package`;
+    `XmlProjectFileStore` removes `RemovedPackage` when `AddedPackages` is empty. Proofs `Proofs/EfBulk/Unsupported/` (bulk-insert, future,
+    from-cache, audit), unit tests in `EfBulkFixTests` and `XmlProjectFileStoreTests`, docs `efbulk-unsupported-{plan,modellen,verify}.md`
 - [ ] 9. Corpus round (protagonist, Plutus, morenote, NexusStack, Lavcode, OpenttdDiscord); B1: README roadmap line only now (steps 4
   and 6 done); archive
 
@@ -96,6 +100,11 @@
 12. **Project row severity** (step 5): "Warning row" is implemented as a non-blocking project-level Manual row (code `EfCoreBelow7`); the
    report has no separate Warning kind for project rows. Enough?
     **Decision (round 19 B12)**: accepted as the B3 Warning row; documented in the plan. Step 7c.
+13. **Kept-package row name** (step 8): the kept rows name `Z.EntityFramework.Plus.EFCore` (the fix's `RemovedPackage`) also in a project that
+    references only `Z.EntityFramework.Extensions.EFCore`. Conservative: left as is (the row still blocks removal correctly). Name the package the project actually references?
+14. **Usages without a call** (step 8): `efbulk.unsupported` reports calls and constructors only; a Z type in a signature or a property access keeps the
+    package and gets an unmatched-use row only when its file has no Manual row. Conservative: enough for B5 (file:line given for every file). Report every Z
+    symbol per line instead?
 
 ## See also
 

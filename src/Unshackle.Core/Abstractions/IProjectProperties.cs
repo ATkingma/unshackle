@@ -12,4 +12,11 @@ public interface IProjectProperties
     /// </summary>
     /// <param name="projectPath">The project file.</param>
     bool IsPackable(string projectPath);
+
+    /// <summary>
+    /// The ids of the <c>PackageReference</c> (and <c>GlobalPackageReference</c>) items in the project file and the nearest
+    /// <c>Directory.Build.props</c>/<c>.targets</c>, conditions ignored (council round 21, B13). Null when one of those files cannot be read.
+    /// </summary>
+    /// <param name="projectPath">The project file.</param>
+    IReadOnlyList<string>? PackageReferences(string projectPath);
 }

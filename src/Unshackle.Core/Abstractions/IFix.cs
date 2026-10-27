@@ -113,4 +113,18 @@ public interface IFix
     /// of the new library that no pattern can prove away. Null or empty (the default): none.
     /// </summary>
     string? ChangedCodeInfo => null;
+
+    /// <summary>
+    /// The package name the kept-package rows of one project give (council round 21, B13), for a fix whose <see cref="Package"/> removes several
+    /// packages and whose project may reference only some of them. Null or empty (the default): <see cref="PackageMigration.RemovedPackage"/>.
+    /// </summary>
+    /// <param name="projectPath">The project file that keeps the package.</param>
+    string? KeptPackageName(string projectPath) => null;
+
+    /// <summary>
+    /// True when a kept project gets one unmatched-use row per file with every remaining use of the old library outside a Manual row's line,
+    /// also in a file that already has a Manual row (council round 21, B14): "N other usages: lines a, b, c". False (the default): one row per
+    /// use, only in a file without a Manual row. Removal of the package never depends on these rows.
+    /// </summary>
+    bool ReportsEveryRemainingUse => false;
 }

@@ -66,8 +66,8 @@
     Bulk* names `EFCore.BulkExtensions.MIT`: MIT, 10.22.0 of 2025-12-09, EF Core 10, checked on nuget.org 2026-10-27); `EfBulkFix.Package`;
     `XmlProjectFileStore` removes `RemovedPackage` when `AddedPackages` is empty. Proofs `Proofs/EfBulk/Unsupported/` (bulk-insert, future,
     from-cache, audit), unit tests in `EfBulkFixTests` and `XmlProjectFileStoreTests`, docs `efbulk-unsupported-{plan,modellen,verify}.md`
-- [ ] 8a. Round 21 B13: kept row names the Z package(s) the project references (unit test: Extensions-only project)
-- [ ] 8b. Round 21 B14: unmatched-use row per file with any other bound Z symbol, also next to a Manual row, "N other Z usages: lines ..."
+- [x] 8a. Round 21 B13: kept row names the Z package(s) the project references (unit test: Extensions-only project)
+- [x] 8b. Round 21 B14: unmatched-use row per file with any other bound Z symbol, also next to a Manual row, "N other Z usages: lines ..."
 - [ ] 9. Corpus round (protagonist, Plutus, morenote, NexusStack, Lavcode, OpenttdDiscord); B1: README roadmap line only now (steps 4
   and 6 done); archive
 

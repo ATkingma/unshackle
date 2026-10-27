@@ -1,7 +1,22 @@
-# Handover (updated 2026-10-22)
+# Handover (updated 2026-10-27)
 
 Read this first if you are taking over this session. Then `CLAUDE.md` and `claude/docs/INDEX.md`.
 
+
+## State on 2026-10-27 (afternoon) — start here
+
+Main green (CI per push, `verify-head.sh <scratch-dir-on-D:>` before each; C:-temp blocks the test exe). Merged today: TAAK-335
+(Polly transient clause once), TAAK-327 rest (EPPlus flow fields/returns Manual, `epplus.address`), TAAK-325
+(`automapper.generic-destination`, closure follows extension callers), council round 16 (`claude/tasks/COUNCIL-round-16.md`:
+E20-E26, A15-A18, G10, P1). All old agent worktrees removed (3 unmerged `worktree-agent-*` branches kept).
+
+**Agents running (branches, merge each after verify-head + green CI):** `taak-336` (EPPlus E21-E24), `taak-338` (closure
+regression proofs), `taak-329` (lost transitive package → direct PackageReference, G10), `amr-remeasure` (AutoMapper corpus:
+TAAK-325 step 6, cats/kavita), `moq-rerun` (TAAK-330 step 5), `polly-rerun` (corpus confirm), `taak-340` (SpecFlow→Reqnroll),
+`taak-341` (xUnit v3), `taak-342` (EF bulk). New fixes 340-342 all touch `Cli.cs`/README: expect merge conflicts there.
+
+**Next:** TAAK-337 (EPPlus range locals, after 336), EPPlus corpus re-measure (TAAK-327 step 7), council round 17 on the
+agents' questions, TAAK-304 release 0.3.0 (user go). Agent cap: 10 until 02:10, then 8.
 
 ## State on 2026-10-27 — start here
 

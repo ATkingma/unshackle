@@ -17,4 +17,7 @@ public enum EfBulkReason
 
     // Project-level summary next to the per-call NoNativeExecute rows: upgrade EF Core first (council round 17, B3).
     EfCoreBelow7,
+
+    // A Z call or type with no EF Core twin (Bulk*, Future, FromCache, IncludeFilter, Audit): it keeps the Z package (TAAK-342 step 8).
+    Unsupported,
 }

@@ -212,6 +212,36 @@ public class XmlProjectFileStoreTests
     }
 
     [Fact]
+    public async Task EditAsync_NoAddedPackage_RemovesTheRemovedAndAlsoRemovedPackages()
+    {
+        // Arrange: efbulk (TAAK-342 step 8) adds nothing; EF Core stays.
+        _fileSystem.AddFile(Project, new MockFileData(
+            "<Project><ItemGroup><PackageReference Include=\"Microsoft.EntityFrameworkCore\" Version=\"8.0.0\" />" +
+            "<PackageReference Include=\"Z.EntityFramework.Plus.EFCore\" Version=\"8.103.0\" />" +
+            "<PackageReference Include=\"Z.EntityFramework.Extensions.EFCore\" Version=\"8.103.0\" /></ItemGroup></Project>"));
+        var migration = new ProjectMigration
+        {
+            ProjectPath = Project,
+            Package = new PackageMigration
+            {
+                RemovedPackage = "Z.EntityFramework.Plus.EFCore",
+                AlsoRemovedPackages = ["Z.EntityFramework.Extensions.EFCore"],
+                AddedPackages = [],
+            },
+            KeepRemovedPackage = false,
+            RemovedNamespaces = ["Z.EntityFramework.Plus"],
+            AddedNamespaces = [],
+        };
+
+        // Act
+        IReadOnlyList<ProjectFileChange> changes = await EditAsync(migration);
+
+        // Assert
+        changes.ShouldHaveSingleItem().NewText.ShouldBe(
+            "<Project><ItemGroup><PackageReference Include=\"Microsoft.EntityFrameworkCore\" Version=\"8.0.0\" /></ItemGroup></Project>");
+    }
+
+    [Fact]
     public async Task EditAsync_VersionAsChildElement_SwapsIt()
     {
         // Arrange

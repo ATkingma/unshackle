@@ -66,6 +66,13 @@ public class AsyncLifetimePattern : IPattern
             rewritten = rewritten.ReplaceNodes(returned, (original, _) => Wrap(original, model));
         }
 
+        // v3 IAsyncLifetime inherits DisposeAsync from IAsyncDisposable: an explicit implementation must name that interface.
+        if (rewritten.ExplicitInterfaceSpecifier is { } specifier && method.ExplicitInterfaceImplementations.Any(m => m.Name == "DisposeAsync"))
+        {
+            rewritten = rewritten.WithExplicitInterfaceSpecifier(specifier.WithName(SyntaxFactory.IdentifierName("IAsyncDisposable").WithTriviaFrom(specifier.Name)));
+            return PatternResult.Fixed(rewritten.WithReturnType(valueTask.WithTriviaFrom(declaration.ReturnType)), [.. s_taskNamespaces, "System"]);
+        }
+
         return PatternResult.Fixed(rewritten.WithReturnType(valueTask.WithTriviaFrom(declaration.ReturnType)), s_taskNamespaces);
     }
 

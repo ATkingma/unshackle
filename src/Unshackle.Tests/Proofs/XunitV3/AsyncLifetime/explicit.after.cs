@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -11,7 +12,7 @@ public class ServerFixture : IAsyncLifetime
         Started = true;
     }
 
-    ValueTask IAsyncLifetime.DisposeAsync()
+    ValueTask IAsyncDisposable.DisposeAsync()
     {
         Started = false;
         return default;

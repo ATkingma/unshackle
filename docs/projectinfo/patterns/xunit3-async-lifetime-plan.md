@@ -31,7 +31,7 @@ files_expected:
 
 ## Requirements
 
-- **REQ-1**: WHEN an `async Task` lifetime method is found THE SYSTEM SHALL change only its return type to `ValueTask` (keeping a qualified form) (proof `async-methods`, `explicit`).
+- **REQ-1**: WHEN an `async Task` lifetime method is found THE SYSTEM SHALL change its return type to `ValueTask` (keeping a qualified form), and an explicit `IAsyncLifetime.DisposeAsync` to `IAsyncDisposable.DisposeAsync` (v3 inherits it from there) (proof `async-methods`, `explicit`).
 - **REQ-2**: WHEN a non-async lifetime method returns `Task.CompletedTask` or another task THE SYSTEM SHALL return `default` or `new ValueTask(task)` (proof `returned-task`, `explicit`).
 - **REQ-3**: WHEN the class also implements `IDisposable` or `IAsyncDisposable` THE SYSTEM SHALL report Manual `DualDisposal` (proof `disposable`).
 - **REQ-4**: WHEN the method (or the interface member) is used other than as `await x.M()` THE SYSTEM SHALL report Manual `LifetimeResultUsed` (proof `result-used`).

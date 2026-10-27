@@ -1,0 +1,1 @@
+Profile CopyProfile<T>: CopyProfile is public in a packable project (Test), so callers outside the solution may close it with other types. Set `<IsPackable>false</IsPackable>` in Test if this library is not published.

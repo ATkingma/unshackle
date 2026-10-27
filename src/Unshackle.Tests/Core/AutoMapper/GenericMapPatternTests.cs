@@ -151,6 +151,8 @@ public class GenericMapPatternTests
             ManualResult manual = finding.Result.ShouldBeOfType<ManualResult>();
             manual.Code.ShouldBe("GenericMapOpenSet");
             manual.Reason.ShouldContain("is public in a packable project");
+            // A13 (council round 15): the reason names the one-line fix in the project file.
+            manual.Reason.ShouldContain("Set `<IsPackable>false</IsPackable>` in Shop.csproj if this library is not published");
         }
         else
         {

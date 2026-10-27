@@ -98,7 +98,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/COUNCIL-round-14.md` | Council round 14 decisions (Moq kept rows, add-side using rule, B1) |
 | `claude/tasks/archief/TAAK-333-council-14-followups.md` | Council round 14 follow-ups (M10-M13) |
 | `claude/tasks/COUNCIL-round-15.md` | Council round 15 decisions (packability, generic profiles, harness disk check) |
-| `claude/tasks/TAAK-334-council-15-followups.md` | Council round 15 follow-ups (A13, A14, H1) |
+| `claude/tasks/archief/TAAK-334-council-15-followups.md` | Council round 15 follow-ups: A13 IsPackable advice, A14 `automapper.generic-profile`, H1 harness free-disk check |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |
 | `claude/tasks/TAAK-380-scout-identityserver.md` | Scout IdentityServer4 → OpenIddict/Duende (go/no-go research) |

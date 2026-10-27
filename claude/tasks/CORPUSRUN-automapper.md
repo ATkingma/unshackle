@@ -248,8 +248,22 @@ could not restore for lack of disk and are not measured.
 | xipona | 0 / 47 | 969/1193 → 969/1193 | 0 | 32 / 16 |
 | cats, kavita | not measured (disk full) | | | |
 
+All rows of this round are suspect (run on a full disk, council round 15 H1); see "H1 free-disk rule" below.
+
 **0 regressions on 12 repos; Manual→Fixed 0.** The generic-map rows now name the real blocker: letterbook and personalasst
 have the generic member in a class library without `IsPackable`, which the SDK treats as packable (R1). skoruba is blocked
 by a generic profile (`CreateMap<TRole, TRole>`), xipona by a closed type not visible from the test project, jhipster and
 nop by `Map<T>(object)`. Details in `docs/projectinfo/patterns/automapper-generic-map-verify.md` and
 `claude/tasks/TAAK-332-automapper-remeasure.md`.
+
+## H1 free-disk rule (council round 15, TAAK-334)
+
+The in-repo harness (`claude/tools/corpus-am.sh`, also `corpus-moq-am.sh`, `corpus-polly-am.sh`, `corpus-regression.sh`) now checks
+the free space of the corpus disk before each repo: below `MIN_FREE_GB` (default 20) it writes "run incomplete: disk below threshold"
+to `_results/INCOMPLETE.txt`, `one` exits 255 (`list` stops starting repos) and later repos are refused until the file is removed.
+The work copy (with `obj`/`bin`) is deleted when a repo finishes; with `JOBS > 1` also `obj`/`bin` in the source clone. The harness
+copies outside the repo (`<corpus>/corpus-automapper/tools/`, the TAAK-332 copy under `<work>/cam332`) still need the same change.
+
+**Suspect results:** the TAAK-332 after-fix round above ran with JOBS=2 on a full data disk. Its rows are marked suspect and must be
+re-measured (skoruba, letterbook, personalasst first, with the A13 reason and A14 `automapper.generic-profile`); cats and kavita were
+never measured. TAAK-334 did not re-measure: the corpus disk had about 3 GB free, below the threshold.

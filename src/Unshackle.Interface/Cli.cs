@@ -5,6 +5,7 @@ using Spectre.Console;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.AutoMapper;
+using Unshackle.Core.Fixes.EfBulk;
 using Unshackle.Core.Fixes.EPPlus;
 using Unshackle.Core.Fixes.FluentAssertions;
 using Unshackle.Core.Fixes.MassTransit;
@@ -40,6 +41,7 @@ public static class Cli
             new PollyFix(),
             new EPPlusFix(new XmlProjectProperties(fileSystem), new FileConfigKeySearch(fileSystem), assetsReader),
             new MassTransitFix(),
+            new EfBulkFix(),
         ];
         IReportWriter[] reportWriters =
             [new CsvReportWriter(fileSystem), new JsonReportWriter(fileSystem), new MarkdownReportWriter(fileSystem)];

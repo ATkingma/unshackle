@@ -46,8 +46,11 @@ otherwise Manual `GenericProjectionOpenSet`.
 **Out of scope (Manual `GenericProjectionOpenSet`)**
 
 - Everything A11 keeps open (R1/R2, virtual/interface, method group, dynamic, reflection, `typeof(G<>)`, depth > 3, empty set).
-- `ProjectTo<T>` with parameters or members to expand (Kavita's `ProjectToWithProgress`).
+- `ProjectTo<T>` with parameters or members to expand (Kavita's `ProjectToWithProgress`). Council round 16 A18: stays Manual; only one
+  repository needs it and the reason is clear, so no follow-up until the corpus shows more.
 - A closed pair without a Fixed projection (no existing `AToBProjection`, no non-generic `ProjectTo` of the pair, or the pair's projection is Manual).
+  Council round 16 A16: the closure is not fed into the projection pass; that couples two passes and could write projections nobody
+  asked for. Revisit with the corpus numbers.
 - A query element that contains a type parameter inside another generic type, or is `object`/`dynamic`.
 - A closed type argument not visible from the call's project.
 

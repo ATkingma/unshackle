@@ -44,7 +44,7 @@ public static class Cli
             new EPPlusFix(new XmlProjectProperties(fileSystem), new FileConfigKeySearch(fileSystem), assetsReader),
             new MassTransitFix(),
             new EfBulkFix(new XmlProjectProperties(fileSystem)),
-            new SpecFlowFix(),
+            new SpecFlowFix(new XmlProjectProperties(fileSystem)),
             new XunitV3Fix(),
         ];
         IReportWriter[] reportWriters =

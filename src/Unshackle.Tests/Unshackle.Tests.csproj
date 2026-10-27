@@ -16,6 +16,7 @@
     <PackageReference Include="Shouldly" />
     <PackageReference Include="TestableIO.System.IO.Abstractions.TestingHelpers" />
     <PackageReference Include="Basic.Reference.Assemblies.Net100" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
   </ItemGroup>
   <ItemGroup Label="Proof references: de echte types voor het SemanticModel">
     <PackageReference Include="FluentAssertions" />

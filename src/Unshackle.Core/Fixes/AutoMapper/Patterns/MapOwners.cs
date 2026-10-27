@@ -378,6 +378,7 @@ internal class MapOwners
         var genericMap = new GenericMapPattern(projectProperties);
         var mapInto = new MapIntoPattern(projectProperties);
         var projectTo = new ProjectToPattern(projectProperties);
+        var genericDestination = new GenericDestinationPattern(projectProperties);
         List<(ClassDeclarationSyntax Profile, SemanticModel Model, List<MapNode> Nodes)> profiles = [];
         List<(SyntaxNode Call, SemanticModel Model, ISolutionPattern? Pattern)> calls = [];
         List<(SyntaxNode Root, SemanticModel Model)> sources = [];
@@ -410,6 +411,7 @@ internal class MapOwners
             calls.AddRange(genericMap.Find(root, model).Select(n => (n, model, (ISolutionPattern?)genericMap)));
             calls.AddRange(mapInto.Find(root, model).Select(n => (n, model, (ISolutionPattern?)mapInto)));
             calls.AddRange(projectTo.Find(root, model).Select(n => (n, model, (ISolutionPattern?)projectTo)));
+            calls.AddRange(genericDestination.Find(root, model).Select(n => (n, model, (ISolutionPattern?)genericDestination)));
             calls.AddRange(root.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => CreateMapPattern.IsOtherMapCall(i, model)).Select(n => ((SyntaxNode)n, model, (ISolutionPattern?)null)));
         }
 

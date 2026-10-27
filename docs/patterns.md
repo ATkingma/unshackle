@@ -92,6 +92,7 @@ How to run a fix: [usage.md](usage.md). The tables below are generated (`unshack
 | `automapper.generic-profile` | Generic Profile P<T> with CreateMap<T, T>() → B ToB(this A source) per closed type argument (closed subclasses, new P<X>(), AddProfile<P<X>>); open sets are Manual |
 | `automapper.map-into` | mapper.Map(a, b) → a.MapInto(b), calling the MapInto that the profile rewrite writes for CreateMap<A, B>; collections, unknown maps and a maybe-null source or destination are Manual |
 | `automapper.project-to` | query.ProjectTo<B>(mapper.ConfigurationProvider) → query.Select(ProfileExtensions.AToBProjection), an Expression<Func<A, B>> the profile rewrite writes next to ToB; parameters, members to expand and unknown maps are Manual |
+| `automapper.generic-destination` | query.ProjectTo<T>(configuration) on a type parameter → query.Select(typeof(T) == typeof(B) ? (Expression<Func<A, T>>)(object)AToBProjection : …) over the closed type arguments of every caller; open sets are Manual |
 | `automapper.mock-set-up` | Stub of IMapper.Map in a test whose value provably equals the generated mapping → removed (the class under test calls the generated method) |
 | `automapper.unused-imapper` | IMapper field, constructor parameter or local that only served migrated Map calls → removed, with its assignments, null checks and the arguments at every caller |
 | `automapper.add-automapper` | services.AddAutoMapper(...); → removed when no IMapper (or IConfigurationProvider) is used anywhere; otherwise, or when the result is used, Manual |

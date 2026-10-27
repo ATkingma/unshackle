@@ -19,6 +19,8 @@
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="22.3.0" />
     <PackageVersion Include="Basic.Reference.Assemblies.Net100" Version="1.8.12" />
+    <!-- TAAK-325: the generic ProjectTo dispatch must translate like the closed rewrite (ToQueryString on SQLite) -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
   </ItemGroup>
   <ItemGroup Label="Proof references: laatste vrije versies (alleen voor tests)">
     <PackageVersion Include="FluentAssertions" Version="7.2.2" />

@@ -10,7 +10,7 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// query.ProjectTo&lt;B&gt;(mapper.ConfigurationProvider) (and mapper.ProjectTo&lt;B&gt;(query)) on an IQueryable&lt;A&gt; →
 /// query.Select(ProfileExtensions.AToBProjection): the Expression&lt;Func&lt;A, B&gt;&gt; that <see cref="CreateMapPattern"/> writes next
 /// to ToB for a CreateMap&lt;A, B&gt; that such a call uses (see <see cref="Projections"/>). A call to ToB() cannot be translated by EF Core,
-/// an expression with the same member assignments can. ProjectTo with parameters or members to expand, a generic destination and a query
+/// an expression with the same member assignments can. ProjectTo with parameters or members to expand, a generic destination (<see cref="GenericDestinationPattern"/>) and a query
 /// that is no IQueryable&lt;A&gt; are Manual. The IMapper or configuration the call came from stays, like for <see cref="MapCallPattern"/>.
 /// </summary>
 public class ProjectToPattern : ISolutionPattern
@@ -37,13 +37,18 @@ public class ProjectToPattern : ISolutionPattern
         "query.ProjectTo<B>(mapper.ConfigurationProvider) → query.Select(ProfileExtensions.AToBProjection), an Expression<Func<A, B>> the profile rewrite writes next to ToB; parameters, members to expand and unknown maps are Manual";
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        root.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => IsProjectToCall(i, model));
+        root.DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => IsProjectToCall(i, model) && !GenericDestinationPattern.IsGenericCall(i, model));
 
     // Without the solution only a projection the code already has counts.
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
         Check((InvocationExpressionSyntax)node, model, out ExpressionSyntax? query, out ITypeSymbol? source, out ITypeSymbol? destination, out List<(string Name, ExpressionSyntax Value)> parameters) is string problem
             ? PatternResult.Manual(problem)
-            : Existing((InvocationExpressionSyntax)node, model, query!, source!, destination!, parameters) ?? PatternResult.Manual(NoMap(source!, destination!));
+            : Existing(node, model, source!, destination!, parameters) switch
+            {
+                { Problem: { } existingProblem } => PatternResult.Manual(existingProblem),
+                { } existing => Fixed((InvocationExpressionSyntax)node, query!, existing.Projection, existing.Namespaces),
+                null => PatternResult.Manual(NoMap(source!, destination!)),
+            };
 
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
@@ -58,46 +63,62 @@ public class ProjectToPattern : ISolutionPattern
             return PatternResult.Manual(problem);
         }
 
-        if (Existing(invocation, model, query!, source!, destination!, parameters) is { } existing)
+        (string? projectionProblem, string projection, IReadOnlyList<string> namespaces) =
+            await ProjectionAsync(invocation, model, solution, source!, destination!, parameters, requireTarget: false, _projectProperties, cancellationToken);
+        return projectionProblem is not null ? PatternResult.Manual(projectionProblem) : Fixed(invocation, query!, projection, namespaces);
+    }
+
+    /// <summary>
+    /// The projection call text (ProfileExtensions.AToBProjection with its arguments) for the pair A → B as seen from the call, and the namespaces it
+    /// needs; or the reason there is none. requireTarget (TAAK-325, council round 13 A12 "already has a Fixed projection"): a projection the profile
+    /// would write only counts when a ProjectTo with a type of its own uses the pair (TargetsAsync); one the code already has always counts.
+    /// </summary>
+    internal static async Task<(string? Problem, string Projection, IReadOnlyList<string> Namespaces)> ProjectionAsync(SyntaxNode node, SemanticModel model, Solution solution,
+        ITypeSymbol source, ITypeSymbol destination, List<(string Name, ExpressionSyntax Value)> parameters, bool requireTarget, IProjectProperties? projectProperties,
+        CancellationToken cancellationToken)
+    {
+        if (Existing(node, model, source, destination, parameters) is { } existing)
         {
             return existing;
         }
 
-        List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)> generated =
-            await MapCallPattern.GeneratedAsync(solution, model, source!, destination!, _projectProperties, cancellationToken);
-        List<(string Extensions, ClassDeclarationSyntax Profile, SemanticModel Model)> profiles = await ProfilesAsync(solution, model, source!, destination!, _projectProperties, cancellationToken);
-        if (generated.Count == 0 && await MapBlockers.ReasonAsync(solution, model, source!, destination!, _projectProperties, cancellationToken) is { } blocker)
+        if (requireTarget && !(await TargetsAsync(solution, cancellationToken)).Contains(MapIntoPattern.Key(source, destination)))
         {
-            return PatternResult.Manual(blocker);
+            return ($"no ProjectTo<{destination.Name}> on a query of {source.Name} with a type of its own uses the map, so no {Projections.Name(source, destination)} is written for it", "", []);
+        }
+
+        List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)> generated =
+            await MapCallPattern.GeneratedAsync(solution, model, source, destination, projectProperties, cancellationToken);
+        List<(string Extensions, ClassDeclarationSyntax Profile, SemanticModel Model)> profiles = await ProfilesAsync(solution, model, source, destination, projectProperties, cancellationToken);
+        if (generated.Count == 0 && await MapBlockers.ReasonAsync(solution, model, source, destination, projectProperties, cancellationToken) is { } blocker)
+        {
+            return (blocker, "", []);
         }
 
         if (generated.Count == 0 || profiles.Count == 0)
         {
-            return PatternResult.Manual(NoMap(source!, destination!));
+            return (NoMap(source, destination), "", []);
         }
 
         if (generated.Count > 1 || profiles.Count > 1)
         {
-            return PatternResult.Manual(MapBlockers.Several(source!, destination!));
+            return (MapBlockers.Several(source, destination), "", []);
         }
 
         (_, string? ns, bool isInternal, ProjectId project) = generated[0];
         if (isInternal && solution.GetDocument(model.SyntaxTree)?.Project.Id != project)
         {
-            return PatternResult.Manual($"The projection {Projections.Name(source!, destination!)} becomes internal in another project; write it by hand or make the types public.");
+            return ($"The projection {Projections.Name(source, destination)} becomes internal in another project; write it by hand or make the types public.", "", []);
         }
 
         string? callNamespace = model.GetEnclosingSymbol(node.SpanStart, cancellationToken)?.ContainingNamespace is { IsGlobalNamespace: false } current ? current.ToDisplayString() : null;
         bool imported = ns is null || (callNamespace is not null && (callNamespace == ns || callNamespace.StartsWith(ns + ".", StringComparison.Ordinal)));
-        string projection = Projections.Name(source!, destination!);
-        List<(string Name, string Type, bool Optional)> accepted = await ParametersAsync(profiles[0].Profile, profiles[0].Model, solution, MapIntoPattern.Key(source!, destination!), projection, _projectProperties, cancellationToken);
-        (string? argumentProblem, string arguments) = Arguments(parameters, accepted, accepted.Count > 0, model, node.SpanStart, source!, destination!);
-        if (argumentProblem is not null)
-        {
-            return PatternResult.Manual(argumentProblem);
-        }
-
-        return Fixed(invocation, query!, profiles[0].Extensions + "." + projection + arguments, imported ? ["System.Linq"] : ["System.Linq", ns!]);
+        string projection = Projections.Name(source, destination);
+        List<(string Name, string Type, bool Optional)> accepted = await ParametersAsync(profiles[0].Profile, profiles[0].Model, solution, MapIntoPattern.Key(source, destination), projection, projectProperties, cancellationToken);
+        (string? argumentProblem, string arguments) = Arguments(parameters, accepted, accepted.Count > 0, model, node.SpanStart, source, destination);
+        return argumentProblem is not null
+            ? (argumentProblem, "", [])
+            : (null, profiles[0].Extensions + "." + projection + arguments, imported ? ["System.Linq"] : ["System.Linq", ns!]);
     }
 
     // Every AutoMapper ProjectTo: the extension on IQueryable and IMapper.ProjectTo. CreateMapPattern leaves them to this pattern.
@@ -133,7 +154,7 @@ public class ProjectToPattern : ISolutionPattern
     }
 
     // Why the call cannot become query.Select(projection), or null with the query and the types of the map.
-    private static string? Check(InvocationExpressionSyntax invocation, SemanticModel model, out ExpressionSyntax? query, out ITypeSymbol? source, out ITypeSymbol? destination,
+    internal static string? Check(InvocationExpressionSyntax invocation, SemanticModel model, out ExpressionSyntax? query, out ITypeSymbol? source, out ITypeSymbol? destination,
         out List<(string Name, ExpressionSyntax Value)> parameters)
     {
         parameters = [];
@@ -258,7 +279,7 @@ public class ProjectToPattern : ISolutionPattern
     private static string WithParameters(ITypeSymbol source, ITypeSymbol destination) =>
         $"ProjectTo<{destination.Name}> with parameters needs the projection method that the profile of CreateMap<{source.Name}, {destination.Name}> writes, not a projection written by hand; migrate it by hand.";
 
-    private static ITypeSymbol? Element(ITypeSymbol? type) =>
+    internal static ITypeSymbol? Element(ITypeSymbol? type) =>
         type is null ? null : new[] { type }.Concat(type.AllInterfaces)
             .OfType<INamedTypeSymbol>()
             .FirstOrDefault(t => t is { Name: "IQueryable", TypeArguments: [_] } && t.ContainingNamespace?.ToDisplayString() == "System.Linq")
@@ -266,7 +287,7 @@ public class ProjectToPattern : ISolutionPattern
 
     // A static Expression<Func<A, B>> AToBProjection the code already has, a property or a method taking the captured variables of the profile
     // (also one the profile patterns just wrote in this file).
-    private static PatternResult? Existing(InvocationExpressionSyntax node, SemanticModel model, ExpressionSyntax query, ITypeSymbol source, ITypeSymbol destination,
+    private static (string? Problem, string Projection, IReadOnlyList<string> Namespaces)? Existing(SyntaxNode node, SemanticModel model, ITypeSymbol source, ITypeSymbol destination,
         List<(string Name, ExpressionSyntax Value)> parameters)
     {
         string name = Projections.Name(source, destination);
@@ -284,12 +305,12 @@ public class ProjectToPattern : ISolutionPattern
         (string? problem, string arguments) = Arguments(parameters, accepted, found is IMethodSymbol, model, node.SpanStart, source, destination);
         if (problem is not null)
         {
-            return PatternResult.Manual(problem);
+            return (problem, "", []);
         }
 
         string? ns = type.ContainingNamespace is { IsGlobalNamespace: false } typeNamespace ? typeNamespace.ToDisplayString() : null;
         bool visible = model.LookupNamespacesAndTypes(node.SpanStart, name: type.Name).Any(t => SymbolEqualityComparer.Default.Equals(t, type));
-        return Fixed(node, query, type.Name + "." + name + arguments, visible || ns is null ? ["System.Linq"] : ["System.Linq", ns]);
+        return (null, type.Name + "." + name + arguments, visible || ns is null ? ["System.Linq"] : ["System.Linq", ns]);
     }
 
     private static bool IsProjection(ITypeSymbol type, ITypeSymbol source, ITypeSymbol destination) =>
@@ -331,7 +352,7 @@ public class ProjectToPattern : ISolutionPattern
     }
 
     // query.ProjectTo<B>(configuration) → query.Select(projection), keeping the line break and indentation before the dot of a chain.
-    private static PatternResult Fixed(InvocationExpressionSyntax node, ExpressionSyntax query, string projection, IReadOnlyList<string> namespaces)
+    internal static PatternResult Fixed(InvocationExpressionSyntax node, ExpressionSyntax query, string projection, IReadOnlyList<string> namespaces)
     {
         var access = (MemberAccessExpressionSyntax)node.Expression;
         MemberAccessExpressionSyntax select = access.Expression == query

@@ -156,7 +156,7 @@ public class GenericMapPattern : ISolutionPattern
     }
 
     // The closed type as the compilation of the Map call sees it, or null when it is not a plain (non-generic) type visible there.
-    private static ITypeSymbol? Local(ITypeSymbol type, Compilation compilation)
+    internal static ITypeSymbol? Local(ITypeSymbol type, Compilation compilation)
     {
         if (type.SpecialType != SpecialType.None && type is INamedTypeSymbol { IsGenericType: false })
         {

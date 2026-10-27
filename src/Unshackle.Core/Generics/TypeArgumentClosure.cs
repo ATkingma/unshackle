@@ -129,14 +129,21 @@ public class TypeArgumentClosure
                     continue;
                 }
 
+                // TAAK-325: query.ProjectToPage<T, TResult>(...) binds to the reduced extension method, whose id differs from the declaration's; it was
+                // skipped silently. Its constructed unreduced form carries the same type arguments, so it is followed like a static call.
+                if (called.ReducedFrom is not null && called.GetConstructedReducedFrom() is { } unreduced)
+                {
+                    called = unreduced;
+                }
+
                 if (Id(called) != id)
                 {
                     continue;
                 }
 
-                if (called.ReducedFrom is not null || !IsInvoked(reference))
+                if (!IsInvoked(reference))
                 {
-                    return Fail(failure, $"{name} is used as a method group or extension method at {Where(reference)}; its type arguments are not followed");
+                    return Fail(failure, $"{name} is used as a method group at {Where(reference)}; its type arguments are not followed");
                 }
 
                 List<ITypeSymbol> arguments = [.. parameters.Select(p => p.DeclaringMethod is not null ? called.TypeArguments[p.Ordinal] : called.ContainingType.TypeArguments[p.Ordinal])];

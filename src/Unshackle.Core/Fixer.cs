@@ -217,9 +217,14 @@ public class Fixer : IFixer
 
         // TAAK-329, G10: a package that came only with the removed one and is still used gets a direct, pinned reference.
         if (_assetsReader is not null && migrated.Count > 0 && _projectFiles is IProjectFileEditor transitiveEditor
-            && await TransitivePackages.PlanAsync(solution, migrated, _assetsReader, cancellationToken) is { HasEdits: true } transitive)
+            && await TransitivePackages.PlanAsync(solution, migrated, _assetsReader, cancellationToken) is TransitivePackages transitive)
         {
-            projectFileChanges = await ProjectFileMigrations.ApplyAsync(fix, transitive, transitiveEditor, original, findings, projectFileChanges, cancellationToken);
+            // Council round 17 T3: a lost package a project reference brings at another version is Manual, not pinned.
+            findings.AddRange(transitive.Manuals.Select(m => FindingFactory.CreateProjectFinding(m.ProjectPath, fix, m.Result)));
+            if (transitive.HasEdits)
+            {
+                projectFileChanges = await ProjectFileMigrations.ApplyAsync(fix, transitive, transitiveEditor, original, findings, projectFileChanges, cancellationToken);
+            }
         }
 
         findings.AddRange(ProjectInfo(fix, original));

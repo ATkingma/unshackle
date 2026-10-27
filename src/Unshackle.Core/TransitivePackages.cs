@@ -15,12 +15,16 @@ internal class TransitivePackages : IProjectFileMigration
 
     private readonly Dictionary<string, IReadOnlyList<ProjectFileEdit>> _edits;
 
-    private TransitivePackages(Dictionary<string, IReadOnlyList<ProjectFileEdit>> edits)
+    private TransitivePackages(Dictionary<string, IReadOnlyList<ProjectFileEdit>> edits, IReadOnlyList<(string ProjectPath, ManualResult Result)> manuals)
     {
         _edits = edits;
+        Manuals = manuals;
     }
 
     public bool HasEdits => _edits.Count > 0;
+
+    // Council round 17 T3: lost packages that a project reference brings at another version; Manual rows on the project file, no pin.
+    public IReadOnlyList<(string ProjectPath, ManualResult Result)> Manuals { get; }
 
     public IReadOnlyList<ProjectFileEdit> EditsFor(Project project) =>
         project.FilePath is string path && _edits.TryGetValue(path, out IReadOnlyList<ProjectFileEdit>? edits) ? edits : [];
@@ -30,6 +34,7 @@ internal class TransitivePackages : IProjectFileMigration
         Solution solution, IEnumerable<ProjectMigration> migrations, IPackageAssetsReader reader, CancellationToken cancellationToken)
     {
         var edits = new Dictionary<string, IReadOnlyList<ProjectFileEdit>>(s_pathComparer);
+        List<(string, ManualResult)> manuals = [];
         foreach (ProjectMigration migration in migrations.Where(m => !m.KeepRemovedPackage).DistinctBy(m => m.ProjectPath, s_pathComparer))
         {
             PackageAssets assets = reader.Read(migration.ProjectPath);
@@ -53,15 +58,28 @@ internal class TransitivePackages : IProjectFileMigration
             }
 
             List<Project> users = Users(solution, migration.ProjectPath);
-            IReadOnlyList<string> used = await UsedAsync(users, lost, cancellationToken);
-            if (used.Count > 0)
+            IReadOnlyDictionary<string, string> used = await UsedAsync(users, lost, cancellationToken);
+            List<ProjectFileEdit> pins = [];
+            foreach ((string package, string user) in used)
             {
-                edits[migration.ProjectPath] =
-                    [.. used.Select(p => new PackageAddEdit { Name = p, Version = lost[p], KeepsTransitiveOf = migration.Package.RemovedPackage })];
+                if (OtherVersion(assets, package, lost[package]) is PackageRequirement other)
+                {
+                    manuals.Add((migration.ProjectPath, new ManualResult(
+                        $"{package} {lost[package]} came transitively with {migration.Package.RemovedPackage} and `{user}` uses it, but project reference "
+                        + $"{other.RequiredBy} brings {package} {other.Range}; a pin would differ from it. Add the reference by hand with the version you want.")));
+                    continue;
+                }
+
+                pins.Add(new PackageAddEdit { Name = package, Version = lost[package], KeepsTransitiveOf = migration.Package.RemovedPackage, KeptFor = user });
+            }
+
+            if (pins.Count > 0)
+            {
+                edits[migration.ProjectPath] = pins;
             }
         }
 
-        return new TransitivePackages(edits);
+        return new TransitivePackages(edits, manuals);
     }
 
     // The resolved packages reachable only through the removed ones: not declared, and not reachable from any other direct package.
@@ -92,6 +110,15 @@ internal class TransitivePackages : IProjectFileMigration
         return [.. Reach(graph, roots).Where(p => !roots.Contains(p) && !direct.Contains(p) && !kept.Contains(p) && assets.Resolved.ContainsKey(p)).Order(StringComparer.OrdinalIgnoreCase)];
     }
 
+    // Council round 17 T3: a project reference that requires the package at another (lower bound) version than the pin, or null. The same
+    // version is accepted: then the pin only repeats what the reference brings.
+    internal static PackageRequirement? OtherVersion(PackageAssets assets, string package, string version)
+    {
+        ArgumentNullException.ThrowIfNull(assets);
+        Version? pinned = PackageRequirement.ParseVersion(version);
+        return assets.ProjectReferenceRequirements.FirstOrDefault(r => string.Equals(r.Package, package, StringComparison.OrdinalIgnoreCase) && r.LowerBound != pinned);
+    }
+
     private static HashSet<string> Reach(Dictionary<string, List<string>> graph, IEnumerable<string> starts)
     {
         HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
@@ -118,9 +145,10 @@ internal class TransitivePackages : IProjectFileMigration
 
     // The lost packages whose types (or namespaces found only in them) the code names. An assembly belongs to a package by its path in the
     // NuGet packages folder: <id>/<version>/... An assembly from elsewhere (a framework reference pack) does not count: it stays.
-    private static async Task<IReadOnlyList<string>> UsedAsync(IEnumerable<Project> projects, Dictionary<string, string> lost, CancellationToken cancellationToken)
+    // Per package the first project (in solution order) whose code uses it (council round 17 T2: named in the row).
+    private static async Task<IReadOnlyDictionary<string, string>> UsedAsync(IEnumerable<Project> projects, Dictionary<string, string> lost, CancellationToken cancellationToken)
     {
-        HashSet<string> used = new(StringComparer.OrdinalIgnoreCase);
+        SortedDictionary<string, string> used = new(StringComparer.OrdinalIgnoreCase);
         foreach (Project project in projects)
         {
             if (await project.GetCompilationAsync(cancellationToken) is not Compilation compilation)
@@ -137,7 +165,7 @@ internal class TransitivePackages : IProjectFileMigration
                 }
             }
 
-            if (assemblies.Count == 0 || assemblies.Values.All(used.Contains))
+            if (assemblies.Count == 0 || assemblies.Values.All(used.ContainsKey))
             {
                 continue;
             }
@@ -150,13 +178,13 @@ internal class TransitivePackages : IProjectFileMigration
                     SymbolInfo info = model.GetSymbolInfo(name, cancellationToken);
                     if ((info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is ISymbol symbol && Package(symbol, assemblies) is string package)
                     {
-                        used.Add(package);
+                        used.TryAdd(package, project.Name);
                     }
                 }
             }
         }
 
-        return [.. used.Order(StringComparer.OrdinalIgnoreCase)];
+        return used;
     }
 
     private static string? Package(ISymbol symbol, Dictionary<IAssemblySymbol, string> assemblies)

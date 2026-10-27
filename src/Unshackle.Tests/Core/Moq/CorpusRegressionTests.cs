@@ -188,6 +188,62 @@ public class CorpusRegressionTests
         edited.Single(m => m.ProjectPath == "/repo/Unit/Unit.csproj").KeepRemovedPackage.ShouldBeTrue();
     }
 
+    [Fact]
+    public async Task Fixer_HelperKeptForDependent_ReportNamesDependentAndOneRowPerProjectFile()
+    {
+        // Arrange: B2 follow-up (TAAK-330): the helper's row says why it keeps Moq; a kept project's file edit gives no second (Fixed) row.
+        IProjectFileStore projectFiles = Substitute.For<IProjectFileStore>();
+        projectFiles.EditAsync(Arg.Any<IEnumerable<ProjectMigration>>(), Arg.Any<CancellationToken>()).Returns(
+        [
+            new ProjectFileChange { FilePath = "/repo/Testing/Testing.csproj", OldText = "a", NewText = "b" },
+            new ProjectFileChange { FilePath = "/repo/Unit/Unit.csproj", OldText = "a", NewText = "b" },
+        ]);
+        var fixer = new Fixer([new MoqFix(MoqReferences.NSubstituteAssembly)], projectFiles);
+        var testing = ProjectId.CreateNewId();
+        var unit = ProjectId.CreateNewId();
+        Solution solution = new AdhocWorkspace().CurrentSolution
+            .AddProject(Project(testing, "Testing"))
+            .AddProject(Project(unit, "Unit").WithProjectReferences([new ProjectReference(testing)]))
+            .AddDocument(DocumentId.CreateNewId(testing), "Helper.cs", "public interface IClock { int Now(); }\npublic static class Helper { }", filePath: "/repo/Testing/Helper.cs")
+            .AddDocument(DocumentId.CreateNewId(unit), "Test.cs", "using Moq;\npublic class T { public void Use(Mock<IClock> clock) { } }", filePath: "/repo/Unit/Test.cs");
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "moq" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        List<Finding> rows = [.. report.Findings.Where(f => f.PatternId == Fixer.ProjectFilePatternId)];
+        rows.Count(f => f.FilePath == "/repo/Unit/Unit.csproj").ShouldBe(1);
+        rows.Count(f => f.FilePath == "/repo/Testing/Testing.csproj").ShouldBe(1);
+        ManualResult helper = rows.Single(f => f.FilePath == "/repo/Testing/Testing.csproj").Result.ShouldBeOfType<ManualResult>();
+        helper.Reason.ShouldContain("a project that references it still uses it: /repo/Unit/Unit.csproj");
+        helper.Reason.ShouldNotContain("still used in this project");
+    }
+
+    [Fact]
+    public async Task Fixer_QualifiedMockOnManualFinding_RemovesUnusedMoqUsing()
+    {
+        // Arrange: TAAK-330: `Moq.Mock<T>` binds through its qualifier, so it does not keep `using Moq;` alive.
+        const string code = """
+            using Moq;
+            public interface IFactory { int Build(); }
+            public class T
+            {
+                public void Test(Moq.Mock<IFactory> factory)
+                {
+                    factory.Setup(f => f.Build()).Returns(1);
+                }
+            }
+            """;
+
+        // Act
+        (string text, _) = await FixAsync(code);
+
+        // Assert
+        text.ShouldContain("Moq.Mock<IFactory>");
+        text.ShouldNotContain("using Moq;");
+        Errors(text).ShouldBeEmpty();
+    }
+
     private static ProjectInfo Project(ProjectId id, string name) =>
         ProjectInfo.Create(id, VersionStamp.Default, name, name, LanguageNames.CSharp, filePath: $"/repo/{name}/{name}.csproj")
             .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))

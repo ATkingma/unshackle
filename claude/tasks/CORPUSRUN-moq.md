@@ -25,9 +25,14 @@ Only fluentmigrator reaches the test comparison; the other four stop at `build1`
 
 ## Bugs and findings
 
-B1 and the H items are open; B2-B7 are fixed (status line under each).
+B1 is an accepted limitation, the H items are open; B2-B7 are fixed (status line under each). TAAK-330 closed the B2 report leftovers
+(helper row names the dependent, one row per project file) and a qualified `Moq.Mock<T>` no longer keeps `using Moq;`.
 
 ### B1 fluentmigrator: a test that asserts the runtime proxy type name
+
+**Status: accepted limitation** (TAAK-330, pending council confirmation): not Manual-detectable. The proxy name only shows through
+`GetType()`/`ToString()` reached from code the fix cannot follow (here inside FluentMigrator's own `MigrationInfo`); flagging every
+`.Object` that leaves the method would turn the 628 Fixed rows into Manual. No test, no proof: the behaviour is unchanged.
 
 `MigrationRunnerTests.CanListVersions` (`test/FluentMigrator.Tests/Unit/MigrationRunnerTests.cs:642`) expects log lines such as `2011010101: IMigrationProxy`:
 the name of the Castle proxy class Moq generates for `new Mock<IMigration>().Object`. After `moq.create`, `Substitute.For<IMigration>()` is a
@@ -43,7 +48,9 @@ Not provable as equal: the type name of the mock object differs between the libr
 ### B2 ocelot: Moq PackageReference removed from a shared helper project while dependents still use Moq (BUILD-AFTER-FIX-FAILS, 684 CS0246)
 
 **Status: fixed** (`ProjectPackages.KeepForDependents`, shared engine): a project that keeps the package makes every project it references (transitively) keep it too.
-The kept helper project then reports the generic "still used in this project" row; the duplicate acceptance row is not addressed.
+TAAK-330: the kept helper's row now says it stays because a referencing project still uses Moq (and names it), and a kept project
+gets no second (Fixed) project-file row for its own edit.
+Test: `CorpusRegressionTests.Fixer_HelperKeptForDependent_ReportNamesDependentAndOneRowPerProjectFile`.
 Test: `CorpusRegressionTests.Fixer_DependentStillUsesMoqThroughHelperProject_HelperKeepsPackage`.
 
 `testing/Ocelot.Testing.csproj:38` has `<PackageReference Include="Moq" Version="4.21.0" />`; `unit/Ocelot.UnitTests.csproj` and

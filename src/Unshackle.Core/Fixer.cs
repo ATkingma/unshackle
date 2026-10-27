@@ -31,6 +31,9 @@ public class Fixer : IFixer
 
     internal const string KeptSharedPackageReason = " is not migrated but still uses ";
 
+    // A helper project that keeps the package only because a project referencing it still uses it (corpus Moq B2).
+    internal const string KeptForDependentReason = " stays in this project because a project that references it still uses it: ";
+
     internal const string KeptGlobalUsingReason = "The project still uses ";
 
     // Start of the usings row for old code in an inactive #if branch; a later pass over another target framework replaces it (TAAK-223).
@@ -459,7 +462,11 @@ public class Fixer : IFixer
         }
 
         findings.AddRange(migrations.Where(m => m.KeepRemovedPackage).Select(m => FindingFactory.CreateProjectFinding(m.ProjectPath, fix,
-            PatternResult.Manual($"{package.RemovedPackage}{KeptPackageReason}Fix the manual findings and run the fix again."))));
+            PatternResult.Manual(m.KeptForDependent is string dependent
+                ? $"{package.RemovedPackage}{KeptForDependentReason}{dependent}. Migrate that project and run the fix again."
+                : $"{package.RemovedPackage}{KeptPackageReason}Fix the manual findings and run the fix again."))));
+        // A kept project's own file edit (the new package next to the old one) is covered by its kept row: one row per project file.
+        HashSet<string> keptRows = new(migrations.Where(m => m.KeepRemovedPackage).Select(m => m.ProjectPath), StringComparer.OrdinalIgnoreCase);
         // The project-file row alone says that something is left, not where. A file with a Manual finding already has its explanation.
         HashSet<string> removed = [package.RemovedPackage, .. package.AlsoRemovedPackages];
         HashSet<string> explained = [.. findings.Where(f => f.Result is ManualResult).Select(f => f.FilePath)];
@@ -475,7 +482,7 @@ public class Fixer : IFixer
             }
         }
 
-        findings.AddRange(changes.Select(c => FindingFactory.CreateProjectFinding(c.FilePath, fix, c.KeptRemovedPackageFor is string user
+        findings.AddRange(changes.Where(c => c.KeptRemovedPackageFor is not null || !keptRows.Contains(c.FilePath)).Select(c =>FindingFactory.CreateProjectFinding(c.FilePath, fix, c.KeptRemovedPackageFor is string user
             ? PatternResult.Manual($"{user}{KeptSharedPackageReason}{package.RemovedPackage}, so this shared file keeps it next to the new package. " +
                 "Migrate that project and run the fix again.")
             : PatternResult.Fixed(Array.Empty<SyntaxNode>()))));

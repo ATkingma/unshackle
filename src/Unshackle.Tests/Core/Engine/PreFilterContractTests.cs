@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using NSubstitute;
 using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
@@ -41,7 +42,7 @@ public class PreFilterContractTests
         ["Polly"] = (() => new PollyFix(), PollyReferences.Before),
         ["EPPlus"] = (() => new EPPlusFix(), EPPlusReferences.EPPlus),
         ["EfBulk"] = (() => new EfBulkFix(), EfBulkReferences.Before),
-        ["SpecFlow"] = (() => new SpecFlowFix(), SpecFlowReferences.SpecFlow),
+        ["SpecFlow"] = (() => new SpecFlowFix(Substitute.For<IProjectProperties>()), SpecFlowReferences.SpecFlow),
         ["MassTransit"] = (() => new MassTransitFix(), MassTransitReferences.MassTransit),
         ["XunitV3"] = (() => new XunitV3Fix(), XunitV3References.Before),
     };

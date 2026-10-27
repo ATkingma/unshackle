@@ -12,4 +12,11 @@ public interface IProjectProperties
     /// </summary>
     /// <param name="projectPath">The project file.</param>
     bool IsPackable(string projectPath);
+
+    /// <summary>
+    /// The package ids of the <c>PackageReference</c> items in the project file and its nearest <c>Directory.Build.props</c>, conditional
+    /// ones included (council round 21, S11: build-only packages have no reference path). Empty for an unreadable file.
+    /// </summary>
+    /// <param name="projectPath">The project file.</param>
+    IReadOnlyList<string> PackageReferences(string projectPath);
 }

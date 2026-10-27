@@ -252,12 +252,17 @@ public partial class XmlProjectFileStore
         return Applied(run, edit, centralLine, [run.Store(versions)], versions.Path);
     }
 
-    // Null: bump. Stays: nothing to do (already at To or later, or below From). Why: a version that is no plain version stays, with an Info row.
+    // Null: bump. Stays: nothing to do (already at To or later, or below From without BelowFromInfo). Why: below From with BelowFromInfo, or a version that is not a plain version, stays, with an Info row.
     private static (bool Stays, string? Why)? BumpDecision(PackageVersionEdit edit, string declared, string what)
     {
         if (!Version.TryParse(declared.Trim(), out Version? version) || !Version.TryParse(edit.From, out Version? from) || !Version.TryParse(edit.To, out Version? to))
         {
             return (false, $"{what} {declared} stays: it is not a plain version, so Unshackle cannot tell whether it is below {edit.To}; check it by hand.");
+        }
+
+        if (version < from && edit.BelowFromInfo is string below)
+        {
+            return (false, $"{what} {declared} stays: {below}");
         }
 
         return version < from || version >= to ? (true, null) : null;

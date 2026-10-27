@@ -62,6 +62,8 @@ public class XunitV3FixTests
             "PackageReference xunit.extensibility.execution → xunit.v3.extensibility.core 3.2.2",
             "PackageReference xunit.abstractions removed",
         ]);
+        // Council round 20, X9: a 1.x runner is kept with an Info row.
+        edits.OfType<PackageVersionEdit>().ShouldHaveSingleItem().BelowFromInfo.ShouldNotBeNull().ShouldContain("1.x runner");
         (await new XunitV3Fix().ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
     }
 

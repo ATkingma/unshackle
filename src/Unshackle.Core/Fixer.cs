@@ -98,7 +98,35 @@ public class Fixer : IFixer
             return partialReport;
         }
 
-        return new FixReport { Solution = solution, Findings = [.. full.Findings.Select(f => f.Result is FixedResult ? FindingFactory.NotApplied(f) : f)], ProjectFileChanges = [] };
+        return new FixReport
+        {
+            Solution = solution,
+            Findings = [.. full.Findings.Select(f => f.Result is FixedResult ? FindingFactory.NotApplied(f) : f)],
+            ProjectFileChanges = [],
+            BlockingProjects = BlockingProjects(fix, solution, full.Findings),
+        };
+    }
+
+    // Council round 18, X1/S2: per project (by file, a project-file row by its own path), the reasons of the Manual findings that hold the run back.
+    private static List<BlockingProject> BlockingProjects(IFix fix, Solution solution, IReadOnlyList<Finding> findings)
+    {
+        Dictionary<string, string> owners = new(StringComparer.OrdinalIgnoreCase);
+        foreach (Project project in solution.Projects)
+        {
+            string name = project.FilePath ?? project.Name;
+            owners.TryAdd(name, name);
+            foreach (Document document in project.Documents.Where(d => d.FilePath is not null))
+            {
+                owners.TryAdd(document.FilePath!, name);
+            }
+        }
+
+        return
+        [
+            .. findings.Where(f => f.Result is ManualResult && !fix.AllowsPartial(f))
+                .GroupBy(f => owners.GetValueOrDefault(f.FilePath) ?? f.FilePath, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new BlockingProject { Project = g.Key, Reasons = [.. g.Select(f => ((ManualResult)f.Result).Reason).Distinct(StringComparer.Ordinal)] }),
+        ];
     }
 
     // One run of the fix over the solution; seed findings come first in the report (the rows of a partial plan).

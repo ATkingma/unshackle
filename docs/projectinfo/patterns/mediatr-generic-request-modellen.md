@@ -31,7 +31,7 @@ Facts from `src/Unshackle.Core/Fixes/MediatR/Patterns/GenericRequestPattern.cs`.
 | Manual "not a plain" | type argument not a plain named type | `not-plain-argument` |
 | Manual "record, partial or file-local" | declared that way | `derived-generic-record` |
 | Manual "becomes abstract" (typeof) | `typeof(G<>)` | `unbound-typeof` |
-| Manual "open type arguments" | `new G<TParam>` in generic code | `open-creation` |
+| Manual "open type argument; callers not followed" | `new G<TParam>` in generic code | `open-creation` |
 | Manual "not visible from" | a closed type in a project out of `G`'s reach | `RewriteAsync_ClosedTypeDeclaredInOtherProject_Manual` |
 | Fixed: abstract + subclasses + renaming | closed usage (also in other projects) | `closed-uses`, `RewriteAsync_ClosedTypeOnlyUsedInOtherProject_WritesItsSubclass` |
 | Fixed: bridge `Handle` | a concrete handler inherits from an abstract generic base | `_Combined/identified-command-eshop` |

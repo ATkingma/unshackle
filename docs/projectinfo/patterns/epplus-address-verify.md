@@ -19,6 +19,7 @@
 | REQ-5 | Met     | proof `Address/start-cell` (manual) |
 | REQ-6 | Met     | `Address/_Combined/range-local` (`StylesCombinedProofTests`, `EPPlusHarnessProofTests`) (TAAK-337) |
 | REQ-7 | Met     | proof `Address/range-local-reassigned` (manual) (TAAK-337) |
+| REQ-8 | Met     | `EPPlusFixTests.Fix_AddressReadInMemberReportedByUnsupported_OneRowWithAddressReason`; proof `Unsupported/address-folded` (manual) (TAAK-346 step 2a) |
 
 ## Build and tests
 

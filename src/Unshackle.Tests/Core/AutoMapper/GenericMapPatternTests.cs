@@ -127,6 +127,28 @@ public class GenericMapPatternTests
         manual.Reason.ShouldContain(reason);
     }
 
+    [Fact]
+    public async Task FixAsync_TwoOpenCallsInOneSet_EachNamesItsOwnBlocker()
+    {
+        // Arrange: two generic Map calls of the same pair, each open for a reason of its own (TAAK-348).
+        string reader = Reader.Replace("ACCESS", "internal").Replace("MODIFIER ", "virtual ").Replace(
+            "=> _mapper.Map<TResult>(order);",
+            "=> _mapper.Map<TResult>(order);\n\n    public void Touch<TResult>(Order order)\n    {\n        _mapper.Map<TResult>(order);\n    }",
+            StringComparison.Ordinal);
+        Solution solution = Single(OutputKind.DynamicallyLinkedLibrary, Types, reader, Callers);
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        List<ManualResult> manual = [.. report.Findings.Where(f => f.PatternId == "automapper.generic-map").Select(f => f.Result.ShouldBeOfType<ManualResult>())];
+        manual.Count.ShouldBe(2, Reasons(report));
+        manual.ShouldAllBe(m => m.Code == "GenericMapOpenSet");
+        manual.ShouldAllBe(m => !m.Reason.Contains("the call at", StringComparison.Ordinal), Reasons(report));
+        manual.ShouldContain(m => m.Reason.Contains("virtual, an override or an interface member", StringComparison.Ordinal), Reasons(report));
+        manual.ShouldContain(m => m.Reason.Contains("the result of Map is not used", StringComparison.Ordinal), Reasons(report));
+    }
+
     // TAAK-324: with the project properties (Cli wires XmlProjectProperties) a public generic Map<T> in a library with IsPackable=false is closed,
     // where the guess from the compilation keeps it open; a packable library stays open.
     [Theory]

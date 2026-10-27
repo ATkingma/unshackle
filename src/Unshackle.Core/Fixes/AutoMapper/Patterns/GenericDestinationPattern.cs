@@ -54,8 +54,9 @@ public class GenericDestinationPattern : ISolutionPattern
         PatternResult own = await DispatchAsync((InvocationExpressionSyntax)node, model, solution, _projectProperties, cancellationToken);
         return await MapOwners.KeptCallAsync(node, model, solution, _projectProperties, cancellationToken) switch
         {
-            ManualResult { Code: null } kept when own is ManualResult { Code: nameof(GenericDestinationCode.GenericProjectionOpenSet) } =>
-                kept with { Code = nameof(GenericDestinationCode.GenericProjectionOpenSet) },
+            // The kept reason of the pair names the first blocking call of the set; the row keeps its own blocker (TAAK-348).
+            ManualResult { Code: null } kept when own is ManualResult { Code: nameof(GenericDestinationCode.GenericProjectionOpenSet) } open =>
+                kept with { Code = nameof(GenericDestinationCode.GenericProjectionOpenSet), Reason = open.Reason },
             { } kept => kept,
             null => own,
         };
@@ -85,7 +86,8 @@ public class GenericDestinationPattern : ISolutionPattern
         }
 
         ITypeSymbol? source = ProjectToPattern.Element(model.GetTypeInfo(query, cancellationToken).Type);
-        string call = $"ProjectTo<{destination.Name}> from {source?.ToDisplayString() ?? "?"}";
+        // A non-generic IQueryable has no element type; name it rather than print a placeholder (TAAK-348).
+        string call = $"ProjectTo<{destination.Name}> from {(source is null ? "an untyped IQueryable" : source.ToDisplayString())}";
         if (source is null || source.TypeKind is TypeKind.Error or TypeKind.Dynamic || source.SpecialType == SpecialType.System_Object
             || (source is not ITypeParameterSymbol && GenericUses.ContainsTypeParameter(source)))
         {

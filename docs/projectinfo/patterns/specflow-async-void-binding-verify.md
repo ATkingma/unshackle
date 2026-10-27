@@ -28,6 +28,10 @@ None.
 | Build | `dotnet build` | passed |
 | Tests | `dotnet test` | all green |
 
+## Council round 18 (S3)
+
+The reason now reads "Reqnroll awaits this; change it to async Task by hand and check ordering". Proof text updated.
+
 ## See also
 
 - [specflow-async-void-binding-plan.md](specflow-async-void-binding-plan.md)

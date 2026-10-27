@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "epplus-address"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
 files_expected:
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/AddressPattern.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/WorkbookUses.cs
@@ -57,6 +57,7 @@ epplus.address: `ws.Cells[..].Rows` / `.Columns` / `.Start.Row` / `.End.Column` 
 | REQ-2 | `.Start`/`.End` `.Row`/`.Column` become `.RangeAddress.FirstAddress`/`LastAddress` `.RowNumber`/`.ColumnNumber`. |
 | REQ-3 | With the full fix the result writes the same workbook (harness), reversed int range included. |
 | REQ-4 | A single cell or reversed literal address is Manual `UnmappedAddress`. |
+| REQ-8 | (R3, council round 19) An `UnmappedAddress` read in a member `epplus.unsupported` reports anyway gets no row of its own: its reason is folded into that one row ("Also epplus.address UnmappedAddress: ..."), as E31; the summary counts the node once. |
 | REQ-5 | A bare `.Start`/`.End` is Manual `UnmappedAddress`. |
 | REQ-6 | (E25) An address read on a range local declared once from a mapped `Cells[..]` is Fixed and the local becomes a ClosedXML range; the harness writes the same workbook. |
 | REQ-7 | (E25) A range local that is written again is Manual `UnmappedAddress`. |

@@ -1,6 +1,8 @@
 using Microsoft.CodeAnalysis;
+using NSubstitute;
 using Shouldly;
 using Unshackle.Core;
+using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.EfBulk;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
@@ -215,6 +217,72 @@ public class EfBulkFixTests
         report.Findings.ShouldContain(f => f.PatternId == "efbulk.delete" && f.Result is FixedResult);
         text.ShouldContain("using Z.EntityFramework.Plus;");
         text.ShouldContain("db.Orders.ExecuteDelete() + db.Orders.Future().Count()");
+    }
+
+    [Fact]
+    public async Task FixAsync_NoZUsageLeft_RemovesBothZPackages()
+    {
+        // Arrange: council round 17, B5.
+        IProjectFileStore store = Store();
+
+        // Act
+        await RunWithStoreAsync(Source("db.Orders.Delete()"), store);
+
+        // Assert
+        await store.Received(1).EditAsync(
+            Arg.Is<IEnumerable<ProjectMigration>>(m => !m.Single().KeepRemovedPackage
+                && m.Single().Package.RemovedPackage == "Z.EntityFramework.Plus.EFCore"
+                && m.Single().Package.AlsoRemovedPackages.Single() == "Z.EntityFramework.Extensions.EFCore"
+                && m.Single().Package.AddedPackages.Count == 0),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task FixAsync_FutureLeft_KeepsThePackageAndReportsTheCallWithItsLine()
+    {
+        // Arrange
+        IProjectFileStore store = Store();
+
+        // Act
+        FixReport report = await RunWithStoreAsync(Source("db.Orders.Delete() + db.Orders.Future().Count()"), store);
+
+        // Assert
+        await store.Received(1).EditAsync(Arg.Is<IEnumerable<ProjectMigration>>(m => m.Single().KeepRemovedPackage), Arg.Any<CancellationToken>());
+        Finding future = report.Findings.Single(f => f.PatternId == "efbulk.unsupported");
+        future.Line.ShouldBe(22);
+        ManualResult result = future.Result.ShouldBeOfType<ManualResult>();
+        result.Code.ShouldBe(nameof(EfBulkReason.Unsupported));
+        result.Reason.ShouldContain("'db.Orders.Future()'");
+        report.Findings.ShouldContain(f => f.FilePath == "Shop.csproj" && f.Result is ManualResult);
+    }
+
+    [Fact]
+    public async Task FixAsync_BulkInsert_IsManualAndNamesTheMitFork()
+    {
+        // Arrange
+        string code = Source("1", "db.BulkInsert(new System.Collections.Generic.List<Order>());");
+
+        // Act
+        FixReport report = await RunAsync(code, EfBulkReferences.Before);
+
+        // Assert
+        ManualResult result = report.Findings.ShouldHaveSingleItem().Result.ShouldBeOfType<ManualResult>();
+        result.Code.ShouldBe(nameof(EfBulkReason.Unsupported));
+        result.Reason.ShouldContain("EFCore.BulkExtensions.MIT");
+    }
+
+    private static IProjectFileStore Store()
+    {
+        IProjectFileStore store = Substitute.For<IProjectFileStore>();
+        store.EditAsync(Arg.Any<IEnumerable<ProjectMigration>>(), Arg.Any<CancellationToken>()).Returns([]);
+        return store;
+    }
+
+    private static Task<FixReport> RunWithStoreAsync(string code, IProjectFileStore store)
+    {
+        Solution solution = TestSolution.Create(code, EfBulkReferences.Before);
+        solution = solution.WithProjectFilePath(solution.ProjectIds.Single(), "Shop.csproj");
+        return new Fixer([new EfBulkFix()], store).FixAsync(solution, new FixRequest { FixId = "efbulk" }, TestContext.Current.CancellationToken);
     }
 
     private static string Source(string call, string local = "") => $$"""

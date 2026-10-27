@@ -4,16 +4,9 @@ namespace Reports;
 
 public class Report
 {
-    private readonly ExcelWorksheet _sheet;
-
-    public Report(ExcelWorksheet sheet)
+    public void Write(ExcelPackage package)
     {
-        _sheet = sheet;
-    }
-
-    public void Write()
-    {
-        Fill(_sheet);
+        Fill(package.Workbook.Worksheets[1]);
     }
 
     private static void Fill(ExcelWorksheet sheet)

@@ -16,7 +16,7 @@ public class StylesCombinedProofTests
 {
     private static readonly string s_proofsDirectory = Path.Combine(AppContext.BaseDirectory, "Proofs", "EPPlus");
 
-    private static readonly string[] s_rows = ["Styles", "Layout", "Dimension", "LoadFrom", "FlowTypes"];
+    private static readonly string[] s_rows = ["Styles", "Layout", "Dimension", "LoadFrom", "FlowTypes", "Address"];
 
     public static TheoryData<string> Cases() =>
         [.. s_rows.SelectMany(row => Directory.EnumerateFiles(Path.Combine(s_proofsDirectory, row, "_Combined"), "*.before.cs"))

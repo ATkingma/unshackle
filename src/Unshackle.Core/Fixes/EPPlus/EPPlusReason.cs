@@ -24,4 +24,7 @@ public enum EPPlusReason
     FlowMemberNotPrivate,
     FlowUseNotMigrated,
     FlowCallerNotMigrated,
+    FlowFieldNotMapped,
+    FlowReturnNotMapped,
+    UnmappedAddress,
 }

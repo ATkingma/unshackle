@@ -35,6 +35,11 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
+    Z[field or method found] --> Y{field of an EPPlus type?}
+    Y -- yes --> MF[Manual FlowFieldNotMapped]
+    Y -- no --> X{EPPlus return type?}
+    X -- yes --> MR[Manual FlowReturnNotMapped]
+    X -- no --> A
     A[method with an ExcelWorksheet parameter] --> B{private, ordinary, non-partial type, has body?}
     B -- no --> M1[Manual FlowMemberNotPrivate]
     B -- yes --> C{one by-value worksheet, no other EPPlus type?}

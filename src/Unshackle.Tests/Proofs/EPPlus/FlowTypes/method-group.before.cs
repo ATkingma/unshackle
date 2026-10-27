@@ -5,7 +5,7 @@ namespace Reports;
 
 public static class Report
 {
-    public static Action<ExcelWorksheet> Filler() => Fill;
+    public static Delegate Filler() => (Action<ExcelWorksheet>)Fill;
 
     private static void Fill(ExcelWorksheet sheet)
     {

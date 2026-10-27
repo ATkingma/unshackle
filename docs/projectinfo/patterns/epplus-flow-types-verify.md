@@ -18,6 +18,8 @@
 | REQ-4 | Met     | proof `FlowTypes/unfixed-use` (manual, `CellReadDiffers`) |
 | REQ-5 | Met     | proof `FlowTypes/unfixed-caller` (manual) |
 | REQ-6 | Met     | proof `FlowTypes/method-group` (manual) |
+| REQ-7 | Met     | proof `FlowTypes/field` (manual, `FlowFieldNotMapped`) |
+| REQ-8 | Met     | proof `FlowTypes/return` (manual, `FlowReturnNotMapped`) |
 
 ## Build and tests
 
@@ -26,7 +28,8 @@
 
 ## Deviations
 
-- Only parameters; fields and return types (E18 step 1) are left for a council answer (TAAK-327 Council questions).
+- Only parameters are Fixed. Fields and return types (E18 step 1 asks for after proofs) are Manual with their own codes until the council answers questions 2 and 3 in TAAK-327 (conservative choice).
+- `unfixed-caller` now passes `package.Workbook.Worksheets[1]` instead of a field, and `method-group` returns `Delegate`: the field and the `Action<ExcelWorksheet>` return type are now Manual for their own reason.
 - A Manual helper is also reported by `epplus.unsupported` (two rows for one method); both Manual, so AllOrNothing is unchanged.
 - Diagrams are inline Mermaid instead of D2/PNG under `img/`.
 

@@ -211,6 +211,7 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `epplus.dimension` | [plan](patterns/epplus-dimension-plan.md) | [models](patterns/epplus-dimension-modellen.md) | [verify](patterns/epplus-dimension-verify.md) | TAAK-309 |
 | `epplus.load-from` | [plan](patterns/epplus-load-from-plan.md) | [models](patterns/epplus-load-from-modellen.md) | [verify](patterns/epplus-load-from-verify.md) | TAAK-309 |
 | `epplus.flow-types` | [plan](patterns/epplus-flow-types-plan.md) | [models](patterns/epplus-flow-types-modellen.md) | [verify](patterns/epplus-flow-types-verify.md) | TAAK-327 |
+| `epplus.address` | [plan](patterns/epplus-address-plan.md) | [models](patterns/epplus-address-modellen.md) | [verify](patterns/epplus-address-verify.md) | TAAK-327 |
 | `epplus.unsupported` | [plan](patterns/epplus-unsupported-plan.md) | [models](patterns/epplus-unsupported-modellen.md) | [verify](patterns/epplus-unsupported-verify.md) | TAAK-309 |
 | `masstransit.registration` | [plan](patterns/masstransit-registration-plan.md) | [models](patterns/masstransit-registration-modellen.md) | [verify](patterns/masstransit-registration-verify.md) | TAAK-310 |
 | `masstransit.transport` | [plan](patterns/masstransit-transport-plan.md) | [models](patterns/masstransit-transport-modellen.md) | [verify](patterns/masstransit-transport-verify.md) | TAAK-310 |

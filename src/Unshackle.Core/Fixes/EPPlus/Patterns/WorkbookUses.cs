@@ -118,7 +118,9 @@ internal class WorkbookUses
         bool value = cell.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Value" } access
             && access.Parent is AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax } assignment
             && assignment.Left == access && IsCovered(assignment.Right);
-        if (!styled && !value && !merged && !inserted)
+        // range.RowCount() / range.RangeAddress.FirstAddress.RowNumber as AddressPattern writes it for .Rows / .Start.Row (TAAK-327, E18 step 2).
+        bool addressed = !single && IsAddressRead(cell);
+        if (!styled && !value && !merged && !inserted && !addressed)
         {
             return false;
         }
@@ -189,8 +191,17 @@ internal class WorkbookUses
         }
     }
 
+    private static bool IsAddressRead(ExpressionSyntax range) =>
+        range.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RowCount" or "ColumnCount" } count && count.Expression == range
+            && count.Parent is InvocationExpressionSyntax { ArgumentList.Arguments.Count: 0 }
+        || range.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RangeAddress" } address && address.Expression == range
+            && address.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "FirstAddress" or "LastAddress" } corner
+            && corner.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RowNumber" or "ColumnNumber" };
+
     private static bool IsRowOrColumnNumber(ExpressionSyntax value) =>
-        value is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RowNumber" or "ColumnNumber", Expression: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "LastRowUsed" or "LastColumnUsed" or "FirstRowUsed" or "FirstColumnUsed" } } } };
+        value is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RowCount" or "ColumnCount", Expression: ElementAccessExpressionSyntax range } } && IsAddressRead(range)
+        || value is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RowNumber" or "ColumnNumber", Expression: MemberAccessExpressionSyntax { Expression: MemberAccessExpressionSyntax { Expression: ElementAccessExpressionSyntax corner } } } && IsAddressRead(corner)
+        || value is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RowNumber" or "ColumnNumber", Expression: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "LastRowUsed" or "LastColumnUsed" or "FirstRowUsed" or "FirstColumnUsed" } } } };
 
     private static bool RoundTripsIn15Digits(double value) =>
         double.Parse(value.ToString("G15", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture).Equals(value);

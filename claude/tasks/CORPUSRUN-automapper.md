@@ -267,3 +267,37 @@ copies outside the repo (`<corpus>/corpus-automapper/tools/`, the TAAK-332 copy 
 **Suspect results:** the TAAK-332 after-fix round above ran with JOBS=2 on a full data disk. Its rows are marked suspect and must be
 re-measured (skoruba, letterbook, personalasst first, with the A13 reason and A14 `automapper.generic-profile`); cats and kavita were
 never measured. TAAK-334 did not re-measure: the corpus disk had about 3 GB free, below the threshold.
+
+## Re-measure cats, kavita, neozhu with main 07552c5 (TAAK-325 step 6, TAAK-332, 2026-10-27)
+
+Windows, tool published from 07552c5 (includes `automapper.generic-destination`). Harness copy with the H1 rule added (stop below
+20 GB free before each repo; never triggered: about 110 GB free throughout), own result dir and work root, JOBS=1, TEMP/TMP on the
+data disk, NuGet caches under `<corpus>/corpus-automapper/`. cats was missing from `src/` and was re-fetched at the pinned commit
+8e93a2a (tarball, same sha as `repos.txt`). Base from `_results/base`.
+
+| Repo | Fixed / Manual | previous (round) | tests before → after (pass/total) | regressions | flaky / missing |
+| --- | --- | --- | --- | ---: | --- |
+| cats | 0 / 139 | 0 / 137 (4661eba scan; 7c0db29 not measured) | 309/309 → 309/309 | 0 | – |
+| kavita | 0 / 169 | 0 / 169 (TAAK-258 after; 7c0db29 not measured) | 3305/3326 → 3305/3326 | 0 | 28 / 14 (as base) |
+| neozhu | 0 / 64 | 0 / 64 (7c0db29, suspect) | 13/42 → 13/42 | 0 | – |
+
+**0 regressions, Manual→Fixed 0.** All three builds after the fix succeed. `generic-destination` finds the generic `ProjectTo<T>`
+helpers (cats 1, kavita 2, neozhu 2 rows; they were `project-to` rows before, so `project-to` drops by the same count) but every
+one stays Manual, so the `project-to` rows that route through them stay Manual too:
+
+- cats `QueryableExtensions.ProjectToPaginatedDataAsync` (36 `project-to` rows depend on it): public in packable
+  `Cfo.Cats.Application` (no `IsPackable`), R1 as for letterbook/personalasst (TAAK-332 council question 1).
+- kavita `ProjectToExtensions.ProjectToWithProgress` (both overloads): `ProjectTo<T>` with parameters (`new { userId }`); stays
+  Manual by decision A18.
+- neozhu `MappingExtensions.ProjectToListAsync<TDestination>(this IQueryable, ...)`: the source is a non-generic `IQueryable`, so
+  the source type is unknown; correct Manual. `QueryableExtensions.cs:54` is in the same open set.
+
+The neozhu 7c0db29 row (0 / 64, 0 regressions) is confirmed on a disk with ample space, so it is no longer suspect.
+
+Findings (no bugs in rewrites; report wording only):
+
+1. Reason text shows `from ?` when the source type is unknown (neozhu `MappingExtensions.cs:24`: "ProjectTo<TDestination> from ?:
+   the query is no IQueryable<T> ..."). Readable but the `?` looks like a formatting glitch; suggest "from a non-generic IQueryable".
+2. In an open set every member cites the first blocking call, not its own (kavita `ProjectToExtensions.cs:21` says "the call at
+   ProjectToExtensions.cs:14"; neozhu `QueryableExtensions.cs:54` cites `MappingExtensions.cs:24` and the map `T → TResult`
+   while the cited call maps `? → TDestination`). Correct outcome, but a user fixing line 54 is sent to another file.

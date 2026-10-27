@@ -1,6 +1,6 @@
 # TAAK-325 — AutoMapper generic destination (`automapper.generic-destination`)
 
-**Status**: steps 1-5 done (branch `taak-325`); step 6 corpus re-measure open
+**Status**: done (step 6 measured at 07552c5)
 **Created**: 2026-10-27
 **Goal**: close `ProjectTo<T>` (and `Map` with a type-parameter destination) per type argument, as council round 13 A12 decides, so generic paging/query helpers stop holding every projection on AutoMapper.
 
@@ -29,7 +29,7 @@
 - [x] 3. Proofs in `src/Unshackle.Tests/Proofs/AutoMapper/GenericDestination/`: `two-callers`, `paging-helper` (after); `packable-paging-helper` (moved from `ProjectTo/generic`), `no-projection`, `parameters` (moved from `ProjectTo/parameters-generic`) (manual); unit tests `GenericDestinationPatternTests`
 - [x] 4. `GenericDestinationTranslationTests`: `ToQueryString()` of the selector equals the closed rewrite on EF Core SQLite in-memory
 - [x] 5. KingmaDoc plan/models/verify, README row, `docs/patterns.md`
-- [ ] 6. Corpus re-measure (cats, kavita, neozhu have `project-to` rows)
+- [x] 6. Corpus re-measure (cats, kavita, neozhu have `project-to` rows): 0 Fixed, 0 regressions; all generic helpers Manual (R1, parameters, non-generic `IQueryable`), see `CORPUSRUN-automapper.md` (07552c5 round)
 
 ## Council questions
 

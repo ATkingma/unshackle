@@ -226,6 +226,12 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `masstransit.saga` | [plan](patterns/masstransit-saga-plan.md) | [models](patterns/masstransit-saga-modellen.md) | [verify](patterns/masstransit-saga-verify.md) | TAAK-310 |
 | `masstransit.request-client` | [plan](patterns/masstransit-request-client-plan.md) | [models](patterns/masstransit-request-client-modellen.md) | [verify](patterns/masstransit-request-client-verify.md) | TAAK-310 |
 | `masstransit.publish-send` | [plan](patterns/masstransit-publish-send-plan.md) | [models](patterns/masstransit-publish-send-modellen.md) | [verify](patterns/masstransit-publish-send-verify.md) | TAAK-310 |
+| `specflow.namespace` | [plan](patterns/specflow-namespace-plan.md) | [models](patterns/specflow-namespace-modellen.md) | [verify](patterns/specflow-namespace-verify.md) | TAAK-340 |
+| `specflow.renamed-type` | [plan](patterns/specflow-renamed-type-plan.md) | [models](patterns/specflow-renamed-type-modellen.md) | [verify](patterns/specflow-renamed-type-verify.md) | TAAK-340 |
+| `specflow.combined-tags` | [plan](patterns/specflow-combined-tags-plan.md) | [models](patterns/specflow-combined-tags-modellen.md) | [verify](patterns/specflow-combined-tags-verify.md) | TAAK-340 |
+| `specflow.pending` | [plan](patterns/specflow-pending-plan.md) | [models](patterns/specflow-pending-modellen.md) | [verify](patterns/specflow-pending-verify.md) | TAAK-340 |
+| `specflow.string-step-call` | [plan](patterns/specflow-string-step-call-plan.md) | [models](patterns/specflow-string-step-call-modellen.md) | [verify](patterns/specflow-string-step-call-verify.md) | TAAK-340 |
+| `specflow.async-void-binding` | [plan](patterns/specflow-async-void-binding-plan.md) | [models](patterns/specflow-async-void-binding-modellen.md) | [verify](patterns/specflow-async-void-binding-verify.md) | TAAK-340 |
 
 ## See also
 

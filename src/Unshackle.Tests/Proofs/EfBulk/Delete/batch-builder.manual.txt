@@ -1,1 +1,1 @@
-BatchOptions
+the batch options BatchSize

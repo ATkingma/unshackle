@@ -55,5 +55,5 @@
 - `claude/tasks/TAAK-346-epplus-flow-rows.md` — follow-up
 - `claude/tasks/COUNCIL-round-16.md`
 - `claude/tasks/TAAK-327-epplus-flow-types.md`
-- `claude/tasks/TAAK-337-epplus-range-locals.md`
+- `claude/tasks/archief/TAAK-337-epplus-range-locals.md`
 - `docs/projectinfo/patterns/epplus-flow-types-plan.md`

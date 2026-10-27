@@ -47,7 +47,13 @@ flowchart TD
     XR -- yes --> XC{every caller passes a migrated package?}
     XC -- no --> M4
     XC -- yes --> OKR[Fixed: IXLWorksheet return, XLWorkbook parameter]
-    X -- no --> A
+    X -- no --> R{E25: ExcelRange parameter and no worksheet parameter?}
+    R -- yes --> RP{private helper, one by-value range, invoked only, only address reads?}
+    RP -- no --> M2
+    RP -- yes --> RC{every caller passes a migrated range?}
+    RC -- no --> M4
+    RC -- yes --> OKG[Fixed: IXLRange parameter, address reads rewritten]
+    R -- no --> A
     A[method with an ExcelWorksheet parameter] --> B{private, ordinary, non-partial type, has body?}
     B -- no --> M1[Manual FlowMemberNotPrivate]
     B -- yes --> C{one by-value worksheet, no other EPPlus type?}

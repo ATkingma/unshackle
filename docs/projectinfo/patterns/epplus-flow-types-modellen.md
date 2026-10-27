@@ -7,13 +7,15 @@ Facts from `src/Unshackle.Core/Fixes/EPPlus/Patterns/FlowTypesPattern.cs` and `s
 ```mermaid
 classDiagram
     class IPattern
-    class FlowTypesPattern { Find(root, model); Rewrite(node, model); Migratable(method, model) }
-    class WorkbookUses { WorkbookUses(model, scope, IParameterSymbol); Map(); Replacements }
+    class FlowTypesPattern { Find(root, model); Rewrite(node, model); Migratable(method, model); MigratableField(field, model); MigratableReturn(method, model) }
+    class WorkbookUses { WorkbookUses(model, scope, IParameterSymbol, chain); Map(); Replacements }
+    class UnsupportedPattern
+    UnsupportedPattern ..> FlowTypesPattern : Find (E24, skip Manual nodes)
     class PackagePattern
     IPattern <|.. FlowTypesPattern
     FlowTypesPattern ..> WorkbookUses
     PackagePattern ..> WorkbookUses
-    WorkbookUses ..> FlowTypesPattern : IsFlowArgument → Migratable
+    WorkbookUses ..> FlowTypesPattern : IsFlowArgument / field write / return argument
     EPPlusFix o-- FlowTypesPattern
 ```
 
@@ -36,9 +38,15 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     Z[field or method found] --> Y{field of an EPPlus type?}
-    Y -- yes --> MF[Manual FlowFieldNotMapped]
+    Y -- yes --> YF{E21: private worksheet field, every write a migrated package's sheet in its scope, other uses Name or later in that scope?}
+    YF -- no --> MF[Manual FlowFieldNotMapped]
+    YF -- yes --> OKF[Fixed: IXLWorksheet field]
     Y -- no --> X{EPPlus return type?}
-    X -- yes --> MR[Manual FlowReturnNotMapped]
+    X -- yes --> XR{E22: private, one ExcelPackage parameter, returns its Workbook.Worksheets.Add of a valid literal?}
+    XR -- no --> MR[Manual FlowReturnNotMapped]
+    XR -- yes --> XC{every caller passes a migrated package?}
+    XC -- no --> M4
+    XC -- yes --> OKR[Fixed: IXLWorksheet return, XLWorkbook parameter]
     X -- no --> A
     A[method with an ExcelWorksheet parameter] --> B{private, ordinary, non-partial type, has body?}
     B -- no --> M1[Manual FlowMemberNotPrivate]
@@ -48,7 +56,9 @@ flowchart TD
     D -- no --> M2
     D -- yes --> E{every parameter use mapped by WorkbookUses?}
     E -- no --> M3[Manual: that use's reason]
-    E -- yes --> F{every caller argument migrated?}
+    E -- yes --> G{E23: linked helpers acyclic, at most 3 deep, each passing these checks?}
+    G -- no --> M2
+    G -- yes --> F{every caller argument from outside the chain migrated?}
     F -- no --> M4[Manual FlowCallerNotMigrated]
     F -- yes --> OK[Fixed: IXLWorksheet parameter]
 ```

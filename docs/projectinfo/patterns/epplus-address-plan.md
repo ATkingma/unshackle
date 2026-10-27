@@ -39,7 +39,9 @@ epplus.address: `ws.Cells[..].Rows` / `.Columns` / `.Start.Row` / `.End.Column` 
 | non-literal string address | its order cannot be checked |
 | bare `.Start` / `.End` (an `ExcelCellAddress` value) | no one-to-one type |
 
-A range held in a local, field or parameter (`ExcelRange r`) is not found; it stays `epplus.unsupported`.
+**Range locals (TAAK-337, council round 16 E25)**: the same reads on an `ExcelRange` local (`var r = ws.Cells[..];` or `ExcelRange r = ...`) are Fixed when the local is the one variable of a declaration statement in a block, initialized from an in-order `ws.Cells[..]` range as above, and never written again (no assignment, `ref`/`out` argument or `++`/`--`). `WorkbookUses` then makes the initializer `ws.Range(..)` (an explicit type becomes `IXLRange`), and every use of the local must be such an address read or a by-value argument to a range helper `epplus.flow-types` migrates; else Manual. Any other range local is Manual `UnmappedAddress`. A range parameter (`private static int Size(ExcelRange r)`) is mapped by `epplus.flow-types`; a field stays `epplus.unsupported`.
+
+**Limitation (council round 16 E26)**: int coordinates are accepted as any int expression, as for the existing `Cells[..]` → `Range(..)` mapping. A non-positive or out-of-sheet coordinate throws in both libraries, only with a different exception type; a valid program behaves the same.
 
 ## Design
 
@@ -56,6 +58,8 @@ A range held in a local, field or parameter (`ExcelRange r`) is not found; it st
 | REQ-3 | With the full fix the result writes the same workbook (harness), reversed int range included. |
 | REQ-4 | A single cell or reversed literal address is Manual `UnmappedAddress`. |
 | REQ-5 | A bare `.Start`/`.End` is Manual `UnmappedAddress`. |
+| REQ-6 | (E25) An address read on a range local declared once from a mapped `Cells[..]` is Fixed and the local becomes a ClosedXML range; the harness writes the same workbook. |
+| REQ-7 | (E25) A range local that is written again is Manual `UnmappedAddress`. |
 
 ## See also
 

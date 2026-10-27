@@ -24,6 +24,8 @@
 | REQ-10 | Met    | proof `FlowTypes/return` (after); `FlowTypes/_Combined/return` (combined + harness) |
 | REQ-11 | Met    | proofs `FlowTypes/chain` (after), `chain-recursive`, `chain-too-deep` (manual); `FlowTypes/_Combined/chain` (combined + harness) |
 | REQ-12 | Met    | `EPPlusFixTests.Fix_NodeLeftManualByFlowTypesOrAddress_OneRowPerNode` |
+| REQ-13 | Met    | proof `FlowTypes/range-parameter` (after); `FlowTypes/_Combined/range-parameter` (combined + harness) (TAAK-337) |
+| REQ-14 | Met    | proof `FlowTypes/range-parameter-unfixed-use` (manual) (TAAK-337) |
 
 ## Build and tests
 

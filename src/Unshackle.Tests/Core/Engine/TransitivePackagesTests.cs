@@ -131,7 +131,37 @@ public class TransitivePackagesTests
         // Assert
         Finding row = report.Findings.Single(f => f.PatternId == Fixer.ProjectFilePatternId && f.Line == 5);
         row.FilePath.ShouldBe(Domain);
-        row.Result.ShouldBeOfType<FixedResult>().Info.ShouldNotBeNull().ShouldContain($"{Configuration} 8.0.0 added");
+        row.Result.ShouldBeOfType<FixedResult>().Info.ShouldBe(
+            $"may conflict (NU1605): PackageReference {Configuration} pinned to 8.0.0, kept for `Infrastructure` (it came transitively with EPPlus). "
+            + $"If restore reports NU1605 for {Configuration}, raise the pin");
+    }
+
+    [Theory]
+    [InlineData("[8.0.0, )", true)]
+    [InlineData("[9.0.0, )", false)]
+    [InlineData("7.0.0", false)]
+    public async Task PlanAsync_ProjectReferenceBringsPackage_PinsSameVersionOtherwiseManual(string range, bool pinned)
+    {
+        // Arrange (council round 17 T3)
+        Solution solution = Create("using Microsoft.Extensions.Configuration;\nclass C { IConfiguration? _c; }");
+        PackageRequirement fromReference = new() { Package = Configuration, RequiredBy = "Shared/1.0.0", Range = range };
+
+        // Act
+        TransitivePackages plan = await TransitivePackages.PlanAsync(
+            solution, [Migration(keep: false)], Reader(AssetsState.Current, fromReference), TestContext.Current.CancellationToken);
+
+        // Assert
+        plan.HasEdits.ShouldBe(pinned);
+        if (pinned)
+        {
+            plan.Manuals.ShouldBeEmpty();
+        }
+        else
+        {
+            (string path, ManualResult manual) = plan.Manuals.ShouldHaveSingleItem();
+            path.ShouldBe(Domain);
+            manual.Reason.ShouldContain($"project reference Shared/1.0.0 brings {Configuration} {range}");
+        }
     }
 
     private static ProjectMigration Migration(bool keep) => new()
@@ -143,11 +173,11 @@ public class TransitivePackagesTests
         AddedNamespaces = [],
     };
 
-    private static IPackageAssetsReader Reader(AssetsState state)
+    private static IPackageAssetsReader Reader(AssetsState state, params PackageRequirement[] projectReferenceRequirements)
     {
         IPackageAssetsReader reader = Substitute.For<IPackageAssetsReader>();
         reader.Read(Domain).Returns(Assets(Requirement("EPPlus", "project"), Requirement(Configuration, "EPPlus/7.1.3")) is var assets
-            ? new PackageAssets { State = state, Resolved = assets.Resolved, Requirements = assets.Requirements }
+            ? new PackageAssets { State = state, Resolved = assets.Resolved, Requirements = assets.Requirements, ProjectReferenceRequirements = projectReferenceRequirements }
             : PackageAssets.Missing);
         reader.Read(Infrastructure).Returns(PackageAssets.Missing);
         return reader;

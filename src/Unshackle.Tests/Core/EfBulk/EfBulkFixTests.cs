@@ -78,13 +78,73 @@ public class EfBulkFixTests
                 public int Run(IQueryable<Order> orders) => orders.Delete();
             }
             """;
-        IReadOnlyList<MetadataReference> references = [.. TestReferences.Net, EfBulkReferences.Plus];
+        IReadOnlyList<MetadataReference> references = [.. TestReferences.Net, EfBulkReferences.Plus, EfBulkReferences.Extensions];
 
         // Act
         FixReport report = await RunAsync(code, references);
 
         // Assert
         report.Findings.ShouldHaveSingleItem().Result.ShouldBeOfType<ManualResult>().Code.ShouldBe(nameof(EfBulkReason.NoNativeExecute));
+    }
+
+    [Fact]
+    public async Task FixAsync_NoExecuteDeleteInTheProject_AddsOneProjectRow()
+    {
+        // Arrange: council round 17, B3, two blocked calls give one project-level row next to the per-call rows.
+        const string code = """
+            using System.Linq;
+            using Z.EntityFramework.Plus;
+
+            public class Order { public int Id { get; set; } }
+
+            public class Cleanup
+            {
+                public int Run(IQueryable<Order> orders) => orders.Delete() + orders.Where(o => o.Id > 1).Delete();
+            }
+            """;
+        Solution solution = TestSolution.Create(code, [.. TestReferences.Net, EfBulkReferences.Plus, EfBulkReferences.Extensions]);
+        solution = solution.WithProjectFilePath(solution.ProjectIds.Single(), "Shop.csproj");
+
+        // Act
+        FixReport report = await new Fixer([new EfBulkFix()]).FixAsync(solution, new FixRequest { FixId = "efbulk" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.Count(f => f.Result is ManualResult { Code: nameof(EfBulkReason.NoNativeExecute) }).ShouldBe(2);
+        Finding project = report.Findings.Where(f => f.FilePath == "Shop.csproj").ShouldHaveSingleItem();
+        ManualResult row = project.Result.ShouldBeOfType<ManualResult>();
+        row.Code.ShouldBe(nameof(EfBulkReason.EfCoreBelow7));
+        row.Reason.ShouldContain("EF Core < 7");
+        row.Reason.ShouldContain("2 batch call(s) blocked");
+    }
+
+    [Fact]
+    public async Task FixAsync_ExecuteDeleteAvailable_AddsNoProjectRow()
+    {
+        // Arrange
+        Solution solution = TestSolution.Create(Source("db.Orders.Delete()"), EfBulkReferences.Before);
+        solution = solution.WithProjectFilePath(solution.ProjectIds.Single(), "Shop.csproj");
+
+        // Act
+        FixReport report = await new Fixer([new EfBulkFix()]).FixAsync(solution, new FixRequest { FixId = "efbulk" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.Select(f => (f.Result as ManualResult)?.Code).ShouldNotContain(nameof(EfBulkReason.EfCoreBelow7));
+    }
+
+    [Fact]
+    public async Task FixAsync_BatchBuilder_ReasonNamesTheOptionsAndTheCall()
+    {
+        // Arrange: council round 17, B7 and B4.
+        string code = Source("db.Orders.Delete(b => { b.BatchSize = 10; b.BatchDelayInterval = 5; })");
+
+        // Act
+        FixReport report = await RunAsync(code, EfBulkReferences.Before);
+
+        // Assert
+        ManualResult result = report.Findings.ShouldHaveSingleItem().Result.ShouldBeOfType<ManualResult>();
+        result.Code.ShouldBe(nameof(EfBulkReason.BatchOptions));
+        result.Reason.ShouldContain("the batch options BatchSize, BatchDelayInterval");
+        result.Reason.ShouldContain("'db.Orders.Delete(b => { b.BatchSize = 10; b.BatchDelayInterval = 5; })'");
     }
 
     [Fact]
@@ -98,6 +158,19 @@ public class EfBulkFixTests
 
         // Assert
         report.Findings.ShouldHaveSingleItem().Result.ShouldBeOfType<ManualResult>().Code.ShouldBe(nameof(EfBulkReason.UpdateValueNotProvable));
+    }
+
+    [Fact]
+    public async Task FixAsync_AnonymousObjectUpdate_IsManual()
+    {
+        // Arrange: the real packages bind an anonymous object to the Expression<Func<T, object>> overload.
+        string code = Source("db.Orders.Update(o => new { Status = \"done\" })");
+
+        // Act
+        FixReport report = await RunAsync(code, EfBulkReferences.Before);
+
+        // Assert
+        report.Findings.ShouldHaveSingleItem().Result.ShouldBeOfType<ManualResult>().Code.ShouldBe(nameof(EfBulkReason.UpdateFactoryShape));
     }
 
     [Fact]

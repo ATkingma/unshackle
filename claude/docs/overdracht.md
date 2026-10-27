@@ -15,7 +15,7 @@ regression proofs), `taak-329` (lost transitive package → direct PackageRefere
 TAAK-325 step 6, cats/kavita), `moq-rerun` (TAAK-330 step 5), `polly-rerun` (corpus confirm), `taak-340` (SpecFlow→Reqnroll),
 `taak-341` (xUnit v3), `taak-342` (EF bulk). New fixes 340-342 all touch `Cli.cs`/README: expect merge conflicts there.
 
-**Next:** TAAK-337 (EPPlus range locals, after 336), EPPlus corpus re-measure (TAAK-327 step 7), council round 17 on the
+**Next:** EPPlus corpus re-measure (TAAK-327 step 7), council round 17 on the
 agents' questions, TAAK-304 release 0.3.0 (user go). Agent cap: 10 until 02:10, then 8.
 
 ## State on 2026-10-27 — start here

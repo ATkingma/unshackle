@@ -20,10 +20,13 @@ Proofs: `src/Unshackle.Tests/Proofs/EfBulk/Update/` (`ProofTests`, before agains
 | REQ-3 | Met | navigation |
 | REQ-4 | Met | factory-variable |
 | REQ-5 | Met | unit test `FixAsync_LocalNamedSetters_PicksAFreeName` |
+| REQ-6 | Met | captured-local, entity-member, numeric-arithmetic; string-concatenation, decimal-arithmetic, static-now; `EfBulkSqlTests` |
+| REQ-7 | Met | batch-builder; unit test `FixAsync_BatchBuilder_ReasonNamesTheOptionsAndTheCall` |
+| REQ-8 | Met | unit tests `FixAsync_NoExecuteDeleteInTheProject_AddsOneProjectRow`, `FixAsync_ExecuteDeleteAvailable_AddsNoProjectRow` |
 
 ## Deviations
 
-- The Z assemblies are stubs (`src/Unshackle.Tests/Core/EfBulk/EfBulkReferences.cs`), so "before compiles against the old library" is proven against the documented signatures, not the real package. No run-time (SQL) proof yet.
+- The Z assemblies are stubs (`src/Unshackle.Tests/Core/EfBulk/EfBulkReferences.cs`), so "before compiles against the old library" is proven against stubs checked once against the 10.105.9 nupkgs. The run-time proof (`src/Unshackle.Tests/Core/EfBulk/EfBulkSqlTests.cs`) covers the EF side only: one UPDATE statement, captured values as parameters, entity members as columns. SQLite evaluates decimal arithmetic with .NET semantics (`ef_divide`), which proves nothing for SQL Server's column precision, so decimal arithmetic stays Manual.
 
 ## Validation results
 

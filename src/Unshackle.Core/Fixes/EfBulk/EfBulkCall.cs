@@ -50,6 +50,24 @@ internal static class EfBulkCall
         model.GetTypeInfo(argument.Expression).ConvertedType is { Name: "CancellationToken", ContainingNamespace: { } ns }
         && ns.ToDisplayString() == "System.Threading";
 
+    // The expression as a report shows it: one line, whitespace runs collapsed (council round 17, B4: Manual rows show the exact expression).
+    public static string Shown(SyntaxNode node) => string.Join(' ', node.ToString().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
+    // Council round 17, B7: the options a batch builder sets (b => { b.BatchSize = 100; b.Executing = ...; }), in source order.
+    public static string BatchOptions(InvocationExpressionSyntax invocation)
+    {
+        string[] options =
+        [
+            .. invocation.ArgumentList.Arguments
+                .Select(a => a.Expression).OfType<LambdaExpressionSyntax>()
+                .SelectMany(l => l.DescendantNodes().OfType<AssignmentExpressionSyntax>())
+                .Select(a => a.Left is MemberAccessExpressionSyntax access ? access.Name.Identifier.ValueText : null)
+                .OfType<string>()
+                .Distinct(StringComparer.Ordinal),
+        ];
+        return options.Length == 0 ? "a batch builder" : $"the batch options {string.Join(", ", options)}";
+    }
+
     // The same call with another method name; type arguments and the receiver stay.
     public static InvocationExpressionSyntax Renamed(InvocationExpressionSyntax invocation, SimpleNameSyntax name, string newName) =>
         invocation.ReplaceNode(name, name.WithIdentifier(SyntaxFactory.Identifier(newName)));

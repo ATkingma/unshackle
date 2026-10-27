@@ -12,7 +12,9 @@ namespace Unshackle.Core.Fixes.EPPlus.Patterns;
 /// EPPlus base type or attribute) that still names EPPlus after the other patterns, as Manual with a typed reason and the APIs it uses,
 /// each with the queue row that will migrate it. So nothing of EPPlus is left behind silently (general rule, council round 8).
 /// A public or protected signature in a packable project that exposes an EPPlus type is Manual by design (E6, <c>PublicApiExposesOldLibrary</c>).
-/// Code another EPPlus pattern already reports (a licence line or package it left Manual) is not reported twice.
+/// Code another EPPlus pattern already reports (a licence line or package it left Manual) is not reported twice; nor (council round 16, E24)
+/// a member or address <c>epplus.flow-types</c> or <c>epplus.address</c> left Manual, so each node has one row with the most specific reason.
+/// A flow-types member whose signature is E6 public API keeps its <c>PublicApiExposesOldLibrary</c> row here.
 /// </summary>
 public class UnsupportedPattern : IPattern
 {
@@ -20,13 +22,19 @@ public class UnsupportedPattern : IPattern
 
     private static readonly PackagePattern s_package = new();
 
+    private static readonly FlowTypesPattern s_flowTypes = new();
+
+    private static readonly AddressPattern s_address = new();
+
     public string Id => "epplus.unsupported";
 
     public string Description => "any EPPlus API no other pattern migrated → Manual with the APIs and their queue rows (E6: public API exposing EPPlus)";
 
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model)
     {
-        List<TextSpan> reported = [.. s_licenseContext.Find(root, model).Concat(s_package.Find(root, model)).Select(n => n.Span)];
+        // These patterns ran before this one: what they still find is what they left Manual.
+        List<TextSpan> reported = [.. s_licenseContext.Find(root, model).Concat(s_package.Find(root, model)).Concat(s_address.Find(root, model))
+            .Concat(s_flowTypes.Find(root, model).Where(n => ExposedSignature(n, model) is null)).Select(n => n.Span)];
         return root.DescendantNodes()
             .Where(n => n is SimpleNameSyntax && !n.Ancestors().Any(a => a is UsingDirectiveSyntax) && EPPlusApi.Name(n, model) is not null)
             .Where(n => !reported.Any(span => span.Contains(n.Span)) && !InHandledTail(n, model))

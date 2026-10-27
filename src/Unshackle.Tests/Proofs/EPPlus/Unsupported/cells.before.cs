@@ -2,9 +2,9 @@ using OfficeOpenXml;
 
 namespace Reports;
 
-internal static class Report
+internal class Report
 {
-    internal static void Fill(ExcelWorksheet sheet)
+    internal Report(ExcelWorksheet sheet)
     {
         sheet.Cells[1, 1].Value = "Name";
     }

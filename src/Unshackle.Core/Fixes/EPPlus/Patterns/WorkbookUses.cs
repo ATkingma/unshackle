@@ -18,6 +18,7 @@ internal class WorkbookUses
     private readonly SyntaxNode _scope;
     private readonly ILocalSymbol? _package;
     private readonly List<ISymbol> _worksheets = [];
+    private readonly IReadOnlyCollection<IMethodSymbol> _chain = [];
     private Models.PatternResult? _unknownVersion;
 
     private readonly WorksheetIndexBase _indexBase;
@@ -31,9 +32,11 @@ internal class WorkbookUses
     }
 
     // TAAK-327 (council E18): the uses of one ExcelWorksheet parameter of a private helper, with no package in reach. Only what is provable
-    // without knowing the workbook: cells, layout and a Name read (a rename could clash with a sheet the caller added); no further flow.
-    public WorkbookUses(SemanticModel model, SyntaxNode scope, IParameterSymbol worksheet)
+    // without knowing the workbook: cells, layout and a Name read (a rename could clash with a sheet the caller added), and (E23) passing it
+    // on to a helper of the same chain, which flips with it.
+    public WorkbookUses(SemanticModel model, SyntaxNode scope, IParameterSymbol worksheet, IReadOnlyCollection<IMethodSymbol> chain)
     {
+        _chain = chain;
         _indexBase = WorksheetIndexBase.Unknown(worksheet.Name);
         _model = model;
         _scope = scope;
@@ -67,7 +70,7 @@ internal class WorkbookUses
         {
             foreach (IdentifierNameSyntax use in UsesOf(_worksheets[i]))
             {
-                if (!IsNameAccess(use) && !MapCellUse(use) && !IsLayoutUse(use) && !(_package is not null && IsFlowArgument(use)))
+                if (!IsNameAccess(use) && !MapCellUse(use) && !IsLayoutUse(use) && !IsFlowArgument(use) && !IsFieldWrite(use))
                 {
                     string text = $"Worksheet {(_package is null ? "parameter" : "local")} {_worksheets[i].Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue row 4+).";
                     return _unknownVersion ?? (_package is null ? Models.PatternResult.Manual(EPPlusReason.FlowUseNotMigrated, text) : Models.PatternResult.Manual(text));
@@ -245,9 +248,33 @@ internal class WorkbookUses
         }
 
         int position = list.Arguments.IndexOf(argument);
+        IParameterSymbol? target = _package is not null ? FlowTypesPattern.Migratable(method, _model)
+            : _chain.Contains(method.OriginalDefinition, SymbolEqualityComparer.Default) ? FlowTypesPattern.WorksheetParameter(method.OriginalDefinition) : null;
+        return position < method.Parameters.Length && target is not null
+            && SymbolEqualityComparer.Default.Equals(target, method.OriginalDefinition.Parameters[position]);
+    }
+
+    // E21: the field itself on the left of 'field = <worksheet>;' (the worksheet on the right is mapped as a package use).
+    private bool IsFieldWrite(IdentifierNameSyntax use) =>
+        _package is not null && _model.GetSymbolInfo(use).Symbol is IFieldSymbol
+        && use.Parent is AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax } assignment && assignment.Left == use;
+
+    // E22: p passed (by value, by position) as the package of a private helper that returns p.Workbook.Worksheets.Add("literal"), whose result
+    // is dropped or stands where a worksheet may.
+    private bool IsReturnFlowArgument(IdentifierNameSyntax use)
+    {
+        if (use.Parent is not ArgumentSyntax { RefKindKeyword.RawKind: (int)SyntaxKind.None, NameColon: null } argument
+            || argument.Parent is not ArgumentListSyntax { Parent: InvocationExpressionSyntax invocation } list
+            || _model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method)
+        {
+            return false;
+        }
+
+        int position = list.Arguments.IndexOf(argument);
         return position < method.Parameters.Length
-            && FlowTypesPattern.Migratable(method, _model) is { } parameter
-            && SymbolEqualityComparer.Default.Equals(parameter, method.Parameters[position]);
+            && FlowTypesPattern.MigratableReturn(method.OriginalDefinition, _model) is { } package
+            && SymbolEqualityComparer.Default.Equals(package, method.OriginalDefinition.Parameters[position])
+            && (invocation.Parent is ExpressionStatementSyntax || IsWorksheetContext(invocation));
     }
 
     private IEnumerable<IdentifierNameSyntax> UsesOf(ISymbol local) =>
@@ -256,6 +283,11 @@ internal class WorkbookUses
 
     private bool MapPackageUse(IdentifierNameSyntax use)
     {
+        if (IsReturnFlowArgument(use))
+        {
+            return true;
+        }
+
         // Row 6: p.SaveAs(stream); is the same call (SaveHarnessTests: both leave the stream open at its end).
         if (use.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "SaveAs" } toStream
             && toStream.Parent is InvocationExpressionSyntax { ArgumentList.Arguments: [var target], Parent: ExpressionStatementSyntax }
@@ -343,6 +375,19 @@ internal class WorkbookUses
             return true;
         }
 
+        // E21: _field = p.Workbook.Worksheets.Add("name"); for a private worksheet field FlowTypesPattern migrates with it.
+        if (worksheet.Parent is AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression, Parent: ExpressionStatementSyntax, Left: IdentifierNameSyntax target } assignment
+            && assignment.Right == worksheet && _package is not null
+            && _model.GetSymbolInfo(target).Symbol is IFieldSymbol field && FlowTypesPattern.MigratableField(field, _model))
+        {
+            if (!_worksheets.Contains(field, SymbolEqualityComparer.Default))
+            {
+                _worksheets.Add(field);
+            }
+
+            return true;
+        }
+
         return false;
     }
 
@@ -406,7 +451,7 @@ internal class WorkbookUses
         return statement?.Parent is BlockSyntax block && (block == _scope || block.Parent == _scope);
     }
 
-    private static bool IsValidSheetName(string name) =>
+    internal static bool IsValidSheetName(string name) =>
         name.Length is > 0 and <= 31 && name.AsSpan().IndexOfAny(s_invalidSheetNameCharacters) < 0 && name[0] != '\'' && name[^1] != '\'';
 
     private static int Line(SyntaxNode node) => node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;

@@ -53,7 +53,8 @@ public class PollyFix : IFix, IProjectFileMigration
     public IReadOnlyList<ManualResult> ProjectBlockers(Project project)
     {
         ArgumentNullException.ThrowIfNull(project);
-        return PollyTargetFramework.Blockers(project);
+        // Corpus B1/B4: an older resolved Microsoft.Extensions.* package than the Resilience closure needs blocks the project too.
+        return [.. PollyTargetFramework.Blockers(project), .. PollyPackageDowngrade.Blockers(project)];
     }
 
     public IReadOnlyList<ProjectFileEdit> EditsFor(Project project)

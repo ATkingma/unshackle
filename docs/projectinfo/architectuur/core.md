@@ -259,7 +259,7 @@ edits per project from a closed set (`ProjectFileEdit` has a private-protected c
 - **G1 header kind.** The report-only header is an `InfoResult` with `Kind = InfoKind.Header`. `FixReport.CountedFindings` /
   `FixReport.IsCounted` leave it out of every count.
 - **G4 what blocks.** A project's file edits are blocked by any blocking document row, and by a project-level Manual row whose `Code` is a
-  `ProjectBlockingReason` (`TargetFrameworkUnsupported`, `SharedDeclarationBlocked`, `LicensedDependency`). Fixes add such rows through
+  `ProjectBlockingReason` (`TargetFrameworkUnsupported`, `SharedDeclarationBlocked`, `LicensedDependency`, `PackageDowngrade`). Fixes add such rows through
   `IProjectFileMigration.ProjectBlockers(Project)`. An outcome with a blocking code turns the project's other edits into Manual rows, and
   none of its changes are kept.
 - **G3 shared declarations.** A package declared only in a shared `Directory.*.props` is edited there when every `.csproj` that imports it

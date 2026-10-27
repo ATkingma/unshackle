@@ -36,6 +36,6 @@
 - `claude/tasks/COUNCIL-round-18.md`
 - `claude/tasks/COUNCIL-round-19.md`
 - `claude/tasks/COUNCIL-round-20.md`
-- `claude/tasks/TAAK-351-epplus-row-fold.md`
+- `claude/tasks/archief/TAAK-351-epplus-row-fold.md`
 - `claude/tasks/archief/TAAK-336-epplus-flow-followups.md`
 - `docs/projectinfo/patterns/epplus-flow-types-plan.md`

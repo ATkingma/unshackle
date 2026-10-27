@@ -82,7 +82,7 @@ internal class WorkbookUses
             {
                 if (!IsNameAccess(use) && !MapCellUse(use) && !IsLayoutUse(use) && !IsFlowArgument(use) && !IsFieldWrite(use))
                 {
-                    string text = $"Worksheet {(_package is null ? "parameter" : "local")} {_worksheets[i].Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue row 4+).";
+                    string text = $"Worksheet {(_package is null ? "parameter" : "local")} {_worksheets[i].Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue row 4+){HelperClash(use)}.";
                     return _unknownVersion ?? (_package is null ? Models.PatternResult.Manual(EPPlusReason.FlowUseNotMigrated, text) : Models.PatternResult.Manual(text));
                 }
             }
@@ -525,6 +525,28 @@ internal class WorkbookUses
             .OfType<IMethodSymbol>()
             .Select(m => FlowTypesPattern.ReturnedSheetName(m.OriginalDefinition))
             .OfType<string>();
+
+    // E33 (council round 20): a rename to a name a return helper adds names that helper call with file:line.
+    private string HelperClash(IdentifierNameSyntax use)
+    {
+        if (_package is null || use.Parent is not MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Name", Parent: AssignmentExpressionSyntax { Right: LiteralExpressionSyntax value } })
+        {
+            return "";
+        }
+
+        foreach (IdentifierNameSyntax argument in UsesOf(_package).Where(IsReturnFlowArgument))
+        {
+            var call = (InvocationExpressionSyntax)argument.Parent!.Parent!.Parent!;
+            if (_model.GetSymbolInfo(call).Symbol is IMethodSymbol method
+                && string.Equals(FlowTypesPattern.ReturnedSheetName(method.OriginalDefinition), value.Token.ValueText, StringComparison.OrdinalIgnoreCase))
+            {
+                string file = System.IO.Path.GetFileName(call.SyntaxTree.FilePath);
+                return $"; the name \"{value.Token.ValueText}\" is already added by the helper call '{Shorten(call)}' ({(file.Length == 0 ? "line " : file + ":")}{Line(call)}) (council round 20, E33)";
+            }
+        }
+
+        return "";
+    }
 
     // The ClosedXML position (1-based) or name for a lookup that provably finds an added sheet; null otherwise.
     private ExpressionSyntax? Position(ElementAccessExpressionSyntax lookup, ExpressionSyntax key)

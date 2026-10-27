@@ -18,7 +18,7 @@ unifies the blocking-projects output (340b vs 341b) and renames the SpecFlow bac
 
 **Agents running:** moq-rerun, polly-rerun (corpus rounds).
 
-**Next:** TAAK-352 (IProjectFileMigration async, council X8) after integ-1; TAAK-351 rest (E33 reason with file:line);
+**Next:** TAAK-352 (IProjectFileMigration async, council X8) after integ-1; TAAK-351 done;
 council round 21 on TAAK-342 Q13-14 and TAAK-340 Q9-11; TAAK-342 step 9 and TAAK-340/341 corpus rounds; EPPlus corpus
 re-measure; regenerate `proofs.md` (LF); TAAK-304 release 0.3.0 (user go). Agent cap: 10 until 02:10, then 8.
 

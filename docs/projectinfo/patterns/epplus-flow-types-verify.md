@@ -26,7 +26,7 @@
 | REQ-12 | Met    | `EPPlusFixTests.Fix_NodeLeftManualByFlowTypesOrAddress_OneRowPerNode` |
 | REQ-13 | Met    | proof `FlowTypes/range-parameter` (after); `FlowTypes/_Combined/range-parameter` (combined + harness) (TAAK-337) |
 | REQ-14 | Met    | proof `FlowTypes/range-parameter-unfixed-use` (manual) (TAAK-337) |
-| REQ-15 | Met    | proof `Package/rename-to-helper-added` (manual) (TAAK-346) |
+| REQ-15 | Met    | proof `Package/rename-to-helper-added` (manual; reason names the helper call with file:line, E33) (TAAK-346, TAAK-351) |
 | REQ-16 | Met    | `EPPlusFixTests.Fix_FlowTypesNodeWithPublicApiSignature_OneE6RowWithFlowReason`; proof `FlowTypes/public-member` now uses an internal type (TAAK-346) |
 | REQ-17 | Met    | proof `FlowTypes/chain-failing-member` (manual, names the failing member's use) (TAAK-346) |
 | REQ-18 | Met    | proofs `FlowTypes/range-parameter-unfixed-use`, `FlowTypes/range-parameter-passed-on` (manual) (TAAK-346 step 2a) |

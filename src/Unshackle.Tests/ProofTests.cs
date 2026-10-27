@@ -88,7 +88,7 @@ public class ProofTests
         },
         ["SpecFlow"] = new()
         {
-            Fix = new SpecFlowFix(),
+            Fix = new SpecFlowFix(Substitute.For<IProjectProperties>()),
             Before = SpecFlowReferences.SpecFlow,
             After = SpecFlowReferences.Reqnroll,
             AfterRunsWholeFix = true,

@@ -168,7 +168,7 @@ public class EPPlusFixTests
 
             internal static class Report
             {
-                internal static object Read(ExcelWorksheet sheet) => sheet.Cells.ToCollection<string>();
+                internal static object Read(ExcelPackage package) => package.Workbook.Worksheets[1].Cells.ToCollection<string>();
             }
             """;
         SyntaxTree tree = CSharpSyntaxTree.ParseText(code, cancellationToken: TestContext.Current.CancellationToken);
@@ -203,7 +203,43 @@ public class EPPlusFixTests
         FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "epplus" }, TestContext.Current.CancellationToken);
 
         // Assert
-        report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Code == "UnmigratedEPPlusApi");
+        // (council round 16, E24: the one row is flow-types' FlowMemberNotPrivate, not a second UnmigratedEPPlusApi row)
+        report.Findings.ShouldContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Code == "FlowMemberNotPrivate");
         report.Findings.ShouldNotContain(f => f.Result is ManualResult && ((ManualResult)f.Result).Code == "PublicApiExposesOldLibrary");
+    }
+
+    [Fact]
+    public async Task Fix_NodeLeftManualByFlowTypesOrAddress_OneRowPerNode()
+    {
+        // Arrange: council round 16, E24. The helper is Manual in flow-types (its caller passes an unmigrated sheet) and the reversed address
+        // is Manual in epplus.address; epplus.unsupported adds no second row for either node.
+        const string code = """
+            using OfficeOpenXml;
+
+            public class Report
+            {
+                public void Write(ExcelPackage package)
+                {
+                    Fill(package.Workbook.Worksheets[1]);
+                }
+
+                private static void Fill(ExcelWorksheet sheet)
+                {
+                    sheet.Cells[1, 1].Value = "Name";
+                }
+
+                private static int Rows(ExcelWorksheet sheet) => sheet.Cells["C5:A2"].Rows;
+            }
+            """;
+        var fixer = new Fixer([new EPPlusFix()]);
+        Solution solution = TestSolution.Create(code, EPPlusReferences.EPPlus);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "epplus" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.Where(f => f.Line == 10).ShouldHaveSingleItem().PatternId.ShouldBe("epplus.flow-types");
+        report.Findings.Where(f => f.Line == 15 && f.PatternId == "epplus.address").ShouldHaveSingleItem();
+        report.Findings.ShouldNotContain(f => f.PatternId == "epplus.unsupported" && (f.Line == 10 || f.Line == 15));
     }
 }

@@ -25,13 +25,16 @@ public class DimensionUnsupportedTests
                 public string Name { get; set; } = string.Empty;
             }
 
-            internal static class Report
+            internal class Report
             {
-                internal static int Fill(ExcelWorksheet sheet, List<Item> items)
+                // A constructor, so the row is epplus.unsupported's (a private helper would be epplus.flow-types', E24).
+                internal Report(ExcelWorksheet sheet, List<Item> items)
                 {
                     sheet.Cells["A1"].LoadFromCollection(items);
-                    return sheet.Dimension.End.Row;
+                    Rows = sheet.Dimension.End.Row;
                 }
+
+                internal int Rows { get; }
             }
             """;
         Solution solution = TestSolution.Create(code, EPPlusReferences.EPPlus);

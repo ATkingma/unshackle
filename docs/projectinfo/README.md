@@ -215,6 +215,9 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `epplus.address` | [plan](patterns/epplus-address-plan.md) | [models](patterns/epplus-address-modellen.md) | [verify](patterns/epplus-address-verify.md) | TAAK-327 |
 | `efbulk.delete` | [plan](patterns/efbulk-delete-plan.md) | [models](patterns/efbulk-delete-modellen.md) | [verify](patterns/efbulk-delete-verify.md) | TAAK-342 |
 | `efbulk.update` | [plan](patterns/efbulk-update-plan.md) | [models](patterns/efbulk-update-modellen.md) | [verify](patterns/efbulk-update-verify.md) | TAAK-342 |
+| `xunit3.abstractions-namespace` | [plan](patterns/xunit3-abstractions-namespace-plan.md) | [models](patterns/xunit3-abstractions-namespace-modellen.md) | [verify](patterns/xunit3-abstractions-namespace-verify.md) | TAAK-341 |
+| `xunit3.async-lifetime` | [plan](patterns/xunit3-async-lifetime-plan.md) | [models](patterns/xunit3-async-lifetime-modellen.md) | [verify](patterns/xunit3-async-lifetime-verify.md) | TAAK-341 |
+| `xunit3.async-void-test` | [plan](patterns/xunit3-async-void-test-plan.md) | [models](patterns/xunit3-async-void-test-modellen.md) | [verify](patterns/xunit3-async-void-test-verify.md) | TAAK-341 |
 | `epplus.unsupported` | [plan](patterns/epplus-unsupported-plan.md) | [models](patterns/epplus-unsupported-modellen.md) | [verify](patterns/epplus-unsupported-verify.md) | TAAK-309 |
 | `masstransit.registration` | [plan](patterns/masstransit-registration-plan.md) | [models](patterns/masstransit-registration-modellen.md) | [verify](patterns/masstransit-registration-verify.md) | TAAK-310 |
 | `masstransit.transport` | [plan](patterns/masstransit-transport-plan.md) | [models](patterns/masstransit-transport-modellen.md) | [verify](patterns/masstransit-transport-verify.md) | TAAK-310 |
@@ -226,6 +229,12 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `masstransit.saga` | [plan](patterns/masstransit-saga-plan.md) | [models](patterns/masstransit-saga-modellen.md) | [verify](patterns/masstransit-saga-verify.md) | TAAK-310 |
 | `masstransit.request-client` | [plan](patterns/masstransit-request-client-plan.md) | [models](patterns/masstransit-request-client-modellen.md) | [verify](patterns/masstransit-request-client-verify.md) | TAAK-310 |
 | `masstransit.publish-send` | [plan](patterns/masstransit-publish-send-plan.md) | [models](patterns/masstransit-publish-send-modellen.md) | [verify](patterns/masstransit-publish-send-verify.md) | TAAK-310 |
+| `specflow.namespace` | [plan](patterns/specflow-namespace-plan.md) | [models](patterns/specflow-namespace-modellen.md) | [verify](patterns/specflow-namespace-verify.md) | TAAK-340 |
+| `specflow.renamed-type` | [plan](patterns/specflow-renamed-type-plan.md) | [models](patterns/specflow-renamed-type-modellen.md) | [verify](patterns/specflow-renamed-type-verify.md) | TAAK-340 |
+| `specflow.combined-tags` | [plan](patterns/specflow-combined-tags-plan.md) | [models](patterns/specflow-combined-tags-modellen.md) | [verify](patterns/specflow-combined-tags-verify.md) | TAAK-340 |
+| `specflow.pending` | [plan](patterns/specflow-pending-plan.md) | [models](patterns/specflow-pending-modellen.md) | [verify](patterns/specflow-pending-verify.md) | TAAK-340 |
+| `specflow.string-step-call` | [plan](patterns/specflow-string-step-call-plan.md) | [models](patterns/specflow-string-step-call-modellen.md) | [verify](patterns/specflow-string-step-call-verify.md) | TAAK-340 |
+| `specflow.async-void-binding` | [plan](patterns/specflow-async-void-binding-plan.md) | [models](patterns/specflow-async-void-binding-modellen.md) | [verify](patterns/specflow-async-void-binding-verify.md) | TAAK-340 |
 
 ## See also
 

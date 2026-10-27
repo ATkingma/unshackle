@@ -4,5 +4,5 @@ namespace Reports;
 
 public static class SheetFactory
 {
-    internal static ExcelWorksheet Create(ExcelPackage package, string name) => package.Workbook.Worksheets.Add(name);
+    internal static void Create(ExcelPackage package, string name) => package.Workbook.Worksheets.Add(name);
 }

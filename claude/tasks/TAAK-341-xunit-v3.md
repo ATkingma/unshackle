@@ -42,7 +42,7 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
 - [x] 5e. X3: `PackageVersionEdit` (Name, From, To): bumps a plain version in [From, To) on the reference, a shared props file (G3 rules), or the
   central `PackageVersion` (only when every project under it that references the package is loaded and unblocked, else Info naming them);
   a non-plain version (`$(Prop)`, range) stays with an Info row. xunit3 test projects bump `xunit.runner.visualstudio` 2.0.0+ → 3.1.5 (step 6 runner part done)
-- [ ] 5f. X9: Info row for a 1.x `xunit.runner.visualstudio` (unit test); after TAAK-352, `XunitV3Assemblies` awaits with the run token
+- [ ] 5f. X9: Info row for a 1.x `xunit.runner.visualstudio` (unit test) (the TAAK-352 part, `XunitV3Assemblies` awaiting with the run token, is done)
 - [ ] 5. Remaining patterns: `Record.ExceptionAsync` (ValueTask), `[PropertyData]` → `[MemberData]`, string-based `[CollectionBehavior]`/
   `[TestCaseOrderer]`/`[TestFrameworkAttribute]` → `typeof(...)`, Manual inventory of extensibility (custom `DataAttribute`, discoverers,
   `Xunit.Sdk` runners), `TheoryData` / `SkipException` differences
@@ -98,4 +98,4 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
 - `docs/projectinfo/patterns/xunit3-async-lifetime-plan.md` — pattern plans (also `-abstractions-namespace`, `-async-void-test`)
 - `claude/docs/council.md` — decision council
 - `claude/tasks/COUNCIL-round-20.md` — X7-X9
-- `claude/tasks/TAAK-352-async-project-migration.md` — async project migrations
+- `claude/tasks/archief/TAAK-352-async-project-migration.md` — async project migrations

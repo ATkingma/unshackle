@@ -35,9 +35,14 @@ public class MoqFix : IFix, IProjectFileMigration
 
     // Later rows of claude/tasks/moq-queue.md (setups, verifies) go before CreatePattern: it only converts a mock used as .Object.
     // Council round 9, Q3 / round 10, G4: a project whose target cannot use NSubstitute gets a blocking project row.
-    public IReadOnlyList<ManualResult> ProjectBlockers(Project project)
+    public Task<IReadOnlyList<ManualResult>> ProjectBlockersAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
+        return Task.FromResult(Blockers(project));
+    }
+
+    private static IReadOnlyList<ManualResult> Blockers(Project project)
+    {
         return project.ParseOptions is { } options && MoqTargetFramework.Unsupported(options.PreprocessorSymbolNames) is { } framework
             ? [(ManualResult)PatternResult.Manual(ProjectBlockingReason.TargetFrameworkUnsupported, MoqTargetFramework.Reason(framework))]
             : [];
@@ -50,7 +55,7 @@ public class MoqFix : IFix, IProjectFileMigration
     public string? ChangedCodeInfo => ProxyInfo;
 
     // No project-file edits besides the package swap (Package).
-    public IReadOnlyList<ProjectFileEdit> EditsFor(Project project) => [];
+    public Task<IReadOnlyList<ProjectFileEdit>> EditsForAsync(Project project, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<ProjectFileEdit>>([]);
 
     public IReadOnlyList<IPattern> Patterns { get; } = [new VerifyAllPattern(), new SetupReturnsPattern(), new ReturnsLambdaPattern(), new ThrowsPattern(), new SetupSequencePattern(), new CallbackPattern(), new LoggerVerifyPattern(), new VerifyPattern(), new PropertiesPattern(), new ClassMocksPattern(), new UnsupportedPattern(), new CreatePattern()];
 }

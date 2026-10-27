@@ -62,9 +62,14 @@ public class SpecFlowFix : IFix, IProjectFileMigration
     // (a pattern, or a project blocker) leaves the solution as it is (conservative; council question 6 in TAAK-340).
     public bool AllOrNothing => true;
 
-    public IReadOnlyList<ManualResult> ProjectBlockers(Project project)
+    public Task<IReadOnlyList<ManualResult>> ProjectBlockersAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
+        return Task.FromResult<IReadOnlyList<ManualResult>>(Blockers(project));
+    }
+
+    private static List<ManualResult> Blockers(Project project)
+    {
         List<ManualResult> blockers = [];
         // packages.config: the package swap is not an edit of the project file (survey: 3 of 13 repos). Manual until a packages.config edit exists.
         if (OldReferencePaths(project).Any(IsPackagesFolderPath))
@@ -85,9 +90,14 @@ public class SpecFlowFix : IFix, IProjectFileMigration
         return blockers;
     }
 
-    public IReadOnlyList<ProjectFileEdit> EditsFor(Project project)
+    public Task<IReadOnlyList<ProjectFileEdit>> EditsForAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
+        return Task.FromResult(Edits(project));
+    }
+
+    private static IReadOnlyList<ProjectFileEdit> Edits(Project project)
+    {
         if (!OldReferencePaths(project).Any())
         {
             return [];

@@ -75,7 +75,7 @@ public class TransitivePackagesTests
         TransitivePackages plan = await TransitivePackages.PlanAsync(solution, [Migration(keep: false)], reader, TestContext.Current.CancellationToken);
 
         // Assert
-        IReadOnlyList<ProjectFileEdit> edits = plan.EditsFor(solution.Projects.Single(p => p.FilePath == Domain));
+        IReadOnlyList<ProjectFileEdit> edits = await plan.EditsForAsync(solution.Projects.Single(p => p.FilePath == Domain), TestContext.Current.CancellationToken);
         if (pinned)
         {
             PackageAddEdit edit = edits.ShouldHaveSingleItem().ShouldBeOfType<PackageAddEdit>();

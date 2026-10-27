@@ -62,13 +62,13 @@ public class FontsLicenceTests
     [Theory]
     [InlineData("1.0.0.0", 0)]
     [InlineData("2.1.3.0", 1)]
-    public void ProjectBlockers_ResolvedFontsVersion_LicensedDependencyFromTwo(string version, int expected)
+    public async Task ProjectBlockers_ResolvedFontsVersion_LicensedDependencyFromTwo(string version, int expected)
     {
         // Arrange
         Project project = Helpers.TestSolution.Create(Code, [.. EPPlusReferences.EPPlus, Fonts(version)]).Projects.Single();
 
         // Act
-        IReadOnlyList<ManualResult> blockers = new Unshackle.Core.Fixes.EPPlus.EPPlusFix().ProjectBlockers(project);
+        IReadOnlyList<ManualResult> blockers = await new Unshackle.Core.Fixes.EPPlus.EPPlusFix().ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         blockers.Count.ShouldBe(expected);
@@ -82,14 +82,14 @@ public class FontsLicenceTests
     [InlineData(AssetsState.Current, "Other", "[1.0.0, )", 0)]
     [InlineData(AssetsState.Stale, "EPPlus", "[1.0.0, )", 0)]
     [InlineData(AssetsState.Missing, "EPPlus", "[1.0.0, )", 0)]
-    public void EditsFor_Assets_PinFontsOnlyWhenSafe(AssetsState state, string declared, string fontsRange, int expected)
+    public async Task EditsFor_Assets_PinFontsOnlyWhenSafe(AssetsState state, string declared, string fontsRange, int expected)
     {
         // Arrange
         PackageAssets assets = Assets(state, "1.0.1", new PackageRequirement { Package = declared, RequiredBy = "project", Range = "4.5.3.3" },
             new PackageRequirement { Package = "SixLabors.Fonts", RequiredBy = "ClosedXML/0.105.1", Range = fontsRange });
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = Fix(assets).EditsFor(ProjectAt("/r/P.csproj"));
+        IReadOnlyList<ProjectFileEdit> edits = await Fix(assets).EditsForAsync(ProjectAt("/r/P.csproj"), TestContext.Current.CancellationToken);
 
         // Assert
         edits.Count.ShouldBe(expected);
@@ -100,13 +100,13 @@ public class FontsLicenceTests
     [InlineData(AssetsState.Current, "2.1.0", 1)]
     [InlineData(AssetsState.Current, "1.0.1", 0)]
     [InlineData(AssetsState.Missing, "2.1.0", 0)]
-    public void ProjectBlockers_Assets_LicensedDependencyFromTwo(AssetsState state, string fonts, int expected)
+    public async Task ProjectBlockers_Assets_LicensedDependencyFromTwo(AssetsState state, string fonts, int expected)
     {
         // Arrange
         PackageAssets assets = Assets(state, fonts);
 
         // Act
-        IReadOnlyList<ManualResult> blockers = Fix(assets).ProjectBlockers(ProjectAt("/r/P.csproj"));
+        IReadOnlyList<ManualResult> blockers = await Fix(assets).ProjectBlockersAsync(ProjectAt("/r/P.csproj"), TestContext.Current.CancellationToken);
 
         // Assert
         blockers.Count.ShouldBe(expected);

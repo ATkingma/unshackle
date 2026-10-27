@@ -26,8 +26,8 @@ internal class TransitivePackages : IProjectFileMigration
     // Council round 17 T3: lost packages that a project reference brings at another version; Manual rows on the project file, no pin.
     public IReadOnlyList<(string ProjectPath, ManualResult Result)> Manuals { get; }
 
-    public IReadOnlyList<ProjectFileEdit> EditsFor(Project project) =>
-        project.FilePath is string path && _edits.TryGetValue(path, out IReadOnlyList<ProjectFileEdit>? edits) ? edits : [];
+    public Task<IReadOnlyList<ProjectFileEdit>> EditsForAsync(Project project, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<ProjectFileEdit>>(project.FilePath is string path && _edits.TryGetValue(path, out IReadOnlyList<ProjectFileEdit>? edits) ? edits : []);
 
     // The pins per project that drops the removed package. Needs current assets (TAAK-319): without them nothing is known, nothing is added.
     internal static async Task<TransitivePackages> PlanAsync(

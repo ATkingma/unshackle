@@ -3,6 +3,18 @@
 Read this first if you are taking over this session. Then `CLAUDE.md` and `claude/docs/INDEX.md`.
 
 
+## State on 2026-10-27 — start here
+
+Main green (`b32cf79`+, CI green). Done: Polly B2 (`HandlerResultUsed`), B3 (`Exception!` in nullable onRetry), B1/B4
+(project blocker `PackageDowngrade`, no ref bumps); Moq B2-B7 (`MockPassedAround` for out/deconstruction, `Arg.Is<T>(a => a == null)`,
+`global::` on clashes, receiver members no longer keep a using, helper project keeps Moq when dependents use it);
+`IProjectProperties` wired into `AutoMapperFix` (TAAK-324 closes sets in non-packable libraries).
+
+**Next:** 1. Re-run Polly, Moq and AutoMapper corpus rounds to confirm (AutoMapper: letterbook, personalasst, skoruba have
+generic-map rows; TAAK-324 step 6 and its verify corpus table still open). 2. Leftovers: Polly redundant `OrTransientHttpStatusCode`
+clause; Moq B1, H1/H2, misleading kept-package text for the helper project (`Fixer.cs`), duplicate project-file rows, qualified
+`Moq.Mock<T>` keeps the using. 3. TAAK-325, TAAK-327. 4. TAAK-304 release 0.3.0 (user go).
+
 ## State on 2026-10-26 (end of day, Windows) — start here
 
 Main is green (CI per push, `verify-head.sh` before each). No agents running. Pool branches `pool/*` are merged except

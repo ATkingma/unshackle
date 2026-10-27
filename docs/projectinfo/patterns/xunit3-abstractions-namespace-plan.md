@@ -38,7 +38,7 @@ files_expected:
 
 ## Assumptions
 
-- v3 has `ITestOutputHelper` in namespace `Xunit` with `WriteLine(string)` and `WriteLine(string, params object[])` (checked: every Fixed proof compiles against xunit.v3 4.0.2).
+- v3 has `ITestOutputHelper` in namespace `Xunit` with `WriteLine(string)` and `WriteLine(string, params object[])` (checked: every Fixed proof compiles against xunit.v3 3.2.2).
 - The fix is `AllOrNothing`: one Manual row anywhere leaves the whole solution on v2 (half a migration does not build).
 
 ## Models

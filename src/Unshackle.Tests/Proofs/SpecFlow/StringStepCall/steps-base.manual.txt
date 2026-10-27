@@ -1,1 +1,1 @@
-String step calls (Given/When/Then/And/But on a Steps base class) were removed in Reqnroll
+(or keep them through Reqnroll.SpecFlowCompatibility)

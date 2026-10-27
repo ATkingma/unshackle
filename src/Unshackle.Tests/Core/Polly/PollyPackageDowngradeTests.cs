@@ -75,7 +75,7 @@ public class PollyPackageDowngradeTests
     [Theory]
     [InlineData("8.0.0", true)]   // babylon-gateway (B5): Abstractions references Logging.Abstractions 8.0.0 and gets Resilience via CoreApiSdk
     [InlineData("8.0.3", false)]
-    public void ProjectBlockers_ConsumerThroughProjectReferenceResolvesOlderPackage_BlocksWithPackageDowngrade(string version, bool blocked)
+    public async Task ProjectBlockers_ConsumerThroughProjectReferenceResolvesOlderPackage_BlocksWithPackageDowngrade(string version, bool blocked)
     {
         // Arrange
         string[] symbols = ["NETCOREAPP", "NET8_0_OR_GREATER"];
@@ -91,7 +91,7 @@ public class PollyPackageDowngradeTests
             .AddProjectReference(consumer, new ProjectReference(sdk));
 
         // Act
-        IReadOnlyList<ManualResult> blockers = new PollyFix().ProjectBlockers(solution.GetProject(sdk)!);
+        IReadOnlyList<ManualResult> blockers = await new PollyFix().ProjectBlockersAsync(solution.GetProject(sdk)!, TestContext.Current.CancellationToken);
 
         // Assert
         if (blocked)
@@ -110,7 +110,7 @@ public class PollyPackageDowngradeTests
     [InlineData("[10.0.8, )", AssetsState.Current, true)]    // listenarr (B6): central pin below 10.0.13, NU1109
     [InlineData("[10.0.13, )", AssetsState.Current, false)]
     [InlineData("[10.0.8, )", AssetsState.Stale, false)]     // stale assets say nothing
-    public void ProjectBlockers_DeclaredVersionBelowMinimum_BlocksWithPackageDowngrade(string range, AssetsState state, bool blocked)
+    public async Task ProjectBlockers_DeclaredVersionBelowMinimum_BlocksWithPackageDowngrade(string range, AssetsState state, bool blocked)
     {
         // Arrange: the assembly binds from the ASP.NET Core reference pack, so only the assets show the central pin.
         string[] symbols = ["NETCOREAPP", "NET8_0_OR_GREATER", "NET9_0_OR_GREATER", "NET10_0_OR_GREATER"];
@@ -130,7 +130,7 @@ public class PollyPackageDowngradeTests
         });
 
         // Act
-        IReadOnlyList<ManualResult> blockers = new PollyFix(reader).ProjectBlockers(project);
+        IReadOnlyList<ManualResult> blockers = await new PollyFix(reader).ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         if (blocked)

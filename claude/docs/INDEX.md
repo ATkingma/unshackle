@@ -93,7 +93,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/TAAK-322-engine-round-12.md` | Engine follow-ups from council round 12 (pre-filter on assemblies, solution-level CPM, comment trivia) |
 | `claude/tasks/archief/TAAK-324-automapper-generic-map.md` | AutoMapper `Map<T>` on a type parameter closed per type argument (A11) |
 | `claude/tasks/TAAK-332-automapper-remeasure.md` | AutoMapper corpus re-measure after `IProjectProperties` wiring (TAAK-324 follow-up) |
-| `claude/tasks/TAAK-325-automapper-generic-destination.md` | AutoMapper `ProjectTo<T>` on a type parameter closed per type argument (A12, not started) |
+| `claude/tasks/TAAK-325-automapper-generic-destination.md` | AutoMapper `ProjectTo<T>` on a type parameter closed per type argument (A12, steps 1-5 done, corpus re-measure open) |
 | `claude/tasks/TAAK-327-epplus-flow-types.md` | EPPlus `ExcelWorksheet` parameters of private helpers → `IXLWorksheet` (council E18 step 1; fields/returns open) |
 | `claude/tasks/TAAK-329-transitive-package-loss.md` | Removing a package drops transitive dependencies user code relies on (found in TAAK-326 corpus) |
 | `claude/tasks/COUNCIL-round-14.md` | Council round 14 decisions (Moq kept rows, add-side using rule, B1) |

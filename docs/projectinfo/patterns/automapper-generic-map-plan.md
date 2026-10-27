@@ -45,10 +45,13 @@ caller, use and derived type in the solution provably passes; otherwise Manual `
 - A member reachable from outside the solution (R1: visible outside a packable project; R2: internal, but `InternalsVisibleTo`
   names an assembly outside the solution).
 - A virtual, abstract, override or interface method (callers through the base or interface are not followed), a method group,
-  a reduced extension method, a dynamic call, `MakeGenericMethod`/`MakeGenericType`, or `typeof(G<>)` (open generic registration).
+  a dynamic call, `MakeGenericMethod`/`MakeGenericType`, or `typeof(G<>)` (open generic registration).
 - A type parameter inside another generic type (`Map<List<T>>`, `Wrapper<T>`), a collection, a nested generic type, a local function.
 - An empty set, a chain deeper than 3, a closed pair without a generated (or existing) map, a closed type not visible from the call's project.
 - `ProjectTo<T>`: A12, TAAK-325 (`automapper.generic-destination`).
+
+A call of a generic extension method in reduced form (`x.Read<A, B>()`) is followed like a static call since TAAK-325; before, its
+id did not match the declaration's and such a caller was skipped silently.
 
 ## Design
 

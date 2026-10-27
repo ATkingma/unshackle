@@ -43,6 +43,6 @@ public class AutoMapperFix : IFix
     private static IReadOnlyList<IPattern> CreatePatterns(IProjectProperties? projectProperties) =>
         [new CreateMapPattern(projectProperties), new ForMemberIgnorePattern(projectProperties), new ForMemberMapFromPattern(projectProperties), new ValueResolverPattern(projectProperties),
         new KeptMapPattern(projectProperties), new MapCallPattern(projectProperties), new GenericMapPattern(projectProperties), new GenericProfilePattern(projectProperties), new MapIntoPattern(projectProperties),
-        new ProjectToPattern(projectProperties), new MockSetUpPattern(projectProperties), new UnusedMapperPattern(projectProperties), new AddAutoMapperPattern(projectProperties),
+        new ProjectToPattern(projectProperties), new GenericDestinationPattern(projectProperties), new MockSetUpPattern(projectProperties), new UnusedMapperPattern(projectProperties), new AddAutoMapperPattern(projectProperties),
         new ConfigurationTestPattern(projectProperties)];
 }

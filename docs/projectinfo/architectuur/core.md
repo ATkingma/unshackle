@@ -306,6 +306,22 @@ edits per project from a closed set (`ProjectFileEdit` has a private-protected c
 - `ResolvesAtLeast(package, v)` and `RequiresAtLeast(package, v)` answer EPPlus E7 (council round 10). A requirement whose range cannot be
   read counts as "at least", so the pin is not made.
 
+## Lost transitive packages (TAAK-329, council round 16 G10)
+
+- When a project drops the old package (`ProjectMigration.KeepRemovedPackage` false), the packages that came only with it are gone too.
+  `TransitivePackages` (Core) finds them in the project's current assets: reachable from the removed package, not declared, and not
+  reachable from any other direct package. The added packages themselves are skipped.
+- Only a lost package whose types the project, or a project that references it (directly or not), still names counts. The code is the
+  migrated solution; an assembly belongs to a package by its path in the NuGet packages folder (`<id>/<version>/`), so an assembly from a
+  framework reference pack does not count. A `using` of a namespace that only the lost package declares counts too (it would be CS0234).
+- Each such package becomes a `PackageAddEdit` with `KeepsTransitiveOf` set, pinned to the resolved version, on the project that drops
+  the old package. It runs through `ProjectFileMigrations` like a fix's own edits, so it is one Fixed `project-file` row per addition, and
+  a blocked project gets no pin.
+- The writer adds the central `<PackageVersion>` only when it is absent; a central version that differs is a Manual row on
+  `Directory.Packages.props` (the build would not resolve what it did before).
+- Needs `Fixer(fixes, projectFiles, assetsReader)` (the CLI) and `Current` assets; without them nothing is pinned.
+- Limitation: the new package's dependency closure is not known before a restore, so a pin is not checked against it (see TAAK-329).
+
 ## Council round 12 engine rules (TAAK-322)
 
 - G6: a blocked project gets no package migration at all (TAAK-321, pinned by `FixAsync_ProjectBlocker_SkipsThePackageMigrationOfThatProject`).

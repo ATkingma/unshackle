@@ -49,6 +49,7 @@ public class Fixer : IFixer
 
     private readonly IReadOnlyList<IFix> _fixes;
     private readonly IProjectFileStore? _projectFiles;
+    private readonly IPackageAssetsReader? _assetsReader;
 
     // Code only: project files are left alone.
     public Fixer(IEnumerable<IFix> fixes)
@@ -62,6 +63,14 @@ public class Fixer : IFixer
     {
         ArgumentNullException.ThrowIfNull(projectFiles);
         _projectFiles = projectFiles;
+    }
+
+    // TAAK-329: with the restored assets, a package lost with the removed one is pinned where code still uses it (council round 16, G10).
+    public Fixer(IEnumerable<IFix> fixes, IProjectFileStore projectFiles, IPackageAssetsReader assetsReader)
+        : this(fixes, projectFiles)
+    {
+        ArgumentNullException.ThrowIfNull(assetsReader);
+        _assetsReader = assetsReader;
     }
 
     public async Task<FixReport> FixAsync(Solution solution, FixRequest request, CancellationToken cancellationToken)
@@ -192,9 +201,10 @@ public class Fixer : IFixer
         findings.AddRange(vendored.Findings);
         solution = vendored.AddTo(solution);
         IReadOnlyList<ProjectFileChange> projectFileChanges = [];
+        IReadOnlyList<ProjectMigration> migrated = [];
         if (_projectFiles is not null && fix.Package is PackageMigration package)
         {
-            (solution, projectFileChanges) = await MigrateProjectFilesAsync(
+            (solution, projectFileChanges, migrated) = await MigrateProjectFilesAsync(
                 _projectFiles, original, solution, fix, package, swappedTypes, vendored.Migrations, blockedProjects, findings, cancellationToken);
         }
 
@@ -203,6 +213,13 @@ public class Fixer : IFixer
         if (fix is IProjectFileMigration fileMigration && _projectFiles is IProjectFileEditor editor)
         {
             projectFileChanges = await ProjectFileMigrations.ApplyAsync(fix, fileMigration, editor, original, findings, projectFileChanges, cancellationToken);
+        }
+
+        // TAAK-329, G10: a package that came only with the removed one and is still used gets a direct, pinned reference.
+        if (_assetsReader is not null && migrated.Count > 0 && _projectFiles is IProjectFileEditor transitiveEditor
+            && await TransitivePackages.PlanAsync(solution, migrated, _assetsReader, cancellationToken) is { HasEdits: true } transitive)
+        {
+            projectFileChanges = await ProjectFileMigrations.ApplyAsync(fix, transitive, transitiveEditor, original, findings, projectFileChanges, cancellationToken);
         }
 
         findings.AddRange(ProjectInfo(fix, original));
@@ -423,7 +440,7 @@ public class Fixer : IFixer
     // Runs on the fixed solution: only code that is still there can keep the removed package.
     // When the project files cannot be edited, the code of those projects stays as it was: rewritten code without the new
     // package would not build (TAAK-111).
-    private static async Task<(Solution Solution, IReadOnlyList<ProjectFileChange> Changes)> MigrateProjectFilesAsync(
+    private static async Task<(Solution Solution, IReadOnlyList<ProjectFileChange> Changes, IReadOnlyList<ProjectMigration> Migrations)> MigrateProjectFilesAsync(
         IProjectFileStore projectFiles,
         Solution original,
         Solution solution,
@@ -456,7 +473,7 @@ public class Fixer : IFixer
 
         if (migrations.Count == 0)
         {
-            return (solution, []);
+            return (solution, [], []);
         }
 
         IReadOnlyList<ProjectFileChange> changes;
@@ -485,7 +502,7 @@ public class Fixer : IFixer
             }
 
             findings.AddRange(migrations.Select(m => FindingFactory.CreateProjectFinding(m.ProjectPath, fix, PatternResult.Manual(reason))));
-            return (solution, []);
+            return (solution, [], []);
         }
 
         findings.AddRange(migrations.Where(m => m.KeepRemovedPackage).Select(m => FindingFactory.CreateProjectFinding(m.ProjectPath, fix,
@@ -514,6 +531,6 @@ public class Fixer : IFixer
             ? PatternResult.Manual($"{user}{KeptSharedPackageReason}{package.RemovedPackage}, so this shared file keeps it next to the new package. " +
                 "Migrate that project and run the fix again.")
             : PatternResult.Fixed(Array.Empty<SyntaxNode>()))));
-        return (solution, changes);
+        return (solution, changes, migrations);
     }
 }

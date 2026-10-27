@@ -179,6 +179,38 @@ public class ProjectFileEditTests
         outcomes.ShouldBeEmpty();
     }
 
+    // TAAK-329, G10: a lost transitive package under CPM gets its PackageVersion only when absent; the same version is fine, another is Manual.
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("8.0.0", false)]
+    [InlineData("9.0.1", true)]
+    public async Task ApplyAsync_TransitivePinCentral_AddsVersionOrManualOnConflict(string? central, bool manual)
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(CentralBefore));
+        _fileSystem.AddFile(PackagesProps, new MockFileData(central is null ? VersionsBefore
+            : VersionsBefore.Replace("</ItemGroup>", $"  <PackageVersion Include=\"Microsoft.Extensions.Configuration\" Version=\"{central}\" />\n  </ItemGroup>", StringComparison.Ordinal)));
+        var edit = new PackageAddEdit { Name = "Microsoft.Extensions.Configuration", Version = "8.0.0", KeepsTransitiveOf = "EPPlus" };
+
+        // Act
+        ProjectFileEditOutcome outcome = (await ApplyAsync([edit])).ShouldHaveSingleItem();
+
+        // Assert
+        if (manual)
+        {
+            outcome.ManualReason.ShouldNotBeNull().ShouldContain("9.0.1");
+            outcome.FilePath.ShouldBe(FullPath(PackagesProps));
+            outcome.Changes.ShouldBeEmpty();
+        }
+        else
+        {
+            outcome.ManualReason.ShouldBeNull();
+            Text(outcome, Project).ShouldContain("<PackageReference Include=\"Microsoft.Extensions.Configuration\" />");
+            outcome.Changes.Any(c => c.FilePath == FullPath(PackagesProps)).ShouldBe(central is null);
+            edit.Describe().ShouldContain("transitively with EPPlus");
+        }
+    }
+
     [Fact]
     public async Task ApplyAsync_PropertyMissing_AddsItToThePropertyGroup()
     {

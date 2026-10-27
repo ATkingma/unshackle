@@ -43,9 +43,47 @@ internal static class ProjectPackages
         }
 
         // A multi-target project is loaded once per target framework; it keeps the package when any of them needs it.
-        return
+        List<ProjectMigration> merged =
         [
             .. migrations.GroupBy(m => m.ProjectPath, StringComparer.Ordinal).Select(g => g.FirstOrDefault(m => m.KeepRemovedPackage) ?? g.First()),
+        ];
+        return KeepForDependents(solution, merged);
+    }
+
+    // A project that keeps the package may get it only transitively, through a shared helper project (corpus B2: Ocelot.Testing):
+    // every project it references, directly or not, keeps the package too, or the dependent loses it (CS0246).
+    private static List<ProjectMigration> KeepForDependents(Solution solution, List<ProjectMigration> migrations)
+    {
+        HashSet<string> keeping = [.. migrations.Where(m => m.KeepRemovedPackage).Select(m => m.ProjectPath)];
+        var needed = new HashSet<string>(StringComparer.Ordinal);
+        var pending = new Stack<Project>(solution.Projects.Where(p => p.FilePath is not null && keeping.Contains(p.FilePath)));
+        var seen = new HashSet<ProjectId>();
+        while (pending.Count > 0)
+        {
+            foreach (ProjectReference reference in pending.Pop().ProjectReferences)
+            {
+                if (seen.Add(reference.ProjectId) && solution.GetProject(reference.ProjectId) is { } referenced)
+                {
+                    if (referenced.FilePath is not null)
+                    {
+                        needed.Add(referenced.FilePath);
+                    }
+
+                    pending.Push(referenced);
+                }
+            }
+        }
+
+        return
+        [
+            .. migrations.Select(m => m.KeepRemovedPackage || !needed.Contains(m.ProjectPath) ? m : new ProjectMigration
+            {
+                ProjectPath = m.ProjectPath,
+                Package = m.Package,
+                KeepRemovedPackage = true,
+                RemovedNamespaces = m.RemovedNamespaces,
+                AddedNamespaces = m.AddedNamespaces,
+            }),
         ];
     }
 

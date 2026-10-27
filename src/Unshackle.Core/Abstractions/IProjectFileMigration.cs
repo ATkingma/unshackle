@@ -12,12 +12,14 @@ public interface IProjectFileMigration
 {
     /// <summary>The edits for one project, in order; empty leaves it alone. An edit with nothing to do (for example a package the project does not declare) is skipped.</summary>
     /// <param name="project">A C# project of the original solution that lives in a file.</param>
-    IReadOnlyList<ProjectFileEdit> EditsFor(Project project);
+    /// <param name="cancellationToken">The run's token.</param>
+    Task<IReadOnlyList<ProjectFileEdit>> EditsForAsync(Project project, CancellationToken cancellationToken);
 
     /// <summary>
     /// Project-level Manual rows (council round 10, G4), for example a target framework the new library does not support. Each is
     /// reported on the project file; one with a <see cref="ProjectBlockingReason"/> code blocks the project's file edits. Empty (the default): none.
     /// </summary>
     /// <param name="project">A C# project of the original solution that lives in a file (the first copy of a multi-target project).</param>
-    IReadOnlyList<ManualResult> ProjectBlockers(Project project) => [];
+    /// <param name="cancellationToken">The run's token.</param>
+    Task<IReadOnlyList<ManualResult>> ProjectBlockersAsync(Project project, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<ManualResult>>([]);
 }

@@ -50,16 +50,26 @@ public class PollyFix : IFix, IProjectFileMigration
 
     // Council round 10, P9/G4: a target framework Microsoft.Extensions.Resilience does not support blocks the project's file edits.
     // TAAK-320: the Fixer then also leaves that project's documents unrewritten, so its code stays on v7 and keeps building.
-    public IReadOnlyList<ManualResult> ProjectBlockers(Project project)
+    public Task<IReadOnlyList<ManualResult>> ProjectBlockersAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
+        return Task.FromResult(Blockers(project));
+    }
+
+    private static IReadOnlyList<ManualResult> Blockers(Project project)
+    {
         // Corpus B1/B4: an older resolved Microsoft.Extensions.* package than the Resilience closure needs blocks the project too.
         return [.. PollyTargetFramework.Blockers(project), .. PollyPackageDowngrade.Blockers(project)];
     }
 
-    public IReadOnlyList<ProjectFileEdit> EditsFor(Project project)
+    public Task<IReadOnlyList<ProjectFileEdit>> EditsForAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
+        return Task.FromResult(Edits(project));
+    }
+
+    private static IReadOnlyList<ProjectFileEdit> Edits(Project project)
+    {
         // Council round 10, P8: a direct Polly.Core reference goes once Microsoft.Extensions.Resilience brings it in, only when the
         // declared version is at most the bundled one (the engine keeps a higher or unknown one with an Info row). The add is a
         // no-op where the package migration already added it; both are blocked while the project has blocking rows (G4).

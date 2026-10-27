@@ -139,7 +139,7 @@ public class Fixer : IFixer
         Dictionary<string, string> blockedProjects = new(StringComparer.OrdinalIgnoreCase);
         if (fix is IProjectFileMigration blockingMigration)
         {
-            (List<Finding> blockerRows, blockedFiles, blockedProjects) = ProjectFileMigrations.Blockers(fix, blockingMigration, original);
+            (List<Finding> blockerRows, blockedFiles, blockedProjects) = await ProjectFileMigrations.BlockersAsync(fix, blockingMigration, original, cancellationToken);
             findings.AddRange(blockerRows);
         }
 
@@ -255,7 +255,7 @@ public class Fixer : IFixer
             }
         }
 
-        findings.AddRange(ProjectInfo(fix, original));
+        findings.AddRange(await ProjectInfoAsync(fix, original, cancellationToken));
         findings.AddRange(ProjectSummary(fix, original, findings));
         if (fix.ChangedCodeInfo is { Length: > 0 } changedCodeInfo && findings.Any(f => f.Line > 0 && f.Result is FixedResult))
         {
@@ -308,11 +308,19 @@ public class Fixer : IFixer
     }
 
     // Council round 10, C2: the fix-level Info rows, once per project file (a multi-target project asks its first copy), in project order.
-    internal static IEnumerable<Finding> ProjectInfo(IFix fix, Solution solution) =>
-        solution.Projects
+    internal static async Task<List<Finding>> ProjectInfoAsync(IFix fix, Solution solution, CancellationToken cancellationToken)
+    {
+        List<Finding> rows = [];
+        foreach (IGrouping<string, Project> project in solution.Projects
             .Where(p => p.Language == LanguageNames.CSharp && p.FilePath is not null)
-            .GroupBy(p => p.FilePath!, StringComparer.OrdinalIgnoreCase)
-            .SelectMany(g => fix.ProjectInfo(g.First()).Select(text => FindingFactory.CreateProjectFinding(g.Key, fix, PatternResult.Note(text))));
+            .GroupBy(p => p.FilePath!, StringComparer.OrdinalIgnoreCase))
+        {
+            IReadOnlyList<string> texts = await fix.ProjectInfoAsync(project.First(), cancellationToken);
+            rows.AddRange(texts.Select(text => FindingFactory.CreateProjectFinding(project.Key, fix, PatternResult.Note(text))));
+        }
+
+        return rows;
+    }
 
     // TAAK-342, council round 17, B3: the fix's summary rows per project file, from the rows of that project's documents.
     internal static IEnumerable<Finding> ProjectSummary(IFix fix, Solution solution, IReadOnlyList<Finding> findings) =>

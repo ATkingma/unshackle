@@ -32,13 +32,13 @@ public class XunitV3Fix : IFix, IProjectFileMigration
     // Conservative until the council decides on per-project partial runs (TAAK-341, council questions).
     public bool AllOrNothing => true;
 
-    public IReadOnlyList<ManualResult> ProjectBlockers(Project project)
+    public Task<IReadOnlyList<ManualResult>> ProjectBlockersAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
-        return XunitV3TargetFramework.Blockers(project);
+        return XunitV3TargetFramework.BlockersAsync(project, cancellationToken);
     }
 
-    public IReadOnlyList<ProjectFileEdit> EditsFor(Project project)
+    public async Task<IReadOnlyList<ProjectFileEdit>> EditsForAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
         if (!XunitV3Assemblies.ReferencesV2(project))
@@ -50,7 +50,7 @@ public class XunitV3Fix : IFix, IProjectFileMigration
         // Council round 18, X4: only a project with Microsoft.NET.Test.Sdk AND test attributes becomes an executable on xunit.v3. Any other
         // project with the xunit package keeps its OutputType and gets the library packages (v3 xunit.v3 refuses a non-executable project).
         List<ProjectFileEdit> edits = [];
-        if (XunitV3Assemblies.IsTestProject(project))
+        if (await XunitV3Assemblies.IsTestProjectAsync(project, cancellationToken))
         {
             edits.Add(new PropertyEdit { Name = "OutputType", Value = "Exe" });
             edits.Add(new PackageRenameEdit { OldName = "xunit", NewName = "xunit.v3", Version = V3Version });
@@ -76,16 +76,16 @@ public class XunitV3Fix : IFix, IProjectFileMigration
     }
 
     // X4: a project with the xunit package that is not a test project by both signs keeps its OutputType; the row says why.
-    public IReadOnlyList<string> ProjectInfo(Project project)
+    public async Task<IReadOnlyList<string>> ProjectInfoAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
-        if (!XunitV3Assemblies.ReferencesExecution(project) || XunitV3Assemblies.IsTestProject(project))
+        if (!XunitV3Assemblies.ReferencesExecution(project) || await XunitV3Assemblies.IsTestProjectAsync(project, cancellationToken))
         {
             return [];
         }
 
         string sdk = XunitV3Assemblies.ReferencesTestSdk(project) ? "references" : "does not reference";
-        string attributes = XunitV3Assemblies.HasTestAttributes(project) ? "has" : "has no";
+        string attributes = await XunitV3Assemblies.HasTestAttributesAsync(project, cancellationToken) ? "has" : "has no";
         return [$"Not migrated as a test project: it {sdk} Microsoft.NET.Test.Sdk and {attributes} xUnit test attributes (both are needed). Its xunit package " +
             "becomes xunit.v3.extensibility.core plus xunit.v3.assert and OutputType stays; if it runs tests, set OutputType Exe and reference xunit.v3 by hand."];
     }

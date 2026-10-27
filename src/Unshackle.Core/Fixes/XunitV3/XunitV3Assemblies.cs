@@ -39,30 +39,39 @@ internal static class XunitV3Assemblies
     public static bool ReferencesExecution(Project project) => ReferencesV2(project) && Names(project).Any(s_execution.Contains);
 
     // A test project (council round 18, X4): the xunit package, Microsoft.NET.Test.Sdk AND test attributes. Only then OutputType Exe and xunit.v3.
-    public static bool IsTestProject(Project project) => ReferencesExecution(project) && ReferencesTestSdk(project) && HasTestAttributes(project);
+    public static async Task<bool> IsTestProjectAsync(Project project, CancellationToken cancellationToken) =>
+        ReferencesExecution(project) && ReferencesTestSdk(project) && await HasTestAttributesAsync(project, cancellationToken);
 
     public static bool ReferencesTestSdk(Project project) => Names(project).Any(s_testSdk.Contains);
 
     public static bool ReferencesAssert(Project project) => Names(project).Contains("xunit.assert", StringComparer.OrdinalIgnoreCase);
 
-    // Sync because IProjectFileMigration is: the trees are parsed already by the document pass, the compilation is only built for a file
-    // that names an attribute ending in Fact or Theory.
-    public static bool HasTestAttributes(Project project) =>
-        s_testAttributes.GetValue(project, p => new StrongBox<bool>(FindTestAttributes(p))).Value;
+    // Cached per project; the compilation is only built for a file that names an attribute ending in Fact or Theory.
+    public static async Task<bool> HasTestAttributesAsync(Project project, CancellationToken cancellationToken)
+    {
+        if (s_testAttributes.TryGetValue(project, out StrongBox<bool>? known))
+        {
+            return known.Value;
+        }
 
-    private static bool FindTestAttributes(Project project)
+        bool found = await FindTestAttributesAsync(project, cancellationToken);
+        s_testAttributes.AddOrUpdate(project, new StrongBox<bool>(found));
+        return found;
+    }
+
+    private static async Task<bool> FindTestAttributesAsync(Project project, CancellationToken cancellationToken)
     {
         Compilation? compilation = null;
         foreach (Document document in project.Documents)
         {
-            SyntaxNode root = document.GetSyntaxRootAsync(CancellationToken.None).GetAwaiter().GetResult()!;
+            SyntaxNode root = (await document.GetSyntaxRootAsync(cancellationToken))!;
             List<AttributeSyntax> candidates = [.. root.DescendantNodes().OfType<AttributeSyntax>().Where(IsCandidate)];
             if (candidates.Count == 0)
             {
                 continue;
             }
 
-            compilation ??= project.GetCompilationAsync(CancellationToken.None).GetAwaiter().GetResult()!;
+            compilation ??= (await project.GetCompilationAsync(cancellationToken))!;
             INamedTypeSymbol? fact = compilation.GetTypeByMetadataName("Xunit.FactAttribute");
             SemanticModel model = compilation.GetSemanticModel(root.SyntaxTree);
             if (fact is not null && candidates.Any(a => model.GetSymbolInfo(a).Symbol?.ContainingType is INamedTypeSymbol type && DerivesFrom(type, fact)))

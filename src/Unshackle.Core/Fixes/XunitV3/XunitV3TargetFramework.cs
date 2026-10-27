@@ -23,8 +23,8 @@ internal static class XunitV3TargetFramework
         return symbols.Contains("NETSTANDARD") ? "a netstandard target (a v3 test project is an executable)" : null;
     }
 
-    public static IReadOnlyList<ManualResult> Blockers(Project project) =>
-        XunitV3Assemblies.IsTestProject(project) && project.ParseOptions is { } options && Unsupported(options.PreprocessorSymbolNames) is string framework
+    public static async Task<IReadOnlyList<ManualResult>> BlockersAsync(Project project, CancellationToken cancellationToken) =>
+        await XunitV3Assemblies.IsTestProjectAsync(project, cancellationToken) && project.ParseOptions is { } options && Unsupported(options.PreprocessorSymbolNames) is string framework
             ? [(ManualResult)PatternResult.Manual(ProjectBlockingReason.TargetFrameworkUnsupported, $"xunit.v3 {XunitV3Fix.V3Version} does not support {framework}.")]
             : [];
 }

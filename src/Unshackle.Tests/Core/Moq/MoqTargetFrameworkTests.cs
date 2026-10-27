@@ -20,13 +20,13 @@ public class MoqTargetFrameworkTests
     [InlineData("NETSTANDARD,NETSTANDARD1_6,NETSTANDARD1_6_OR_GREATER", true)]
     [InlineData("NETSTANDARD,NETSTANDARD2_0,NETSTANDARD2_0_OR_GREATER", false)]
     [InlineData("", false)]
-    public void ProjectBlockers_TargetFramework_BlocksOnlyWithoutNetStandard20(string symbols, bool blocked)
+    public async Task ProjectBlockers_TargetFramework_BlocksOnlyWithoutNetStandard20(string symbols, bool blocked)
     {
         // Arrange
         Project project = Project(symbols);
 
         // Act
-        IReadOnlyList<ManualResult> blockers = new MoqFix().ProjectBlockers(project);
+        IReadOnlyList<ManualResult> blockers = await new MoqFix().ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         if (blocked)

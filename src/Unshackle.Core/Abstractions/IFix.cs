@@ -99,7 +99,8 @@ public interface IFix
     /// Info row on the project file, rendered like <see cref="PatternResult.Note"/> and never counted as a warning. Empty (the default): none.
     /// </summary>
     /// <param name="project">A C# project of the original solution that lives in a file (the first copy of a multi-target project).</param>
-    IReadOnlyList<string> ProjectInfo(Project project) => [];
+    /// <param name="cancellationToken">The run's token.</param>
+    Task<IReadOnlyList<string>> ProjectInfoAsync(Project project, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<string>>([]);
 
     /// <summary>
     /// Project-level rows computed from the findings of one project's documents after the document pass (TAAK-342, council round 17, B3), for

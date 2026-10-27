@@ -60,13 +60,13 @@ public class PollyFixTests
     [InlineData("NETCOREAPP;NET8_0_OR_GREATER", true, false)]
     [InlineData("NETFRAMEWORK;NET462_OR_GREATER", true, false)]
     [InlineData("NETCOREAPP;NETCOREAPP3_0", false, false)]
-    public void ProjectBlockers_UnsupportedFrameworkWithPollyV7_BlocksTheProject(string symbols, bool referencesPolly, bool blocked)
+    public async Task ProjectBlockers_UnsupportedFrameworkWithPollyV7_BlocksTheProject(string symbols, bool referencesPolly, bool blocked)
     {
         // Arrange (council round 10, P9/G4)
         Project project = CreateProject(symbols.Split(';'), referencesPolly ? PollyReferences.Before : PollyReferences.After);
 
         // Act
-        IReadOnlyList<ManualResult> blockers = new PollyFix().ProjectBlockers(project);
+        IReadOnlyList<ManualResult> blockers = await new PollyFix().ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         if (blocked)
@@ -82,13 +82,13 @@ public class PollyFixTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void EditsFor_PollyV7Project_AddsResilienceAndRemovesBundledPollyCore(bool referencesPolly)
+    public async Task EditsFor_PollyV7Project_AddsResilienceAndRemovesBundledPollyCore(bool referencesPolly)
     {
         // Arrange (council round 10, P8)
         Project project = CreateProject(["NETCOREAPP", "NET8_0_OR_GREATER"], referencesPolly ? PollyReferences.Before : PollyReferences.After);
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = new PollyFix().EditsFor(project);
+        IReadOnlyList<ProjectFileEdit> edits = await new PollyFix().EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         if (!referencesPolly)

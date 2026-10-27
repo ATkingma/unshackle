@@ -163,7 +163,7 @@ public class ProjectFileMigrationTests
         FixReport report = await FixAsync(fixer);
 
         // Assert
-        ((IProjectFileMigration)fix).DidNotReceive().EditsFor(Arg.Any<Project>());
+        _ = ((IProjectFileMigration)fix).DidNotReceive().EditsForAsync(Arg.Any<Project>(), Arg.Any<CancellationToken>());
         report.Findings.ShouldNotContain(f => f.PatternId == Fixer.ProjectFilePatternId);
     }
 
@@ -179,7 +179,7 @@ public class ProjectFileMigrationTests
         fix.Patterns.Returns([pattern]);
         fix.RemovedNamespaces.Returns(["FluentAssertions"]);
         fix.AddedNamespaces.Returns(["Shouldly"]);
-        ((IProjectFileMigration)fix).EditsFor(Arg.Any<Project>()).Returns([edit]);
+        ((IProjectFileMigration)fix).EditsForAsync(Arg.Any<Project>(), Arg.Any<CancellationToken>()).Returns([edit]);
         return fix;
     }
 

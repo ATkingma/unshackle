@@ -23,6 +23,8 @@ Proofs: `src/Unshackle.Tests/Proofs/EfBulk/Update/` (`ProofTests`, before agains
 | REQ-6 | Met | captured-local, entity-member, numeric-arithmetic; string-concatenation, decimal-arithmetic, static-now; `EfBulkSqlTests` |
 | REQ-7 | Met | batch-builder; unit test `FixAsync_BatchBuilder_ReasonNamesTheOptionsAndTheCall` |
 | REQ-8 | Met | unit tests `FixAsync_NoExecuteDeleteInTheProject_AddsOneProjectRow`, `FixAsync_ExecuteDeleteAvailable_AddsNoProjectRow` |
+| REQ-9 | Met | captured-field, captured-property, enum-member, constant |
+| REQ-10 | Met | string-equality, string-equality-captured; `EfBulkSqlTests.ExecuteUpdate_StringEqualityWithConstant_MatchesCSharpOnNullColumn` (EF Core emits NULL-safe SQL: NULL row gives false for `==`, true for `!=`) |
 
 ## Deviations
 

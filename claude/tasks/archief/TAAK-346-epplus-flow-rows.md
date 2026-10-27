@@ -27,9 +27,12 @@
 ## Council questions
 
 1. E29 is conservative: any return-helper call on the package anywhere in the scope (also in a branch, or after the rename) blocks a rename to its name. Acceptable?
+   **Decision (council 20 E33: accepted; the reason names the helper call with file:line. Round 19 R3 (step 2a, dropped by the archive) moved to TAAK-351.)**
 
 ## See also
 
 - `claude/tasks/COUNCIL-round-18.md`
+- `claude/tasks/COUNCIL-round-20.md`
+- `claude/tasks/TAAK-351-epplus-row-fold.md`
 - `claude/tasks/archief/TAAK-336-epplus-flow-followups.md`
 - `docs/projectinfo/patterns/epplus-flow-types-plan.md`

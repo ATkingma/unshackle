@@ -42,6 +42,7 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
 - [x] 5e. X3: `PackageVersionEdit` (Name, From, To): bumps a plain version in [From, To) on the reference, a shared props file (G3 rules), or the
   central `PackageVersion` (only when every project under it that references the package is loaded and unblocked, else Info naming them);
   a non-plain version (`$(Prop)`, range) stays with an Info row. xunit3 test projects bump `xunit.runner.visualstudio` 2.0.0+ → 3.1.5 (step 6 runner part done)
+- [ ] 5f. X9: Info row for a 1.x `xunit.runner.visualstudio` (unit test); after TAAK-352, `XunitV3Assemblies` awaits with the run token
 - [ ] 5. Remaining patterns: `Record.ExceptionAsync` (ValueTask), `[PropertyData]` → `[MemberData]`, string-based `[CollectionBehavior]`/
   `[TestCaseOrderer]`/`[TestFrameworkAttribute]` → `typeof(...)`, Manual inventory of extensibility (custom `DataAttribute`, discoverers,
   `Xunit.Sdk` runners), `TheoryData` / `SkipException` differences
@@ -71,13 +72,16 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
    Fixed alternative.
    **Decision (council 18 X6: Fixed `.AsTask()` only when the result is used exactly once directly; else Manual.)**
 
-## Council questions (open, from steps 5a-5e)
+## Council questions (from steps 5a-5e, decided in council round 20, `claude/tasks/COUNCIL-round-20.md`)
 
 1. **Non-test project with the `xunit` package** (X4 "either alone"): built conservatively as `xunit`/`xunit.core` → `xunit.v3.extensibility.core`
    (+ `xunit.v3.assert`), OutputType unchanged, Info row. Keeping `xunit` v2 would mix v2 and v3 assemblies and not build. Acceptable?
+   **Decision (council 20 X7: accepted as built.)**
 2. **Test attribute detection** runs sync over the project's documents (`GetAwaiter().GetResult()`, as `IProjectFileMigration` is sync). Make
    `EditsFor`/`ProjectInfo` async later?
+   **Decision (council 20 X8: yes, `IProjectFileMigration` becomes async with a required token; TAAK-352.)**
 3. **Runner bump range**: `From` 2.0.0 (so an older 3.x below 3.1.5 is raised too). A 1.x runner is left alone (no row).
+   **Decision (council 20 X9: `From` 2.0.0 accepted; a 1.x runner gets an Info row to update by hand; step 5f.)**
 
 ## Context for the next agent
 
@@ -93,3 +97,5 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
 - `claude/tasks/TAAK-440-scout-testfw.md` — the scout task
 - `docs/projectinfo/patterns/xunit3-async-lifetime-plan.md` — pattern plans (also `-abstractions-namespace`, `-async-void-test`)
 - `claude/docs/council.md` — decision council
+- `claude/tasks/COUNCIL-round-20.md` — X7-X9
+- `claude/tasks/TAAK-352-async-project-migration.md` — async project migrations

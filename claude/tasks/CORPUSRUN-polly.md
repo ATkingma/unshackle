@@ -66,6 +66,12 @@ Of the 14 repos with a green baseline, 8 pass with 0 test regressions and 6 brea
   The project references `Microsoft.Extensions.DependencyInjection 5.0.0`. The added Resilience package brings in `DependencyInjection.Abstractions 8.0`, which also defines `ServiceCollection` -> CS0433. Expected: bump the direct `Microsoft.Extensions.DependencyInjection` reference to match, or report Manual. Same family as B1.
   **Fixed** with B1: DependencyInjection 5.0.0 is below the 8.0 group's major, so the project is blocked with `PackageDowngrade`.
 
+## H1 free-disk rule (council round 15)
+
+`claude/tools/corpus-polly-am.sh` (and `corpus-polly-run.sh`) stop the run when the corpus disk has less than `MIN_FREE_GB` (default 20)
+free before a repo: "run incomplete: disk below threshold" in `_results/INCOMPLETE.txt`; remaining repos are not counted. Details in
+`CORPUSRUN-automapper.md` ("H1 free-disk rule"). Harness copies outside the repo need the same change.
+
 ## See also
 
 - `claude/tasks/polly-queue.md` (row 13)

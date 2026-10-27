@@ -391,7 +391,8 @@ internal class MapOwners
             }
 
             sources.Add((root, model));
-            foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => ProfileSyntax.IsProfileWithMaps(c, model)))
+            // A generic profile is GenericProfilePattern's (council round 15, A14); its CreateMap<T, T> has no pair to plan.
+            foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => ProfileSyntax.IsProfileWithMaps(c, model) && !GenericProfilePattern.IsGenericProfile(c, model)))
             {
                 List<MapNode> nodes = [];
                 foreach (SyntaxNode statement in ProfileSyntax.MapStatements(profile, model))

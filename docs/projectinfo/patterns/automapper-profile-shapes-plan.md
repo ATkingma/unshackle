@@ -58,7 +58,7 @@ automapper.profile-shapes: the profile rewrite (shared by `CreateMap`, `ForMembe
 - **REQ-7**: IF a mapped type is private or protected (a private DTO nested in a class) THEN THE SYSTEM SHALL report Manual (proof `CreateMap/nested-private-dto`).
 - **REQ-8**: IF a `MapFrom` expression uses a private/protected member, or a simple name that means something else next to the outermost type THEN THE SYSTEM SHALL report Manual (proofs `ForMemberMapFrom/nested-private-member`, `ForMemberMapFrom/nested-outer-member`).
 - **REQ-9**: IF the outermost type holds several profiles with maps, or `<Outer><Profile>Extensions` already exists THEN THE SYSTEM SHALL report Manual (proofs `CreateMap/nested-several-profiles`, `CreateMap/nested-name-taken`).
-- **REQ-10**: IF the profile is generic, partial or has several constructors THEN THE SYSTEM SHALL report Manual with that specific reason (proofs `CreateMap/generic`, `CreateMap/partial`, `CreateMap/several-constructors`).
+- **REQ-10**: IF the profile is generic, partial or has several constructors THEN THE SYSTEM SHALL report Manual with that specific reason (proofs `GenericProfile/skoruba-shape` (since council round 15, A14, a top-level generic profile goes to automapper.generic-profile), `CreateMap/partial`, `CreateMap/several-constructors`).
 
 ## Assumptions
 

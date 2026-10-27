@@ -49,7 +49,7 @@ Facts from `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs` (`
 | Leaf                                    | Condition                                                       | Evidence                                    |
 | --------------------------------------- | --------------------------------------------------------------- | ------------------------------------------- |
 | Manual "holds several profiles"         | two or more profiles with maps in one outermost type            | `CreateMap/nested-several-profiles`          |
-| Manual "is generic or nested in a generic type" | type parameters on the profile or a containing type      | `CreateMap/generic`                          |
+| Manual "is generic or nested in a generic type" | type parameters on the profile or a containing type      | `GenericProfile/skoruba-shape` (since A14 a top-level generic profile is `automapper.generic-profile`) |
 | Manual "is partial"                     | `partial` profile                                               | `CreateMap/partial`                          |
 | Manual "has several constructors"       | more than one constructor (static included)                     | `CreateMap/several-constructors`             |
 | Manual "is private or protected"        | a mapped type is not reachable from a top-level class           | `CreateMap/nested-private-dto`               |

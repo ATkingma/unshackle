@@ -42,7 +42,7 @@ public class AutoMapperFix : IFix
     // Every pattern that reaches the solution-wide plan (MapOwners) gets the same properties, so each one sees the same plan.
     private static IReadOnlyList<IPattern> CreatePatterns(IProjectProperties? projectProperties) =>
         [new CreateMapPattern(projectProperties), new ForMemberIgnorePattern(projectProperties), new ForMemberMapFromPattern(projectProperties), new ValueResolverPattern(projectProperties),
-        new KeptMapPattern(projectProperties), new MapCallPattern(projectProperties), new GenericMapPattern(projectProperties), new MapIntoPattern(projectProperties),
+        new KeptMapPattern(projectProperties), new MapCallPattern(projectProperties), new GenericMapPattern(projectProperties), new GenericProfilePattern(projectProperties), new MapIntoPattern(projectProperties),
         new ProjectToPattern(projectProperties), new MockSetUpPattern(projectProperties), new UnusedMapperPattern(projectProperties), new AddAutoMapperPattern(projectProperties),
         new ConfigurationTestPattern(projectProperties)];
 }

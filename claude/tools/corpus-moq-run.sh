@@ -7,7 +7,7 @@ LIST=$HERE/corpus-moq-list.txt
 for N in ${@:-$(grep -vE '^\s*(#|$)' "$LIST" | cut -d' ' -f1)}; do
   SLN=$(grep -E "^$N " "$LIST" | cut -d' ' -f2-)
   for M in base scan after; do
-    "$HERE/corpus-moq-am.sh" one $M "$N" "$SLN"
+    "$HERE/corpus-moq-am.sh" one $M "$N" "$SLN" || [ $? -ne 255 ] || { echo "$(date +%T) stop: run incomplete (H1, disk below threshold)"; exit 1; }
     S=$(cat "$CORPUS/_results/$M/$N/status.txt" 2>/dev/null)
     echo "$(date +%T) $N $M $S"
     [ "$M" = base ] && [ "$S" != ok ] && break   # no baseline, no comparison

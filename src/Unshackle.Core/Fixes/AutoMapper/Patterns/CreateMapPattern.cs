@@ -50,7 +50,7 @@ public class CreateMapPattern : ISolutionPattern
     public virtual IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().Where(n => n switch
         {
-            ClassDeclarationSyntax c => ProfileSyntax.IsProfileWithMaps(c, model) && !ProfileSyntax.UsesForMember(c, ignore: true) && !ProfileSyntax.UsesForMember(c, ignore: false),
+            ClassDeclarationSyntax c => ProfileSyntax.IsProfileWithMaps(c, model) && !GenericProfilePattern.IsGenericProfile(c, model) && !ProfileSyntax.UsesForMember(c, ignore: true) && !ProfileSyntax.UsesForMember(c, ignore: false),
             InvocationExpressionSyntax i => IsOtherMapCall(i, model),
             _ => false,
         }).Select(ProfileSyntax.Anchor).Distinct();

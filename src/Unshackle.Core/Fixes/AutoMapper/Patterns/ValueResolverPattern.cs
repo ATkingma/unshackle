@@ -28,5 +28,5 @@ public class ValueResolverPattern : CreateMapPattern
         "ForMember(d => d.X, o => o.MapFrom<TResolver>()) and MapFrom((s, d) => expr) → X = new TResolver().Resolve(source, default!, default!, default!) or X = expr in B ToB(this A source); resolvers with DI dependencies or that use the destination, member or context stay Manual";
 
     public override IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => ProfileSyntax.IsProfileWithMaps(c, model) && ValueResolvers.UsesResolver(c)).Select(ProfileSyntax.Anchor).Distinct();
+        root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => ProfileSyntax.IsProfileWithMaps(c, model) && !GenericProfilePattern.IsGenericProfile(c, model) && ValueResolvers.UsesResolver(c)).Select(ProfileSyntax.Anchor).Distinct();
 }

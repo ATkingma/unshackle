@@ -10,7 +10,7 @@
 
 ## Requirements
 
-Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `ForMemberIgnorePattern.cs`, `ForMemberMapFromPattern.cs`, `MapCallPattern.cs`, `NestedMaps.cs`. Proofs: `src/Unshackle.Tests/Proofs/AutoMapper/CreateMap/` (`nested-*`, `expression-bodied*`, `member-list-nested-profile`, `generic`, `partial`, `several-constructors`), `ForMemberIgnore/nested-profile`, `ForMemberMapFrom/nested-*`, `_Combined/nested-profile-map-call`, `_Combined/nested-profiles-nested-map`. Unit tests: `src/Unshackle.Tests/Core/ProfileShapesTests.cs`.
+Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `ForMemberIgnorePattern.cs`, `ForMemberMapFromPattern.cs`, `MapCallPattern.cs`, `NestedMaps.cs`. Proofs: `src/Unshackle.Tests/Proofs/AutoMapper/CreateMap/` (`nested-*`, `expression-bodied*`, `member-list-nested-profile`, `partial`, `several-constructors`), `ForMemberIgnore/nested-profile`, `ForMemberMapFrom/nested-*`, `_Combined/nested-profile-map-call`, `_Combined/nested-profiles-nested-map`. Unit tests: `src/Unshackle.Tests/Core/ProfileShapesTests.cs`.
 
 | REQ    | Verdict | Evidence                                                                                                                  |
 | ------ | ------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -23,7 +23,7 @@ Code: `src/Unshackle.Core/Fixes/AutoMapper/Patterns/CreateMapPattern.cs`, `ForMe
 | REQ-7  | Met     | `CreateMap/nested-private-dto`                                                                                            |
 | REQ-8  | Met     | `ForMemberMapFrom/nested-private-member`, `ForMemberMapFrom/nested-outer-member`                                          |
 | REQ-9  | Met     | `CreateMap/nested-several-profiles` (cats `AddPRI` form), `CreateMap/nested-name-taken`                                    |
-| REQ-10 | Met     | `CreateMap/generic` (skoruba form), `CreateMap/partial` (nop form), `CreateMap/several-constructors` (dasblog form)          |
+| REQ-10 | Met     | `GenericProfile/skoruba-shape` (skoruba form, automapper.generic-profile since A14), `CreateMap/partial` (nop form), `CreateMap/several-constructors` (dasblog form)          |
 
 ## Deviations
 

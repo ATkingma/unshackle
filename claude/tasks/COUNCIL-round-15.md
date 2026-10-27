@@ -54,5 +54,5 @@ when JOBS > 1. CORPUSRUN-automapper results produced on the full disk are marked
 - `claude/docs/council.md` — summary of all rounds
 - `claude/tasks/TAAK-332-automapper-remeasure.md`
 - `claude/tasks/TAAK-325-automapper-generic-destination.md`
-- `claude/tasks/TAAK-334-council-15-followups.md`
+- `claude/tasks/archief/TAAK-334-council-15-followups.md`
 - `claude/tasks/CORPUSRUN-automapper.md`

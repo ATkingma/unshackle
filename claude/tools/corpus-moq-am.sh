@@ -27,6 +27,19 @@ mkdir -p "$CORPUS/tmp" "$CORPUS/work" "$R"
 export CORPUS JOBS TEST_TIMEOUT EXTRA FIX REPOS TOOL=${TOOL:-}
 export TEMP=$CORPUS/tmp TMP=$CORPUS/tmp TMPDIR=$CORPUS/tmp
 export DOCKER_HOST=tcp://127.0.0.1:1 DOTNET_CLI_TELEMETRY_OPTOUT=1 MSBUILDDISABLENODEREUSE=1 DOTNET_ROLL_FORWARD=Major
+# H1 (council round 15): before each repo the corpus disk needs MIN_FREE_GB (default 20) free. Below it the run stops (it does not skip
+# the repo): "run incomplete: disk below threshold" goes to $R/INCOMPLETE.txt, `one` exits 255 (xargs in `list` stops starting repos)
+# and every later `one` refuses until that file is removed. Results of a run with that file are not counted.
+MIN_FREE_GB=${MIN_FREE_GB:-20}
+INCOMPLETE=$R/INCOMPLETE.txt
+free_gb() { df -Pk "$CORPUS" | awk 'NR==2 { print int($4 / 1048576) }'; }
+disk_ok() {
+  [ ! -e "$INCOMPLETE" ] || { echo "run incomplete (see $INCOMPLETE): not starting $1" >&2; return 1; }
+  local F; F=$(free_gb)
+  [ "${F:-0}" -lt "$MIN_FREE_GB" ] || return 0
+  echo "run incomplete: disk below threshold (${F:-?} GB free < ${MIN_FREE_GB} GB on $CORPUS) before $1 at $(date '+%F %T')" | tee -a "$INCOMPLETE" >&2
+  return 1
+}
 
 clone() {
   grep -vE '^\s*(#|$)' "$REPOS" | while read -r N REPO REF; do
@@ -42,6 +55,7 @@ one() {
   local M=$1 N=$2 SLN=$3 F=${4:-$FIX}
   local SRC=$CORPUS/src/$N D=$R/$M/$N W=$CORPUS/work/$M-$N T0=$(date +%s)
   local L=$D/logs
+  disk_ok "$M $N" || exit 255
   rm -rf "$D" "$W"; mkdir -p "$W" "$L"
   tar -C "$SRC" --exclude=.git --exclude=bin --exclude=obj --exclude=node_modules -cf - . | tar -C "$W" -xf -
   # lock files pin versions/sources of the original machine (bitwarden: NU1101 on nuget.org-only restore)
@@ -58,7 +72,9 @@ XML
   local TEST=(dotnet test "$SLN" --no-build --logger trx --results-directory)
   [ "$RUNNER" = mtp ] && TEST=(dotnet test --solution "$SLN" --no-build ${TRX_FLAG:---report-trx} --results-directory)  # TRX_FLAG=--report-xunit-trx: xunit v3 without the TrxReport extension (orchardcore)
   local TO=1800
-  status() { echo "$1" > "$D/status.txt"; echo "$(( $(date +%s)-T0 ))s" > "$D/duration.txt"; cd "$CORPUS" && rm -rf "$W"; }
+  # H1: the work copy (with its obj/bin) goes as soon as the repo is done; with JOBS > 1 also any obj/bin built in the source clone.
+  status() { echo "$1" > "$D/status.txt"; echo "$(( $(date +%s)-T0 ))s" > "$D/duration.txt"; cd "$CORPUS" && rm -rf "$W"
+             [ "$JOBS" -le 1 ] || find "$SRC" -name node_modules -prune -o -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +; }
   step() { local s=$1; shift; local t=$(date +%s); timeout "$TO" nice "$@" > "$L/$s.log" 2>&1; local e=$?
            echo "$s exit=$e t=$(( $(date +%s)-t ))s" >> "$D/steps.txt"; return $e; }
   step restore0 dotnet restore "$SLN" $P || { status "restore-fails"; return; }
@@ -92,6 +108,6 @@ case ${1:-} in
   clone) clone ;;
   one) shift; one "$@" ;;
   list) M=$2; grep -vE '^\s*(#|$)' "$3" | xargs -P "$JOBS" -L 1 bash "$0" one "$M" ;;
-  summary) $PY summary "$R/$2" ;;
+  summary) [ ! -e "$INCOMPLETE" ] || cat "$INCOMPLETE"; $PY summary "$R/$2" ;;
   *) sed -n '2,8p' "$0"; exit 2 ;;
 esac

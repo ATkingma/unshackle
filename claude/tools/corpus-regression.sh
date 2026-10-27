@@ -20,6 +20,16 @@ PY="python3 -I $HERE/corpus-regression.py"
 P="-p:NuGetAudit=false -p:AllowMissingPrunePackageData=true -p:SkipNSwag=True"
 export OUT JOBS TEST_TIMEOUT
 export DOCKER_HOST=tcp://127.0.0.1:1 DOTNET_CLI_TELEMETRY_OPTOUT=1 MSBUILDDISABLENODEREUSE=1 DOTNET_ROLL_FORWARD=Major
+# H1 (council round 15): before each solution $OUT's disk needs MIN_FREE_GB (default 20) free; below it the run stops (exit 255, xargs
+# stops starting solutions) and "run incomplete: disk below threshold" goes to $OUT/INCOMPLETE.txt until that file is removed.
+MIN_FREE_GB=${MIN_FREE_GB:-20}
+disk_ok() {
+  [ ! -e "$OUT/INCOMPLETE.txt" ] || { echo "run incomplete (see $OUT/INCOMPLETE.txt): not starting $1" >&2; return 1; }
+  local F; F=$(df -Pk "$OUT" | awk 'NR==2 { print int($4 / 1048576) }')
+  [ "${F:-0}" -lt "$MIN_FREE_GB" ] || return 0
+  echo "run incomplete: disk below threshold (${F:-?} GB free < ${MIN_FREE_GB} GB on $OUT) before $1 at $(date '+%F %T')" | tee -a "$OUT/INCOMPLETE.txt" >&2
+  return 1
+}
 
 tool() {
   if [ -z "${TOOL:-}" ]; then
@@ -33,6 +43,7 @@ tool() {
 one() {
   local N=$1 SRC=$2 SLN=$3 FIX=$4
   local D=$OUT/$N W=$OUT/$N/work L=$OUT/$N/logs T0=$(date +%s)
+  disk_ok "$N" || exit 255
   rm -rf "$D"; mkdir -p "$W" "$L"
   if [[ $SRC == *.tgz ]]; then tar -xzf "$SRC" -C "$W" --strip-components=1; else cp -r "$SRC/." "$W"; fi
   local RUNNER; RUNNER=$($PY globaljson "$W")
@@ -40,7 +51,8 @@ one() {
   local TEST=(dotnet test "$SLN" --no-build --logger trx --results-directory)
   # shortcut: MTP mode takes --solution only, a .csproj target needs --project
   [ "$RUNNER" = mtp ] && TEST=(dotnet test --solution "$SLN" --no-build --report-trx --results-directory)
-  status() { echo "$1" > "$D/status.txt"; echo "$(( $(date +%s)-T0 ))s" > "$D/duration.txt"; }
+  # H1: the work copy (with its obj/bin) goes as soon as the solution is done; the results stay in $D.
+  status() { echo "$1" > "$D/status.txt"; echo "$(( $(date +%s)-T0 ))s" > "$D/duration.txt"; cd "$OUT" && rm -rf "$W"; }
   step() { local s=$1; shift; local t=$(date +%s); timeout "$TO" nice "$@" > "$L/$s.log" 2>&1; local e=$?
            echo "$s exit=$e t=$(( $(date +%s)-t ))s" >> "$D/steps.txt"; return $e; }
   local TO=1800

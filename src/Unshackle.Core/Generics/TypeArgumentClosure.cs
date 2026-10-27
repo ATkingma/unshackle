@@ -337,7 +337,11 @@ public class TypeArgumentClosure
 
         if (IsVisibleOutside(symbol))
         {
-            return IsPackable(compilation, _solution, _projectProperties) ? $"is public in a packable project ({compilation.AssemblyName}), so callers outside the solution may close it with other types" : null;
+            // A13 (council round 15): the reason names the one-line fix; a re-run after it closes the set.
+            return IsPackable(compilation, _solution, _projectProperties)
+                ? $"is public in a packable project ({compilation.AssemblyName}), so callers outside the solution may close it with other types. "
+                    + $"Set `<IsPackable>false</IsPackable>` in {ProjectName(compilation)} if this library is not published"
+                : null;
         }
 
         string? friend = compilation.Assembly.GetAttributes()
@@ -348,6 +352,12 @@ public class TypeArgumentClosure
             .FirstOrDefault(n => !_assemblies.Contains(n));
         return friend is not null ? $"is internal, but InternalsVisibleTo names {friend}, which is not in the solution" : null;
     }
+
+    // The project file that builds the assembly (its file name), or the assembly name without one.
+    private string ProjectName(Compilation compilation) =>
+        _solution?.Projects.Where(p => p.AssemblyName == compilation.AssemblyName).Select(p => p.FilePath).OfType<string>().Select(Path.GetFileName).FirstOrDefault()
+            ?? compilation.AssemblyName
+            ?? "the project";
 
     private static bool IsVisibleOutside(ISymbol symbol)
     {

@@ -147,6 +147,12 @@ Expected: `Arg.Is<T>((T)null)` (or `Arg.Is((T)null)`), which binds to the value 
 (round 1 `report.json`; fluentmigrator: 628 Fixed, 1299 Manual; Manual reasons: ClassMockSetup 524, DefaultValueDiffers 266, MockUsedBeyondObject 233,
 MockPassedAround 109, ClassMockNoCallBase 59, MatcherTypeDiffers 39, CallShape 28, MockGet 17, TooManyDefaultPins 12, StrictBehaviour 3.)
 
+## H1 free-disk rule (council round 15)
+
+`claude/tools/corpus-moq-am.sh` (and `corpus-moq-run.sh`) stop the run when the corpus disk has less than `MIN_FREE_GB` (default 20)
+free before a repo: "run incomplete: disk below threshold" in `_results/INCOMPLETE.txt`; remaining repos are not counted. Details in
+`CORPUSRUN-automapper.md` ("H1 free-disk rule"). Harness copies outside the repo need the same change.
+
 ## See also
 
 - `claude/tasks/TAAK-307-moq-to-nsubstitute.md`

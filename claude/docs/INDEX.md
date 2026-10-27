@@ -106,6 +106,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/COUNCIL-round-17.md` | Council round 17 decisions (transitive pins, MediatR generic-request closure, EF bulk) |
 | `claude/tasks/COUNCIL-round-18.md` | Council round 18 decisions (SpecFlow → Reqnroll, xUnit v3, EPPlus flow follow-ups) |
 | `claude/tasks/COUNCIL-round-19.md` | Council round 19 decisions (transitive pin reasons, EPPlus range locals, EF bulk update values) |
+| `claude/tasks/COUNCIL-round-21.md` | Council round 21 decisions (EF bulk kept rows, SpecFlow import/plugin detection, dropped usings) |
 | `claude/tasks/TAAK-349-transitive-pin-reasons.md` | Council round 19 T4-T5: transitive pin reason per version direction, all user projects listed |
 | `claude/tasks/TAAK-346-epplus-flow-rows.md` | Council round 18 E27-E32: EPPlus helper-name rename Manual, one row per node, failing member named |
 | `claude/tasks/archief/TAAK-336-epplus-flow-followups.md` | Council round 16 E21-E24: EPPlus Fixed field/return shapes, helper chains, one row per node |

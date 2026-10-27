@@ -330,11 +330,24 @@ Full text: `claude/tasks/COUNCIL-round-19.md`. Follow-ups: TAAK-349, TAAK-346 st
 | B11 | Captured members beyond B4 | Kept, one proof each; static members Manual. |
 | B12 | `EfCoreBelow7` severity | Non-blocking project Manual row accepted as the Warning row. |
 
+## Round 21 (2026-10-27)
+
+Full text: `claude/tasks/COUNCIL-round-21.md`. Follow-ups: TAAK-342 steps 8a-8b, TAAK-340 steps 4a-4c.
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| B13 | Kept-package row name | Name the Z package(s) the project actually references. |
+| B14 | Z usages without a call | One row per file with count and every line, also next to a Manual row. |
+| S10 | Imported props files | Not followed; Manual row names the declaring file and the rename. |
+| S11 | Autofac / build-only plugins | Proof with real packages first (Manual until then); unknown `SpecFlow.*` references block. |
+| S12 | Dropped-using scope | Accepted as built; exclusions documented, semantic check. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct
 - `claude/docs/overdracht.md` — handover
 - `claude/tasks/COUNCIL-round-19.md` — round 19
+- `claude/tasks/COUNCIL-round-21.md` — round 21
 - `claude/tasks/archief/TAAK-292-council-follow-up.md` — implementation of these decisions
 - `claude/tasks/archief/TAAK-293-council-round-3.md` — implementation of the round-3 decisions
 - `claude/tasks/archief/TAAK-294-council-round-4.md` — round-4 changes before 0.2.0

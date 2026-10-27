@@ -31,6 +31,9 @@
   - [x] 3e. S8 (in step 4): plugin without a port → project blocker naming the package; `SpecFlow.Autofac` → `Reqnroll.Autofac`
   - [x] 3f. Backlog task for per-project partial migration (unit: project + referenced binding projects)
 - [ ] 4. Project-level gaps: `<Using Include="TechTalk.SpecFlow" />` items; packages declared in `Directory.Build.props` (a `PackageRenameEdit` skips a project that does not declare the package, which would leave code on Reqnroll and packages on SpecFlow: add a blocker or an edit there; decided by council 18 S9, see 3d); plugin packages without a port (`SpecFlow.Plus.LivingDocPlugin`, `SpecFlow.Allure`, `SpecRun.*`, `SpecFlow.Assist.Dynamic`, `SpecFlow.Autofac` → `Reqnroll.Autofac`): detect from the project file and report or rename
+  - [ ] 4a. Council 21 S10: `SharedDeclarationBlocked` reason names the declaring file (line) and rename; ProjectReference-only reason names the declaring project
+  - [ ] 4b. Council 21 S11: license check, `SpecFlow.Autofac` + `Reqnroll.Autofac` in `Directory.Packages.props`, proof for namespace map and version pin (Manual "possible match" until then); unknown `SpecFlow.*`/`SpecRun.*` project-file references block
+  - [ ] 4c. Council 21 S12: plan lists the S7 exclusions literally; confirm the drop uses the semantic model
 - [ ] 5. Config: `specflow.json` → `reqnroll.json` (`ConfigFileRenameEdit` exists) plus key renames (`stepAssemblies` → `bindingAssemblies`, `bindingCulture/name` → `language/binding`) under council G5 (parsed-tree proof); App.config `<specFlow>` section Manual; checked-in `*.feature.cs` hint
 - [ ] 6. Step text: Reqnroll detects Cucumber expressions; a regex step text without `^`/`$` can change meaning. Inventory the corpus, then Info or a rewrite (add `^...$`)
 - [ ] 7. Corpus round (S8 UI-suite bar: build + equal discovered-test count; baseline build + `dotnet test` counts before/after; UI suites: build + discovered-test count only), blind round, roadmap row, README text (EOL, not license)
@@ -63,12 +66,15 @@ Open design choices; the slice takes the conservative option for each.
    nearest `Directory.Build.props` / `Directory.Packages.props` declares them, the rename is a `SharedDeclarationBlocked` Manual. A runner
    package that reaches a project only through a `ProjectReference` is blocked too (conservative). An imported props file that declares it
    statically is not followed and edited (Manual instead). Follow static imports and edit there?
+   **Decision (council 21 S10: no; the Manual row names the declaring file and the rename; ProjectReference-only names the declaring project.)**
 10. **S8 detection**: unported plugins are seen only when they have an assembly in a reference path; a build-only package (possibly
     `SpecFlow.Plus.LivingDocPlugin`) is not seen until step 4 reads project files. `Reqnroll.Autofac` is pinned to `ReqnrollVersion`
     (Reqnroll ships its plugins with the same version) and the `SpecFlow.Autofac` namespace maps to `Reqnroll.Autofac` (not proven
     against the real plugin assemblies; no proof package). Add both packages to `Directory.Packages.props` for a proof?
+    **Decision (council 21 S11: yes after a license check; Autofac rename Manual "possible match" until the proof passes; unknown `SpecFlow.*`/`SpecRun.*` references in step 4 block the project.)**
 11. **S7 scope**: the dropped using must have only whitespace in front of it and must not be global, alias or static; files with a
     query expression or a deconstruction keep it (implicit binds not checked); the only using of its block is kept (a stray blank line otherwise, e.g. `RenamedType/output-helper`).
+    **Decision (council 21 S12: accepted as built; exclusions listed in the plan; drop decided by the semantic model.)**
 
 ## Progress log
 

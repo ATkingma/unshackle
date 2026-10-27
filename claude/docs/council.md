@@ -330,7 +330,7 @@ Full text: `claude/tasks/COUNCIL-round-19.md`. Follow-ups: TAAK-349, TAAK-346 st
 | B11 | Captured members beyond B4 | Kept, one proof each; static members Manual. |
 | B12 | `EfCoreBelow7` severity | Non-blocking project Manual row accepted as the Warning row. |
 
-### 2026-10-27 — round 20: xUnit v3 detection, EPPlus helper names, unparsable pin bounds
+## Round 20 (2026-10-27)
 
 Full text: `claude/tasks/COUNCIL-round-20.md`. Follow-ups: TAAK-351 (E33, R3), TAAK-352 (X8), TAAK-341 step 5f (X9).
 
@@ -341,7 +341,8 @@ Full text: `claude/tasks/COUNCIL-round-20.md`. Follow-ups: TAAK-351 (E33, R3), T
 | X9 | Runner bump range | `From` 2.0.0 accepted; 1.x gets an Info row. |
 | E33 | E29 conservative scope | Accepted; reason names the helper call. |
 | T6 | Unparsable pin bound | Manual without direction text; no work. |
-### 2026-10-27 — round 21: EF bulk kept rows, SpecFlow detection, dropped usings
+
+## Round 21 (2026-10-27)
 
 Full text: `claude/tasks/COUNCIL-round-21.md`. Follow-ups: TAAK-342 steps 8a-8b, TAAK-340 steps 4a-4c.
 
@@ -353,6 +354,19 @@ Full text: `claude/tasks/COUNCIL-round-21.md`. Follow-ups: TAAK-342 steps 8a-8b,
 | S11 | Autofac / build-only plugins | Proof with real packages first (Manual until then); unknown `SpecFlow.*` references block. |
 | S12 | Dropped-using scope | Accepted as built; exclusions documented, semantic check. |
 
+## Round 22 (2026-10-27)
+
+Full text: `claude/tasks/COUNCIL-round-22.md`. Follow-ups: TAAK-341 steps 5g-5j, TAAK-355 (P11).
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| X10 | `.AsTask()` on `Record.ExceptionAsync` | Always Fixed; proof awaits the stored result twice. |
+| X11 | Built-in type-name map | No map now; Manual row names the type, v3 name as hint. |
+| X12 | Extensibility inventory breadth | Uses reported too, as Info, one row per file; missing-type list from real assemblies. |
+| X13 | `[PropertyData]` | Dropped from scope. |
+| X14 | `TheoryData` / `SkipException` | Corpus first; `Xunit.SkippableFact` out of scope. |
+| P11 | Polly kept row | Says the new package was added, only when it was; shared `Fixer` text. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct
@@ -360,6 +374,7 @@ Full text: `claude/tasks/COUNCIL-round-21.md`. Follow-ups: TAAK-342 steps 8a-8b,
 - `claude/tasks/COUNCIL-round-19.md` — round 19
 - `claude/tasks/COUNCIL-round-20.md` — round 20
 - `claude/tasks/COUNCIL-round-21.md` — round 21
+- `claude/tasks/COUNCIL-round-22.md` — round 22
 - `claude/tasks/archief/TAAK-292-council-follow-up.md` — implementation of these decisions
 - `claude/tasks/archief/TAAK-293-council-round-3.md` — implementation of the round-3 decisions
 - `claude/tasks/archief/TAAK-294-council-round-4.md` — round-4 changes before 0.2.0

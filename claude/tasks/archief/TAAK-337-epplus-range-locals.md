@@ -24,9 +24,12 @@
 
 1. Uses of a range local or range parameter other than its address (a value assignment, style, `Merge()`, `InsertData`) are Manual for
    now, although `ws.Cells[..]` has those mappings. Conservative choice; extend per use when the corpus shows them?
+   **Decision (round 19 R1)**: Manual stays, reason names the use; extend per use on corpus evidence.
 2. A range parameter passed on to another helper is Manual (no range chains like E23 for worksheets). Needed?
+   **Decision (round 19 R2)**: Manual accepted; reason names the callee.
 3. A range local whose source is not `Cells[..]` straight (e.g. `ws.Cells` without indexer, or a range from another range) is Manual
    `UnmappedAddress`; these now get an `epplus.address` row where before only `epplus.unsupported` reported them.
+   **Decision (round 19 R3)**: accepted, one row per node: fold into the `epplus.unsupported` row. TAAK-346 step 2a.
 
 ## See also
 

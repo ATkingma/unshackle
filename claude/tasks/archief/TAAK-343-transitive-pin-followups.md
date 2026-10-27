@@ -33,7 +33,9 @@
 
 1. T3 compares the project reference's lower bound with the pinned version; a reference that requires a lower version (no NU1605
    risk) is Manual too, conservatively, per "a differing version → Manual". Should only a higher requirement be Manual?
+   **Decision (round 19 T4)**: stays Manual; reason distinguishes higher (NU1605) vs lower (downgrade). TAAK-349.
 2. With several users, "kept for" names the first project in solution order. Should the row list all of them?
+   **Decision (round 19 T5)**: list all, capped at three plus "and N more". TAAK-349.
 
 ## See also
 

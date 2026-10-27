@@ -55,6 +55,9 @@
   entity-member, numeric-arithmetic, plus the existing plus-initializer); string concatenation and any binary operator on string/decimal
   operands → Manual (proofs string-concatenation, decimal-arithmetic); `DateTime.Now` stays Manual (proof static-now); `Math.*` stays Manual
   (method-call). No `DateTime.Now`/`Math.*` SQL proof was added, so neither is widened
+- [ ] 7a. Round 19 B10: string `==`/`!=` with a non-null literal or `const` → Fixed; proof + `EfBulkSqlTests` case with a NULL column row
+- [ ] 7b. Round 19 B11: proofs for captured field, instance property of a captured value, enum member, constant
+- [ ] 7c. Round 19 B12: `efbulk-update-plan.md` / `efbulk-delete-plan.md` name `EfCoreBelow7` as the B3 Warning row
 - [ ] 8. `efbulk.unsupported` (Bulk*, Future, FromCache, AuditTrail as Manual rows; B8: the reason/README names
   `EFCore.BulkExtensions.MIT` as an alternative, not migrated, after checking its license/maintenance) and B5 package removal at zero Z
   usages per project (dependents counted, Plus and Extensions), else a row with the remaining usages file:line. EFCore.BulkExtensions
@@ -83,12 +86,16 @@
 
 9. **Decimal arithmetic** (step 7): kept Manual. The SQLite run-time proof cannot show SQL Server/PostgreSQL rounding to the column
    precision, and Z cannot run here. Widen only with a SQL Server (or Testcontainers) proof, or accept "same SQL as Z, same provider" as enough?
+   **Decision (round 19 B9)**: Manual stays; widen only with a real-provider (Testcontainers) proof; backlog.
 10. **String comparison/concatenation operands** (step 7): any binary operator with a string operand is Manual, so `Open = o.Status == "x"`
    is Manual too. Allow string equality comparisons?
+    **Decision (round 19 B10)**: allow `==`/`!=` with a non-null literal or `const` (SQLite proof with a NULL row); rest Manual. Step 7a.
 11. **Captured members beyond the B4 list** (step 7): the pattern still allows captured fields, instance properties of captured values
    (`request.Status`), enum members and constants (all client-evaluated by both Z and EF, as slice 1 did). Keep, or narrow to the literal B4 list?
+    **Decision (round 19 B11)**: keep, one proof per kind; static members stay Manual. Step 7b.
 12. **Project row severity** (step 5): "Warning row" is implemented as a non-blocking project-level Manual row (code `EfCoreBelow7`); the
    report has no separate Warning kind for project rows. Enough?
+    **Decision (round 19 B12)**: accepted as the B3 Warning row; documented in the plan. Step 7c.
 
 ## See also
 

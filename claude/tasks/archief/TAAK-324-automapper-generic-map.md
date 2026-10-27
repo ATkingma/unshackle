@@ -1,6 +1,6 @@
 # TAAK-324 — AutoMapper generic Map closure (`automapper.generic-map`)
 
-**Status**: done (README row and INDEX lines pending in the main session)
+**Status**: done (archived 2026-10-27, corpus re-measure in TAAK-332)
 **Created**: 2026-10-26
 **Goal**: close `Map<T>` on a type parameter per type argument collected from callers and derived types (council round 13, A11), so one generic repository/service base no longer keeps every map on AutoMapper.
 
@@ -27,7 +27,7 @@
 - [x] 3. Proofs (3 after, 3 manual), unit tests
 - [x] 4. Docs plan/models/verify, `docs/patterns.md`
 - [x] 5. Corpus re-measure (8 repos), after-build/test where they build
-- [ ] 6. README row + INDEX lines (reported to the main session), archive
+- [x] 6. README row + INDEX lines, archive (TAAK-332)
 
 ## See also
 

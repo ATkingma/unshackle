@@ -55,6 +55,25 @@ Row delta 0: every generic call in these repos lives in a public member of a lib
 `IProjectProperties`) keeps open; the reason now names the member (`GenericMapOpenSet`). Wiring `IProjectProperties` into `AutoMapperFix`
 (`Cli.cs`) is the next lever.
 
+## Corpus with `IProjectProperties` (TAAK-332, tool from main 7c0db29, after-fix round)
+
+`fix --fix automapper --force`, rebuild, test, compare per test against the Windows baseline (2026-10-14). cats and kavita were not
+measured (the data disk ran full during restore); bitwarden, gnomeshade, lancommander and ombi have no baseline.
+
+| Repo | Fixed / Manual | generic-map rows | Blocker named by the generic-map rows | tests before → after (pass/total) | regressions |
+| --- | --- | --- | --- | --- | ---: |
+| letterbook | 0 / 165 | 2 Manual | `Client.Fetch` public in `Letterbook.Adapter.ActivityPub`, packable by SDK default (R1) | 537/616 → 537/616 | 0 |
+| personalasst | 0 / 52 | 1 Manual | `UserService.Get` public in `Core.Application`, packable by SDK default (R1) | 131/131 → 131/131 | 0 |
+| skoruba | 0 / 120 | 45 Manual | generic profile `CreateMap<TRole, TRole>` (`IdentityRepository.cs:164`), outside A11 | 272/272 → 272/272 | 0 |
+| xipona | 0 / 47 | 2 Manual | closed type argument not visible from `Xipona.Api.Core.Tests` | 969/1193 → 969/1193 | 0 |
+| jhipster | 0 / 126 | 1 Manual | source is `object` (destination only known at run time) | 146/146 → 146/146 | 0 |
+| nop | 0 / 5 | 1 Manual | source is `object` | 1051/1060 → 1051/1060 | 0 |
+| altinnauth, devarch, jason, neozhu | 0 / 14, 4, 13, 64 | – | – | unchanged | 0 |
+| eshoponweb | 7 / 0 | – | – | 74/74 → 74/74 | 0 |
+
+Manual→Fixed: 0. The wiring works (packability is now read from the project, not guessed), but no repo sets `IsPackable=false`
+on its libraries, so the SDK default (`true` for class libraries) keeps R1 open. 0 test regressions over 12 repos.
+
 ## See also
 
 - [automapper-generic-map-plan.md](automapper-generic-map-plan.md)

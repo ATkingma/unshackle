@@ -224,3 +224,32 @@ decides), letterbook (`Mention` only has a private parameterless constructor), l
 
 Harness fixes in this round (`claude/tools/corpus-am.sh`): `after` builds before the fix (letterbook needs its source
 generator output to resolve types) and keeps `node_modules/**/bin` when cleaning `bin`/`obj` (jhipster `ng build` broke).
+
+## After-fix round with main 7c0db29 (TAAK-332, 2026-10-27)
+
+Windows, `IProjectProperties` wired into `AutoMapperFix` (TAAK-324 follow-up). Harness copy with its own result dir
+(`<work>/cam332/res/after`) and work root, so `_results/after` from TAAK-258 is kept; base from `_results/base`.
+`NUGET_PACKAGES`/`NUGET_HTTP_CACHE_PATH` under `<corpus>/corpus-automapper/`. JOBS=2 ran the data disk full (restore and
+pdb writes failed: "not enough space on the disk"), so the failed repos were rerun with JOBS=1; cats and kavita still
+could not restore for lack of disk and are not measured.
+
+| Repo | Fixed / Manual | tests before → after (pass/total) | regressions | flaky / missing |
+| --- | --- | --- | ---: | --- |
+| altinnauth | 0 / 14 | 249/534 → 249/534 | 0 | – |
+| devarch | 0 / 4 | 37/37 → 37/37 | 0 | – |
+| eshoponweb | 7 / 0 | 74/74 → 74/74 | 0 | – |
+| jason | 0 / 13 | 39/41 → 39/41 | 0 | – |
+| jhipster | 0 / 126 | 146/146 → 146/146 | 0 | – |
+| letterbook | 0 / 165 | 537/616 → 537/616 | 0 | 130 / 64 |
+| neozhu | 0 / 64 | 13/42 → 13/42 | 0 | – |
+| nop | 0 / 5 | 1051/1060 → 1051/1060 | 0 | 1 / 0 |
+| personalasst | 0 / 52 | 131/131 → 131/131 | 0 | – |
+| skoruba | 0 / 120 | 272/272 → 272/272 | 0 | – |
+| xipona | 0 / 47 | 969/1193 → 969/1193 | 0 | 32 / 16 |
+| cats, kavita | not measured (disk full) | | | |
+
+**0 regressions on 12 repos; Manual→Fixed 0.** The generic-map rows now name the real blocker: letterbook and personalasst
+have the generic member in a class library without `IsPackable`, which the SDK treats as packable (R1). skoruba is blocked
+by a generic profile (`CreateMap<TRole, TRole>`), xipona by a closed type not visible from the test project, jhipster and
+nop by `Map<T>(object)`. Details in `docs/projectinfo/patterns/automapper-generic-map-verify.md` and
+`claude/tasks/TAAK-332-automapper-remeasure.md`.

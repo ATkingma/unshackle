@@ -37,4 +37,31 @@ public class XmlProjectPropertiesTests
         // Assert
         packable.ShouldBe(expected);
     }
+
+    [Fact]
+    public void PackageReferences_ProjectAndBuildProps_EveryInclude()
+    {
+        // Arrange: council round 21, B13.
+        _fileSystem.AddFile(Project, new MockFileData("<Project Sdk=\"Microsoft.NET.Sdk\"><ItemGroup><PackageReference Include=\"Z.EntityFramework.Extensions.EFCore\" /></ItemGroup></Project>"));
+        _fileSystem.AddFile("/repo/Directory.Build.props", new MockFileData("<Project><ItemGroup><GlobalPackageReference Include=\"Analyzers\" /></ItemGroup></Project>"));
+
+        // Act
+        IReadOnlyList<string>? references = new XmlProjectProperties(_fileSystem).PackageReferences(Project);
+
+        // Assert
+        references.ShouldBe(["Analyzers", "Z.EntityFramework.Extensions.EFCore"]);
+    }
+
+    [Fact]
+    public void PackageReferences_NotXml_Null()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData("not xml"));
+
+        // Act
+        IReadOnlyList<string>? references = new XmlProjectProperties(_fileSystem).PackageReferences(Project);
+
+        // Assert
+        references.ShouldBeNull();
+    }
 }

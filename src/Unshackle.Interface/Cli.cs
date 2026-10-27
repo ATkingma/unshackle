@@ -43,7 +43,7 @@ public static class Cli
             new PollyFix(),
             new EPPlusFix(new XmlProjectProperties(fileSystem), new FileConfigKeySearch(fileSystem), assetsReader),
             new MassTransitFix(),
-            new EfBulkFix(),
+            new EfBulkFix(new XmlProjectProperties(fileSystem)),
             new SpecFlowFix(),
             new XunitV3Fix(),
         ];

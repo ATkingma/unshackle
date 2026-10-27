@@ -26,7 +26,7 @@ public class EPPlusFix : IFix, IProjectFileMigration, IPartialFix
     public EPPlusFix(IProjectProperties? projectProperties, IConfigKeySearch? configSearch, IPackageAssetsReader? assetsReader)
     {
         _assetsReader = assetsReader;
-        Patterns = [new LicenseContextPattern(), new StylesPattern(), new LayoutPattern(), new DimensionPattern(), new LoadFromPattern(), new PackagePattern(projectProperties, configSearch), new UnsupportedPattern()];
+        Patterns = [new LicenseContextPattern(), new StylesPattern(), new LayoutPattern(), new DimensionPattern(), new LoadFromPattern(), new PackagePattern(projectProperties, configSearch), new FlowTypesPattern(), new UnsupportedPattern()];
     }
 
     private readonly IPackageAssetsReader? _assetsReader;

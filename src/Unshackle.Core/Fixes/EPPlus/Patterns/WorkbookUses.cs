@@ -16,8 +16,8 @@ internal class WorkbookUses
 
     private readonly SemanticModel _model;
     private readonly SyntaxNode _scope;
-    private readonly ILocalSymbol _package;
-    private readonly List<ILocalSymbol> _worksheets = [];
+    private readonly ILocalSymbol? _package;
+    private readonly List<ISymbol> _worksheets = [];
     private Models.PatternResult? _unknownVersion;
 
     private readonly WorksheetIndexBase _indexBase;
@@ -28,6 +28,16 @@ internal class WorkbookUses
         _model = model;
         _scope = scope;
         _package = package;
+    }
+
+    // TAAK-327 (council E18): the uses of one ExcelWorksheet parameter of a private helper, with no package in reach. Only what is provable
+    // without knowing the workbook: cells, layout and a Name read (a rename could clash with a sheet the caller added); no further flow.
+    public WorkbookUses(SemanticModel model, SyntaxNode scope, IParameterSymbol worksheet)
+    {
+        _indexBase = WorksheetIndexBase.Unknown(worksheet.Name);
+        _model = model;
+        _scope = scope;
+        _worksheets.Add(worksheet);
     }
 
     public Dictionary<SyntaxNode, SyntaxNode> Replacements { get; } = [];
@@ -44,11 +54,11 @@ internal class WorkbookUses
     // Null when every use is mapped; otherwise the Manual result that says why not.
     public Models.PatternResult? Map()
     {
-        foreach (IdentifierNameSyntax use in UsesOf(_package))
+        foreach (IdentifierNameSyntax use in _package is null ? [] : UsesOf(_package))
         {
             if (!MapPackageUse(use))
             {
-                return _unknownVersion ?? Models.PatternResult.Manual($"ExcelPackage local {_package.Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue).");
+                return _unknownVersion ?? Models.PatternResult.Manual($"ExcelPackage local {_package!.Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue).");
             }
         }
 
@@ -57,9 +67,10 @@ internal class WorkbookUses
         {
             foreach (IdentifierNameSyntax use in UsesOf(_worksheets[i]))
             {
-                if (!IsNameAccess(use) && !MapCellUse(use) && !IsLayoutUse(use))
+                if (!IsNameAccess(use) && !MapCellUse(use) && !IsLayoutUse(use) && !(_package is not null && IsFlowArgument(use)))
                 {
-                    return _unknownVersion ?? Models.PatternResult.Manual($"Worksheet local {_worksheets[i].Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue row 4+).");
+                    string text = $"Worksheet {(_package is null ? "parameter" : "local")} {_worksheets[i].Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}), which is not mapped yet (epplus-queue row 4+).";
+                    return _unknownVersion ?? (_package is null ? Models.PatternResult.Manual(EPPlusReason.FlowUseNotMigrated, text) : Models.PatternResult.Manual(text));
                 }
             }
         }
@@ -212,7 +223,23 @@ internal class WorkbookUses
         return candidate;
     }
 
-    private IEnumerable<IdentifierNameSyntax> UsesOf(ILocalSymbol local) =>
+    // TAAK-327: the worksheet local passed (by position, by value) to a private helper whose worksheet parameter FlowTypesPattern migrates.
+    private bool IsFlowArgument(IdentifierNameSyntax use)
+    {
+        if (use.Parent is not ArgumentSyntax { RefKindKeyword.RawKind: (int)SyntaxKind.None, NameColon: null } argument
+            || argument.Parent is not ArgumentListSyntax { Parent: InvocationExpressionSyntax invocation } list
+            || _model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method)
+        {
+            return false;
+        }
+
+        int position = list.Arguments.IndexOf(argument);
+        return position < method.Parameters.Length
+            && FlowTypesPattern.Migratable(method, _model) is { } parameter
+            && SymbolEqualityComparer.Default.Equals(parameter, method.Parameters[position]);
+    }
+
+    private IEnumerable<IdentifierNameSyntax> UsesOf(ISymbol local) =>
         _scope.DescendantNodes().OfType<IdentifierNameSyntax>()
             .Where(i => i.Identifier.ValueText == local.Name && SymbolEqualityComparer.Default.Equals(_model.GetSymbolInfo(i).Symbol, local));
 
@@ -317,7 +344,7 @@ internal class WorkbookUses
         }
 
         return access.Parent is not AssignmentExpressionSyntax assignment || assignment.Left != access
-            || assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) && assignment.Right is LiteralExpressionSyntax value
+            || _package is not null && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) && assignment.Right is LiteralExpressionSyntax value
                 && value.IsKind(SyntaxKind.StringLiteralExpression) && IsValidSheetName(value.Token.ValueText)
                 && !AddedBefore(_scope.FullSpan.End).Contains(value.Token.ValueText, StringComparer.OrdinalIgnoreCase);
     }
@@ -353,7 +380,7 @@ internal class WorkbookUses
     // Names of the p.Workbook.Worksheets.Add("literal") calls that surely ran before a position: directly in the scope's own block, not
     // in a nested statement (a branch or loop).
     private IReadOnlyList<string> AddedBefore(int position) =>
-        [.. UsesOf(_package)
+        _package is null ? [] : [.. UsesOf(_package)
             .Where(u => u.SpanStart < position)
             .Select(u => u.Parent?.Parent?.Parent?.Parent)
             .OfType<InvocationExpressionSyntax>()

@@ -22,6 +22,7 @@
 
 - `derived-generic-record` was first a `mediatr.unsupported` proof (`Unsupported/derived-generic-message`); the generic record now falls under this pattern and stays Manual.
 - Corpus proof (eShop `59f1a6c` builds and tests after the fix) is still open; see `claude/tasks/CORPUSRUN-mediatr.md`.
+- Open creation stays Manual ("callers not followed"): TAAK-344 counted 2 open generic requests (proofs `open-creation`, `extension-callers`; 0 in the MediatR corpus), below the council M15 threshold of 3, so caller closure via `TypeArgumentClosure` is not built yet.
 
 ## See also
 

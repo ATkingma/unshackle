@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "epplus-flow-types"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18]
 files_expected:
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/FlowTypesPattern.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/WorkbookUses.cs
@@ -38,7 +38,10 @@ epplus.flow-types: a private helper method with one `ExcelWorksheet` parameter t
 - **E21 field**: a `private` field of type `ExcelWorksheet` (one variable, no initializer) of a non-partial type, referenced by its bare name only. Every write is a statement `_f = p.Workbook.Worksheets.Add("x")` (or a lookup `PackagePattern` proves) of an `ExcelPackage` local `p`, directly in that local's scope; any other use is a `Name` read, or comes later in the scope of a write (`PackagePattern` maps it as a worksheet local). `PackagePattern` rewrites the write and those uses; this pattern rewrites the declaration once every write's package is migrated.
 - **E22 return**: a private helper whose one EPPlus parameter is a by-value `ExcelPackage` and whose body only returns `package.Workbook.Worksheets.Add("valid literal")` (the parameter used nowhere else) becomes `IXLWorksheet Helper(XLWorkbook package) => package.Worksheets.Add("literal")`, when every caller passes a migrated package. `PackagePattern` accepts the package local passed to it, with the result dropped or standing where a worksheet may (`.Name`, a worksheet local).
 - **E25 range parameter (TAAK-337)**: a private helper whose one EPPlus parameter is a by-value `ExcelRange`, used only for its address (`.Rows`, `.Columns`, `.Start`/`.End` `.Row`/`.Column`, rewritten here as `epplus.address` does), takes `IXLRange`, when every caller passes a migrated range: `ws.Cells[..]` (in order, made `ws.Range(..)` by `WorkbookUses`) or an E25 range local. Passing the range on to another helper is not mapped (no range chains).
-- **E24**: `epplus.unsupported` skips nodes `epplus.flow-types` or `epplus.address` still find after they ran (they left them Manual), so each node has one row with the most specific reason. Exception: a flow-types node whose signature is E6 public API of a packable project keeps its `PublicApiExposesOldLibrary` row.
+- **E24**: `epplus.unsupported` skips nodes `epplus.flow-types` or `epplus.address` still find after they ran (they left them Manual), so each node has one row with the most specific reason. E31 (council round 18): a node whose signature is E6 public API of a packable project is skipped by flow-types and gets one `PublicApiExposesOldLibrary` row from `epplus.unsupported`, with the flow-types reason folded into its text; the summary counts it once.
+- **E29**: a rename in the caller (`sheet.Name = "x"`) to a name a return helper adds to that package is Manual (ClosedXML would throw only at run time); lookups of such names stay Manual too.
+- **E32**: the Manual row of a linked helper set names the failing member and its reason.
+- **E27**: the Fixed field (E21) is proven by `FlowTypes/_Combined/field` (full fix, `StylesCombinedProofTests` and `EPPlusHarnessProofTests`, run in CI); a single-pattern proof cannot show it.
 
 **Out of scope (Manual)**:
 
@@ -78,6 +81,10 @@ epplus.flow-types: a private helper method with one `ExcelWorksheet` parameter t
 | REQ-12 | E24: a node flow-types or address left Manual has one row (no extra `epplus.unsupported` row). |
 | REQ-13 | E25: a private helper with one by-value ExcelRange parameter used for its address takes IXLRange; with the full fix, `Cells[..]` and range-local arguments migrate and the result writes the same workbook. |
 | REQ-14 | E25: any other use of the range parameter is Manual `FlowUseNotMigrated`. |
+| REQ-15 | E29: a rename in the caller to a sheet name a return helper adds is Manual. |
+| REQ-16 | E31: a flow-types node with an E6 public-API signature has one row, `PublicApiExposesOldLibrary`, that includes the flow-types reason. |
+| REQ-17 | E32: the Manual row of a linked helper set names the failing member. |
+| REQ-18 | R1/R2 (council round 19): the Manual reason of a range use that is not mapped names the use (value, style, merge, data load, member) or the callee it is passed on to. |
 
 ## See also
 

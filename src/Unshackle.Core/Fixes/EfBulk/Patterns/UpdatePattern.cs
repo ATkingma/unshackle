@@ -10,7 +10,7 @@ namespace Unshackle.Core.Fixes.EfBulk.Patterns;
 /// <summary>
 /// <c>q.Update(x => new T { A = e })</c> / <c>UpdateFromQuery</c> (+Async) of Z.EntityFramework.Plus/Extensions →
 /// <c>q.ExecuteUpdate(s => s.SetProperty(x => x.A, x => e))</c>. Only plain values (literals, captured variables, the entity's own
-/// scalar properties and numeric operators on them, no string concatenation or decimal arithmetic); anything EF Core may translate differently is Manual (TAAK-342 council question 4).
+/// scalar properties and numeric operators on them, string ==/!= against a non-null literal or const; no string concatenation or decimal arithmetic); anything EF Core may translate differently is Manual (TAAK-342 council question 4).
 /// </summary>
 public class UpdatePattern : IPattern
 {
@@ -143,6 +143,9 @@ public class UpdatePattern : IPattern
             IsPlainValue(u.Operand, model, parameter),
         // Council round 17, B4: no string concatenation (null handling differs per provider) and no decimal arithmetic (rounding and
         // overflow follow the provider's column type, EfBulkSqlTests); numeric arithmetic, comparisons and logic on the rest.
+        // Council round 19, B10: string ==/!= against a non-null literal or const is Fixed (EfBulkSqlTests, NULL column row).
+        BinaryExpressionSyntax b when IsStringEqualityWithConstant(b, model) =>
+            IsPlainValue(b.Left, model, parameter) && IsPlainValue(b.Right, model, parameter),
         BinaryExpressionSyntax b => model.GetSymbolInfo(b).Symbol is not IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator }
             && !IsStringOrDecimal(model.GetTypeInfo(b).Type) && !IsStringOrDecimal(model.GetTypeInfo(b.Left).Type) && !IsStringOrDecimal(model.GetTypeInfo(b.Right).Type)
             && IsPlainValue(b.Left, model, parameter) && IsPlainValue(b.Right, model, parameter),
@@ -179,6 +182,24 @@ public class UpdatePattern : IPattern
             || IsPlainName(access.Expression, model, parameter) || access.Expression is ThisExpressionSyntax,
         _ => true,
     };
+
+    private static bool IsStringEqualityWithConstant(BinaryExpressionSyntax binary, SemanticModel model) =>
+        (binary.IsKind(SyntaxKind.EqualsExpression) || binary.IsKind(SyntaxKind.NotEqualsExpression))
+        && model.GetSymbolInfo(binary).Symbol is IMethodSymbol { MethodKind: MethodKind.BuiltinOperator or MethodKind.UserDefinedOperator, ContainingType.SpecialType: SpecialType.System_String }
+        && model.GetTypeInfo(binary.Left).Type?.SpecialType == SpecialType.System_String
+        && model.GetTypeInfo(binary.Right).Type?.SpecialType == SpecialType.System_String
+        && (IsNonNullStringConstant(binary.Left, model) || IsNonNullStringConstant(binary.Right, model));
+
+    // A string literal or a const field/local, not null; a captured variable may be null at run time.
+    private static bool IsNonNullStringConstant(ExpressionSyntax expression, SemanticModel model) =>
+        expression switch
+        {
+            ParenthesizedExpressionSyntax p => IsNonNullStringConstant(p.Expression, model),
+            LiteralExpressionSyntax literal => literal.IsKind(SyntaxKind.StringLiteralExpression),
+            IdentifierNameSyntax or MemberAccessExpressionSyntax => model.GetSymbolInfo(expression).Symbol is IFieldSymbol { IsConst: true } or ILocalSymbol { IsConst: true }
+                && model.GetConstantValue(expression) is { HasValue: true, Value: string },
+            _ => false,
+        };
 
     private static bool IsStringOrDecimal(ITypeSymbol? type)
     {

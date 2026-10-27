@@ -59,7 +59,9 @@ public class GenericMapPattern : ISolutionPattern
         PatternResult own = await DispatchAsync((InvocationExpressionSyntax)node, model, solution, _projectProperties, cancellationToken);
         return await MapOwners.KeptCallAsync(node, model, solution, _projectProperties, cancellationToken) switch
         {
-            ManualResult { Code: null } kept when own is ManualResult { Code: nameof(GenericMapCode.GenericMapOpenSet) } => kept with { Code = nameof(GenericMapCode.GenericMapOpenSet) },
+            // The kept reason of the pair names the first blocking call of the set; the row keeps its own blocker (TAAK-348).
+            ManualResult { Code: null } kept when own is ManualResult { Code: nameof(GenericMapCode.GenericMapOpenSet) } open =>
+                kept with { Code = nameof(GenericMapCode.GenericMapOpenSet), Reason = open.Reason },
             { } kept => kept,
             null => own,
         };

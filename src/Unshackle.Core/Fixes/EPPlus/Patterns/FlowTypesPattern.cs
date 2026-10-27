@@ -28,14 +28,18 @@ public class FlowTypesPattern : IPattern
     public string Description => "private helper with one ExcelWorksheet parameter, a worksheet field or a returned added sheet whose uses and callers are all migrated → IXLWorksheet";
 
     // Methods with an ExcelWorksheet parameter or an EPPlus return type, and fields of an EPPlus type.
+    // E31 (council round 18): a node whose signature is E6 public API gets one row, from UnsupportedPattern, with this pattern's reason folded in.
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        root.DescendantNodes().Where(n => n switch
+        root.DescendantNodes().Where(n => IsCandidate(n, model) && UnsupportedPattern.ExposedSignature(n, model) is null);
+
+    internal static bool IsCandidate(SyntaxNode node, SemanticModel model) =>
+        node switch
         {
             MethodDeclarationSyntax m => m.ParameterList.Parameters.Any(p => p.Type is not null && (IsWorksheet(model.GetTypeInfo(p.Type).Type) || EPPlusSyntax.IsRangeType(model.GetTypeInfo(p.Type).Type)))
                 || model.GetTypeInfo(m.ReturnType).Type is { } returned && EPPlusApi.Mentions(returned),
             FieldDeclarationSyntax f => model.GetTypeInfo(f.Declaration.Type).Type is { } type && EPPlusApi.Mentions(type),
             _ => false,
-        });
+        };
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
@@ -119,6 +123,14 @@ public class FlowTypesPattern : IPattern
             && reference.GetSyntax() is MethodDeclarationSyntax declaration
             && ReturnBlocked(method, declaration, model, out IParameterSymbol? package, out _) is null ? package : null;
 
+    // E29: the literal sheet name a return helper adds (call only after MigratableReturn accepted it), or null.
+    internal static string? ReturnedSheetName(IMethodSymbol method) =>
+        method.DeclaringSyntaxReferences is [var reference] && reference.GetSyntax() is MethodDeclarationSyntax declaration
+            && (declaration.ExpressionBody?.Expression ?? (declaration.Body?.Statements is [ReturnStatementSyntax { Expression: { } value }] ? value : null))
+                is InvocationExpressionSyntax { ArgumentList.Arguments: [{ Expression: LiteralExpressionSyntax { RawKind: (int)SyntaxKind.StringLiteralExpression } name }] }
+            ? name.Token.ValueText
+            : null;
+
     // The one ExcelWorksheet parameter of a method, or null.
     internal static IParameterSymbol? WorksheetParameter(IMethodSymbol method) =>
         method.Parameters.Where(p => IsWorksheet(p.Type)).ToList() is [var single] ? single : null;
@@ -147,13 +159,16 @@ public class FlowTypesPattern : IPattern
 
         foreach (IMethodSymbol member in members.Where(m => !SymbolEqualityComparer.Default.Equals(m, method)))
         {
-            if (member.DeclaringSyntaxReferences is not [var reference] || reference.GetSyntax() is not MethodDeclarationSyntax other
-                || Analyze(member, other, model, members, out _, out _) is not null)
+            PatternResult? failed = member.DeclaringSyntaxReferences is [var reference] && reference.GetSyntax() is MethodDeclarationSyntax other
+                ? Analyze(member, other, model, members, out _, out _)
+                : PatternResult.Manual(EPPlusReason.FlowUseNotMigrated, $"{member.Name} has no single method declaration in this file.");
+            if (failed is not null)
             {
                 parameter = null;
                 uses = null;
+                string why = failed is ManualResult { Reason: var reason } ? $" Failing member {member.Name}: {reason}" : string.Empty;
                 return PatternResult.Manual(EPPlusReason.FlowUseNotMigrated, $"{method.Name} ({Where(declaration)}) passes its worksheet to or from {member.Name}, "
-                    + "which this pattern does not migrate; the helpers of a chain flip together (council round 16, E23). Change them by hand.");
+                    + "which this pattern does not migrate; the helpers of a chain flip together (council round 16, E23). Change them by hand." + why);
             }
         }
 

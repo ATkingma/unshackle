@@ -11,7 +11,6 @@ namespace Unshackle.Interface.Output;
 public class SpectreConsoleView : IConsoleView
 {
     public const string InventoryOnlyLine = "Inventory only: nothing was changed.";
-
     private const int MaxBlockersShown = 10;
 
     private readonly IAnsiConsole _out;
@@ -39,9 +38,13 @@ public class SpectreConsoleView : IConsoleView
         _out.Write(table);
     }
 
-    public void ShowSummary(IReadOnlyList<Finding> findings)
+    public void ShowSummary(IReadOnlyList<Finding> findings, IReadOnlyDictionary<string, string> projectOfFile) =>
+        ShowSummary(findings, projectOfFile, listBlockers: true);
+
+    public void ShowSummary(IReadOnlyList<Finding> findings, IReadOnlyDictionary<string, string> projectOfFile, bool listBlockers)
     {
         ArgumentNullException.ThrowIfNull(findings);
+        ArgumentNullException.ThrowIfNull(projectOfFile);
         // A report-only fix (council round 8 S2, round 10 G1): say so first; its header row is not a finding and counts nowhere.
         if (findings.Any(f => !FixReport.IsCounted(f)))
         {
@@ -72,17 +75,18 @@ public class SpectreConsoleView : IConsoleView
         // A few Manual findings can hold back a whole migration (all or nothing): name them, so the user knows where to start.
         int blocked = findings.Count(f => f.Result is ManualResult m && m.Reason.StartsWith(Fixer.NotRewrittenPrefix, StringComparison.Ordinal));
         List<Finding> blockers = [.. findings.Where(f => f.Result is ManualResult m && !m.Reason.StartsWith(Fixer.NotRewrittenPrefix, StringComparison.Ordinal))];
-        if (blocked > 0 && blockers.Count > 0)
+        if (listBlockers && blocked > 0 && blockers.Count > 0)
         {
             _out.WriteLine(ConsoleText.Sanitize($"{blocked} findings wait on these {blockers.Count} manual ones; fix them first, then run again:"));
-            foreach (Finding blocker in blockers.Take(MaxBlockersShown))
+            // Council round 18, S2: every blocking project with every one of its blocking rows.
+            foreach (IGrouping<string, Finding> project in blockers.GroupBy(f => projectOfFile.GetValueOrDefault(f.FilePath, f.FilePath), StringComparer.OrdinalIgnoreCase)
+                .OrderBy(g => g.Key, StringComparer.Ordinal))
             {
-                _out.WriteLine(ConsoleText.Sanitize($"  {blocker.FilePath}:{blocker.Line} {blocker.PatternId}: {ReportRow.ReasonOf((ManualResult)blocker.Result)}"));
-            }
-
-            if (blockers.Count > MaxBlockersShown)
-            {
-                _out.WriteLine($"  ... and {blockers.Count - MaxBlockersShown} more (see --report).");
+                _out.WriteLine(ConsoleText.Sanitize($"  {project.Key} ({project.Count()} blocking):"));
+                foreach (Finding blocker in project)
+                {
+                    _out.WriteLine(ConsoleText.Sanitize($"    {blocker.FilePath}:{blocker.Line} {blocker.PatternId}: {ReportRow.ReasonOf((ManualResult)blocker.Result)}"));
+                }
             }
         }
 
@@ -90,6 +94,30 @@ public class SpectreConsoleView : IConsoleView
             $"{findings.Count(f => f.Result is FixedResult)} fixed ({findings.Count(f => f.Result is FixedResult { Warning: not null })} with a warning), " +
             $"{findings.Count(f => f.Result is ManualResult)} manual. " +
             "Use --report for every finding.");
+    }
+
+    public void ShowBlockingProjects(IReadOnlyList<BlockingProject> projects)
+    {
+        ArgumentNullException.ThrowIfNull(projects);
+        if (projects.Count == 0)
+        {
+            return;
+        }
+
+        _out.WriteLine(ConsoleText.Sanitize($"Nothing was changed: {projects.Count} project(s) block this all-or-nothing fix:"));
+        foreach (BlockingProject project in projects)
+        {
+            _out.WriteLine(ConsoleText.Sanitize($"  {project.Project}"));
+            foreach (string reason in project.Reasons.Take(MaxBlockersShown))
+            {
+                _out.WriteLine(ConsoleText.Sanitize($"    - {reason}"));
+            }
+
+            if (project.Reasons.Count > MaxBlockersShown)
+            {
+                _out.WriteLine($"    ... and {project.Reasons.Count - MaxBlockersShown} more reasons (see --report).");
+            }
+        }
     }
 
     public void ShowDiff(string filePath, IReadOnlyList<DiffLine> lines)

@@ -140,7 +140,7 @@ public class KeptReasonTextTests
         var writer = new StringWriter();
         IAnsiConsole console = AnsiConsole.Create(new AnsiConsoleSettings { Out = new AnsiConsoleOutput(writer), Ansi = AnsiSupport.No });
         console.Profile.Width = 300;
-        new SpectreConsoleView(console, console).ShowSummary(findings);
+        new SpectreConsoleView(console, console).ShowSummary(findings, new Dictionary<string, string>());
         return writer.ToString();
     }
 }

@@ -90,7 +90,7 @@ Free disk stayed above the H1 threshold (98 GB at the end).
 | uno.check | ok | 1 | 5 | 376/376 -> 376/376, 0 regressions |
 
 12 of 14 pass with no test regression caused by the fix (was 8). B2, B3 and B4 are confirmed fixed (fergun, okta build and test green);
-B1 is fixed for eventualshop, heappe-style single-project cases and seedwork.cqrs.bus, but two variants remain (B5, B6).
+B1 is fixed for eventualshop and seedwork.cqrs.bus, but two variants remain (B5, B6).
 fergun and okta now get 0 Fixed: the former Fixed sites became Manual (`HandlerResultUsed`, `PackageDowngrade`), as designed.
 TAAK-335 (single transient clause) could not be observed directly: the fergun site is now Manual (B2 fix), so no corpus rewrite exercises it.
 

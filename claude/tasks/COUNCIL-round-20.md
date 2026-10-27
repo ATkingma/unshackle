@@ -37,7 +37,7 @@ Follow-ups: TAAK-351 (E33, plus round 19 R3, which TAAK-346 archived without doi
 - `claude/docs/council.md` — summary of all rounds
 - `claude/tasks/COUNCIL-round-19.md`
 - `claude/tasks/TAAK-341-xunit-v3.md`
-- `claude/tasks/TAAK-351-epplus-row-fold.md`
+- `claude/tasks/archief/TAAK-351-epplus-row-fold.md`
 - `claude/tasks/archief/TAAK-352-async-project-migration.md`
 - `claude/tasks/archief/TAAK-346-epplus-flow-rows.md`
 - `claude/tasks/archief/TAAK-349-transitive-pin-reasons.md`

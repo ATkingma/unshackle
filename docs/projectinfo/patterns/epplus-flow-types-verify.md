@@ -29,6 +29,7 @@
 | REQ-15 | Met    | proof `Package/rename-to-helper-added` (manual) (TAAK-346) |
 | REQ-16 | Met    | `EPPlusFixTests.Fix_FlowTypesNodeWithPublicApiSignature_OneE6RowWithFlowReason`; proof `FlowTypes/public-member` now uses an internal type (TAAK-346) |
 | REQ-17 | Met    | proof `FlowTypes/chain-failing-member` (manual, names the failing member's use) (TAAK-346) |
+| REQ-18 | Met    | proofs `FlowTypes/range-parameter-unfixed-use`, `FlowTypes/range-parameter-passed-on` (manual) (TAAK-346 step 2a) |
 
 ## Build and tests
 

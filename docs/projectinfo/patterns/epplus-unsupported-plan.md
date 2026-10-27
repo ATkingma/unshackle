@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "epplus-unsupported"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7]
 files_expected:
     - src/Unshackle.Core/Fixes/EPPlus/EPPlusFix.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/UnsupportedPattern.cs
@@ -60,6 +60,7 @@ whole project on EPPlus (per-project plan, council round 13 E17, TAAK-326).
 | REQ-4 | The same signature that is internal, or in a test project, is `UnmigratedEPPlusApi` (proof `Unsupported/internal-api`, `UnsupportedPattern_PublicApiInTestProject_NotE6`). |
 | REQ-5 | An unresolved EPPlus 5+ member is named with its receiver (`UnsupportedPattern_UnresolvedEPPlus5Member_NamedWithItsReceiver`). |
 | REQ-6 | Code the licence or package pattern reports is not reported again (`Fix_SaveWithoutFile_ManualAndSolutionUntouched`, `Fix_TwoPackagesInOneBlock_Manual`). |
+| REQ-7 | R3 (council round 19): an `epplus.address` read left Manual in a member this pattern reports is folded into this pattern's one row for that member (`Fix_AddressReadInMemberReportedByUnsupported_OneRowWithAddressReason`, proof `Unsupported/address-folded`). |
 
 ## See also
 

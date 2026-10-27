@@ -95,7 +95,7 @@ internal class WorkbookUses
             {
                 if (!MapRangeRead(use) && !IsRangeFlowArgument(use))
                 {
-                    string text = $"Range {(range is IParameterSymbol ? "parameter" : "local")} {range.Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}); only "
+                    string text = $"Range {(range is IParameterSymbol ? "parameter" : "local")} {range.Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}): {RangeUse(use)}; only "
                         + "its address (.Rows, .Columns, .Start/.End .Row/.Column) and passing a local on to a range helper are mapped (council round 16, E25).";
                     return _unknownVersion ?? (_package is null ? Models.PatternResult.Manual(EPPlusReason.FlowUseNotMigrated, text) : Models.PatternResult.Manual(text));
                 }
@@ -104,6 +104,23 @@ internal class WorkbookUses
 
         return null;
     }
+
+    // R1/R2 (council round 19): what a range use that is not mapped is, so hand work is quick: a value, a style, a merge, a data load,
+    // or the callee a range is passed on to.
+    private string RangeUse(IdentifierNameSyntax use) => use.Parent switch
+    {
+        MemberAccessExpressionSyntax { Name.Identifier.ValueText: var name } member when member.Expression == use => name switch
+        {
+            "Value" or "Text" or "Formula" or "FormulaR1C1" => $"a value use (.{name})",
+            "Style" or "StyleName" => $"a style use (.{name})",
+            "Merge" => "a merge (.Merge, ClosedXML Merge())",
+            "LoadFromCollection" or "LoadFromDataTable" or "LoadFromArrays" or "LoadFromText" => $"a data load (.{name}, ClosedXML InsertData)",
+            _ => $"member .{name}",
+        },
+        ArgumentSyntax { Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax call } } =>
+            $"passed on to {(_model.GetSymbolInfo(call).Symbol is IMethodSymbol callee ? callee.Name : Shorten(call.Expression))}",
+        _ => "another use",
+    };
 
     // r.RowCount() / r.RangeAddress.FirstAddress.RowNumber as AddressPattern wrote it, or the EPPlus r.Rows / r.Start.Row, rewritten here
     // (a range parameter: AddressPattern leaves those to FlowTypesPattern).

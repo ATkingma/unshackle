@@ -18,6 +18,7 @@
 | REQ-4 | Met     | proof `Unsupported/internal-api`; `EPPlusFixTests.UnsupportedPattern_PublicApiInTestProject_NotE6` |
 | REQ-5 | Met     | `EPPlusFixTests.UnsupportedPattern_UnresolvedEPPlus5Member_NamedWithItsReceiver` |
 | REQ-6 | Met     | `EPPlusFixTests.Fix_SaveWithoutFile_ManualAndSolutionUntouched`, `Fix_TwoPackagesInOneBlock_Manual` |
+| REQ-7 | Met     | `EPPlusFixTests.Fix_AddressReadInMemberReportedByUnsupported_OneRowWithAddressReason`; proof `Unsupported/address-folded` (TAAK-346 step 2a) |
 
 ## Build and tests
 

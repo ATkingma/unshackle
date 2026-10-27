@@ -244,6 +244,38 @@ public class EPPlusFixTests
     }
 
     [Fact]
+    public async Task Fix_AddressReadInMemberReportedByUnsupported_OneRowWithAddressReason()
+    {
+        // Arrange: council round 19, R3. The member is reported by epplus.unsupported for an unmigrated API (worksheet protection) and also
+        // has an UnmappedAddress read; it gets one row, the epplus.unsupported row, with the address reason folded into its text.
+        const string code = """
+            using OfficeOpenXml;
+
+            public class Report
+            {
+                private ExcelWorksheet _sheet;
+
+                public int Rows()
+                {
+                    _sheet.Protection.IsProtected = true;
+                    return _sheet.Cells["C5:A2"].Rows;
+                }
+            }
+            """;
+        var fixer = new Fixer([new EPPlusFix()]);
+        Solution solution = TestSolution.Create(code, EPPlusReferences.EPPlus);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "epplus" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        report.Findings.ShouldNotContain(f => f.PatternId == "epplus.address");
+        Finding row = report.Findings.Where(f => f.Line == 7).ShouldHaveSingleItem();
+        row.PatternId.ShouldBe("epplus.unsupported");
+        ((ManualResult)row.Result).Reason.ShouldContain("Also epplus.address UnmappedAddress:");
+    }
+
+    [Fact]
     public async Task Fix_FlowTypesNodeWithPublicApiSignature_OneE6RowWithFlowReason()
     {
         // Arrange: council round 18, E31. A public helper of a packable project is both E6 public API and Manual in flow-types; it gets

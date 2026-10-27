@@ -24,6 +24,7 @@
   generic code is Manual, also inside a reduced extension method. Step 3 is therefore one Manual proof
   (`Proofs/MediatR/GenericRequest/extension-callers`); a mixed-open proof would add nothing over it. Conservative choice: no new closing
   behaviour for MediatR. Should `mediatr.generic-request` follow callers through `TypeArgumentClosure` like `automapper.generic-map`?
+  **Decision (round 17 M15)**: yes, in TAAK-344, only with a statically found handler registration (assembly scan only → Manual); a corpus count sets priority.
 
 ## See also
 

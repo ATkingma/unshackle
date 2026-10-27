@@ -267,6 +267,25 @@ Full text: `claude/tasks/COUNCIL-round-16.md`. Follow-ups: TAAK-336, TAAK-337, T
 | A18 | `ProjectTo<T>` with parameters | Stays Manual. |
 | G10 | Lost transitive package | Add a direct pinned `PackageReference` when its types are used; CPM conflict → Manual. |
 
+## Round 17 (2026-10-27)
+
+Full text: `claude/tasks/COUNCIL-round-17.md`. Follow-ups: TAAK-343, TAAK-344, TAAK-342 steps 4-9.
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| T1 | Pin vs new package closure | Keep pinning; the row says "may conflict (NU1605)"; nuspec reader on the first corpus NU1605. |
+| T2 | Dependent declares the package itself | Keep pinning; the reason names the user project. |
+| T3 | Package via a project reference | Same-version pin accepted and documented; a differing version → Manual. |
+| M15 | `mediatr.generic-request` via `TypeArgumentClosure` | Yes, with a static handler-registration guard (scan only → Manual); corpus count sets priority. |
+| B1 | EF bulk go | Go, narrow; roadmap line after the signature check and SQL proof. |
+| B2 | EFCore.BulkExtensions in v1 | No. |
+| B3 | EF Core < 7 | Per-call Manual plus one project-level Warning row. |
+| B4 | Non-trivial values | Manual; numeric allow-list with proofs; `DateTime.Now`/`Math.*` only after a SQL proof. |
+| B5 | Z package removal | At zero Z usages per project; otherwise report the remaining usages. |
+| B6 | Stubs | Accepted; one-time nupkg check recorded with its version; no CI download. |
+| B7 | `DeleteAsync(builder, ct)` | Manual `BatchOptions` naming the options. |
+| B8 | MIT fork note | One neutral README line after a license check. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

@@ -3,6 +3,7 @@ using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.AutoMapper;
+using Unshackle.Core.Fixes.EfBulk;
 using Unshackle.Core.Fixes.EPPlus;
 using Unshackle.Core.Fixes.FluentAssertions;
 using Unshackle.Core.Fixes.MassTransit;
@@ -11,6 +12,7 @@ using Unshackle.Core.Fixes.Moq;
 using Unshackle.Core.Fixes.Polly;
 using Unshackle.Core.Models;
 using Unshackle.DataAccess.Reports;
+using Unshackle.Tests.Core.EfBulk;
 using Unshackle.Tests.Core.EPPlus;
 using Unshackle.Tests.Core.MassTransit;
 using Unshackle.Tests.Core.Moq;
@@ -34,6 +36,7 @@ public class PreFilterContractTests
         ["Moq"] = (() => new MoqFix(MoqReferences.NSubstituteAssembly), MoqReferences.Moq),
         ["Polly"] = (() => new PollyFix(), PollyReferences.Before),
         ["EPPlus"] = (() => new EPPlusFix(), EPPlusReferences.EPPlus),
+        ["EfBulk"] = (() => new EfBulkFix(), EfBulkReferences.Before),
         ["MassTransit"] = (() => new MassTransitFix(), MassTransitReferences.MassTransit),
     };
 

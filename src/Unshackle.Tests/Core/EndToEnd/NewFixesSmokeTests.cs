@@ -6,11 +6,13 @@ using Unshackle.Core.Fixes.EPPlus;
 using Unshackle.Core.Fixes.MassTransit;
 using Unshackle.Core.Fixes.Moq;
 using Unshackle.Core.Fixes.Polly;
+using Unshackle.Core.Fixes.XunitV3;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Core.EPPlus;
 using Unshackle.Tests.Core.MassTransit;
 using Unshackle.Tests.Core.Moq;
 using Unshackle.Tests.Core.Polly;
+using Unshackle.Tests.Core.XunitV3;
 using Unshackle.Tests.Helpers;
 using Xunit;
 
@@ -33,6 +35,12 @@ public class NewFixesSmokeTests
     public async Task Polly_RealFix_RewritesKnownGoodFile()
     {
         await ShouldRewriteAsync(new PollyFix(), "polly", "Polly/RetryVariants/retry-count", PollyReferences.Before);
+    }
+
+    [Fact]
+    public async Task XunitV3_RealFix_RewritesKnownGoodFile()
+    {
+        await ShouldRewriteAsync(new XunitV3Fix(), "xunit3", "XunitV3/AsyncLifetime/async-methods", XunitV3References.Before);
     }
 
     [Fact]

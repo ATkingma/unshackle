@@ -1,0 +1,51 @@
+---
+kingmadoc: 1
+feature: "xunit3-async-lifetime"
+status: approved
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5]
+files_expected:
+    - src/Unshackle.Core/Fixes/XunitV3/Patterns/AsyncLifetimePattern.cs
+    - src/Unshackle.Core/Fixes/XunitV3/XunitV3Fix.cs
+    - src/Unshackle.Tests/Proofs/XunitV3/AsyncLifetime/
+---
+
+# Feature: xunit3.async-lifetime: IAsyncLifetime Task InitializeAsync/DisposeAsync → ValueTask
+
+|               |                         |
+| ------------- | ----------------------- |
+| **Project**   | Unshackle               |
+| **Status**    | Approved                |
+| **Generated** | 2026-10-27 by KingmaDoc |
+
+> Drafted from TAAK-341 (first xunit3 slice) and the scout report `docs/projectinfo/architectuur/candidate-testfw.md`.
+
+## One-sentence summary
+
+`Task InitializeAsync()`/`Task DisposeAsync()` that implement v2 `Xunit.IAsyncLifetime` (directly, explicitly or as an override of an implementation) return `ValueTask`; a non-async body returns `default` for `Task.CompletedTask` and `new ValueTask(task)` for any other task.
+
+## Scope (in / out)
+
+**In scope**: implicit and explicit implementations, overrides of an implementing method, `async` and non-async bodies (block or expression).
+
+**Out of scope**: classes that also implement `IDisposable` or `IAsyncDisposable` (Manual `DualDisposal`: v3 `IAsyncLifetime` extends `IAsyncDisposable` and xUnit then calls only `DisposeAsync`); methods used as a `Task` anywhere in the compilation instead of directly awaited (Manual `LifetimeResultUsed`); an aliased return type (Manual `UnsupportedShape`).
+
+## Requirements
+
+- **REQ-1**: WHEN an `async Task` lifetime method is found THE SYSTEM SHALL change only its return type to `ValueTask` (keeping a qualified form) (proof `async-methods`, `explicit`).
+- **REQ-2**: WHEN a non-async lifetime method returns `Task.CompletedTask` or another task THE SYSTEM SHALL return `default` or `new ValueTask(task)` (proof `returned-task`, `explicit`).
+- **REQ-3**: WHEN the class also implements `IDisposable` or `IAsyncDisposable` THE SYSTEM SHALL report Manual `DualDisposal` (proof `disposable`).
+- **REQ-4**: WHEN the method (or the interface member) is used other than as `await x.M()` THE SYSTEM SHALL report Manual `LifetimeResultUsed` (proof `result-used`).
+- **REQ-5**: WHEN a base class implements the interface virtually THE SYSTEM SHALL rewrite the base method and its overrides alike (proof unit test `AsyncLifetime_Find_OverrideOfAnImplementation_Found`).
+
+## Assumptions
+
+- `new ValueTask(task)` awaits the same task; `default(ValueTask)` is a completed ValueTask. The non-awaited scan is cached per `Compilation` (`ConditionalWeakTable`).
+- The fix is `AllOrNothing`: one Manual row anywhere leaves the whole solution on v2 (half a migration does not build).
+
+## Models
+
+[xunit3-async-lifetime-modellen.md](xunit3-async-lifetime-modellen.md).
+
+## Open questions
+
+- See "Council questions" in `claude/tasks/TAAK-341-xunit-v3.md`.

@@ -104,6 +104,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/TAAK-336-epplus-flow-followups.md` | Council round 16 E21-E24: EPPlus Fixed field/return shapes, helper chains, one row per node |
 | `claude/tasks/TAAK-337-epplus-range-locals.md` | Council round 16 E25-E26: EPPlus `ExcelRange` locals, then the range parameter flow type |
 | `claude/tasks/TAAK-338-automapper-closure-regressions.md` | Council round 16 A15-A18: regression proofs for extension callers in `TypeArgumentClosure` |
+| `claude/tasks/TAAK-341-xunit-v3.md` | xUnit v2 → v3 fix (`xunit3`): skeleton, project-file edits, first three patterns, council questions |
 | `claude/tasks/archief/TAAK-335-polly-redundant-transient-clause.md` | Polly: `OrTransientHttpStatusCode()` after the transient filter no longer writes a duplicate clause (corpus B2 side issue) |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |

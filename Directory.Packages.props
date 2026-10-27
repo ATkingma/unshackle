@@ -41,5 +41,10 @@
     <!-- MediatR registered by hand in an Autofac module (TAAK-196): the versions of the corpus case -->
     <PackageVersion Include="Autofac" Version="7.1.0" />
     <PackageVersion Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
+    <!-- TAAK-341: xUnit v2 as types for the xunit3 proofs' "before" (Apache-2.0); never compiled into the test project itself -->
+    <PackageVersion Include="xunit.extensibility.core" Version="2.9.3" />
+    <PackageVersion Include="xunit.extensibility.execution" Version="2.9.3" />
+    <PackageVersion Include="xunit.assert" Version="2.9.3" />
+    <PackageVersion Include="xunit.abstractions" Version="2.0.3" />
   </ItemGroup>
 </Project>

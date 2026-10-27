@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "epplus-flow-types"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18]
 files_expected:
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/FlowTypesPattern.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/WorkbookUses.cs
@@ -84,6 +84,7 @@ epplus.flow-types: a private helper method with one `ExcelWorksheet` parameter t
 | REQ-15 | E29: a rename in the caller to a sheet name a return helper adds is Manual. |
 | REQ-16 | E31: a flow-types node with an E6 public-API signature has one row, `PublicApiExposesOldLibrary`, that includes the flow-types reason. |
 | REQ-17 | E32: the Manual row of a linked helper set names the failing member. |
+| REQ-18 | R1/R2 (council round 19): the Manual reason of a range use that is not mapped names the use (value, style, merge, data load, member) or the callee it is passed on to. |
 
 ## See also
 

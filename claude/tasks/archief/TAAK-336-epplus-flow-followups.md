@@ -32,18 +32,27 @@
 
 1. **Field after proof**: a single-pattern proof runs only flow-types on code that compiles against EPPlus, so a field write is never
    migrated there; the Fixed field is proven by `_Combined/field` (full fix + harness) only. Conservative; acceptable?
+   **Decision (council 18 E27: accepted; plan names `_Combined/field` (TAAK-346).)**
 2. **E22 index/lookup**: "literal sheet name or index" — only `Add("literal")` is mapped. A lookup by name or index inside the helper cannot
    prove the caller's package has that sheet (EPPlus returns null, ClosedXML throws), so it stays `FlowReturnNotMapped`.
+   **Decision (council 18 E28: accepted.)**
 3. **E22 names in the caller**: a sheet added by a return helper is not known to the caller's `AddedBefore`, so a later lookup of that name in
    the caller stays Manual (conservative); a rename to that name is not checked against it (both libraries throw on a duplicate name).
+   **Decision (council 18 E29: a rename to a helper-added name becomes Manual too, with a test (TAAK-346).)**
 4. **E21 field uses**: other uses must be in a write's package scope and after the write (top level of that scope); reads in other methods
    are Name reads only, no flow arguments. Widen later if the corpus shows it.
+   **Decision (council 18 E30: accepted; widen on corpus evidence.)**
 5. **E24 and E6**: a flow-types node whose signature is E6 public API of a packable project keeps its `PublicApiExposesOldLibrary`
    unsupported row (chosen as the more specific reason), so such a node can still have two rows.
+   **Decision (council 18 E31: one row per node; flow-types reason folded into the E6 row (TAAK-346).)**
 6. **E23 depth**: depth counts methods on the longest caller→callee path of the linked set (A→B→C = 3); one failing member makes the whole
    linked set Manual.
+   **Decision (council 18 E32: accepted; the row names the failing member (TAAK-346).)**
 
 ## See also
+
+- `claude/tasks/COUNCIL-round-18.md` — decisions E27-E32
+- `claude/tasks/TAAK-346-epplus-flow-rows.md` — follow-up
 
 - `claude/tasks/COUNCIL-round-16.md`
 - `claude/tasks/TAAK-327-epplus-flow-types.md`

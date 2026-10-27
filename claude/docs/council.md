@@ -286,6 +286,34 @@ Full text: `claude/tasks/COUNCIL-round-17.md`. Follow-ups: TAAK-343, TAAK-344, T
 | B7 | `DeleteAsync(builder, ct)` | Manual `BatchOptions` naming the options. |
 | B8 | MIT fork note | One neutral README line after a license check. |
 
+## Round 18 (2026-10-27)
+
+Full text: `claude/tasks/COUNCIL-round-18.md`. Follow-ups: TAAK-340 steps 3a-3f, TAAK-341 steps 5a-5e, TAAK-346.
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| S1 | SpecFlow compat mode | Level 2 only; Manual rows name `Reqnroll.SpecFlowCompatibility`. |
+| S2 | SpecFlow AllOrNothing | Stays; summary names blockers; partial migration on the backlog. |
+| S3 | `async void` bindings | Manual with a hand-route reason. |
+| S4 | String step calls | Always Manual; single match named as "possible match". |
+| S5 | `Pending()` | Last statement only. |
+| S6 | Generator package | Renamed, kept. |
+| S7 | Unused swapped usings | Removed only when our swap wrote them and nothing binds. |
+| S8 | Plugins / UI suites / packages.config | No port → project blocker; port → rename; packages.config blocked; UI: build + equal test count. |
+| S9 | `Directory.Build.props` packages | Edit with a row naming the file; Manual when it reaches unmigrated/outside projects, has a `Condition` or cannot be evaluated. |
+| X1 | xunit3 AllOrNothing | Solution-wide; summary lists blockers. |
+| X2 | xunit.v3 version | 3.2.x (MTP v1) default; 4.x opt-in later; corpus checks test counts. |
+| X3 | Runner bump | New `PackageVersionEdit` incl. CPM, only when all users migrate. |
+| X4 | Test project detection | `Microsoft.NET.Test.Sdk` AND test attributes. |
+| X5 | Dual disposal | Manual. |
+| X6 | Non-awaited lifetime calls | `.AsTask()` for exactly one direct use; else Manual. |
+| E27 | EPPlus field proof | `_Combined/field` accepted. |
+| E28 | Return-helper lookup | Manual. |
+| E29 | Rename to a helper-added name | Manual. |
+| E30 | Field uses | As built. |
+| E31 | E6 and flow-types rows | One row per node (folded into E6). |
+| E32 | Linked-set failure | Whole set Manual; row names the member. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

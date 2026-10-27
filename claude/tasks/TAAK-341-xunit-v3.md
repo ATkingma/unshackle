@@ -32,28 +32,39 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
   netstandard test projects; Info row about `xunit.runner.visualstudio` ≥ 3.0
 - [x] 3. Patterns with proofs + KingmaDoc: `xunit3.abstractions-namespace`, `xunit3.async-lifetime`, `xunit3.async-void-test`
 - [x] 4. Unit tests `src/Unshackle.Tests/Core/XunitV3/`
+- [ ] 5a. X2: switch the target to xunit.v3 3.2.x (MTP v1) and the proof references; 4.x opt-in recorded as a later option after checking its readme for VSTest
+- [ ] 5b. X4: test project = `Microsoft.NET.Test.Sdk` AND test attributes; otherwise no `Exe`, Info row (unit tests)
+- [ ] 5c. X6: `.AsTask()` Fixed for a lifetime call result used exactly once directly (proof); other uses stay `LifetimeResultUsed`
+- [ ] 5d. X1: run summary lists blocking projects and their reasons (shared with TAAK-340 3a)
+- [ ] 5e. X3: engine edit `PackageVersionEdit` (Name, From, To) incl. CPM; replaces the workaround in step 6
 - [ ] 5. Remaining patterns: `Record.ExceptionAsync` (ValueTask), `[PropertyData]` → `[MemberData]`, string-based `[CollectionBehavior]`/
   `[TestCaseOrderer]`/`[TestFrameworkAttribute]` → `typeof(...)`, Manual inventory of extensibility (custom `DataAttribute`, discoverers,
   `Xunit.Sdk` runners), `TheoryData` / `SkipException` differences
 - [ ] 6. `xunit.runner.visualstudio` bump (needs a same-name version edit in the engine: `PackageRenameEdit` with OldName == NewName removes
   the reference, and under central package management the old `PackageVersion` stays), and `Microsoft.NET.Test.Sdk` minimum
-- [ ] 7. Corpus: 10-15 xUnit 2.x repos incl. integration suites with `IAsyncLifetime` (scout survey gap), pinned shas, build after fix
+- [ ] 7. Corpus (discovered-test count > 0 and equal before/after, X2): 10-15 xUnit 2.x repos incl. integration suites with `IAsyncLifetime` (scout survey gap), pinned shas, build after fix
 - [ ] 8. Blind round, roadmap row in `docs/projectinfo/project.md`
 
-## Council questions (open; conservative option built)
+## Council questions (decided in council round 18, `claude/tasks/COUNCIL-round-18.md`)
 
 1. **AllOrNothing solution-wide vs. per project.** Built: solution-wide (one Manual row reverts everything). A per-project partial run
    (blocked project keeps v2 code and packages) would migrate more, but needs `AllowsPartial` rules and care for shared helper projects.
+   **Decision (council 18 X1: solution-wide for now; summary lists blocking projects and reasons.)**
 2. **Target version.** Built: xunit.v3 4.0.2 (what the proofs compile against; it pulls Microsoft Testing Platform v2 via
    `xunit.v3.mtp-v2`). 3.2.x (MTP v1) may be the safer default for VSTest-based CI. Which one?
+   **Decision (council 18 X2: default 3.2.x (MTP v1); 4.x opt-in later after a VSTest check; corpus checks discovered-test count > 0 and equal.)**
 3. **Runner package.** Built: Info row only. Should the engine get a same-name version-bump edit (also for central package management)
    so `xunit.runner.visualstudio` 2.x → 3.x is automatic?
+   **Decision (council 18 X3: yes, new engine edit `PackageVersionEdit` (Name, From, To) incl. CPM; under CPM only when every user project is migrated, else Info naming the blockers.)**
 4. **Test project detection** by the `xunit.execution.*` assembly: a helper library that references the full `xunit` package also becomes
    `Exe`. Acceptable (v3's `xunit.v3` package requires Exe anyway), or detect test projects by test attributes / `Microsoft.NET.Test.Sdk`?
+   **Decision (council 18 X4: `Exe` + `xunit.v3` only with `Microsoft.NET.Test.Sdk` AND test attributes; either alone → Info, no `Exe`.)**
 5. **`IAsyncLifetime` + `IDisposable`**: built as Manual `DualDisposal`. Could be Fixed by moving the `Dispose` body into `DisposeAsync`
    (with a warning), at the cost of a behaviour-sensitive rewrite.
+   **Decision (council 18 X5: stays Manual.)**
 6. **Non-awaited lifetime calls** (`Task t = f.InitializeAsync()`): built as Manual `LifetimeResultUsed`; `.AsTask()` would be a mechanical
    Fixed alternative.
+   **Decision (council 18 X6: Fixed `.AsTask()` only when the result is used exactly once directly; else Manual.)**
 
 ## Context for the next agent
 

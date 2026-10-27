@@ -225,6 +225,17 @@ Full text: `claude/tasks/COUNCIL-round-13.md`.
 | E19 | EPPlus read mapping | E12 stands, no shim. |
 | R4 | ReadyToRun | Not built; TAAK-305 deferred. |
 
+## Round 14 (2026-10-27)
+
+Full text: `claude/tasks/COUNCIL-round-14.md`. Follow-up: TAAK-333.
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| M10 | Kept row vs Fixed project-file row | One row per project file; the kept row also names the added package. |
+| M11 | Dependents in the kept row | All, solution order, max 5 in the text then "and N more"; JSON has the full list. |
+| M12 | Full-name rule on adding usings | Symmetric: no using added when every rewritten reference is a full name from the root; proofs updated. |
+| M13 | B1 proxy type name | Accepted limitation confirmed; one fix-level Info line on Moq runs that changed code. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

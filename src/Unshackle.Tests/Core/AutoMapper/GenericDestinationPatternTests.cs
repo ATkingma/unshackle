@@ -145,6 +145,45 @@ public class GenericDestinationPatternTests
     }
 
     [Fact]
+    public async Task FixAsync_UntypedQueryable_NamesUntypedSource()
+    {
+        // Arrange: the query is a non-generic IQueryable, so the source type is unknown (TAAK-348).
+        string reader = Reader.Replace("ACCESS", "internal")
+            .Replace("Query<TResult>(IQueryable<Order> orders)", "Query<TResult>(IQueryable orders)", StringComparison.Ordinal);
+        Solution solution = Single(OutputKind.DynamicallyLinkedLibrary, Types, reader, Callers, PlainProjections);
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        ManualResult manual = report.Findings.Single(f => f.PatternId == "automapper.generic-destination").Result.ShouldBeOfType<ManualResult>();
+        manual.Code.ShouldBe("GenericProjectionOpenSet");
+        manual.Reason.ShouldContain("ProjectTo<TResult> from an untyped IQueryable:");
+        manual.Reason.ShouldNotContain("from ?");
+    }
+
+    [Fact]
+    public async Task FixAsync_TwoOpenCallsInOneSet_EachNamesItsOwnBlocker()
+    {
+        // Arrange: two generic ProjectTo calls of the same pair, each open for a reason of its own (TAAK-348, kavita ProjectToExtensions).
+        string reader = Reader.Replace("ACCESS", "internal").Replace(
+            "orders.ProjectTo<TResult>(_mapper.ConfigurationProvider);",
+            "orders.ProjectTo<TResult>(_mapper.ConfigurationProvider, new { Id = 1 });\n\n    public IQueryable<TResult> Other<TResult>(IQueryable<Order> orders) => orders.ProjectTo<TResult>(_mapper.ConfigurationProvider, null, \"Id\");",
+            StringComparison.Ordinal);
+        Solution solution = Single(OutputKind.DynamicallyLinkedLibrary, Types, reader, Callers, PlainProjections);
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        List<ManualResult> manual = [.. report.Findings.Where(f => f.PatternId == "automapper.generic-destination").Select(f => f.Result.ShouldBeOfType<ManualResult>())];
+        manual.Count.ShouldBe(2, Reasons(report));
+        manual.ShouldAllBe(m => m.Code == "GenericProjectionOpenSet");
+        manual.ShouldAllBe(m => !m.Reason.Contains("the call at", StringComparison.Ordinal), Reasons(report));
+        manual.ShouldAllBe(m => m.Reason.StartsWith("ProjectTo<TResult> with parameters", StringComparison.Ordinal), Reasons(report));
+    }
+
+    [Fact]
     public void Find_GenericProjectTo_IsNotProjectToPatterns()
     {
         // Arrange

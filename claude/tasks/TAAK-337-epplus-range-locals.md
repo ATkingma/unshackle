@@ -22,5 +22,5 @@
 ## See also
 
 - `claude/tasks/COUNCIL-round-16.md`
-- `claude/tasks/TAAK-336-epplus-flow-followups.md`
+- `claude/tasks/archief/TAAK-336-epplus-flow-followups.md`
 - `docs/projectinfo/patterns/epplus-address-plan.md`

@@ -10,6 +10,8 @@ using Unshackle.Core.Fixes.MassTransit;
 using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Fixes.Moq;
 using Unshackle.Core.Fixes.Polly;
+using Unshackle.Core.Fixes.SpecFlow;
+using Unshackle.Core.Fixes.XunitV3;
 using Unshackle.Core.Models;
 using Unshackle.DataAccess.Reports;
 using Unshackle.Tests.Core.EfBulk;
@@ -17,6 +19,8 @@ using Unshackle.Tests.Core.EPPlus;
 using Unshackle.Tests.Core.MassTransit;
 using Unshackle.Tests.Core.Moq;
 using Unshackle.Tests.Core.Polly;
+using Unshackle.Tests.Core.SpecFlow;
+using Unshackle.Tests.Core.XunitV3;
 using Unshackle.Tests.Helpers;
 using Xunit;
 
@@ -37,7 +41,9 @@ public class PreFilterContractTests
         ["Polly"] = (() => new PollyFix(), PollyReferences.Before),
         ["EPPlus"] = (() => new EPPlusFix(), EPPlusReferences.EPPlus),
         ["EfBulk"] = (() => new EfBulkFix(), EfBulkReferences.Before),
+        ["SpecFlow"] = (() => new SpecFlowFix(), SpecFlowReferences.SpecFlow),
         ["MassTransit"] = (() => new MassTransitFix(), MassTransitReferences.MassTransit),
+        ["XunitV3"] = (() => new XunitV3Fix(), XunitV3References.Before),
     };
 
     public static TheoryData<string> Proofs() =>

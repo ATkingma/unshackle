@@ -18,9 +18,10 @@ public class LayoutUnsupportedTests
         const string code = """
             using OfficeOpenXml;
 
-            internal static class Report
+            internal class Report
             {
-                internal static void Layout(ExcelWorksheet sheet)
+                // A constructor, so the row is epplus.unsupported's (a helper method would be epplus.flow-types', E24).
+                internal Report(ExcelWorksheet sheet)
                 {
                     sheet.Cells["A1:B2"].Merge = true;
                     sheet.View.FreezePanes(2, 1);

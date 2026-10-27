@@ -267,6 +267,53 @@ Full text: `claude/tasks/COUNCIL-round-16.md`. Follow-ups: TAAK-336, TAAK-337, T
 | A18 | `ProjectTo<T>` with parameters | Stays Manual. |
 | G10 | Lost transitive package | Add a direct pinned `PackageReference` when its types are used; CPM conflict → Manual. |
 
+## Round 17 (2026-10-27)
+
+Full text: `claude/tasks/COUNCIL-round-17.md`. Follow-ups: TAAK-343, TAAK-344, TAAK-342 steps 4-9.
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| T1 | Pin vs new package closure | Keep pinning; the row says "may conflict (NU1605)"; nuspec reader on the first corpus NU1605. |
+| T2 | Dependent declares the package itself | Keep pinning; the reason names the user project. |
+| T3 | Package via a project reference | Same-version pin accepted and documented; a differing version → Manual. |
+| M15 | `mediatr.generic-request` via `TypeArgumentClosure` | Yes, with a static handler-registration guard (scan only → Manual); corpus count sets priority. |
+| B1 | EF bulk go | Go, narrow; roadmap line after the signature check and SQL proof. |
+| B2 | EFCore.BulkExtensions in v1 | No. |
+| B3 | EF Core < 7 | Per-call Manual plus one project-level Warning row. |
+| B4 | Non-trivial values | Manual; numeric allow-list with proofs; `DateTime.Now`/`Math.*` only after a SQL proof. |
+| B5 | Z package removal | At zero Z usages per project; otherwise report the remaining usages. |
+| B6 | Stubs | Accepted; one-time nupkg check recorded with its version; no CI download. |
+| B7 | `DeleteAsync(builder, ct)` | Manual `BatchOptions` naming the options. |
+| B8 | MIT fork note | One neutral README line after a license check. |
+
+## Round 18 (2026-10-27)
+
+Full text: `claude/tasks/COUNCIL-round-18.md`. Follow-ups: TAAK-340 steps 3a-3f, TAAK-341 steps 5a-5e, TAAK-346.
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| S1 | SpecFlow compat mode | Level 2 only; Manual rows name `Reqnroll.SpecFlowCompatibility`. |
+| S2 | SpecFlow AllOrNothing | Stays; summary names blockers; partial migration on the backlog. |
+| S3 | `async void` bindings | Manual with a hand-route reason. |
+| S4 | String step calls | Always Manual; single match named as "possible match". |
+| S5 | `Pending()` | Last statement only. |
+| S6 | Generator package | Renamed, kept. |
+| S7 | Unused swapped usings | Removed only when our swap wrote them and nothing binds. |
+| S8 | Plugins / UI suites / packages.config | No port → project blocker; port → rename; packages.config blocked; UI: build + equal test count. |
+| S9 | `Directory.Build.props` packages | Edit with a row naming the file; Manual when it reaches unmigrated/outside projects, has a `Condition` or cannot be evaluated. |
+| X1 | xunit3 AllOrNothing | Solution-wide; summary lists blockers. |
+| X2 | xunit.v3 version | 3.2.x (MTP v1) default; 4.x opt-in later; corpus checks test counts. |
+| X3 | Runner bump | New `PackageVersionEdit` incl. CPM, only when all users migrate. |
+| X4 | Test project detection | `Microsoft.NET.Test.Sdk` AND test attributes. |
+| X5 | Dual disposal | Manual. |
+| X6 | Non-awaited lifetime calls | `.AsTask()` for exactly one direct use; else Manual. |
+| E27 | EPPlus field proof | `_Combined/field` accepted. |
+| E28 | Return-helper lookup | Manual. |
+| E29 | Rename to a helper-added name | Manual. |
+| E30 | Field uses | As built. |
+| E31 | E6 and flow-types rows | One row per node (folded into E6). |
+| E32 | Linked-set failure | Whole set Manual; row names the member. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

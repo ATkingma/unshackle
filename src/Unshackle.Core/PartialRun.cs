@@ -127,5 +127,6 @@ internal static class PartialRun
     // The project-file rows that kept code causes: the old package stays next to the new one.
     private static bool IsKeptPackageRow(Finding finding) =>
         finding.PatternId == Fixer.ProjectFilePatternId && finding.Result is ManualResult { Reason: var reason }
-        && (reason.Contains(Fixer.KeptPackageReason, StringComparison.Ordinal) || reason.Contains(Fixer.KeptSharedPackageReason, StringComparison.Ordinal));
+        && (reason.Contains(Fixer.KeptPackageReason, StringComparison.Ordinal) || reason.Contains(Fixer.KeptSharedPackageReason, StringComparison.Ordinal)
+            || reason.Contains(Fixer.KeptForDependentReason, StringComparison.Ordinal));
 }

@@ -55,32 +55,37 @@ internal static class ProjectPackages
     private static List<ProjectMigration> KeepForDependents(Solution solution, List<ProjectMigration> migrations)
     {
         HashSet<string> keeping = [.. migrations.Where(m => m.KeepRemovedPackage).Select(m => m.ProjectPath)];
-        var needed = new HashSet<string>(StringComparer.Ordinal);
-        var pending = new Stack<Project>(solution.Projects.Where(p => p.FilePath is not null && keeping.Contains(p.FilePath)));
+        // Referenced project path -> the first keeping project (solution order) that needs it, named in the report row.
+        var needed = new Dictionary<string, string>(StringComparer.Ordinal);
         var seen = new HashSet<ProjectId>();
-        while (pending.Count > 0)
+        foreach (Project root in solution.Projects.Where(p => p.FilePath is not null && keeping.Contains(p.FilePath)))
         {
-            foreach (ProjectReference reference in pending.Pop().ProjectReferences)
+            var pending = new Stack<Project>([root]);
+            while (pending.Count > 0)
             {
-                if (seen.Add(reference.ProjectId) && solution.GetProject(reference.ProjectId) is { } referenced)
+                foreach (ProjectReference reference in pending.Pop().ProjectReferences)
                 {
-                    if (referenced.FilePath is not null)
+                    if (seen.Add(reference.ProjectId) && solution.GetProject(reference.ProjectId) is { } referenced)
                     {
-                        needed.Add(referenced.FilePath);
-                    }
+                        if (referenced.FilePath is not null)
+                        {
+                            needed.TryAdd(referenced.FilePath, root.FilePath!);
+                        }
 
-                    pending.Push(referenced);
+                        pending.Push(referenced);
+                    }
                 }
             }
         }
 
         return
         [
-            .. migrations.Select(m => m.KeepRemovedPackage || !needed.Contains(m.ProjectPath) ? m : new ProjectMigration
+            .. migrations.Select(m => m.KeepRemovedPackage || !needed.TryGetValue(m.ProjectPath, out string? dependent) ? m : new ProjectMigration
             {
                 ProjectPath = m.ProjectPath,
                 Package = m.Package,
                 KeepRemovedPackage = true,
+                KeptForDependent = dependent,
                 RemovedNamespaces = m.RemovedNamespaces,
                 AddedNamespaces = m.AddedNamespaces,
             }),

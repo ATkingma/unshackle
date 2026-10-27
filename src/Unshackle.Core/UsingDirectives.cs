@@ -713,7 +713,7 @@ internal static class UsingDirectives
         CompilationUnitSyntax root, SemanticModel model, IEnumerable<string> removedNamespaces, IReadOnlyCollection<string> swappedTypes,
         CancellationToken cancellationToken)
     {
-        HashSet<string> used = UsedNamespaces(root, model, swappedTypes, cancellationToken);
+        HashSet<string> used = UsedNamespaces(root, model, swappedTypes, cancellationToken, fullyQualifiedNeedsNoUsing: true);
         if (used.Overlaps(removedNamespaces))
         {
             used.UnionWith(removedNamespaces);
@@ -724,17 +724,42 @@ internal static class UsingDirectives
 
     // Namespaces the document still needs a using for: those of the types and members it binds to by simple name.
     private static HashSet<string> UsedNamespaces(
-        CompilationUnitSyntax root, SemanticModel model, IReadOnlyCollection<string> swappedTypes, CancellationToken cancellationToken) =>
+        CompilationUnitSyntax root, SemanticModel model, IReadOnlyCollection<string> swappedTypes, CancellationToken cancellationToken,
+        bool fullyQualifiedNeedsNoUsing = false) =>
         [.. root.DescendantNodes(n => n is not UsingDirectiveSyntax)
             .OfType<SimpleNameSyntax>()
             .Where(n => !IsGlobalQualified(n))
             .Select(n => (Name: n, Symbol: model.GetSymbolInfo(n, cancellationToken).Symbol))
-            .Where(u => u.Symbol is not null and not INamespaceSymbol && !IsSwapped(u.Symbol, swappedTypes) && !IsMemberOfReceiver(u.Name, u.Symbol))
+            .Where(u => u.Symbol is not null and not INamespaceSymbol && !IsSwapped(u.Symbol, swappedTypes) && !IsMemberOfReceiver(u.Name, u.Symbol, model, fullyQualifiedNeedsNoUsing, cancellationToken))
             .Select(u => u.Symbol!.ContainingNamespace?.ToDisplayString() ?? string.Empty)];
 
     // `mock.Setup(..)`: an instance member reached through its receiver needs no using for its namespace; an extension method does
-    // (corpus B3: `using Moq;` stayed for the Setup calls on a Mock<T> another library hands out, IDE0005).
-    private static bool IsMemberOfReceiver(SimpleNameSyntax name, ISymbol symbol) =>
-        symbol is not ITypeSymbol and not IMethodSymbol { ReducedFrom: not null }
-            && name.Parent is MemberAccessExpressionSyntax { Name: var accessed } && accessed == name;
+    // (corpus B3: `using Moq;` stayed for the Setup calls on a Mock<T> another library hands out, IDE0005). Likewise a type named through
+    // its full name from the root (`Moq.Mock<T>`, `Moq.It.IsAny`) needs no using either (TAAK-330); a relative qualifier
+    // (`Notifications.X` under `using MediatR;`) still does.
+    // Only the keep-or-remove decision for a removed using applies the full-name rule: whether the added usings come in still follows
+    // every name of the old namespace (a swapped `MediatR.IRequest` brings `using Mediator;`, proof QualifiedSwappedType).
+    private static bool IsMemberOfReceiver(
+        SimpleNameSyntax name, ISymbol symbol, SemanticModel model, bool fullyQualifiedNeedsNoUsing, CancellationToken cancellationToken)
+    {
+        if (symbol is IMethodSymbol { ReducedFrom: not null })
+        {
+            return false;
+        }
+
+        SyntaxNode? qualifier = name.Parent switch
+        {
+            MemberAccessExpressionSyntax access when access.Name == name => access.Expression,
+            QualifiedNameSyntax qualified when qualified.Right == name => qualified.Left,
+            _ => null,
+        };
+        if (qualifier is null)
+        {
+            return false;
+        }
+
+        return symbol is not ITypeSymbol
+            || (fullyQualifiedNeedsNoUsing && model.GetSymbolInfo(qualifier, cancellationToken).Symbol is INamespaceOrTypeSymbol container
+                && string.Equals(container.ToDisplayString(), qualifier.ToString(), StringComparison.Ordinal));
+    }
 }

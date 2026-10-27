@@ -4,6 +4,7 @@ using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.AutoMapper;
+using Unshackle.Core.Fixes.EfBulk;
 using Unshackle.Core.Fixes.EPPlus;
 using Unshackle.Core.Fixes.FluentAssertions;
 using Unshackle.Core.Fixes.MassTransit;
@@ -12,6 +13,7 @@ using Unshackle.Core.Fixes.Moq;
 using Unshackle.Core.Fixes.Polly;
 using Unshackle.Core.Models;
 using Unshackle.DataAccess.Reports;
+using Unshackle.Tests.Core.EfBulk;
 using Unshackle.Tests.Core.EPPlus;
 using Unshackle.Tests.Core.MassTransit;
 using Unshackle.Tests.Core.Moq;
@@ -73,6 +75,12 @@ public class ProofTests
             Fix = new EPPlusFix(),
             Before = EPPlusReferences.EPPlus,
             After = EPPlusReferences.ClosedXml,
+        },
+        ["EfBulk"] = new()
+        {
+            Fix = new EfBulkFix(),
+            Before = EfBulkReferences.Before,
+            After = EfBulkReferences.After,
         },
         ["MassTransit"] = new()
         {

@@ -30,6 +30,7 @@ public static class Cli
     {
         ArgumentNullException.ThrowIfNull(args);
         var fileSystem = new FileSystem();
+        var assetsReader = new JsonPackageAssetsReader(fileSystem);
         IReadOnlyList<IFix> fixes =
         [
             new FluentAssertionsFix([MetadataReference.CreateFromFile(Path.Combine(AppContext.BaseDirectory, "References", "Shouldly.dll"))]),
@@ -37,7 +38,7 @@ public static class Cli
             new AutoMapperFix(new XmlProjectProperties(fileSystem)),
             new MoqFix([MetadataReference.CreateFromFile(Path.Combine(AppContext.BaseDirectory, "References", "NSubstitute.dll"))]),
             new PollyFix(),
-            new EPPlusFix(new XmlProjectProperties(fileSystem), new FileConfigKeySearch(fileSystem), new JsonPackageAssetsReader(fileSystem)),
+            new EPPlusFix(new XmlProjectProperties(fileSystem), new FileConfigKeySearch(fileSystem), assetsReader),
             new MassTransitFix(),
         ];
         IReportWriter[] reportWriters =
@@ -50,7 +51,7 @@ public static class Cli
         var view = new SpectreConsoleView(output, error);
         using var store = new MsBuildSolutionStore(fileSystem, fixes.SelectMany(f => f.RemovedNamespaces));
         var projectFiles = new XmlProjectFileStore(fileSystem);
-        var scan = new ScanCommand(new Fixer(fixes, projectFiles), store, reportWriters, view);
+        var scan = new ScanCommand(new Fixer(fixes, projectFiles, assetsReader), store, reportWriters, view);
         var fix = new FixCommand(scan, projectFiles, new GitSourceControl(), view);
         var list = new ListCommand(fixes, view);
 

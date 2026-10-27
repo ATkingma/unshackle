@@ -3,7 +3,7 @@
 Date: 2026-10-27. Perspectives: Guardian (G), Pragmatist (P), Architect (A); see `claude/docs/council.md`. All decisions joint.
 Questions: P-Q1 in `claude/tasks/archief/TAAK-335-polly-redundant-transient-clause.md`, council questions 1-8 in
 `claude/tasks/TAAK-327-epplus-flow-types.md`, 1-4 in `claude/tasks/TAAK-325-automapper-generic-destination.md`, step 1 in
-`claude/tasks/TAAK-329-transitive-package-loss.md`. Follow-ups: TAAK-336, TAAK-337, TAAK-338; TAAK-329 continues with G10.
+`claude/tasks/archief/TAAK-329-transitive-package-loss.md`. Follow-ups: TAAK-336, TAAK-337, TAAK-338; TAAK-329 continues with G10.
 
 | # | Decision | Joint rule |
 | --- | --- | --- |
@@ -82,7 +82,7 @@ Rule: private only. Count internal helpers in the TAAK-327 step 7 re-measure; re
 - `claude/docs/council.md` — summary of all rounds
 - `claude/tasks/TAAK-327-epplus-flow-types.md`
 - `claude/tasks/TAAK-325-automapper-generic-destination.md`
-- `claude/tasks/TAAK-329-transitive-package-loss.md`
+- `claude/tasks/archief/TAAK-329-transitive-package-loss.md`
 - `claude/tasks/archief/TAAK-335-polly-redundant-transient-clause.md`
 - `claude/tasks/TAAK-336-epplus-flow-followups.md`
 - `claude/tasks/TAAK-337-epplus-range-locals.md`

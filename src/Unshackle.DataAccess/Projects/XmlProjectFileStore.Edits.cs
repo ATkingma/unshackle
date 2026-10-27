@@ -151,6 +151,16 @@ public partial class XmlProjectFileStore
         }
 
         ProjectFile? versions = await CentralVersionsAsync(run, project, cancellationToken);
+        // G10 (TAAK-329): a lost transitive package is pinned to what resolved before; a central version that differs would change that.
+        if (edit.KeepsTransitiveOf is not null && versions is not null && Find(versions, PackageVersion, edit.Name) is XElement central
+            && (central.Attribute("Version")?.Value ?? central.Element(versions.Namespace + "Version")?.Value) is var centralVersion
+            && !string.Equals(centralVersion?.Trim(), edit.Version, StringComparison.OrdinalIgnoreCase))
+        {
+            return Manual(run, edit, LineOf(central),
+                $"{versions.Path} sets {edit.Name} to {centralVersion ?? "no version"}, but {edit.Version} resolved before; add the reference by hand with the version you want.",
+                versions.Path);
+        }
+
         var added = new XElement(project.Namespace + PackageReference, new XAttribute(Include, edit.Name));
         if (versions is null)
         {

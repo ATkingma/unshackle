@@ -8,5 +8,11 @@ public class PackageAddEdit : ProjectFileEdit
 
     public required string Version { get; init; }
 
-    public override string Describe() => $"PackageReference {Name} {Version} added";
+    // TAAK-329, council round 16 G10: set when the package only came transitively with this removed package. The version is the resolved
+    // one, so the build resolves what it did before; a central PackageVersion with another version is then Manual instead of kept.
+    public string? KeepsTransitiveOf { get; init; }
+
+    public override string Describe() => KeepsTransitiveOf is string removed
+        ? $"PackageReference {Name} {Version} added (it came transitively with {removed}, and code uses it)"
+        : $"PackageReference {Name} {Version} added";
 }

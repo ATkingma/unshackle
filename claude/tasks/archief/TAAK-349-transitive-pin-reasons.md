@@ -24,8 +24,10 @@
 ## Council questions
 
 1. An unparsable reference bound gets no direction text (conservative). OK?
+   **Decision (council 20 T6: accepted, no work.)**
 
 ## See also
 
 - `claude/tasks/COUNCIL-round-19.md`
+- `claude/tasks/COUNCIL-round-20.md`
 - `claude/tasks/archief/TAAK-343-transitive-pin-followups.md`

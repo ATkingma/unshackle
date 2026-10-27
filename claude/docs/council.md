@@ -330,11 +330,24 @@ Full text: `claude/tasks/COUNCIL-round-19.md`. Follow-ups: TAAK-349, TAAK-346 st
 | B11 | Captured members beyond B4 | Kept, one proof each; static members Manual. |
 | B12 | `EfCoreBelow7` severity | Non-blocking project Manual row accepted as the Warning row. |
 
+### 2026-10-27 — round 20: xUnit v3 detection, EPPlus helper names, unparsable pin bounds
+
+Full text: `claude/tasks/COUNCIL-round-20.md`. Follow-ups: TAAK-351 (E33, R3), TAAK-352 (X8), TAAK-341 step 5f (X9).
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| X7 | Non-test project with `xunit` | Accepted: extensibility.core (+ assert) rename, no `Exe`, Info row. |
+| X8 | Sync-over-async attribute detection | `IProjectFileMigration` becomes async with a required token. |
+| X9 | Runner bump range | `From` 2.0.0 accepted; 1.x gets an Info row. |
+| E33 | E29 conservative scope | Accepted; reason names the helper call. |
+| T6 | Unparsable pin bound | Manual without direction text; no work. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct
 - `claude/docs/overdracht.md` — handover
 - `claude/tasks/COUNCIL-round-19.md` — round 19
+- `claude/tasks/COUNCIL-round-20.md` — round 20
 - `claude/tasks/archief/TAAK-292-council-follow-up.md` — implementation of these decisions
 - `claude/tasks/archief/TAAK-293-council-round-3.md` — implementation of the round-3 decisions
 - `claude/tasks/archief/TAAK-294-council-round-4.md` — round-4 changes before 0.2.0

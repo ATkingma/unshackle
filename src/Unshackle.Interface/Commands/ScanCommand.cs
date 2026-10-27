@@ -93,7 +93,9 @@ public class ScanCommand
             throw new CommandException(ExitCodes.InvalidArguments, ex.Message);
         }
 
-        _view.ShowSummary(report.Findings);
+        // An all-or-nothing run that changed nothing names its blocking projects once (Core's list, project-file rows included);
+        // otherwise the summary groups the blocking rows per project itself.
+        _view.ShowSummary(report.Findings, ProjectOfFile(report.Solution), listBlockers: report.BlockingProjects.Count == 0);
         _view.ShowBlockingProjects(report.BlockingProjects);
         if (reportWriter is not null)
         {
@@ -101,6 +103,21 @@ public class ScanCommand
         }
 
         return new ScanResult { Original = solution, Report = report };
+    }
+
+    // Council round 18, S2: the first project of each source file (a multi-target project is loaded once per framework under one path).
+    private static Dictionary<string, string> ProjectOfFile(Solution solution)
+    {
+        Dictionary<string, string> projects = new(StringComparer.OrdinalIgnoreCase);
+        foreach (Project project in solution.Projects.Where(p => p.FilePath is not null))
+        {
+            foreach (string file in project.Documents.Select(d => d.FilePath).OfType<string>())
+            {
+                projects.TryAdd(file, project.FilePath!);
+            }
+        }
+
+        return projects;
     }
 
     private IReportWriter FindReportWriter(string reportPath)

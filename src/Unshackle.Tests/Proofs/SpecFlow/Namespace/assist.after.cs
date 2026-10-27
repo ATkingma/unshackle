@@ -1,5 +1,4 @@
 using Reqnroll;
-using Reqnroll.Assist;
 
 namespace Shop.Specs;
 

@@ -61,6 +61,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tools/corpus-masstransit-repos.txt` | MassTransit survey repo list |
 | `docs/projectinfo/architectuur/candidate-specflow.md` | Scout TAAK-370: SpecFlow → Reqnroll, conditional go (EOL fix) |
 | `claude/tasks/TAAK-340-specflow-to-reqnroll.md` | SpecFlow → Reqnroll fix: steps, design of the first slice, council questions |
+| `claude/tasks/TAAK-353-specflow-partial-migration.md` | Backlog: SpecFlow per-project partial migration (council 18 S2) |
 | `docs/projectinfo/architectuur/candidate-imagesharp.md` | Scout TAAK-390: ImageSharp, conditional no-go (park) |
 | `docs/projectinfo/architectuur/candidate-newtonsoft.md` | Scout TAAK-420: Newtonsoft → STJ, no-go blanket, narrow fix possible |
 | `docs/projectinfo/architectuur/candidate-efbulk.md` | Scout TAAK-430: EF bulk extensions → ExecuteUpdate/Delete, conditional go (narrow) |

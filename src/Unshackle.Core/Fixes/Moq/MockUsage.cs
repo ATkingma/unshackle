@@ -28,6 +28,13 @@ public static class MockUsage
         }
 
         SyntaxNode declarator = reference.GetSyntax();
+
+        // `out var m`, `var (m, x) = Create()`, `foreach (var m in ..)`, `is Mock<T> m`: the mock was made elsewhere (corpus B4/B5).
+        if (symbol is ILocalSymbol && declarator is not VariableDeclaratorSyntax)
+        {
+            return MockAnalysis.Blocked(MoqReason.MockPassedAround, "the mock comes from an out argument, a deconstruction or a pattern, so it is created elsewhere");
+        }
+
         if (declarator.Parent is VariableDeclarationSyntax { Variables.Count: > 1 })
         {
             return MockAnalysis.Blocked(MoqReason.MockDeclaration, "several mocks in one declaration; split it first");

@@ -115,7 +115,19 @@ public static class MoqSyntax
         };
         return generic is { TypeArgumentList.Arguments.Count: 1 }
             ? generic.TypeArgumentList.Arguments[0].WithoutTrivia()
-            : SyntaxFactory.ParseTypeName(mocked.ToMinimalDisplayString(model, position));
+            : SyntaxFactory.ParseTypeName(TypeText(mocked, model, position));
+    }
+
+    // The shortest name of the type at position, or its global:: name when that short name binds to something else there:
+    // `YesSql.Indexes.IIndexProvider` inside namespace `OrchardCore.Data.Migration` finds `OrchardCore.Data.YesSql` first (corpus B6).
+    public static string TypeText(ITypeSymbol type, SemanticModel model, int position)
+    {
+        string minimal = type.ToMinimalDisplayString(model, position);
+        ITypeSymbol? bound = model.GetSpeculativeTypeInfo(position, SyntaxFactory.ParseTypeName(minimal), SpeculativeBindingOption.BindAsTypeOrNamespace).Type;
+        return SymbolEqualityComparer.Default.Equals(bound, type)
+            ? minimal
+            : type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
+                SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions | SymbolDisplayMiscellaneousOptions.UseSpecialTypes));
     }
 
     public static ExpressionSyntax SubstituteFor(TypeSyntax type) =>

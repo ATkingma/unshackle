@@ -89,7 +89,7 @@ public static class SetupSequenceSyntax
                     return MockCall.Blocked(MoqReason.SequenceStep, "ReturnsAsync on a member that is not Task<T>/ValueTask<T>");
                 }
 
-                string resultType = result.ToMinimalDisplayString(model, sequence.SpanStart);
+                string resultType = MoqSyntax.TypeText(result, model, sequence.SpanStart);
                 text = task.Name == "Task" ? $"Task.FromResult<{resultType}>({text})" : $"new ValueTask<{resultType}>({text})";
                 needsTasks = true;
             }

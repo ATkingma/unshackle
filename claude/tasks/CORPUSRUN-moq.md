@@ -23,7 +23,9 @@ Harness knobs added: `TRX_FLAG` (xunit v3 without the TrxReport extension needs 
 
 Only fluentmigrator reaches the test comparison; the other four stop at `build1`. Every build failure is a tool bug (B2-B7), none is environmental.
 
-## Bugs and findings (repro, not fixed)
+## Bugs and findings
+
+B1 and the H items are open; B2-B7 are fixed (status line under each).
 
 ### B1 fluentmigrator: a test that asserts the runtime proxy type name
 
@@ -40,6 +42,10 @@ Not provable as equal: the type name of the mock object differs between the libr
 
 ### B2 ocelot: Moq PackageReference removed from a shared helper project while dependents still use Moq (BUILD-AFTER-FIX-FAILS, 684 CS0246)
 
+**Status: fixed** (`ProjectPackages.KeepForDependents`, shared engine): a project that keeps the package makes every project it references (transitively) keep it too.
+The kept helper project then reports the generic "still used in this project" row; the duplicate acceptance row is not addressed.
+Test: `CorpusRegressionTests.Fixer_DependentStillUsesMoqThroughHelperProject_HelperKeepsPackage`.
+
 `testing/Ocelot.Testing.csproj:38` has `<PackageReference Include="Moq" Version="4.21.0" />`; `unit/Ocelot.UnitTests.csproj` and
 `acceptance/Ocelot.Acceptance.csproj` have no own Moq reference and get Moq transitively via `<ProjectReference Include="..	esting\Ocelot.Testing.csproj" />`
 (plus `global using Moq;` in `acceptance/Usings.cs`). The report says `unit` and `acceptance` csproj: Manual "Moq is still used in this project, so its
@@ -51,6 +57,9 @@ Also odd: `acceptance/Ocelot.Acceptance.csproj` gets two project-file rows (one 
 
 ### B3 radarr: `using Moq;` kept although nothing left in the file needs the namespace (BUILD-AFTER-FIX-FAILS, IDE0005 as error)
 
+**Status: fixed** (`UsingDirectives.UsedNamespaces`, shared engine): a non-extension member reached through a receiver (`x.Setup`) no longer counts as a use of its namespace.
+Test: `CorpusRegressionTests.Fixer_ManualOnMockFromElsewhere_RemovesUnusedMoqUsing`.
+
 `src/NzbDrone.Core.Test/Messaging/Events/EventAggregatorFixture.cs`: all `new Mock<IHandle<EventA>>()` fields, `.Object` and `Verify(.., Times.Once())`
 are Fixed; only the two `Mocker.GetMock<IServiceFactory>().Setup(c => c.BuildAll<IHandle<EventA>>()).Returns(...)` (lines 29-34) stay Manual
 (MockPassedAround). Those calls are instance members on the `Mock<T>` that Radarr's `Mocker` (AutoMoqer) returns and need no `using Moq;`.
@@ -59,6 +68,9 @@ Expected: when Manual findings remain, keep `using Moq;` only if a remaining nod
 (`Mock<>`, `It`, `Times`, `MockBehavior`, ...); otherwise remove it. Actual: kept whenever any Manual finding remains in the file.
 
 ### B4 jellyfin: a mock that comes in through an `out var` argument is rewritten as a local substitute
+
+**Status: fixed** (`MockUsage.Analyze`): a `Mock<T>` local not declared by a plain declarator (out var, deconstruction, foreach, pattern) is Manual MockPassedAround.
+Proof `Proofs/Moq/SetupReturns/out-argument`, test `CorpusRegressionTests.Fixer_MockFromOutArgument_ManualAndCompiles`.
 
 `tests/Jellyfin.Api.Tests/Controllers/SubtitleControllerTests.cs`:
 ```csharp
@@ -75,6 +87,8 @@ like a `Mock<T>` parameter. Actual: treated as a local mock and its Setup rewrit
 
 ### B5 orchardcore: a mock that comes in through tuple deconstruction is rewritten as a local substitute
 
+**Status: fixed** with B4. Proof `Proofs/Moq/SetupReturns/deconstruction`, test `CorpusRegressionTests.Fixer_MockFromDeconstruction_ManualAndCompiles`.
+
 `test/OrchardCore.Tests.Integration/MediaAzure/MediaGalleryCapabilitiesFilterTests.cs`:
 ```csharp
 private static (Mock<INotifier> Notifier, MediaGalleryCapabilitiesFilter Filter) CreateFilter(BlobFileStore store) { var notifier = new Mock<INotifier>(); ... return (notifier, ...); }
@@ -90,6 +104,9 @@ Expected: a variable from a deconstruction (`var (a, b) = M()`) whose type is `M
 
 ### B6 orchardcore: generated type names are namespace-relative and rebind inside the test's namespace
 
+**Status: fixed** (`MoqSyntax.TypeText`): every emitted type name is the minimal name, checked by speculative binding at that position; when it binds to
+something else, the `global::` name. Test: `CorpusRegressionTests.Fixer_PinnedTypeShadowedByOwnNamespace_GlobalQualifiedAndCompiles`.
+
 Pinned defaults / arguments emitted with a namespace-qualified name that the file's own namespace shadows:
 - `OrchardCore.Tests/Data/Migration/DataMigrationManagerTests.cs` (namespace `OrchardCore.Data.Migration.Tests`): emitted `YesSql.Indexes.IIndexProvider`
   binds to `OrchardCore.Data.YesSql`: `(123,62): error CS0234: 'Indexes' does not exist in the namespace 'OrchardCore.Data.YesSql'`.
@@ -100,6 +117,9 @@ Expected: emit `global::`-qualified names (then simplify with the Simplifier aga
 that position (`ToMinimalDisplayString(model, position)`). Actual: fully qualified without `global::`.
 
 ### B7 orchardcore: a literal `null` argument becomes an ambiguous `Arg.Is<T>(null)` (CS0121)
+
+**Status: fixed** (`ArgMatchers.ValueSpec`): a literal `null` next to matchers becomes `Arg.Is<T>(a => a == null)` (no nullable warning, unlike `(T)null`);
+a `default` literal the same for a reference type, `Arg.Is<T>(default(T))` otherwise. Proof `Proofs/Moq/SetupReturns/null-argument`.
 
 When a call mixes matchers and a literal `null` (NSubstitute needs all arguments as specs), `null` becomes `Arg.Is<T>(null)`, which is ambiguous between
 `Arg.Is<T>(T)` and `Arg.Is<T>(Expression<Predicate<T>>)`:

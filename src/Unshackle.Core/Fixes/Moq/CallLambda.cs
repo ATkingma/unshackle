@@ -36,7 +36,7 @@ public static class CallLambda
                 return MockCall.Blocked(MoqReason.ReturnsLambda, "a function parameter without a symbol");
             }
 
-            string type = symbol.Type.ToMinimalDisplayString(model, lambda.SpanStart);
+            string type = MoqSyntax.TypeText(symbol.Type, model, lambda.SpanStart);
             foreach (IdentifierNameSyntax use in lambda.Body.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>()
                 .Where(id => id.Identifier.Text == symbol.Name && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(id).Symbol, symbol)))
             {

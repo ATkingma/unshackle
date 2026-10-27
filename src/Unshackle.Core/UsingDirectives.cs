@@ -728,7 +728,13 @@ internal static class UsingDirectives
         [.. root.DescendantNodes(n => n is not UsingDirectiveSyntax)
             .OfType<SimpleNameSyntax>()
             .Where(n => !IsGlobalQualified(n))
-            .Select(n => model.GetSymbolInfo(n, cancellationToken).Symbol)
-            .Where(s => s is not null and not INamespaceSymbol && !IsSwapped(s, swappedTypes))
-            .Select(s => s!.ContainingNamespace?.ToDisplayString() ?? string.Empty)];
+            .Select(n => (Name: n, Symbol: model.GetSymbolInfo(n, cancellationToken).Symbol))
+            .Where(u => u.Symbol is not null and not INamespaceSymbol && !IsSwapped(u.Symbol, swappedTypes) && !IsMemberOfReceiver(u.Name, u.Symbol))
+            .Select(u => u.Symbol!.ContainingNamespace?.ToDisplayString() ?? string.Empty)];
+
+    // `mock.Setup(..)`: an instance member reached through its receiver needs no using for its namespace; an extension method does
+    // (corpus B3: `using Moq;` stayed for the Setup calls on a Mock<T> another library hands out, IDE0005).
+    private static bool IsMemberOfReceiver(SimpleNameSyntax name, ISymbol symbol) =>
+        symbol is not ITypeSymbol and not IMethodSymbol { ReducedFrom: not null }
+            && name.Parent is MemberAccessExpressionSyntax { Name: var accessed } && accessed == name;
 }

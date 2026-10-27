@@ -32,6 +32,8 @@
    brings `using Mediator;`). Should the add side follow too (would change MediatR proofs)?
 4. B1 as accepted limitation (no Manual/Info row for `.Object` flowing out). Confirm.
 
+Answered in council round 14 (M10-M13, `claude/tasks/COUNCIL-round-14.md`); follow-up TAAK-333.
+
 ## See also
 
 - `claude/tasks/CORPUSRUN-moq.md`

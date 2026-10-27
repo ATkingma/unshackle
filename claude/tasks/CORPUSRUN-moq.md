@@ -30,7 +30,7 @@ B1 is an accepted limitation, the H items are open; B2-B7 are fixed (status line
 
 ### B1 fluentmigrator: a test that asserts the runtime proxy type name
 
-**Status: accepted limitation** (TAAK-330, pending council confirmation): not Manual-detectable. The proxy name only shows through
+**Status: accepted limitation** (TAAK-330, confirmed in council round 14 M13; Info line in TAAK-333): not Manual-detectable. The proxy name only shows through
 `GetType()`/`ToString()` reached from code the fix cannot follow (here inside FluentMigrator's own `MigrationInfo`); flagging every
 `.Object` that leaves the method would turn the 628 Fixed rows into Manual. No test, no proof: the behaviour is unchanged.
 

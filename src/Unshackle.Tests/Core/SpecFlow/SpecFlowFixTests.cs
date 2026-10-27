@@ -54,9 +54,50 @@ public class SpecFlowFixTests
         renames.Select(r => (r.OldName, r.NewName)).ShouldBe(
         [
             ("SpecFlow", "Reqnroll"), ("SpecFlow.NUnit", "Reqnroll.NUnit"), ("SpecFlow.xUnit", "Reqnroll.xUnit"), ("SpecFlow.MsTest", "Reqnroll.MsTest"),
-            ("SpecFlow.Tools.MsBuild.Generation", "Reqnroll.Tools.MsBuild.Generation"),
+            ("SpecFlow.Tools.MsBuild.Generation", "Reqnroll.Tools.MsBuild.Generation"), ("SpecFlow.Autofac", "Reqnroll.Autofac"),
         ]);
         renames.ShouldAllBe(r => r.Version == SpecFlowFix.ReqnrollVersion);
+    }
+
+    [Fact]
+    public void EditsFor_RunnerPackageInReferences_MustBeDeclared()
+    {
+        // Arrange (council round 18, S9: a runner package nothing else brings in is declared by the project or a shared file it imports)
+        Project project = CreateProject([.. SpecFlowReferences.SpecFlow, FakeReference("C:/nuget/specflow.nunit/3.9.74/lib/net461/TechTalk.SpecFlow.NUnit.SpecFlowPlugin.dll")]);
+
+        // Act
+        List<PackageRenameEdit> renames = [.. new SpecFlowFix().EditsFor(project).OfType<PackageRenameEdit>()];
+
+        // Assert
+        renames.Where(r => r.MustBeDeclared).Select(r => r.OldName).ShouldBe(["SpecFlow.NUnit"]);
+    }
+
+    [Theory]
+    [InlineData("C:/nuget/specrun.specflow/3.9.31/lib/net461/TechTalk.SpecRun.SpecFlowPlugin.dll", "specrun.specflow")]
+    [InlineData("C:/nuget/specflow.assist.dynamic/1.4.2/lib/netstandard2.0/SpecFlow.Assist.Dynamic.dll", "specflow.assist.dynamic")]
+    public void ProjectBlockers_UnportedPlugin_BlocksNamingThePackage(string path, string package)
+    {
+        // Arrange (council round 18, S8)
+        Project project = CreateProject([.. SpecFlowReferences.SpecFlow, FakeReference(path)]);
+
+        // Act
+        IReadOnlyList<ManualResult> blockers = new SpecFlowFix().ProjectBlockers(project);
+
+        // Assert
+        blockers.ShouldHaveSingleItem().Reason.ShouldContain($"plugin package {package}, which has no Reqnroll port");
+    }
+
+    [Theory]
+    [InlineData(@"C:\Users\me\.nuget\packages\specflow.xunit\3.9.74\lib\netstandard2.0\x.dll", "specflow.xunit")]
+    [InlineData("/home/me/.nuget/packages/specflow/3.9.74/lib/net461/TechTalk.SpecFlow.dll", "specflow")]
+    [InlineData("/usr/share/dotnet/packs/ref/System.Runtime.dll", null)]
+    public void PackageIdOf_NuGetPath_IsTheFolderAboveTheVersion(string path, string? expected)
+    {
+        // Act
+        string? id = SpecFlowFix.PackageIdOf(path);
+
+        // Assert
+        id.ShouldBe(expected);
     }
 
     [Fact]
@@ -121,6 +162,11 @@ public class SpecFlowFixTests
         (await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken)).ShouldBe(code);
         report.Findings.ShouldAllBe(f => f.Result is ManualResult);
     }
+
+    // The SpecFlow assembly under another package's path: only the path matters to the fix.
+    private static PortableExecutableReference FakeReference(string path) =>
+        MetadataReference.CreateFromImage(File.ReadAllBytes(SpecFlowReferences.SpecFlow.OfType<PortableExecutableReference>()
+            .First(r => Path.GetFileNameWithoutExtension(r.FilePath) == "TechTalk.SpecFlow").FilePath!), filePath: path);
 
     private static Project CreateProject(IEnumerable<MetadataReference> references)
     {

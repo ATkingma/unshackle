@@ -56,7 +56,7 @@ internal class MapOwners
     /// The plan of the solution. The Fixer fixes one file at a time against the original solution, so a plan built for a solution that differs
     /// only in the file of model (the one being fixed) is reused: removing migrated maps does not change which pairs stay.
     /// </summary>
-    public static async Task<MapOwners> ForAsync(Solution solution, SemanticModel? model, CancellationToken cancellationToken)
+    public static async Task<MapOwners> ForAsync(Solution solution, SemanticModel? model, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         if (s_planning.Value is { } planning)
         {
@@ -67,10 +67,12 @@ internal class MapOwners
         Task<MapOwners> plan;
         lock (entry)
         {
-            if (entry.Solution is null || entry.Plan is null || entry.Plan.IsFaulted || entry.Plan.IsCanceled || !SameApartFrom(solution, entry.Solution, model?.SyntaxTree.FilePath))
+            if (entry.Solution is null || entry.Plan is null || entry.Plan.IsFaulted || entry.Plan.IsCanceled || entry.ProjectProperties != projectProperties
+                || !SameApartFrom(solution, entry.Solution, model?.SyntaxTree.FilePath))
             {
                 entry.Solution = solution;
-                entry.Plan = BuildAsync(solution, cancellationToken);
+                entry.ProjectProperties = projectProperties;
+                entry.Plan = BuildAsync(solution, projectProperties, cancellationToken);
             }
 
             plan = entry.Plan;
@@ -83,9 +85,9 @@ internal class MapOwners
     /// Manual with the reason when the Map, MapInto or ProjectTo call stays on IMapper (its pair stays, or it is a mock set-up); null when a
     /// call pattern may rewrite it.
     /// </summary>
-    public static async Task<PatternResult?> KeptCallAsync(SyntaxNode call, SemanticModel model, Solution solution, CancellationToken cancellationToken)
+    public static async Task<PatternResult?> KeptCallAsync(SyntaxNode call, SemanticModel model, Solution solution, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
-        MapOwners owners = await ForAsync(solution, model, cancellationToken);
+        MapOwners owners = await ForAsync(solution, model, projectProperties, cancellationToken);
         return owners.KeptCall(call, model);
     }
 
@@ -349,12 +351,12 @@ internal class MapOwners
         $"{call.SyntaxTree.FilePath}|{call.GetLocation().GetLineSpan().StartLinePosition.Line}|{call}";
 
     // TAAK-311: a mock that turns out not to qualify once the plan is stable is vetoed (with the reason) and the plan is built again.
-    private static async Task<MapOwners> BuildAsync(Solution solution, CancellationToken cancellationToken)
+    private static async Task<MapOwners> BuildAsync(Solution solution, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         Dictionary<string, MockReason> vetoed = new(StringComparer.Ordinal);
         while (true)
         {
-            (MapOwners owners, Dictionary<string, MockReason> failures) = await BuildOnceAsync(solution, vetoed, cancellationToken);
+            (MapOwners owners, Dictionary<string, MockReason> failures) = await BuildOnceAsync(solution, vetoed, projectProperties, cancellationToken);
             if (failures.Count == 0)
             {
                 return owners;
@@ -367,15 +369,15 @@ internal class MapOwners
         }
     }
 
-    private static async Task<(MapOwners Owners, Dictionary<string, MockReason> Failures)> BuildOnceAsync(Solution solution, IReadOnlyDictionary<string, MockReason> vetoed,
+    private static async Task<(MapOwners Owners, Dictionary<string, MockReason> Failures)> BuildOnceAsync(Solution solution, IReadOnlyDictionary<string, MockReason> vetoed, IProjectProperties? projectProperties,
         CancellationToken cancellationToken)
     {
         var owners = new MapOwners();
         s_planning.Value = owners;
-        var mapCall = new MapCallPattern();
-        var genericMap = new GenericMapPattern();
-        var mapInto = new MapIntoPattern();
-        var projectTo = new ProjectToPattern();
+        var mapCall = new MapCallPattern(projectProperties);
+        var genericMap = new GenericMapPattern(projectProperties);
+        var mapInto = new MapIntoPattern(projectProperties);
+        var projectTo = new ProjectToPattern(projectProperties);
         List<(ClassDeclarationSyntax Profile, SemanticModel Model, List<MapNode> Nodes)> profiles = [];
         List<(SyntaxNode Call, SemanticModel Model, ISolutionPattern? Pattern)> calls = [];
         List<(SyntaxNode Root, SemanticModel Model)> sources = [];
@@ -469,7 +471,7 @@ internal class MapOwners
             owners.Rewrites.Clear();
             foreach ((ClassDeclarationSyntax profile, SemanticModel model, List<MapNode> nodes) in profiles)
             {
-                foreach ((SyntaxNode? statement, string reason) in await CreateMapPattern.PlanAsync(profile, model, solution, cancellationToken))
+                foreach ((SyntaxNode? statement, string reason) in await CreateMapPattern.PlanAsync(profile, model, solution, projectProperties, cancellationToken))
                 {
                     foreach (MapNode node in nodes.Where(n => statement is null || n.Statement == statement))
                     {

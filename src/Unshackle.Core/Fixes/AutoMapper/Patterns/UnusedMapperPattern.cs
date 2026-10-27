@@ -15,6 +15,20 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
 {
+    private readonly IProjectProperties? _projectProperties;
+
+    // Without project properties (tests, a host without MSBuild) packability is guessed from the compilation (TypeArgumentClosure).
+    public UnusedMapperPattern()
+        : this(null)
+    {
+    }
+
+    // TAAK-324: IsPackable as MSBuild sees it decides whether a public generic member closes its type arguments (council round 10, R1).
+    public UnusedMapperPattern(IProjectProperties? projectProperties)
+    {
+        _projectProperties = projectProperties;
+    }
+
     public string Id => "automapper.unused-imapper";
 
     public string Description =>
@@ -25,7 +39,7 @@ public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
 
     public async Task<IReadOnlyList<SyntaxNode>> FindAsync(SyntaxNode root, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, cancellationToken);
+        MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, _projectProperties, cancellationToken);
         return [.. cleanup.Removals(root, model).Select(r => (SyntaxNode?)r.Node.Ancestors().OfType<TypeDeclarationSyntax>().LastOrDefault() ?? r.Node).Distinct(),
             .. cleanup.KeptLookups(root, model).Select(k => k.Lookup)];
     }
@@ -35,7 +49,7 @@ public class UnusedMapperPattern : ISolutionPattern, ISolutionFinder
 
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, cancellationToken);
+        MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, _projectProperties, cancellationToken);
         if (node is InvocationExpressionSyntax && cleanup.KeptLookups(node.SyntaxTree.GetRoot(cancellationToken), model).FirstOrDefault(k => k.Lookup == node) is { Reason: string kept, Code: var code })
         {
             return PatternResult.KeptManual(code, kept);

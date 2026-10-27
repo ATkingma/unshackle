@@ -17,7 +17,7 @@ Code: `src/Unshackle.Core/Generics/`, `src/Unshackle.Core/Fixes/AutoMapper/Patte
 | REQ-1 | Met | `two-callers`, `FixAsync_ProfileAndTwoCallers_DispatchesToGeneratedMethods` (with the profile rewrite) |
 | REQ-2 | Met | `derived-repositories`, `Close_TypeParameterOfClass_CollectsUsesAndDerivedTypes` |
 | REQ-3 | Met | `constraint-filter` (chain of two), `FixAsync_ChainDeeperThanLimit_IsOpenSet` |
-| REQ-4 | Met | `packable-public-base`, `FixAsync_CallersNotAllKnown_IsOpenSet(public)`, `FixAsync_UnprovableCaller_NamesIt(InternalsVisibleTo)`, `FixAsync_PublicMethodInExecutable_IsNotReachableFromOutside` |
+| REQ-4 | Met | `packable-public-base`, `FixAsync_CallersNotAllKnown_IsOpenSet(public)`, `FixAsync_UnprovableCaller_NamesIt(InternalsVisibleTo)`, `FixAsync_PublicMethodInExecutable_IsNotReachableFromOutside`, `FixAsync_PublicMethodInLibraryWithProjectProperties_FollowsIsPackable(false, true)` |
 | REQ-5 | Met | `open-registration` |
 | REQ-6 | Met | `reflection-caller` |
 | REQ-7 | Met | `FixAsync_CallersNotAllKnown_IsOpenSet(virtual)`, `FixAsync_UnprovableCaller_NamesIt` (method group, dynamic receiver) |

@@ -7,6 +7,19 @@ namespace Unshackle.Core.Fixes.AutoMapper;
 /// <summary>AutoMapper 14 and older → hand-written mapping extension methods.</summary>
 public class AutoMapperFix : IFix
 {
+    // Without project properties (tests, a host without MSBuild) packability is guessed from the compilation (TypeArgumentClosure).
+    public AutoMapperFix()
+    {
+        Patterns = CreatePatterns(null);
+    }
+
+    // TAAK-324 (council round 10, R1): IsPackable as MSBuild sees it decides whether a public generic Map<T> in a library closes its type arguments.
+    public AutoMapperFix(IProjectProperties projectProperties)
+    {
+        ArgumentNullException.ThrowIfNull(projectProperties);
+        Patterns = CreatePatterns(projectProperties);
+    }
+
     public string Id => "automapper";
 
     // Only removed where nothing of AutoMapper is left; a Profile base class keeps it.
@@ -24,6 +37,12 @@ public class AutoMapperFix : IFix
     // No Package yet: every migrated Profile stays (empty) and keeps AutoMapper referenced; the package goes once the
     // Profile, Map and AddAutoMapper rows of claude/tasks/automapper-queue.md can remove all of it (TAAK-159: AddAutoMapper
     // goes only without IMapper users; the emptied Profiles still keep the package).
-    public IReadOnlyList<IPattern> Patterns { get; } = [new CreateMapPattern(), new ForMemberIgnorePattern(), new ForMemberMapFromPattern(), new ValueResolverPattern(), new KeptMapPattern(), new MapCallPattern(), new GenericMapPattern(), new MapIntoPattern(), new ProjectToPattern(), new MockSetUpPattern(), new UnusedMapperPattern(), new AddAutoMapperPattern(),
-        new ConfigurationTestPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; }
+
+    // Every pattern that reaches the solution-wide plan (MapOwners) gets the same properties, so each one sees the same plan.
+    private static IReadOnlyList<IPattern> CreatePatterns(IProjectProperties? projectProperties) =>
+        [new CreateMapPattern(projectProperties), new ForMemberIgnorePattern(projectProperties), new ForMemberMapFromPattern(projectProperties), new ValueResolverPattern(projectProperties),
+        new KeptMapPattern(projectProperties), new MapCallPattern(projectProperties), new GenericMapPattern(projectProperties), new MapIntoPattern(projectProperties),
+        new ProjectToPattern(projectProperties), new MockSetUpPattern(projectProperties), new UnusedMapperPattern(projectProperties), new AddAutoMapperPattern(projectProperties),
+        new ConfigurationTestPattern(projectProperties)];
 }

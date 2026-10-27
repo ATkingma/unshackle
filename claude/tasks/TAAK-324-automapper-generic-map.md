@@ -17,7 +17,7 @@
 | Shared service `src/Unshackle.Core/Generics/` (`GenericUses`, `TypeArgumentClosure`) | A11 C: extract TAAK-193's collection; MediatR's `GenericRequestPattern` now uses `GenericUses.Find` |
 | Separate pattern, `MapCallPattern.Find` skips generic calls | Own id and reason code; per pair the same `SingleAsync` as `map-call`, so branches call exactly what the plain call would |
 | Dispatch `typeof(T) == typeof(X) ? (T)(object)… : throw` | Total over the proven set; outside it AutoMapper throws too |
-| Packability guessed from the compilation | `AutoMapperFix` has no `IProjectProperties` (wiring it means touching `Cli.cs`, out of scope); errs towards Manual |
+| Packability from `IProjectProperties` (follow-up 2026-10-27) | `Cli.cs` wires `XmlProjectProperties` into `AutoMapperFix`; every plan-reaching pattern gets it, so the plan and the pattern agree; without it the guess errs towards Manual |
 | Uses inside the generic type's own declaration count | `new C<int>()` inside `C` closes `C` too (`GenericUses.Find(..., insideDeclaration: true)`) |
 
 ## Steps

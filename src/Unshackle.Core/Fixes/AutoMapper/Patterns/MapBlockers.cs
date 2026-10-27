@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
@@ -22,7 +23,7 @@ internal static class MapBlockers
     public static string Several(ITypeSymbol source, ITypeSymbol destination) =>
         $"Several profiles map {source.Name} to {destination.Name}; AutoMapper uses the one registered last (its order is not known to this fix, and AssertConfigurationIsValid rejects the duplicate); keep one definition and run the fix again.";
 
-    public static async Task<string?> ReasonAsync(Solution solution, SemanticModel model, ITypeSymbol source, ITypeSymbol destination, CancellationToken cancellationToken)
+    public static async Task<string?> ReasonAsync(Solution solution, SemanticModel model, ITypeSymbol source, ITypeSymbol destination, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         string map = $"CreateMap<{source.Name}, {destination.Name}>";
         if (source is ITypeParameterSymbol || destination is ITypeParameterSymbol)
@@ -51,7 +52,7 @@ internal static class MapBlockers
                 ClassDeclarationSyntax? profile = createMap.Ancestors().OfType<ClassDeclarationSyntax>().FirstOrDefault();
                 if (profile is not null && ProfileSyntax.IsProfileWithMaps(profile, mapModel) && ProfileSyntax.IsInMapStatements(createMap, profile, mapModel))
                 {
-                    if (await CreateMapPattern.RewriteMethodsAsync(profile, mapModel, solution, cancellationToken) is ManualResult manual)
+                    if (await CreateMapPattern.RewriteMethodsAsync(profile, mapModel, solution, projectProperties, cancellationToken) is ManualResult manual)
                     {
                         return $"{map} is in profile {profile.Identifier.ValueText}, which this fix does not rewrite: {KeptReasonText.Rendered(manual)}";
                     }

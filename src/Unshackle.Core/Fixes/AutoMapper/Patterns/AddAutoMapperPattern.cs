@@ -13,6 +13,20 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 public class AddAutoMapperPattern : ISolutionPattern
 {
+    private readonly IProjectProperties? _projectProperties;
+
+    // Without project properties (tests, a host without MSBuild) packability is guessed from the compilation (TypeArgumentClosure).
+    public AddAutoMapperPattern()
+        : this(null)
+    {
+    }
+
+    // TAAK-324: IsPackable as MSBuild sees it decides whether a public generic member closes its type arguments (council round 10, R1).
+    public AddAutoMapperPattern(IProjectProperties? projectProperties)
+    {
+        _projectProperties = projectProperties;
+    }
+
     private const string AutoMapperAssembly = "AutoMapper";
 
     // The services AddAutoMapper registers; any of them still named in code needs the registration.
@@ -47,7 +61,7 @@ public class AddAutoMapperPattern : ISolutionPattern
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
         // A use in code that UnusedMapperPattern removes (TAAK-289) does not count.
-        MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, cancellationToken);
+        MapperCleanup cleanup = await MapperCleanup.ForAsync(solution, model, _projectProperties, cancellationToken);
         List<(string File, int Line)> users = [];
         foreach (INamedTypeSymbol service in s_services.Select(model.Compilation.GetTypeByMetadataName).OfType<INamedTypeSymbol>())
         {

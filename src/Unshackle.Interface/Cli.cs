@@ -34,7 +34,7 @@ public static class Cli
         [
             new FluentAssertionsFix([MetadataReference.CreateFromFile(Path.Combine(AppContext.BaseDirectory, "References", "Shouldly.dll"))]),
             new MediatRFix(new XmlProjectProperties(fileSystem)),
-            new AutoMapperFix(),
+            new AutoMapperFix(new XmlProjectProperties(fileSystem)),
             new MoqFix([MetadataReference.CreateFromFile(Path.Combine(AppContext.BaseDirectory, "References", "NSubstitute.dll"))]),
             new PollyFix(),
             new EPPlusFix(new XmlProjectProperties(fileSystem), new FileConfigKeySearch(fileSystem), new JsonPackageAssetsReader(fileSystem)),

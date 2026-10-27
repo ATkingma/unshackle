@@ -16,6 +16,20 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 public class ConfigurationTestPattern : ISolutionPattern
 {
+    private readonly IProjectProperties? _projectProperties;
+
+    // Without project properties (tests, a host without MSBuild) packability is guessed from the compilation (TypeArgumentClosure).
+    public ConfigurationTestPattern()
+        : this(null)
+    {
+    }
+
+    // TAAK-324: IsPackable as MSBuild sees it decides whether a public generic member closes its type arguments (council round 10, R1).
+    public ConfigurationTestPattern(IProjectProperties? projectProperties)
+    {
+        _projectProperties = projectProperties;
+    }
+
     private const string AutoMapperAssembly = "AutoMapper";
 
     public string Id => "automapper.configuration-test";
@@ -47,7 +61,7 @@ public class ConfigurationTestPattern : ISolutionPattern
 
         // While maps stay on AutoMapper (TAAK-272) the checks and test mappers stay too: the trimmed profiles still pass the check (probe), and a
         // test mapper may still serve Map calls that stay. A check in any form (also inside Action act = () => ..., TAAK-273) then stays as it is.
-        if (!(await MapOwners.ForAsync(solution, model, cancellationToken)).IsEmpty)
+        if (!(await MapOwners.ForAsync(solution, model, _projectProperties, cancellationToken)).IsEmpty)
         {
             return PatternResult.KeptManual(KeptReason.ConfigurationCheckWithKeptMaps, "maps of the solution stay on AutoMapper, so this configuration check or test mapper stays as it is.");
         }
@@ -57,7 +71,7 @@ public class ConfigurationTestPattern : ISolutionPattern
             return PatternResult.Manual(problem);
         }
 
-        return ChecksConfiguration(node, model) && await UnmigratedMapAsync(solution, model, cancellationToken) is string unmigrated
+        return ChecksConfiguration(node, model) && await UnmigratedMapAsync(solution, model, _projectProperties, cancellationToken) is string unmigrated
             ? PatternResult.KeptManual(KeptReason.ConfigurationCheckWithUnmigratedMap, $"AssertConfigurationIsValid still has maps to check (the map at {unmigrated} is not in a profile constructor this fix rewrites), so it stays.")
             : Remove(null);
     }
@@ -81,7 +95,7 @@ public class ConfigurationTestPattern : ISolutionPattern
         node.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>().Any(i => ConfigurationSyntax.IsAssert(i, model));
 
     // The first CreateMap (or [AutoMap]) in the calling project or one it depends on that no profile pattern rewrites.
-    private static async Task<string?> UnmigratedMapAsync(Solution solution, SemanticModel model, CancellationToken cancellationToken)
+    private static async Task<string?> UnmigratedMapAsync(Solution solution, SemanticModel model, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         IEnumerable<Project> projects = solution.GetDocument(model.SyntaxTree)?.Project is { } callProject
             ? solution.GetProjectDependencyGraph().GetProjectsThatThisProjectTransitivelyDependsOn(callProject.Id).Append(callProject.Id).Select(solution.GetProject).OfType<Project>()

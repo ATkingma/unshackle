@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Unshackle.Core.Abstractions;
 
 namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 
@@ -52,12 +53,12 @@ public class NestedMaps
     }
 
     // Without the maps that stay on AutoMapper (TAAK-272): a member of such a pair has no ToY() to call.
-    public static async Task<NestedMaps> FromAsync(SemanticModel model, Solution solution, CancellationToken cancellationToken)
+    public static async Task<NestedMaps> FromAsync(SemanticModel model, Solution solution, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         NestedMaps all = solution.GetDocument(model.SyntaxTree)?.Project is { } own
             ? await s_cache.GetValue(solution, _ => new()).GetOrAdd(own.Id, _ => BuildAsync(model.Compilation, solution, own.Id, cancellationToken))
             : From(model);
-        MapOwners owners = await MapOwners.ForAsync(solution, model, cancellationToken);
+        MapOwners owners = await MapOwners.ForAsync(solution, model, projectProperties, cancellationToken);
         return owners.IsEmpty
             ? all
             : new NestedMaps(all._maps.Where(m => owners.Reason(m.Key.Source, m.Key.Destination) is null).ToDictionary(), all._configured, all.NullSetting);

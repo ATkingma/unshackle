@@ -12,6 +12,20 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 public class KeptMapPattern : ISolutionPattern
 {
+    private readonly IProjectProperties? _projectProperties;
+
+    // Without project properties (tests, a host without MSBuild) packability is guessed from the compilation (TypeArgumentClosure).
+    public KeptMapPattern()
+        : this(null)
+    {
+    }
+
+    // TAAK-324: IsPackable as MSBuild sees it decides whether a public generic member closes its type arguments (council round 10, R1).
+    public KeptMapPattern(IProjectProperties? projectProperties)
+    {
+        _projectProperties = projectProperties;
+    }
+
     public string Id => "automapper.kept-map";
 
     public string Description =>
@@ -31,7 +45,7 @@ public class KeptMapPattern : ISolutionPattern
 
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        return Kept(node, model, await MapOwners.ForAsync(solution, model, cancellationToken));
+        return Kept(node, model, await MapOwners.ForAsync(solution, model, _projectProperties, cancellationToken));
     }
 
     private static PatternResult Kept(SyntaxNode node, SemanticModel model, MapOwners owners)

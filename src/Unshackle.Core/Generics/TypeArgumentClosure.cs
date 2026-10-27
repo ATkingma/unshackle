@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Unshackle.Core.Abstractions;
 using static Unshackle.Core.Generics.GenericUses;
 
 namespace Unshackle.Core.Generics;
@@ -8,7 +9,7 @@ namespace Unshackle.Core.Generics;
 /// <summary>
 /// Closes type parameters over the solution (council round 13, A11): the closed type arguments a generic method or type gets from its
 /// callers, its uses and its derived types, followed transitively through generic code up to <see cref="MaxDepth"/> levels. The set is only
-/// proven when every caller is in the solution: a member visible outside a packable project (R1, packability guessed from the compilation as
+/// proven when every caller is in the solution: a member visible outside a packable project (R1, IsPackable from the project properties when given, else guessed as
 /// AssemblyResolver does without project properties; R2: internal stays closed unless InternalsVisibleTo names an assembly outside the
 /// solution), a call through a base or interface member, a method group, a dynamic call, <c>MakeGenericMethod</c>/<c>MakeGenericType</c>
 /// or an unbound <c>typeof(G&lt;&gt;)</c> (an open generic DI registration) leave it open, with the place named.
@@ -23,12 +24,23 @@ public class TypeArgumentClosure
 
     private readonly IReadOnlyList<Compilation> _compilations;
     private readonly HashSet<string> _assemblies;
+    private readonly Solution? _solution;
+    private readonly IProjectProperties? _projectProperties;
 
     public TypeArgumentClosure(IReadOnlyList<Compilation> compilations)
     {
         ArgumentNullException.ThrowIfNull(compilations);
         _compilations = compilations;
         _assemblies = new([.. compilations.Select(c => c.AssemblyName ?? "")], StringComparer.Ordinal);
+    }
+
+    // TAAK-324: with the project properties IsPackable is read as MSBuild sees it (council round 10, R1), so a public member of a library with
+    // IsPackable=false is closed too; without them (or for a project without a file) it is guessed from the compilation.
+    public TypeArgumentClosure(IReadOnlyList<Compilation> compilations, Solution solution, IProjectProperties? projectProperties)
+        : this(compilations)
+    {
+        _solution = solution;
+        _projectProperties = projectProperties;
     }
 
     /// <summary>
@@ -325,7 +337,7 @@ public class TypeArgumentClosure
 
         if (IsVisibleOutside(symbol))
         {
-            return IsPackable(compilation) ? $"is public in a packable project ({compilation.AssemblyName}), so callers outside the solution may close it with other types" : null;
+            return IsPackable(compilation, _solution, _projectProperties) ? $"is public in a packable project ({compilation.AssemblyName}), so callers outside the solution may close it with other types" : null;
         }
 
         string? friend = compilation.Assembly.GetAttributes()
@@ -348,6 +360,15 @@ public class TypeArgumentClosure
         }
 
         return true;
+    }
+
+    // Every project file that builds the assembly (one per target framework) is asked; any packable one makes it packable.
+    private static bool IsPackable(Compilation compilation, Solution? solution, IProjectProperties? projectProperties)
+    {
+        List<string> files = solution is null || projectProperties is null
+            ? []
+            : [.. solution.Projects.Where(p => p.AssemblyName == compilation.AssemblyName).Select(p => p.FilePath).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase)];
+        return files.Count == 0 ? IsPackable(compilation) : files.Any(projectProperties!.IsPackable);
     }
 
     // Same guess as MediatR's AssemblyResolver without project properties: a library is packable unless it references a test framework.

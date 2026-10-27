@@ -16,6 +16,20 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 public class GenericMapPattern : ISolutionPattern
 {
+    private readonly IProjectProperties? _projectProperties;
+
+    // Without project properties (tests, a host without MSBuild) packability is guessed from the compilation (TypeArgumentClosure).
+    public GenericMapPattern()
+        : this(null)
+    {
+    }
+
+    // TAAK-324: IsPackable as MSBuild sees it decides whether a public generic member closes its type arguments (council round 10, R1).
+    public GenericMapPattern(IProjectProperties? projectProperties)
+    {
+        _projectProperties = projectProperties;
+    }
+
     public string Id => "automapper.generic-map";
 
     public string Description =>
@@ -42,8 +56,8 @@ public class GenericMapPattern : ISolutionPattern
     // A call the plan keeps on IMapper (TAAK-272) stays Kept, so the rest may still migrate; it keeps the code of its own open set.
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        PatternResult own = await DispatchAsync((InvocationExpressionSyntax)node, model, solution, cancellationToken);
-        return await MapOwners.KeptCallAsync(node, model, solution, cancellationToken) switch
+        PatternResult own = await DispatchAsync((InvocationExpressionSyntax)node, model, solution, _projectProperties, cancellationToken);
+        return await MapOwners.KeptCallAsync(node, model, solution, _projectProperties, cancellationToken) switch
         {
             ManualResult { Code: null } kept when own is ManualResult { Code: nameof(GenericMapCode.GenericMapOpenSet) } => kept with { Code = nameof(GenericMapCode.GenericMapOpenSet) },
             { } kept => kept,
@@ -51,7 +65,7 @@ public class GenericMapPattern : ISolutionPattern
         };
     }
 
-    private static async Task<PatternResult> DispatchAsync(InvocationExpressionSyntax invocation, SemanticModel model, Solution solution, CancellationToken cancellationToken)
+    private static async Task<PatternResult> DispatchAsync(InvocationExpressionSyntax invocation, SemanticModel model, Solution solution, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         if (MapCallPattern.Check(invocation, model, out ExpressionSyntax? source, out ITypeSymbol? sourceType, out ITypeSymbol? destination, out MapCallKind kind) is string problem)
         {
@@ -76,7 +90,7 @@ public class GenericMapPattern : ISolutionPattern
 
         List<ITypeParameterSymbol> parameters = [.. new[] { sourceType, destination }.OfType<ITypeParameterSymbol>().Distinct(SymbolEqualityComparer.Default).OfType<ITypeParameterSymbol>()];
         IReadOnlyList<Compilation> compilations = await GenericUses.CompilationsAsync(solution, cancellationToken);
-        ClosedSets closed = new TypeArgumentClosure(compilations).Close(parameters);
+        ClosedSets closed = new TypeArgumentClosure(compilations, solution, projectProperties).Close(parameters);
         string call = $"Map<{destination!.ToDisplayString()}> from {sourceType!.ToDisplayString()}";
         if (closed.Unresolved is string why)
         {
@@ -110,7 +124,7 @@ public class GenericMapPattern : ISolutionPattern
             ExpressionSyntax receiver = sourceType is ITypeParameterSymbol
                 ? SyntaxFactory.ParseExpression($"({closedSource.ToMinimalDisplayString(model, position)})(object){(MapCallPattern.NeedsParentheses(bare) ? $"({bare})" : bare.ToString())}")
                 : bare;
-            PatternResult result = await MapCallPattern.SingleAsync(invocation, model, solution, receiver, closedSource, closedDestination, kind, cancellationToken);
+            PatternResult result = await MapCallPattern.SingleAsync(invocation, model, solution, receiver, closedSource, closedDestination, kind, projectProperties, cancellationToken);
             if (result is not FixedResult { NewNodes: [ExpressionSyntax mappedCall] } fixedResult)
             {
                 return Open($"{call}: for {closedSource.Name} → {closedDestination.Name}: {(result as ManualResult)?.Reason ?? "no generated map"}");

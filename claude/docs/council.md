@@ -330,7 +330,7 @@ Full text: `claude/tasks/COUNCIL-round-19.md`. Follow-ups: TAAK-349, TAAK-346 st
 | B11 | Captured members beyond B4 | Kept, one proof each; static members Manual. |
 | B12 | `EfCoreBelow7` severity | Non-blocking project Manual row accepted as the Warning row. |
 
-### 2026-10-27 — round 20: xUnit v3 detection, EPPlus helper names, unparsable pin bounds
+## Round 20 (2026-10-27)
 
 Full text: `claude/tasks/COUNCIL-round-20.md`. Follow-ups: TAAK-351 (E33, R3), TAAK-352 (X8), TAAK-341 step 5f (X9).
 
@@ -341,7 +341,8 @@ Full text: `claude/tasks/COUNCIL-round-20.md`. Follow-ups: TAAK-351 (E33, R3), T
 | X9 | Runner bump range | `From` 2.0.0 accepted; 1.x gets an Info row. |
 | E33 | E29 conservative scope | Accepted; reason names the helper call. |
 | T6 | Unparsable pin bound | Manual without direction text; no work. |
-### 2026-10-27 — round 21: EF bulk kept rows, SpecFlow detection, dropped usings
+
+## Round 21 (2026-10-27)
 
 Full text: `claude/tasks/COUNCIL-round-21.md`. Follow-ups: TAAK-342 steps 8a-8b, TAAK-340 steps 4a-4c.
 

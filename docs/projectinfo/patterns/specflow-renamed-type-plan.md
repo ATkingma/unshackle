@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "specflow-renamed-type"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5]
 files_expected:
     - src/Unshackle.Core/Fixes/SpecFlow/Patterns/RenamedTypePattern.cs
     - src/Unshackle.Core/Fixes/SpecFlow/SpecFlowNames.cs
@@ -34,6 +34,8 @@ specflow.renamed-type: A SpecFlow type that Reqnroll renamed or moved (`ISpecFlo
 - **REQ-1**: WHEN a simple name binds to a renamed SpecFlow type THE SYSTEM SHALL write the Reqnroll name and import its namespace (proof/test: output-helper, table-row).
 - **REQ-2**: WHEN it binds to a type without a Reqnroll twin THE SYSTEM SHALL report Manual (proof/test: removed-type).
 - **REQ-3**: THE SYSTEM SHALL only map to types that exist in Reqnroll 3.3.4 (proof/test: SpecFlowNamesTests).
+- **REQ-4** (council 21 S11): WHEN a simple name binds to a member Reqnroll renamed on a type that keeps its name (`SpecFlowNames.RenamedMembers`: `AddSpecFlowBindings` → `AddReqnrollBindings` of the Autofac plugin) THE SYSTEM SHALL write the new member name (proof/test: autofac-bindings).
+- **REQ-5** (council 21 S11): WHEN it binds to a member without a Reqnroll twin (`SpecFlowNames.RemovedMembers`: the Autofac finder's `GetCreateScenarioContainerBuilder`) THE SYSTEM SHALL report Manual; every other public plugin member has a same-name twin (proof/test: autofac-finder, SpecFlowNamesTests.EveryPublicAutofacPluginMember_HasATwin_OrIsListed).
 
 ## Assumptions
 

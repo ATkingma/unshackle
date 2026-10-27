@@ -18,6 +18,8 @@ Proofs: `src/Unshackle.Tests/Proofs/SpecFlow/RenamedType/` (`ProofTests`; an aft
 | REQ-1 | Met | output-helper, table-row |
 | REQ-2 | Met | removed-type |
 | REQ-3 | Met | SpecFlowNamesTests |
+| REQ-4 | Met | autofac-bindings (TAAK-340 step 4b) |
+| REQ-5 | Met | autofac-finder, SpecFlowNamesTests.EveryPublicAutofacPluginMember_HasATwin_OrIsListed |
 
 ## Deviations
 

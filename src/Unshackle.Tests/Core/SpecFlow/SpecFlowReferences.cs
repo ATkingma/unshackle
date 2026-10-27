@@ -7,9 +7,12 @@ namespace Unshackle.Tests.Core.SpecFlow;
 // "after" Reqnroll 3.3.4. Both BSD-3-Clause.
 public static class SpecFlowReferences
 {
-    public static IReadOnlyList<MetadataReference> SpecFlow { get; } = [.. TestReferences.Net, Reference("TechTalk.SpecFlow"), Reference("BoDi")];
+    // Council round 21, S11: the Autofac plugins (SpecFlow.Autofac 3.9.74, Reqnroll.Autofac 3.3.4, both BSD-3-Clause) prove the namespace map.
+    public static IReadOnlyList<MetadataReference> SpecFlow { get; } =
+        [.. TestReferences.Net, Reference("TechTalk.SpecFlow"), Reference("BoDi"), Reference("SpecFlow.Autofac.SpecFlowPlugin"), Reference("Autofac")];
 
-    public static IReadOnlyList<MetadataReference> Reqnroll { get; } = [.. TestReferences.Net, Reference("Reqnroll")];
+    public static IReadOnlyList<MetadataReference> Reqnroll { get; } =
+        [.. TestReferences.Net, Reference("Reqnroll"), Reference("Reqnroll.Autofac.ReqnrollPlugin"), Reference("Autofac")];
 
     public static string PathOf(string assembly) => Path.Combine(AppContext.BaseDirectory, assembly + ".dll");
 

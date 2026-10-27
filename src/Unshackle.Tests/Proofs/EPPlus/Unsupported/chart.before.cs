@@ -3,9 +3,9 @@ using OfficeOpenXml.Drawing.Chart;
 
 namespace Reports;
 
-internal static class Report
+internal class Report
 {
-    internal static void Chart(ExcelWorksheet sheet)
+    internal Report(ExcelWorksheet sheet)
     {
         sheet.Drawings.AddChart("Sales", eChartType.Pie);
     }

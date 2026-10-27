@@ -94,10 +94,29 @@ public class RetryVariantsPatternTests
         results.ShouldAllBe(r => r is ManualResult && ((ManualResult)r).Code == code);
     }
 
-    private static (SyntaxNode Root, SemanticModel Model) Parse(string statements)
+    [Theory]
+    [InlineData("#nullable enable\n", "Keep((ArgumentException)r.Exception!, r.Exception?.Message, r.Exception == null, r.Exception!.Message)")]
+    [InlineData("", "Keep((ArgumentException)r.Exception, r.Exception?.Message, r.Exception == null, r.Exception.Message)")]
+    public void Rewrite_DelegateResultException_SuppressedOnlyInNullableContext(string directive, string expected)
+    {
+        // Arrange (corpus B3)
+        (SyntaxNode root, SemanticModel model) = Parse(
+            "var p = Policy<int>.Handle<ArgumentException>().RetryAsync(1, (r, n) => Keep((ArgumentException)r.Exception, r.Exception?.Message, r.Exception == null, r.Exception.Message)); await p.ExecuteAsync(() => Task.FromResult(1));",
+            directive);
+        var pattern = new RetryVariantsPattern();
+
+        // Act
+        List<PatternResult> results = [.. pattern.Find(root, model).Select(n => pattern.Rewrite(n, model))];
+
+        // Assert
+        string text = string.Concat(results.Select(r => r.ShouldBeOfType<FixedResult>()).SelectMany(r => r.NewNodes).Select(n => n.ToFullString()));
+        text.ShouldContain("void OnRetryCallback(Outcome<int> r, int unused1) => " + expected + ";");
+    }
+
+    private static (SyntaxNode Root, SemanticModel Model) Parse(string statements, string directive = "")
     {
         SyntaxTree tree = CSharpSyntaxTree.ParseText(
-            "using System;\nusing System.Threading.Tasks;\nusing Polly;\npublic class T { public async Task M() { " + statements + " } }",
+            directive + "using System;\nusing System.Threading.Tasks;\nusing Polly;\npublic class T { public async Task M() { " + statements + " } static void Keep(params object?[] values) { } }",
             cancellationToken: TestContext.Current.CancellationToken);
         SemanticModel model = CSharpCompilation.Create("Check", [tree], PollyReferences.Before).GetSemanticModel(tree);
         return (tree.GetRoot(TestContext.Current.CancellationToken), model);

@@ -49,6 +49,10 @@ so one call never belongs to both), Context- or outcome-taking sleep-duration pr
 
 - **REQ-7** (queue row 5): THE SYSTEM SHALL apply the private-field rule of `polly.wait-and-retry-async` REQ-15 (proof
   `field-instance`: `AsyncRetryPolicy<int>` field used as `this._policy` and `_policy`, + behaviour trace).
+- **REQ-4a** (corpus B3): WHEN the onRetry body reads `DelegateResult<T>.Exception` in a nullable-enabled context, THE
+  SYSTEM SHALL write `Outcome<T>.Exception!` for every read that is not itself a null check (`?.`, `== null`, `is`, `??`,
+  `nameof`), because v8's `Exception` is `Exception?`. The `!` is compile-time only; behaviour is unchanged. Shared code in
+  `PollyOnRetry`, so it applies to every Polly retry pattern with an onRetry.
 
 ## Assumptions
 

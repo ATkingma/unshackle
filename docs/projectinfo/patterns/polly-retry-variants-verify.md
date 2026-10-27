@@ -19,6 +19,7 @@ Proofs: `src/Unshackle.Tests/Proofs/Polly/RetryVariants/` (text: `ProofTests`; r
 | REQ-2 | Met | `wait-forever` (`WaitAndRetryForeverAsync` on a result filter, `RetryForeverAsync`) |
 | REQ-3 | Met | `durations` (3 literal durations, onRetry sees 0, 1, 2 ms), `durations-variable`; unit test with a variable element |
 | REQ-4 | Met | `retry-count`, `durations`; unit test `OnRetryUsesContext` on `RetryForeverAsync` |
+| REQ-4a | Met | `on-retry-exception-nullable` (cast + `?.` in `#nullable enable`, + trace), `Rewrite_DelegateResultException_SuppressedOnlyInNullableContext` |
 | REQ-5 | Met | `Proof_BeforeAndAfter_SameTrace` for all four Fixed proofs |
 | REQ-7 | Met | `field-instance` (+ trace), `Rewrite_FieldNotProvablyLocal_Manual` |
 | REQ-6 | Met | unit test `RetryAsync(n)` with a variable |

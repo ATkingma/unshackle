@@ -18,6 +18,19 @@ public class PollyFix : IFix, IProjectFileMigration
     // The Polly.Core that Microsoft.Extensions.Resilience 10.11.0 brings in (via Polly.Extensions 8.4.2, checked in the nuspecs).
     public const string BundledPollyCoreVersion = "8.4.2";
 
+    private readonly IPackageAssetsReader? _assetsReader;
+
+    public PollyFix()
+        : this(null)
+    {
+    }
+
+    // TAAK-354: the restored assets add the declared (central) versions and the consumers' packages to the downgrade check (B5, B6).
+    public PollyFix(IPackageAssetsReader? assetsReader)
+    {
+        _assetsReader = assetsReader;
+    }
+
     public string Id => "polly";
 
     // Polly v7 and Polly.Core share the namespaces Polly and Polly.Retry, which the rewritten code binds to; only the HttpPolicyExtensions
@@ -59,7 +72,7 @@ public class PollyFix : IFix, IProjectFileMigration
     private static IReadOnlyList<ManualResult> Blockers(Project project)
     {
         // Corpus B1/B4: an older resolved Microsoft.Extensions.* package than the Resilience closure needs blocks the project too.
-        return [.. PollyTargetFramework.Blockers(project), .. PollyPackageDowngrade.Blockers(project)];
+        return [.. PollyTargetFramework.Blockers(project), .. PollyPackageDowngrade.Blockers(project, _assetsReader)];
     }
 
     public Task<IReadOnlyList<ProjectFileEdit>> EditsForAsync(Project project, CancellationToken cancellationToken)

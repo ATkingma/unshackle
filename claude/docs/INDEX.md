@@ -119,6 +119,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-344-mediatr-generic-request-closure.md` | Council round 17 M15: done, count 2 < 3, only the Manual reason "callers not followed" |
 | `claude/tasks/TAAK-341-xunit-v3.md` | xUnit v2 → v3 fix (`xunit3`): skeleton, project-file edits, first three patterns, council questions |
 | `claude/tasks/archief/TAAK-348-automapper-generic-reason-wording.md` | Generic AutoMapper Manual reasons name an untyped IQueryable source and each row's own blocker (done) |
+| `claude/tasks/archief/TAAK-354-polly-downgrade-transitive-cpm.md` | Polly PackageDowngrade also checks ProjectReference consumers (B5) and central pins (B6) (done) |
 | `claude/tasks/archief/TAAK-335-polly-redundant-transient-clause.md` | Polly: `OrTransientHttpStatusCode()` after the transient filter no longer writes a duplicate clause (corpus B2 side issue) |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |

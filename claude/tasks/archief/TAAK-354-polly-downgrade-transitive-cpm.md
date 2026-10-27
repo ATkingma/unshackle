@@ -31,12 +31,14 @@ projects that get Microsoft.Extensions.Resilience through `ProjectReference`, an
 - Known limit: with `CentralPackageTransitivePinningEnabled`, a pin of a package the project does not reference directly is not in the
   project's requirements; not seen in the corpus.
 
-## Council questions
+## Council questions (decided in council round 22, `claude/tasks/COUNCIL-round-22.md`)
 
 1. The kept row of a project with manual findings ("Polly is still used ... stay") does not mention the new package added next to the old one,
    which made the CoreApiSdk rows look contradictory. Add "; Microsoft.Extensions.Resilience was added next to it" to that row?
+   **Decision (council 22 P11: yes, only when the package was actually added, via the shared `Fixer` text; TAAK-355.)**
 
 ## See also
 
 - `claude/tasks/CORPUSRUN-polly.md` (B5, B6)
 - `claude/docs/council.md` (Polly B1/B4 decisions)
+- `claude/tasks/TAAK-355-polly-kept-row-added-package.md` — P11 follow-up

@@ -354,6 +354,19 @@ Full text: `claude/tasks/COUNCIL-round-21.md`. Follow-ups: TAAK-342 steps 8a-8b,
 | S11 | Autofac / build-only plugins | Proof with real packages first (Manual until then); unknown `SpecFlow.*` references block. |
 | S12 | Dropped-using scope | Accepted as built; exclusions documented, semantic check. |
 
+## Round 22 (2026-10-27)
+
+Full text: `claude/tasks/COUNCIL-round-22.md`. Follow-ups: TAAK-341 steps 5g-5j, TAAK-355 (P11).
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| X10 | `.AsTask()` on `Record.ExceptionAsync` | Always Fixed; proof awaits the stored result twice. |
+| X11 | Built-in type-name map | No map now; Manual row names the type, v3 name as hint. |
+| X12 | Extensibility inventory breadth | Uses reported too, as Info, one row per file; missing-type list from real assemblies. |
+| X13 | `[PropertyData]` | Dropped from scope. |
+| X14 | `TheoryData` / `SkipException` | Corpus first; `Xunit.SkippableFact` out of scope. |
+| P11 | Polly kept row | Says the new package was added, only when it was; shared `Fixer` text. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct
@@ -361,6 +374,7 @@ Full text: `claude/tasks/COUNCIL-round-21.md`. Follow-ups: TAAK-342 steps 8a-8b,
 - `claude/tasks/COUNCIL-round-19.md` — round 19
 - `claude/tasks/COUNCIL-round-20.md` — round 20
 - `claude/tasks/COUNCIL-round-21.md` — round 21
+- `claude/tasks/COUNCIL-round-22.md` — round 22
 - `claude/tasks/archief/TAAK-292-council-follow-up.md` — implementation of these decisions
 - `claude/tasks/archief/TAAK-293-council-round-3.md` — implementation of the round-3 decisions
 - `claude/tasks/archief/TAAK-294-council-round-4.md` — round-4 changes before 0.2.0

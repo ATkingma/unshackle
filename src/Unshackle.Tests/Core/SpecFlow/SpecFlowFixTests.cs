@@ -88,8 +88,8 @@ public class SpecFlowFixTests
     }
 
     [Theory]
-    [InlineData(@"C:\Users\me\.nuget\packages\specflow.xunit\3.9.74\lib\netstandard2.0\x.dll", "specflow.xunit")]
-    [InlineData("/home/me/.nuget/packages/specflow/3.9.74/lib/net461/TechTalk.SpecFlow.dll", "specflow")]
+    [InlineData(@"D:\nuget\specflow.xunit\3.9.74\lib\netstandard2.0\x.dll", "specflow.xunit")]
+    [InlineData("/nuget/specflow/3.9.74/lib/net461/TechTalk.SpecFlow.dll", "specflow")]
     [InlineData("/usr/share/dotnet/packs/ref/System.Runtime.dll", null)]
     public void PackageIdOf_NuGetPath_IsTheFolderAboveTheVersion(string path, string? expected)
     {
@@ -116,7 +116,7 @@ public class SpecFlowFixTests
     [Theory]
     [InlineData(@"C:\src\Shop\packages\SpecFlow.3.9.74\lib\net461\TechTalk.SpecFlow.dll", true)]
     [InlineData(@"C:\src\Shop\packages\BoDi.1.5.0\lib\net45\BoDi.dll", true)]
-    [InlineData(@"C:\Users\me\.nuget\packages\specflow\3.9.74\lib\netstandard2.0\TechTalk.SpecFlow.dll", false)]
+    [InlineData(@"D:\nuget\specflow\3.9.74\lib\netstandard2.0\TechTalk.SpecFlow.dll", false)]
     public void IsPackagesFolderPath_PackagesConfigLayout_IsDetected(string path, bool expected)
     {
         // Act

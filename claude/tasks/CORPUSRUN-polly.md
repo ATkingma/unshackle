@@ -54,6 +54,7 @@ Of the 14 repos with a green baseline, 8 pass with 0 test regressions and 6 brea
   Before: `public static IHttpClientBuilder AddRetryPolicy(this IHttpClientBuilder builder) => builder.AddTransientHttpErrorPolicy(p => p.OrTransientHttpStatusCode().WaitAndRetryAsync(3, a => TimeSpan.FromSeconds(Math.Pow(2, a))));`
   After: `=> builder.AddResilienceHandler("retry", builder1 => builder1.AddRetry(...));` -> CS0266 (`IHttpResiliencePipelineBuilder` to `IHttpClientBuilder`).
   Expected: when the value of the `AddPolicyHandler`/`AddTransientHttpErrorPolicy` call is used (returned, assigned or chained), keep returning the `IHttpClientBuilder` (block body `{ builder.AddResilienceHandler(...); return builder; }`) or report Manual.
+  **Fixed 2026-10-27:** Manual `HandlerResultUsed` when the builder result is used (REQ-5b, proof `result-returned`).
   Side issue in the same output: `.OrTransientHttpStatusCode()` adds a second, identical `HandleResult(5xx || 408)` clause (harmless but redundant).
 - **B3 polly.retry-variants: v8 `Outcome<T>.Exception` is nullable** (fergun `src/Apis/Musixmatch/MusixmatchClient.cs:42`).
   Before: `Policy<JsonDocument>.Handle<MusixmatchException>(...).RetryAsync(async (result, _) => { logger.LogWarning(result.Exception, "...", ((MusixmatchException)result.Exception).Hint); ... })`

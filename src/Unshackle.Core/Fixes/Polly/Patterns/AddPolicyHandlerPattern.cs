@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
@@ -91,6 +92,14 @@ public class AddPolicyHandlerPattern : IPattern
         {
             return PatternResult.Manual(PollyReason.HandlerOrderNotProvable,
                 $"the client also has {other}; the order of several handlers is not proven the same after a rewrite.");
+        }
+
+        // AddResilienceHandler returns IHttpResiliencePipelineBuilder, not IHttpClientBuilder (corpus B2, fergun). A void `=>` body
+        // is an expression statement in the operation tree too.
+        if (model.GetOperation(invocation)?.Parent is not IExpressionStatementOperation)
+        {
+            return PatternResult.Manual(PollyReason.HandlerResultUsed,
+                "the handler call's IHttpClientBuilder is used (returned, assigned or chained); AddResilienceHandler returns another builder type.");
         }
 
         ExpressionSyntax argument = invocation.ArgumentList.Arguments[0].Expression;

@@ -1755,13 +1755,14 @@ Total: 1307 proofs (excluding `_Pending`).
 
 ## Polly
 
-### AddPolicyHandler (4)
+### AddPolicyHandler (5)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `inline-transient` | Fixed | `.AddPolicyHandler(HttpPolicyExtensions.HandleTransientHttpError().WaitAndRetryAsync(3, attempt => TimeSpan.Fro…` → `.AddResilienceHandler("retry", builder => builder.AddRetry(new RetryStrategyOptions<HttpResponseMessage> {` |
 | `policy-method` | Fixed | `.AddPolicyHandler(GetRetryPolicy()); }` → `.AddResilienceHandler("retry", builder => builder.AddRetry(new RetryStrategyOptions<HttpResponseMessage> {` |
 | `transient-lambda-429` | Fixed | `.AddTransientHttpErrorPolicy(p => p.OrResult(r => r.StatusCode == HttpStatusCode.NotFound).RetryAsync(3, (outc…` → `.AddResilienceHandler("retry", builder => builder.AddRetry(new RetryStrategyOptions<HttpResponseMessage> {` |
+| `result-returned` | Manual |  — reason: HandlerResultUsed |
 | `two-handlers` | Manual |  — reason: HandlerOrderNotProvable |
 
 ### CircuitBreaker (2)

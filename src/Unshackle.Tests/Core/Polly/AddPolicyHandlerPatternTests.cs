@@ -29,6 +29,9 @@ public class AddPolicyHandlerPatternTests
     [InlineData("b.AddPolicyHandler(request => HttpPolicyExtensions.HandleTransientHttpError().RetryAsync(1));", nameof(PollyReason.HandlerOverloadNotSupported))]
     [InlineData("b.AddPolicyHandler(Policy.NoOpAsync<HttpResponseMessage>());", nameof(PollyReason.HandlerPolicyNotInline))]
     [InlineData("b.AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(n, a => TimeSpan.Zero));", nameof(PollyReason.RetryCountNotLiteral))]
+    [InlineData("var c = b.AddTransientHttpErrorPolicy(p => p.RetryAsync(1));", nameof(PollyReason.HandlerResultUsed))]
+    [InlineData("b.AddTransientHttpErrorPolicy(p => p.RetryAsync(1)).SetHandlerLifetime(TimeSpan.Zero);", nameof(PollyReason.HandlerResultUsed))]
+    [InlineData("Func<IHttpClientBuilder> f = () => b.AddTransientHttpErrorPolicy(p => p.RetryAsync(1));", nameof(PollyReason.HandlerResultUsed))]
     public void Rewrite_UnsupportedShape_ManualWithCode(string statements, string code)
     {
         // Arrange
@@ -40,6 +43,20 @@ public class AddPolicyHandlerPatternTests
 
         // Assert
         result.ShouldBeOfType<ManualResult>().Code.ShouldBe(code);
+    }
+
+    [Fact]
+    public void Rewrite_VoidLambdaBody_Fixed()
+    {
+        // Arrange (a void `=>` body discards the builder like a statement)
+        (SyntaxNode root, SemanticModel model) = Parse("Action a = () => b.AddTransientHttpErrorPolicy(p => p.RetryAsync(1));");
+        var pattern = new AddPolicyHandlerPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).Single(), model);
+
+        // Assert
+        result.ShouldBeOfType<FixedResult>();
     }
 
     [Fact]

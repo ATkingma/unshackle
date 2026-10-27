@@ -19,6 +19,7 @@ public enum PollyReason
     PolicyMemberNotPrivate,
     HandlerOverloadNotSupported,
     HandlerOrderNotProvable,
+    HandlerResultUsed,
     HandlerPolicyNotInline,
     WrapOrderNotProvable,
     TimeoutNotProvable,

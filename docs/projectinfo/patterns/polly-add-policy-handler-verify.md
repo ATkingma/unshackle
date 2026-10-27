@@ -28,6 +28,9 @@ Proofs: `src/Unshackle.Tests/Proofs/Polly/AddPolicyHandler/` (text: `ProofTests`
 
 None.
 
+**2026-10-27 (corpus B2):** REQ-5b added: a handler call whose `IHttpClientBuilder` is used is Manual `HandlerResultUsed`
+(fergun returned it from an expression-bodied extension method → CS0266). Proof `result-returned`, unit tests in `AddPolicyHandlerPatternTests`.
+
 ## Validation results
 
 | Check | Command | Result |

@@ -45,7 +45,9 @@ flowchart TD
     B -- no --> M1[Manual HandlerOverloadNotSupported]
     B -- yes --> C{another handler on the chain?}
     C -- yes --> M2[Manual HandlerOrderNotProvable]
-    C -- no --> D{retry call written in place?}
+    C -- no --> U{builder result used?}
+    U -- yes --> M5[Manual HandlerResultUsed]
+    U -- no --> D{retry call written in place?}
     D -- no --> M3[Manual HandlerPolicyNotInline]
     D -- yes --> E{retry options plannable?}
     E -- no --> M4[Manual with the retry code]
@@ -56,6 +58,7 @@ flowchart TD
 | --- | --- |
 | Fixed | `inline-transient`, `transient-lambda-429` (+ traces) |
 | `HandlerOrderNotProvable` | `two-handlers` |
+| `HandlerResultUsed` | `result-returned`, unit tests |
 | `HandlerPolicyNotInline` | unit tests |
 | method inlined and removed | `policy-method` |
 | `HandlerOverloadNotSupported`, retry codes | `AddPolicyHandlerPatternTests` |

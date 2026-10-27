@@ -32,7 +32,7 @@ RetryStrategyOptions<HttpResponseMessage> { ... }))` with the same filter, count
 `AddTransientHttpErrorPolicy(p => p.<retry>)`; every retry form of `polly.wait-and-retry-async` and `polly.retry-variants`
 (filters, onRetry); `HttpPolicyExtensions.HandleTransientHttpError()`, `.OrTransientHttpError()`, `.OrTransientHttpStatusCode()`.
 
-**Out of scope (Manual)**: a request-based selector or registry overload (`HandlerOverloadNotSupported`), a policy from a field or registry, or from a method used elsewhere (`HandlerPolicyNotInline`), a client with more than one handler (`HandlerOrderNotProvable`).
+**Out of scope (Manual)**: a request-based selector or registry overload (`HandlerOverloadNotSupported`), a policy from a field or registry, or from a method used elsewhere (`HandlerPolicyNotInline`), a client with more than one handler (`HandlerOrderNotProvable`), a handler call whose builder is used (`HandlerResultUsed`).
 
 ## Requirements
 
@@ -46,6 +46,8 @@ RetryStrategyOptions<HttpResponseMessage> { ... }))` with the same filter, count
 - **REQ-4**: THE SYSTEM SHALL give equal run-time traces before (Microsoft.Extensions.Http.Polly 10.0.13, Polly 7.2.4) and after
   (Microsoft.Extensions.Http.Resilience 10.11.0) with a fake primary handler (proofs `inline-transient`, `transient-lambda-429`).
 - **REQ-5**: WHEN the client chain has another handler call THE SYSTEM SHALL report Manual `HandlerOrderNotProvable` (proof `two-handlers`).
+- **REQ-5b**: WHEN the handler call's `IHttpClientBuilder` is used (returned, assigned or chained; a void `=>` body does not count)
+  THE SYSTEM SHALL report Manual `HandlerResultUsed`, because `AddResilienceHandler` returns `IHttpResiliencePipelineBuilder` (corpus B2, proof `result-returned`).
 - **REQ-6**: WHEN the policy is neither written in place nor a handler-only method (REQ-8) THE SYSTEM SHALL report Manual `HandlerPolicyNotInline`;
   the retry patterns leave a handler's policy to this pattern (`Find_HandlerPolicy_OnlyTheHandlerPatternReportsIt`).
 - **REQ-7**: THE SYSTEM SHALL add `Microsoft.Extensions.Http.Resilience` only to projects that called `AddPolicyHandler` or

@@ -71,6 +71,25 @@ public class SpectreConsoleViewTests
         output.ShouldContain("0 fixed (0 with a warning), 1 manual.");
     }
 
+    [Fact]
+    public void ShowBlockingProjects_NamesEachProjectAndItsReasons()
+    {
+        // Arrange (council round 18, X1)
+        var writer = new StringWriter();
+        IAnsiConsole console = AnsiConsole.Create(new AnsiConsoleSettings { Out = new AnsiConsoleOutput(writer), Ansi = AnsiSupport.No });
+        console.Profile.Width = 200;
+
+        // Act
+        new SpectreConsoleView(console, console).ShowBlockingProjects([new BlockingProject { Project = "Tests.csproj", Reasons = ["Merge the disposal by hand."] }]);
+        new SpectreConsoleView(console, console).ShowBlockingProjects([]);
+
+        // Assert
+        writer.ToString().ShouldBe(
+            "Nothing was changed: 1 project(s) block this all-or-nothing fix:" + Environment.NewLine
+            + "  Tests.csproj" + Environment.NewLine
+            + "    - Merge the disposal by hand." + Environment.NewLine);
+    }
+
     private static Finding Finding(string file, int line, string reason) => new()
     {
         FilePath = file,

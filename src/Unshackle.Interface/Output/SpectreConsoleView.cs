@@ -92,6 +92,30 @@ public class SpectreConsoleView : IConsoleView
             "Use --report for every finding.");
     }
 
+    public void ShowBlockingProjects(IReadOnlyList<BlockingProject> projects)
+    {
+        ArgumentNullException.ThrowIfNull(projects);
+        if (projects.Count == 0)
+        {
+            return;
+        }
+
+        _out.WriteLine(ConsoleText.Sanitize($"Nothing was changed: {projects.Count} project(s) block this all-or-nothing fix:"));
+        foreach (BlockingProject project in projects)
+        {
+            _out.WriteLine(ConsoleText.Sanitize($"  {project.Project}"));
+            foreach (string reason in project.Reasons.Take(MaxBlockersShown))
+            {
+                _out.WriteLine(ConsoleText.Sanitize($"    - {reason}"));
+            }
+
+            if (project.Reasons.Count > MaxBlockersShown)
+            {
+                _out.WriteLine($"    ... and {project.Reasons.Count - MaxBlockersShown} more reasons (see --report).");
+            }
+        }
+    }
+
     public void ShowDiff(string filePath, IReadOnlyList<DiffLine> lines)
     {
         _out.Write(new Text($"--- {ConsoleText.Sanitize(filePath)}", new Style(decoration: Decoration.Bold)));

@@ -13,9 +13,8 @@
   `Directory.Packages.props`. Proof/unit types for Z are stubs compiled in-memory with the real assembly names:
   `src/Unshackle.Tests/Core/EfBulk/EfBulkReferences.cs`. EF Core 10 is real (`Microsoft.EntityFrameworkCore.Sqlite`, already a test package).
 - **API note (scout correction)**: `DeleteFromQuery`/`UpdateFromQuery` belong to Z.EntityFramework.**Extensions**; Plus itself has
-  `Delete()`/`DeleteAsync()`/`Update(factory)`/`UpdateAsync(factory)` in namespace `Z.EntityFramework.Plus`. The stub signatures follow
-  the zzzprojects docs from memory and are **not yet checked against the nupkg** (step 4). The Extensions stub puts its methods in
-  namespace `Microsoft.EntityFrameworkCore` (also unverified); the fix does not depend on it, it matches by assembly name.
+  `Delete()`/`DeleteAsync()`/`Update(factory)`/`UpdateAsync(factory)` in namespace `Z.EntityFramework.Plus`. The stub signatures were
+  checked against the real nupkgs (step 4, see Findings).
 - **EF version guard**: EF Core 7-9 declare `ExecuteDelete` in `RelationalQueryableExtensions`, EF Core 10 in
   `EntityFrameworkQueryableExtensions` (core). `EfBulkCall.HasNative` checks both; none → Manual `NoNativeExecute`.
 - Code: `src/Unshackle.Core/Fixes/EfBulk/` (`EfBulkFix`, `EfBulkCall`, `EfBulkReason`, `Patterns/DeletePattern`, `Patterns/UpdatePattern`),
@@ -30,7 +29,19 @@
 - [x] 1. Read scout report, pick narrow scope: Plus `Delete/Update` + Extensions `DeleteFromQuery/UpdateFromQuery` (+Async)
 - [x] 2. Fix skeleton, assembly-based receiver match, EF7+ guard, stub references, Cli registration
 - [x] 3. Patterns `efbulk.delete` and `efbulk.update` (plain initializer → `SetProperty` chain), proofs, unit tests, KingmaDoc, README rows
-- [ ] 4. Verify the Z signatures (and Extensions namespace) against the real nupkgs without adding them to our packages (download to a scratch dir, read metadata only); adjust the stubs
+- [x] 4. Verify the Z signatures (and Extensions namespace) against the real nupkgs without adding them to our packages (download to a scratch dir, read metadata only); adjust the stubs
+  - Findings (Z.EntityFramework.Plus.EFCore and Z.EntityFramework.Extensions.EFCore 10.105.9, lib/net10.0, inspected as Roslyn
+    metadata symbols; nothing executed). Correct already: Plus `BatchDeleteExtensions`/`BatchUpdateExtensions` in `Z.EntityFramework.Plus`,
+    all `where T : class`, `int`/`Task<int>` returns, `CancellationToken cancellationToken = default` on the factory/delete async overloads.
+    Wrong and fixed: (a) the Extensions methods live in **global-namespace** classes `BatchDeleteExtensions`/`BatchUpdateExtensions`,
+    not `Microsoft.EntityFrameworkCore.BatchQueryExtensions` (still no using needed; the fix matches by assembly, unaffected);
+    (b) `BatchDelete`/`BatchUpdate` are declared in the **Extensions** assembly, namespace `Z.EntityFramework.Extensions` (Plus' builder
+    overloads use them), and `BatchUpdate.BatchSize` is `int?`; (c) `Future<T>()` returns `QueryFutureEnumerable<T>`
+    (: `BaseQueryFuture`, `IEnumerable<T>`), not `IEnumerable<T>`; (d) missing overloads: Extensions `DeleteFromQuery(Async)` and
+    `UpdateFromQuery(Async)` with a batch builder, and in both packages `Expression<Func<T, object>>` (anonymous object),
+    `IDictionary<string, object>` and `ExpandoObject` overloads. The stubs now carry the builder and `Func<T, object>` shapes; a new unit
+    test pins that an anonymous-object update is Manual `UpdateFactoryShape`. Patterns and proofs needed no change (the patterns match by
+    assembly + IQueryable receiver and by argument shape, which already sends builder/dictionary/anonymous forms to Manual).
 - [ ] 5. After council: EFCore.BulkExtensions `BatchDelete/BatchUpdate`, a `efbulk.unsupported` pattern (Bulk*, Future, FromCache, AuditTrail as Manual rows), package removal rule
 - [ ] 6. Run-time proof: SQLite `ToQueryString`/SQL log of the native calls vs. the expected SQL (Plus cannot run without the paid Extensions trial)
 - [ ] 7. Corpus round (protagonist, Plutus, morenote, NexusStack, Lavcode, OpenttdDiscord), README/roadmap text, archive

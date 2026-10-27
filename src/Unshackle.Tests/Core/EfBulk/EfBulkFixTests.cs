@@ -78,7 +78,7 @@ public class EfBulkFixTests
                 public int Run(IQueryable<Order> orders) => orders.Delete();
             }
             """;
-        IReadOnlyList<MetadataReference> references = [.. TestReferences.Net, EfBulkReferences.Plus];
+        IReadOnlyList<MetadataReference> references = [.. TestReferences.Net, EfBulkReferences.Plus, EfBulkReferences.Extensions];
 
         // Act
         FixReport report = await RunAsync(code, references);
@@ -98,6 +98,19 @@ public class EfBulkFixTests
 
         // Assert
         report.Findings.ShouldHaveSingleItem().Result.ShouldBeOfType<ManualResult>().Code.ShouldBe(nameof(EfBulkReason.UpdateValueNotProvable));
+    }
+
+    [Fact]
+    public async Task FixAsync_AnonymousObjectUpdate_IsManual()
+    {
+        // Arrange: the real packages bind an anonymous object to the Expression<Func<T, object>> overload.
+        string code = Source("db.Orders.Update(o => new { Status = \"done\" })");
+
+        // Act
+        FixReport report = await RunAsync(code, EfBulkReferences.Before);
+
+        // Assert
+        report.Findings.ShouldHaveSingleItem().Result.ShouldBeOfType<ManualResult>().Code.ShouldBe(nameof(EfBulkReason.UpdateFactoryShape));
     }
 
     [Fact]

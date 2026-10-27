@@ -28,6 +28,13 @@ None.
 | Build | `dotnet build` | passed |
 | Tests | `dotnet test` | all green |
 
+## Council round 18 (S1, S4)
+
+The reason names `Reqnroll.SpecFlowCompatibility` as the other hand route. When the first argument is a constant and exactly one step
+definition of the compilation (`[Given]`/`[When]`/`[Then]`/`[StepDefinition]`; `And`/`But` match every kind) matches the whole text (regex
+anchored at both ends, 100 ms timeout, an invalid regex never matches), the reason ends with `Possible match: Type.Method.` (a hint, no
+rewrite). Proof: `StringStepCall/possible-match`.
+
 ## See also
 
 - [specflow-string-step-call-plan.md](specflow-string-step-call-plan.md)

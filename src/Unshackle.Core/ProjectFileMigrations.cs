@@ -197,6 +197,7 @@ internal static class ProjectFileMigrations
         {
             Info = outcome.Note is null ? outcome.Edit.Describe() : $"{outcome.Edit.Describe()}. {outcome.Note}",
             Warning = outcome.Edit is PropertyEdit property && s_warnedProperties.Contains(property.Name) ? property.Name + WarnedPropertyReason : null,
+            Dependents = outcome.Edit is PackageAddEdit { KeptFor.Count: > PackageAddEdit.MaxUsersInRow } pin ? pin.KeptFor : null,
         };
     }
 }

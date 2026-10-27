@@ -23,7 +23,16 @@ public class AddressPattern : IPattern
 
     public string Description => "ws.Cells[r1, c1, r2, c2].Rows / .Start.Row ... → .RowCount() / .RangeAddress.FirstAddress.RowNumber (ranges in order only)";
 
-    public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
+    // R3 (council round 19): an address read left Manual in a member that epplus.unsupported reports anyway is not found here; its reason is
+    // folded into that one row (as E31), so each node has one row and the summary counts it once.
+    public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model)
+    {
+        List<SyntaxNode> candidates = [.. Candidates(root, model)];
+        return candidates.Where(n => Rewrite(n, model) is not ManualResult || !UnsupportedPattern.ReportsBesides(n, candidates, root, model));
+    }
+
+    // Every address read this pattern handles, Fixed or Manual.
+    internal static IEnumerable<SyntaxNode> Candidates(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().OfType<MemberAccessExpressionSyntax>()
             .Where(a => a.Name.Identifier.ValueText is "Rows" or "Columns" or "Start" or "End"
                 && (a.Expression is ElementAccessExpressionSyntax cells && IsCells(cells, model) || IsRangeLocal(a.Expression, model))

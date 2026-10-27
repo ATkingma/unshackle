@@ -155,7 +155,7 @@ public class GenericRequestPattern : ISolutionPattern, ISolutionFinder
 
         if (uses.OpenCreation is not null)
         {
-            return PatternResult.Manual($"{name} is created with open type arguments in generic code ({uses.OpenCreation}); Mediator needs one concrete request per closed type. Create it by hand.");
+            return PatternResult.Manual($"{name}: open type argument in generic code; callers not followed ({uses.OpenCreation}). Mediator needs one concrete request per closed type. Create it by hand.");
         }
 
         string? both = uses.Closed.Keys.FirstOrDefault(uses.Subclassed.Contains);

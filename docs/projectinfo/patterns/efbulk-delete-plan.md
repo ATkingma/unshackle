@@ -43,9 +43,9 @@ efbulk.delete: a batch delete of Z.EntityFramework.Plus (`Delete`, `DeleteAsync`
 - Like the Z batch calls, the native call bypasses the change tracker and `SaveChanges` interceptors; the fix states this once per run (`ChangedCodeInfo`).
 - Signatures verified once (TAAK-342 step 4, council round 17 B6) against Z.EntityFramework.Plus.EFCore and Z.EntityFramework.Extensions.EFCore **10.105.9** (lib/net10.0, metadata only): Plus `Z.EntityFramework.Plus.BatchDeleteExtensions`/`BatchUpdateExtensions`, Extensions in the global-namespace classes `BatchDeleteExtensions`/`BatchUpdateExtensions`, all `where T : class`, `int`/`Task<int>` returns, builder types `Z.EntityFramework.Extensions.BatchDelete`/`BatchUpdate`. The stubs in `EfBulkReferences.cs` name that version; no CI download.
 - Run-time proof (step 6): `EfBulkSqlTests.ExecuteDelete_WhereFilter_IsOneDeleteStatement` checks the single `DELETE ... WHERE` statement on EF Core 10 + SQLite.
-- Manual reasons show the exact call; a batch builder's reason names the options it sets (council round 17, B4/B7); a project with blocked calls gets one `EfCoreBelow7` project row (B3).
+- Manual reasons show the exact call; a batch builder's reason names the options it sets (council round 17, B4/B7); a project with blocked calls gets one `EfCoreBelow7` project row (B3). The report has no separate Warning kind for project rows, so `EfCoreBelow7` (a non-blocking project-level Manual row) **is** the B3 Warning row (council round 19, B12).
 - The Z types in the proofs are stubs with the documented signatures (the Z packages cannot enter `Directory.Packages.props`); to be checked against the nupkg before the corpus round.
-- No package or project file is changed in this slice.
+- Package removal (step 8, council round 17 B5): see [efbulk-unsupported-plan.md](efbulk-unsupported-plan.md).
 
 ## Models
 

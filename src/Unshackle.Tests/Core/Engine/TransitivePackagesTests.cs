@@ -137,10 +137,10 @@ public class TransitivePackagesTests
     }
 
     [Theory]
-    [InlineData("[8.0.0, )", true)]
-    [InlineData("[9.0.0, )", false)]
-    [InlineData("7.0.0", false)]
-    public async Task PlanAsync_ProjectReferenceBringsPackage_PinsSameVersionOtherwiseManual(string range, bool pinned)
+    [InlineData("[8.0.0, )", true, "")]
+    [InlineData("[9.0.0, )", false, " (higher: NU1605 risk)")]
+    [InlineData("7.0.0", false, " (lower: removing the pin downgrades to 7.0.0)")]
+    public async Task PlanAsync_ProjectReferenceBringsPackage_PinsSameVersionOtherwiseManual(string range, bool pinned, string direction)
     {
         // Arrange (council round 17 T3)
         Solution solution = Create("using Microsoft.Extensions.Configuration;\nclass C { IConfiguration? _c; }");
@@ -160,8 +160,51 @@ public class TransitivePackagesTests
         {
             (string path, ManualResult manual) = plan.Manuals.ShouldHaveSingleItem();
             path.ShouldBe(Domain);
-            manual.Reason.ShouldContain($"project reference Shared/1.0.0 brings {Configuration} {range}");
+            manual.Reason.ShouldContain($"`Infrastructure` uses it, but project reference Shared/1.0.0 brings {Configuration} {range}{direction}; a pin");
         }
+    }
+
+    [Theory]
+    [InlineData("[9.0.0, )", " (higher: NU1605 risk)")]
+    [InlineData("[7.5.0, 9.0.0)", " (lower: removing the pin downgrades to 7.5.0)")]
+    [InlineData("not-a-version", "")]
+    public void Direction_DifferingBound_NamesTheCase(string range, string expected)
+    {
+        // Arrange (council round 19 T4)
+        PackageRequirement other = new() { Package = Configuration, RequiredBy = "Shared/1.0.0", Range = range };
+
+        // Act
+        string direction = TransitivePackages.Direction(other, "8.0.0");
+
+        // Assert
+        direction.ShouldBe(expected);
+    }
+
+    [Theory]
+    [InlineData(new[] { "Api" }, "`Api`")]
+    [InlineData(new[] { "Api", "Web", "Jobs" }, "`Api`, `Web`, `Jobs`")]
+    [InlineData(new[] { "Api", "Web", "Jobs", "Tests" }, "`Api`, `Web`, `Jobs` and 1 more")]
+    public void UserList_Users_CappedAtThree(string[] users, string expected)
+    {
+        // Act (council round 19 T5)
+        string list = PackageAddEdit.UserList(users);
+
+        // Assert
+        list.ShouldBe(expected);
+    }
+
+    [Fact]
+    public void Describe_FourUsers_NamesThreeInSolutionOrder()
+    {
+        // Arrange (council round 19 T5)
+        var pin = new PackageAddEdit { Name = Configuration, Version = "8.0.0", KeepsTransitiveOf = "EPPlus", KeptFor = ["Api", "Web", "Jobs", "Tests"] };
+
+        // Act
+        string row = pin.Describe();
+
+        // Assert
+        row.ShouldBe($"may conflict (NU1605): PackageReference {Configuration} pinned to 8.0.0, kept for `Api`, `Web`, `Jobs` and 1 more "
+            + $"(it came transitively with EPPlus). If restore reports NU1605 for {Configuration}, raise the pin");
     }
 
     private static ProjectMigration Migration(bool keep) => new()

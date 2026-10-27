@@ -30,6 +30,14 @@ None.
 | Build | `dotnet build` | passed |
 | Tests | `dotnet test` | all green |
 
+## Council round 18 (S7, S8)
+
+A swapped namespace using is dropped (the result has no nodes) when nothing in the file binds through it afterwards: every name, `foreach`
+enumerator, `await` awaiter and collection-initializer `Add` is resolved, and a symbol of the old namespace counts only when its new
+namespace (after `RenamedTypes`) is the swapped one. Global, alias and static usings, a using with comments or directives in front, and
+files with a query expression or a deconstruction keep it, and so does the only using of its block (dropping it would leave a stray blank line). Proofs: `Namespace/assist` (`using Reqnroll.Assist;` dropped) and
+`RenamedType/output-helper` (the only using, kept). S8: namespace `SpecFlow.Autofac` maps to `Reqnroll.Autofac`.
+
 ## See also
 
 - [specflow-namespace-plan.md](specflow-namespace-plan.md)

@@ -52,6 +52,16 @@ public static class EfBulkReferences
                 IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
             }
 
+            public static class QueryCacheExtensions
+            {
+                public static IEnumerable<T> FromCache<T>(this IQueryable<T> query, params string[] tags) where T : class => throw new NotSupportedException();
+            }
+
+            public class Audit
+            {
+                public string CreatedBy { get; set; } = "";
+            }
+
             public static class QueryFutureExtensions
             {
                 public static QueryFutureEnumerable<T> Future<T>(this IQueryable<T> query) => throw new NotSupportedException();
@@ -63,6 +73,7 @@ public static class EfBulkReferences
     // options in Z.EntityFramework.Extensions.
     private const string ExtensionsSource = """
         using System;
+        using System.Collections.Generic;
         using System.Linq;
         using System.Linq.Expressions;
         using System.Threading;
@@ -81,6 +92,12 @@ public static class EfBulkReferences
             public static int DeleteFromQuery<T>(this IQueryable<T> query, Action<BatchDelete> batchDeleteBuilder) where T : class => throw new NotSupportedException();
             public static Task<int> DeleteFromQueryAsync<T>(this IQueryable<T> query, CancellationToken cancellationToken = default) where T : class => throw new NotSupportedException();
             public static Task<int> DeleteFromQueryAsync<T>(this IQueryable<T> query, Action<BatchDelete> batchDeleteBuilder, CancellationToken cancellationToken = default) where T : class => throw new NotSupportedException();
+        }
+
+        public static class DbContextExtensions
+        {
+            public static void BulkInsert<T>(this Microsoft.EntityFrameworkCore.DbContext context, IEnumerable<T> entities) where T : class => throw new NotSupportedException();
+            public static Task BulkInsertAsync<T>(this Microsoft.EntityFrameworkCore.DbContext context, IEnumerable<T> entities, CancellationToken cancellationToken = default) where T : class => throw new NotSupportedException();
         }
 
         public static class BatchUpdateExtensions
@@ -107,10 +124,6 @@ public static class EfBulkReferences
         }
         """;
 
-    public static MetadataReference Extensions { get; } = Stub("Z.EntityFramework.Extensions.EFCore", ExtensionsSource, []);
-
-    public static MetadataReference Plus { get; } = Stub("Z.EntityFramework.Plus.EFCore", PlusSource, [Extensions]);
-
     // EF Core with its relational layer (ExecuteDelete/ExecuteUpdate) and the Microsoft.Extensions assemblies its public API names.
     public static IReadOnlyList<MetadataReference> EfCore { get; } =
     [
@@ -119,6 +132,10 @@ public static class EfBulkReferences
             .Order(StringComparer.Ordinal)
             .Select(p => MetadataReference.CreateFromFile(p)),
     ];
+
+    public static MetadataReference Extensions { get; } = Stub("Z.EntityFramework.Extensions.EFCore", ExtensionsSource, EfCore);
+
+    public static MetadataReference Plus { get; } = Stub("Z.EntityFramework.Plus.EFCore", PlusSource, [Extensions]);
 
     public static IReadOnlyList<MetadataReference> Before { get; } = [.. TestReferences.Net, .. EfCore, Plus, Extensions];
 

@@ -9,4 +9,7 @@ public record FixedResult(IReadOnlyList<SyntaxNode> NewNodes, IReadOnlyList<stri
 
     // A note for the report that is not a behaviour difference, e.g. a type the rewrite left empty (TAAK-292); null when there is none.
     public string? Info { get; init; }
+
+    // Council round 19 T5: the full list of user projects for the detailed report when the row caps it; null otherwise.
+    public IReadOnlyList<string>? Dependents { get; init; }
 }

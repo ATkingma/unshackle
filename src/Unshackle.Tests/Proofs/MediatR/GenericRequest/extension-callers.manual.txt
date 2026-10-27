@@ -1,1 +1,1 @@
-Retried is created with open type arguments in generic code
+Retried: open type argument in generic code; callers not followed

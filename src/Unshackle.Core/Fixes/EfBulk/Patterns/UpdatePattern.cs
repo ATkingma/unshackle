@@ -10,7 +10,7 @@ namespace Unshackle.Core.Fixes.EfBulk.Patterns;
 /// <summary>
 /// <c>q.Update(x => new T { A = e })</c> / <c>UpdateFromQuery</c> (+Async) of Z.EntityFramework.Plus/Extensions →
 /// <c>q.ExecuteUpdate(s => s.SetProperty(x => x.A, x => e))</c>. Only plain values (literals, captured variables, the entity's own
-/// scalar properties and operators on them); anything EF Core may translate differently is Manual (TAAK-342 council question 4).
+/// scalar properties and numeric operators on them, no string concatenation or decimal arithmetic); anything EF Core may translate differently is Manual (TAAK-342 council question 4).
 /// </summary>
 public class UpdatePattern : IPattern
 {
@@ -38,7 +38,8 @@ public class UpdatePattern : IPattern
         string target = s_names[name.Identifier.ValueText];
         if (!EfBulkCall.HasNative(model, "ExecuteUpdate"))
         {
-            return PatternResult.Manual(EfBulkReason.NoNativeExecute, "ExecuteUpdate needs EF Core 7+ with a relational provider.");
+            return PatternResult.Manual(EfBulkReason.NoNativeExecute,
+                $"'{EfBulkCall.Shown(invocation)}': ExecuteUpdate needs EF Core 7+ with a relational provider.");
         }
 
         bool isAsync = target.EndsWith("Async", StringComparison.Ordinal);
@@ -46,13 +47,14 @@ public class UpdatePattern : IPattern
         bool restMaps = arguments.Count == 1 || (arguments.Count == 2 && isAsync && EfBulkCall.IsCancellationToken(arguments[1], model));
         if (arguments.Count == 0 || !restMaps || arguments[0].NameColon is not null)
         {
-            return PatternResult.Manual(EfBulkReason.BatchOptions, "a batch builder (BatchSize, Executing, ...) has no ExecuteUpdate equivalent.");
+            return PatternResult.Manual(EfBulkReason.BatchOptions,
+                $"'{EfBulkCall.Shown(invocation)}': {EfBulkCall.BatchOptions(invocation)} (BatchSize, Executing, ...) has no ExecuteUpdate equivalent.");
         }
 
         if (Factory(arguments[0].Expression, model) is not ({ } parameter, { } initializer))
         {
             return PatternResult.Manual(EfBulkReason.UpdateFactoryShape,
-                "the update factory is not an inline lambda x => new T { ... } with property assignments only.");
+                $"'{EfBulkCall.Shown(arguments[0])}': the update factory is not an inline lambda x => new T {{ ... }} with property assignments only.");
         }
 
         var setters = new List<(string Property, ExpressionSyntax Value)>();
@@ -64,13 +66,14 @@ public class UpdatePattern : IPattern
                 || !IsScalar(property.Type))
             {
                 return PatternResult.Manual(EfBulkReason.UpdateValueNotProvable,
-                    $"'{expression}' does not set a scalar property; ExecuteUpdate cannot set navigations or owned types.");
+                    $"'{EfBulkCall.Shown(expression)}' does not set a scalar property; ExecuteUpdate cannot set navigations or owned types.");
             }
 
             if (!IsPlainValue(value, model, parameter))
             {
                 return PatternResult.Manual(EfBulkReason.UpdateValueNotProvable,
-                    $"'{value}' may translate to SQL differently in EF Core (method calls, conditionals, server-side members).");
+                    $"'{EfBulkCall.Shown(value)}' may translate to SQL differently in EF Core (method calls, conditionals, server-side members, string "
+                    + "concatenation, decimal arithmetic).");
             }
 
             setters.Add((left.Identifier.ValueText, value.WithoutTrivia()));
@@ -78,7 +81,8 @@ public class UpdatePattern : IPattern
 
         if (setters.Count == 0)
         {
-            return PatternResult.Manual(EfBulkReason.UpdateFactoryShape, "the initializer sets no property; ExecuteUpdate needs at least one setter.");
+            return PatternResult.Manual(EfBulkReason.UpdateFactoryShape,
+                $"'{EfBulkCall.Shown(arguments[0])}': the initializer sets no property; ExecuteUpdate needs at least one setter.");
         }
 
         string settersName = FreeName(model, invocation.SpanStart, parameter.Name);
@@ -137,7 +141,10 @@ public class UpdatePattern : IPattern
         PostfixUnaryExpressionSyntax u when u.IsKind(SyntaxKind.SuppressNullableWarningExpression) => IsPlainValue(u.Operand, model, parameter),
         PrefixUnaryExpressionSyntax u when u.IsKind(SyntaxKind.UnaryMinusExpression) || u.IsKind(SyntaxKind.LogicalNotExpression) =>
             IsPlainValue(u.Operand, model, parameter),
+        // Council round 17, B4: no string concatenation (null handling differs per provider) and no decimal arithmetic (rounding and
+        // overflow follow the provider's column type, EfBulkSqlTests); numeric arithmetic, comparisons and logic on the rest.
         BinaryExpressionSyntax b => model.GetSymbolInfo(b).Symbol is not IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator }
+            && !IsStringOrDecimal(model.GetTypeInfo(b).Type) && !IsStringOrDecimal(model.GetTypeInfo(b.Left).Type) && !IsStringOrDecimal(model.GetTypeInfo(b.Right).Type)
             && IsPlainValue(b.Left, model, parameter) && IsPlainValue(b.Right, model, parameter),
         IdentifierNameSyntax or MemberAccessExpressionSyntax => IsPlainName(value, model, parameter),
         _ => false,
@@ -172,6 +179,12 @@ public class UpdatePattern : IPattern
             || IsPlainName(access.Expression, model, parameter) || access.Expression is ThisExpressionSyntax,
         _ => true,
     };
+
+    private static bool IsStringOrDecimal(ITypeSymbol? type)
+    {
+        ITypeSymbol? underlying = type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var inner] } ? inner : type;
+        return underlying?.SpecialType is SpecialType.System_String or SpecialType.System_Decimal;
+    }
 
     private static bool IsScalar(ITypeSymbol type)
     {

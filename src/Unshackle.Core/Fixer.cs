@@ -228,6 +228,7 @@ public class Fixer : IFixer
         }
 
         findings.AddRange(ProjectInfo(fix, original));
+        findings.AddRange(ProjectSummary(fix, original, findings));
         if (fix.ChangedCodeInfo is { Length: > 0 } changedCodeInfo && findings.Any(f => f.Line > 0 && f.Result is FixedResult))
         {
             findings.Add(FindingFactory.CreateFinding(original.FilePath ?? ".", 0, fix, ChangedCodeInfoPatternId, PatternResult.Note(changedCodeInfo)));
@@ -284,6 +285,19 @@ public class Fixer : IFixer
             .Where(p => p.Language == LanguageNames.CSharp && p.FilePath is not null)
             .GroupBy(p => p.FilePath!, StringComparer.OrdinalIgnoreCase)
             .SelectMany(g => fix.ProjectInfo(g.First()).Select(text => FindingFactory.CreateProjectFinding(g.Key, fix, PatternResult.Note(text))));
+
+    // TAAK-342, council round 17, B3: the fix's summary rows per project file, from the rows of that project's documents.
+    internal static IEnumerable<Finding> ProjectSummary(IFix fix, Solution solution, IReadOnlyList<Finding> findings) =>
+        solution.Projects
+            .Where(p => p.Language == LanguageNames.CSharp && p.FilePath is not null)
+            .GroupBy(p => p.FilePath!, StringComparer.OrdinalIgnoreCase)
+            .SelectMany(g =>
+            {
+                HashSet<string> documents = new(g.SelectMany(p => p.Documents).Select(d => d.FilePath ?? d.Name), StringComparer.OrdinalIgnoreCase);
+                return fix.ProjectSummary([.. findings.Where(f => f.Line > 0 && documents.Contains(f.FilePath))])
+                    .Select(result => FindingFactory.CreateProjectFinding(g.Key, fix, result));
+            })
+            .ToList();
 
     // One file with all its copies (one per target framework): its rows and its fixed text (null when it stays as it was).
     private static async Task<FileOutcome> FixFileCopiesAsync(

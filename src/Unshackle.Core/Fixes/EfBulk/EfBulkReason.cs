@@ -14,4 +14,7 @@ public enum EfBulkReason
 
     // A value or target in the initializer that EF Core may translate differently from the Z library (TAAK-342 council question 4).
     UpdateValueNotProvable,
+
+    // Project-level summary next to the per-call NoNativeExecute rows: upgrade EF Core first (council round 17, B3).
+    EfCoreBelow7,
 }

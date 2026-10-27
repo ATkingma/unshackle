@@ -30,7 +30,8 @@ public class DeletePattern : IPattern
         string target = s_names[name.Identifier.ValueText];
         if (!EfBulkCall.HasNative(model, "ExecuteDelete"))
         {
-            return PatternResult.Manual(EfBulkReason.NoNativeExecute, "ExecuteDelete needs EF Core 7+ with a relational provider.");
+            return PatternResult.Manual(EfBulkReason.NoNativeExecute,
+                $"'{EfBulkCall.Shown(invocation)}': ExecuteDelete needs EF Core 7+ with a relational provider.");
         }
 
         bool isAsync = target.EndsWith("Async", StringComparison.Ordinal);
@@ -42,6 +43,7 @@ public class DeletePattern : IPattern
         };
         return argumentsMap
             ? PatternResult.Fixed(EfBulkCall.Renamed(invocation, name, target), EfBulkCall.EfCoreNamespace)
-            : PatternResult.Manual(EfBulkReason.BatchOptions, "a batch builder (BatchSize, Executing, ...) has no ExecuteDelete equivalent.");
+            : PatternResult.Manual(EfBulkReason.BatchOptions,
+                $"'{EfBulkCall.Shown(invocation)}': {EfBulkCall.BatchOptions(invocation)} (BatchSize, Executing, ...) has no ExecuteDelete equivalent.");
     }
 }

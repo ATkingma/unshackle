@@ -195,7 +195,7 @@ public class CorpusRegressionTests
         IProjectFileStore projectFiles = Substitute.For<IProjectFileStore>();
         projectFiles.EditAsync(Arg.Any<IEnumerable<ProjectMigration>>(), Arg.Any<CancellationToken>()).Returns(
         [
-            new ProjectFileChange { FilePath = "/repo/Testing/Testing.csproj", OldText = "a", NewText = "b" },
+            new ProjectFileChange { FilePath = "/repo/Testing/Testing.csproj", OldText = "<Moq/>", NewText = "<Moq/><NSubstitute/>" },
             new ProjectFileChange { FilePath = "/repo/Unit/Unit.csproj", OldText = "a", NewText = "b" },
         ]);
         var fixer = new Fixer([new MoqFix(MoqReferences.NSubstituteAssembly)], projectFiles);
@@ -215,8 +215,73 @@ public class CorpusRegressionTests
         rows.Count(f => f.FilePath == "/repo/Unit/Unit.csproj").ShouldBe(1);
         rows.Count(f => f.FilePath == "/repo/Testing/Testing.csproj").ShouldBe(1);
         ManualResult helper = rows.Single(f => f.FilePath == "/repo/Testing/Testing.csproj").Result.ShouldBeOfType<ManualResult>();
-        helper.Reason.ShouldContain("a project that references it still uses it: /repo/Unit/Unit.csproj");
-        helper.Reason.ShouldNotContain("still used in this project");
+        helper.Reason.ShouldBe("Moq stays in this project because a project that references it still uses it: /repo/Unit/Unit.csproj; " +
+            "NSubstitute was added next to it. Migrate that project and run the fix again.");
+        helper.Dependents.ShouldBe(["/repo/Unit/Unit.csproj"]);
+        PartialRun.IsKeptPackageRow(rows.Single(f => f.FilePath == "/repo/Testing/Testing.csproj")).ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData(2, "/repo/Unit0/Unit0.csproj, /repo/Unit1/Unit1.csproj. Migrate those")]
+    [InlineData(7, "/repo/Unit0/Unit0.csproj, /repo/Unit1/Unit1.csproj, /repo/Unit2/Unit2.csproj, /repo/Unit3/Unit3.csproj, /repo/Unit4/Unit4.csproj and 2 more. Migrate those")]
+    public async Task Fixer_HelperKeptForSeveralDependents_RowCapsListAndResultKeepsAll(int count, string expected)
+    {
+        // Arrange: council round 14, M11: every keeping dependent in solution order; the row text names at most five.
+        var fixer = new Fixer([new MoqFix(MoqReferences.NSubstituteAssembly)], Substitute.For<IProjectFileStore>());
+        var testing = ProjectId.CreateNewId();
+        Solution solution = new AdhocWorkspace().CurrentSolution
+            .AddProject(Project(testing, "Testing"))
+            .AddDocument(DocumentId.CreateNewId(testing), "Helper.cs", "public interface IClock { int Now(); }", filePath: "/repo/Testing/Helper.cs");
+        for (int i = 0; i < count; i++)
+        {
+            var unit = ProjectId.CreateNewId();
+            solution = solution
+                .AddProject(Project(unit, $"Unit{i}").WithProjectReferences([new ProjectReference(testing)]))
+                .AddDocument(DocumentId.CreateNewId(unit), "Test.cs", "using Moq;\npublic class T { public void Use(Mock<IClock> clock) { } }", filePath: $"/repo/Unit{i}/Test.cs");
+        }
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "moq" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        ManualResult helper = report.Findings.Single(f => f.PatternId == Fixer.ProjectFilePatternId && f.FilePath == "/repo/Testing/Testing.csproj")
+            .Result.ShouldBeOfType<ManualResult>();
+        helper.Reason.ShouldContain(expected);
+        helper.Reason.ShouldNotContain("added next to it");
+        helper.Dependents.ShouldBe([.. Enumerable.Range(0, count).Select(i => $"/repo/Unit{i}/Unit{i}.csproj")]);
+    }
+
+    [Fact]
+    public async Task Fixer_ChangedCode_OneProxyInfoRow()
+    {
+        // Arrange: council round 14, M13 (B1).
+        const string code = """
+            using Moq;
+            public interface IClock { int Now(); }
+            public class T
+            {
+                public IClock A() => new Mock<IClock>().Object;
+                public IClock B() => new Mock<IClock>().Object;
+            }
+            """;
+
+        // Act
+        (_, FixReport report) = await FixAsync(code);
+
+        // Assert
+        Finding info = report.Findings.Single(f => f.PatternId == Fixer.ChangedCodeInfoPatternId);
+        info.Result.ShouldBe(new InfoResult(MoqFix.ProxyInfo));
+        info.Line.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Fixer_NothingChanged_NoProxyInfoRow()
+    {
+        // Act
+        (_, FixReport report) = await FixAsync("public class T { }");
+
+        // Assert
+        report.Findings.ShouldNotContain(f => f.PatternId == Fixer.ChangedCodeInfoPatternId);
     }
 
     [Fact]

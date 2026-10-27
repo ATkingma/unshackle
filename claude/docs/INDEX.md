@@ -96,7 +96,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/TAAK-325-automapper-generic-destination.md` | AutoMapper `ProjectTo<T>` on a type parameter closed per type argument (A12, not started) |
 | `claude/tasks/TAAK-329-transitive-package-loss.md` | Removing a package drops transitive dependencies user code relies on (found in TAAK-326 corpus) |
 | `claude/tasks/COUNCIL-round-14.md` | Council round 14 decisions (Moq kept rows, add-side using rule, B1) |
-| `claude/tasks/TAAK-333-council-14-followups.md` | Council round 14 follow-ups (M10-M13) |
+| `claude/tasks/archief/TAAK-333-council-14-followups.md` | Council round 14 follow-ups (M10-M13) |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |
 | `claude/tasks/TAAK-380-scout-identityserver.md` | Scout IdentityServer4 → OpenIddict/Duende (go/no-go research) |

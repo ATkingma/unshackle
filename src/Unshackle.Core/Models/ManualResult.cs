@@ -9,4 +9,8 @@ public record ManualResult(string Reason) : PatternResult
     // The typed reason code (council round 10, C1), for example "PolicyNotLocal"; null for a Manual result without one. Separate from
     // Kept: a code names why, Kept says whether the rest goes ahead. The reason then has no "Code: " prefix: the renderer prints it.
     public string? Code { get; init; }
+
+    // The full list of dependents a kept-for-dependent project row names (council round 14, M11): the row text caps it, the JSON report
+    // carries all of them. Null for every other Manual result.
+    public IReadOnlyList<string>? Dependents { get; init; }
 }

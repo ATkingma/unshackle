@@ -15,6 +15,7 @@ internal static class UsingDirectives
         IReadOnlyCollection<string> swappedTypes,
         IReadOnlyCollection<string> removedExtensionMethods,
         IReadOnlyCollection<string> addedTypes,
+        IReadOnlyCollection<string> fullNameRuleNamespaces,
         CancellationToken cancellationToken)
     {
         if (await document.GetSyntaxRootAsync(cancellationToken) is not CompilationUnitSyntax root
@@ -39,6 +40,14 @@ internal static class UsingDirectives
                 && await withMissing.GetSemanticModelAsync(cancellationToken) is SemanticModel withMissingModel)
             {
                 used.UnionWith(UsedRemovedNamespaces(withMissingRoot, withMissingModel, removedNamespaces, swappedTypes, cancellationToken));
+                // Council round 14, M12: a namespace whose every reference here is a full name from the root needs no using (IDE0005).
+                // Only the fix's own namespaces: a namespace a pattern asks for may serve a call that binds only later (generated code).
+                HashSet<string> needed = UsedNamespaces(withMissingRoot, withMissingModel, [], cancellationToken, fullyQualifiedNeedsNoUsing: true);
+                if (!MayNeedAddedUsing(withMissingRoot, withMissingModel, missing, swappedTypes, cancellationToken)
+                    && removedNamespaces.Concat(missing).Any(ns => NamesFromRoot(withMissingRoot, ns)))
+                {
+                    missing.RemoveAll(ns => fullNameRuleNamespaces.Contains(ns) && !needed.Contains(ns));
+                }
             }
         }
 
@@ -722,6 +731,58 @@ internal static class UsingDirectives
         return used;
     }
 
+    // True when the document writes a name of the namespace as its full name from the root (`Mediator.IRequest`, `global::Mediator.IRequest`).
+    private static bool NamesFromRoot(CompilationUnitSyntax root, string ns) =>
+        root.DescendantNodes(n => n is not UsingDirectiveSyntax).Any(n => n switch
+        {
+            QualifiedNameSyntax q => IsNamespaceText(q.Left, ns),
+            MemberAccessExpressionSyntax m => IsNamespaceText(m.Expression, ns),
+            _ => false,
+        });
+
+    private static bool IsNamespaceText(SyntaxNode node, string ns)
+    {
+        string text = node.ToString();
+        return string.Equals(text.StartsWith("global::", StringComparison.Ordinal) ? text["global::".Length..] : text, ns, StringComparison.Ordinal);
+    }
+
+    // A simple name that may need a new using: one that binds to nothing or ambiguously (its library is not referenced yet, or old and new
+    // usings are both in), a type the fix swaps (`Unit`, still the old library's while fixing) not written as a full name from the root, or a
+    // namespace written relative to a using. Any of them keeps every new using (conservative). The root of a full name is no such name.
+    private static bool MayNeedAddedUsing(
+        CompilationUnitSyntax root, SemanticModel model, List<string> namespaces, IReadOnlyCollection<string> swappedTypes, CancellationToken cancellationToken)
+    {
+        HashSet<string> roots = [.. namespaces.Select(ns => ns.Split('.')[0])];
+        foreach (SimpleNameSyntax name in root.DescendantNodes(n => n is not UsingDirectiveSyntax).OfType<SimpleNameSyntax>())
+        {
+            if (name.Parent is AliasQualifiedNameSyntax
+                || (name.Parent is QualifiedNameSyntax or MemberAccessExpressionSyntax && roots.Contains(name.Identifier.ValueText) && Left(name.Parent) == name))
+            {
+                continue;
+            }
+
+            ISymbol? symbol = model.GetSymbolInfo(name, cancellationToken).Symbol;
+            bool qualifiedRight = name.Parent is QualifiedNameSyntax { Right: var right } && right == name
+                || name.Parent is MemberAccessExpressionSyntax { Name: var member } && member == name;
+            // An unbound name may be an extension method of a new namespace (`services.AddMediator()`): only a full name from the root is safe.
+            if (symbol is null ? !(qualifiedRight && namespaces.Any(ns => IsNamespaceText(Left(name.Parent!)!, ns)))
+                : symbol is INamespaceSymbol ns ? !qualifiedRight && !string.Equals(ns.ToDisplayString(), name.ToString(), StringComparison.Ordinal)
+                : IsSwapped(symbol, swappedTypes) && !IsMemberOfReceiver(name, symbol, model, fullyQualifiedNeedsNoUsing: true, cancellationToken))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static ExpressionSyntax? Left(SyntaxNode node) => node switch
+    {
+        QualifiedNameSyntax q => q.Left,
+        MemberAccessExpressionSyntax m => m.Expression,
+        _ => null,
+    };
+
     // Namespaces the document still needs a using for: those of the types and members it binds to by simple name.
     private static HashSet<string> UsedNamespaces(
         CompilationUnitSyntax root, SemanticModel model, IReadOnlyCollection<string> swappedTypes, CancellationToken cancellationToken,
@@ -737,8 +798,8 @@ internal static class UsingDirectives
     // (corpus B3: `using Moq;` stayed for the Setup calls on a Mock<T> another library hands out, IDE0005). Likewise a type named through
     // its full name from the root (`Moq.Mock<T>`, `Moq.It.IsAny`) needs no using either (TAAK-330); a relative qualifier
     // (`Notifications.X` under `using MediatR;`) still does.
-    // Only the keep-or-remove decision for a removed using applies the full-name rule: whether the added usings come in still follows
-    // every name of the old namespace (a swapped `MediatR.IRequest` brings `using Mediator;`, proof QualifiedSwappedType).
+    // Both the keep-or-remove decision for a removed using and the add decision for a new one apply the full-name rule (council round 14,
+    // M12): a swapped `MediatR.IRequest` written as a full name brings no `using Mediator;` (proof QualifiedSwappedType).
     private static bool IsMemberOfReceiver(
         SimpleNameSyntax name, ISymbol symbol, SemanticModel model, bool fullyQualifiedNeedsNoUsing, CancellationToken cancellationToken)
     {

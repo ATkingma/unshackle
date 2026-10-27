@@ -100,4 +100,10 @@ public interface IFix
     /// </summary>
     /// <param name="project">A C# project of the original solution that lives in a file (the first copy of a multi-target project).</param>
     IReadOnlyList<string> ProjectInfo(Project project) => [];
+
+    /// <summary>
+    /// One fix-level Info row per run, added only when the run changed code (council round 14, M13), for example a behaviour difference
+    /// of the new library that no pattern can prove away. Null or empty (the default): none.
+    /// </summary>
+    string? ChangedCodeInfo => null;
 }

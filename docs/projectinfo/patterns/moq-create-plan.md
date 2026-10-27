@@ -68,6 +68,7 @@ mock and substitute provably answer the same.
 - The defaults table is checked by the run-time harness (council round 9, Q2) for the shapes in `_Runtime/`.
 - `TargetFrameworkUnsupported` (Q3): a project row through `IProjectFileMigration.ProjectBlockers` plus Manual in every pattern (from the preprocessor symbols); the project row does not yet block the `Package` swap (engine).
 - The strict defaults check makes many corpus mocks Manual until the setup rows land; that is intended.
+- Proxy identity (corpus B1, accepted limitation, council round 14 M13): a mock object is now an NSubstitute proxy, so a test that asserts its `GetType()` name or `ToString()` sees a different value. No Manual reason (any `.Object` may reach it); instead the Moq fix emits one fix-level Info row (`changed-code-info`) on every run that changed code: "Mock objects are now NSubstitute proxies; tests that assert a mock's GetType() name or ToString() will see a different value."
 
 ## Models
 

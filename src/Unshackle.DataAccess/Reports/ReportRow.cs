@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 using Unshackle.Core.Fixes.FluentAssertions.Patterns;
 using Unshackle.Core.Models;
 
@@ -19,6 +20,10 @@ public class ReportRow
 
     public required string Reason { get; init; }
 
+    // Every dependent of a kept-for-dependent project row (council round 14, M11); the reason text names at most five. Null otherwise.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? Dependents { get; init; }
+
     // One row per finding, except the calls of one custom assertion: one row (at the first call) with the count, because
     // the fix is one rewrite of the extension, not of every call.
     public static IEnumerable<ReportRow> FromAll(IEnumerable<Finding> findings)
@@ -38,6 +43,7 @@ public class ReportRow
         Pattern = row.Pattern,
         Status = row.Status,
         Reason = $"{count} call(s), first here. {row.Reason}",
+        Dependents = row.Dependents,
     };
 
     // The reason of a Manual result as the report shows it: the one Core rendering (council round 6, Q1), the code stays in the model.
@@ -60,6 +66,7 @@ public class ReportRow
             Pattern = finding.PatternId,
             Status = status,
             Reason = reason,
+            Dependents = (finding.Result as ManualResult)?.Dependents,
         };
     }
 }

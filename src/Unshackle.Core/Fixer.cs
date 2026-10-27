@@ -27,6 +27,9 @@ public class Fixer : IFixer
     // The header row of a report-only fix (council round 8, S2): an Info row, first in the report, that says "inventory only".
     public const string InventoryOnlyPatternId = "inventory-only";
 
+    // The one fix-level Info row of a run that changed code (council round 14, M13).
+    public const string ChangedCodeInfoPatternId = "changed-code-info";
+
     internal const string KeptPackageReason = " is still used in this project, so its package and global usings stay. ";
 
     internal const string KeptSharedPackageReason = " is not migrated but still uses ";
@@ -203,6 +206,11 @@ public class Fixer : IFixer
         }
 
         findings.AddRange(ProjectInfo(fix, original));
+        if (fix.ChangedCodeInfo is { Length: > 0 } changedCodeInfo && findings.Any(f => f.Line > 0 && f.Result is FixedResult))
+        {
+            findings.Add(FindingFactory.CreateFinding(original.FilePath ?? ".", 0, fix, ChangedCodeInfoPatternId, PatternResult.Note(changedCodeInfo)));
+        }
+
         return new FixReport { Solution = solution, Findings = findings, ProjectFileChanges = projectFileChanges };
     }
 
@@ -227,6 +235,25 @@ public class Fixer : IFixer
         }
 
         return solution;
+    }
+
+    // Council round 14, M11: at most this many dependents in the row text; the JSON report has them all.
+    internal const int MaxDependentsInRow = 5;
+
+    internal static string DependentList(IReadOnlyList<string> dependents) =>
+        dependents.Count <= MaxDependentsInRow
+            ? string.Join(", ", dependents)
+            : $"{string.Join(", ", dependents.Take(MaxDependentsInRow))} and {dependents.Count - MaxDependentsInRow} more";
+
+    // Council round 14, M10: the kept row covers the project file's own edit, so it names the packages that edit added next to the old one.
+    private static string AddedNextTo(ProjectMigration migration, IReadOnlyList<ProjectFileChange> changes)
+    {
+        ProjectFileChange? change = changes.FirstOrDefault(c => string.Equals(c.FilePath, migration.ProjectPath, StringComparison.OrdinalIgnoreCase));
+        List<string> added = change is null
+            ? []
+            : [.. migration.Package.AddedPackages.Select(p => p.Name).Where(name => !change.OldText.Contains(name, StringComparison.OrdinalIgnoreCase)
+                && change.NewText.Contains(name, StringComparison.OrdinalIgnoreCase))];
+        return added.Count == 0 ? string.Empty : $"; {string.Join(" and ", added)} {(added.Count == 1 ? "was" : "were")} added next to it";
     }
 
     // Council round 10, C2: the fix-level Info rows, once per project file (a multi-target project asks its first copy), in project order.
@@ -462,9 +489,10 @@ public class Fixer : IFixer
         }
 
         findings.AddRange(migrations.Where(m => m.KeepRemovedPackage).Select(m => FindingFactory.CreateProjectFinding(m.ProjectPath, fix,
-            PatternResult.Manual(m.KeptForDependent is string dependent
-                ? $"{package.RemovedPackage}{KeptForDependentReason}{dependent}. Migrate that project and run the fix again."
-                : $"{package.RemovedPackage}{KeptPackageReason}Fix the manual findings and run the fix again."))));
+            m.KeptForDependents.Count > 0
+                ? new ManualResult($"{package.RemovedPackage}{KeptForDependentReason}{DependentList(m.KeptForDependents)}{AddedNextTo(m, changes)}. " +
+                    (m.KeptForDependents.Count == 1 ? "Migrate that project and run the fix again." : "Migrate those projects and run the fix again.")) { Dependents = m.KeptForDependents }
+                : PatternResult.Manual($"{package.RemovedPackage}{KeptPackageReason}Fix the manual findings and run the fix again."))));
         // A kept project's own file edit (the new package next to the old one) is covered by its kept row: one row per project file.
         HashSet<string> keptRows = new(migrations.Where(m => m.KeepRemovedPackage).Select(m => m.ProjectPath), StringComparer.OrdinalIgnoreCase);
         // The project-file row alone says that something is left, not where. A file with a Manual finding already has its explanation.

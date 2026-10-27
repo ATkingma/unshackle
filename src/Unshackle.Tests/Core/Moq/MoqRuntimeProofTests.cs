@@ -42,7 +42,7 @@ public class MoqRuntimeProofTests
         string afterOutcome = Run(name + "_after", after, MoqReferences.NSubstitute);
 
         // Assert
-        report.Findings.ShouldAllBe(f => f.Result is FixedResult, string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
+        report.Findings.ShouldAllBe(f => f.Result is FixedResult || f.PatternId == Fixer.ChangedCodeInfoPatternId, string.Join(" | ", report.Findings.Select(f => f.Result is ManualResult m ? m.Reason : f.PatternId)));
         after.ShouldNotContain("using Moq;", customMessage: after);
         afterOutcome.ShouldBe(beforeOutcome, after);
         if (before.StartsWith(ExpectPrefix, StringComparison.Ordinal))

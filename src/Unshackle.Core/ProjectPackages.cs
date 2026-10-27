@@ -55,11 +55,11 @@ internal static class ProjectPackages
     private static List<ProjectMigration> KeepForDependents(Solution solution, List<ProjectMigration> migrations)
     {
         HashSet<string> keeping = [.. migrations.Where(m => m.KeepRemovedPackage).Select(m => m.ProjectPath)];
-        // Referenced project path -> the first keeping project (solution order) that needs it, named in the report row.
-        var needed = new Dictionary<string, string>(StringComparer.Ordinal);
-        var seen = new HashSet<ProjectId>();
+        // Referenced project path -> every keeping project (solution order) that needs it, named in the report row (council round 14, M11).
+        var needed = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         foreach (Project root in solution.Projects.Where(p => p.FilePath is not null && keeping.Contains(p.FilePath)))
         {
+            var seen = new HashSet<ProjectId>();
             var pending = new Stack<Project>([root]);
             while (pending.Count > 0)
             {
@@ -69,7 +69,11 @@ internal static class ProjectPackages
                     {
                         if (referenced.FilePath is not null)
                         {
-                            needed.TryAdd(referenced.FilePath, root.FilePath!);
+                            List<string> dependents = needed.TryGetValue(referenced.FilePath, out List<string>? list) ? list : needed[referenced.FilePath] = [];
+                            if (!dependents.Contains(root.FilePath!, StringComparer.Ordinal))
+                            {
+                                dependents.Add(root.FilePath!);
+                            }
                         }
 
                         pending.Push(referenced);
@@ -80,12 +84,12 @@ internal static class ProjectPackages
 
         return
         [
-            .. migrations.Select(m => m.KeepRemovedPackage || !needed.TryGetValue(m.ProjectPath, out string? dependent) ? m : new ProjectMigration
+            .. migrations.Select(m => m.KeepRemovedPackage || !needed.TryGetValue(m.ProjectPath, out List<string>? dependents) ? m : new ProjectMigration
             {
                 ProjectPath = m.ProjectPath,
                 Package = m.Package,
                 KeepRemovedPackage = true,
-                KeptForDependent = dependent,
+                KeptForDependents = dependents,
                 RemovedNamespaces = m.RemovedNamespaces,
                 AddedNamespaces = m.AddedNamespaces,
             }),

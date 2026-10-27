@@ -93,7 +93,7 @@ internal static class FileFixer
 
         Document current = working.GetDocument(documentId)!;
         working = await UsingDirectives.UpdateAsync(
-            current, requiredNamespaces, fix.RemovedNamespaces, swappedTypes, fix.RemovedExtensionMethods, fix.AddedTypes, cancellationToken);
+            current, requiredNamespaces, fix.RemovedNamespaces, swappedTypes, fix.RemovedExtensionMethods, fix.AddedTypes, fix.AddedNamespaces, cancellationToken);
         Document updated = working.GetDocument(documentId)!;
         SyntaxNode updatedRoot = (await updated.GetSyntaxRootAsync(cancellationToken))!;
         SemanticModel currentModel = (await current.GetSemanticModelAsync(cancellationToken))!;

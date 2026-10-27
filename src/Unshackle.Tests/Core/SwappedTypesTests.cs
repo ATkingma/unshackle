@@ -81,6 +81,28 @@ public class SwappedTypesTests
             Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData("", false)]
+    [InlineData("using MediatR;\n\n", true)]
+    public async Task FixAsync_QualifiedSwappedType_AddsUsingOnlyForUnqualifiedReference(string beforeUsing, bool addsUsing)
+    {
+        // Arrange: council round 14, M12: a full name from the root needs no using on the add side either; one unqualified
+        // rewritten reference (the handler's `IRequestHandler`) still brings it.
+        string handler = beforeUsing.Length == 0 ? "" : "\npublic class Handler : IRequestHandler<Query, string>\n{\n" +
+            "    public System.Threading.Tasks.Task<string> Handle(Query request, System.Threading.CancellationToken cancellationToken) => System.Threading.Tasks.Task.FromResult(\"\");\n}\n";
+        string code = beforeUsing + "namespace Proofs;\n\npublic record Query(int Id)\n    : MediatR.IRequest<string>;\n" + handler;
+        var fixer = new Fixer([new MediatRFix()]);
+        Solution solution = TestSolution.Create(code, TestReferences.MediatR);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "mediatr" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);
+        text.Contains("using Mediator;", StringComparison.Ordinal).ShouldBe(addsUsing);
+        text.ShouldContain(": Mediator.IRequest<string>;");
+    }
+
     [Fact]
     public async Task FixAsync_StreamRequestHandler_CompilesAgainstMediator()
     {

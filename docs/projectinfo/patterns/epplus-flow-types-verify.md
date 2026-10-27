@@ -6,7 +6,7 @@
 | **Status**    | Verified                                                                           |
 | **Generated** | 2026-10-27 by KingmaDoc skill (by hand, `kingmadoc` not available)                 |
 
-> Verified by an AI agent against the code of the TAAK-327 worktree branch; REQ-7 to REQ-12 against the TAAK-336 branch.
+> Verified by an AI agent against the code of the TAAK-327 worktree branch; REQ-7 to REQ-12 against the TAAK-336 branch; REQ-15 to REQ-17 against the TAAK-346 branch.
 
 ## Requirements
 
@@ -26,6 +26,9 @@
 | REQ-12 | Met    | `EPPlusFixTests.Fix_NodeLeftManualByFlowTypesOrAddress_OneRowPerNode` |
 | REQ-13 | Met    | proof `FlowTypes/range-parameter` (after); `FlowTypes/_Combined/range-parameter` (combined + harness) (TAAK-337) |
 | REQ-14 | Met    | proof `FlowTypes/range-parameter-unfixed-use` (manual) (TAAK-337) |
+| REQ-15 | Met    | proof `Package/rename-to-helper-added` (manual) (TAAK-346) |
+| REQ-16 | Met    | `EPPlusFixTests.Fix_FlowTypesNodeWithPublicApiSignature_OneE6RowWithFlowReason`; proof `FlowTypes/public-member` now uses an internal type (TAAK-346) |
+| REQ-17 | Met    | proof `FlowTypes/chain-failing-member` (manual, names the failing member's use) (TAAK-346) |
 
 ## Build and tests
 

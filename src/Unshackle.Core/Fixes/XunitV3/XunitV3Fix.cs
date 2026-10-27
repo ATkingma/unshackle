@@ -56,7 +56,14 @@ public class XunitV3Fix : IFix, IProjectFileMigration
             edits.Add(new PackageRenameEdit { OldName = "xunit", NewName = "xunit.v3", Version = V3Version });
             edits.Add(new PackageRenameEdit { OldName = "xunit.core", NewName = "xunit.v3", Version = V3Version });
             // X3: xunit.v3 needs runner 3.x to run under dotnet test/VSTest.
-            edits.Add(new PackageVersionEdit { Name = "xunit.runner.visualstudio", From = RunnerFromVersion, To = RunnerVersion });
+            // X9: a 1.x runner (pre-netcore era) is not raised automatically; an Info row says to update it by hand.
+            edits.Add(new PackageVersionEdit
+            {
+                Name = "xunit.runner.visualstudio",
+                From = RunnerFromVersion,
+                To = RunnerVersion,
+                BelowFromInfo = $"a 1.x runner cannot run xunit.v3 tests; update it to {RunnerVersion} by hand.",
+            });
         }
         else if (XunitV3Assemblies.ReferencesExecution(project))
         {
@@ -90,5 +97,9 @@ public class XunitV3Fix : IFix, IProjectFileMigration
             "becomes xunit.v3.extensibility.core plus xunit.v3.assert and OutputType stays; if it runs tests, set OutputType Exe and reference xunit.v3 by hand."];
     }
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new AbstractionsNamespacePattern(), new AsyncLifetimePattern(), new AsyncVoidTestPattern()];
+    public IReadOnlyList<IPattern> Patterns { get; } =
+    [
+        new AbstractionsNamespacePattern(), new AsyncLifetimePattern(), new AsyncVoidTestPattern(), new RecordExceptionAsyncPattern(),
+        new TypeNameAttributePattern(), new ExtensibilityPattern(),
+    ];
 }

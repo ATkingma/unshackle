@@ -90,6 +90,69 @@ public class XunitV3PatternTests
         result.ShouldBeOfType<FixedResult>().NewNodes.ShouldHaveSingleItem().ToString().ShouldBe("global using Xunit;");
     }
 
+    [Fact]
+    public void RecordExceptionAsync_Find_OwnRecordClassOrParenthesizedAwait_NotFound()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Parse("using System; using System.Threading.Tasks;"
+            + " public static class Record { public static Task<Exception> ExceptionAsync(Func<Task> f) => Task.FromResult<Exception>(null); }"
+            + " public class T { public async Task A() { var e = Record.ExceptionAsync(() => Task.CompletedTask); var x = await (Xunit.Record.ExceptionAsync(() => Task.CompletedTask)); } }");
+
+        // Act
+        int found = new RecordExceptionAsyncPattern().Find(root, model).Count();
+
+        // Assert
+        found.ShouldBe(0);
+    }
+
+    [Theory]
+    [InlineData("[assembly: TestCaseOrderer(\"O\", \"Other\")] public class O { }", "not a type of this project")]
+    [InlineData("[assembly: TestCaseOrderer(\"Missing\", \"Test\")]", "not a type of this project")]
+    public void TypeNameAttribute_NotOwnConstantType_Manual(string code, string why)
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Parse("using Xunit; " + code);
+        var pattern = new TypeNameAttributePattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).Single(), model);
+
+        // Assert
+        ManualResult manual = result.ShouldBeOfType<ManualResult>();
+        manual.Code.ShouldBe(nameof(XunitV3Reason.TypeNameArgument));
+        manual.Reason.ShouldContain(why);
+    }
+
+    [Fact]
+    public void TypeNameAttribute_EnumConstructor_NotFound()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Parse("using Xunit; [assembly: CollectionBehavior(CollectionBehavior.CollectionPerClass)]");
+
+        // Act
+        int found = new TypeNameAttributePattern().Find(root, model).Count();
+
+        // Assert
+        found.ShouldBe(0);
+    }
+
+    [Fact]
+    public void Extensibility_Find_FactSubclassNotFoundDiscovererAttributeFound()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Parse("using Xunit; using Xunit.Sdk;"
+            + " public class SlowFactAttribute : FactAttribute { }"
+            + " [XunitTestCaseDiscoverer(\"D\", \"Test\")] public class RetryFactAttribute : FactAttribute { }"
+            + " public class Data : TheoryData<int> { }");
+        var pattern = new ExtensibilityPattern();
+
+        // Act
+        List<PatternResult> results = [.. pattern.Find(root, model).Select(n => pattern.Rewrite(n, model))];
+
+        // Assert
+        results.ShouldHaveSingleItem().ShouldBeOfType<ManualResult>().Reason.ShouldContain("RetryFactAttribute builds on the v2 extensibility API (Xunit.Sdk.XunitTestCaseDiscovererAttribute)");
+    }
+
     private static (SyntaxNode Root, SemanticModel Model) Parse(string code)
     {
         SyntaxTree tree = CSharpSyntaxTree.ParseText(code);

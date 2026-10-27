@@ -43,6 +43,9 @@ RetryStrategyOptions<HttpResponseMessage> { ... }))` with the same filter, count
   which also retries 429 and timeouts (proof `transient-lambda-429`: 429 is not retried, before and after).
 - **REQ-3**: WHEN `AddTransientHttpErrorPolicy(p => ...)` THE SYSTEM SHALL treat `p` as `HandleTransientHttpError()` and keep the
   clauses chained on it (`OrResult`).
+- **REQ-3b**: WHEN `OrTransientHttpStatusCode()` or `OrTransientHttpError()` follows a transient filter (`p` of
+  `AddTransientHttpErrorPolicy`, or `HandleTransientHttpError()`) THE SYSTEM SHALL write each transient clause
+  (`Handle<HttpRequestException>()`, `HandleResult(5xx || 408)`) only once; user clauses carry over verbatim (proof `transient-or-status`).
 - **REQ-4**: THE SYSTEM SHALL give equal run-time traces before (Microsoft.Extensions.Http.Polly 10.0.13, Polly 7.2.4) and after
   (Microsoft.Extensions.Http.Resilience 10.11.0) with a fake primary handler (proofs `inline-transient`, `transient-lambda-429`).
 - **REQ-5**: WHEN the client chain has another handler call THE SYSTEM SHALL report Manual `HandlerOrderNotProvable` (proof `two-handlers`).

@@ -21,7 +21,7 @@ internal static class PollyPredicate
             if (current is IdentifierNameSyntax && model.GetSymbolInfo(current).Symbol is IParameterSymbol { ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.AnonymousFunction } lambda }
                 && IsTransientPolicyLambda(lambda))
             {
-                return PollyPlan.OfText($"new PredicateBuilder<{resultType}>(){Transient(response)}" + string.Concat(clauses));
+                return PollyPlan.OfText($"new PredicateBuilder<{resultType}>()" + Concat([.. TransientClauses(response), .. clauses], response));
             }
 
             if (current is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax access } invocation
@@ -36,9 +36,9 @@ internal static class PollyPredicate
                 switch (method.Name)
                 {
                     case "HandleTransientHttpError" when method.IsStatic && method.Parameters.Length == 0:
-                        return PollyPlan.OfText($"new PredicateBuilder<{resultType}>(){Transient(response)}" + string.Concat(clauses));
+                        return PollyPlan.OfText($"new PredicateBuilder<{resultType}>()" + Concat([.. TransientClauses(response), .. clauses], response));
                     case "OrTransientHttpError":
-                        clauses.Insert(0, Transient(response));
+                        clauses.InsertRange(0, TransientClauses(response));
                         current = access.Expression;
                         continue;
                     case "OrTransientHttpStatusCode":
@@ -84,7 +84,17 @@ internal static class PollyPredicate
 
     private const string HttpExtensionsAssembly = "Polly.Extensions.Http";
 
-    private static string Transient(string response) => $".Handle<HttpRequestException>(){TransientStatus(response)}";
+    private static string[] TransientClauses(string response) => [".Handle<HttpRequestException>()", TransientStatus(response)];
+
+    // A clause the transient filter already wrote (OrTransientHttpStatusCode after AddTransientHttpErrorPolicy's
+    // HandleTransientHttpError, for example) is written once: OR with an identical, side-effect-free clause changes nothing.
+    // Only these generated clauses are deduplicated; user clauses carry over verbatim.
+    private static string Concat(List<string> clauses, string response)
+    {
+        string[] generated = TransientClauses(response);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        return string.Concat(clauses.Where(c => !generated.Contains(c, StringComparer.Ordinal) || seen.Add(c)));
+    }
 
     private static string TransientStatus(string response) =>
         $".HandleResult({response} => (int){response}.StatusCode >= 500 || {response}.StatusCode == HttpStatusCode.RequestTimeout)";

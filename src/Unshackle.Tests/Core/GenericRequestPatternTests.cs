@@ -47,6 +47,21 @@ public class GenericRequestPatternTests
     }
 
     [Fact]
+    public async Task RewriteAsync_OpenCreationInGenericCode_ManualCallersNotFollowed()
+    {
+        // Arrange
+        (Solution solution, DocumentId declaration) = CreateSolution(
+            "using MediatR;\nusing Library;\nclass Use { void M<T>(ISender s, T r) where T : IRequest<int> { s.Send(new Retried<T, int>(r)); } }");
+        (GenericRequestPattern pattern, SyntaxNode node, SemanticModel model) = await ArrangeAsync(solution, declaration);
+
+        // Act
+        PatternResult result = await pattern.RewriteAsync(node, model, solution, TestContext.Current.CancellationToken);
+
+        // Assert
+        result.ShouldBeOfType<ManualResult>().Reason.ShouldContain("Retried: open type argument in generic code; callers not followed");
+    }
+
+    [Fact]
     public void Find_OnlyBaseOfConcreteSubclass_FindsTheDeclaration()
     {
         // Arrange

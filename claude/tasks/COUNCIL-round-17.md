@@ -50,4 +50,4 @@ Follow-ups: TAAK-343 (T1-T3), TAAK-344 (M15), TAAK-342 steps 4-9 (B1-B8). TAAK-3
 - `claude/tasks/archief/TAAK-338-automapper-closure-regressions.md`
 - `claude/tasks/TAAK-342-ef-bulk.md`
 - `claude/tasks/TAAK-343-transitive-pin-followups.md`
-- `claude/tasks/TAAK-344-mediatr-generic-request-closure.md`
+- `claude/tasks/archief/TAAK-344-mediatr-generic-request-closure.md`

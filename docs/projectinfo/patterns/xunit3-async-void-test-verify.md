@@ -11,7 +11,7 @@
 ## Requirements
 
 Code: `src/Unshackle.Core/Fixes/XunitV3/Patterns/AsyncVoidTestPattern.cs`, registration in `XunitV3Fix.cs`.
-Proofs: `src/Unshackle.Tests/Proofs/XunitV3/AsyncVoidTest/` (`ProofTests`: before compiles against xUnit 2.9.3, after against xunit.v3 4.0.2).
+Proofs: `src/Unshackle.Tests/Proofs/XunitV3/AsyncVoidTest/` (`ProofTests`: before compiles against xUnit 2.9.3, after against xunit.v3 3.2.2).
 
 | REQ | Verdict | Evidence |
 | --- | --- | --- |

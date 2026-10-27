@@ -27,14 +27,15 @@ files_expected:
 
 **In scope**: implicit and explicit implementations, overrides of an implementing method, `async` and non-async bodies (block or expression).
 
-**Out of scope**: classes that also implement `IDisposable` or `IAsyncDisposable` (Manual `DualDisposal`: v3 `IAsyncLifetime` extends `IAsyncDisposable` and xUnit then calls only `DisposeAsync`); methods used as a `Task` anywhere in the compilation instead of directly awaited (Manual `LifetimeResultUsed`); an aliased return type (Manual `UnsupportedShape`).
+**Out of scope**: classes that also implement `IDisposable` or `IAsyncDisposable` (Manual `DualDisposal`: v3 `IAsyncLifetime` extends `IAsyncDisposable` and xUnit then calls only `DisposeAsync`); methods used as a `Task` anywhere in the compilation other than directly awaited or one direct use (Manual `LifetimeResultUsed`); an aliased return type (Manual `UnsupportedShape`).
 
 ## Requirements
 
 - **REQ-1**: WHEN an `async Task` lifetime method is found THE SYSTEM SHALL change its return type to `ValueTask` (keeping a qualified form), and an explicit `IAsyncLifetime.DisposeAsync` to `IAsyncDisposable.DisposeAsync` (v3 inherits it from there) (proof `async-methods`, `explicit`).
 - **REQ-2**: WHEN a non-async lifetime method returns `Task.CompletedTask` or another task THE SYSTEM SHALL return `default` or `new ValueTask(task)` (proof `returned-task`, `explicit`).
 - **REQ-3**: WHEN the class also implements `IDisposable` or `IAsyncDisposable` THE SYSTEM SHALL report Manual `DualDisposal` (proof `disposable`).
-- **REQ-4**: WHEN the method (or the interface member) is used other than as `await x.M()` THE SYSTEM SHALL report Manual `LifetimeResultUsed` (proof `result-used`).
+- **REQ-4**: WHEN the method (or the interface member) is used other than as `await x.M()` or a direct use (REQ-6) THE SYSTEM SHALL report Manual `LifetimeResultUsed` (proof `result-used`: `.Wait()`, `.ContinueWith`).
+- **REQ-6** (council round 18, X6): WHEN a call's result is used once, directly (a variable initializer, the right side of an assignment, a return value or an argument, outside a lifetime method of its own and not returned from a lambda) THE SYSTEM SHALL append `.AsTask()` to the call and keep the declaration Fixed (proof `as-task`).
 - **REQ-5**: WHEN a base class implements the interface virtually THE SYSTEM SHALL rewrite the base method and its overrides alike (proof unit test `AsyncLifetime_Find_OverrideOfAnImplementation_Found`).
 
 ## Assumptions

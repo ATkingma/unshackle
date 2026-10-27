@@ -10,5 +10,9 @@ public class QueueFixture : IAsyncLifetime
 
 public static class Runner
 {
-    public static Task RunAsync(QueueFixture fixture) => Task.WhenAll(fixture.InitializeAsync(), fixture.DisposeAsync());
+    public static void Run(QueueFixture fixture)
+    {
+        fixture.InitializeAsync().Wait();
+        fixture.DisposeAsync().ContinueWith(t => t.Exception);
+    }
 }

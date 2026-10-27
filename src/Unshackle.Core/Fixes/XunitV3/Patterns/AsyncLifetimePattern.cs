@@ -10,6 +10,8 @@ namespace Unshackle.Core.Fixes.XunitV3.Patterns;
 /// <summary>
 /// <c>Task InitializeAsync()</c>/<c>Task DisposeAsync()</c> of an <c>IAsyncLifetime</c> implementation (and overrides of one) →
 /// <c>ValueTask</c>. A non-async body returns <c>default</c> for <c>Task.CompletedTask</c> and <c>new ValueTask(task)</c> otherwise.
+/// A call whose result is used once, directly (assigned, returned or passed), gets <c>.AsTask()</c> (council round 18, X6); any other
+/// use that is not a direct <c>await</c> keeps the method Manual (<see cref="XunitV3Reason.LifetimeResultUsed"/>).
 /// </summary>
 public class AsyncLifetimePattern : IPattern
 {
@@ -27,13 +29,30 @@ public class AsyncLifetimePattern : IPattern
 
     public string Description => "IAsyncLifetime Task InitializeAsync/DisposeAsync → ValueTask";
 
-    public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        root.DescendantNodes().OfType<MethodDeclarationSyntax>()
+    public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        IEnumerable<SyntaxNode> declarations = root.DescendantNodes().OfType<MethodDeclarationSyntax>()
             .Where(m => s_methods.Contains(m.Identifier.ValueText) && m.ParameterList.Parameters.Count == 0)
             .Where(m => model.GetDeclaredSymbol(m) is IMethodSymbol method && LifetimeMember(method) is not null);
+        IEnumerable<SyntaxNode> calls = root.DescendantNodes().OfType<SimpleNameSyntax>()
+            .Where(n => s_methods.Contains(n.Identifier.ValueText))
+            .Select(n => DirectUse(n, model))
+            .OfType<InvocationExpressionSyntax>()
+            .Where(i => model.GetSymbolInfo(i).Symbol is IMethodSymbol method && BecomesValueTask(method));
+        return declarations.Concat(calls);
+    }
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
+        if (node is InvocationExpressionSyntax call)
+        {
+            // X6: the result was a Task and is used once, where it is: as a Task again it keeps every caller building.
+            InvocationExpressionSyntax asTask = SyntaxFactory.InvocationExpression(SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression, call.WithoutTrivia(), SyntaxFactory.IdentifierName("AsTask")));
+            return PatternResult.Fixed(asTask.WithTriviaFrom(call));
+        }
+
         if (node is not MethodDeclarationSyntax declaration || model.GetDeclaredSymbol(declaration) is not IMethodSymbol method
             || LifetimeMember(method) is not IMethodSymbol member)
         {
@@ -99,6 +118,53 @@ public class AsyncLifetimePattern : IPattern
         return null;
     }
 
+    // A lifetime method that this fix turns into ValueTask: one declared in the solution, or the IAsyncLifetime member itself.
+    private static bool BecomesValueTask(IMethodSymbol method)
+    {
+        method = method.OriginalDefinition;
+        if (method.ContainingType.ToDisplayString() == LifetimeInterface && XunitV3Assemblies.IsFrom(method, XunitV3Assemblies.Core))
+        {
+            return true;
+        }
+
+        return method.DeclaringSyntaxReferences.Length > 0 && LifetimeMember(method) is not null;
+    }
+
+    // X6: the invocation of the name when its result is used once, directly: a variable initializer, the right side of an assignment, a
+    // return value or an argument, outside a lifetime method of its own (whose returns the declaration rewrite wraps). Null otherwise.
+    private static InvocationExpressionSyntax? DirectUse(SimpleNameSyntax name, SemanticModel model)
+    {
+        SyntaxNode callee = name.Parent is MemberAccessExpressionSyntax access && access.Name == name ? access : name;
+        if (callee.Parent is not InvocationExpressionSyntax invocation || invocation.Expression != callee)
+        {
+            return null;
+        }
+
+        bool direct = invocation.Parent switch
+        {
+            EqualsValueClauseSyntax => true,
+            AssignmentExpressionSyntax assignment => assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) && assignment.Right == invocation,
+            ReturnStatementSyntax or ArgumentSyntax => true,
+            ArrowExpressionClauseSyntax arrow => arrow.Parent is not AnonymousFunctionExpressionSyntax,
+            _ => false,
+        };
+        if (!direct)
+        {
+            return null;
+        }
+
+        SyntaxNode? owner = invocation.Ancestors().FirstOrDefault(a => a is BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax
+            or BasePropertyDeclarationSyntax or BaseFieldDeclarationSyntax);
+        if (owner is AnonymousFunctionExpressionSyntax && invocation.Parent is ReturnStatementSyntax or ArrowExpressionClauseSyntax)
+        {
+            return null;
+        }
+
+        return owner is MethodDeclarationSyntax method && model.GetDeclaredSymbol(method) is IMethodSymbol symbol && LifetimeMember(symbol) is not null
+            ? null
+            : invocation;
+    }
+
     private static TypeSyntax? ValueTaskType(TypeSyntax returnType) => returnType switch
     {
         IdentifierNameSyntax { Identifier.ValueText: "Task" } => SyntaxFactory.IdentifierName("ValueTask"),
@@ -133,7 +199,8 @@ public class AsyncLifetimePattern : IPattern
             .WithTriviaFrom(expression);
     }
 
-    // Every lifetime method or IAsyncLifetime member that the compilation names other than as `await x.M()` (or `await x.M().ConfigureAwait(..)`).
+    // Every lifetime method or IAsyncLifetime member that the compilation names other than as `await x.M()` (or `await x.M().ConfigureAwait(..)`)
+    // or a direct use that gets .AsTask() (X6).
     private static HashSet<ISymbol> NonAwaited(Compilation compilation)
     {
         var symbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
@@ -141,7 +208,7 @@ public class AsyncLifetimePattern : IPattern
         {
             SemanticModel model = compilation.GetSemanticModel(tree);
             foreach (SimpleNameSyntax name in tree.GetRoot().DescendantNodes().OfType<SimpleNameSyntax>()
-                .Where(n => s_methods.Contains(n.Identifier.ValueText) && !IsAwaited(n)))
+                .Where(n => s_methods.Contains(n.Identifier.ValueText) && !IsAwaited(n) && DirectUse(n, model) is null))
             {
                 if (model.GetSymbolInfo(name).Symbol is IMethodSymbol method)
                 {

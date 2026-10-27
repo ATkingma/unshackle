@@ -32,11 +32,16 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
   netstandard test projects; Info row about `xunit.runner.visualstudio` ≥ 3.0
 - [x] 3. Patterns with proofs + KingmaDoc: `xunit3.abstractions-namespace`, `xunit3.async-lifetime`, `xunit3.async-void-test`
 - [x] 4. Unit tests `src/Unshackle.Tests/Core/XunitV3/`
-- [ ] 5a. X2: switch the target to xunit.v3 3.2.x (MTP v1) and the proof references; 4.x opt-in recorded as a later option after checking its readme for VSTest
-- [ ] 5b. X4: test project = `Microsoft.NET.Test.Sdk` AND test attributes; otherwise no `Exe`, Info row (unit tests)
-- [ ] 5c. X6: `.AsTask()` Fixed for a lifetime call result used exactly once directly (proof); other uses stay `LifetimeResultUsed`
-- [ ] 5d. X1: run summary lists blocking projects and their reasons (shared with TAAK-340 3a)
-- [ ] 5e. X3: engine edit `PackageVersionEdit` (Name, From, To) incl. CPM; replaces the workaround in step 6
+- [x] 5a. X2: target xunit.v3 3.2.2 (latest 3.2.x on nuget.org, 2026-10-27; `XunitV3Fix.V3Version`). The proofs' "after" compiles against
+  3.2.2 assemblies fetched by `PackageDownload` into the output folder `XunitV3/` (the test project itself stays on 4.0.2). 4.x opt-in: later
+- [x] 5b. X4: test project = `xunit` package AND `Microsoft.NET.Test.Sdk` (seen as `Microsoft.TestPlatform.CoreUtilities`/`ObjectModel`/
+  `CodeCoverage.Shim` references) AND an attribute deriving from `Xunit.FactAttribute`. Otherwise no `Exe`, `xunit`/`xunit.core` →
+  `xunit.v3.extensibility.core` (+ `xunit.v3.assert` add when v2 assert was referenced), and an Info row naming which sign is missing
+- [x] 5c. X6: `.AsTask()` on a direct use (initializer, assignment, return, argument); proof `as-task`; `result-used` now `.Wait()`/`.ContinueWith`
+- [x] 5d. X1: `FixReport.BlockingProjects` (all-or-nothing revert) + `IConsoleView.ShowBlockingProjects` after the summary
+- [x] 5e. X3: `PackageVersionEdit` (Name, From, To): bumps a plain version in [From, To) on the reference, a shared props file (G3 rules), or the
+  central `PackageVersion` (only when every project under it that references the package is loaded and unblocked, else Info naming them);
+  a non-plain version (`$(Prop)`, range) stays with an Info row. xunit3 test projects bump `xunit.runner.visualstudio` 2.0.0+ → 3.1.5 (step 6 runner part done)
 - [ ] 5. Remaining patterns: `Record.ExceptionAsync` (ValueTask), `[PropertyData]` → `[MemberData]`, string-based `[CollectionBehavior]`/
   `[TestCaseOrderer]`/`[TestFrameworkAttribute]` → `typeof(...)`, Manual inventory of extensibility (custom `DataAttribute`, discoverers,
   `Xunit.Sdk` runners), `TheoryData` / `SkipException` differences
@@ -65,6 +70,14 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
 6. **Non-awaited lifetime calls** (`Task t = f.InitializeAsync()`): built as Manual `LifetimeResultUsed`; `.AsTask()` would be a mechanical
    Fixed alternative.
    **Decision (council 18 X6: Fixed `.AsTask()` only when the result is used exactly once directly; else Manual.)**
+
+## Council questions (open, from steps 5a-5e)
+
+1. **Non-test project with the `xunit` package** (X4 "either alone"): built conservatively as `xunit`/`xunit.core` → `xunit.v3.extensibility.core`
+   (+ `xunit.v3.assert`), OutputType unchanged, Info row. Keeping `xunit` v2 would mix v2 and v3 assemblies and not build. Acceptable?
+2. **Test attribute detection** runs sync over the project's documents (`GetAwaiter().GetResult()`, as `IProjectFileMigration` is sync). Make
+   `EditsFor`/`ProjectInfo` async later?
+3. **Runner bump range**: `From` 2.0.0 (so an older 3.x below 3.1.5 is raised too). A 1.x runner is left alone (no row).
 
 ## Context for the next agent
 

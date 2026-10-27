@@ -94,6 +94,7 @@ public class ScanCommand
         }
 
         _view.ShowSummary(report.Findings);
+        _view.ShowBlockingProjects(report.BlockingProjects);
         if (reportWriter is not null)
         {
             await WriteReportAsync(reportWriter, reportPath!, solutionPath, report.Findings, cancellationToken);

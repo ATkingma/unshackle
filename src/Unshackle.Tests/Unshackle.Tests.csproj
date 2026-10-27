@@ -50,6 +50,14 @@
     <None Include="$(Pkgxunit_extensibility_execution)/lib/netstandard1.1/xunit.execution.dotnet.dll" Link="XunitV2/xunit.execution.dotnet.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     <None Include="$(Pkgxunit_assert)/lib/netstandard1.1/xunit.assert.dll" Link="XunitV2/xunit.assert.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     <None Include="$(Pkgxunit_abstractions)/lib/netstandard2.0/xunit.abstractions.dll" Link="XunitV2/xunit.abstractions.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <!-- TAAK-341 X2: the proofs' "after" compiles against the default target xunit.v3 3.2.2 (XunitV3Fix.V3Version), not this project's own
+         xunit.v3; downloaded only (no reference, no version conflict) and copied to XunitV3/ -->
+    <PackageDownload Include="xunit.v3.extensibility.core" Version="[3.2.2]" />
+    <PackageDownload Include="xunit.v3.common" Version="[3.2.2]" />
+    <PackageDownload Include="xunit.v3.assert" Version="[3.2.2]" />
+    <None Include="$(NuGetPackageRoot)xunit.v3.extensibility.core/3.2.2/lib/netstandard2.0/xunit.v3.core.dll" Link="XunitV3/xunit.v3.core.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <None Include="$(NuGetPackageRoot)xunit.v3.common/3.2.2/lib/netstandard2.0/xunit.v3.common.dll" Link="XunitV3/xunit.v3.common.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <None Include="$(NuGetPackageRoot)xunit.v3.assert/3.2.2/lib/net8.0/xunit.v3.assert.dll" Link="XunitV3/xunit.v3.assert.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
   <ItemGroup>
     <!-- Proofs zijn testdata, geen code van het testproject zelf -->

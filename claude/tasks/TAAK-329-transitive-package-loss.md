@@ -1,6 +1,6 @@
 # TAAK-329 — Removing a package drops its transitive dependencies
 
-**Status**: step 1/4 — open (found by TAAK-326 corpus after-fix round, 2026-10-26)
+**Status**: step 1 decided (G10), step 2 open (found by TAAK-326 corpus after-fix round, 2026-10-26)
 **Created**: 2026-10-26
 **Goal**: a package swap never breaks code that only compiled because the removed package pulled in another package transitively.
 
@@ -15,7 +15,11 @@
 
 ## Steps
 
-- [ ] 1. Council question: Manual row on the project, or add the lost package as a direct `PackageReference` (pinned to the resolved version)?
+- [x] 1. Council question: Manual row on the project, or add the lost package as a direct `PackageReference` (pinned to the resolved version)?
+  **Decision (council round 16 G10)**: add it as a direct `PackageReference` pinned to the resolved version, only when the project (or a
+  project referencing it) uses its types; under CPM add the version to `Directory.Packages.props` only when absent, a different version
+  there → Manual. Each addition is its own Fixed row. See `claude/tasks/COUNCIL-round-16.md`.
+- [ ] 1b. Writer: add the pinned `PackageReference` (and CPM entry) via the existing project-file writer; report row per addition
 - [ ] 2. Detector: packages in the old package's closure, not in the new package's closure nor declared, whose types the project (or a project referencing it) uses
 - [ ] 3. Unit tests with assets fixtures; corpus salesapi repro with the per-project rule disabled
 - [ ] 4. Docs (`core.md`), archive

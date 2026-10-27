@@ -247,6 +247,26 @@ Full text: `claude/tasks/COUNCIL-round-15.md`. Follow-up: TAAK-334.
 | H1 | Harness on a full disk | Free-space check before each repo (20 GB); stop and mark the run incomplete. |
 | M14 | TAAK-333 conservative choices | Confirmed (M12 own namespaces, M10 clause on kept row only, M13 `changed-code-info` on solution file). |
 
+## Round 16 (2026-10-27)
+
+Full text: `claude/tasks/COUNCIL-round-16.md`. Follow-ups: TAAK-336, TAAK-337, TAAK-338, TAAK-329.
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| P1 | Dedupe user clauses equal to a generated one | No; only generated clauses are deduplicated. |
+| E20 | Internal flow members | Private only for now; `InternalsVisibleTo` will be a blocker. |
+| E21 | First Fixed field | Private field written only in its type from a migrated expression; constructor parameter source stays Manual. |
+| E22 | Return types | Fixed when the returned expression is Fixed; no constant propagation. |
+| E23 | Helper chains | Depth 3, private, no recursion. |
+| E24 | Double Manual rows | One row per node; `epplus.unsupported` skips nodes already reported. |
+| E25 | Range locals vs parameter | `ExcelRange` locals first, then the parameter flow type. |
+| E26 | Non-positive coordinates | Accepted as today; documented limitation. |
+| A15 | Inline `ProjectTo<T>` selector | Kept. |
+| A16 | Projections for closed pairs | Not written; revisit after the corpus re-measure. |
+| A17 | Reduced extension callers in the closure | Confirmed; regression proofs for all users. |
+| A18 | `ProjectTo<T>` with parameters | Stays Manual. |
+| G10 | Lost transitive package | Add a direct pinned `PackageReference` when its types are used; CPM conflict → Manual. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

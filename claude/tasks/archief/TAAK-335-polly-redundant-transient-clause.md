@@ -25,6 +25,7 @@
 - P-Q1 (conservative choice taken): only clauses Unshackle generates itself are deduplicated. An identical user-written clause
   (e.g. `.OrResult(r => (int)r.StatusCode >= 500 ...)` after the transient filter) is kept verbatim, even though it is redundant. Also dedupe
   user clauses that are textually equal to a generated one?
+  **Decision (council round 16 P1)**: no; user clauses stay verbatim.
 
 ## See also
 

@@ -32,13 +32,21 @@
 ## Council questions
 
 1. E18 says "private/internal only". Built: private only. Internal needs every caller in the project (SymbolFinder over the solution, `InternalsVisibleTo` excluded). Is internal wanted now, and is `InternalsVisibleTo` to a test project a blocker or should the test project migrate with it (same E17 project gate)?
+   **Decision (council round 16 E20): private only for now; `InternalsVisibleTo` will be a blocker (Manual)**.
 2. Fields: a private `ExcelWorksheet _sheet` field assigned in a constructor from a parameter crosses the constructor's callers. Which shape is in scope first: a field assigned only from a migrated local in the same method set, or none until the constructor flow is proven too?
+   **Decision (council round 16 E21): private field written only inside its type from a migrated expression; constructor parameter source stays Manual (TAAK-336)**.
 3. Return types: `private ExcelWorksheet AddSheet(ExcelPackage p, string name) => p.Workbook.Worksheets.Add(name)` needs `ExcelPackage` as a parameter type, whose `Worksheets.Add` with a non-literal name is Manual today (invalid-name exception differs, harness finding c). Should a non-literal sheet name be accepted when the caller passes a literal (constant propagation through one call)?
+   **Decision (council round 16 E22): Fixed when the returned expression is Fixed; no constant propagation (TAAK-336)**.
 4. Chains: a migrated helper passing its parameter to another helper is refused (no recursion). Allow one level, or a fixed depth like A11's 3?
+   **Decision (council round 16 E23): depth 3, no recursion (TAAK-336)**.
 5. Should `epplus.unsupported` skip a method `epplus.flow-types` already reported Manual (one row instead of two)? Same for a Manual `epplus.address` and a field/return now reported by both.
+   **Decision (council round 16 E24): yes, one row per node (TAAK-336)**.
 6. Step 5 was built conservatively: fields and EPPlus return types are Manual (`FlowFieldNotMapped`, `FlowReturnNotMapped`), not Fixed, while E18 asks for `field` and `return` after proofs. Which first Fixed shape is wanted (see questions 2 and 3)?
+   **Decision (council round 16 E21, E22): field first, then return (TAAK-336)**.
 7. `epplus.address` maps only a range taken straight from `ws.Cells[..]`. A range in a local (`var r = ws.Cells[1, 1, n, 3]; r.Rows`) needs `ExcelRange` locals in `WorkbookUses`. Build that next, or first the `ExcelRange` parameter flow type?
+   **Decision (council round 16 E25): `ExcelRange` locals first, then the parameter (TAAK-337)**.
 8. `epplus.address` accepts any four int expressions, like the existing `Cells[..]` → `Range(..)` mapping: a zero or negative coordinate throws in both libraries but with different exception types. Accept as today, or Manual unless the ints are constants >= 1?
+   **Decision (council round 16 E26): accept as today, document the limitation (TAAK-337)**.
 
 ## See also
 

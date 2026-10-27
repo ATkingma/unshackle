@@ -34,9 +34,13 @@
 ## Council questions
 
 1. **Selector as an inline conditional instead of a private static member** (task step 2 suggested a member). Same evaluation order (outside the query); chosen because a rewrite of one invocation cannot add a member. Keep, or require a named member for readability?
+   **Decision (council round 16 A15): keep the inline conditional**.
 2. **Should a generic `ProjectTo<T>` make the profile write projections for its closed pairs?** Now only pairs that already have a projection (existing, or written for a non-generic `ProjectTo`) count; others make the call Manual. Feeding closed pairs into `ProjectToPattern.TargetsAsync` would lift more rows but couples the closure to the profile rewrite.
+   **Decision (council round 16 A16): no for now; revisit after step 6**.
 3. **Reduced extension calls in `TypeArgumentClosure`** were silently skipped (so an extension-only caller set was "no caller", and a mixed set could miss a caller — a soundness gap in A11). Now followed like static calls. Confirm this is acceptable for `generic-map` and `mediatr.generic-request` too.
+   **Decision (council round 16 A17): confirmed; regression proofs in TAAK-338**.
 4. **`ProjectTo<T>` with parameters over a type parameter** (Kavita `ProjectToWithProgress`) stays Manual. Worth a follow-up?
+   **Decision (council round 16 A18): stays Manual, no follow-up**.
 
 ## See also
 

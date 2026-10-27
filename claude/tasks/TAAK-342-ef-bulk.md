@@ -13,9 +13,8 @@
   `Directory.Packages.props`. Proof/unit types for Z are stubs compiled in-memory with the real assembly names:
   `src/Unshackle.Tests/Core/EfBulk/EfBulkReferences.cs`. EF Core 10 is real (`Microsoft.EntityFrameworkCore.Sqlite`, already a test package).
 - **API note (scout correction)**: `DeleteFromQuery`/`UpdateFromQuery` belong to Z.EntityFramework.**Extensions**; Plus itself has
-  `Delete()`/`DeleteAsync()`/`Update(factory)`/`UpdateAsync(factory)` in namespace `Z.EntityFramework.Plus`. The stub signatures follow
-  the zzzprojects docs from memory and are **not yet checked against the nupkg** (step 4). The Extensions stub puts its methods in
-  namespace `Microsoft.EntityFrameworkCore` (also unverified); the fix does not depend on it, it matches by assembly name.
+  `Delete()`/`DeleteAsync()`/`Update(factory)`/`UpdateAsync(factory)` in namespace `Z.EntityFramework.Plus`. The stub signatures were
+  checked against the real nupkgs (step 4, see Findings).
 - **EF version guard**: EF Core 7-9 declare `ExecuteDelete` in `RelationalQueryableExtensions`, EF Core 10 in
   `EntityFrameworkQueryableExtensions` (core). `EfBulkCall.HasNative` checks both; none → Manual `NoNativeExecute`.
 - Code: `src/Unshackle.Core/Fixes/EfBulk/` (`EfBulkFix`, `EfBulkCall`, `EfBulkReason`, `Patterns/DeletePattern`, `Patterns/UpdatePattern`),
@@ -30,15 +29,35 @@
 - [x] 1. Read scout report, pick narrow scope: Plus `Delete/Update` + Extensions `DeleteFromQuery/UpdateFromQuery` (+Async)
 - [x] 2. Fix skeleton, assembly-based receiver match, EF7+ guard, stub references, Cli registration
 - [x] 3. Patterns `efbulk.delete` and `efbulk.update` (plain initializer → `SetProperty` chain), proofs, unit tests, KingmaDoc, README rows
-- [ ] 4. Verify the Z signatures (and Extensions namespace) against the real nupkgs without adding them to our packages (download to a
-  scratch dir, read metadata only); adjust the stubs; record the verified signatures + nupkg version in the `efbulk-*-plan.md` files and
-  name the version in a comment in `EfBulkReferences.cs` (B6)
-- [ ] 5. B3: one project-level Warning row "EF Core < 7: upgrade first, N calls blocked" next to the per-call `NoNativeExecute`;
-  B7: the `BatchOptions` reason names the builder options; B4: Manual reasons show the exact expression; unit tests
-- [ ] 6. Run-time proof: SQLite `ToQueryString`/SQL log of the native calls vs. the expected SQL (Plus cannot run without the paid
-  Extensions trial)
-- [ ] 7. B4 allow-list: captured locals/parameters, entity member access, numeric arithmetic (no string concatenation) → Fixed, one proof
-  each, plus a decimal overflow/rounding proof; `DateTime.Now`/`Math.*` only with their own step-6 SQL proof
+- [x] 4. Verify the Z signatures (and Extensions namespace) against the real nupkgs without adding them to our packages (download to a scratch dir, read metadata only); adjust the stubs
+  - Findings (Z.EntityFramework.Plus.EFCore and Z.EntityFramework.Extensions.EFCore 10.105.9, lib/net10.0, inspected as Roslyn
+    metadata symbols; nothing executed). Correct already: Plus `BatchDeleteExtensions`/`BatchUpdateExtensions` in `Z.EntityFramework.Plus`,
+    all `where T : class`, `int`/`Task<int>` returns, `CancellationToken cancellationToken = default` on the factory/delete async overloads.
+    Wrong and fixed: (a) the Extensions methods live in **global-namespace** classes `BatchDeleteExtensions`/`BatchUpdateExtensions`,
+    not `Microsoft.EntityFrameworkCore.BatchQueryExtensions` (still no using needed; the fix matches by assembly, unaffected);
+    (b) `BatchDelete`/`BatchUpdate` are declared in the **Extensions** assembly, namespace `Z.EntityFramework.Extensions` (Plus' builder
+    overloads use them), and `BatchUpdate.BatchSize` is `int?`; (c) `Future<T>()` returns `QueryFutureEnumerable<T>`
+    (: `BaseQueryFuture`, `IEnumerable<T>`), not `IEnumerable<T>`; (d) missing overloads: Extensions `DeleteFromQuery(Async)` and
+    `UpdateFromQuery(Async)` with a batch builder, and in both packages `Expression<Func<T, object>>` (anonymous object),
+    `IDictionary<string, object>` and `ExpandoObject` overloads. The stubs now carry the builder and `Func<T, object>` shapes; a new unit
+    test pins that an anonymous-object update is Manual `UpdateFactoryShape`. Patterns and proofs needed no change (the patterns match by
+    assembly + IQueryable receiver and by argument shape, which already sends builder/dictionary/anonymous forms to Manual).
+- [x] 5. B3: one project-level Manual row `EfCoreBelow7` "EF Core < 7: upgrade to EF Core 7+ ... first; N batch call(s) blocked" next to the
+  per-call `NoNativeExecute` (new default member `IFix.ProjectSummary(findings)`, called by the Fixer per project file after the document
+  pass; blocks nothing). B7: the `BatchOptions` reason names the options the builder assigns. B4: every Manual reason quotes the exact
+  expression (whitespace collapsed). B6 docs: version 10.105.9 and the verified signatures in both `efbulk-*-plan.md`. Unit tests in
+  `EfBulkFixTests`
+- [x] 6. Run-time proof: `src/Unshackle.Tests/Core/EfBulk/EfBulkSqlTests.cs` (EF Core 10 + SQLite in memory, command interceptor):
+  ExecuteDelete and ExecuteUpdate (captured local, entity arithmetic, enum, negation) each send exactly one statement, no SELECT first,
+  captured values as parameters, entity members as columns; rows checked. Decimal: SQLite evaluates `ef_divide`/`ef_multiply` with .NET
+  decimal semantics (10/3 exact to 28 digits, overflow throws), which proves nothing about SQL Server column precision
+- [x] 7. B4 allow-list: captured locals/parameters, entity member access, numeric arithmetic → Fixed (proofs captured-local,
+  entity-member, numeric-arithmetic, plus the existing plus-initializer); string concatenation and any binary operator on string/decimal
+  operands → Manual (proofs string-concatenation, decimal-arithmetic); `DateTime.Now` stays Manual (proof static-now); `Math.*` stays Manual
+  (method-call). No `DateTime.Now`/`Math.*` SQL proof was added, so neither is widened
+- [ ] 7a. Round 19 B10: string `==`/`!=` with a non-null literal or `const` → Fixed; proof + `EfBulkSqlTests` case with a NULL column row
+- [ ] 7b. Round 19 B11: proofs for captured field, instance property of a captured value, enum member, constant
+- [ ] 7c. Round 19 B12: `efbulk-update-plan.md` / `efbulk-delete-plan.md` name `EfCoreBelow7` as the B3 Warning row
 - [ ] 8. `efbulk.unsupported` (Bulk*, Future, FromCache, AuditTrail as Manual rows; B8: the reason/README names
   `EFCore.BulkExtensions.MIT` as an alternative, not migrated, after checking its license/maintenance) and B5 package removal at zero Z
   usages per project (dependents counted, Plus and Extensions), else a row with the remaining usages file:line. EFCore.BulkExtensions
@@ -64,6 +83,19 @@
    **Decision (round 17 B7)**: yes, Manual `BatchOptions` naming the options; token-only overload later if common.
 8. **README note** on the MIT fork `EFCore.BulkExtensions.MIT` for Bulk* users (scout Q6).
    **Decision (round 17 B8)**: yes, one neutral line after checking the fork's license and maintenance.
+
+9. **Decimal arithmetic** (step 7): kept Manual. The SQLite run-time proof cannot show SQL Server/PostgreSQL rounding to the column
+   precision, and Z cannot run here. Widen only with a SQL Server (or Testcontainers) proof, or accept "same SQL as Z, same provider" as enough?
+   **Decision (round 19 B9)**: Manual stays; widen only with a real-provider (Testcontainers) proof; backlog.
+10. **String comparison/concatenation operands** (step 7): any binary operator with a string operand is Manual, so `Open = o.Status == "x"`
+   is Manual too. Allow string equality comparisons?
+    **Decision (round 19 B10)**: allow `==`/`!=` with a non-null literal or `const` (SQLite proof with a NULL row); rest Manual. Step 7a.
+11. **Captured members beyond the B4 list** (step 7): the pattern still allows captured fields, instance properties of captured values
+   (`request.Status`), enum members and constants (all client-evaluated by both Z and EF, as slice 1 did). Keep, or narrow to the literal B4 list?
+    **Decision (round 19 B11)**: keep, one proof per kind; static members stay Manual. Step 7b.
+12. **Project row severity** (step 5): "Warning row" is implemented as a non-blocking project-level Manual row (code `EfCoreBelow7`); the
+   report has no separate Warning kind for project rows. Enough?
+    **Decision (round 19 B12)**: accepted as the B3 Warning row; documented in the plan. Step 7c.
 
 ## See also
 

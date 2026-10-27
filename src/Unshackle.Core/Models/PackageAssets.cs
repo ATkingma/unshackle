@@ -17,6 +17,12 @@ public class PackageAssets
     /// <summary>Every requirement on a package: by the project (direct) or by a resolved package, with its version range as written.</summary>
     public required IReadOnlyList<PackageRequirement> Requirements { get; init; }
 
+    /// <summary>
+    /// Every package requirement of a referenced project (council round 17 T3), with <see cref="PackageRequirement.RequiredBy"/> the project
+    /// as <c>Name/Version</c>. Kept apart from <see cref="Requirements"/>: the package graph only follows package libraries.
+    /// </summary>
+    public IReadOnlyList<PackageRequirement> ProjectReferenceRequirements { get; init; } = [];
+
     /// <summary>True when the package resolved to <paramref name="version"/> or higher in some target framework.</summary>
     public bool ResolvesAtLeast(string package, Version version)
     {

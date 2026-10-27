@@ -314,10 +314,27 @@ Full text: `claude/tasks/COUNCIL-round-18.md`. Follow-ups: TAAK-340 steps 3a-3f,
 | E31 | E6 and flow-types rows | One row per node (folded into E6). |
 | E32 | Linked-set failure | Whole set Manual; row names the member. |
 
+## Round 19 (2026-10-27)
+
+Full text: `claude/tasks/COUNCIL-round-19.md`. Follow-ups: TAAK-349, TAAK-346 step 2a, TAAK-342 steps 7a-7c.
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| T4 | Lower required version on a pin | Manual stays; reason distinguishes NU1605 (higher) and downgrade (lower). |
+| T5 | Several users in "kept for" | All listed, capped at three plus "and N more". |
+| R1 | Other range-local uses | Manual, reason names the use; widen on corpus evidence. |
+| R2 | Range parameter passed on | Manual, reason names the callee. |
+| R3 | Non-`Cells[..]` range source | `UnmappedAddress` accepted, one row per node with `epplus.unsupported`. |
+| B9 | EF bulk decimal arithmetic | Manual until a real-provider proof. |
+| B10 | String operands | `==`/`!=` with a non-null literal or `const` Fixed (NULL-row proof); rest Manual. |
+| B11 | Captured members beyond B4 | Kept, one proof each; static members Manual. |
+| B12 | `EfCoreBelow7` severity | Non-blocking project Manual row accepted as the Warning row. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct
 - `claude/docs/overdracht.md` — handover
+- `claude/tasks/COUNCIL-round-19.md` — round 19
 - `claude/tasks/archief/TAAK-292-council-follow-up.md` — implementation of these decisions
 - `claude/tasks/archief/TAAK-293-council-round-3.md` — implementation of the round-3 decisions
 - `claude/tasks/archief/TAAK-294-council-round-4.md` — round-4 changes before 0.2.0

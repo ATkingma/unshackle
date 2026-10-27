@@ -39,6 +39,25 @@ public class PackageAssetsReaderTests
     }
 
     [Fact]
+    public void Read_ProjectReferenceLibrary_RequirementsKeptApart()
+    {
+        // Arrange (council round 17 T3)
+        AddProject(AssetsJson("1.0.1", "[1.0.0, )").Replace(
+            "\"SixLabors.Fonts/1.0.1\": { \"type\": \"package\" }",
+            "\"SixLabors.Fonts/1.0.1\": { \"type\": \"package\" },\n\"Shared/1.0.0\": { \"type\": \"project\", \"dependencies\": { \"SixLabors.Fonts\": \"2.0.0\" } }",
+            StringComparison.Ordinal), s_restored);
+
+        // Act
+        PackageAssets assets = new JsonPackageAssetsReader(_fileSystem).Read(Project);
+
+        // Assert
+        PackageRequirement fromReference = assets.ProjectReferenceRequirements.ShouldHaveSingleItem();
+        (fromReference.Package, fromReference.RequiredBy, fromReference.Range).ShouldBe(("SixLabors.Fonts", "Shared/1.0.0", "2.0.0"));
+        assets.Requirements.ShouldNotContain(r => r.RequiredBy == "Shared/1.0.0");
+        assets.Resolved.ContainsKey("Shared").ShouldBeFalse();
+    }
+
+    [Fact]
     public void Read_NoAssetsFile_IsMissing()
     {
         // Arrange

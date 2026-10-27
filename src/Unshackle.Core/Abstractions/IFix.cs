@@ -102,6 +102,13 @@ public interface IFix
     IReadOnlyList<string> ProjectInfo(Project project) => [];
 
     /// <summary>
+    /// Project-level rows computed from the findings of one project's documents after the document pass (TAAK-342, council round 17, B3), for
+    /// example one summary row for a precondition the project misses. Each is reported on the project file and blocks nothing. Empty (the default): none.
+    /// </summary>
+    /// <param name="findings">The rows of the project's documents (Line &gt; 0), in report order.</param>
+    IReadOnlyList<PatternResult> ProjectSummary(IReadOnlyList<Finding> findings) => [];
+
+    /// <summary>
     /// One fix-level Info row per run, added only when the run changed code (council round 14, M13), for example a behaviour difference
     /// of the new library that no pattern can prove away. Null or empty (the default): none.
     /// </summary>

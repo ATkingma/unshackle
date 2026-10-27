@@ -41,6 +41,9 @@ efbulk.delete: a batch delete of Z.EntityFramework.Plus (`Delete`, `DeleteAsync`
 
 - The call is matched by the containing assembly of the bound method (`Z.EntityFramework.Plus.EFCore`, `Z.EntityFramework.Extensions.EFCore`), never by name: FreeSql, Azure Table helpers and LanguageExt use the same names.
 - Like the Z batch calls, the native call bypasses the change tracker and `SaveChanges` interceptors; the fix states this once per run (`ChangedCodeInfo`).
+- Signatures verified once (TAAK-342 step 4, council round 17 B6) against Z.EntityFramework.Plus.EFCore and Z.EntityFramework.Extensions.EFCore **10.105.9** (lib/net10.0, metadata only): Plus `Z.EntityFramework.Plus.BatchDeleteExtensions`/`BatchUpdateExtensions`, Extensions in the global-namespace classes `BatchDeleteExtensions`/`BatchUpdateExtensions`, all `where T : class`, `int`/`Task<int>` returns, builder types `Z.EntityFramework.Extensions.BatchDelete`/`BatchUpdate`. The stubs in `EfBulkReferences.cs` name that version; no CI download.
+- Run-time proof (step 6): `EfBulkSqlTests.ExecuteDelete_WhereFilter_IsOneDeleteStatement` checks the single `DELETE ... WHERE` statement on EF Core 10 + SQLite.
+- Manual reasons show the exact call; a batch builder's reason names the options it sets (council round 17, B4/B7); a project with blocked calls gets one `EfCoreBelow7` project row (B3).
 - The Z types in the proofs are stubs with the documented signatures (the Z packages cannot enter `Directory.Packages.props`); to be checked against the nupkg before the corpus round.
 - No package or project file is changed in this slice.
 

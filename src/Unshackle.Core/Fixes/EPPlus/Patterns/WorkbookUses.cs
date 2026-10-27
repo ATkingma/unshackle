@@ -18,6 +18,7 @@ internal class WorkbookUses
     private readonly SyntaxNode _scope;
     private readonly ILocalSymbol? _package;
     private readonly List<ISymbol> _worksheets = [];
+    private readonly List<ISymbol> _ranges = [];
     private readonly IReadOnlyCollection<IMethodSymbol> _chain = [];
     private Models.PatternResult? _unknownVersion;
 
@@ -41,6 +42,15 @@ internal class WorkbookUses
         _model = model;
         _scope = scope;
         _worksheets.Add(worksheet);
+    }
+
+    // TAAK-337 (council round 16, E25): the uses of one ExcelRange parameter of a private helper: address reads, nothing else.
+    public WorkbookUses(SemanticModel model, SyntaxNode scope, IParameterSymbol range)
+    {
+        _indexBase = WorksheetIndexBase.Unknown(range.Name);
+        _model = model;
+        _scope = scope;
+        _ranges.Add(range);
     }
 
     public Dictionary<SyntaxNode, SyntaxNode> Replacements { get; } = [];
@@ -78,7 +88,64 @@ internal class WorkbookUses
             }
         }
 
+        // E25: a range local declared from a mapped Cells[..] (it became ws.Range(..)), or a range parameter: address reads only.
+        foreach (ISymbol range in _ranges)
+        {
+            foreach (IdentifierNameSyntax use in UsesOf(range))
+            {
+                if (!MapRangeRead(use) && !IsRangeFlowArgument(use))
+                {
+                    string text = $"Range {(range is IParameterSymbol ? "parameter" : "local")} {range.Name} is used as '{Shorten(use.Parent ?? use)}' (line {Line(use)}); only "
+                        + "its address (.Rows, .Columns, .Start/.End .Row/.Column) and passing a local on to a range helper are mapped (council round 16, E25).";
+                    return _unknownVersion ?? (_package is null ? Models.PatternResult.Manual(EPPlusReason.FlowUseNotMigrated, text) : Models.PatternResult.Manual(text));
+                }
+            }
+        }
+
         return null;
+    }
+
+    // r.RowCount() / r.RangeAddress.FirstAddress.RowNumber as AddressPattern wrote it, or the EPPlus r.Rows / r.Start.Row, rewritten here
+    // (a range parameter: AddressPattern leaves those to FlowTypesPattern).
+    private bool MapRangeRead(IdentifierNameSyntax use)
+    {
+        if (IsAddressRead(use))
+        {
+            return true;
+        }
+
+        if (use.Parent is not MemberAccessExpressionSyntax first || first.Expression != use)
+        {
+            return false;
+        }
+
+        MemberAccessExpressionSyntax access = first.Name.Identifier.ValueText is "Start" or "End" && first.Parent is MemberAccessExpressionSyntax corner && corner.Expression == first ? corner : first;
+        if (AddressPattern.Mapped(access) is not (var range, string text) || range != use
+            || _model.GetSymbolInfo(access).Symbol is not IPropertySymbol { ContainingNamespace: { Name: EPPlusSyntax.Namespace, ContainingNamespace.IsGlobalNamespace: true } })
+        {
+            return false;
+        }
+
+        Replacements[access] = SyntaxFactory.ParseExpression($"{use.Identifier.ValueText}.{text}").WithTriviaFrom(access);
+        return true;
+    }
+
+    // E25: a range local passed (by position, by value) to a private helper whose ExcelRange parameter FlowTypesPattern migrates.
+    private bool IsRangeFlowArgument(IdentifierNameSyntax use) =>
+        _model.GetSymbolInfo(use).Symbol is ILocalSymbol && IsRangeHelperArgument(use);
+
+    private bool IsRangeHelperArgument(ExpressionSyntax range)
+    {
+        if (range.Parent is not ArgumentSyntax { RefKindKeyword.RawKind: (int)SyntaxKind.None, NameColon: null } argument
+            || argument.Parent is not ArgumentListSyntax { Parent: InvocationExpressionSyntax invocation } list
+            || _model.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method)
+        {
+            return false;
+        }
+
+        int position = list.Arguments.IndexOf(argument);
+        return position < method.Parameters.Length && FlowTypesPattern.MigratableRange(method.OriginalDefinition, _model) is { } target
+            && SymbolEqualityComparer.Default.Equals(target, method.OriginalDefinition.Parameters[position]);
     }
 
     // ws.Cells[r, c] / ws.Cells["A1"] → ws.Cell(r, c) / ws.Cell("A1"), as the target of a covered Value assignment (row 5, E4) or as the
@@ -123,7 +190,10 @@ internal class WorkbookUses
             && assignment.Left == access && IsCovered(assignment.Right);
         // range.RowCount() / range.RangeAddress.FirstAddress.RowNumber as AddressPattern writes it for .Rows / .Start.Row (TAAK-327, E18 step 2).
         bool addressed = !single && IsAddressRead(cell);
-        if (!styled && !value && !merged && !inserted && !addressed)
+        // E25: var r = ws.Cells[..]; becomes a ClosedXML range local (its uses are checked in Map), or the range is passed to a range helper.
+        bool local = !single && IsRangeLocal(cell, arguments);
+        bool passed = !single && AddressPattern.InOrder(arguments, _model) && IsRangeHelperArgument(cell);
+        if (!styled && !value && !merged && !inserted && !addressed && !local && !passed)
         {
             return false;
         }
@@ -131,6 +201,25 @@ internal class WorkbookUses
         Replacements[cell] = SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, use, SyntaxFactory.IdentifierName(single ? "Cell" : "Range")),
             SyntaxFactory.ArgumentList(arguments));
+        return true;
+    }
+
+    // E25: the initializer of a range local AddressPattern accepts (one local, declared once, never written, corners in order).
+    private bool IsRangeLocal(ElementAccessExpressionSyntax cell, SeparatedSyntaxList<ArgumentSyntax> arguments)
+    {
+        if (cell.Parent is not EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } declarator }
+            || _model.GetDeclaredSymbol(declarator) is not ILocalSymbol range
+            || AddressPattern.LocalSource(range, _model) != cell || !AddressPattern.InOrder(arguments, _model))
+        {
+            return false;
+        }
+
+        _ranges.Add(range);
+        if (!declaration.Type.IsVar)
+        {
+            Replacements[declaration.Type] = SyntaxFactory.ParseTypeName("IXLRange").WithTriviaFrom(declaration.Type);
+        }
+
         return true;
     }
 
@@ -201,10 +290,15 @@ internal class WorkbookUses
             && address.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "FirstAddress" or "LastAddress" } corner
             && corner.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RowNumber" or "ColumnNumber" };
 
-    private static bool IsRowOrColumnNumber(ExpressionSyntax value) =>
-        value is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RowCount" or "ColumnCount", Expression: ElementAccessExpressionSyntax range } } && IsAddressRead(range)
-        || value is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RowNumber" or "ColumnNumber", Expression: MemberAccessExpressionSyntax { Expression: MemberAccessExpressionSyntax { Expression: ElementAccessExpressionSyntax corner } } } && IsAddressRead(corner)
+    // The range of an address read is ws.Range(..) (was ws.Cells[..]) or, E25, a range local declared from one.
+    private bool IsRowOrColumnNumber(ExpressionSyntax value) =>
+        value is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RowCount" or "ColumnCount", Expression: var range } } && IsAddressRange(range) && IsAddressRead(range)
+        || value is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RowNumber" or "ColumnNumber", Expression: MemberAccessExpressionSyntax { Expression: MemberAccessExpressionSyntax { Expression: var corner } } } && IsAddressRange(corner) && IsAddressRead(corner)
         || value is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "RowNumber" or "ColumnNumber", Expression: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.ValueText: "LastRowUsed" or "LastColumnUsed" or "FirstRowUsed" or "FirstColumnUsed" } } } };
+
+    private bool IsAddressRange(ExpressionSyntax range) =>
+        range is ElementAccessExpressionSyntax
+        || range is IdentifierNameSyntax && _model.GetSymbolInfo(range).Symbol is ILocalSymbol local && AddressPattern.LocalSource(local, _model) is not null;
 
     private static bool RoundTripsIn15Digits(double value) =>
         double.Parse(value.ToString("G15", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture).Equals(value);

@@ -66,6 +66,8 @@
     Bulk* names `EFCore.BulkExtensions.MIT`: MIT, 10.22.0 of 2025-12-09, EF Core 10, checked on nuget.org 2026-10-27); `EfBulkFix.Package`;
     `XmlProjectFileStore` removes `RemovedPackage` when `AddedPackages` is empty. Proofs `Proofs/EfBulk/Unsupported/` (bulk-insert, future,
     from-cache, audit), unit tests in `EfBulkFixTests` and `XmlProjectFileStoreTests`, docs `efbulk-unsupported-{plan,modellen,verify}.md`
+- [x] 8a. Round 21 B13: kept row names the Z package(s) the project references (unit test: Extensions-only project)
+- [x] 8b. Round 21 B14: unmatched-use row per file with any other bound Z symbol, also next to a Manual row, "N other Z usages: lines ..."
 - [ ] 9. Corpus round (protagonist, Plutus, morenote, NexusStack, Lavcode, OpenttdDiscord); B1: README roadmap line only now (steps 4
   and 6 done); archive
 
@@ -102,9 +104,11 @@
     **Decision (round 19 B12)**: accepted as the B3 Warning row; documented in the plan. Step 7c.
 13. **Kept-package row name** (step 8): the kept rows name `Z.EntityFramework.Plus.EFCore` (the fix's `RemovedPackage`) also in a project that
     references only `Z.EntityFramework.Extensions.EFCore`. Conservative: left as is (the row still blocks removal correctly). Name the package the project actually references?
+    **Decision (round 21 B13)**: name the package(s) the project file references; unreadable → "or Extensions". Step 8a.
 14. **Usages without a call** (step 8): `efbulk.unsupported` reports calls and constructors only; a Z type in a signature or a property access keeps the
     package and gets an unmatched-use row only when its file has no Manual row. Conservative: enough for B5 (file:line given for every file). Report every Z
     symbol per line instead?
+    **Decision (round 21 B14)**: one row per file with count and every line, also when the file has a Manual row. Step 8b.
 
 ## See also
 

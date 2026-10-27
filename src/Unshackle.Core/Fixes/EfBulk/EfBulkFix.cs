@@ -11,6 +11,19 @@ namespace Unshackle.Core.Fixes.EfBulk;
 /// </summary>
 public class EfBulkFix : IFix
 {
+    private readonly IProjectProperties? _projectProperties;
+
+    // Without project properties every kept row names both packages (council round 21, B13: the unreadable case).
+    public EfBulkFix()
+    {
+    }
+
+    public EfBulkFix(IProjectProperties projectProperties)
+    {
+        ArgumentNullException.ThrowIfNull(projectProperties);
+        _projectProperties = projectProperties;
+    }
+
     public string Id => "efbulk";
 
     // Removed only where nothing in the file binds to it anymore; Future/FromCache/IncludeFilter keep it.
@@ -47,6 +60,23 @@ public class EfBulkFix : IFix
         AlsoRemovedPackages = [EfBulkCall.ExtensionsAssembly],
         AddedPackages = [],
     };
+
+    // Council round 21, B14: one row per file with every remaining Z use, also next to a Manual row.
+    public bool ReportsEveryRemainingUse => true;
+
+    // Council round 21, B13: name the Z package(s) the project file references; unknown: Plus "or" Extensions.
+    public string? KeptPackageName(string projectPath)
+    {
+        string fallback = $"{EfBulkCall.PlusAssembly} or {EfBulkCall.ExtensionsAssembly}";
+        IReadOnlyList<string>? references = _projectProperties?.PackageReferences(projectPath);
+        if (references is null)
+        {
+            return fallback;
+        }
+
+        List<string> named = [.. new[] { EfBulkCall.PlusAssembly, EfBulkCall.ExtensionsAssembly }.Where(z => references.Contains(z, StringComparer.OrdinalIgnoreCase))];
+        return named.Count == 0 ? fallback : string.Join(" and ", named);
+    }
 
     public IReadOnlyList<IPattern> Patterns { get; } = [new DeletePattern(), new UpdatePattern(), new UnsupportedPattern()];
 }

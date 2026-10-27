@@ -44,12 +44,13 @@ Driver: `claude/tools/corpus-polly-run.sh` -> `corpus-polly-am.sh` (copy of `cor
 
 Of the 14 repos with a green baseline, 8 pass with 0 test regressions and 6 break: 4 at restore (B1) and 2 at build (fergun B2+B3, okta B4).
 
-### Bugs (repros; not fixed, because this lane may not edit src/)
+### Bugs (repros; B1 and B4 fixed afterwards, see each entry)
 
 - **B1 project-file: package downgrade after adding Microsoft.Extensions.Resilience / Http.Resilience 10.11.0** (babylon-gateway, eventualshop, heappe, seedwork.cqrs.bus, listenarr).
   The added package pulls `Microsoft.Extensions.*` >= 8.0.x / 9.0.21 / 10.0.x transitively. The project references an older version directly, so restore fails with NU1605 (warning as error) or NU1109 (central pinning).
   Repro: `RadixDlt.NetworkGateway.Abstractions.csproj` references `Microsoft.Extensions.Logging.Abstractions 8.0.0`. After the fix: `NU1605 Detected package downgrade: Microsoft.Extensions.Logging.Abstractions from 8.0.3 to 8.0.0` (via Resilience 10.11.0 -> Telemetry.Abstractions 10.11.0). In eventualshop, the direct `Microsoft.Extensions.Http 8.0.0-preview.1` conflicts with Http.Resilience, which needs >= 8.0.1.
   Expected: pick a Resilience version whose dependencies match the project's direct `Microsoft.Extensions.*` references, bump those references, or report Manual (`PackageDowngrade`) instead of writing a project that does not restore.
+  **Fixed**: `PollyPackageDowngrade` blocks the project with `ProjectBlockingReason.PackageDowngrade` (resolved versions from the reference paths vs. the nuspec minimums); no bump, the project stays on v7.
 - **B2 polly.add-policy-handler: expression-bodied method returning IHttpClientBuilder** (fergun `src/Extensions/HttpClientBuilderExtensions.cs:21`).
   Before: `public static IHttpClientBuilder AddRetryPolicy(this IHttpClientBuilder builder) => builder.AddTransientHttpErrorPolicy(p => p.OrTransientHttpStatusCode().WaitAndRetryAsync(3, a => TimeSpan.FromSeconds(Math.Pow(2, a))));`
   After: `=> builder.AddResilienceHandler("retry", builder1 => builder1.AddRetry(...));` -> CS0266 (`IHttpResiliencePipelineBuilder` to `IHttpClientBuilder`).
@@ -62,6 +63,7 @@ Of the 14 repos with a green baseline, 8 pass with 0 test regressions and 6 brea
   Expected: in a nullable-enabled context, write `result.Exception!` wherever the v7 `DelegateResult<T>.Exception` was dereferenced or cast, or report Manual.
 - **B4 project-file: CS0433 duplicate ServiceCollection** (okta-sdk-dotnet `src/Okta.Sdk/Client/OktaApiServiceBuilder.cs:62`).
   The project references `Microsoft.Extensions.DependencyInjection 5.0.0`. The added Resilience package brings in `DependencyInjection.Abstractions 8.0`, which also defines `ServiceCollection` -> CS0433. Expected: bump the direct `Microsoft.Extensions.DependencyInjection` reference to match, or report Manual. Same family as B1.
+  **Fixed** with B1: DependencyInjection 5.0.0 is below the 8.0 group's major, so the project is blocked with `PackageDowngrade`.
 
 ## See also
 

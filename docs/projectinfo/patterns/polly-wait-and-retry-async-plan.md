@@ -73,6 +73,11 @@ pipeline, with the delay lambda kept as the `DelayGenerator`.
   10.11.0 does not support (.NET Core before net8.0, .NET Framework before net462) THE SYSTEM SHALL report one project-level Manual
   row `ProjectBlockingReason.TargetFrameworkUnsupported` (`PollyFix.ProjectBlockers`); the Fixer then leaves that project's documents
   and files as they were (end-to-end test `FixAsync_UnsupportedFramework_LeavesTheCodeOnPollyV7`).
+- **REQ-11b** (corpus B1/B4): WHEN a project that references Polly v7 resolves a `Microsoft.Extensions.*` package older than the
+  Microsoft.Extensions.Resilience 10.11.0 closure needs for its dependency group (table from the nuspecs; outside the table the group's
+  major x.0.0; the dotnet/extensions family exactly 10.11.0) THE SYSTEM SHALL report one project-level Manual row
+  `ProjectBlockingReason.PackageDowngrade` naming each package, and leave the project as it was (restore would fail with NU1605/NU1109,
+  or the build with CS0433). The references are not bumped: the user's code and other packages may depend on the old version.
 - **REQ-12** (council P10): WHEN `args`, `SleepDuration` or `_` is taken (a symbol in scope at the call, or an identifier inside the
   rewritten span) THE SYSTEM SHALL use `args1`, `args2`, ... (first free of 10), else Manual `NameClash`.
 

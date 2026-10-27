@@ -14,4 +14,7 @@ public enum ProjectBlockingReason
 
     /// <summary>The project resolves a dependency under a licence the migration must not pull in (EPPlus, council round 10, E7).</summary>
     LicensedDependency,
+
+    /// <summary>The project resolves an older version of a package the new library needs newer, so restore or build would fail (Polly, corpus B1/B4).</summary>
+    PackageDowngrade,
 }

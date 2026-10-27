@@ -102,7 +102,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-334-council-15-followups.md` | Council round 15 follow-ups: A13 IsPackable advice, A14 `automapper.generic-profile`, H1 harness free-disk check |
 | `claude/tasks/COUNCIL-round-16.md` | Council round 16 decisions (Polly user clauses, EPPlus flow types, AutoMapper generic destination, transitive package loss) |
 | `claude/tasks/archief/TAAK-336-epplus-flow-followups.md` | Council round 16 E21-E24: EPPlus Fixed field/return shapes, helper chains, one row per node |
-| `claude/tasks/TAAK-337-epplus-range-locals.md` | Council round 16 E25-E26: EPPlus `ExcelRange` locals, then the range parameter flow type |
+| `claude/tasks/archief/TAAK-337-epplus-range-locals.md` | Council round 16 E25-E26: EPPlus `ExcelRange` locals, then the range parameter flow type |
 | `claude/tasks/archief/TAAK-338-automapper-closure-regressions.md` | Council round 16 A15-A18: regression proofs for extension callers in `TypeArgumentClosure` (done) |
 | `claude/tasks/archief/TAAK-335-polly-redundant-transient-clause.md` | Polly: `OrTransientHttpStatusCode()` after the transient filter no longer writes a duplicate clause (corpus B2 side issue) |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |

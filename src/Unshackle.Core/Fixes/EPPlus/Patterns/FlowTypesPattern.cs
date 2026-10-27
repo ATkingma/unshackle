@@ -31,7 +31,7 @@ public class FlowTypesPattern : IPattern
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
         root.DescendantNodes().Where(n => n switch
         {
-            MethodDeclarationSyntax m => m.ParameterList.Parameters.Any(p => p.Type is not null && IsWorksheet(model.GetTypeInfo(p.Type).Type))
+            MethodDeclarationSyntax m => m.ParameterList.Parameters.Any(p => p.Type is not null && (IsWorksheet(model.GetTypeInfo(p.Type).Type) || EPPlusSyntax.IsRangeType(model.GetTypeInfo(p.Type).Type)))
                 || model.GetTypeInfo(m.ReturnType).Type is { } returned && EPPlusApi.Mentions(returned),
             FieldDeclarationSyntax f => model.GetTypeInfo(f.Declaration.Type).Type is { } type && EPPlusApi.Mentions(type),
             _ => false,
@@ -64,6 +64,11 @@ public class FlowTypesPattern : IPattern
         if (EPPlusApi.Mentions(method.ReturnType))
         {
             return RewriteReturn(method, declaration, model);
+        }
+
+        if (WorksheetParameter(method) is null && method.Parameters.Any(p => EPPlusSyntax.IsRangeType(p.Type)))
+        {
+            return RewriteRange(method, declaration, model);
         }
 
         if (Chain(method, model, out IParameterSymbol? parameter, out WorkbookUses? uses, out IReadOnlyCollection<IMethodSymbol> chain) is PatternResult blocked)
@@ -101,6 +106,12 @@ public class FlowTypesPattern : IPattern
 
     // E21: true when a write of this field may take a worksheet PackagePattern migrates (checked before PackagePattern runs).
     internal static bool MigratableField(IFieldSymbol field, SemanticModel model) => FieldBlocked(field, model, migrated: false) is null;
+
+    // E25: the ExcelRange parameter WorkbookUses may pass a migrated range (ws.Range(..) or a range local) to, or null.
+    internal static IParameterSymbol? MigratableRange(IMethodSymbol method, SemanticModel model) =>
+        method.DeclaringSyntaxReferences is [var reference] && reference.SyntaxTree == model.SyntaxTree
+            && reference.GetSyntax() is MethodDeclarationSyntax declaration
+            && RangeBlocked(method, declaration, model, out IParameterSymbol? range, out _) is null ? range : null;
 
     // E22: the ExcelPackage parameter of a helper that returns package.Workbook.Worksheets.Add("literal"), or null.
     internal static IParameterSymbol? MigratableReturn(IMethodSymbol method, SemanticModel model) =>
@@ -279,6 +290,64 @@ public class FlowTypesPattern : IPattern
     // A reference to the method that is not the callee of an invocation (a method group), or null.
     private static IdentifierNameSyntax? MethodGroup(IMethodSymbol method, SemanticModel model) =>
         References(method, model.SyntaxTree.GetRoot(), model).FirstOrDefault(r => CallOf(r) is null);
+
+    // E25: a private helper whose one EPPlus parameter is a by-value ExcelRange, used for its address only, called with migrated ranges only.
+    private static PatternResult RewriteRange(IMethodSymbol method, MethodDeclarationSyntax declaration, SemanticModel model)
+    {
+        if (RangeBlocked(method, declaration, model, out IParameterSymbol? range, out WorkbookUses? uses) is PatternResult blocked)
+        {
+            return blocked;
+        }
+
+        int position = method.Parameters.IndexOf(range!);
+        foreach (InvocationExpressionSyntax call in Invocations(method, declaration.SyntaxTree.GetRoot(), model))
+        {
+            if (call.ArgumentList.Arguments.Count <= position || EPPlusSyntax.IsRangeType(model.GetTypeInfo(call.ArgumentList.Arguments[position].Expression).Type))
+            {
+                return PatternResult.Manual(EPPlusReason.FlowCallerNotMigrated, $"'{Shorten(call)}' ({Where(call)}) passes an EPPlus range that no pattern migrated; "
+                    + $"{method.Name} can only take an IXLRange when every caller passes one (council round 16, E25). Migrate the caller first.");
+            }
+        }
+
+        Dictionary<SyntaxNode, SyntaxNode> replacements = uses!.Replacements;
+        ParameterSyntax rangeSyntax = declaration.ParameterList.Parameters[position];
+        replacements[rangeSyntax.Type!] = SyntaxFactory.ParseTypeName("IXLRange").WithTriviaFrom(rangeSyntax.Type!);
+        return PatternResult.Fixed(Replace(declaration, replacements), PackagePattern.AddedNamespace);
+    }
+
+    private static PatternResult? RangeBlocked(IMethodSymbol method, MethodDeclarationSyntax declaration, SemanticModel model, out IParameterSymbol? range, out WorkbookUses? uses)
+    {
+        range = null;
+        uses = null;
+        if (!IsPrivateHelper(method, declaration))
+        {
+            return PatternResult.Manual(EPPlusReason.FlowMemberNotPrivate, $"{method.Name} ({Where(declaration)}) takes an ExcelRange but is not a private, non-virtual method of a "
+                + "non-partial type with a body, so its callers may be out of reach (council round 16, E25: private only). Change the signature by hand.");
+        }
+
+        IParameterSymbol[] epplus = [.. method.Parameters.Where(p => EPPlusApi.Mentions(p.Type))];
+        if (epplus is not [{ RefKind: RefKind.None, IsParams: false, HasExplicitDefaultValue: false } single] || !EPPlusSyntax.IsRangeType(single.Type) || EPPlusApi.Mentions(method.ReturnType))
+        {
+            return PatternResult.Manual(EPPlusReason.FlowUseNotMigrated, $"{method.Name} ({Where(declaration)}) has EPPlus types other than one by-value ExcelRange parameter "
+                + "(another EPPlus parameter, a ref/out/params/optional range, or an EPPlus return type); not mapped yet (council round 16, E25).");
+        }
+
+        if (MethodGroup(method, model) is { } group)
+        {
+            return PatternResult.Manual(EPPlusReason.FlowUseNotMigrated, $"{method.Name} is used as '{Shorten(group.Parent ?? group)}' ({Where(group)}), not invoked: "
+                + "a delegate type would name ExcelRange. Change it by hand.");
+        }
+
+        var rangeUses = new WorkbookUses(model, declaration, single);
+        if (rangeUses.Map() is PatternResult unmapped)
+        {
+            return unmapped;
+        }
+
+        range = single;
+        uses = rangeUses;
+        return null;
+    }
 
     // E22: package.Workbook.Worksheets.Add("literal") returned by a private helper whose one EPPlus parameter is that ExcelPackage.
     private static PatternResult RewriteReturn(IMethodSymbol method, MethodDeclarationSyntax declaration, SemanticModel model)

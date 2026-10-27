@@ -32,9 +32,13 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    A[ws.Cells-range member Rows/Columns/Start/End] --> B{Rows, Columns, or Start/End followed by Row/Column?}
+    A[ws.Cells-range or range-local member Rows/Columns/Start/End] --> B{Rows, Columns, or Start/End followed by Row/Column?}
     B -- no --> M[Manual UnmappedAddress]
-    B -- yes --> C{four ints, or literal A1:C2 in order?}
+    B -- yes --> L{E25: receiver a range local?}
+    L -- yes --> LS{one local in a block, from ws.Cells, never written?}
+    LS -- no --> M
+    LS -- yes --> C
+    L -- no --> C{four ints, or literal A1:C2 in order?}
     C -- no --> M
     C -- yes --> OK[Fixed: RowCount / ColumnCount / RangeAddress.First/LastAddress]
 ```

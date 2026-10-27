@@ -85,5 +85,5 @@ Rule: private only. Count internal helpers in the TAAK-327 step 7 re-measure; re
 - `claude/tasks/archief/TAAK-329-transitive-package-loss.md`
 - `claude/tasks/archief/TAAK-335-polly-redundant-transient-clause.md`
 - `claude/tasks/archief/TAAK-336-epplus-flow-followups.md`
-- `claude/tasks/TAAK-337-epplus-range-locals.md`
+- `claude/tasks/archief/TAAK-337-epplus-range-locals.md`
 - `claude/tasks/archief/TAAK-338-automapper-closure-regressions.md`

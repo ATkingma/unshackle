@@ -57,20 +57,24 @@ internal class TransitivePackages : IProjectFileMigration
                 continue;
             }
 
-            List<Project> users = Users(solution, migration.ProjectPath);
-            IReadOnlyDictionary<string, string> used = await UsedAsync(users, lost, cancellationToken);
+            List<Project> projects = Users(solution, migration.ProjectPath);
+            IReadOnlyDictionary<string, IReadOnlyList<string>> used = await UsedAsync(projects, lost, cancellationToken);
             List<ProjectFileEdit> pins = [];
-            foreach ((string package, string user) in used)
+            foreach ((string package, IReadOnlyList<string> users) in used)
             {
                 if (OtherVersion(assets, package, lost[package]) is PackageRequirement other)
                 {
                     manuals.Add((migration.ProjectPath, new ManualResult(
-                        $"{package} {lost[package]} came transitively with {migration.Package.RemovedPackage} and `{user}` uses it, but project reference "
-                        + $"{other.RequiredBy} brings {package} {other.Range}; a pin would differ from it. Add the reference by hand with the version you want.")));
+                        $"{package} {lost[package]} came transitively with {migration.Package.RemovedPackage} and {PackageAddEdit.UserList(users)} "
+                        + $"{(users.Count == 1 ? "uses" : "use")} it, but project reference {other.RequiredBy} brings {package} {other.Range}"
+                        + $"{Direction(other, lost[package])}; a pin would differ from it. Add the reference by hand with the version you want.")
+                    {
+                        Dependents = users.Count > PackageAddEdit.MaxUsersInRow ? users : null,
+                    }));
                     continue;
                 }
 
-                pins.Add(new PackageAddEdit { Name = package, Version = lost[package], KeepsTransitiveOf = migration.Package.RemovedPackage, KeptFor = user });
+                pins.Add(new PackageAddEdit { Name = package, Version = lost[package], KeepsTransitiveOf = migration.Package.RemovedPackage, KeptFor = users });
             }
 
             if (pins.Count > 0)
@@ -119,6 +123,17 @@ internal class TransitivePackages : IProjectFileMigration
         return assets.ProjectReferenceRequirements.FirstOrDefault(r => string.Equals(r.Package, package, StringComparison.OrdinalIgnoreCase) && r.LowerBound != pinned);
     }
 
+    // Council round 19 T4: a differing version stays Manual either way; the reason tells which case applies. A higher reference bound conflicts
+    // with the pin (NU1605); a lower one means dropping the pin silently downgrades to that bound. An unparsable bound names neither.
+    internal static string Direction(PackageRequirement other, string version)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+        Version? pinned = PackageRequirement.ParseVersion(version);
+        return other.LowerBound is not Version bound || pinned is null ? ""
+            : bound > pinned ? " (higher: NU1605 risk)"
+            : $" (lower: removing the pin downgrades to {bound})";
+    }
+
     private static HashSet<string> Reach(Dictionary<string, List<string>> graph, IEnumerable<string> starts)
     {
         HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
@@ -145,10 +160,11 @@ internal class TransitivePackages : IProjectFileMigration
 
     // The lost packages whose types (or namespaces found only in them) the code names. An assembly belongs to a package by its path in the
     // NuGet packages folder: <id>/<version>/... An assembly from elsewhere (a framework reference pack) does not count: it stays.
-    // Per package the first project (in solution order) whose code uses it (council round 17 T2: named in the row).
-    private static async Task<IReadOnlyDictionary<string, string>> UsedAsync(IEnumerable<Project> projects, Dictionary<string, string> lost, CancellationToken cancellationToken)
+    // Per package every project (in solution order, once per name) whose code uses it (council round 17 T2, round 19 T5: named in the row).
+    private static async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> UsedAsync(
+        IEnumerable<Project> projects, Dictionary<string, string> lost, CancellationToken cancellationToken)
     {
-        SortedDictionary<string, string> used = new(StringComparer.OrdinalIgnoreCase);
+        SortedDictionary<string, List<string>> used = new(StringComparer.OrdinalIgnoreCase);
         foreach (Project project in projects)
         {
             if (await project.GetCompilationAsync(cancellationToken) is not Compilation compilation)
@@ -165,10 +181,12 @@ internal class TransitivePackages : IProjectFileMigration
                 }
             }
 
-            if (assemblies.Count == 0 || assemblies.Values.All(used.ContainsKey))
+            if (assemblies.Count == 0)
             {
                 continue;
             }
+
+            HashSet<string> found = new(StringComparer.OrdinalIgnoreCase);
 
             foreach (SyntaxTree tree in compilation.SyntaxTrees)
             {
@@ -178,13 +196,26 @@ internal class TransitivePackages : IProjectFileMigration
                     SymbolInfo info = model.GetSymbolInfo(name, cancellationToken);
                     if ((info.Symbol ?? info.CandidateSymbols.FirstOrDefault()) is ISymbol symbol && Package(symbol, assemblies) is string package)
                     {
-                        used.TryAdd(package, project.Name);
+                        found.Add(package);
                     }
+                }
+            }
+
+            foreach (string package in found)
+            {
+                if (!used.TryGetValue(package, out List<string>? names))
+                {
+                    used[package] = names = [];
+                }
+
+                if (!names.Contains(project.Name, StringComparer.Ordinal))
+                {
+                    names.Add(project.Name);
                 }
             }
         }
 
-        return used;
+        return used.ToDictionary(p => p.Key, p => (IReadOnlyList<string>)p.Value, StringComparer.OrdinalIgnoreCase);
     }
 
     private static string? Package(ISymbol symbol, Dictionary<IAssemblySymbol, string> assemblies)

@@ -41,7 +41,7 @@ Follow-ups: TAAK-349 (T4, T5), TAAK-346 step 2a (R3), TAAK-342 steps 7a-7c (B10,
 
 - `claude/docs/council.md` — summary of all rounds
 - `claude/tasks/COUNCIL-round-18.md`
-- `claude/tasks/TAAK-349-transitive-pin-reasons.md`
+- `claude/tasks/archief/TAAK-349-transitive-pin-reasons.md`
 - `claude/tasks/TAAK-346-epplus-flow-rows.md`
 - `claude/tasks/TAAK-342-ef-bulk.md`
 - `claude/tasks/archief/TAAK-343-transitive-pin-followups.md`

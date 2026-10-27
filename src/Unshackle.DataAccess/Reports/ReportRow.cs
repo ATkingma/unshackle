@@ -66,7 +66,7 @@ public class ReportRow
             Pattern = finding.PatternId,
             Status = status,
             Reason = reason,
-            Dependents = (finding.Result as ManualResult)?.Dependents,
+            Dependents = (finding.Result as ManualResult)?.Dependents ?? (finding.Result as FixedResult)?.Dependents,
         };
     }
 }

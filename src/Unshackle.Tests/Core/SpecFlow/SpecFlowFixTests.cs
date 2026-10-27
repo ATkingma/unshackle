@@ -41,13 +41,13 @@ public class SpecFlowFixTests
     }
 
     [Fact]
-    public void EditsFor_ProjectOnSpecFlow_RenamesEveryPackageToReqnroll()
+    public async Task EditsFor_ProjectOnSpecFlow_RenamesEveryPackageToReqnroll()
     {
         // Arrange
         Project project = CreateProject(SpecFlowReferences.SpecFlow);
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = new SpecFlowFix().EditsFor(project);
+        IReadOnlyList<ProjectFileEdit> edits = await new SpecFlowFix().EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         List<PackageRenameEdit> renames = [.. edits.Select(e => e.ShouldBeOfType<PackageRenameEdit>())];
@@ -60,13 +60,13 @@ public class SpecFlowFixTests
     }
 
     [Fact]
-    public void EditsFor_RunnerPackageInReferences_MustBeDeclared()
+    public async Task EditsFor_RunnerPackageInReferences_MustBeDeclared()
     {
         // Arrange (council round 18, S9: a runner package nothing else brings in is declared by the project or a shared file it imports)
         Project project = CreateProject([.. SpecFlowReferences.SpecFlow, FakeReference("C:/nuget/specflow.nunit/3.9.74/lib/net461/TechTalk.SpecFlow.NUnit.SpecFlowPlugin.dll")]);
 
         // Act
-        List<PackageRenameEdit> renames = [.. new SpecFlowFix().EditsFor(project).OfType<PackageRenameEdit>()];
+        List<PackageRenameEdit> renames = [.. (await new SpecFlowFix().EditsForAsync(project, TestContext.Current.CancellationToken)).OfType<PackageRenameEdit>()];
 
         // Assert
         renames.Where(r => r.MustBeDeclared).Select(r => r.OldName).ShouldBe(["SpecFlow.NUnit"]);
@@ -75,13 +75,13 @@ public class SpecFlowFixTests
     [Theory]
     [InlineData("C:/nuget/specrun.specflow/3.9.31/lib/net461/TechTalk.SpecRun.SpecFlowPlugin.dll", "specrun.specflow")]
     [InlineData("C:/nuget/specflow.assist.dynamic/1.4.2/lib/netstandard2.0/SpecFlow.Assist.Dynamic.dll", "specflow.assist.dynamic")]
-    public void ProjectBlockers_UnportedPlugin_BlocksNamingThePackage(string path, string package)
+    public async Task ProjectBlockers_UnportedPlugin_BlocksNamingThePackage(string path, string package)
     {
         // Arrange (council round 18, S8)
         Project project = CreateProject([.. SpecFlowReferences.SpecFlow, FakeReference(path)]);
 
         // Act
-        IReadOnlyList<ManualResult> blockers = new SpecFlowFix().ProjectBlockers(project);
+        IReadOnlyList<ManualResult> blockers = await new SpecFlowFix().ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         blockers.ShouldHaveSingleItem().Reason.ShouldContain($"plugin package {package}, which has no Reqnroll port");
@@ -101,13 +101,13 @@ public class SpecFlowFixTests
     }
 
     [Fact]
-    public void EditsFor_ProjectWithoutSpecFlow_LeavesItAlone()
+    public async Task EditsFor_ProjectWithoutSpecFlow_LeavesItAlone()
     {
         // Arrange
         Project project = CreateProject(SpecFlowReferences.Reqnroll);
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = new SpecFlowFix().EditsFor(project);
+        IReadOnlyList<ProjectFileEdit> edits = await new SpecFlowFix().EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         edits.ShouldBeEmpty();
@@ -127,13 +127,13 @@ public class SpecFlowFixTests
     }
 
     [Fact]
-    public void ProjectBlockers_PackageReferenceProject_IsNotBlocked()
+    public async Task ProjectBlockers_PackageReferenceProject_IsNotBlocked()
     {
         // Arrange
         Project project = CreateProject(SpecFlowReferences.SpecFlow);
 
         // Act
-        IReadOnlyList<ManualResult> blockers = new SpecFlowFix().ProjectBlockers(project);
+        IReadOnlyList<ManualResult> blockers = await new SpecFlowFix().ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         blockers.ShouldBeEmpty();

@@ -21,13 +21,13 @@ public class PollyPackageDowngradeTests
     [InlineData("Microsoft.Extensions.Options", "9.0.21", "NETCOREAPP;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NET10_0_OR_GREATER", true)]
     [InlineData("Microsoft.Extensions.Telemetry.Abstractions", "9.0.0", "NETCOREAPP;NET8_0_OR_GREATER", true)]
     [InlineData("Microsoft.Extensions.Http.Polly", "3.1.0", "NETCOREAPP;NET8_0_OR_GREATER", false)]          // removed by the migration
-    public void ProjectBlockers_OlderMicrosoftExtensionsPackage_BlocksWithPackageDowngrade(string id, string version, string symbols, bool blocked)
+    public async Task ProjectBlockers_OlderMicrosoftExtensionsPackage_BlocksWithPackageDowngrade(string id, string version, string symbols, bool blocked)
     {
         // Arrange
         Project project = PollyFixTests.CreateProject(symbols.Split(';'), [.. PollyReferences.Before, PackageReference(id, version)]);
 
         // Act
-        IReadOnlyList<ManualResult> blockers = new PollyFix().ProjectBlockers(project);
+        IReadOnlyList<ManualResult> blockers = await new PollyFix().ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         if (blocked)
@@ -43,13 +43,13 @@ public class PollyPackageDowngradeTests
     }
 
     [Fact]
-    public void ProjectBlockers_ProjectWithoutPollyV7_DoesNotBlock()
+    public async Task ProjectBlockers_ProjectWithoutPollyV7_DoesNotBlock()
     {
         // Arrange
         Project project = PollyFixTests.CreateProject(["NETCOREAPP", "NET8_0_OR_GREATER"], [.. PollyReferences.After, PackageReference("Microsoft.Extensions.Http", "6.0.0")]);
 
         // Act
-        IReadOnlyList<ManualResult> blockers = new PollyFix().ProjectBlockers(project);
+        IReadOnlyList<ManualResult> blockers = await new PollyFix().ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         blockers.ShouldBeEmpty();

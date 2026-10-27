@@ -42,13 +42,13 @@ public class XunitV3FixTests
     }
 
     [Fact]
-    public void EditsFor_TestProject_SetsExeAndRenamesEveryV2Package()
+    public async Task EditsFor_TestProject_SetsExeAndRenamesEveryV2Package()
     {
         // Arrange
         Project project = CreateTestProject(["NETCOREAPP", "NET8_0_OR_GREATER"]);
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = new XunitV3Fix().EditsFor(project);
+        IReadOnlyList<ProjectFileEdit> edits = await new XunitV3Fix().EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         edits.Select(e => e.Describe()).ShouldBe(
@@ -62,20 +62,20 @@ public class XunitV3FixTests
             "PackageReference xunit.extensibility.execution → xunit.v3.extensibility.core 3.2.2",
             "PackageReference xunit.abstractions removed",
         ]);
-        new XunitV3Fix().ProjectInfo(project).ShouldBeEmpty();
+        (await new XunitV3Fix().ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
     }
 
     [Theory]
     [InlineData(true, false, "references Microsoft.NET.Test.Sdk and has no xUnit test attributes")]
     [InlineData(false, true, "does not reference Microsoft.NET.Test.Sdk and has xUnit test attributes")]
     [InlineData(false, false, "does not reference Microsoft.NET.Test.Sdk and has no xUnit test attributes")]
-    public void EditsFor_XunitPackageWithoutBothTestSigns_NoExeLibraryPackagesAndInfo(bool sdk, bool attributes, string why)
+    public async Task EditsFor_XunitPackageWithoutBothTestSigns_NoExeLibraryPackagesAndInfo(bool sdk, bool attributes, string why)
     {
         // Arrange (council round 18, X4): either sign alone is not a test project.
         Project project = CreateProject(["NETCOREAPP", "NET8_0_OR_GREATER"], sdk ? [.. XunitV3References.Before, TestSdk] : XunitV3References.Before, attributes ? TestCode : HelperCode);
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = new XunitV3Fix().EditsFor(project);
+        IReadOnlyList<ProjectFileEdit> edits = await new XunitV3Fix().EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         edits.Select(e => e.Describe()).ShouldBe(
@@ -88,52 +88,52 @@ public class XunitV3FixTests
             "PackageReference xunit.extensibility.execution → xunit.v3.extensibility.core 3.2.2",
             "PackageReference xunit.abstractions removed",
         ]);
-        new XunitV3Fix().ProjectInfo(project).ShouldHaveSingleItem().ShouldContain(why);
-        new XunitV3Fix().ProjectBlockers(project).ShouldBeEmpty();
+        (await new XunitV3Fix().ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldHaveSingleItem().ShouldContain(why);
+        (await new XunitV3Fix().ProjectBlockersAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
     }
 
     [Fact]
-    public void HasTestAttributes_DerivedFactAttribute_Counts()
+    public async Task HasTestAttributes_DerivedFactAttribute_Counts()
     {
         // Arrange: a custom attribute that derives from FactAttribute marks a test too.
         Project project = CreateProject(["NETCOREAPP", "NET8_0_OR_GREATER"], [.. XunitV3References.Before, TestSdk],
             "using Xunit;\npublic class SlowFactAttribute : FactAttribute { }\npublic class T { [SlowFact] public void A() { } }\n");
 
         // Act
-        bool test = XunitV3Assemblies.IsTestProject(project);
+        bool test = await XunitV3Assemblies.IsTestProjectAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         test.ShouldBeTrue();
     }
 
     [Fact]
-    public void EditsFor_HelperLibraryWithoutExecution_KeepsOutputType()
+    public async Task EditsFor_HelperLibraryWithoutExecution_KeepsOutputType()
     {
         // Arrange: a shared helper project references only xunit.extensibility.core (+ abstractions), not the runner side.
         Project project = CreateProject(["NETSTANDARD"], [.. XunitV3References.Before.Where(r => !(r.Display ?? string.Empty).Contains("execution", StringComparison.Ordinal))]);
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = new XunitV3Fix().EditsFor(project);
+        IReadOnlyList<ProjectFileEdit> edits = await new XunitV3Fix().EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         edits.ShouldNotContain(e => e is PropertyEdit);
         edits.ShouldContain(e => e is PackageRenameEdit && ((PackageRenameEdit)e).OldName == "xunit.extensibility.core");
-        new XunitV3Fix().ProjectBlockers(project).ShouldBeEmpty();
-        new XunitV3Fix().ProjectInfo(project).ShouldBeEmpty();
+        (await new XunitV3Fix().ProjectBlockersAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        (await new XunitV3Fix().ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
     }
 
     [Fact]
-    public void EditsFor_ProjectAlreadyOnV3_LeavesItAlone()
+    public async Task EditsFor_ProjectAlreadyOnV3_LeavesItAlone()
     {
         // Arrange
         Project project = CreateProject(["NETCOREAPP", "NET8_0_OR_GREATER"], XunitV3References.After);
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = new XunitV3Fix().EditsFor(project);
+        IReadOnlyList<ProjectFileEdit> edits = await new XunitV3Fix().EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         edits.ShouldBeEmpty();
-        new XunitV3Fix().ProjectInfo(project).ShouldBeEmpty();
+        (await new XunitV3Fix().ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
     }
 
     [Theory]
@@ -143,13 +143,13 @@ public class XunitV3FixTests
     [InlineData("NETSTANDARD;NETSTANDARD2_0", true)]
     [InlineData("NETCOREAPP;NET8_0_OR_GREATER", false)]
     [InlineData("NETFRAMEWORK;NET472_OR_GREATER", false)]
-    public void ProjectBlockers_TestProjectOnUnsupportedFramework_BlocksIt(string symbols, bool blocked)
+    public async Task ProjectBlockers_TestProjectOnUnsupportedFramework_BlocksIt(string symbols, bool blocked)
     {
         // Arrange
         Project project = CreateTestProject(symbols.Split(';'));
 
         // Act
-        IReadOnlyList<ManualResult> blockers = new XunitV3Fix().ProjectBlockers(project);
+        IReadOnlyList<ManualResult> blockers = await new XunitV3Fix().ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         if (blocked)

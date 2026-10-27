@@ -56,7 +56,7 @@ public class RoundTenEngineTests
     {
         // Arrange
         IFix fix = CreateFix(PatternResult.Note("ok"));
-        fix.ProjectInfo(Arg.Any<Project>()).Returns(["Polly 7.2.4 found."]);
+        fix.ProjectInfoAsync(Arg.Any<Project>(), Arg.Any<CancellationToken>()).Returns(["Polly 7.2.4 found."]);
 
         // Act
         FixReport report = await new Fixer([fix]).FixAsync(CreateSolution(), new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
@@ -132,11 +132,11 @@ public class RoundTenEngineTests
         IProjectFileStore store = Substitute.For<IProjectFileStore, IProjectFileEditor>();
         var edit = new PackageRenameEdit { OldName = "SpecFlow", NewName = "Reqnroll", Version = "2.4.1" };
         IFix fix = CreateFix(PatternResult.Note("ok"));
-        ((IProjectFileMigration)fix).EditsFor(Arg.Any<Project>()).Returns([edit]);
+        ((IProjectFileMigration)fix).EditsForAsync(Arg.Any<Project>(), Arg.Any<CancellationToken>()).Returns([edit]);
         ManualResult blocker = code is ProjectBlockingReason reason
             ? (ManualResult)PatternResult.Manual(reason, "net45 is not supported.")
             : (ManualResult)PatternResult.Manual("SpecFlow is kept.");
-        ((IProjectFileMigration)fix).ProjectBlockers(Arg.Any<Project>()).Returns([blocker]);
+        ((IProjectFileMigration)fix).ProjectBlockersAsync(Arg.Any<Project>(), Arg.Any<CancellationToken>()).Returns([blocker]);
         ((IProjectFileEditor)store).ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>())
             .Returns([new ProjectFileEditOutcome { Edit = edit, FilePath = ProjectPath, Line = 3 }]);
 
@@ -160,7 +160,7 @@ public class RoundTenEngineTests
         ManualResult blocker = blocking
             ? (ManualResult)PatternResult.Manual(ProjectBlockingReason.TargetFrameworkUnsupported, "net45 is not supported.")
             : (ManualResult)PatternResult.Manual("only a note-like Manual row.");
-        ((IProjectFileMigration)fix).ProjectBlockers(Arg.Any<Project>()).Returns([blocker]);
+        ((IProjectFileMigration)fix).ProjectBlockersAsync(Arg.Any<Project>(), Arg.Any<CancellationToken>()).Returns([blocker]);
         Solution solution = CreateSolution();
 
         // Act
@@ -196,7 +196,7 @@ public class RoundTenEngineTests
         ManualResult blocker = blocking
             ? (ManualResult)PatternResult.Manual(ProjectBlockingReason.TargetFrameworkUnsupported, "net45 is not supported.")
             : (ManualResult)PatternResult.Manual("only a note-like Manual row.");
-        ((IProjectFileMigration)fix).ProjectBlockers(Arg.Any<Project>()).Returns([blocker]);
+        ((IProjectFileMigration)fix).ProjectBlockersAsync(Arg.Any<Project>(), Arg.Any<CancellationToken>()).Returns([blocker]);
 
         // Act
         FixReport report = await new Fixer([fix], store).FixAsync(CreateSolution(), new FixRequest { FixId = "test" }, TestContext.Current.CancellationToken);
@@ -215,7 +215,7 @@ public class RoundTenEngineTests
         var edit = new PackageRenameEdit { OldName = "SpecFlow", NewName = "Reqnroll", Version = "2.4.1" };
         var pending = new OldPackageVersion { PropsPath = "/repo/Directory.Packages.props", Package = "SpecFlow" };
         IFix fix = CreateFix(PatternResult.Note("ok"));
-        ((IProjectFileMigration)fix).EditsFor(Arg.Any<Project>()).Returns([edit]);
+        ((IProjectFileMigration)fix).EditsForAsync(Arg.Any<Project>(), Arg.Any<CancellationToken>()).Returns([edit]);
         var editor = (IProjectFileEditor)store;
         editor.ApplyAsync(ProjectPath, Arg.Any<IEnumerable<ProjectFileEdit>>(), Arg.Any<IEnumerable<ProjectFileChange>>(), Arg.Any<ProjectFileEditContext>(), Arg.Any<CancellationToken>())
             .Returns([new ProjectFileEditOutcome { Edit = edit, FilePath = ProjectPath, Line = 3, PendingOldVersions = [pending] }]);
@@ -250,9 +250,9 @@ public class RoundTenEngineTests
         fix.Patterns.Returns([pattern]);
         fix.RemovedNamespaces.Returns(["FluentAssertions"]);
         fix.AddedNamespaces.Returns(["Shouldly"]);
-        fix.ProjectInfo(Arg.Any<Project>()).Returns([]);
-        ((IProjectFileMigration)fix).EditsFor(Arg.Any<Project>()).Returns([]);
-        ((IProjectFileMigration)fix).ProjectBlockers(Arg.Any<Project>()).Returns([]);
+        fix.ProjectInfoAsync(Arg.Any<Project>(), Arg.Any<CancellationToken>()).Returns([]);
+        ((IProjectFileMigration)fix).EditsForAsync(Arg.Any<Project>(), Arg.Any<CancellationToken>()).Returns([]);
+        ((IProjectFileMigration)fix).ProjectBlockersAsync(Arg.Any<Project>(), Arg.Any<CancellationToken>()).Returns([]);
         return fix;
     }
 

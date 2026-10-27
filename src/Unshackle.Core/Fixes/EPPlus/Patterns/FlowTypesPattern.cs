@@ -11,7 +11,9 @@ namespace Unshackle.Core.Fixes.EPPlus.Patterns;
 /// takes <c>IXLWorksheet</c>, only when the flow is provable in one file: the method is private in a non-partial type, it is only ever
 /// invoked (no method group), every use of the parameter in its body is one <see cref="WorkbookUses"/> maps (cells, layout, a Name read),
 /// and every caller passes a worksheet another EPPlus pattern already migrated. <see cref="PackagePattern"/> accepts a worksheet local
-/// passed to such a helper (<see cref="Migratable"/>). Fields, return types, packages and ranges as flow types are not mapped yet.
+/// passed to such a helper (<see cref="Migratable"/>). A field of an EPPlus type is Manual <c>FlowFieldNotMapped</c> and a method with an EPPlus
+/// return type Manual <c>FlowReturnNotMapped</c> (conservative until TAAK-327 council questions 2 and 3 are answered); packages and ranges as
+/// parameters are not mapped yet.
 /// </summary>
 public class FlowTypesPattern : IPattern
 {
@@ -19,13 +21,33 @@ public class FlowTypesPattern : IPattern
 
     public string Description => "private helper with one ExcelWorksheet parameter whose uses and callers are all migrated → IXLWorksheet parameter";
 
+    // Methods with an ExcelWorksheet parameter or an EPPlus return type, and fields of an EPPlus type (the last two are Manual for now).
     public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        root.DescendantNodes().OfType<MethodDeclarationSyntax>()
-            .Where(m => m.ParameterList.Parameters.Any(p => p.Type is not null && IsWorksheet(model.GetTypeInfo(p.Type).Type)));
+        root.DescendantNodes().Where(n => n switch
+        {
+            MethodDeclarationSyntax m => m.ParameterList.Parameters.Any(p => p.Type is not null && IsWorksheet(model.GetTypeInfo(p.Type).Type))
+                || model.GetTypeInfo(m.ReturnType).Type is { } returned && EPPlusApi.Mentions(returned),
+            FieldDeclarationSyntax f => model.GetTypeInfo(f.Declaration.Type).Type is { } type && EPPlusApi.Mentions(type),
+            _ => false,
+        });
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
+        if (node is FieldDeclarationSyntax field)
+        {
+            // Council question 2 (TAAK-327): a field's flow crosses every method of the type and the constructor's callers; not proven yet.
+            return PatternResult.Manual(EPPlusReason.FlowFieldNotMapped, $"field '{Shorten(field.Declaration)}' ({Where(field)}) has an EPPlus type; a field is assigned and read "
+                + "across methods (and from constructor callers), which E18 step 1 does not prove yet (TAAK-327 council question 2). Change the field and its uses by hand.");
+        }
+
         var declaration = (MethodDeclarationSyntax)node;
+        if (model.GetTypeInfo(declaration.ReturnType).Type is { } returnType && EPPlusApi.Mentions(returnType))
+        {
+            // Council question 3 (TAAK-327): what a returned sheet or package is depends on every caller's use of the result.
+            return PatternResult.Manual(EPPlusReason.FlowReturnNotMapped, $"{declaration.Identifier.ValueText} ({Where(declaration)}) returns an EPPlus type; the returned value "
+                + "flows into every caller, which E18 step 1 does not prove yet (TAAK-327 council question 3). Change the return type and its callers by hand.");
+        }
+
         if (model.GetDeclaredSymbol(declaration) is not IMethodSymbol method)
         {
             return PatternResult.Manual(EPPlusReason.FlowMemberNotPrivate, $"method at {Where(node)} does not bind; migrate its ExcelWorksheet parameter by hand.");

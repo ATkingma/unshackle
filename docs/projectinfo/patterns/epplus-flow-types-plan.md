@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "epplus-flow-types"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8]
 files_expected:
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/FlowTypesPattern.cs
     - src/Unshackle.Core/Fixes/EPPlus/Patterns/WorkbookUses.cs
@@ -34,11 +34,12 @@ epplus.flow-types: a private helper method with one `ExcelWorksheet` parameter t
 | Shape | Reason |
 | --- | --- |
 | public/internal/protected or virtual method, partial type | `FlowMemberNotPrivate` (E18: private only; callers may be out of reach) |
-| another EPPlus parameter, EPPlus return, ref/out/params/optional worksheet | `FlowUseNotMigrated` |
+| another EPPlus parameter, ref/out/params/optional worksheet | `FlowUseNotMigrated` |
+| a method with an EPPlus return type (`ExcelWorksheet AddSheet(..)`, `Action<ExcelWorksheet>`) | `FlowReturnNotMapped` (council question 3) |
 | method group (`Action<ExcelWorksheet> a = Fill`) | `FlowUseNotMigrated` |
 | a parameter use the package rules do not map (a cell read, a rename, passing it on) | that use's code (`CellReadDiffers`, `UncoveredRuntimeType`, `FlowUseNotMigrated`) |
 | a caller passes a worksheet no pattern migrated (field, other helper) | `FlowCallerNotMigrated` |
-| fields and return types of `ExcelPackage`/`ExcelWorksheet`/`ExcelRange` | not found by this pattern; still `epplus.unsupported` (council question) |
+| a field of an EPPlus type (`private ExcelWorksheet _sheet`) | `FlowFieldNotMapped` (council question 2) |
 
 ## Design
 
@@ -56,6 +57,8 @@ epplus.flow-types: a private helper method with one `ExcelWorksheet` parameter t
 | REQ-4 | An unmapped use of the parameter is Manual with that use's reason. |
 | REQ-5 | A caller passing an unmigrated worksheet is Manual `FlowCallerNotMigrated`. |
 | REQ-6 | A method group of the helper is Manual. |
+| REQ-7 | A field of an EPPlus type is Manual `FlowFieldNotMapped` (TAAK-327 step 5, conservative until council question 2 is answered). |
+| REQ-8 | A method with an EPPlus return type is Manual `FlowReturnNotMapped` (TAAK-327 step 5, conservative until council question 3 is answered). |
 
 ## See also
 

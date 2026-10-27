@@ -40,7 +40,7 @@ public static class Cli
             new MediatRFix(new XmlProjectProperties(fileSystem)),
             new AutoMapperFix(new XmlProjectProperties(fileSystem)),
             new MoqFix([MetadataReference.CreateFromFile(Path.Combine(AppContext.BaseDirectory, "References", "NSubstitute.dll"))]),
-            new PollyFix(),
+            new PollyFix(assetsReader),
             new EPPlusFix(new XmlProjectProperties(fileSystem), new FileConfigKeySearch(fileSystem), assetsReader),
             new MassTransitFix(),
             new EfBulkFix(new XmlProjectProperties(fileSystem)),

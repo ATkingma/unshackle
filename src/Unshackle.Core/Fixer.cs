@@ -30,7 +30,7 @@ public class Fixer : IFixer
     // The one fix-level Info row of a run that changed code (council round 14, M13).
     public const string ChangedCodeInfoPatternId = "changed-code-info";
 
-    internal const string KeptPackageReason = " is still used in this project, so its package and global usings stay. ";
+    internal const string KeptPackageReason = " is still used in this project, so its package and global usings stay";
 
     internal const string KeptSharedPackageReason = " is not migrated but still uses ";
 
@@ -566,7 +566,7 @@ public class Fixer : IFixer
             m.KeptForDependents.Count > 0
                 ? new ManualResult($"{KeptName(m.ProjectPath)}{KeptForDependentReason}{DependentList(m.KeptForDependents)}{AddedNextTo(m, changes)}. " +
                     (m.KeptForDependents.Count == 1 ? "Migrate that project and run the fix again." : "Migrate those projects and run the fix again.")) { Dependents = m.KeptForDependents }
-                : PatternResult.Manual($"{KeptName(m.ProjectPath)}{KeptPackageReason}Fix the manual findings and run the fix again."))));
+                : PatternResult.Manual($"{KeptName(m.ProjectPath)}{KeptPackageReason}{AddedNextTo(m, changes)}. Fix the manual findings and run the fix again."))));
         // A kept project's own file edit (the new package next to the old one) is covered by its kept row: one row per project file.
         HashSet<string> keptRows = new(migrations.Where(m => m.KeepRemovedPackage).Select(m => m.ProjectPath), StringComparer.OrdinalIgnoreCase);
         // The project-file row alone says that something is left, not where. A file with a Manual finding already has its explanation.

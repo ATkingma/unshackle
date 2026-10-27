@@ -16,6 +16,20 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 public class MapCallPattern : ISolutionPattern, ISolutionFinder
 {
+    private readonly IProjectProperties? _projectProperties;
+
+    // Without project properties (tests, a host without MSBuild) packability is guessed from the compilation (TypeArgumentClosure).
+    public MapCallPattern()
+        : this(null)
+    {
+    }
+
+    // TAAK-324: IsPackable as MSBuild sees it decides whether a public generic member closes its type arguments (council round 10, R1).
+    public MapCallPattern(IProjectProperties? projectProperties)
+    {
+        _projectProperties = projectProperties;
+    }
+
     private const string AutoMapperAssembly = "AutoMapper";
 
     public string Id => "automapper.map-call";
@@ -38,7 +52,7 @@ public class MapCallPattern : ISolutionPattern, ISolutionFinder
             return found;
         }
 
-        MapOwners owners = await MapOwners.ForAsync(solution, model, cancellationToken);
+        MapOwners owners = await MapOwners.ForAsync(solution, model, _projectProperties, cancellationToken);
         HashSet<SyntaxNode> removed = [.. MockedMappers.Find(root, model).Where(m => owners.IsDischarged(m.Key)).SelectMany(m => m.Stubs.Select(s => (SyntaxNode)s.Call))];
         return [.. found.Where(n => !removed.Contains(n))];
     }
@@ -70,7 +84,7 @@ public class MapCallPattern : ISolutionPattern, ISolutionFinder
 
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        if (await MapOwners.KeptCallAsync(node, model, solution, cancellationToken) is { } kept)
+        if (await MapOwners.KeptCallAsync(node, model, solution, _projectProperties, cancellationToken) is { } kept)
         {
             return kept;
         }
@@ -83,7 +97,7 @@ public class MapCallPattern : ISolutionPattern, ISolutionFinder
             }
 
             ExpressionSyntax parameter = SyntaxFactory.IdentifierName(ParameterName(node, model));
-            return Lambda(parameter, await SingleAsync(node, model, solution, parameter, groupSource!, groupDestination!, MapCallKind.Plain, cancellationToken));
+            return Lambda(parameter, await SingleAsync(node, model, solution, parameter, groupSource!, groupDestination!, MapCallKind.Plain, _projectProperties, cancellationToken));
         }
 
         if (Check((InvocationExpressionSyntax)node, model, out ExpressionSyntax? source, out ITypeSymbol? sourceType, out ITypeSymbol? destination, out MapCallKind kind)
@@ -94,15 +108,15 @@ public class MapCallPattern : ISolutionPattern, ISolutionFinder
 
         if (kind == MapCallKind.Collection)
         {
-            return Collection((InvocationExpressionSyntax)node, model, await NestedMaps.FromAsync(model, solution, cancellationToken), source!, sourceType!, destination!);
+            return Collection((InvocationExpressionSyntax)node, model, await NestedMaps.FromAsync(model, solution, _projectProperties, cancellationToken), source!, sourceType!, destination!);
         }
 
-        return await SingleAsync(node, model, solution, source!, sourceType!, destination!, kind, cancellationToken);
+        return await SingleAsync(node, model, solution, source!, sourceType!, destination!, kind, _projectProperties, cancellationToken);
     }
 
     // source.ToB() through the method that exists or the one a profile of the solution gets; Manual when there is none (or several).
     internal static async Task<PatternResult> SingleAsync(SyntaxNode node, SemanticModel model, Solution solution, ExpressionSyntax source, ITypeSymbol sourceType,
-        ITypeSymbol destination, MapCallKind kind, CancellationToken cancellationToken)
+        ITypeSymbol destination, MapCallKind kind, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         if (Existing(node, model, sourceType!, destination!, source!, kind) is { } existing)
         {
@@ -110,10 +124,10 @@ public class MapCallPattern : ISolutionPattern, ISolutionFinder
         }
 
         List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)> generated =
-            await GeneratedAsync(solution, model, sourceType!, destination!, cancellationToken);
+            await GeneratedAsync(solution, model, sourceType!, destination!, projectProperties, cancellationToken);
         if (generated.Count == 0)
         {
-            return PatternResult.Manual(await MapBlockers.ReasonAsync(solution, model, sourceType!, destination!, cancellationToken) ?? NoMapAnywhere(sourceType!, destination!));
+            return PatternResult.Manual(await MapBlockers.ReasonAsync(solution, model, sourceType!, destination!, projectProperties, cancellationToken) ?? NoMapAnywhere(sourceType!, destination!));
         }
 
         if (generated.Count > 1)
@@ -398,7 +412,7 @@ public class MapCallPattern : ISolutionPattern, ISolutionFinder
     // Every CreateMap<A, B> in a profile the profile patterns rewrite, in the calling project or one it depends on: the generated method,
     // the namespace of its class (null: global) and whether it becomes internal.
     internal static async Task<List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)>> GeneratedAsync(Solution solution, SemanticModel model,
-        ITypeSymbol sourceType, ITypeSymbol destination, CancellationToken cancellationToken)
+        ITypeSymbol sourceType, ITypeSymbol destination, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         string sourceName = sourceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         string destinationName = destination.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
@@ -406,7 +420,7 @@ public class MapCallPattern : ISolutionPattern, ISolutionFinder
             ? solution.GetProjectDependencyGraph().GetProjectsThatThisProjectTransitivelyDependsOn(callProject.Id).Append(callProject.Id).Select(solution.GetProject).OfType<Project>()
             : solution.Projects;
         List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)> found = [];
-        MapOwners owners = await MapOwners.ForAsync(solution, model, cancellationToken);
+        MapOwners owners = await MapOwners.ForAsync(solution, model, projectProperties, cancellationToken);
         foreach (Project project in projects.Where(p => p.Language == LanguageNames.CSharp))
         {
             foreach (Document document in project.Documents)
@@ -421,7 +435,7 @@ public class MapCallPattern : ISolutionPattern, ISolutionFinder
                 foreach (ClassDeclarationSyntax profile in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(c => ProfileSyntax.IsProfileWithMaps(c, profileModel)))
                 {
                     // With the solution: a member may call the map of a profile in a project this one depends on.
-                    if (await CreateMapPattern.RewriteMethodsAsync(profile, profileModel, solution, cancellationToken) is not FixedResult { NewNodes: [_, ClassDeclarationSyntax extensions] })
+                    if (await CreateMapPattern.RewriteMethodsAsync(profile, profileModel, solution, projectProperties, cancellationToken) is not FixedResult { NewNodes: [_, ClassDeclarationSyntax extensions] })
                     {
                         continue;
                     }

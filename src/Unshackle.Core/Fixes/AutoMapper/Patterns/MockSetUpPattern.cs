@@ -14,6 +14,20 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 public class MockSetUpPattern : ISolutionPattern, ISolutionFinder
 {
+    private readonly IProjectProperties? _projectProperties;
+
+    // Without project properties (tests, a host without MSBuild) packability is guessed from the compilation (TypeArgumentClosure).
+    public MockSetUpPattern()
+        : this(null)
+    {
+    }
+
+    // TAAK-324: IsPackable as MSBuild sees it decides whether a public generic member closes its type arguments (council round 10, R1).
+    public MockSetUpPattern(IProjectProperties? projectProperties)
+    {
+        _projectProperties = projectProperties;
+    }
+
     public string Id => "automapper.mock-set-up";
 
     public string Description =>
@@ -24,7 +38,7 @@ public class MockSetUpPattern : ISolutionPattern, ISolutionFinder
 
     public async Task<IReadOnlyList<SyntaxNode>> FindAsync(SyntaxNode root, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
-        (List<(MapStub Stub, MockedMapper Mock)> stubs, List<MockedMapper> bare) = await DischargedAsync(root, model, solution, cancellationToken);
+        (List<(MapStub Stub, MockedMapper Mock)> stubs, List<MockedMapper> bare) = await DischargedAsync(root, model, solution, _projectProperties, cancellationToken);
         return [.. stubs.Select(s => (SyntaxNode)s.Stub.Statement), .. bare.Select(m => m.Declaration)];
     }
 
@@ -34,7 +48,7 @@ public class MockSetUpPattern : ISolutionPattern, ISolutionFinder
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
         SyntaxNode root = node.SyntaxTree.GetRoot(cancellationToken);
-        (List<(MapStub Stub, MockedMapper Mock)> stubs, List<MockedMapper> bare) = await DischargedAsync(root, model, solution, cancellationToken);
+        (List<(MapStub Stub, MockedMapper Mock)> stubs, List<MockedMapper> bare) = await DischargedAsync(root, model, solution, _projectProperties, cancellationToken);
         if (bare.FirstOrDefault(m => m.Declaration == node) is { } unstubbed)
         {
             return PatternResult.Note($"The mock of IMapper at {unstubbed.Where} had no stubs; Map now returns a real object: "
@@ -57,7 +71,7 @@ public class MockSetUpPattern : ISolutionPattern, ISolutionFinder
 
     // The stubs that go (with their mock) and the mocks without stubs whose classes migrate (council A8), of this file.
     private static async Task<(List<(MapStub Stub, MockedMapper Mock)> Stubs, List<MockedMapper> Bare)> DischargedAsync(
-        SyntaxNode root, SemanticModel model, Solution solution, CancellationToken cancellationToken)
+        SyntaxNode root, SemanticModel model, Solution solution, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         if (!root.ToString().Contains("IMapper", StringComparison.Ordinal))
         {
@@ -70,7 +84,7 @@ public class MockSetUpPattern : ISolutionPattern, ISolutionFinder
             return ([], []);
         }
 
-        MapOwners owners = await MapOwners.ForAsync(solution, model, cancellationToken);
+        MapOwners owners = await MapOwners.ForAsync(solution, model, projectProperties, cancellationToken);
         List<MockedMapper> discharged = [.. mocks.Where(m => owners.IsDischarged(m.Key))];
         return ([.. discharged.SelectMany(m => m.Stubs.Select(s => (s, m)))], [.. discharged.Where(m => m.Stubs.Count == 0)]);
     }

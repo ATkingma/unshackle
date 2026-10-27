@@ -15,6 +15,20 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 public class ProjectToPattern : ISolutionPattern
 {
+    private readonly IProjectProperties? _projectProperties;
+
+    // Without project properties (tests, a host without MSBuild) packability is guessed from the compilation (TypeArgumentClosure).
+    public ProjectToPattern()
+        : this(null)
+    {
+    }
+
+    // TAAK-324: IsPackable as MSBuild sees it decides whether a public generic member closes its type arguments (council round 10, R1).
+    public ProjectToPattern(IProjectProperties? projectProperties)
+    {
+        _projectProperties = projectProperties;
+    }
+
     private const string AutoMapperAssembly = "AutoMapper";
 
     public string Id => "automapper.project-to";
@@ -34,7 +48,7 @@ public class ProjectToPattern : ISolutionPattern
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
         var invocation = (InvocationExpressionSyntax)node;
-        if (await MapOwners.KeptCallAsync(node, model, solution, cancellationToken) is { } kept)
+        if (await MapOwners.KeptCallAsync(node, model, solution, _projectProperties, cancellationToken) is { } kept)
         {
             return kept;
         }
@@ -50,9 +64,9 @@ public class ProjectToPattern : ISolutionPattern
         }
 
         List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)> generated =
-            await MapCallPattern.GeneratedAsync(solution, model, source!, destination!, cancellationToken);
-        List<(string Extensions, ClassDeclarationSyntax Profile, SemanticModel Model)> profiles = await ProfilesAsync(solution, model, source!, destination!, cancellationToken);
-        if (generated.Count == 0 && await MapBlockers.ReasonAsync(solution, model, source!, destination!, cancellationToken) is { } blocker)
+            await MapCallPattern.GeneratedAsync(solution, model, source!, destination!, _projectProperties, cancellationToken);
+        List<(string Extensions, ClassDeclarationSyntax Profile, SemanticModel Model)> profiles = await ProfilesAsync(solution, model, source!, destination!, _projectProperties, cancellationToken);
+        if (generated.Count == 0 && await MapBlockers.ReasonAsync(solution, model, source!, destination!, _projectProperties, cancellationToken) is { } blocker)
         {
             return PatternResult.Manual(blocker);
         }
@@ -76,7 +90,7 @@ public class ProjectToPattern : ISolutionPattern
         string? callNamespace = model.GetEnclosingSymbol(node.SpanStart, cancellationToken)?.ContainingNamespace is { IsGlobalNamespace: false } current ? current.ToDisplayString() : null;
         bool imported = ns is null || (callNamespace is not null && (callNamespace == ns || callNamespace.StartsWith(ns + ".", StringComparison.Ordinal)));
         string projection = Projections.Name(source!, destination!);
-        List<(string Name, string Type, bool Optional)> accepted = await ParametersAsync(profiles[0].Profile, profiles[0].Model, solution, MapIntoPattern.Key(source!, destination!), projection, cancellationToken);
+        List<(string Name, string Type, bool Optional)> accepted = await ParametersAsync(profiles[0].Profile, profiles[0].Model, solution, MapIntoPattern.Key(source!, destination!), projection, _projectProperties, cancellationToken);
         (string? argumentProblem, string arguments) = Arguments(parameters, accepted, accepted.Count > 0, model, node.SpanStart, source!, destination!);
         if (argumentProblem is not null)
         {
@@ -206,8 +220,8 @@ public class ProjectToPattern : ISolutionPattern
 
     // The parameters of the projection method the profile writes (none: a property), from the generated class itself.
     private static async Task<List<(string Name, string Type, bool Optional)>> ParametersAsync(ClassDeclarationSyntax profile, SemanticModel profileModel, Solution solution, string key, string projection,
-        CancellationToken cancellationToken) =>
-        await CreateMapPattern.RewriteProjectionAsync(profile, profileModel, solution, key, cancellationToken) is FixedResult { NewNodes: [_, ClassDeclarationSyntax extensions] }
+        IProjectProperties? projectProperties, CancellationToken cancellationToken) =>
+        await CreateMapPattern.RewriteProjectionAsync(profile, profileModel, solution, key, projectProperties, cancellationToken) is FixedResult { NewNodes: [_, ClassDeclarationSyntax extensions] }
             ? [.. extensions.Members.OfType<MethodDeclarationSyntax>().Where(m => m.Identifier.ValueText == projection)
                 .SelectMany(m => m.ParameterList.Parameters).Select(p => (p.Identifier.ValueText, p.Type!.ToString(), p.Default is not null))]
             : [];
@@ -284,7 +298,7 @@ public class ProjectToPattern : ISolutionPattern
         && SymbolEqualityComparer.Default.Equals(to, destination);
 
     // The extension class names of the profiles (in the calling project or one it depends on) whose constructor has a CreateMap<A, B>.
-    private static async Task<List<(string Extensions, ClassDeclarationSyntax Profile, SemanticModel Model)>> ProfilesAsync(Solution solution, SemanticModel model, ITypeSymbol source, ITypeSymbol destination, CancellationToken cancellationToken)
+    private static async Task<List<(string Extensions, ClassDeclarationSyntax Profile, SemanticModel Model)>> ProfilesAsync(Solution solution, SemanticModel model, ITypeSymbol source, ITypeSymbol destination, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         string key = MapIntoPattern.Key(source, destination);
         IEnumerable<Project> projects = solution.GetDocument(model.SyntaxTree)?.Project is { } callProject

@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Text;
+using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
@@ -47,18 +48,19 @@ internal class MapperCleanup
     /// The plan of the solution. Like <see cref="MapOwners.ForAsync"/> it is reused for a solution that differs only in the file it was built
     /// from and the file being fixed: the call patterns only remove uses that the plan allows anyway.
     /// </summary>
-    public static async Task<MapperCleanup> ForAsync(Solution solution, SemanticModel model, CancellationToken cancellationToken)
+    public static async Task<MapperCleanup> ForAsync(Solution solution, SemanticModel model, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         MapperCleanupEntry entry = s_cache.GetValue(solution.Id, _ => new MapperCleanupEntry());
         Task<MapperCleanup> plan;
         lock (entry)
         {
             if (entry.Solution is null || entry.Plan is null || entry.Plan.IsFaulted || entry.Plan.IsCanceled
-                || !MapOwners.SameApartFrom(solution, entry.Solution, [entry.FilePath, model.SyntaxTree.FilePath]))
+                || entry.ProjectProperties != projectProperties || !MapOwners.SameApartFrom(solution, entry.Solution, [entry.FilePath, model.SyntaxTree.FilePath]))
             {
                 entry.Solution = solution;
                 entry.FilePath = model.SyntaxTree.FilePath;
-                entry.Plan = BuildAsync(solution, model, cancellationToken);
+                entry.ProjectProperties = projectProperties;
+                entry.Plan = BuildAsync(solution, model, projectProperties, cancellationToken);
             }
 
             plan = entry.Plan;
@@ -241,9 +243,9 @@ internal class MapperCleanup
             || (invocation.ArgumentList.Arguments.Count == 0 && Key(method) is string key && removed.Contains(key));
     }
 
-    private static async Task<MapperCleanup> BuildAsync(Solution solution, SemanticModel current, CancellationToken cancellationToken)
+    private static async Task<MapperCleanup> BuildAsync(Solution solution, SemanticModel current, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
-        MapOwners owners = await MapOwners.ForAsync(solution, current, cancellationToken);
+        MapOwners owners = await MapOwners.ForAsync(solution, current, projectProperties, cancellationToken);
         Dictionary<DocumentId, (SyntaxNode Root, SemanticModel Model)> documents = [];
         async Task<(SyntaxNode Root, SemanticModel Model)> LoadAsync(Document document)
         {

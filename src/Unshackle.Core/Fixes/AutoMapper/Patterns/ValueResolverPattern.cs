@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Unshackle.Core.Abstractions;
 
 namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 
@@ -11,6 +12,16 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 public class ValueResolverPattern : CreateMapPattern
 {
+    public ValueResolverPattern()
+        : this(null)
+    {
+    }
+
+    public ValueResolverPattern(IProjectProperties? projectProperties)
+        : base(projectProperties)
+    {
+    }
+
     public override string Id => "automapper.value-resolver";
 
     public override string Description =>

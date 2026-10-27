@@ -25,6 +25,20 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 public class CreateMapPattern : ISolutionPattern
 {
+    protected IProjectProperties? ProjectProperties { get; }
+
+    // Without project properties (tests, a host without MSBuild) packability is guessed from the compilation (TypeArgumentClosure).
+    public CreateMapPattern()
+        : this(null)
+    {
+    }
+
+    // TAAK-324: IsPackable as MSBuild sees it decides whether a public generic member closes its type arguments (council round 10, R1).
+    public CreateMapPattern(IProjectProperties? projectProperties)
+    {
+        ProjectProperties = projectProperties;
+    }
+
     internal const string AutoMapperAssembly = "AutoMapper";
 
     public virtual string Id => "automapper.create-map";
@@ -49,12 +63,12 @@ public class CreateMapPattern : ISolutionPattern
     {
         if (node is not TypeDeclarationSyntax)
         {
-            return await MapOwners.KeptCallAsync(node, model, solution, cancellationToken)
+            return await MapOwners.KeptCallAsync(node, model, solution, ProjectProperties, cancellationToken)
                 ?? Rewrite(node, model, new HashSet<string>(), nested: null, projectTo: new HashSet<string>(), asserted: true, MapOwners.None, problems: null);
         }
 
-        return Rewrite(node, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken), await NestedMaps.FromAsync(model, solution, cancellationToken),
-            await ProjectToPattern.TargetsAsync(solution, cancellationToken), await AssertsAsync(solution, cancellationToken), await MapOwners.ForAsync(solution, model, cancellationToken), problems: null);
+        return Rewrite(node, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken), await NestedMaps.FromAsync(model, solution, ProjectProperties, cancellationToken),
+            await ProjectToPattern.TargetsAsync(solution, cancellationToken), await AssertsAsync(solution, cancellationToken), await MapOwners.ForAsync(solution, model, ProjectProperties, cancellationToken), problems: null);
     }
 
     // A Map or ProjectTo of AutoMapper that none of the call patterns rewrites (Map with options, the untyped overloads).
@@ -68,15 +82,15 @@ public class CreateMapPattern : ISolutionPattern
 
     // The ToB methods of a profile, with nested maps of the whole solution; no MapInto (MapCallPattern only needs the method names).
     // While the plan is built, one rewrite per profile and plan size is enough.
-    internal static async Task<PatternResult> RewriteMethodsAsync(ClassDeclarationSyntax profile, SemanticModel model, Solution solution, CancellationToken cancellationToken)
+    internal static async Task<PatternResult> RewriteMethodsAsync(ClassDeclarationSyntax profile, SemanticModel model, Solution solution, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
-        MapOwners owners = await MapOwners.ForAsync(solution, model, cancellationToken);
+        MapOwners owners = await MapOwners.ForAsync(solution, model, projectProperties, cancellationToken);
         if (owners.Rewrites.TryGetValue(profile, out PatternResult? done))
         {
             return done;
         }
 
-        PatternResult result = Rewrite(profile, model, new HashSet<string>(), await NestedMaps.FromAsync(model, solution, cancellationToken), projectTo: new HashSet<string>(),
+        PatternResult result = Rewrite(profile, model, new HashSet<string>(), await NestedMaps.FromAsync(model, solution, projectProperties, cancellationToken), projectTo: new HashSet<string>(),
             await AssertsAsync(solution, cancellationToken), owners, problems: null);
         if (owners != MapOwners.None)
         {
@@ -87,17 +101,17 @@ public class CreateMapPattern : ISolutionPattern
     }
 
     // Like RewriteMethodsAsync, with the projection of the map with this key (MapIntoPattern.Key) written too: the parameters of ProjectTo's call come from it.
-    internal static async Task<PatternResult> RewriteProjectionAsync(ClassDeclarationSyntax profile, SemanticModel model, Solution solution, string key, CancellationToken cancellationToken) =>
-        Rewrite(profile, model, new HashSet<string>(), await NestedMaps.FromAsync(model, solution, cancellationToken), projectTo: new HashSet<string> { key },
-            await AssertsAsync(solution, cancellationToken), await MapOwners.ForAsync(solution, model, cancellationToken), problems: null);
+    internal static async Task<PatternResult> RewriteProjectionAsync(ClassDeclarationSyntax profile, SemanticModel model, Solution solution, string key, IProjectProperties? projectProperties, CancellationToken cancellationToken) =>
+        Rewrite(profile, model, new HashSet<string>(), await NestedMaps.FromAsync(model, solution, projectProperties, cancellationToken), projectTo: new HashSet<string> { key },
+            await AssertsAsync(solution, cancellationToken), await MapOwners.ForAsync(solution, model, projectProperties, cancellationToken), problems: null);
 
     // For the plan (MapOwners): the statements of the profile that cannot be rewritten with the plan so far, or one row without a statement
     // when the whole profile cannot be.
-    internal static async Task<List<(SyntaxNode? Statement, string Reason)>> PlanAsync(ClassDeclarationSyntax profile, SemanticModel model, Solution solution, CancellationToken cancellationToken)
+    internal static async Task<List<(SyntaxNode? Statement, string Reason)>> PlanAsync(ClassDeclarationSyntax profile, SemanticModel model, Solution solution, IProjectProperties? projectProperties, CancellationToken cancellationToken)
     {
         List<(SyntaxNode? Statement, string Reason)> problems = [];
-        PatternResult result = Rewrite(profile, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken), await NestedMaps.FromAsync(model, solution, cancellationToken),
-            await ProjectToPattern.TargetsAsync(solution, cancellationToken), await AssertsAsync(solution, cancellationToken), await MapOwners.ForAsync(solution, model, cancellationToken), problems);
+        PatternResult result = Rewrite(profile, model, await MapIntoPattern.TargetsAsync(solution, cancellationToken), await NestedMaps.FromAsync(model, solution, projectProperties, cancellationToken),
+            await ProjectToPattern.TargetsAsync(solution, cancellationToken), await AssertsAsync(solution, cancellationToken), await MapOwners.ForAsync(solution, model, projectProperties, cancellationToken), problems);
         if (result is ManualResult { Kept: KeptReason.None, Reason: var reason })
         {
             problems.Add((null, $"Profile {profile.Identifier.ValueText}: {reason}"));

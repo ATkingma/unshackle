@@ -13,6 +13,20 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 public class MapIntoPattern : ISolutionPattern
 {
+    private readonly IProjectProperties? _projectProperties;
+
+    // Without project properties (tests, a host without MSBuild) packability is guessed from the compilation (TypeArgumentClosure).
+    public MapIntoPattern()
+        : this(null)
+    {
+    }
+
+    // TAAK-324: IsPackable as MSBuild sees it decides whether a public generic member closes its type arguments (council round 10, R1).
+    public MapIntoPattern(IProjectProperties? projectProperties)
+    {
+        _projectProperties = projectProperties;
+    }
+
     private const string AutoMapperAssembly = "AutoMapper";
     private const string MethodName = "MapInto";
 
@@ -33,7 +47,7 @@ public class MapIntoPattern : ISolutionPattern
     public async Task<PatternResult> RewriteAsync(SyntaxNode node, SemanticModel model, Solution solution, CancellationToken cancellationToken)
     {
         var invocation = (InvocationExpressionSyntax)node;
-        if (await MapOwners.KeptCallAsync(node, model, solution, cancellationToken) is { } kept)
+        if (await MapOwners.KeptCallAsync(node, model, solution, _projectProperties, cancellationToken) is { } kept)
         {
             return kept;
         }
@@ -49,10 +63,10 @@ public class MapIntoPattern : ISolutionPattern
         }
 
         List<(string Method, string? Namespace, bool IsInternal, ProjectId Project)> generated =
-            await MapCallPattern.GeneratedAsync(solution, model, sourceType!, destination!, cancellationToken);
+            await MapCallPattern.GeneratedAsync(solution, model, sourceType!, destination!, _projectProperties, cancellationToken);
         if (generated.Count == 0)
         {
-            return PatternResult.Manual(await MapBlockers.ReasonAsync(solution, model, sourceType!, destination!, cancellationToken) ?? NoMap(sourceType!, destination!));
+            return PatternResult.Manual(await MapBlockers.ReasonAsync(solution, model, sourceType!, destination!, _projectProperties, cancellationToken) ?? NoMap(sourceType!, destination!));
         }
 
         if (generated.Count > 1)

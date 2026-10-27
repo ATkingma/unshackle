@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Unshackle.Core.Abstractions;
 
 namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 
@@ -10,6 +11,16 @@ namespace Unshackle.Core.Fixes.AutoMapper.Patterns;
 /// </summary>
 public class ForMemberIgnorePattern : CreateMapPattern
 {
+    public ForMemberIgnorePattern()
+        : this(null)
+    {
+    }
+
+    public ForMemberIgnorePattern(IProjectProperties? projectProperties)
+        : base(projectProperties)
+    {
+    }
+
     public override string Id => "automapper.for-member-ignore";
 
     public override string Description =>

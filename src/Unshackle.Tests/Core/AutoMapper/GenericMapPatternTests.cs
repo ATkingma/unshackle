@@ -1,8 +1,10 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using NSubstitute;
 using Shouldly;
 using Unshackle.Core;
+using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.AutoMapper;
 using Unshackle.Core.Fixes.AutoMapper.Patterns;
 using Unshackle.Core.Generics;
@@ -15,6 +17,8 @@ namespace Unshackle.Tests.Core.AutoMapper;
 // automapper.generic-map (TAAK-324, council round 13 A11): a Map on a type parameter is closed over its callers, or Manual GenericMapOpenSet.
 public class GenericMapPatternTests
 {
+    private const string ProjectFile = "Shop.csproj";
+
     private const string Types = """
         using AutoMapper;
 
@@ -121,6 +125,38 @@ public class GenericMapPatternTests
         ManualResult manual = finding.Result.ShouldBeOfType<ManualResult>();
         manual.Code.ShouldBe("GenericMapOpenSet");
         manual.Reason.ShouldContain(reason);
+    }
+
+    // TAAK-324: with the project properties (Cli wires XmlProjectProperties) a public generic Map<T> in a library with IsPackable=false is closed,
+    // where the guess from the compilation keeps it open; a packable library stays open.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FixAsync_PublicMethodInLibraryWithProjectProperties_FollowsIsPackable(bool packable)
+    {
+        // Arrange
+        Solution solution = Single(OutputKind.DynamicallyLinkedLibrary, Types, Reader.Replace("ACCESS", "public").Replace("MODIFIER ", ""), Callers);
+        IProjectProperties properties = Substitute.For<IProjectProperties>();
+        properties.IsPackable(ProjectFile).Returns(packable);
+
+        // Act
+        FixReport guessed = await FixAsync(solution);
+        FixReport report = await new Fixer([new AutoMapperFix(properties)]).FixAsync(solution, new FixRequest { FixId = "automapper" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        guessed.Findings.Single(f => f.PatternId == "automapper.generic-map").Result.ShouldBeOfType<ManualResult>().Code.ShouldBe("GenericMapOpenSet");
+        Finding finding = report.Findings.Single(f => f.PatternId == "automapper.generic-map");
+        if (packable)
+        {
+            ManualResult manual = finding.Result.ShouldBeOfType<ManualResult>();
+            manual.Code.ShouldBe("GenericMapOpenSet");
+            manual.Reason.ShouldContain("is public in a packable project");
+        }
+        else
+        {
+            report.Findings.ShouldAllBe(f => f.Result is FixedResult, Reasons(report));
+            (await TextAsync(report.Solution, "Reader.cs")).ShouldContain("typeof(TResult) == typeof(OrderDto) ? (TResult)(object)order.ToOrderDto()");
+        }
     }
 
     [Theory]
@@ -314,7 +350,7 @@ public class GenericMapPatternTests
     }
 
     private static Solution AddProject(Solution solution, ProjectId id, string name, OutputKind kind) =>
-        solution.AddProject(id, name, name, LanguageNames.CSharp)
+        solution.AddProject(ProjectInfo.Create(id, VersionStamp.Default, name, name, LanguageNames.CSharp, filePath: name == "Shop" ? ProjectFile : null))
             .WithProjectCompilationOptions(id, new CSharpCompilationOptions(kind))
             .WithProjectParseOptions(id, new CSharpParseOptions(LanguageVersion.Preview))
             .AddMetadataReferences(id, TestReferences.AutoMapper);

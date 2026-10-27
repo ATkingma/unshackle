@@ -77,7 +77,7 @@ a Manual one still does (as before), and its kept result carries the code `Gener
 - **REQ-1**: WHEN a generic method's type parameter is closed by every caller THE SYSTEM SHALL dispatch over the closed types (proof `two-callers`).
 - **REQ-2**: WHEN a generic base type's type parameters are closed by derived types THE SYSTEM SHALL dispatch over the closed pairs, casting the source (proof `derived-repositories`).
 - **REQ-3**: WHEN a type parameter is closed through generic code THE SYSTEM SHALL follow the chain up to depth 3, and respect constraints (proof `constraint-filter`; unit test `FixAsync_ChainDeeperThanLimit_IsOpenSet`).
-- **REQ-4**: IF the member is public in a packable project (R1) or internal with `InternalsVisibleTo` to an assembly outside the solution (R2) THEN Manual `GenericMapOpenSet` (proof `packable-public-base`; unit tests `FixAsync_CallersNotAllKnown_IsOpenSet`, `FixAsync_UnprovableCaller_NamesIt`); a public member of an executable is closed (`FixAsync_PublicMethodInExecutable_IsNotReachableFromOutside`).
+- **REQ-4**: IF the member is public in a packable project (R1) or internal with `InternalsVisibleTo` to an assembly outside the solution (R2) THEN Manual `GenericMapOpenSet` (proof `packable-public-base`; unit tests `FixAsync_CallersNotAllKnown_IsOpenSet`, `FixAsync_UnprovableCaller_NamesIt`); a public member of an executable is closed (`FixAsync_PublicMethodInExecutable_IsNotReachableFromOutside`), and so is one of a library with `IsPackable=false` read through `IProjectProperties` (`FixAsync_PublicMethodInLibraryWithProjectProperties_FollowsIsPackable`).
 - **REQ-5**: IF `typeof(G<>)` is used THEN Manual naming the place (proof `open-registration`).
 - **REQ-6**: IF `MakeGenericMethod`/`MakeGenericType` is called THEN Manual naming the place (proof `reflection-caller`).
 - **REQ-7**: IF the method is virtual/override/interface, used as a method group, or called dynamically THEN Manual naming the place (unit tests).
@@ -89,8 +89,9 @@ a Manual one still does (as before), and its kept result carries the code `Gener
 
 - Every closed `C<X>` of a generic type is written somewhere in the solution (construction, base class, field/parameter type) unless it is
   made by reflection, which needs `typeof(C<>)` or `MakeGenericType`; both make the set open.
-- Packability is guessed as in MediatR's `AssemblyResolver` without project properties (a library without a test-framework reference is packable),
-  because `AutoMapperFix` has no `IProjectProperties`: a library with `IsPackable=false` still counts as packable (Manual rather than a wrong Fixed).
+- Packability is read through `IProjectProperties` (`Cli.cs` wires `XmlProjectProperties` into `AutoMapperFix`, every pattern that reaches the
+  plan gets the same instance): a library with `IsPackable=false` is closed. Without project properties (tests, a project without a file) it is
+  guessed as in MediatR's `AssemblyResolver` (a library without a test-framework reference is packable; Manual rather than a wrong Fixed).
 
 ## Risks
 

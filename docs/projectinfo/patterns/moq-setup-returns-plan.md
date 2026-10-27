@@ -44,10 +44,10 @@ on `m.Object` (which `moq.create` then drops), with Moq's argument matchers rewr
 
 - **REQ-1**: WHEN a property is set up THE SYSTEM SHALL write `m.Object.P.Returns(v);` (proof `property`).
 - **REQ-2**: WHEN arguments are `It.IsAny<T>()` THE SYSTEM SHALL write `Arg.Any<T>()` (proof `any-argument`).
-- **REQ-3**: WHEN matchers and plain values are mixed THE SYSTEM SHALL wrap the values in `Arg.Is<T>(value)` (proof `mixed-arguments`); only plain values stay plain (proof `literal-arguments`).
+- **REQ-3**: WHEN matchers and plain values are mixed THE SYSTEM SHALL wrap the values in `Arg.Is<T>(value)` (proof `mixed-arguments`); only plain values stay plain (proof `literal-arguments`). A literal `null` becomes `Arg.Is<T>(a => a == null)`, since `Arg.Is<T>(null)` is ambiguous (CS0121, proof `null-argument`).
 - **REQ-4**: WHEN `ReturnsAsync(v)` is used THE SYSTEM SHALL write `Returns(Task.FromResult<T>(v))` and add `using System.Threading.Tasks;` (proof `returns-async`).
 - **REQ-5**: IF `Returns` gets a method group THEN Manual `ReturnsLambda` (proof `returns-method-group`); a lambda is `moq.returns-lambda`.
-- **REQ-6**: IF the mock does not convert as a whole (strict, another use such as `Callback`, default that cannot be pinned) THEN every Setup of it is Manual with the mock's reason (proofs `strict`, `other-use-blocks`).
+- **REQ-6**: IF the mock does not convert as a whole (strict, another use such as `Callback`, default that cannot be pinned, a mock from an `out` argument or a deconstruction) THEN every Setup of it is Manual with the mock's reason (proofs `strict`, `other-use-blocks`, `out-argument`, `deconstruction`).
 - **REQ-7**: The whole fix SHALL give the same run-time answers as Moq, including overriding setups, non-matching arguments (Moq's null pinned by `moq.create`) and setups in a constructor (run-time `setup-returns`, `setup-override`, `setup-field`; `setup-must-fail` throws under both).
 - **REQ-8**: A member set up for every argument (`It.IsAny` only, or a property) SHALL get no pin and not count toward `MaxPins`; any other set-up member keeps its pin (council round 9, Q1).
 

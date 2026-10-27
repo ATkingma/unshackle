@@ -17,10 +17,10 @@ Proofs: `src/Unshackle.Tests/Proofs/Moq/SetupReturns/` (`ProofTests`, this patte
 | ----- | ------- | -------- |
 | REQ-1 | Met | `property.*` |
 | REQ-2 | Met | `any-argument.*`; `ArgMatchersTests` |
-| REQ-3 | Met | `mixed-arguments.*`, `literal-arguments.*` |
+| REQ-3 | Met | `mixed-arguments.*`, `literal-arguments.*`, `null-argument.*` |
 | REQ-4 | Met | `returns-async.*` |
 | REQ-5 | Met | `returns-method-group.manual.txt` |
-| REQ-6 | Met | `strict.manual.txt`, `other-use-blocks.manual.txt` |
+| REQ-6 | Met | `strict.manual.txt`, `other-use-blocks.manual.txt`, `out-argument.manual.txt`, `deconstruction.manual.txt` |
 | REQ-7 | Met | `_Runtime/setup-returns`, `setup-override`, `setup-field`, `setup-must-fail` |
 | REQ-8 | Met | `_Runtime/setup-returns` (`Count` exempt, `Find` pinned) |
 

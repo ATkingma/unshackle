@@ -217,7 +217,7 @@ public static class SetupReturnsSyntax
                 return MockCall.Blocked(MoqReason.ReturnsLambda, "ReturnsAsync on a member that is not Task<T>/ValueTask<T>");
             }
 
-            string resultType = result.ToMinimalDisplayString(model, setup.SpanStart);
+            string resultType = MoqSyntax.TypeText(result, model, setup.SpanStart);
             string Wrap(string inner) => task.Name == "Task" ? $"Task.FromResult<{resultType}>({inner})" : $"new ValueTask<{resultType}>({inner})";
             if (converted is SimpleLambdaExpressionSyntax { ExpressionBody: { } body } simple)
             {

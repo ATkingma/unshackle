@@ -43,11 +43,24 @@ public static class ArgMatchers
 
         bool anyMatcher = matchers.Any(m => m is not null);
         IEnumerable<ArgumentSyntax> arguments = list.Arguments.Select((a, i) => matchers[i] is { } m ? a.WithExpression(m.WithTriviaFrom(a.Expression))
-            : anyMatcher ? a.WithExpression(SyntaxFactory.ParseExpression(
-                $"Arg.Is<{TypeText(method.Parameters[i].Type, model, a.SpanStart)}>({a.Expression.WithoutTrivia()})").WithTriviaFrom(a.Expression))
+            : anyMatcher ? a.WithExpression(SyntaxFactory.ParseExpression(ValueSpec(a.Expression, method.Parameters[i].Type, model)).WithTriviaFrom(a.Expression))
             : a);
         bool forAny = list.Arguments.All(a => model.GetSymbolInfo(a.Expression).Symbol is IMethodSymbol { Name: "IsAny", ContainingType: { Name: "It", ContainingNamespace.Name: "Moq" } });
         return new() { Node = list.WithArguments(SyntaxFactory.SeparatedList(arguments, list.Arguments.GetSeparators())), ForAnyArguments = forAny };
+    }
+
+    // `Arg.Is<T>(value)`; a literal null or default becomes a predicate: `Arg.Is<T>(null)` is ambiguous between Is(T) and
+    // Is(Expression<Predicate<T>>) (CS0121, corpus B7). Moq matches null by object.Equals, so `a => a == null` for a reference type.
+    private static string ValueSpec(ExpressionSyntax value, ITypeSymbol type, SemanticModel model)
+    {
+        string typeText = TypeText(type, model, value.SpanStart);
+        return value.WithoutTrivia() switch
+        {
+            LiteralExpressionSyntax { RawKind: (int)SyntaxKind.NullLiteralExpression } => $"Arg.Is<{typeText}>(a => a == null)",
+            LiteralExpressionSyntax { RawKind: (int)SyntaxKind.DefaultLiteralExpression } when type.IsReferenceType => $"Arg.Is<{typeText}>(a => a == null)",
+            LiteralExpressionSyntax { RawKind: (int)SyntaxKind.DefaultLiteralExpression } => $"Arg.Is<{typeText}>(default({typeText}))",
+            var plain => $"Arg.Is<{typeText}>({plain})",
+        };
     }
 
     // One value (the right side of a VerifySet): a matcher becomes its Arg form, a plain value stays.
@@ -168,5 +181,5 @@ public static class ArgMatchers
             ? text.Replace("Moq.It.IsAnyType", "Arg.AnyType", StringComparison.Ordinal).Replace("It.IsAnyType", "Arg.AnyType", StringComparison.Ordinal) : null;
     }
 
-    private static string TypeText(ITypeSymbol type, SemanticModel model, int position) => type.ToMinimalDisplayString(model, position);
+    private static string TypeText(ITypeSymbol type, SemanticModel model, int position) => MoqSyntax.TypeText(type, model, position);
 }

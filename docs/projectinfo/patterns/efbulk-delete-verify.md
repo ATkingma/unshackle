@@ -23,7 +23,7 @@ Proofs: `src/Unshackle.Tests/Proofs/EfBulk/Delete/` (`ProofTests`, before agains
 
 ## Deviations
 
-- The Z assemblies are stubs (`src/Unshackle.Tests/Core/EfBulk/EfBulkReferences.cs`), so "before compiles against the old library" is proven against the documented signatures, not the real package. No run-time (SQL) proof yet.
+- The Z assemblies are stubs (`src/Unshackle.Tests/Core/EfBulk/EfBulkReferences.cs`), so "before compiles against the old library" is proven against stubs checked once against the 10.105.9 nupkgs. Run-time proof of the EF side: `EfBulkSqlTests.ExecuteDelete_WhereFilter_IsOneDeleteStatement` (one DELETE ... WHERE statement on EF Core 10 + SQLite); Z itself cannot run here.
 
 ## Validation results
 

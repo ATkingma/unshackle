@@ -35,11 +35,21 @@ public class JsonPackageAssetsReader : IPackageAssetsReader
             JsonElement root = document.RootElement;
             var resolved = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             List<PackageRequirement> requirements = [];
+            List<PackageRequirement> projectRequirements = [];
             foreach (JsonProperty target in Properties(root, "targets"))
             {
                 foreach (JsonProperty library in target.Value.EnumerateObject())
                 {
-                    if (!library.Value.TryGetProperty("type", out JsonElement type) || type.GetString() != "package" || library.Name.Split('/') is not [string id, string version])
+                    string? kind = library.Value.TryGetProperty("type", out JsonElement type) ? type.GetString() : null;
+                    if (kind == "project")
+                    {
+                        // Council round 17 T3: what a project reference brings, to compare with a pin.
+                        projectRequirements.AddRange(Properties(library.Value, "dependencies")
+                            .Select(d => new PackageRequirement { Package = d.Name, RequiredBy = library.Name, Range = d.Value.GetString() ?? string.Empty }));
+                        continue;
+                    }
+
+                    if (kind != "package" || library.Name.Split('/') is not [string id, string version])
                     {
                         continue;
                     }
@@ -69,7 +79,7 @@ public class JsonPackageAssetsReader : IPackageAssetsReader
             }
 
             AssetsState state = IsCurrent(project, assetsPath, projectSection, direct) ? AssetsState.Current : AssetsState.Stale;
-            return new PackageAssets { State = state, Resolved = resolved, Requirements = requirements };
+            return new PackageAssets { State = state, Resolved = resolved, Requirements = requirements, ProjectReferenceRequirements = projectRequirements };
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
         {

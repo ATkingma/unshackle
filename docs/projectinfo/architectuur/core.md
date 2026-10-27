@@ -320,7 +320,15 @@ edits per project from a closed set (`ProjectFileEdit` has a private-protected c
 - The writer adds the central `<PackageVersion>` only when it is absent; a central version that differs is a Manual row on
   `Directory.Packages.props` (the build would not resolve what it did before).
 - Needs `Fixer(fixes, projectFiles, assetsReader)` (the CLI) and `Current` assets; without them nothing is pinned.
-- Limitation: the new package's dependency closure is not known before a restore, so a pin is not checked against it (see TAAK-329).
+- Row text (council round 17 T1/T2, TAAK-343): the Fixed row starts with "may conflict (NU1605)", names the pinned version and the user
+  project ("kept for `<project>`", the first project in solution order whose code uses the package) and gives "raise the pin" as the remedy.
+- T2: a dependent that declares the package itself still counts as a user; the pin stays (one predictable rule).
+- T3: "kept" means package libraries in the assets only. A package that a project reference also brings is still seen as lost; the pin is
+  accepted when the reference requires the same version (lower bound). A project reference that requires another version makes it a
+  Manual row on the project file instead of a pin (`PackageAssets.ProjectReferenceRequirements`, read from the `project` libraries).
+- T1 limitation: the new package's dependency closure is not known before a restore, so a pin is not checked against it (no nuspec
+  check). A nuspec reader is built on the first corpus NU1605, as a Core interface with a DataAccess implementation. Unshackle has no
+  post-fix build/verify step, so the NU1605 hint lives in the row text only.
 
 ## Council round 12 engine rules (TAAK-322)
 

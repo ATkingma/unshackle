@@ -38,7 +38,8 @@ public class StylesUnsupportedTests
 
         // Assert
         report.Solution.ShouldBeSameAs(solution);
-        report.Findings.ShouldContain(f => f.PatternId == "epplus.unsupported" && ((ManualResult)f.Result).Reason.Contains("ExcelRange (row 4)", StringComparison.Ordinal));
+        // TAAK-337 (E25, with E24): the ExcelRange parameter now has its epplus.flow-types row instead of an epplus.unsupported one.
+        report.Findings.ShouldContain(f => f.PatternId == "epplus.flow-types" && ((ManualResult)f.Result).Reason.Contains("takes an ExcelRange", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -53,7 +54,7 @@ public class StylesUnsupportedTests
         // Assert
         string reasons = string.Join(" | ", report.Findings.Where(f => f.PatternId == "epplus.unsupported").Select(f => ((ManualResult)f.Result).Reason));
         reasons.ShouldNotContain("row 8", Case.Sensitive, reasons);
-        reasons.ShouldContain("ExcelRange", Case.Sensitive, reasons);
+        report.Findings.ShouldContain(f => f.PatternId == "epplus.flow-types", reasons);
     }
 
     [Fact]

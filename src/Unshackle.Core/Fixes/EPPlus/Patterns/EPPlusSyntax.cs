@@ -35,6 +35,10 @@ internal static class EPPlusSyntax
     public static bool IsPackageType(ITypeSymbol? type) =>
         type is INamedTypeSymbol { Name: PackageType, ContainingNamespace: { Name: Namespace, ContainingNamespace.IsGlobalNamespace: true } };
 
+    // TAAK-337: OfficeOpenXml.ExcelRange, the type of ws.Cells[..].
+    public static bool IsRangeType(ITypeSymbol? type) =>
+        type is INamedTypeSymbol { Name: "ExcelRange", ContainingNamespace: { Name: Namespace, ContainingNamespace.IsGlobalNamespace: true } };
+
     // E3: the version of the EPPlus assembly the project references (4.x: 1-based worksheet index, 5+: 0-based), or null when unknown.
     public static Version? Version(SemanticModel model) =>
         model.Compilation.GetTypeByMetadataName($"{Namespace}.{PackageType}")?.ContainingAssembly.Identity.Version;

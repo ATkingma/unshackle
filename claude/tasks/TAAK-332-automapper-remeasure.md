@@ -1,6 +1,6 @@
 # TAAK-332 — AutoMapper corpus re-measure after `IProjectProperties` wiring
 
-**Status**: done (cats and kavita not measured: disk full)
+**Status**: done (cats and kavita measured later at 07552c5, see `CORPUSRUN-automapper.md`)
 **Created**: 2026-10-27
 **Goal**: re-measure the AutoMapper corpus with main now that `AutoMapperFix` gets `IProjectProperties` (TAAK-324 follow-up), confirm 0 test regressions, count Manual→Fixed, and close TAAK-324 step 6.
 
@@ -17,6 +17,7 @@
 - [x] 3. TAAK-324 step 6: README row and INDEX line (already present), archive TAAK-324
 - [x] 4. Fix regressions contained in AutoMapper code, otherwise document (none found)
 - [x] 5. TAAK-325 scoped: task file `claude/tasks/TAAK-325-automapper-generic-destination.md` (not implemented)
+- [x] 6. Re-measure cats and kavita (and neozhu) on a disk above the H1 threshold: 0 / 139, 0 / 169, 0 / 64, 0 regressions (07552c5)
 
 ## Results
 

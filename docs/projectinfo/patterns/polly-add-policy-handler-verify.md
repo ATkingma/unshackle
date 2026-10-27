@@ -18,6 +18,7 @@ Proofs: `src/Unshackle.Tests/Proofs/Polly/AddPolicyHandler/` (text: `ProofTests`
 | REQ-1 | Met | both Fixed proofs' after text (`RetryStrategyOptions<HttpResponseMessage>`) |
 | REQ-2 | Met | `transient-lambda-429` trace `send 503, retry 1 503, send 429, final 429` before and after |
 | REQ-3 | Met | `transient-lambda-429` (`p.OrResult(...)`) |
+| REQ-3b | Met | `transient-or-status` (trace `send 503, retry 1 503, send 429, final 429`), `Rewrite_RedundantTransientClause_PredicateWrittenOnce`, `Rewrite_TransientWithUserClause_UserClauseKept` |
 | REQ-4 | Met | `inline-transient` (`send 500, send 0, send 408, send 200, final 200`), `transient-lambda-429` |
 | REQ-5 | Met | `two-handlers` |
 | REQ-6 | Met | `AddPolicyHandlerPatternTests` |
@@ -30,6 +31,9 @@ None.
 
 **2026-10-27 (corpus B2):** REQ-5b added: a handler call whose `IHttpClientBuilder` is used is Manual `HandlerResultUsed`
 (fergun returned it from an expression-bodied extension method → CS0266). Proof `result-returned`, unit tests in `AddPolicyHandlerPatternTests`.
+
+**2026-10-27 (corpus B2 side issue, TAAK-335):** REQ-3b added: `p.OrTransientHttpStatusCode()` no longer writes a second, identical
+`HandleResult(5xx || 408)` clause.
 
 ## Validation results
 

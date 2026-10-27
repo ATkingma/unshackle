@@ -28,6 +28,7 @@ public class PollyBehaviourProofTests
     [InlineData("AddPolicyHandler/inline-transient", "send 500, send 0, send 408, send 200, final 200")]
     [InlineData("AddPolicyHandler/policy-method", "send 502, send 504, final 504")]
     [InlineData("AddPolicyHandler/transient-lambda-429", "send 503, retry 1 503, send 429, final 429")]
+    [InlineData("AddPolicyHandler/transient-or-status", "send 503, retry 1 503, send 429, final 429")]
     [InlineData("Wrap/two-locals", "inner 1, inner 2, outer 1, inner 1, done")]
     [InlineData("Wrap/three-inline", "argument 1, invalid 1, timeout 1, argument 1, invalid 1, done")]
     [InlineData("RetryVariants/retry-count", "retry 1 call 1, retry 2 call 2, caught call 3")]

@@ -59,6 +59,43 @@ public class AddPolicyHandlerPatternTests
         result.ShouldBeOfType<FixedResult>();
     }
 
+    [Theory]
+    [InlineData("b.AddTransientHttpErrorPolicy(p => p.OrTransientHttpStatusCode().RetryAsync(1));")]
+    [InlineData("b.AddTransientHttpErrorPolicy(p => p.OrTransientHttpError().RetryAsync(1));")]
+    [InlineData("b.AddPolicyHandler(HttpPolicyExtensions.HandleTransientHttpError().OrTransientHttpStatusCode().RetryAsync(1));")]
+    public void Rewrite_RedundantTransientClause_PredicateWrittenOnce(string statements)
+    {
+        // Arrange (TAAK-335: the transient filter already covers OrTransientHttpStatusCode / OrTransientHttpError)
+        (SyntaxNode root, SemanticModel model) = Parse(statements);
+        var pattern = new AddPolicyHandlerPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).Single(), model);
+
+        // Assert
+        string text = string.Concat(result.ShouldBeOfType<FixedResult>().NewNodes.Select(n => n.ToFullString()));
+        CountOf(text, "StatusCode >= 500").ShouldBe(1);
+        CountOf(text, "Handle<HttpRequestException>()").ShouldBe(1);
+    }
+
+    [Fact]
+    public void Rewrite_TransientWithUserClause_UserClauseKept()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Parse("b.AddTransientHttpErrorPolicy(p => p.OrTransientHttpStatusCode().OrResult(r => r.StatusCode == System.Net.HttpStatusCode.NotFound).RetryAsync(1));");
+        var pattern = new AddPolicyHandlerPattern();
+
+        // Act
+        PatternResult result = pattern.Rewrite(pattern.Find(root, model).Single(), model);
+
+        // Assert
+        string text = string.Concat(result.ShouldBeOfType<FixedResult>().NewNodes.Select(n => n.ToFullString()));
+        CountOf(text, "StatusCode >= 500").ShouldBe(1);
+        text.ShouldContain(".HandleResult(r => r.StatusCode == System.Net.HttpStatusCode.NotFound)");
+    }
+
+    private static int CountOf(string text, string value) => (text.Length - text.Replace(value, "", StringComparison.Ordinal).Length) / value.Length;
+
     [Fact]
     public void Rewrite_PolicyMethodAlsoUsedElsewhere_HandlerAndMethodManual()
     {

@@ -88,7 +88,11 @@ public partial class XmlProjectFileStore : IProjectFileStore, IProjectFileEditor
                 }
             }
 
-            foreach (string also in migration.Package.AlsoRemovedPackages)
+            // A fix that adds no package (efbulk) removes its own package like the ones that go with it.
+            IEnumerable<string> alsoRemoved = migration.Package.AddedPackages.Count == 0
+                ? migration.Package.AlsoRemovedPackages.Prepend(removed)
+                : migration.Package.AlsoRemovedPackages;
+            foreach (string also in alsoRemoved)
             {
                 foreach (ProjectFile file in chain.Where(f => !Keeps(f.Path)))
                 {

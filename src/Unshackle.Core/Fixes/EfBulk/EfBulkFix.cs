@@ -7,7 +7,7 @@ namespace Unshackle.Core.Fixes.EfBulk;
 /// <summary>
 /// Batch delete/update calls of Z.EntityFramework.Plus / Z.EntityFramework.Extensions on EF Core queries → EF Core 7+ native
 /// <c>ExecuteDelete</c>/<c>ExecuteUpdate</c> (TAAK-342, scout report <c>docs/projectinfo/architectuur/candidate-efbulk.md</c>).
-/// First slice: no package is touched, since Bulk*, Future and FromCache usually keep the Z package (TAAK-342 council question 5).
+/// Both Z packages leave a project only when no Z usage is left (council round 17, B5); Bulk*, Future, FromCache etc. are Manual rows.
 /// </summary>
 public class EfBulkFix : IFix
 {
@@ -39,5 +39,14 @@ public class EfBulkFix : IFix
                 $"EF Core < 7: upgrade to EF Core 7+ with a relational provider first; {blocked} batch call(s) blocked (ExecuteDelete/ExecuteUpdate are missing).")];
     }
 
-    public IReadOnlyList<IPattern> Patterns { get; } = [new DeletePattern(), new UpdatePattern()];
+    // Council round 17, B5: both Z packages leave a project only at zero Z usages. The engine keeps them for any bound Z symbol, also for a
+    // project that references this one, and lists the remaining uses with file:line. EF Core 7+ is already referenced, so nothing is added.
+    public PackageMigration? Package { get; } = new()
+    {
+        RemovedPackage = EfBulkCall.PlusAssembly,
+        AlsoRemovedPackages = [EfBulkCall.ExtensionsAssembly],
+        AddedPackages = [],
+    };
+
+    public IReadOnlyList<IPattern> Patterns { get; } = [new DeletePattern(), new UpdatePattern(), new UnsupportedPattern()];
 }

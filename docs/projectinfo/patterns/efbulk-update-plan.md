@@ -49,7 +49,7 @@ efbulk.update: a batch update of Z.EntityFramework.Plus (`Update`, `UpdateAsync`
 - The Z types in the proofs are stubs (the Z packages cannot enter `Directory.Packages.props`).
 - Signatures verified once (TAAK-342 step 4, council round 17 B6) against Z.EntityFramework.Plus.EFCore and Z.EntityFramework.Extensions.EFCore **10.105.9** (lib/net10.0, metadata only): Plus `Z.EntityFramework.Plus.BatchDeleteExtensions`/`BatchUpdateExtensions`, Extensions in the global-namespace classes `BatchDeleteExtensions`/`BatchUpdateExtensions`, all `where T : class`, `int`/`Task<int>` returns, builder types `Z.EntityFramework.Extensions.BatchDelete`/`BatchUpdate`. The stubs in `EfBulkReferences.cs` name that version; no CI download.
 - Run-time proof (step 6): `EfBulkSqlTests` runs the rewritten shapes on EF Core 10 + SQLite in memory and checks the one executed statement; Z itself cannot run (paid Extensions trial).
-- No package or project file is changed in this slice.
+- Package removal (step 8, council round 17 B5): see [efbulk-unsupported-plan.md](efbulk-unsupported-plan.md).
 
 ## Models
 

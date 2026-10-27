@@ -11,8 +11,8 @@ public class ProjectMigration
     public required bool KeepRemovedPackage { get; init; }
 
     // Set when the project's own code no longer needs the removed package but a project that references it does (corpus Moq B2):
-    // the path of that dependent, for the report.
-    public string? KeptForDependent { get; init; }
+    // the paths of every such dependent in solution order (council round 14, M11), for the report. Empty: not kept for a dependent.
+    public IReadOnlyList<string> KeptForDependents { get; init; } = [];
 
     // <Using Include> items to swap, in the same pairs as the fix swaps top-level usings.
     public required IReadOnlyList<string> RemovedNamespaces { get; init; }

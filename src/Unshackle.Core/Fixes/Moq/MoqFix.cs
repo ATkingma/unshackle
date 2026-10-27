@@ -43,6 +43,12 @@ public class MoqFix : IFix, IProjectFileMigration
             : [];
     }
 
+    // Council round 14, M13 (corpus B1): an accepted limitation, stated once per run that changed code.
+    public const string ProxyInfo =
+        "Mock objects are now NSubstitute proxies; tests that assert a mock's GetType() name or ToString() will see a different value.";
+
+    public string? ChangedCodeInfo => ProxyInfo;
+
     // No project-file edits besides the package swap (Package).
     public IReadOnlyList<ProjectFileEdit> EditsFor(Project project) => [];
 

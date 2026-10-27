@@ -53,5 +53,5 @@ are now NSubstitute proxies; tests that assert a mock's GetType() name or ToStri
 
 - `claude/docs/council.md` — summary of all rounds
 - `claude/tasks/TAAK-330-moq-corpus-leftovers.md`
-- `claude/tasks/TAAK-333-council-14-followups.md`
+- `claude/tasks/archief/TAAK-333-council-14-followups.md`
 - `claude/tasks/CORPUSRUN-moq.md`

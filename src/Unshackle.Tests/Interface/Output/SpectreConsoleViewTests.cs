@@ -24,12 +24,16 @@ public class SpectreConsoleViewTests
             Finding("Handler.cs", 3, Fixer.NotRewrittenPrefix + "this fix changes nothing while other findings are Manual."),
             Finding("Handler.cs", 9, Fixer.NotRewrittenPrefix + "this fix changes nothing while other findings are Manual."),
             Finding("Startup.cs", 12, "AddMediatR scans the assembly of type parameter 'T'."),
-        ]);
+            Finding("Other.cs", 4, "Manual in another project."),
+        ], new Dictionary<string, string> { ["Startup.cs"] = "Web.csproj", ["Other.cs"] = "Jobs.csproj" });
 
         // Assert
         string output = writer.ToString();
-        output.ShouldContain("2 findings wait on these 1 manual ones");
+        output.ShouldContain("2 findings wait on these 2 manual ones");
+        output.ShouldContain("Web.csproj (1 blocking):");
+        output.ShouldContain("Jobs.csproj (1 blocking):");
         output.ShouldContain("Startup.cs:12 mediatr.add-mediatr: AddMediatR scans the assembly of type parameter 'T'.");
+        output.ShouldContain("Other.cs:4 mediatr.add-mediatr: Manual in another project.");
     }
 
     [Fact]
@@ -40,7 +44,7 @@ public class SpectreConsoleViewTests
         IAnsiConsole console = AnsiConsole.Create(new AnsiConsoleSettings { Out = new AnsiConsoleOutput(writer), Ansi = AnsiSupport.No });
 
         // Act
-        new SpectreConsoleView(console, console).ShowSummary([Finding("Startup.cs", 12, "Manual for its own reason.")]);
+        new SpectreConsoleView(console, console).ShowSummary([Finding("Startup.cs", 12, "Manual for its own reason.")], new Dictionary<string, string>());
 
         // Assert
         writer.ToString().ShouldNotContain("wait on");
@@ -62,7 +66,7 @@ public class SpectreConsoleViewTests
         }
 
         // Act
-        new SpectreConsoleView(console, console).ShowSummary(findings);
+        new SpectreConsoleView(console, console).ShowSummary(findings, new Dictionary<string, string>());
 
         // Assert
         string output = writer.ToString();

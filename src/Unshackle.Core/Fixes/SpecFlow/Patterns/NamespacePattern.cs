@@ -99,9 +99,73 @@ public class NamespacePattern : IPattern
 
         UsingDirectiveSyntax swapped = directive.WithName(SyntaxFactory.ParseName(Global(directive.Name!) + newName).WithTriviaFrom(directive.Name!));
         // TechTalk.SpecFlow.Assist's extension methods (CreateInstance, CreateSet, ...) moved to namespace Reqnroll.
-        return !isType && target == SpecFlowNames.OldRoot + ".Assist"
-            ? PatternResult.Fixed(swapped, SpecFlowNames.NewRoot)
-            : PatternResult.Fixed(swapped);
+        string[] required = !isType && target == SpecFlowNames.OldRoot + ".Assist" ? [SpecFlowNames.NewRoot] : [];
+        // Council round 18, S7: a swapped namespace using to which nothing in the file binds afterwards is dropped.
+        return !isType && Droppable(directive, target, newName, model)
+            ? PatternResult.Fixed(Array.Empty<SyntaxNode>(), required)
+            : PatternResult.Fixed(swapped, required);
+    }
+
+    // A plain (not global, alias or static) using of an old namespace, with nothing but whitespace in front of it, through which no use in the
+    // file binds to a type that stays in the swapped namespace. Implicit uses that are not checked (query expressions, deconstruction) keep it.
+    private static bool Droppable(UsingDirectiveSyntax directive, string oldNamespace, string newNamespace, SemanticModel model)
+    {
+        // The only using of its block stays: removing it leaves the blank line after the block behind the usings the Fixer adds.
+        SyntaxList<UsingDirectiveSyntax> block = directive.Parent switch
+        {
+            CompilationUnitSyntax unit => unit.Usings,
+            BaseNamespaceDeclarationSyntax ns => ns.Usings,
+            _ => default,
+        };
+        if (block.Count < 2 || directive.GlobalKeyword != default || directive.Alias is not null || directive.StaticKeyword != default
+            || directive.GetLeadingTrivia().Any(t => !t.IsKind(SyntaxKind.WhitespaceTrivia) && !t.IsKind(SyntaxKind.EndOfLineTrivia)))
+        {
+            return false;
+        }
+
+        SyntaxNode root = directive.SyntaxTree.GetRoot();
+        if (root.DescendantNodes().Any(n => n is QueryExpressionSyntax or AssignmentExpressionSyntax { Left: TupleExpressionSyntax or DeclarationExpressionSyntax }
+            or ForEachVariableStatementSyntax))
+        {
+            return false;
+        }
+
+        IEnumerable<ISymbol?> used = root.DescendantNodes()
+            .Where(n => !n.Ancestors().Any(a => a is UsingDirectiveSyntax))
+            .SelectMany(n => n switch
+            {
+                SimpleNameSyntax name => [model.GetSymbolInfo(name).Symbol, .. model.GetSymbolInfo(name).CandidateSymbols],
+                ForEachStatementSyntax loop => [model.GetForEachStatementInfo(loop).GetEnumeratorMethod],
+                AwaitExpressionSyntax wait => [model.GetAwaitExpressionInfo(wait).GetAwaiterMethod],
+                ExpressionSyntax element when element.Parent is InitializerExpressionSyntax { RawKind: (int)SyntaxKind.CollectionInitializerExpression }
+                    => [model.GetCollectionInitializerSymbolInfo(element).Symbol],
+                _ => Array.Empty<ISymbol?>(),
+            });
+        return !used.Any(symbol => NewNamespaceOf(symbol, oldNamespace) == newNamespace);
+    }
+
+    // The namespace a use of a symbol of oldNamespace binds to after the swap; null when the symbol is not in oldNamespace.
+    private static string? NewNamespaceOf(ISymbol? symbol, string oldNamespace)
+    {
+        if (symbol is INamespaceSymbol ns)
+        {
+            return ns.ContainingNamespace?.ToDisplayString() == oldNamespace ? SpecFlowNames.NewNamespace(oldNamespace) : null;
+        }
+
+        INamedTypeSymbol? type = symbol is IMethodSymbol { ReducedFrom: IMethodSymbol reduced } ? reduced.ContainingType
+            : symbol as INamedTypeSymbol ?? symbol?.ContainingType;
+        while (type?.ContainingType is INamedTypeSymbol outer)
+        {
+            type = outer;
+        }
+
+        if (type is null || type.OriginalDefinition.ContainingNamespace.ToDisplayString() != oldNamespace)
+        {
+            return null;
+        }
+
+        string fullName = SpecFlowNames.FullName(type.OriginalDefinition);
+        return SpecFlowNames.RenamedTypes.TryGetValue(fullName, out string? renamed) ? SpecFlowNames.NamespaceOf(renamed) : SpecFlowNames.NewNamespace(oldNamespace);
     }
 
     // The SpecFlow namespace or type (full metadata name) a using directive names; null when it names neither.

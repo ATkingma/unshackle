@@ -55,6 +55,9 @@ public partial class XmlProjectFileStore
 
         return await SharedDeclarationAsync(run, edit, edit.OldName, cancellationToken) switch
         {
+            null when edit.MustBeDeclared => Manual(run, edit, 0, $"the project uses {edit.OldName}, but neither the project file nor its " +
+                "Directory.Build.props or Directory.Packages.props declares it statically (an imported file, a conditional import, a " +
+                "property-driven name or a ProjectReference brings it in); rename it by hand.", null, nameof(ProjectBlockingReason.SharedDeclarationBlocked)),
             null => null,
             { Blocked: ProjectFileEditOutcome blocked } => blocked,
             { File: var shared, Declared: var declared } => await RenameInAsync(run, shared, declared, edit, shared.Path, cancellationToken),
@@ -291,7 +294,10 @@ public partial class XmlProjectFileStore
                 var file = new ProjectFile(_fileSystem.Path.GetFullPath(shared), text);
                 if (Find(file, PackageReference, package) is XElement declared)
                 {
-                    return SharedBlocker(run, file.Path) is string why
+                    // Council round 18, S9: a conditioned item (or group) holds for some importers only; which ones is not evaluated here.
+                    string? conditioned = declared.AncestorsAndSelf().Any(e => e.Attribute("Condition") is not null)
+                        ? "has a Condition on the package item or its group" : null;
+                    return (conditioned ?? SharedBlocker(run, file.Path)) is string why
                         ? new SharedDeclaration(file, declared, Manual(run, edit, LineOf(declared),
                             $"the package is declared in a shared file that {why}; edit it by hand.", file.Path, nameof(ProjectBlockingReason.SharedDeclarationBlocked)))
                         : new SharedDeclaration(file, declared, null);

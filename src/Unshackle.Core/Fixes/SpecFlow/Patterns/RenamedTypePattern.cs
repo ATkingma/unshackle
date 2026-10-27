@@ -28,6 +28,12 @@ public class RenamedTypePattern : IPattern
     {
         var name = (SimpleNameSyntax)node;
         string fullName = Special(name, model)!;
+        if (SpecFlowNames.RenamedMembers.TryGetValue(fullName, out string? newMember))
+        {
+            // Council round 21, S11: the type keeps its name; NamespacePattern swaps the using that brings it in.
+            return PatternResult.Fixed(name.WithIdentifier(SyntaxFactory.Identifier(newMember).WithTriviaFrom(name.Identifier)));
+        }
+
         if (!SpecFlowNames.RenamedTypes.TryGetValue(fullName, out string? newName))
         {
             return PatternResult.Manual($"{fullName} has no Reqnroll counterpart. Migrate this code by hand.");
@@ -38,9 +44,17 @@ public class RenamedTypePattern : IPattern
         return PatternResult.Fixed(renamed, SpecFlowNames.NamespaceOf(newName));
     }
 
-    // The full name of the renamed or removed SpecFlow type this name binds to (a constructor counts as its type); null otherwise.
+    // The full name of the renamed or removed SpecFlow type this name binds to (a constructor counts as its type), or of the renamed or
+    // removed member ("<type>.<member>"); null otherwise.
     private static string? Special(SimpleNameSyntax name, SemanticModel model)
     {
+        if (model.GetSymbolInfo(name).Symbol is { } member and not INamedTypeSymbol and not IMethodSymbol { MethodKind: MethodKind.Constructor }
+            && ((member as IMethodSymbol)?.ReducedFrom ?? member).ContainingType is INamedTypeSymbol owner && SpecFlowNames.IsOldType(owner))
+        {
+            string key = SpecFlowNames.FullName(owner.OriginalDefinition) + "." + member.Name;
+            return SpecFlowNames.RenamedMembers.ContainsKey(key) || SpecFlowNames.RemovedMembers.Contains(key) ? key : null;
+        }
+
         INamedTypeSymbol? type = model.GetSymbolInfo(name).Symbol switch
         {
             INamedTypeSymbol named => named,

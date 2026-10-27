@@ -54,11 +54,17 @@ public partial class XmlProjectFileStore
             return await RenameInAsync(run, project, reference, edit, null, cancellationToken);
         }
 
-        return await SharedDeclarationAsync(run, edit, edit.OldName, cancellationToken) switch
+        SharedDeclaration? declaration = await SharedDeclarationAsync(run, edit, edit.OldName, cancellationToken);
+        if (declaration is null && edit.MustBeDeclared)
         {
-            null when edit.MustBeDeclared => Manual(run, edit, 0, $"the project uses {edit.OldName}, but neither the project file nor its " +
-                "Directory.Build.props or Directory.Packages.props declares it statically (an imported file, a conditional import, a " +
-                "property-driven name or a ProjectReference brings it in); rename it by hand.", null, nameof(ProjectBlockingReason.SharedDeclarationBlocked)),
+            // Council round 21, S10: name where it is declared instead; that file is not edited.
+            return Manual(run, edit, 0, $"the project uses {edit.OldName}, but neither the project file nor its Directory.Build.props or " +
+                $"Directory.Packages.props declares it statically; {await DeclaredElsewhereAsync(run, edit.OldName, cancellationToken)}" +
+                $"rename it to {edit.NewName} {edit.Version} there by hand.", null, nameof(ProjectBlockingReason.SharedDeclarationBlocked));
+        }
+
+        return declaration switch
+        {
             null => null,
             { Blocked: ProjectFileEditOutcome blocked } => blocked,
             { File: var shared, Declared: var declared } => await RenameInAsync(run, shared, declared, edit, shared.Path, cancellationToken),
@@ -420,13 +426,88 @@ public partial class XmlProjectFileStore
                         ? "has a Condition on the package item or its group" : null;
                     return (conditioned ?? SharedBlocker(run, file.Path)) is string why
                         ? new SharedDeclaration(file, declared, Manual(run, edit, LineOf(declared),
-                            $"the package is declared in a shared file that {why}; edit it by hand.", file.Path, nameof(ProjectBlockingReason.SharedDeclarationBlocked)))
+                            $"the package is declared in a shared file that {why}; {RenameHint(edit)}edit it by hand.", file.Path, nameof(ProjectBlockingReason.SharedDeclarationBlocked)))
                         : new SharedDeclaration(file, declared, null);
                 }
             }
         }
 
         return null;
+    }
+
+    // Council round 21, S10: the rename to make in a blocked shared file (only a rename has one).
+    private static string RenameHint(ProjectFileEdit edit) =>
+        edit is PackageRenameEdit rename ? $"rename {rename.OldName} to {rename.NewName} {rename.Version} there, or " : string.Empty;
+
+    // Council round 21, S10: where a package the project uses is declared when the project file and its nearest props files do not: a
+    // static <Import> of either (file and line), else a ProjectReference whose project (or its Directory.Build.props) declares it. Those
+    // files are named, never edited. Ends with "; " so the caller's instruction follows.
+    private async Task<string> DeclaredElsewhereAsync(EditRun run, string package, CancellationToken cancellationToken)
+    {
+        string? buildProps = FindUp(run.ProjectPath, BuildProps);
+        string[] importers = buildProps is null ? [run.ProjectPath] : [run.ProjectPath, _fileSystem.Path.GetFullPath(buildProps)];
+        foreach (string importer in importers)
+        {
+            foreach (string imported in await StaticPathsAsync(run, importer, "Import", "Project", cancellationToken))
+            {
+                if (await ParsedAsync(run, imported, cancellationToken) is ProjectFile declaring && Find(declaring, PackageReference, package) is XElement declared)
+                {
+                    return $"{imported} (line {LineOf(declared)}, imported by {importer}) declares it, a file Unshackle does not edit; ";
+                }
+            }
+        }
+
+        foreach (string referenced in await StaticPathsAsync(run, run.ProjectPath, "ProjectReference", Include, cancellationToken))
+        {
+            string? referencedProps = FindUp(referenced, BuildProps);
+            string[] files = referencedProps is null ? [referenced] : [referenced, _fileSystem.Path.GetFullPath(referencedProps)];
+            foreach (string path in files)
+            {
+                if (await ParsedAsync(run, path, cancellationToken) is ProjectFile declaring && Find(declaring, PackageReference, package) is XElement declared)
+                {
+                    return $"it comes in through the ProjectReference to {referenced}, declared in {path} (line {LineOf(declared)}); reference it in this project, or ";
+                }
+            }
+        }
+
+        return "an imported file, a conditional import or a property-driven name brings it in; ";
+    }
+
+    // The full paths in an attribute of the file's elements that need no evaluation (no property but $(MSBuildThisFileDirectory), no wildcard).
+    private async Task<List<string>> StaticPathsAsync(EditRun run, string path, string element, string attribute, CancellationToken cancellationToken)
+    {
+        if (await ParsedAsync(run, path, cancellationToken) is not ProjectFile file)
+        {
+            return [];
+        }
+
+        string directory = _fileSystem.Path.GetDirectoryName(file.Path)!;
+        return
+        [
+            .. file.Document.Descendants(file.Namespace + element)
+                .Select(e => ((string?)e.Attribute(attribute))?.Replace("$(MSBuildThisFileDirectory)", string.Empty, StringComparison.OrdinalIgnoreCase))
+                .OfType<string>()
+                .Where(v => v.Length > 0 && !v.Contains("$(", StringComparison.Ordinal) && !v.Contains('*', StringComparison.Ordinal) && !v.Contains(';', StringComparison.Ordinal))
+                .Select(v => _fileSystem.Path.GetFullPath(_fileSystem.Path.Combine(directory, v.Replace('\\', '/')))),
+        ];
+    }
+
+    // The file as XML; null when it does not exist or does not parse.
+    private async Task<ProjectFile?> ParsedAsync(EditRun run, string path, CancellationToken cancellationToken)
+    {
+        if ((await StateAsync(run, path, cancellationToken)).Current is not string text)
+        {
+            return null;
+        }
+
+        try
+        {
+            return new ProjectFile(_fileSystem.Path.GetFullPath(path), text);
+        }
+        catch (Exception ex) when (ex is XmlException or InvalidDataException)
+        {
+            return null;
+        }
     }
 
     // Why a shared file may not be edited (G3): a project that imports it is not loaded, or has blocking rows; null when every one is fine.

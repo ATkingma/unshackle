@@ -44,6 +44,9 @@
     <!-- TAAK-340: SpecFlow → Reqnroll (EOL fix); both BSD-3-Clause, no license or sponsor checks. Only as types for proofs -->
     <PackageVersion Include="SpecFlow" Version="3.9.74" />
     <PackageVersion Include="Reqnroll" Version="3.3.4" />
+    <!-- TAAK-340 step 4b (council 21 S11): the Autofac plugin pair, licence-checked: both BSD-3-Clause, their build files only copy the plugin dll. Only as types for proofs -->
+    <PackageVersion Include="SpecFlow.Autofac" Version="3.9.74" />
+    <PackageVersion Include="Reqnroll.Autofac" Version="3.3.4" />
     <!-- TAAK-341: xUnit v2 as types for the xunit3 proofs' "before" (Apache-2.0); never compiled into the test project itself -->
     <PackageVersion Include="xunit.extensibility.core" Version="2.9.3" />
     <PackageVersion Include="xunit.extensibility.execution" Version="2.9.3" />

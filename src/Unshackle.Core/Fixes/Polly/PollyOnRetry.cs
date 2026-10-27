@@ -7,7 +7,9 @@ namespace Unshackle.Core.Fixes.Polly;
 // A v7 onRetry/onRetryAsync lambda → v8 OnRetry (council P3, queue row 3). The body is kept verbatim in a local function whose
 // parameters map 1:1 onto OnRetryArguments: Exception → Outcome.Exception, DelegateResult<T> → Outcome (only .Result and
 // .Exception used, the members both share), TimeSpan → RetryDelay, the 1-based retry count → AttemptNumber + 1. A Context
-// parameter must be unused; a body that reads it is Manual.
+// parameter must be unused; a body that reads it is Manual. In a nullable-enabled context, v8's Outcome<T>.Exception is
+// Exception? where v7's DelegateResult<T>.Exception was Exception, so every read that is not itself a null check gets a `!`
+// (corpus B3); the suppression is compile-time only, the runtime value and behaviour are unchanged.
 internal static class PollyOnRetry
 {
     public const string CallbackName = "OnRetryCallback";
@@ -33,6 +35,8 @@ internal static class PollyOnRetry
 
         var declared = new List<string>();
         var passed = new List<string>();
+        var suppress = new List<int>();
+        bool nullable = model.GetNullableContext(lambda.SpanStart).WarningsEnabled();
         for (int i = 0; i < parameters.Count; i++)
         {
             ITypeSymbol type = invoke.Parameters[i].Type;
@@ -58,6 +62,14 @@ internal static class PollyOnRetry
                         return Unsupported("the onRetry body uses the DelegateResult for more than .Result and .Exception.");
                     }
 
+                    if (nullable)
+                    {
+                        suppress.AddRange(uses
+                            .Select(u => (MemberAccessExpressionSyntax)u.Parent!)
+                            .Where(a => a.Name.Identifier.ValueText == "Exception" && !IsNullCheck(a))
+                            .Select(a => a.Span.End));
+                    }
+
                     declared.Add($"Outcome<{resultType}> {declaredName}");
                     passed.Add($"{args}.Outcome");
                     break;
@@ -78,8 +90,9 @@ internal static class PollyOnRetry
         string signature = $"{returnType} {callback}({string.Join(", ", declared)})";
         string function = lambda.Body switch
         {
+            BlockSyntax block when suppress.Count > 0 => $"{signature}{newLine}{inner}    {Reindent(block, Suppressed(block, suppress), inner + "    ", newLine)}",
             BlockSyntax block => $"{signature}{newLine}{inner}    {PollyRetry.Reindent(block, inner + "    ", newLine)}",
-            ExpressionSyntax expression => $"{signature} => {expression};",
+            ExpressionSyntax expression => $"{signature} => {Suppressed(expression, suppress)};",
             _ => throw new System.Diagnostics.UnreachableException(),
         };
         string call = $"{callback}({string.Join(", ", passed)})";
@@ -110,6 +123,40 @@ internal static class PollyOnRetry
             ? []
             : lambda.Body.DescendantNodes().OfType<IdentifierNameSyntax>()
                 .Where(n => n.Identifier.ValueText == symbol.Name && SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(n).Symbol, symbol));
+    }
+
+    // A read whose only purpose is testing for null keeps the nullable type: `e?.X`, `e == null`, `e is null`, `e ?? x`, nameof(e).
+    private static bool IsNullCheck(MemberAccessExpressionSyntax access) => access.Parent switch
+    {
+        ConditionalAccessExpressionSyntax conditional => conditional.Expression == access,
+        BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.CoalesceExpression) => binary.Left == access,
+        BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.EqualsExpression) || binary.IsKind(SyntaxKind.NotEqualsExpression) =>
+            binary.Left.IsKind(SyntaxKind.NullLiteralExpression) || binary.Right.IsKind(SyntaxKind.NullLiteralExpression),
+        IsPatternExpressionSyntax => true,
+        ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" } } } => true,
+        _ => false,
+    };
+
+    private static string Suppressed(SyntaxNode body, List<int> positions)
+    {
+        string text = body.ToString();
+        foreach (int position in positions.Distinct().OrderDescending())
+        {
+            text = text.Insert(position - body.SpanStart, "!");
+        }
+
+        return text;
+    }
+
+    // PollyRetry.Reindent over already-edited text: the same column logic, measured on the original block.
+    private static string Reindent(BlockSyntax block, string text, string indent, string newLine)
+    {
+        Microsoft.CodeAnalysis.Text.SourceText source = block.SyntaxTree.GetText();
+        int column = block.OpenBraceToken.SpanStart - source.Lines.GetLineFromPosition(block.OpenBraceToken.SpanStart).Start;
+        string[] lines = text.ReplaceLineEndings("\n").Split('\n');
+        return string.Join(newLine, lines.Select((l, i) => i == 0 || l.Length == 0
+            ? l
+            : indent + (l.Length >= column && string.IsNullOrWhiteSpace(l[..column]) ? l[column..] : l.TrimStart())));
     }
 
     private static PollyPlan Unsupported(string text) => PollyPlan.Manual(PollyReason.OnRetryNotMappable, text);

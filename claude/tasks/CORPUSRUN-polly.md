@@ -61,6 +61,7 @@ Of the 14 repos with a green baseline, 8 pass with 0 test regressions and 6 brea
   Before: `Policy<JsonDocument>.Handle<MusixmatchException>(...).RetryAsync(async (result, _) => { logger.LogWarning(result.Exception, "...", ((MusixmatchException)result.Exception).Hint); ... })`
   After: the body moves unchanged into `async Task OnRetryCallback(Outcome<JsonDocument> result, int unused1)` -> CS8600 + CS8602 at the cast (nullable warnings are errors).
   Expected: in a nullable-enabled context, write `result.Exception!` wherever the v7 `DelegateResult<T>.Exception` was dereferenced or cast, or report Manual.
+  **Fixed 2026-10-27:** `PollyOnRetry` appends `!` to every `.Exception` read that is not a null check, only when nullable warnings are enabled (REQ-4a, proof `on-retry-exception-nullable`).
 - **B4 project-file: CS0433 duplicate ServiceCollection** (okta-sdk-dotnet `src/Okta.Sdk/Client/OktaApiServiceBuilder.cs:62`).
   The project references `Microsoft.Extensions.DependencyInjection 5.0.0`. The added Resilience package brings in `DependencyInjection.Abstractions 8.0`, which also defines `ServiceCollection` -> CS0433. Expected: bump the direct `Microsoft.Extensions.DependencyInjection` reference to match, or report Manual. Same family as B1.
   **Fixed** with B1: DependencyInjection 5.0.0 is below the 8.0 group's major, so the project is blocked with `PackageDowngrade`.

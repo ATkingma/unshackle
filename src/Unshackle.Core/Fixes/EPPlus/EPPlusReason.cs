@@ -21,4 +21,7 @@ public enum EPPlusReason
     LoadFromTypeDiffers,
     UnmappedLoadFrom,
     EPPlusTypeCrossesProject,
+    FlowMemberNotPrivate,
+    FlowUseNotMigrated,
+    FlowCallerNotMigrated,
 }

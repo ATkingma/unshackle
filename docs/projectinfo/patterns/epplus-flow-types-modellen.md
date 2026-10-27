@@ -10,7 +10,7 @@ classDiagram
     class FlowTypesPattern { Find(root, model); Rewrite(node, model); Migratable(method, model); MigratableField(field, model); MigratableReturn(method, model) }
     class WorkbookUses { WorkbookUses(model, scope, IParameterSymbol, chain); Map(); Replacements }
     class UnsupportedPattern
-    UnsupportedPattern ..> FlowTypesPattern : Find (E24, skip Manual nodes)
+    UnsupportedPattern ..> FlowTypesPattern : Find (E24, skip Manual nodes), Rewrite (E31, fold reason into E6 row)
     class PackagePattern
     IPattern <|.. FlowTypesPattern
     FlowTypesPattern ..> WorkbookUses

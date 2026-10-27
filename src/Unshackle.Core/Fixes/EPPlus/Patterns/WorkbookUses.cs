@@ -496,8 +496,18 @@ internal class WorkbookUses
         return access.Parent is not AssignmentExpressionSyntax assignment || assignment.Left != access
             || _package is not null && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) && assignment.Right is LiteralExpressionSyntax value
                 && value.IsKind(SyntaxKind.StringLiteralExpression) && IsValidSheetName(value.Token.ValueText)
-                && !AddedBefore(_scope.FullSpan.End).Contains(value.Token.ValueText, StringComparer.OrdinalIgnoreCase);
+                && !AddedBefore(_scope.FullSpan.End).Concat(AddedByHelpers()).Contains(value.Token.ValueText, StringComparer.OrdinalIgnoreCase);
     }
+
+    // E29 (council round 18): the literal names return helpers add to this package anywhere in the scope; a rename to one of them would
+    // throw only at run time in ClosedXML, so it stays Manual.
+    private IEnumerable<string> AddedByHelpers() =>
+        _package is null ? [] : UsesOf(_package)
+            .Where(IsReturnFlowArgument)
+            .Select(u => _model.GetSymbolInfo(u.Parent!.Parent!.Parent!).Symbol)
+            .OfType<IMethodSymbol>()
+            .Select(m => FlowTypesPattern.ReturnedSheetName(m.OriginalDefinition))
+            .OfType<string>();
 
     // The ClosedXML position (1-based) or name for a lookup that provably finds an added sheet; null otherwise.
     private ExpressionSyntax? Position(ElementAccessExpressionSyntax lookup, ExpressionSyntax key)

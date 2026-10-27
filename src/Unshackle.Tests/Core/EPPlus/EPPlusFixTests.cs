@@ -242,4 +242,32 @@ public class EPPlusFixTests
         report.Findings.Where(f => f.Line == 15 && f.PatternId == "epplus.address").ShouldHaveSingleItem();
         report.Findings.ShouldNotContain(f => f.PatternId == "epplus.unsupported" && (f.Line == 10 || f.Line == 15));
     }
+
+    [Fact]
+    public async Task Fix_FlowTypesNodeWithPublicApiSignature_OneE6RowWithFlowReason()
+    {
+        // Arrange: council round 18, E31. A public helper of a packable project is both E6 public API and Manual in flow-types; it gets
+        // one row, the E6 row, with the flow-types reason folded into its text.
+        const string code = """
+            using OfficeOpenXml;
+
+            public class Report
+            {
+                public static void Fill(ExcelWorksheet sheet)
+                {
+                    sheet.Cells[1, 1].Value = "Name";
+                }
+            }
+            """;
+        var fixer = new Fixer([new EPPlusFix()]);
+        Solution solution = TestSolution.Create(code, EPPlusReferences.EPPlus);
+
+        // Act
+        FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = "epplus" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        ManualResult row = report.Findings.Where(f => f.Line == 5).ShouldHaveSingleItem().Result.ShouldBeOfType<ManualResult>();
+        row.Code.ShouldBe("PublicApiExposesOldLibrary");
+        row.Reason.ShouldContain("epplus.flow-types FlowMemberNotPrivate");
+    }
 }

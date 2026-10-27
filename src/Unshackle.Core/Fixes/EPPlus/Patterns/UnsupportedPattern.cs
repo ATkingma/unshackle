@@ -14,7 +14,8 @@ namespace Unshackle.Core.Fixes.EPPlus.Patterns;
 /// A public or protected signature in a packable project that exposes an EPPlus type is Manual by design (E6, <c>PublicApiExposesOldLibrary</c>).
 /// Code another EPPlus pattern already reports (a licence line or package it left Manual) is not reported twice; nor (council round 16, E24)
 /// a member or address <c>epplus.flow-types</c> or <c>epplus.address</c> left Manual, so each node has one row with the most specific reason.
-/// A flow-types member whose signature is E6 public API keeps its <c>PublicApiExposesOldLibrary</c> row here.
+/// A flow-types member whose signature is E6 public API is skipped by flow-types and gets its one <c>PublicApiExposesOldLibrary</c> row here,
+/// with the flow-types reason folded into the text (council round 18, E31).
 /// </summary>
 public class UnsupportedPattern : IPattern
 {
@@ -34,7 +35,7 @@ public class UnsupportedPattern : IPattern
     {
         // These patterns ran before this one: what they still find is what they left Manual.
         List<TextSpan> reported = [.. s_licenseContext.Find(root, model).Concat(s_package.Find(root, model)).Concat(s_address.Find(root, model))
-            .Concat(s_flowTypes.Find(root, model).Where(n => ExposedSignature(n, model) is null)).Select(n => n.Span)];
+            .Concat(s_flowTypes.Find(root, model)).Select(n => n.Span)];
         return root.DescendantNodes()
             .Where(n => n is SimpleNameSyntax && !n.Ancestors().Any(a => a is UsingDirectiveSyntax) && EPPlusApi.Name(n, model) is not null)
             .Where(n => !reported.Any(span => span.Contains(n.Span)) && !InHandledTail(n, model))
@@ -48,8 +49,12 @@ public class UnsupportedPattern : IPattern
         string where = $"line {node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
         if (ExposedSignature(node, model) is string exposed)
         {
+            // E31 (council round 18): flow-types skips this node, so its reason is folded into this one row.
+            string flow = FlowTypesPattern.IsCandidate(node, model) && s_flowTypes.Rewrite(node, model) is ManualResult { Code: { } code, Reason: var reason }
+                ? $" Also epplus.flow-types {code}: {reason}"
+                : string.Empty;
             return PatternResult.Manual(EPPlusReason.PublicApiExposesOldLibrary, $"{exposed} ({where}) is public API of a packable project and exposes EPPlus: "
-                + "its callers outside the solution would break. Change the signature by hand (by design, council round 8 E6).");
+                + "its callers outside the solution would break. Change the signature by hand (by design, council round 8 E6)." + flow);
         }
 
         IEnumerable<string> apis = node.DescendantNodesAndSelf().Where(n => n is SimpleNameSyntax && !InHandledTail(n, model)).Select(n => EPPlusApi.Name(n, model))
@@ -74,7 +79,7 @@ public class UnsupportedPattern : IPattern
         name.Ancestors().OfType<MemberDeclarationSyntax>().FirstOrDefault(m => m is not BaseNamespaceDeclarationSyntax);
 
     // E6: a public/protected member (or type) of an outside-visible type whose signature names an EPPlus type, in a packable project.
-    private static string? ExposedSignature(SyntaxNode node, SemanticModel model)
+    internal static string? ExposedSignature(SyntaxNode node, SemanticModel model)
     {
         ISymbol? symbol = node is FieldDeclarationSyntax field
             ? field.Declaration.Variables.Select(v => model.GetDeclaredSymbol(v)).FirstOrDefault()

@@ -1,5 +1,6 @@
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.EfBulk.Patterns;
+using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.EfBulk;
 
@@ -26,6 +27,17 @@ public class EfBulkFix : IFix
 
     public string? ChangedCodeInfo =>
         "ExecuteDelete/ExecuteUpdate run directly on the database like the Z batch calls: tracked entities are not updated and SaveChanges interceptors do not run.";
+
+    // Council round 17, B3: one project row "upgrade first" next to the per-call NoNativeExecute rows.
+    public IReadOnlyList<PatternResult> ProjectSummary(IReadOnlyList<Finding> findings)
+    {
+        ArgumentNullException.ThrowIfNull(findings);
+        int blocked = findings.Count(f => f.FixId == Id && f.Result is ManualResult { Code: nameof(EfBulkReason.NoNativeExecute) });
+        return blocked == 0
+            ? []
+            : [PatternResult.Manual(EfBulkReason.EfCoreBelow7,
+                $"EF Core < 7: upgrade to EF Core 7+ with a relational provider first; {blocked} batch call(s) blocked (ExecuteDelete/ExecuteUpdate are missing).")];
+    }
 
     public IReadOnlyList<IPattern> Patterns { get; } = [new DeletePattern(), new UpdatePattern()];
 }

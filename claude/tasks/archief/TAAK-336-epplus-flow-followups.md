@@ -52,7 +52,7 @@
 ## See also
 
 - `claude/tasks/COUNCIL-round-18.md` — decisions E27-E32
-- `claude/tasks/TAAK-346-epplus-flow-rows.md` — follow-up
+- `claude/tasks/archief/TAAK-346-epplus-flow-rows.md` — follow-up
 - `claude/tasks/COUNCIL-round-16.md`
 - `claude/tasks/TAAK-327-epplus-flow-types.md`
 - `claude/tasks/archief/TAAK-337-epplus-range-locals.md`

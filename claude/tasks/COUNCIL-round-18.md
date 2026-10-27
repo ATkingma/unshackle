@@ -59,4 +59,4 @@ Follow-ups: TAAK-340 steps 3a-3f, TAAK-341 steps 5a-5e, TAAK-346 (E27, E29, E31,
 - `claude/tasks/COUNCIL-round-17.md`
 - `claude/tasks/TAAK-340-specflow-to-reqnroll.md`
 - `claude/tasks/TAAK-341-xunit-v3.md`
-- `claude/tasks/TAAK-346-epplus-flow-rows.md`
+- `claude/tasks/archief/TAAK-346-epplus-flow-rows.md`

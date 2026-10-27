@@ -2,7 +2,7 @@ using OfficeOpenXml;
 
 namespace Reports;
 
-public static class Report
+internal static class Report
 {
     public static void Fill(ExcelWorksheet sheet)
     {

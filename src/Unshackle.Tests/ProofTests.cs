@@ -12,6 +12,7 @@ using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Fixes.Moq;
 using Unshackle.Core.Fixes.Polly;
 using Unshackle.Core.Fixes.SpecFlow;
+using Unshackle.Core.Fixes.XunitV3;
 using Unshackle.Core.Models;
 using Unshackle.DataAccess.Reports;
 using Unshackle.Tests.Core.EfBulk;
@@ -20,6 +21,7 @@ using Unshackle.Tests.Core.MassTransit;
 using Unshackle.Tests.Core.Moq;
 using Unshackle.Tests.Core.Polly;
 using Unshackle.Tests.Core.SpecFlow;
+using Unshackle.Tests.Core.XunitV3;
 using Unshackle.Tests.Helpers;
 using Xunit;
 
@@ -97,6 +99,12 @@ public class ProofTests
             Fix = new MassTransitFix(),
             Before = MassTransitReferences.MassTransit,
             After = MassTransitReferences.MassTransit,
+        },
+        ["XunitV3"] = new()
+        {
+            Fix = new XunitV3Fix(),
+            Before = XunitV3References.Before,
+            After = XunitV3References.After,
         },
     };
 

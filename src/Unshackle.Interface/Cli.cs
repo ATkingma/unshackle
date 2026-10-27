@@ -13,6 +13,7 @@ using Unshackle.Core.Fixes.MediatR;
 using Unshackle.Core.Fixes.Moq;
 using Unshackle.Core.Fixes.Polly;
 using Unshackle.Core.Fixes.SpecFlow;
+using Unshackle.Core.Fixes.XunitV3;
 using Unshackle.Core.Models;
 using Unshackle.DataAccess.Projects;
 using Unshackle.DataAccess.Reports;
@@ -44,6 +45,7 @@ public static class Cli
             new MassTransitFix(),
             new EfBulkFix(),
             new SpecFlowFix(),
+            new XunitV3Fix(),
         ];
         IReportWriter[] reportWriters =
             [new CsvReportWriter(fileSystem), new JsonReportWriter(fileSystem), new MarkdownReportWriter(fileSystem)];

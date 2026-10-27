@@ -41,6 +41,15 @@
     <!-- Niet als analyzer van dit project: de proofs draaien de generator zelf op hun "after" (TestReferences.MediatorGenerators) -->
     <PackageReference Include="Mediator.SourceGenerator" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
     <None Include="$(PkgMediator_SourceGenerator)/analyzers/dotnet/cs/*.dll" Link="Generators/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <!-- TAAK-341: xUnit v2 for the xunit3 proofs' "before"; not compiled here (its Xunit types would clash with xunit.v3), copied to XunitV2/ -->
+    <PackageReference Include="xunit.extensibility.core" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="xunit.extensibility.execution" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="xunit.assert" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
+    <PackageReference Include="xunit.abstractions" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
+    <None Include="$(Pkgxunit_extensibility_core)/lib/netstandard1.1/xunit.core.dll" Link="XunitV2/xunit.core.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <None Include="$(Pkgxunit_extensibility_execution)/lib/netstandard1.1/xunit.execution.dotnet.dll" Link="XunitV2/xunit.execution.dotnet.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <None Include="$(Pkgxunit_assert)/lib/netstandard1.1/xunit.assert.dll" Link="XunitV2/xunit.assert.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <None Include="$(Pkgxunit_abstractions)/lib/netstandard2.0/xunit.abstractions.dll" Link="XunitV2/xunit.abstractions.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
   <ItemGroup>
     <!-- Proofs zijn testdata, geen code van het testproject zelf -->

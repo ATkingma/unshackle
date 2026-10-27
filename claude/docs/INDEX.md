@@ -108,6 +108,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-338-automapper-closure-regressions.md` | Council round 16 A15-A18: regression proofs for extension callers in `TypeArgumentClosure` (done) |
 | `claude/tasks/TAAK-343-transitive-pin-followups.md` | Council round 17 T1-T3: NU1605 hint, user project in the pin reason, documented limits |
 | `claude/tasks/TAAK-344-mediatr-generic-request-closure.md` | Council round 17 M15: `mediatr.generic-request` via `TypeArgumentClosure` with a handler guard |
+| `claude/tasks/TAAK-341-xunit-v3.md` | xUnit v2 → v3 fix (`xunit3`): skeleton, project-file edits, first three patterns, council questions |
 | `claude/tasks/archief/TAAK-335-polly-redundant-transient-clause.md` | Polly: `OrTransientHttpStatusCode()` after the transient filter no longer writes a duplicate clause (corpus B2 side issue) |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |

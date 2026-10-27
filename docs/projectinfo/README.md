@@ -215,6 +215,9 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `epplus.address` | [plan](patterns/epplus-address-plan.md) | [models](patterns/epplus-address-modellen.md) | [verify](patterns/epplus-address-verify.md) | TAAK-327 |
 | `efbulk.delete` | [plan](patterns/efbulk-delete-plan.md) | [models](patterns/efbulk-delete-modellen.md) | [verify](patterns/efbulk-delete-verify.md) | TAAK-342 |
 | `efbulk.update` | [plan](patterns/efbulk-update-plan.md) | [models](patterns/efbulk-update-modellen.md) | [verify](patterns/efbulk-update-verify.md) | TAAK-342 |
+| `xunit3.abstractions-namespace` | [plan](patterns/xunit3-abstractions-namespace-plan.md) | [models](patterns/xunit3-abstractions-namespace-modellen.md) | [verify](patterns/xunit3-abstractions-namespace-verify.md) | TAAK-341 |
+| `xunit3.async-lifetime` | [plan](patterns/xunit3-async-lifetime-plan.md) | [models](patterns/xunit3-async-lifetime-modellen.md) | [verify](patterns/xunit3-async-lifetime-verify.md) | TAAK-341 |
+| `xunit3.async-void-test` | [plan](patterns/xunit3-async-void-test-plan.md) | [models](patterns/xunit3-async-void-test-modellen.md) | [verify](patterns/xunit3-async-void-test-verify.md) | TAAK-341 |
 | `epplus.unsupported` | [plan](patterns/epplus-unsupported-plan.md) | [models](patterns/epplus-unsupported-modellen.md) | [verify](patterns/epplus-unsupported-verify.md) | TAAK-309 |
 | `masstransit.registration` | [plan](patterns/masstransit-registration-plan.md) | [models](patterns/masstransit-registration-modellen.md) | [verify](patterns/masstransit-registration-verify.md) | TAAK-310 |
 | `masstransit.transport` | [plan](patterns/masstransit-transport-plan.md) | [models](patterns/masstransit-transport-modellen.md) | [verify](patterns/masstransit-transport-verify.md) | TAAK-310 |

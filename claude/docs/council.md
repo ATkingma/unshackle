@@ -236,6 +236,17 @@ Full text: `claude/tasks/COUNCIL-round-14.md`. Follow-up: TAAK-333.
 | M12 | Full-name rule on adding usings | Symmetric: no using added when every rewritten reference is a full name from the root; proofs updated. |
 | M13 | B1 proxy type name | Accepted limitation confirmed; one fix-level Info line on Moq runs that changed code. |
 
+## Round 15 (2026-10-27)
+
+Full text: `claude/tasks/COUNCIL-round-15.md`. Follow-up: TAAK-334.
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| A13 | SDK-default packable library | Stays packable (Manual); reason tells the user to set `IsPackable=false`. |
+| A14 | Generic profiles | Close per type argument like A11; open set Manual `GenericProfileOpenSet`. |
+| H1 | Harness on a full disk | Free-space check before each repo (20 GB); stop and mark the run incomplete. |
+| M14 | TAAK-333 conservative choices | Confirmed (M12 own namespaces, M10 clause on kept row only, M13 `changed-code-info` on solution file). |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct

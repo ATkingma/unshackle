@@ -12,6 +12,8 @@ namespace Unshackle.Tests.Core.EfBulk;
 // statement, no entities loaded or tracked.
 public class EfBulkSqlTests
 {
+    private const string Gift = "gift";
+
     [Fact]
     public async Task ExecuteDelete_WhereFilter_IsOneDeleteStatement()
     {
@@ -91,6 +93,25 @@ public class EfBulkSqlTests
         await overflow.ShouldThrowAsync<Exception>();
     }
 
+    [Fact]
+    public async Task ExecuteUpdate_StringEqualityWithConstant_MatchesCSharpOnNullColumn()
+    {
+        // Arrange: council round 19, B10 (Proofs/EfBulk/Update/string-equality.after.cs). Order 1 has a NULL Note: in C# null == "gift" is
+        // false and null != "gift" is true; plain SQL NULL = 'gift' would be NULL and break the NOT NULL column.
+        await using Shop shop = await Shop.CreateAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        await shop.Context.Orders.ExecuteUpdateAsync(setters => setters.SetProperty(o => o.Open, o => o.Note == Gift), TestContext.Current.CancellationToken);
+        List<bool> equal = await shop.Context.Orders.AsNoTracking().OrderBy(o => o.Id).Select(o => o.Open).ToListAsync(TestContext.Current.CancellationToken);
+        await shop.Context.Orders.ExecuteUpdateAsync(setters => setters.SetProperty(o => o.Open, o => o.Note != "gift"), TestContext.Current.CancellationToken);
+        List<bool> notEqual = await shop.Context.Orders.AsNoTracking().OrderBy(o => o.Id).Select(o => o.Open).ToListAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        shop.Statements.Count(s => s.StartsWith("UPDATE", StringComparison.Ordinal)).ShouldBe(2);
+        equal.ShouldBe([false, true, false]);
+        notEqual.ShouldBe([true, false, true]);
+    }
+
     public enum OrderKind
     {
         Sale,
@@ -102,6 +123,8 @@ public class EfBulkSqlTests
         public int Id { get; set; }
 
         public string Status { get; set; } = "";
+
+        public string? Note { get; set; }
 
         public int Retries { get; set; }
 
@@ -167,8 +190,8 @@ public class EfBulkSqlTests
             await context.Database.EnsureCreatedAsync(cancellationToken);
             context.Orders.AddRange(
                 new Order { Id = 1, Status = "new", Retries = 1, Total = 10m },
-                new Order { Id = 2, Status = "new", Retries = 2, Total = 20m },
-                new Order { Id = 3, Status = "new", Retries = 3, Total = 30m });
+                new Order { Id = 2, Status = "new", Retries = 2, Total = 20m, Note = "gift" },
+                new Order { Id = 3, Status = "new", Retries = 3, Total = 30m, Note = "rush" });
             await context.SaveChangesAsync(cancellationToken);
             context.ChangeTracker.Clear();
             log.Statements.Clear();

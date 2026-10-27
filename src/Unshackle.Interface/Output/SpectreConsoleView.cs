@@ -11,6 +11,7 @@ namespace Unshackle.Interface.Output;
 public class SpectreConsoleView : IConsoleView
 {
     public const string InventoryOnlyLine = "Inventory only: nothing was changed.";
+    private const int MaxBlockersShown = 10;
 
     private readonly IAnsiConsole _out;
     private readonly IAnsiConsole _error;

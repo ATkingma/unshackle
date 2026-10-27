@@ -1436,7 +1436,7 @@ Total: 1307 proofs (excluding `_Pending`).
 | `closed-uses` | Fixed | `public class Retried<TRequest, TResponse> : IRequest<TResponse> Retried<Ping, int> retried = new(ping, 3);` → `public abstract class Retried<TRequest, TResponse> : IRequest<TResponse> public class RetriedOfPingAndInt32 : …` |
 | `derived-generic-record` | Manual |  — reason: is a record, partial or file-local |
 | `not-plain-argument` | Manual |  — reason: is not a plain |
-| `open-creation` | Manual |  — reason: is created with open type arguments in generic code |
+| `open-creation` | Manual |  — reason: open type argument in generic code; callers not followed |
 | `unbound-typeof` | Manual |  — reason: Retried becomes abstract with one concrete subclass per closed type |
 
 ### MediatorImplementation (3)

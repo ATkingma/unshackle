@@ -1,13 +1,13 @@
-# corpus-regression.sh list: name source solution fix (SpecFlow round 1, TAAK-340 step 7)
-shouty /mnt/dikkeschijf/unshackle-corpus/corpus-specflow/src/shouty.net Shouty.NET.sln specflow
-corvus-testing /mnt/dikkeschijf/unshackle-corpus/corpus-specflow/src/Corvus.Testing Solutions/Corvus.Testing.sln specflow
-corvus-retry /mnt/dikkeschijf/unshackle-corpus/corpus-specflow/src/Corvus.Retry Solutions/Corvus.Retry.sln specflow
-ais-net /mnt/dikkeschijf/unshackle-corpus/corpus-specflow/src/Ais.Net Solutions/Ais.Net.sln specflow
-clean-arch /mnt/dikkeschijf/unshackle-corpus/corpus-specflow/src/clean-architecture-demo CleanArchitecture.sln specflow
-das-learning /mnt/dikkeschijf/unshackle-corpus/corpus-specflow/src/das-learning src/SFA.DAS.Learning.sln specflow
-discovery-bdd /mnt/dikkeschijf/unshackle-corpus/corpus-specflow/src/discovery-bdd-test DiscoveryBDDTest.sln specflow
-testware /mnt/dikkeschijf/unshackle-corpus/corpus-specflow/src/net6-automation-testware TestWare.sln specflow
-playwright-ea /mnt/dikkeschijf/unshackle-corpus/corpus-specflow/src/Playwrightdotnet PlaywrightSpecflow/SpecFlowProject1.sln specflow
-playwright-pom /mnt/dikkeschijf/unshackle-corpus/corpus-specflow/src/playwright-specflow-pom-dotnet Playwright-SpecFlow-POM.sln specflow
-solid /mnt/dikkeschijf/unshackle-corpus/corpus-specflow/src/Solid src/Solid.sln specflow
-aspnettest-blazor /mnt/dikkeschijf/unshackle-corpus/corpus-specflow/src/aspnettest asp.blazor.sln specflow
+# corpus-regression.sh list: name source solution fix (SpecFlow round 1, TAAK-340 step 7) (run from the corpus-specflow dir: sources are relative)
+shouty src/shouty.net Shouty.NET.sln specflow
+corvus-testing src/Corvus.Testing Solutions/Corvus.Testing.sln specflow
+corvus-retry src/Corvus.Retry Solutions/Corvus.Retry.sln specflow
+ais-net src/Ais.Net Solutions/Ais.Net.sln specflow
+clean-arch src/clean-architecture-demo CleanArchitecture.sln specflow
+das-learning src/das-learning src/SFA.DAS.Learning.sln specflow
+discovery-bdd src/discovery-bdd-test DiscoveryBDDTest.sln specflow
+testware src/net6-automation-testware TestWare.sln specflow
+playwright-ea src/Playwrightdotnet PlaywrightSpecflow/SpecFlowProject1.sln specflow
+playwright-pom src/playwright-specflow-pom-dotnet Playwright-SpecFlow-POM.sln specflow
+solid src/Solid src/Solid.sln specflow
+aspnettest-blazor src/aspnettest asp.blazor.sln specflow

@@ -1,6 +1,6 @@
 # TAAK-381 — corpus-regression.py does not count Passed → NotExecuted as a regression
 
-**Status**: open
+**Status**: done (2026-10-28, branch taak-377)
 **Created**: 2026-10-28
 **Goal**: The corpus harness flags a test that passed before the fix and did not run after it.
 
@@ -13,10 +13,10 @@
 
 ## Steps
 
-- [ ] 1. Report Passed → NotExecuted in its own list (`not_run`) and in `summary`; selftest case
-- [ ] 2. Recheck earlier corpus reports for such cases
+- [x] 1. Report Passed → NotExecuted in its own list (`not_run`) and in `summary`; selftest case
+- [x] 2. Recheck earlier corpus reports: only `CORPUSRUN-specflow.md` mentions NotExecuted (the TAAK-377 case); older compare.json files were not recomputed
 
 ## See also
 
 - `claude/tasks/CORPUSRUN-specflow.md`
-- `claude/tasks/TAAK-377-specflow-step-expression-cucumber-parameter.md`
+- `claude/tasks/archief/TAAK-377-specflow-step-expression-cucumber-parameter.md`

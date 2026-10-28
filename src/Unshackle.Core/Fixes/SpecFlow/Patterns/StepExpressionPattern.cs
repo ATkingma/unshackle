@@ -14,6 +14,8 @@ namespace Unshackle.Core.Fixes.SpecFlow.Patterns;
 /// a Given/When/Then/StepDefinition attribute with a compile-time text gets <c>ExpressionType = ExpressionType.RegularExpression</c>
 /// (Fixed + Info), so the text keeps its SpecFlow meaning. Manual: a text ending in an escaped <c>$</c> (Reqnroll leaves the end
 /// unanchored), a text without a compile-time value, and a step attribute of another type.
+/// TAAK-377: a project with the CucumberExpressions.SpecFlow plugin already reads texts as Cucumber expressions under SpecFlow, so
+/// nothing is pinned; only a text the plugin and Reqnroll detect differently (Reqnroll's extra <c>\.</c>/<c>\d+</c> rule) is Manual.
 /// </summary>
 public partial class StepExpressionPattern : IPattern
 {
@@ -26,11 +28,18 @@ public partial class StepExpressionPattern : IPattern
 
     public string Description => "step text Reqnroll reads as a Cucumber expression → ExpressionType.RegularExpression";
 
-    public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model) =>
-        root.DescendantNodes().OfType<AttributeSyntax>()
+    // The assembly of the CucumberExpressions.SpecFlow.3-x plugin packages (Reqnroll's detector was ported from it).
+    internal const string CucumberPluginAssembly = "CucumberExpressions.SpecFlow.SpecFlowPlugin";
+
+    public IEnumerable<SyntaxNode> Find(SyntaxNode root, SemanticModel model)
+    {
+        bool plugin = model.Compilation.ReferencedAssemblyNames.Any(a => a.Name == CucumberPluginAssembly);
+        return root.DescendantNodes().OfType<AttributeSyntax>()
             .Where(a => a.ArgumentList?.Arguments.FirstOrDefault() is { NameEquals: null, NameColon: null } first
                 && StepAttributeName(a, model) is not null
-                && (Text(first.Expression, model) is not string text || ChangesMeaning(text) || EndsWithEscapedDollar(text)));
+                && Text(first.Expression, model) is var text
+                && (EndsWithEscapedDollar(text ?? "") || (plugin ? text is not null && PluginDiffers(text) : text is null || ChangesMeaning(text))));
+    }
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model)
     {
@@ -45,6 +54,12 @@ public partial class StepExpressionPattern : IPattern
         {
             return PatternResult.Manual("The step text ends in an escaped $: SpecFlow anchors its end, Reqnroll does not, so the step can match " +
                 "longer text; append $ to the text by hand.");
+        }
+
+        if (model.Compilation.ReferencedAssemblyNames.Any(a => a.Name == CucumberPluginAssembly))
+        {
+            return PatternResult.Manual("The CucumberExpressions.SpecFlow plugin reads this step text as a Cucumber expression, Reqnroll reads it " +
+                "as a regular expression (it holds \\. or \\d+); rewrite it as a Cucumber expression or a regular expression by hand.");
         }
 
         if (!s_pinnable.Contains(StepAttributeName(attribute, model)!)
@@ -85,6 +100,11 @@ public partial class StepExpressionPattern : IPattern
         !text.StartsWith('^') && !text.EndsWith('$')
         && (ParameterPlaceholder().IsMatch(text) || (!CommonRegex().IsMatch(text) && !ExtendedRegex().IsMatch(text)))
         && text.AsSpan().IndexOfAny(s_special) >= 0;
+
+    // The plugin's IsCucumberExpression lacks Reqnroll's ExtendedRegex rule; the texts it reads as Cucumber and Reqnroll as regex.
+    internal static bool PluginDiffers(string text) =>
+        !text.StartsWith('^') && !text.EndsWith('$') && !ParameterPlaceholder().IsMatch(text) && !CommonRegex().IsMatch(text)
+        && ExtendedRegex().IsMatch(text);
 
     // The short name of the attribute type ("Given", "MyStep"), when it derives from SpecFlow's StepDefinitionBaseAttribute; null otherwise.
     private static string? StepAttributeName(AttributeSyntax attribute, SemanticModel model)

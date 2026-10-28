@@ -56,5 +56,5 @@ Per repo: restore, build, test twice (TRX, per test), `fix --fix specflow`, bin/
 
 - `claude/tasks/TAAK-340-specflow-to-reqnroll.md` — step 7
 - `docs/projectinfo/architectuur/candidate-specflow.md` — scout survey
-- `claude/tasks/TAAK-377-specflow-step-expression-cucumber-parameter.md`, `TAAK-378-specflow-generated-obj-documents.md`,
+- `claude/tasks/archief/TAAK-377-specflow-step-expression-cucumber-parameter.md`, `TAAK-378-specflow-generated-obj-documents.md`,
   `TAAK-379-specflow-transitive-runner-reason.md`, `TAAK-381-corpus-compare-notexecuted.md`

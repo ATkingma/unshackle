@@ -130,7 +130,14 @@ public class ProofTests
             .ShouldBe(1, $"{proof} needs exactly one of .after.cs, .manual.txt and .info.txt");
         bool unchanged = File.Exists(basePath + ".manual.txt") || File.Exists(basePath + ".info.txt");
         string before = Normalize(await File.ReadAllTextAsync(basePath + ".before.cs", TestContext.Current.CancellationToken));
-        TestSolution.CompileErrors(before, proofFix.Before).ShouldBeEmpty("before must compile against the old library");
+        // An optional <proof>.references.txt names extra assemblies (e.g. a plugin) the project references, before and after.
+        MetadataReference[] extra = File.Exists(basePath + ".references.txt")
+            ? [.. (await File.ReadAllLinesAsync(basePath + ".references.txt", TestContext.Current.CancellationToken))
+                .Where(l => l.Length > 0).Select(EmptyAssembly)]
+            : [];
+        IReadOnlyList<MetadataReference> oldReferences = [.. proofFix.Before, .. extra];
+        IReadOnlyList<MetadataReference> newReferences = [.. proofFix.After, .. extra];
+        TestSolution.CompileErrors(before, oldReferences).ShouldBeEmpty("before must compile against the old library");
 
         IFix fix = Substitute.For<IFix>();
         fix.Id.Returns(proofFix.Fix.Id);
@@ -145,7 +152,7 @@ public class ProofTests
         fix.AddedReferences.Returns(proofFix.Fix.AddedReferences);
         fix.RemovedExtensionMethods.Returns(proofFix.Fix.RemovedExtensionMethods);
         var fixer = new Fixer([fix]);
-        Solution solution = TestSolution.Create(before, proofFix.Before);
+        Solution solution = TestSolution.Create(before, oldReferences);
 
         // Act
         FixReport report = await fixer.FixAsync(solution, new FixRequest { FixId = fix.Id }, TestContext.Current.CancellationToken);
@@ -178,11 +185,14 @@ public class ProofTests
             // using (a catch of AssertionFailedException that now also catches Shouldly's); then both are referenced.
             IEnumerable<MetadataReference> afterReferences = report.Findings.Any(f => f.Result is ManualResult)
                 || proofFix.Fix.RemovedNamespaces.Any(ns => after.Contains($"using {ns};", StringComparison.Ordinal))
-                ? proofFix.Before.Union(proofFix.After)
-                : proofFix.After;
+                ? oldReferences.Union(newReferences)
+                : newReferences;
             TestSolution.CompileErrors(actual, afterReferences, proofFix.AfterGenerators).ShouldBeEmpty("after must compile against the new library");
         }
     }
+
+    private static MetadataReference EmptyAssembly(string name) =>
+        Microsoft.CodeAnalysis.CSharp.CSharpCompilation.Create(name, references: TestReferences.Net).ToMetadataReference();
 
     private static string Normalize(string text) => text.ReplaceLineEndings("\n");
 }

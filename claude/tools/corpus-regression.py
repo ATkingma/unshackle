@@ -78,27 +78,29 @@ def compare(name, b1, b2, after, out):
     a, b, c = load(b1), load(b2), load(after)
     flaky = sorted(k for k in a.keys() | b.keys() if a.get(k, (None,))[0] != b.get(k, (None,))[0])
     fl = set(flaky)
-    reg, fixed = [], []
+    reg, fixed, not_run = [], [], []
     for k in sorted(a.keys() & c.keys()):
         if k in fl:
             continue
         if a[k][0] == 'Passed' and c[k][0] not in ('Passed', 'NotExecuted'):  # Failed/Error/Timeout/Aborted
             reg.append({'test': k, 'message': c[k][1]})
+        elif a[k][0] == 'Passed' and c[k][0] == 'NotExecuted':  # TAAK-381: e.g. an undefined step (inconclusive), still a regression
+            not_run.append({'test': k, 'message': c[k][1]})
         elif a[k][0] == 'Failed' and c[k][0] == 'Passed':
             fixed.append(k)
     cnt = lambda d, o: sum(1 for v in d.values() if v[0] == o)
     r = {'name': name,
          'before': {'total': len(a), 'passed': cnt(a, 'Passed'), 'failed': cnt(a, 'Failed')},
          'after': {'total': len(c), 'passed': cnt(c, 'Passed'), 'failed': cnt(c, 'Failed')},
-         'regressions': reg, 'fixed': fixed, 'flaky': flaky,
+         'regressions': reg, 'not_run': not_run, 'fixed': fixed, 'flaky': flaky,
          'missing': sorted(a.keys() - c.keys()), 'new': sorted(c.keys() - a.keys())}
     pathlib.Path(out).write_text(json.dumps(r, indent=1))
     return r
 
 
 def summary(outdir):
-    print('| Solution | status | tests vóór (pass/fail) | tests na (pass/fail) | regressies | gefaald→geslaagd | verdwenen | nieuw | flaky | duur |')
-    print('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |')
+    print('| Solution | status | tests vóór (pass/fail) | tests na (pass/fail) | regressies | geslaagd→niet uitgevoerd | gefaald→geslaagd | verdwenen | nieuw | flaky | duur |')
+    print('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |')
     for d in sorted(pathlib.Path(outdir).iterdir()):
         if not d.is_dir():
             continue
@@ -106,12 +108,12 @@ def summary(outdir):
         dur = (d / 'duration.txt').read_text().strip() if (d / 'duration.txt').exists() else ''
         c = d / 'compare.json'
         if not c.exists():
-            print(f'| {d.name} | {st} | | | | | | | | {dur} |')
+            print(f'| {d.name} | {st} | | | | | | | | | {dur} |')
             continue
         r = json.loads(c.read_text())
         b, a = r['before'], r['after']
         print(f"| {d.name} | {st} | {b['total']} ({b['passed']}/{b['failed']}) | {a['total']} ({a['passed']}/{a['failed']}) "
-              f"| {len(r['regressions'])} | {len(r['fixed'])} | {len(r['missing'])} | {len(r['new'])} | {len(r['flaky'])} | {dur} |")
+              f"| {len(r['regressions'])} | {len(r.get('not_run', []))} | {len(r['fixed'])} | {len(r['missing'])} | {len(r['new'])} | {len(r['flaky'])} | {dur} |")
 
 
 def selftest():
@@ -123,15 +125,16 @@ def selftest():
         (d / 'a.trx').write_text(f'<TestRun xmlns="{NS[1:-1]}"><Results>{res}</Results><TestDefinitions>{defs}</TestDefinitions></TestRun>')
     with tempfile.TemporaryDirectory() as t:
         t = pathlib.Path(t)
-        trx(t / '1', [('a', 'Passed'), ('b', 'Failed'), ('f', 'Passed'), ('m', 'Passed'), ('d(1)', 'Passed'), ('d(1)', 'Passed')])
-        trx(t / '2', [('a', 'Passed'), ('b', 'Failed'), ('f', 'Failed'), ('m', 'Passed'), ('d(1)', 'Passed'), ('d(1)', 'Passed')])
-        trx(t / '3', [('a', 'Failed'), ('b', 'Passed'), ('f', 'Failed'), ('n', 'Passed'), ('d(1)', 'Passed'), ('d(1)', 'Passed')])
+        trx(t / '1', [('a', 'Passed'), ('b', 'Failed'), ('f', 'Passed'), ('m', 'Passed'), ('d(1)', 'Passed'), ('d(1)', 'Passed'), ('u', 'Passed')])
+        trx(t / '2', [('a', 'Passed'), ('b', 'Failed'), ('f', 'Failed'), ('m', 'Passed'), ('d(1)', 'Passed'), ('d(1)', 'Passed'), ('u', 'Passed')])
+        trx(t / '3', [('a', 'Failed'), ('b', 'Passed'), ('f', 'Failed'), ('n', 'Passed'), ('d(1)', 'Passed'), ('d(1)', 'Passed'), ('u', 'NotExecuted')])
         r = compare('x', t / '1', t / '2', t / '3', t / 'o.json')
         k = 'net8.0/T.dll::C.'
         assert [x['test'] for x in r['regressions']] == [k + 'a'], r
+        assert [x['test'] for x in r['not_run']] == [k + 'u'], r
         assert r['fixed'] == [k + 'b'] and r['flaky'] == [k + 'f'], r
         assert r['missing'] == [k + 'm'] and r['new'] == [k + 'n'], r
-        assert r['before']['total'] == 6, r
+        assert r['before']['total'] == 7, r
         (t / 'g1').mkdir(); (t / 'g1' / 'a.csproj').write_text('<Project Sdk="MSTest.Sdk/4.0.2"/>')
         (t / 'g2').mkdir(); (t / 'g2' / 'a.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"/>')
         assert is_mtp(t / 'g1', []) and not is_mtp(t / 'g2', []) and is_mtp(t / 'g2', [{'test': MTP}])

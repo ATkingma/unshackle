@@ -239,6 +239,7 @@ Queue and status: `claude/tasks/patroon-queue.md`.
 | `specflow.pending` | [plan](patterns/specflow-pending-plan.md) | [models](patterns/specflow-pending-modellen.md) | [verify](patterns/specflow-pending-verify.md) | TAAK-340 |
 | `specflow.string-step-call` | [plan](patterns/specflow-string-step-call-plan.md) | [models](patterns/specflow-string-step-call-modellen.md) | [verify](patterns/specflow-string-step-call-verify.md) | TAAK-340 |
 | `specflow.async-void-binding` | [plan](patterns/specflow-async-void-binding-plan.md) | [models](patterns/specflow-async-void-binding-modellen.md) | [verify](patterns/specflow-async-void-binding-verify.md) | TAAK-340 |
+| `specflow.step-expression` | [plan](patterns/specflow-step-expression-plan.md) | [models](patterns/specflow-step-expression-modellen.md) | [verify](patterns/specflow-step-expression-verify.md) | TAAK-340 |
 
 ## See also
 

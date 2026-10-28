@@ -115,7 +115,7 @@ public class SpecFlowFix : IFix, IProjectFileMigration
         return Task.FromResult(Edits(project));
     }
 
-    private static IReadOnlyList<ProjectFileEdit> Edits(Project project)
+    private IReadOnlyList<ProjectFileEdit> Edits(Project project)
     {
         if (!OldReferencePaths(project).Any())
         {
@@ -123,18 +123,25 @@ public class SpecFlowFix : IFix, IProjectFileMigration
         }
 
         HashSet<string> used = PackageIds(project);
-        return [.. RenamedPackages.Select(p => new PackageRenameEdit
-        {
-            OldName = p.Old,
-            NewName = p.New,
-            Version = ReqnrollVersion,
-            MustBeDeclared = s_directPackages.Contains(p.Old) && used.Contains(p.Old),
-        })];
+        return
+        [
+            .. RenamedPackages.Select(p => new PackageRenameEdit
+            {
+                OldName = p.Old,
+                NewName = p.New,
+                Version = ReqnrollVersion,
+                MustBeDeclared = s_directPackages.Contains(p.Old) && used.Contains(p.Old),
+            }),
+            // <Using Include="TechTalk.SpecFlow" /> items: the code patterns never see the global usings MSBuild generates from them.
+            .. RemovedNamespaces.Select(ns => new UsingRenameEdit { OldNamespace = ns, NewNamespace = SpecFlowNames.NewNamespace(ns)! }),
+            // Council G5: Reqnroll 3.3.4 reads every specflow.json key (stepAssemblies, bindingCulture included), so the file moves unchanged.
+            new ConfigFileRenameEdit { OldFileName = "specflow.json", NewFileName = "reqnroll.json" },
+        ];
     }
 
     public IReadOnlyList<IPattern> Patterns { get; } =
         // NamespacePattern last: the patterns before it need the SpecFlow usings to bind the old types.
-        [new RenamedTypePattern(), new CombinedTagsPattern(), new PendingPattern(), new StringStepCallPattern(), new AsyncVoidBindingPattern(), new NamespacePattern()];
+        [new RenamedTypePattern(), new CombinedTagsPattern(), new PendingPattern(), new StringStepCallPattern(), new AsyncVoidBindingPattern(), new StepExpressionPattern(), new NamespacePattern()];
 
     private static IEnumerable<string> OldReferencePaths(Project project) =>
         project.MetadataReferences.OfType<PortableExecutableReference>()

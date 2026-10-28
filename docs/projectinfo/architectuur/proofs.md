@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1424 proofs (excluding `_Pending`).
+Total: 1426 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -1983,13 +1983,14 @@ Total: 1424 proofs (excluding `_Pending`).
 | --- | --- | --- |
 | `tags` | Fixed | `bool slow = _scenarioContext.ScenarioInfo.ScenarioAndFeatureTags.Contains("slow");` → `bool slow = _scenarioContext.ScenarioInfo.CombinedTags.Contains("slow");` |
 
-### Namespace (5)
+### Namespace (6)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `app-config` | Manual |  — reason: has no Reqnroll counterpart |
 | `assist` | Fixed | usings only |
 | `bodi` | Fixed | usings only |
+| `cucumber-plugin-step-text` | Fixed | usings only |
 | `qualified` | Fixed | `[TechTalk.SpecFlow.Binding] [TechTalk.SpecFlow.Given("a step")]` → `[Reqnroll.Binding] [Reqnroll.Given("a step")]` |
 | `steps` | Fixed | usings only |
 
@@ -2010,7 +2011,7 @@ Total: 1424 proofs (excluding `_Pending`).
 | `removed-type` | Manual |  — reason: has no Reqnroll counterpart |
 | `table-row` | Fixed | `foreach (TableRow row in table.Rows)` → `foreach (DataTableRow row in table.Rows)` |
 
-### StepExpression (4)
+### StepExpression (5)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -2018,6 +2019,7 @@ Total: 1424 proofs (excluding `_Pending`).
 | `escaped-dollar` | Manual |  — reason: The step text ends in an escaped $ |
 | `interpolated` | Manual |  — reason: The step text has no compile-time value (interpolated |
 | `literal` | Fixed | `[Then("the item(s) are listed")]` → `[Then("the item(s) are listed", ExpressionType = ExpressionType.RegularExpression)]` |
+| `plugin-differs` | Manual |  — reason: The CucumberExpressions.SpecFlow plugin reads this step text as a Cucumber expression |
 
 ### StringStepCall (2)
 

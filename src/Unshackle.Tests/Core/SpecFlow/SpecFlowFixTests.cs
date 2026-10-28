@@ -223,6 +223,16 @@ public class SpecFlowFixTests
     public void StepExpression_ChangesMeaning_OnlyForCucumberTextWithSpecialCharacters(string text, bool expected) =>
         StepExpressionPattern.ChangesMeaning(text).ShouldBe(expected);
 
+    [Theory]
+    [InlineData("Lucy is at {int}, {int}", false)]
+    [InlineData("the item(s) are listed", false)]
+    [InlineData("the basket contains (.*) items", false)]
+    [InlineData(@"version \d+ is installed", true)]
+    [InlineData(@"the file a\.txt exists", true)]
+    [InlineData(@"^version \d+$", false)]
+    public void StepExpression_PluginDiffers_OnlyForReqnrollExtendedRegex(string text, bool expected) =>
+        StepExpressionPattern.PluginDiffers(text).ShouldBe(expected);
+
     [Fact]
     public async Task EditsFor_RunnerPackageInReferences_MustBeDeclared()
     {

@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "specflow-step-expression"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3, REQ-4]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4, REQ-5]
 files_expected:
     - src/Unshackle.Core/Fixes/SpecFlow/Patterns/StepExpressionPattern.cs
     - src/Unshackle.Core/Fixes/SpecFlow/SpecFlowNames.cs
@@ -29,6 +29,8 @@ specflow.step-expression: A step text that SpecFlow reads as a regex but Reqnrol
 
 The pin is added only on `Given`/`When`/`Then`/`StepDefinition` whose first argument is a string literal or a constant with a compile-time value and that set no `ExpressionType` yet; a qualified attribute name gets `global::Reqnroll.ExpressionType`. A text ending in an escaped `$` (odd backslash run before the final `$`, counted on the cooked value) is Manual whatever the detector says: SpecFlow anchors its end, Reqnroll does not.
 
+A project that references the `CucumberExpressions.SpecFlow.3-x` plugin (assembly `CucumberExpressions.SpecFlow.SpecFlowPlugin`, TAAK-377, corpus shouty.net) already reads step texts as Cucumber expressions under SpecFlow; its detector (checked in the 1.0.6 dll) is Reqnroll's without the `\.`/`\d+` rule. There nothing is pinned; only a text that the plugin reads as Cucumber and Reqnroll as regex is Manual (an escaped trailing `$` stays Manual).
+
 **Out of scope**: Adding `^...$` to texts. Custom step attributes (Manual).
 
 ## Requirements
@@ -37,6 +39,8 @@ The pin is added only on `Given`/`When`/`Then`/`StepDefinition` whose first argu
 - **REQ-2**: WHEN a step text ends in an escaped `$` THE SYSTEM SHALL report Manual (proof: escaped-dollar; test: `StepExpression_EndsWithEscapedDollar_*`).
 - **REQ-3**: WHEN a step text is interpolated or has no compile-time value THE SYSTEM SHALL report Manual (proof: interpolated).
 - **REQ-4**: WHEN the attribute already sets `ExpressionType` or is a custom step attribute THE SYSTEM SHALL report Manual (no proof: SpecFlow 3.9.74 has no `ExpressionType`, so such a before file cannot compile).
+
+- **REQ-5**: WHEN the compilation references `CucumberExpressions.SpecFlow.SpecFlowPlugin` THE SYSTEM SHALL leave step texts unchanged, and report Manual only for a text the plugin reads as Cucumber and Reqnroll as regex (proofs: plugin-differs, and `Namespace/cucumber-plugin-step-text` where the whole fix leaves the text alone, as the pattern finds nothing; test: `StepExpression_PluginDiffers_*`).
 
 ## Assumptions
 

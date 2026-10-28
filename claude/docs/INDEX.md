@@ -63,8 +63,9 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `docs/projectinfo/architectuur/candidate-specflow.md` | Scout TAAK-370: SpecFlow → Reqnroll, conditional go (EOL fix) |
 | `claude/tasks/TAAK-340-specflow-to-reqnroll.md` | SpecFlow → Reqnroll fix: steps, design of the first slice, council questions |
 | `claude/tasks/TAAK-353-specflow-partial-migration.md` | SpecFlow per-unit partial migration (council 18 S2): design, council question |
-| `claude/tasks/TAAK-377-specflow-step-expression-cucumber-parameter.md`, `TAAK-378-specflow-generated-obj-documents.md`, `TAAK-379-specflow-transitive-runner-reason.md`, `TAAK-381-corpus-compare-notexecuted.md` | Open bugs from SpecFlow corpus round 1 (377 with a pending proof in `Proofs/SpecFlow/_Pending`) |
 | `claude/tasks/archief/TAAK-356-efbulk-kept-row-without-z.md` | Done: no kept-for-dependent row for a project that gets the package only transitively (corpus morenote) |
+| `claude/tasks/TAAK-378-specflow-generated-obj-documents.md`, `TAAK-379-specflow-transitive-runner-reason.md` | Open bugs from SpecFlow corpus round 1 |
+| `claude/tasks/archief/TAAK-377-specflow-step-expression-cucumber-parameter.md`, `archief/TAAK-381-corpus-compare-notexecuted.md` | Done: S13 skips projects with the CucumberExpressions.SpecFlow plugin; corpus compare reports Passed→NotExecuted as `not_run` |
 | `docs/projectinfo/architectuur/candidate-imagesharp.md` | Scout TAAK-390: ImageSharp, conditional no-go (park) |
 | `docs/projectinfo/architectuur/candidate-newtonsoft.md` | Scout TAAK-420: Newtonsoft → STJ, no-go blanket, narrow fix possible |
 | `docs/projectinfo/architectuur/candidate-efbulk.md` | Scout TAAK-430: EF bulk extensions → ExecuteUpdate/Delete, conditional go (narrow) |

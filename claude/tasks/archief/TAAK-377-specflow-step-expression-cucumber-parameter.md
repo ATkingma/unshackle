@@ -1,6 +1,6 @@
 # TAAK-377 — specflow.step-expression pins a `{int}` step text as regex (test regression)
 
-**Status**: open
+**Status**: done (2026-10-28, branch taak-377)
 **Created**: 2026-10-28
 **Goal**: A step text that SpecFlow 3.x already matched as a Cucumber expression (`{int}`, `{string}`, ... parameter types) keeps its meaning after the fix.
 
@@ -17,9 +17,17 @@
 
 ## Steps
 
-- [ ] 1. Check from which SpecFlow 3.x version Cucumber expressions are recognised (decompile `TechTalk.SpecFlow` 3.7.38 / 3.9.74 binding registry) and which detector it uses
-- [ ] 2. `StepExpressionPattern`: do not pin a text the SpecFlow detector reads as a Cucumber expression; council question if it differs from the Reqnroll detector
-- [ ] 3. Move the pending proof; rerun shouty in the corpus
+- [x] 1. Check from which SpecFlow 3.x version Cucumber expressions are recognised (decompile `TechTalk.SpecFlow` 3.7.38 / 3.9.74 binding registry) and which detector it uses
+- [x] 2. `StepExpressionPattern`: do not pin a text the SpecFlow detector reads as a Cucumber expression; council question if it differs from the Reqnroll detector
+- [x] 3. Move the pending proof (now `Proofs/SpecFlow/Namespace/cucumber-plugin-step-text`, since the pattern finds nothing); shouty corpus rerun not done yet
+
+## Result
+
+- SpecFlow 3.7.38/3.9.x itself has no Cucumber expressions; shouty uses the `CucumberExpressions.SpecFlow.3-7` plugin (assembly
+  `CucumberExpressions.SpecFlow.SpecFlowPlugin`), whose detector is Reqnroll's without the `\.`/`\d+` rule.
+- `StepExpressionPattern`: with that assembly referenced, nothing is pinned; only a text the plugin reads as Cucumber and Reqnroll as
+  regex is Manual (proof `plugin-differs`). Proofs can name extra stand-in assemblies in `<proof>.references.txt`.
+- Not done: the plugin package itself stays in the project file after migration (Reqnroll needs no plugin); a follow-up could remove it.
 
 ## See also
 

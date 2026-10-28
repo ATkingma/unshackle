@@ -6,7 +6,7 @@
 | **Status**    | Verified                                                          |
 | **Generated** | 2026-10-28 by KingmaDoc                                           |
 
-> Verified by an AI agent (TAAK-340 step 6) against the code on branch `taak-340e`; re-verified for council 23 S13 on branch `taak-340f`.
+> Verified by an AI agent (TAAK-340 step 6) against the code on branch `taak-340e`; re-verified for council 23 S13 on branch `taak-340f`, and for TAAK-377 (REQ-5) on branch `taak-377`.
 
 ## Requirements
 
@@ -19,6 +19,7 @@ Proofs: `src/Unshackle.Tests/Proofs/SpecFlow/StepExpression/` (`ProofTests`; an 
 | REQ-2 | Met | escaped-dollar; `SpecFlowFixTests.StepExpression_EndsWithEscapedDollar_CountsBackslashes` |
 | REQ-3 | Met | interpolated |
 | REQ-4 | Met (code only) | no proof possible: `ExpressionType` does not exist in SpecFlow 3.9.74 |
+| REQ-5 | Met | plugin-differs, `Namespace/cucumber-plugin-step-text` (no StepExpression finding, so it lives with the namespace proofs) (a `<proof>.references.txt` adds an empty stand-in plugin assembly); `SpecFlowFixTests.StepExpression_PluginDiffers_OnlyForReqnrollExtendedRegex` |
 
 ## Deviations
 

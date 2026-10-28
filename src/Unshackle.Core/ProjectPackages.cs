@@ -82,9 +82,16 @@ internal static class ProjectPackages
             }
         }
 
+        // A referenced project that gets the package from a project it references itself has nothing to keep (TAAK-356, morenote):
+        // the providing project further down is in the same closure and keeps it.
+        HashSet<string> migrating = [.. migrations.Select(m => m.ProjectPath)];
+        bool GetsItTransitively(string path) => solution.Projects.Any(p => p.FilePath == path
+            && p.ProjectReferences.Any(r => solution.GetProject(r.ProjectId)?.FilePath is { } referenced && migrating.Contains(referenced)));
+
         return
         [
-            .. migrations.Select(m => m.KeepRemovedPackage || !needed.TryGetValue(m.ProjectPath, out List<string>? dependents) ? m : new ProjectMigration
+            .. migrations.Select(m => m.KeepRemovedPackage || !needed.TryGetValue(m.ProjectPath, out List<string>? dependents)
+                || GetsItTransitively(m.ProjectPath) ? m : new ProjectMigration
             {
                 ProjectPath = m.ProjectPath,
                 Package = m.Package,

@@ -19,6 +19,7 @@ Unit tests: `src/Unshackle.Tests/Core/XunitV3/XunitV3PatternTests.cs`.
 | REQ-1 | Met | proof `own-orderer` |
 | REQ-2 | Met | proof `other-assembly`; unit test `TypeNameAttribute_NotOwnConstantType_Manual` |
 | REQ-3 | Met | unit test `TypeNameAttribute_EnumConstructor_NotFound` |
+| REQ-4 | Met | proof `other-assembly` (hint `Xunit.v3.XunitTestFramework`); unit tests `TypeNameAttribute_NotOwnConstantType_Manual` (no hint), `XunitV3SdkTypesTests.V3Hints_KeysInV2ValuesInV3` (every hint checked against 2.9.3 and 3.2.2) |
 
 ## Deviations
 

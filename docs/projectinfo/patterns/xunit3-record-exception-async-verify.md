@@ -20,6 +20,7 @@ Unit tests: `src/Unshackle.Tests/Core/XunitV3/XunitV3PatternTests.cs`.
 | REQ-2 | Met | proof `as-task` (`Awaited_StaysAsItIs`); unit test `RecordExceptionAsync_Find_OwnRecordClassOrParenthesizedAwait_NotFound` |
 | REQ-3 | Met | proof `method-group` |
 | REQ-4 | Met | unit test `RecordExceptionAsync_Find_OwnRecordClassOrParenthesizedAwait_NotFound` |
+| REQ-5 | Met | proof `awaited-twice` (council 22 X10) |
 
 ## Deviations
 

@@ -1,1 +1,1 @@
-TypeNameArgument
+TypeNameArgument: TestFramework names Xunit.Sdk.XunitTestFramework in xunit.execution.dotnet, which is not a type of this project; no v2 → v3 name map, and v3 takes typeof(..) of a v3 type, so pick its v3 counterpart by hand. Hint: the documented v3 type is Xunit.v3.XunitTestFramework.

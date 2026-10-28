@@ -48,8 +48,10 @@ public class TypeNameAttributePattern : IPattern
         if (type is null || !SymbolEqualityComparer.Default.Equals(type.ContainingAssembly, model.Compilation.Assembly)
             || !string.Equals(model.Compilation.AssemblyName, assemblyName.Trim(), StringComparison.OrdinalIgnoreCase))
         {
+            // Council 22 X11: no v2 → v3 name map; the documented v3 name is only a hint in the text.
+            string hint = XunitV3SdkTypes.V3Hints.TryGetValue(typeName.Trim(), out string? v3Name) ? $" Hint: the documented v3 type is {v3Name}." : "";
             return PatternResult.Manual(XunitV3Reason.TypeNameArgument,
-                $"{attribute.Name} names {typeName} in {assemblyName}, which is not a type of this project; v3 takes typeof(..) of a v3 type, so pick its v3 counterpart by hand.");
+                $"{attribute.Name} names {typeName} in {assemblyName}, which is not a type of this project; no v2 → v3 name map, and v3 takes typeof(..) of a v3 type, so pick its v3 counterpart by hand.{hint}");
         }
 
         TypeSyntax typeSyntax = SyntaxFactory.ParseTypeName(type.ToMinimalDisplayString(model, attribute.SpanStart));

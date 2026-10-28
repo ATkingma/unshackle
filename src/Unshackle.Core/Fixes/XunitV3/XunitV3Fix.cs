@@ -100,6 +100,6 @@ public class XunitV3Fix : IFix, IProjectFileMigration
     public IReadOnlyList<IPattern> Patterns { get; } =
     [
         new AbstractionsNamespacePattern(), new AsyncLifetimePattern(), new AsyncVoidTestPattern(), new RecordExceptionAsyncPattern(),
-        new TypeNameAttributePattern(), new ExtensibilityPattern(),
+        new TypeNameAttributePattern(), new ExtensibilityPattern(), new SdkUsePattern(),
     ];
 }

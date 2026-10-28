@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "xunit3-type-name-attribute"
 status: approved
-requirements: [REQ-1, REQ-2, REQ-3]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4]
 files_expected:
     - src/Unshackle.Core/Fixes/XunitV3/Patterns/TypeNameAttributePattern.cs
     - src/Unshackle.Core/Fixes/XunitV3/XunitV3Fix.cs
@@ -34,6 +34,7 @@ files_expected:
 - **REQ-1**: WHEN the attribute names a type of this project and this assembly THE SYSTEM SHALL replace both arguments with `typeof(Type)` (minimal name) (proof `own-orderer`).
 - **REQ-2**: WHEN the type is not in the project or the assembly name differs THE SYSTEM SHALL report Manual `TypeNameArgument` (proof `other-assembly`; unit test `TypeNameAttribute_NotOwnConstantType_Manual`).
 - **REQ-3**: WHEN the attribute uses another constructor (`CollectionBehavior.CollectionPerClass`) THE SYSTEM SHALL leave it alone (unit test `TypeNameAttribute_EnumConstructor_NotFound`).
+- **REQ-4**: WHEN the Manual `TypeNameArgument` row is written THE SYSTEM SHALL name the type, say "no v2 → v3 name map" and, for a built-in v2 type with a documented v3 counterpart (`XunitV3SdkTypes.V3Hints`), add that v3 name as a hint in the text only, never as a rewrite (council 22 X11; proof `other-assembly`; unit tests `TypeNameAttribute_NotOwnConstantType_Manual`, `V3Hints_KeysInV2ValuesInV3`).
 
 ## Assumptions
 

@@ -27,7 +27,7 @@ problem? Light scout: primary sources, shallow clones, grep counts, no builds. N
 
 | Change | Class | Note |
 |---|---|---|
-| Package renames (`xunit` → `xunit.v3`, `xunit.assert` → `xunit.v3.assert`, ...), drop `xunit.abstractions`/`xunit.console`, `xunit.runner.visualstudio` ≥ 3.0 | Fixed | csproj/props edit (we already do package swaps); central package management makes it harder |
+| Package renames (`xunit` → `xunit.v3`, `xunit.assert` → `xunit.v3.assert`, ...), drop `xunit.abstractions`/`xunit.console`, `xunit.runner.visualstudio` ≥ 3.0 | Fixed | csproj/props edit (we already do package swaps); central package management makes it harder. Built (TAAK-341 X3/step 6): runner 2.0.0+ → 3.1.5 and `Microsoft.NET.Test.Sdk` 15.0.0+ → 17.13.0 (runner 3.1.5 needs `Microsoft.TestPlatform.ObjectModel` 17.13.0 on .NET Framework, per its nuspec) via `PackageVersionEdit`, CPM included |
 | `<OutputType>Exe</OutputType>` in test projects | Fixed | needs "is this a test project" detection (has an `xunit` reference) |
 | `using Xunit.Abstractions;` (`ITestOutputHelper`) → `Xunit` | Fixed | types moved to `Xunit`; the guide does not name `ITestOutputHelper` explicitly, verify in a proof |
 | `async void` tests → `Task` | Fixed | v3 fast-fails at runtime; trivial rewrite |

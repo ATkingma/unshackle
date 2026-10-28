@@ -43,6 +43,8 @@
   skips a `*.feature.cs` with a sibling `.feature` (`IProjectProperties.FileExists`); the existing Info row now lists only those files.
   Tests: `SpecFlowFixTests.AppConfigSpecFlowSection_*`, `ProjectInfo_CodeBehindNextToFeature_*`, `FixAsync_GeneratedCodeBehind_NotRewritten`
 - [ ] 7. Corpus round (S8 UI-suite bar: build + equal discovered-test count; baseline build + `dotnet test` counts before/after; UI suites: build + discovered-test count only), blind round, roadmap row, README text (EOL, not license)
+  - [x] 7a. Round 1 (`claude/tasks/CORPUSRUN-specflow.md`): 12 repos, 7 with a baseline, equal discovered tests on all 7; 1 migrated (shouty) with a regression → TAAK-377; TAAK-378, 379, 381 opened; `SpecFlow.NUnit.Runners` gap noted
+  - [ ] 7b. Round 2 after TAAK-377..381 (repos without LivingDoc), blind round, roadmap row, README text
 
 ## Council questions
 
@@ -141,5 +143,6 @@ Open design choices; the slice takes the conservative option for each.
 - `claude/tasks/TAAK-353-specflow-partial-migration.md` — backlog: per-project partial migration (S2)
 - `claude/docs/council.md` — rounds 8 (S1, S3, S4) and 10 (G4, G5)
 - `docs/projectinfo/README.md` — pattern table
+- 2026-10-28: branch `specflow-corpus`. Step 7a: corpus round 1, see `CORPUSRUN-specflow.md`.
 - 2026-10-28: branch `taak-340g`. Step 5: App.config `<specFlow>` blocker, `*.feature.cs` Info row (council questions 14, 15).
   TAAK-353 built: `SpecFlowFix` is an `IPartialFix` (`SpecFlowProjects`, per unit).

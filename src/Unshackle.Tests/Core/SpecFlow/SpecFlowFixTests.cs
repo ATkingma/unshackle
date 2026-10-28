@@ -108,6 +108,37 @@ public class SpecFlowFixTests
         info.ShouldHaveSingleItem().ShouldStartWith("specflow.json kept (Reqnroll reads it)");
     }
 
+    [Fact]
+    public async Task ProjectBlockers_SpecFlowSectionInAppConfig_Blocks()
+    {
+        // Arrange (TAAK-340 step 5: Reqnroll 3.3.4 reads no App.config, its settings would be lost silently)
+        IProjectProperties properties = Substitute.For<IProjectProperties>();
+        properties.HasAppConfigSection("C:/src/P/P.csproj", "specFlow").Returns(true);
+        Project project = CreateProject(SpecFlowReferences.SpecFlow, "C:/src/P/P.csproj");
+
+        // Act
+        IReadOnlyList<ManualResult> blockers = await new SpecFlowFix(properties).ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
+
+        // Assert
+        blockers.ShouldHaveSingleItem().Reason.ShouldContain("<specFlow> section in App.config");
+    }
+
+    [Fact]
+    public async Task ProjectInfo_CheckedInCodeBehind_SaysItIsRegenerated()
+    {
+        // Arrange (TAAK-340 step 5)
+        Project project = CreateProject(SpecFlowReferences.SpecFlow)
+            .AddDocument("Login.feature.cs", "", filePath: "C:/src/P/Features/Login.feature.cs").Project
+            .AddDocument("Basket.feature.cs", "", filePath: "C:/src/P/Features/Basket.feature.cs").Project;
+
+        // Act
+        IReadOnlyList<string> info = await new SpecFlowFix(Substitute.For<IProjectProperties>()).ProjectInfoAsync(project, TestContext.Current.CancellationToken);
+
+        // Assert
+        info.Count.ShouldBe(2);
+        info[1].ShouldStartWith("2 *.feature.cs code-behind file(s) (Basket.feature.cs, Login.feature.cs)");
+    }
+
     [Theory]
     [InlineData("the price is 5$", false)]
     [InlineData(@"the price is 5\$", true)]

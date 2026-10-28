@@ -209,6 +209,9 @@ those types and their members do not count as usage in`UsingDirectives.UsedNames
   or declares a member, across projects, whose signature names an EPPlus type while the other side stays (`EPPlusTypeCrossesProject`).
   Each kept project gets one `epplus.kept` row on its project file (`KeptReason.EPPlusProjectKept`, prefix "Stays on EPPlus: "), which
   also blocks its project-file edits (G4). When every EPPlus project is kept, the all-or-nothing result stands.
+- SpecFlow (`SpecFlowProjects`, TAAK-353, council round 18 S2) works the same with units instead of type crossings: a kept project
+  keeps every SpecFlow project it references or that references it (transitively), and every project it shares a file with. Rows
+  `specflow.kept` (`KeptReason.SpecFlowProjectKept`, prefix "Stays on SpecFlow: "), with the same G4 effect.
 
 ## Report-only fixes (TAAK-316)
 

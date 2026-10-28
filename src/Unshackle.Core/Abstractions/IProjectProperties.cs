@@ -19,4 +19,12 @@ public interface IProjectProperties
     /// </summary>
     /// <param name="projectPath">The project file.</param>
     IReadOnlyList<string>? PackageReferences(string projectPath);
+
+    /// <summary>
+    /// Whether the <c>App.config</c> in the project's folder (any case) has a top-level element of that name under
+    /// <c>&lt;configuration&gt;</c>. True when the file cannot be read (the cautious side); false without an App.config.
+    /// </summary>
+    /// <param name="projectPath">The project file.</param>
+    /// <param name="sectionName">The element name, e.g. <c>specFlow</c>.</param>
+    bool HasAppConfigSection(string projectPath, string sectionName);
 }

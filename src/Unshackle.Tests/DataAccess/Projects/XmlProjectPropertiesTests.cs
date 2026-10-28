@@ -52,6 +52,25 @@ public class XmlProjectPropertiesTests
         references.ShouldBe(["Analyzers", "Z.EntityFramework.Extensions.EFCore"]);
     }
 
+    [Theory]
+    [InlineData("App.config", "<configuration><specFlow><language feature=\"de-DE\" /></specFlow></configuration>", true)]
+    [InlineData("app.config", "<configuration><specFlow /></configuration>", true)]
+    [InlineData("App.config", "<configuration><appSettings /></configuration>", false)]
+    [InlineData("App.config", "not xml", true)]
+    [InlineData("Other.config", "<configuration><specFlow /></configuration>", false)]
+    public void HasAppConfigSection_AppConfigNextToProject_TopLevelElementOrUnreadable(string fileName, string content, bool expected)
+    {
+        // Arrange: TAAK-340 step 5, Reqnroll 3.3.4 ignores App.config.
+        _fileSystem.AddFile(Project, new MockFileData("<Project Sdk=\"Microsoft.NET.Sdk\" />"));
+        _fileSystem.AddFile("/repo/src/Lib/" + fileName, new MockFileData(content));
+
+        // Act
+        bool found = new XmlProjectProperties(_fileSystem).HasAppConfigSection(Project, "specFlow");
+
+        // Assert
+        found.ShouldBe(expected);
+    }
+
     [Fact]
     public void PackageReferences_NotXml_Null()
     {

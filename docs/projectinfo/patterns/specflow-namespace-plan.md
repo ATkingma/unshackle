@@ -40,7 +40,13 @@ specflow.namespace: `using TechTalk.SpecFlow[.X];` becomes `using Reqnroll[.X];`
 ## Assumptions
 
 - SpecFlow 3.9.74 is the old library, Reqnroll 3.3.4 the new one (both BSD-3-Clause, `Directory.Packages.props`).
-- `SpecFlowFix` is AllOrNothing: one Manual row anywhere leaves the solution on SpecFlow.
+- `SpecFlowFix` is AllOrNothing per unit (TAAK-353, council 18 S2): a Manual row keeps its project, every SpecFlow project linked to it
+  by a `ProjectReference` (either way, also through other projects) and every project sharing a file with it on SpecFlow (`specflow.kept`
+  row, `KeptReason.SpecFlowProjectKept`); the other units move. A blocking row outside every project, or every SpecFlow project kept,
+  leaves the solution on SpecFlow.
+- Project blockers (TAAK-340 step 5): a `<specFlow>` section in the project's App.config is Manual (Reqnroll 3.3.4's
+  `ConfigurationLoader.GetAppConfigStub` returns the defaults, so the settings would be lost); checked-in `*.feature.cs` code-behind is an
+  Info row (the Reqnroll generator rewrites it next to the `.feature` file on build, `ReqnrollUseIntermediateOutputPathForCodeBehind` false).
 
 ## Models
 

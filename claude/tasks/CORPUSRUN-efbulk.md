@@ -35,7 +35,7 @@ Totals over 7 completed repos: 49 Fixed calls, 0 build breaks caused by the fix,
 ## Bugs
 
 - **TAAK-356**: morenote `MoreNote.Config`, `MoreNote.CryptographyProvider`, `MoreNote.SignatureService` reference no Z package but get the
-  kept-for-dependent row with the B13 fallback name "Plus or Extensions". Proof (pending): `Proofs/_Pending/EfBulk/KeptRow/`.
+  kept-for-dependent row with the B13 fallback name "Plus or Extensions". Proof (pending): `Proofs/EfBulk/_Pending/KeptRow/`.
 
 ## Not a confirmed bug
 

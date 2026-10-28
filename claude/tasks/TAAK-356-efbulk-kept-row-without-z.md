@@ -13,7 +13,7 @@
   The fallback is meant only for an unreadable project file (council round 21 B13); here the file was readable.
 - Rows are built in `src/Unshackle.Core/Fixer.cs` (`KeptForDependentReason`, `migrations.Where(m => m.KeepRemovedPackage)`). Find first why a
   project without the package is a kept migration at all (generic engine or EF bulk only?); fix the root cause there, not only the name.
-- Minimal proof (not run, `_Pending`): `src/Unshackle.Tests/Proofs/_Pending/EfBulk/KeptRow/referenced-project-without-z.*`. A project-level
+- Minimal proof (not run, `_Pending`): `src/Unshackle.Tests/Proofs/EfBulk/_Pending/KeptRow/referenced-project-without-z.*`. A project-level
   case needs a unit test with two projects in `src/Unshackle.Tests/Core/EfBulk/EfBulkFixTests.cs` (see the B13 Extensions-only test).
 
 ## Steps

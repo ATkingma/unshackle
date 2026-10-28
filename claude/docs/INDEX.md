@@ -74,6 +74,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tools/corpus-polly-repos.txt` | Polly corpus repo list |
 | `docs/projectinfo/architectuur/corpus-epplus.md` | EPPlus 4.5–8 usage in 42 repos, draft queue (TAAK-309); builds partial |
 | `claude/tools/corpus-epplus-repos.txt` | EPPlus corpus repos and commits |
+| `docs/projectinfo/architectuur/candidate-masstransit-rewrite.md` | TAAK-310 study: MassTransit v8 rewrite to an OSS bus, no-go; stay on 8.5.x, fork swap later |
 | `docs/projectinfo/architectuur/candidate-swashbuckle.md` | Scout TAAK-410: Swashbuckle, no-go for now |
 | `claude/tasks/TAAK-316-report-only-fix.md` | Report-only fix kind (council round 8 S2) |
 | `claude/tasks/TAAK-317-project-file-migrations.md` | IProjectFileMigration: typed project/config-file edits (council round 8 S3) |
@@ -115,6 +116,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/COUNCIL-round-21.md` | Council round 21 decisions (EF bulk kept rows, SpecFlow import/plugin detection, dropped usings) |
 | `claude/tasks/COUNCIL-round-22.md` | Council round 22 decisions (xUnit v3 step-5 patterns, Polly kept row) |
 | `claude/tasks/COUNCIL-round-23.md` | Council round 23 decisions (SpecFlow step expressions, specflow.json) |
+| `claude/tasks/COUNCIL-round-24.md` | Council round 24 decisions (MassTransit rewrite: no-go, stay on v8) |
 | `claude/tasks/archief/TAAK-355-polly-kept-row-added-package.md` | (done) Council round 22 P11: Polly kept row names the added package |
 | `claude/tasks/archief/TAAK-336-epplus-flow-followups.md` | Council round 16 E21-E24: EPPlus Fixed field/return shapes, helper chains, one row per node |
 | `claude/tasks/archief/TAAK-337-epplus-range-locals.md` | Council round 16 E25-E26: EPPlus `ExcelRange` locals, then the range parameter flow type |

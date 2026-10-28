@@ -376,6 +376,18 @@ Full text: `claude/tasks/COUNCIL-round-23.md`. Follow-ups: TAAK-340 steps 5-6.
 | S13 | Cucumber-read regex step texts | Fixed + Info: pin `ExpressionType.RegularExpression`; escaped trailing `$` and non-literal texts Manual. |
 | S14 | `specflow.json` rename | Keep the name, no edit; Info row; rename with csproj items is backlog. |
 
+## Round 24 (2026-10-28)
+
+Full text: `claude/tasks/COUNCIL-round-24.md`. Study: `docs/projectinfo/architectuur/candidate-masstransit-rewrite.md`. Unanimous.
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| R1 | MassTransit rewrite now | No-go; report-only stays. |
+| R2 | Target | Stay on 8.5.x (Apache-2.0); later package-ID swap to an API-identical fork on NuGet. |
+| R3 | Fixed patterns | None toward another bus; fork swap Fixed only after an API-diff test. |
+| R4 | Re-check | Fork on NuGet, v8 patch end, unpatched CVE, 6 months without patch, else 2027-01-15. |
+| R5 | Partial rewrite | No (consumers without registration do not run). |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct
@@ -385,6 +397,7 @@ Full text: `claude/tasks/COUNCIL-round-23.md`. Follow-ups: TAAK-340 steps 5-6.
 - `claude/tasks/COUNCIL-round-21.md` — round 21
 - `claude/tasks/COUNCIL-round-22.md` — round 22
 - `claude/tasks/COUNCIL-round-23.md` — round 23
+- `claude/tasks/COUNCIL-round-24.md` — round 24
 - `claude/tasks/archief/TAAK-292-council-follow-up.md` — implementation of these decisions
 - `claude/tasks/archief/TAAK-293-council-round-3.md` — implementation of the round-3 decisions
 - `claude/tasks/archief/TAAK-294-council-round-4.md` — round-4 changes before 0.2.0

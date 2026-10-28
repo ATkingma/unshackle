@@ -12,5 +12,9 @@ public class PackageVersionEdit : ProjectFileEdit
 
     public required string To { get; init; }
 
+    // Council round 20, X9: when set, a plain version below From is not silently left alone but kept with this Info row
+    // (an old major the fix will not raise itself, so the user updates it by hand).
+    public string? BelowFromInfo { get; init; }
+
     public override string Describe() => $"PackageReference {Name} {From} or later → {To}";
 }

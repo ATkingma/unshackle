@@ -20,6 +20,11 @@ internal static class SpecFlowNames
 
     public const string NewAutofac = "Reqnroll.Autofac";
 
+    // Council round 21, S11 (proved against both plugin assemblies): the plugin's sub-namespace is renamed too.
+    public const string OldAutofacPlugin = "SpecFlow.Autofac.SpecFlowPlugin";
+
+    public const string NewAutofacPlugin = "Reqnroll.Autofac.ReqnrollPlugin";
+
     // Types renamed (SpecFlow → Reqnroll in the name, TableRow → DataTableRow) or moved to another namespace, as full metadata names.
     public static IReadOnlyDictionary<string, string> RenamedTypes { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -56,6 +61,19 @@ internal static class SpecFlowNames
         ["TechTalk.SpecFlow.TestFramework.ITestRunContext"] = "Reqnroll.ITestRunContext",
     };
 
+    // Members renamed on a type that keeps its name, as "<full type name>.<member>" → new member name (council round 21, S11).
+    public static IReadOnlyDictionary<string, string> RenamedMembers { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["SpecFlow.Autofac.SpecFlowPlugin.ContainerBuilderExtensions.AddSpecFlowBindings"] = "AddReqnrollBindings",
+    };
+
+    // Members without a Reqnroll twin, as "<full type name>.<member>": Reqnroll.Autofac's builder finder has no scenario-builder getter.
+    public static IReadOnlyList<string> RemovedMembers { get; } =
+    [
+        "SpecFlow.Autofac.ContainerBuilderFinder.GetCreateScenarioContainerBuilder",
+        "SpecFlow.Autofac.IContainerBuilderFinder.GetCreateScenarioContainerBuilder",
+    ];
+
     // Namespaces without a Reqnroll twin: App.config configuration only works through Reqnroll.SpecFlowCompatibility.
     public static IReadOnlyList<string> RemovedNamespaces { get; } = ["TechTalk.SpecFlow.Configuration.AppConfig"];
 
@@ -78,6 +96,7 @@ internal static class SpecFlowNames
         oldNamespace == OldRoot ? NewRoot
         : oldNamespace.StartsWith(OldRoot + ".", StringComparison.Ordinal) ? NewRoot + oldNamespace[OldRoot.Length..]
         : oldNamespace == OldContainer ? NewContainer
+        : oldNamespace == OldAutofacPlugin ? NewAutofacPlugin
         : oldNamespace == OldAutofac ? NewAutofac
         : oldNamespace.StartsWith(OldAutofac + ".", StringComparison.Ordinal) ? NewAutofac + oldNamespace[OldAutofac.Length..]
         : null;

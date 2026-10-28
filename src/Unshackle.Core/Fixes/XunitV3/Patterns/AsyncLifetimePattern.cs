@@ -208,7 +208,7 @@ public class AsyncLifetimePattern : IPattern
         {
             SemanticModel model = compilation.GetSemanticModel(tree);
             foreach (SimpleNameSyntax name in tree.GetRoot().DescendantNodes().OfType<SimpleNameSyntax>()
-                .Where(n => s_methods.Contains(n.Identifier.ValueText) && !IsAwaited(n) && DirectUse(n, model) is null))
+                .Where(n => s_methods.Contains(n.Identifier.ValueText) && !XunitV3Syntax.IsAwaited(n) && DirectUse(n, model) is null))
             {
                 if (model.GetSymbolInfo(name).Symbol is IMethodSymbol method)
                 {
@@ -218,24 +218,5 @@ public class AsyncLifetimePattern : IPattern
         }
 
         return symbols;
-    }
-
-    private static bool IsAwaited(SimpleNameSyntax name)
-    {
-        SyntaxNode callee = name.Parent is MemberAccessExpressionSyntax access && access.Name == name ? access : name;
-        if (callee.Parent is not InvocationExpressionSyntax invocation || invocation.Expression != callee)
-        {
-            return false;
-        }
-
-        SyntaxNode result = invocation.Parent is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "ConfigureAwait", Parent: InvocationExpressionSyntax configured }
-            ? configured
-            : invocation;
-        while (result.Parent is ParenthesizedExpressionSyntax parenthesized)
-        {
-            result = parenthesized;
-        }
-
-        return result.Parent is AwaitExpressionSyntax;
     }
 }

@@ -27,7 +27,7 @@ public class SpecFlowFix : IFix, IProjectFileMigration
     ];
 
     // Council round 18, S8: plugins without a Reqnroll port, as package id prefixes (lower case, as in the NuGet folder). Each is a project
-    // blocker naming the package. Only packages with an assembly are seen (a build-only package has no reference path).
+    // blocker naming the package, seen in a reference path or (build-only packages, council round 21 S11) in the project file.
     public static IReadOnlyList<string> UnportedPlugins { get; } =
         ["specflow.plus.livingdocplugin", "specflow.allure", "specrun.", "specflow.assist.dynamic"];
 
@@ -39,6 +39,14 @@ public class SpecFlowFix : IFix, IProjectFileMigration
     // The assemblies of the SpecFlow package (= its runtime and its container).
     private static readonly HashSet<string> s_oldAssemblies = new(["TechTalk.SpecFlow", "BoDi", "SpecFlow.Autofac.SpecFlowPlugin"], StringComparer.OrdinalIgnoreCase);
 
+    private readonly IProjectProperties _properties;
+
+    public SpecFlowFix(IProjectProperties properties)
+    {
+        ArgumentNullException.ThrowIfNull(properties);
+        _properties = properties;
+    }
+
     public string Id => "specflow";
 
     // Every namespace of TechTalk.SpecFlow 3.9.74 and BoDi; the patterns swap them, the Fixer removes one only where nothing binds to it.
@@ -48,6 +56,7 @@ public class SpecFlowFix : IFix, IProjectFileMigration
         "TechTalk.SpecFlow.Assist.ValueRetrievers", "TechTalk.SpecFlow.Bindings", "TechTalk.SpecFlow.Bindings.Discovery", "TechTalk.SpecFlow.Bindings.Reflection",
         "TechTalk.SpecFlow.Configuration", "TechTalk.SpecFlow.Events", "TechTalk.SpecFlow.Infrastructure", "TechTalk.SpecFlow.Plugins",
         "TechTalk.SpecFlow.TestFramework", "TechTalk.SpecFlow.Tracing", "TechTalk.SpecFlow.UnitTestProvider", "BoDi", "SpecFlow.Autofac",
+        "SpecFlow.Autofac.SpecFlowPlugin",
     ];
 
     // The patterns write the Reqnroll usings in place of the SpecFlow ones.
@@ -62,9 +71,14 @@ public class SpecFlowFix : IFix, IProjectFileMigration
     // (a pattern, or a project blocker) leaves the solution as it is (conservative; council question 6 in TAAK-340).
     public bool AllOrNothing => true;
 
-    public IReadOnlyList<ManualResult> ProjectBlockers(Project project)
+    public Task<IReadOnlyList<ManualResult>> ProjectBlockersAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
+        return Task.FromResult<IReadOnlyList<ManualResult>>(Blockers(project));
+    }
+
+    private List<ManualResult> Blockers(Project project)
+    {
         List<ManualResult> blockers = [];
         // packages.config: the package swap is not an edit of the project file (survey: 3 of 13 repos). Manual until a packages.config edit exists.
         if (OldReferencePaths(project).Any(IsPackagesFolderPath))
@@ -75,19 +89,34 @@ public class SpecFlowFix : IFix, IProjectFileMigration
 
         if (OldReferencePaths(project).Any())
         {
-            foreach (string plugin in PackageIds(project).Where(id => UnportedPlugins.Any(p => id.StartsWith(p, StringComparison.OrdinalIgnoreCase))).Order(StringComparer.Ordinal))
+            // Council round 21, S11: a build-only package has no reference path, so the project file is read too.
+            IReadOnlyList<string> declared = project.FilePath is string path ? _properties.PackageReferences(path) ?? [] : [];
+            HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+            foreach (string plugin in PackageIds(project).Concat(declared).Where(id => UnportedPlugins.Any(p => id.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+                .Order(StringComparer.OrdinalIgnoreCase).Where(seen.Add))
             {
                 blockers.Add((ManualResult)PatternResult.Manual($"The project uses the SpecFlow plugin package {plugin}, which has no Reqnroll port. " +
                     "Replace or remove it by hand (Reqnroll has its own LivingDoc, Allure and runner integrations) and run the fix again."));
+            }
+
+            foreach (string unknown in declared.Where(IsUnknownSpecFlowPackage).Where(seen.Add).Order(StringComparer.OrdinalIgnoreCase))
+            {
+                blockers.Add((ManualResult)PatternResult.Manual($"The project references {unknown}, a SpecFlow package Unshackle does not know (no Reqnroll " +
+                    "counterpart on its list). Replace or remove it by hand and run the fix again."));
             }
         }
 
         return blockers;
     }
 
-    public IReadOnlyList<ProjectFileEdit> EditsFor(Project project)
+    public Task<IReadOnlyList<ProjectFileEdit>> EditsForAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
+        return Task.FromResult(Edits(project));
+    }
+
+    private static IReadOnlyList<ProjectFileEdit> Edits(Project project)
+    {
         if (!OldReferencePaths(project).Any())
         {
             return [];
@@ -112,6 +141,12 @@ public class SpecFlowFix : IFix, IProjectFileMigration
             .Select(r => r.FilePath)
             .OfType<string>()
             .Where(path => s_oldAssemblies.Contains(Path.GetFileNameWithoutExtension(path)));
+
+    // Council round 21, S11: a SpecFlow.* / SpecRun.* package that is neither renamed nor a known unported plugin.
+    internal static bool IsUnknownSpecFlowPackage(string id) =>
+        (id.StartsWith("SpecFlow.", StringComparison.OrdinalIgnoreCase) || id.StartsWith("SpecRun.", StringComparison.OrdinalIgnoreCase))
+        && !RenamedPackages.Any(p => p.Old.Equals(id, StringComparison.OrdinalIgnoreCase))
+        && !UnportedPlugins.Any(p => id.StartsWith(p, StringComparison.OrdinalIgnoreCase));
 
     // The NuGet package ids of the project's references (<root>/<id>/<version>/lib/<tfm>/<file>.dll), as written in the path.
     internal static HashSet<string> PackageIds(Project project) =>

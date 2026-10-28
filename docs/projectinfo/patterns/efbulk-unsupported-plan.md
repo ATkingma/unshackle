@@ -28,7 +28,7 @@ efbulk.unsupported: every other call or constructor of Z.EntityFramework.Plus / 
 
 **In scope**: invocations and object creations that bind to a method or constructor of the Z assemblies, except the batch extensions of `efbulk.delete`/`efbulk.update`; the `PackageMigration` of the fix (remove `Z.EntityFramework.Plus.EFCore` and `Z.EntityFramework.Extensions.EFCore`, add nothing).
 
-**Out of scope**: any rewrite of these calls; EFCore.BulkExtensions (council round 17 B2); member accesses or type names without a call (they still keep the package through the engine's usage check).
+**Out of scope**: any rewrite of these calls; EFCore.BulkExtensions (council round 17 B2); member accesses or type names without a call are not rewritten (they keep the package and get the REQ-8 row).
 
 ## Requirements
 
@@ -37,13 +37,15 @@ efbulk.unsupported: every other call or constructor of Z.EntityFramework.Plus / 
 - **REQ-3**: THE SYSTEM SHALL quote the exact call in the reason (B4 style) and leave the code unchanged.
 - **REQ-4**: WHEN no Z symbol is bound anymore in a project and in no project that references it THE SYSTEM SHALL remove both Z package references (and their central `PackageVersion`) and add nothing (unit tests `FixAsync_NoZUsageLeft_RemovesBothZPackages`, `EditAsync_NoAddedPackage_RemovesTheRemovedAndAlsoRemovedPackages`).
 - **REQ-5**: WHEN a Z usage remains THE SYSTEM SHALL keep both packages and report the remaining usages with file:line: the `Unsupported`/Manual rows themselves, or an unmatched-use row for a file without a Manual row (unit test `FixAsync_FutureLeft_KeepsThePackageAndReportsTheCallWithItsLine`).
+- **REQ-7**: WHEN a project keeps the Z package THE SYSTEM SHALL name in its kept row the Z package(s) its project file (or nearest `Directory.Build.props`/`.targets`) references, Plus, Extensions or both; WHEN that file cannot be read or names neither THE SYSTEM SHALL name "`Z.EntityFramework.Plus.EFCore` or `Z.EntityFramework.Extensions.EFCore`" (council round 21 B13; unit tests `FixAsync_ExtensionsOnlyProject_KeptRowNamesExtensions`, `FixAsync_ProjectFileUnreadable_KeptRowNamesPlusOrExtensions`, `PackageReferences_*`).
+- **REQ-8**: WHEN a kept project's file has a bound Z symbol on a line without a Manual row THE SYSTEM SHALL report one unmatched-use row per file, also when the file has a Manual row, giving the count and every line ("N other usages of ... : lines a, b, c"); removal still depends only on the bound-symbol count (council round 21 B14; unit test `FixAsync_OtherZUsagesNextToManualRow_OneRowWithCountAndEveryLine`).
 - **REQ-6**: WHEN a dependent project still uses Z THE SYSTEM SHALL keep the package in the projects it references (engine `KeepForDependents`, already covered by engine tests).
 
 ## Assumptions
 
 - Package id = assembly name for both Z packages (true for the `.EFCore` packages; EF6 packages `Z.EntityFramework.Plus.EF6` are not matched and stay untouched).
 - `XmlProjectFileStore`: a `PackageMigration` with no added package removes `RemovedPackage` like an `AlsoRemovedPackages` entry; no other fix has an empty `AddedPackages`.
-- Kept-package rows name `Z.EntityFramework.Plus.EFCore` (the `RemovedPackage`) also for a project that references only the Extensions package.
+- A use on the same line as a Manual row counts as part of that row's call (line granularity, B14).
 - B8 check (2026-10-27, nuget.org): `EFCore.BulkExtensions.MIT` is MIT, latest 10.22.0 (2025-12-09), targets EF Core 10 (repo `videokojot/EFCore.BulkExtensions.MIT`).
 - Z stubs (`EfBulkReferences.cs`) gained `FromCache`, `Audit` and `BulkInsert(Async)` with the shapes of the real API; not re-checked against the nupkg.
 
@@ -53,4 +55,4 @@ efbulk.unsupported: every other call or constructor of Z.EntityFramework.Plus / 
 
 ## Open questions
 
-- See "Council questions" in `claude/tasks/TAAK-342-ef-bulk.md` (13, 14).
+- None; questions 13-14 decided in council round 21 (B13, B14).

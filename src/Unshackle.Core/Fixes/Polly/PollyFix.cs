@@ -18,6 +18,19 @@ public class PollyFix : IFix, IProjectFileMigration
     // The Polly.Core that Microsoft.Extensions.Resilience 10.11.0 brings in (via Polly.Extensions 8.4.2, checked in the nuspecs).
     public const string BundledPollyCoreVersion = "8.4.2";
 
+    private readonly IPackageAssetsReader? _assetsReader;
+
+    public PollyFix()
+        : this(null)
+    {
+    }
+
+    // TAAK-354: the restored assets add the declared (central) versions and the consumers' packages to the downgrade check (B5, B6).
+    public PollyFix(IPackageAssetsReader? assetsReader)
+    {
+        _assetsReader = assetsReader;
+    }
+
     public string Id => "polly";
 
     // Polly v7 and Polly.Core share the namespaces Polly and Polly.Retry, which the rewritten code binds to; only the HttpPolicyExtensions
@@ -50,16 +63,26 @@ public class PollyFix : IFix, IProjectFileMigration
 
     // Council round 10, P9/G4: a target framework Microsoft.Extensions.Resilience does not support blocks the project's file edits.
     // TAAK-320: the Fixer then also leaves that project's documents unrewritten, so its code stays on v7 and keeps building.
-    public IReadOnlyList<ManualResult> ProjectBlockers(Project project)
+    public Task<IReadOnlyList<ManualResult>> ProjectBlockersAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
-        // Corpus B1/B4: an older resolved Microsoft.Extensions.* package than the Resilience closure needs blocks the project too.
-        return [.. PollyTargetFramework.Blockers(project), .. PollyPackageDowngrade.Blockers(project)];
+        return Task.FromResult(Blockers(project));
     }
 
-    public IReadOnlyList<ProjectFileEdit> EditsFor(Project project)
+    private IReadOnlyList<ManualResult> Blockers(Project project)
+    {
+        // Corpus B1/B4: an older resolved Microsoft.Extensions.* package than the Resilience closure needs blocks the project too.
+        return [.. PollyTargetFramework.Blockers(project), .. PollyPackageDowngrade.Blockers(project, _assetsReader)];
+    }
+
+    public Task<IReadOnlyList<ProjectFileEdit>> EditsForAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
+        return Task.FromResult(Edits(project));
+    }
+
+    private static IReadOnlyList<ProjectFileEdit> Edits(Project project)
+    {
         // Council round 10, P8: a direct Polly.Core reference goes once Microsoft.Extensions.Resilience brings it in, only when the
         // declared version is at most the bundled one (the engine keeps a higher or unknown one with an Info row). The add is a
         // no-op where the package migration already added it; both are blocked while the project has blocking rows (G4).

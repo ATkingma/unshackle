@@ -271,6 +271,55 @@ public class EfBulkFixTests
         result.Reason.ShouldContain("EFCore.BulkExtensions.MIT");
     }
 
+    [Fact]
+    public async Task FixAsync_ExtensionsOnlyProject_KeptRowNamesExtensions()
+    {
+        // Arrange: council round 21, B13.
+        IProjectProperties properties = Substitute.For<IProjectProperties>();
+        properties.PackageReferences("Shop.csproj").Returns(["Microsoft.EntityFrameworkCore", "Z.EntityFramework.Extensions.EFCore"]);
+
+        // Act
+        FixReport report = await RunWithStoreAsync(Source("db.Orders.Future().Count()"), Store(), new EfBulkFix(properties));
+
+        // Assert
+        string reason = report.Findings.Single(f => f.FilePath == "Shop.csproj").Result.ShouldBeOfType<ManualResult>().Reason;
+        reason.ShouldStartWith("Z.EntityFramework.Extensions.EFCore is still used");
+        reason.ShouldNotContain("Plus");
+    }
+
+    [Fact]
+    public async Task FixAsync_ProjectFileUnreadable_KeptRowNamesPlusOrExtensions()
+    {
+        // Arrange: council round 21, B13.
+        IProjectProperties properties = Substitute.For<IProjectProperties>();
+        properties.PackageReferences(Arg.Any<string>()).Returns((IReadOnlyList<string>?)null);
+
+        // Act
+        FixReport report = await RunWithStoreAsync(Source("db.Orders.Future().Count()"), Store(), new EfBulkFix(properties));
+
+        // Assert
+        report.Findings.Single(f => f.FilePath == "Shop.csproj").Result.ShouldBeOfType<ManualResult>().Reason
+            .ShouldStartWith("Z.EntityFramework.Plus.EFCore or Z.EntityFramework.Extensions.EFCore is still used");
+    }
+
+    [Fact]
+    public async Task FixAsync_OtherZUsagesNextToManualRow_OneRowWithCountAndEveryLine()
+    {
+        // Arrange: council round 21, B14. Audit locals on lines 21-22, the Future call (Manual) on line 23.
+        IProjectProperties properties = Substitute.For<IProjectProperties>();
+        properties.PackageReferences("Shop.csproj").Returns(["Z.EntityFramework.Plus.EFCore"]);
+        string code = Source("db.Orders.Future().Count()", "Audit? first = null;\n        Audit? second = first;");
+
+        // Act
+        FixReport report = await RunWithStoreAsync(code, Store(), new EfBulkFix(properties));
+
+        // Assert
+        report.Findings.ShouldContain(f => f.PatternId == "efbulk.unsupported" && f.Line == 23);
+        Finding other = report.Findings.Where(f => f.PatternId == Fixer.UnmatchedPatternId).ShouldHaveSingleItem();
+        other.Line.ShouldBe(21);
+        other.Result.ShouldBeOfType<ManualResult>().Reason.ShouldStartWith("2 other usages of Z.EntityFramework.Plus.EFCore that no pattern migrates: lines 21, 22.");
+    }
+
     private static IProjectFileStore Store()
     {
         IProjectFileStore store = Substitute.For<IProjectFileStore>();
@@ -278,11 +327,11 @@ public class EfBulkFixTests
         return store;
     }
 
-    private static Task<FixReport> RunWithStoreAsync(string code, IProjectFileStore store)
+    private static Task<FixReport> RunWithStoreAsync(string code, IProjectFileStore store, EfBulkFix? fix = null)
     {
         Solution solution = TestSolution.Create(code, EfBulkReferences.Before);
         solution = solution.WithProjectFilePath(solution.ProjectIds.Single(), "Shop.csproj");
-        return new Fixer([new EfBulkFix()], store).FixAsync(solution, new FixRequest { FixId = "efbulk" }, TestContext.Current.CancellationToken);
+        return new Fixer([fix ?? new EfBulkFix()], store).FixAsync(solution, new FixRequest { FixId = "efbulk" }, TestContext.Current.CancellationToken);
     }
 
     private static string Source(string call, string local = "") => $$"""

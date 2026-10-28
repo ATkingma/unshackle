@@ -1,7 +1,9 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using NSubstitute;
 using Shouldly;
 using Unshackle.Core;
+using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.SpecFlow;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
@@ -15,7 +17,7 @@ public class SpecFlowFixTests
     public void Patterns_IdsUseSpecFlowPrefix_NamespacePatternLast()
     {
         // Arrange
-        SpecFlowFix fix = new();
+        SpecFlowFix fix = new(Substitute.For<IProjectProperties>());
 
         // Act
         List<string> ids = [.. fix.Patterns.Select(p => p.Id)];
@@ -41,13 +43,28 @@ public class SpecFlowFixTests
     }
 
     [Fact]
-    public void EditsFor_ProjectOnSpecFlow_RenamesEveryPackageToReqnroll()
+    public async Task ReqnrollAutofacVersion_IsTheReqnrollVersionTheProofsCompileAgainst()
+    {
+        // Arrange (council round 21, S11: Reqnroll ships its plugins with its own version)
+        string props = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "Directory.Packages.props"));
+        PackageRenameEdit autofac = (await new SpecFlowFix(Substitute.For<IProjectProperties>()).EditsForAsync(CreateProject(SpecFlowReferences.SpecFlow), TestContext.Current.CancellationToken)).OfType<PackageRenameEdit>().Single(e => e.OldName == "SpecFlow.Autofac");
+
+        // Act
+        bool pinned = props.Contains($"Include=\"Reqnroll.Autofac\" Version=\"{autofac.Version}\"", StringComparison.Ordinal);
+
+        // Assert
+        autofac.NewName.ShouldBe("Reqnroll.Autofac");
+        pinned.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task EditsFor_ProjectOnSpecFlow_RenamesEveryPackageToReqnroll()
     {
         // Arrange
         Project project = CreateProject(SpecFlowReferences.SpecFlow);
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = new SpecFlowFix().EditsFor(project);
+        IReadOnlyList<ProjectFileEdit> edits = await new SpecFlowFix(Substitute.For<IProjectProperties>()).EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         List<PackageRenameEdit> renames = [.. edits.Select(e => e.ShouldBeOfType<PackageRenameEdit>())];
@@ -60,13 +77,13 @@ public class SpecFlowFixTests
     }
 
     [Fact]
-    public void EditsFor_RunnerPackageInReferences_MustBeDeclared()
+    public async Task EditsFor_RunnerPackageInReferences_MustBeDeclared()
     {
         // Arrange (council round 18, S9: a runner package nothing else brings in is declared by the project or a shared file it imports)
         Project project = CreateProject([.. SpecFlowReferences.SpecFlow, FakeReference("C:/nuget/specflow.nunit/3.9.74/lib/net461/TechTalk.SpecFlow.NUnit.SpecFlowPlugin.dll")]);
 
         // Act
-        List<PackageRenameEdit> renames = [.. new SpecFlowFix().EditsFor(project).OfType<PackageRenameEdit>()];
+        List<PackageRenameEdit> renames = [.. (await new SpecFlowFix(Substitute.For<IProjectProperties>()).EditsForAsync(project, TestContext.Current.CancellationToken)).OfType<PackageRenameEdit>()];
 
         // Assert
         renames.Where(r => r.MustBeDeclared).Select(r => r.OldName).ShouldBe(["SpecFlow.NUnit"]);
@@ -75,16 +92,61 @@ public class SpecFlowFixTests
     [Theory]
     [InlineData("C:/nuget/specrun.specflow/3.9.31/lib/net461/TechTalk.SpecRun.SpecFlowPlugin.dll", "specrun.specflow")]
     [InlineData("C:/nuget/specflow.assist.dynamic/1.4.2/lib/netstandard2.0/SpecFlow.Assist.Dynamic.dll", "specflow.assist.dynamic")]
-    public void ProjectBlockers_UnportedPlugin_BlocksNamingThePackage(string path, string package)
+    public async Task ProjectBlockers_UnportedPlugin_BlocksNamingThePackage(string path, string package)
     {
         // Arrange (council round 18, S8)
         Project project = CreateProject([.. SpecFlowReferences.SpecFlow, FakeReference(path)]);
 
         // Act
-        IReadOnlyList<ManualResult> blockers = new SpecFlowFix().ProjectBlockers(project);
+        IReadOnlyList<ManualResult> blockers = await new SpecFlowFix(Substitute.For<IProjectProperties>()).ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         blockers.ShouldHaveSingleItem().Reason.ShouldContain($"plugin package {package}, which has no Reqnroll port");
+    }
+
+    [Fact]
+    public async Task ProjectBlockers_BuildOnlyPluginInProjectFile_BlocksNamingThePackageOnce()
+    {
+        // Arrange (council round 21, S11: LivingDoc has no reference path; the project file declares it)
+        IProjectProperties properties = Substitute.For<IProjectProperties>();
+        properties.PackageReferences(Arg.Any<string>()).Returns(["SpecFlow.Plus.LivingDocPlugin", "SpecFlow.NUnit", "specflow.plus.livingdocplugin"]);
+        Project project = CreateProject(SpecFlowReferences.SpecFlow, "C:/src/P/P.csproj");
+
+        // Act
+        IReadOnlyList<ManualResult> blockers = await new SpecFlowFix(properties).ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
+
+        // Assert
+        blockers.ShouldHaveSingleItem().Reason.ShouldContain("plugin package SpecFlow.Plus.LivingDocPlugin, which has no Reqnroll port");
+    }
+
+    [Fact]
+    public async Task ProjectBlockers_UnknownSpecFlowPackageInProjectFile_Blocks()
+    {
+        // Arrange (council round 21, S11)
+        IProjectProperties properties = Substitute.For<IProjectProperties>();
+        properties.PackageReferences(Arg.Any<string>()).Returns(["SpecFlow", "SpecFlow.Autofac", "SpecFlow.Contrib.Variants", "Shouldly"]);
+        Project project = CreateProject(SpecFlowReferences.SpecFlow, "C:/src/P/P.csproj");
+
+        // Act
+        IReadOnlyList<ManualResult> blockers = await new SpecFlowFix(properties).ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
+
+        // Assert
+        blockers.ShouldHaveSingleItem().Reason.ShouldContain("SpecFlow.Contrib.Variants, a SpecFlow package Unshackle does not know");
+    }
+
+    [Fact]
+    public async Task ProjectBlockers_ProjectWithoutSpecFlowReferences_DoesNotReadTheProjectFile()
+    {
+        // Arrange
+        IProjectProperties properties = Substitute.For<IProjectProperties>();
+        Project project = CreateProject(SpecFlowReferences.Reqnroll, "C:/src/P/P.csproj");
+
+        // Act
+        IReadOnlyList<ManualResult> blockers = await new SpecFlowFix(properties).ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
+
+        // Assert
+        blockers.ShouldBeEmpty();
+        properties.DidNotReceiveWithAnyArgs().PackageReferences(default!);
     }
 
     [Theory]
@@ -101,13 +163,13 @@ public class SpecFlowFixTests
     }
 
     [Fact]
-    public void EditsFor_ProjectWithoutSpecFlow_LeavesItAlone()
+    public async Task EditsFor_ProjectWithoutSpecFlow_LeavesItAlone()
     {
         // Arrange
         Project project = CreateProject(SpecFlowReferences.Reqnroll);
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = new SpecFlowFix().EditsFor(project);
+        IReadOnlyList<ProjectFileEdit> edits = await new SpecFlowFix(Substitute.For<IProjectProperties>()).EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         edits.ShouldBeEmpty();
@@ -127,13 +189,13 @@ public class SpecFlowFixTests
     }
 
     [Fact]
-    public void ProjectBlockers_PackageReferenceProject_IsNotBlocked()
+    public async Task ProjectBlockers_PackageReferenceProject_IsNotBlocked()
     {
         // Arrange
         Project project = CreateProject(SpecFlowReferences.SpecFlow);
 
         // Act
-        IReadOnlyList<ManualResult> blockers = new SpecFlowFix().ProjectBlockers(project);
+        IReadOnlyList<ManualResult> blockers = await new SpecFlowFix(Substitute.For<IProjectProperties>()).ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         blockers.ShouldBeEmpty();
@@ -156,7 +218,7 @@ public class SpecFlowFixTests
         Solution solution = TestSolution.Create(code, SpecFlowReferences.SpecFlow);
 
         // Act
-        FixReport report = await new Fixer([new SpecFlowFix()]).FixAsync(solution, new FixRequest { FixId = "specflow" }, TestContext.Current.CancellationToken);
+        FixReport report = await new Fixer([new SpecFlowFix(Substitute.For<IProjectProperties>())]).FixAsync(solution, new FixRequest { FixId = "specflow" }, TestContext.Current.CancellationToken);
 
         // Assert
         (await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken)).ShouldBe(code);
@@ -168,11 +230,12 @@ public class SpecFlowFixTests
         MetadataReference.CreateFromImage(File.ReadAllBytes(SpecFlowReferences.SpecFlow.OfType<PortableExecutableReference>()
             .First(r => Path.GetFileNameWithoutExtension(r.FilePath) == "TechTalk.SpecFlow").FilePath!), filePath: path);
 
-    private static Project CreateProject(IEnumerable<MetadataReference> references)
+    private static Project CreateProject(IEnumerable<MetadataReference> references, string? filePath = null)
     {
         var projectId = ProjectId.CreateNewId();
         return TestSolution.NewEmpty()
             .AddProject(projectId, "P", "P", LanguageNames.CSharp)
+            .WithProjectFilePath(projectId, filePath)
             .WithProjectParseOptions(projectId, new CSharpParseOptions())
             .AddMetadataReferences(projectId, references)
             .GetProject(projectId)!;

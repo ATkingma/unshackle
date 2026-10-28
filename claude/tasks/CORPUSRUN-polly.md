@@ -111,6 +111,8 @@ TAAK-335 (single transient clause) could not be observed directly: the fergun si
   10.11.0 require, so restore fails with NU1109. The downgrade check does not read the versions from `Directory.Packages.props`.
   Expected: compare against the central `PackageVersion` pins (and bump them or report `PackageDowngrade`).
 
+B5 and B6 fixed in TAAK-354 (Manual `PackageDowngrade`, no bump); the CoreApiSdk row is explained there.
+
 ## H1 free-disk rule (council round 15)
 
 `claude/tools/corpus-polly-am.sh` (and `corpus-polly-run.sh`) stop the run when the corpus disk has less than `MIN_FREE_GB` (default 20)

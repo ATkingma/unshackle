@@ -1,6 +1,6 @@
 # TAAK-341 — xUnit v2 → v3 fix (`xunit3`)
 
-**Status**: in progress (step 1-4 done, first slice on branch `taak-341`)
+**Status**: in progress (steps 1-5 done; next: corpus, step 7)
 **Created**: 2026-10-27
 **Branch / worktree**: `taak-341` (agent worktree `.claude/worktrees/agent-ad1cc69b2d7075655`)
 **Goal**: An `xunit3` fix that migrates xUnit v2 test projects to xunit.v3: package renames, `OutputType Exe`, `Xunit.Abstractions`
@@ -42,13 +42,21 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
 - [x] 5e. X3: `PackageVersionEdit` (Name, From, To): bumps a plain version in [From, To) on the reference, a shared props file (G3 rules), or the
   central `PackageVersion` (only when every project under it that references the package is loaded and unblocked, else Info naming them);
   a non-plain version (`$(Prop)`, range) stays with an Info row. xunit3 test projects bump `xunit.runner.visualstudio` 2.0.0+ → 3.1.5 (step 6 runner part done)
-- [ ] 5f. X9: Info row for a 1.x `xunit.runner.visualstudio` (unit test); after TAAK-352, `XunitV3Assemblies` awaits with the run token
-- [ ] 5. Remaining patterns: `Record.ExceptionAsync` (ValueTask), `[PropertyData]` → `[MemberData]`, string-based `[CollectionBehavior]`/
-  `[TestCaseOrderer]`/`[TestFrameworkAttribute]` → `typeof(...)`, Manual inventory of extensibility (custom `DataAttribute`, discoverers,
-  `Xunit.Sdk` runners), `TheoryData` / `SkipException` differences
+- [x] 5f. X9: `PackageVersionEdit.BelowFromInfo`: a plain version below `From` is kept with that Info row; xunit3 sets it for the runner
+  ("a 1.x runner cannot run xunit.v3 tests; update it to 3.1.5 by hand"). Unit tests `ApplyAsync_BelowFromWithInfo_KeptWithInfo`, `XunitV3FixTests` (branch `taak-341c`)
+- [x] 5. Remaining patterns (branch `taak-341c`): `xunit3.record-exception-async` (not awaited → `.AsTask()`, method group Manual),
+  `xunit3.type-name-attribute` (`[CollectionBehavior]`/`[TestCaseOrderer]`/`[TestCollectionOrderer]`/`[TestFramework]` (string, string) →
+  `typeof(..)` for an own type, else Manual `TypeNameArgument`), `xunit3.extensibility` (Manual inventory: `Xunit.Sdk` bases/interfaces/
+  discoverer attributes, `ITestCollectionOrderer`, `MemberDataAttributeBase`). Not built: `[PropertyData]` (council question 4 below),
+  `TheoryData`/`SkipException` differences (question 5)
+- [ ] 5g. X10: proof `RecordExceptionAsync/awaited-twice` (result stored, awaited twice, same exception); plan states why X10 differs from X6
+- [ ] 5h. X11: `TypeNameArgument` row names the type, says "no v2 → v3 name map", adds the documented v3 name as a hint when known
+- [ ] 5i. X12: Info row per file for uses of v2 `Xunit.Sdk` types (every line, type named, "no same-name type in xunit.v3 3.2.2" when so);
+  the missing-type list is built by a test from the real 2.9.3 and 3.2.2 assemblies; proof with a same-name type with changed members
+- [ ] 5j. X13: extensibility plan records why `[PropertyData]` is out of scope
 - [ ] 6. `xunit.runner.visualstudio` bump (needs a same-name version edit in the engine: `PackageRenameEdit` with OldName == NewName removes
   the reference, and under central package management the old `PackageVersion` stays), and `Microsoft.NET.Test.Sdk` minimum
-- [ ] 7. Corpus (discovered-test count > 0 and equal before/after, X2): 10-15 xUnit 2.x repos incl. integration suites with `IAsyncLifetime` (scout survey gap), pinned shas, build after fix
+- [ ] 7. Corpus (discovered-test count > 0 and equal before/after, X2; count X11 `TypeNameArgument` and X12 rows, X14 breaks): 10-15 xUnit 2.x repos incl. integration suites with `IAsyncLifetime` (scout survey gap), pinned shas, build after fix
 - [ ] 8. Blind round, roadmap row in `docs/projectinfo/project.md`
 
 ## Council questions (decided in council round 18, `claude/tasks/COUNCIL-round-18.md`)
@@ -83,10 +91,30 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
 3. **Runner bump range**: `From` 2.0.0 (so an older 3.x below 3.1.5 is raised too). A 1.x runner is left alone (no row).
    **Decision (council 20 X9: `From` 2.0.0 accepted; a 1.x runner gets an Info row to update by hand; step 5f.)**
 
+## Council questions (from step 5, decided in council round 22, `claude/tasks/COUNCIL-round-22.md`)
+
+1. **`.AsTask()` on every non-awaited `Record.ExceptionAsync`.** Built: always Fixed (no "used exactly once" limit as in X6), because no
+   declaration changes and `.AsTask()` returns exactly the v2 `Task<Exception>`. Acceptable?
+     **Decision (council 22 X10: always Fixed; proof stores the result and awaits it twice; plan explains the difference from X6; step 5g.)**
+2. **`typeof` rewrite next to a Manual orderer.** Built: an own type named by a string attribute becomes `typeof(..)`; the class itself is
+   Manual via `xunit3.extensibility`, so under AllOrNothing the solution stays v2 until it is rewritten by hand. A built-in v2 type
+   (`Xunit.Sdk.XunitTestFramework`) or another assembly's type stays Manual `TypeNameArgument` (no v2 → v3 name map). Map well-known built-ins?
+     **Decision (council 22 X11: no map now; Manual row names the type, "no v2 → v3 name map", documented v3 name as hint; corpus counts; step 5h.)**
+3. **Extensibility inventory breadth.** Built: classes with a v2 `Xunit.Sdk` base type, own interface or attribute, plus `ITestCollectionOrderer`
+   and `MemberDataAttributeBase`; `FactAttribute`/`TheoryData` subclasses are not reported. Also report uses (not declarations) of `Xunit.Sdk`
+   types, e.g. `new ExceptionAggregator()`?
+     **Decision (council 22 X12: also report uses, as Info, one row per file with every line; missing-in-v3 list built by a test from the real assemblies; step 5i.)**
+4. **`[PropertyData]`.** Not built: in xUnit 2.9.3 `Xunit.Extensions.PropertyDataAttribute` is `[Obsolete(error: true)]`, so a v2 project that
+   builds cannot use it and a proof "before" cannot compile. Drop it from the scope?
+     **Decision (council 22 X13: dropped from scope; plan records why; step 5j.)**
+5. **`TheoryData` / `SkipException`.** Not built: v2 has no `SkipException` (that is the `Xunit.SkippableFact` package, out of scope) and
+   `TheoryData<T>` usage compiles on v3. Leave for the corpus to show a real break?
+     **Decision (council 22 X14: corpus first with the discovered-test count check; `Xunit.SkippableFact` out of scope, Info row if found; step 7.)**
+
 ## Context for the next agent
 
-- Done: steps 1-4; all xunit3 proofs and unit tests green, full `dotnet test` green, `verify-head.sh` VERIFY OK on the branch head.
-- Next: step 5 (one pattern per sub-step, same proof/doc loop), or the council questions above first.
+- Done: steps 1-5 (5f and the step-5 patterns on branch `taak-341c`); all proofs and unit tests green, full `dotnet test` green, `verify-head.sh` VERIFY OK.
+- Next: steps 5g-5j (council 22), then step 7 (corpus) and step 8.
 - Changed files: `src/Unshackle.Core/Fixes/XunitV3/**`, `src/Unshackle.Interface/Cli.cs`, `src/Unshackle.Tests/Core/XunitV3/**`,
   `src/Unshackle.Tests/Proofs/XunitV3/**`, `src/Unshackle.Tests/{ProofTests.cs,Core/Engine/PreFilterContractTests.cs,Core/EndToEnd/NewFixesSmokeTests.cs}`,
   `src/Unshackle.Tests/Unshackle.Tests.csproj`, `Directory.Packages.props`, `docs/projectinfo/patterns/xunit3-*`, `docs/projectinfo/README.md`.
@@ -98,4 +126,5 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
 - `docs/projectinfo/patterns/xunit3-async-lifetime-plan.md` — pattern plans (also `-abstractions-namespace`, `-async-void-test`)
 - `claude/docs/council.md` — decision council
 - `claude/tasks/COUNCIL-round-20.md` — X7-X9
-- `claude/tasks/TAAK-352-async-project-migration.md` — async project migrations
+- `claude/tasks/COUNCIL-round-22.md` — X10-X14
+- `claude/tasks/archief/TAAK-352-async-project-migration.md` — async project migrations

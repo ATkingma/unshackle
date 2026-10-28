@@ -66,6 +66,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-356-efbulk-kept-row-without-z.md` | Done: no kept-for-dependent row for a project that gets the package only transitively (corpus morenote) |
 | `claude/tasks/TAAK-378-specflow-generated-obj-documents.md`, `TAAK-379-specflow-transitive-runner-reason.md` | Open bugs from SpecFlow corpus round 1 |
 | `claude/tasks/archief/TAAK-377-specflow-step-expression-cucumber-parameter.md`, `archief/TAAK-381-corpus-compare-notexecuted.md` | Done: S13 skips projects with the CucumberExpressions.SpecFlow plugin; corpus compare reports Passed→NotExecuted as `not_run` |
+| `claude/tasks/TAAK-382-xunit3-analyzer-warnings.md` .. `TAAK-386-xunit3-fact-subclass-source-info.md` | Open findings from the unfinished xUnit v3 corpus round (analyzer warnings, Test.Sdk TFM property, netfx module initializer, v2-dependent packages, Fact subclass source info); repros in `Proofs/_Pending/XunitV3/` |
 | `docs/projectinfo/architectuur/candidate-imagesharp.md` | Scout TAAK-390: ImageSharp, conditional no-go (park) |
 | `docs/projectinfo/architectuur/candidate-newtonsoft.md` | Scout TAAK-420: Newtonsoft → STJ, no-go blanket, narrow fix possible |
 | `docs/projectinfo/architectuur/candidate-efbulk.md` | Scout TAAK-430: EF bulk extensions → ExecuteUpdate/Delete, conditional go (narrow) |

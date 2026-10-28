@@ -19,6 +19,7 @@
 ## Build and tests
 
 - `dotnet build`: 0 warnings. `dotnet test`: 2026 total, 2026 passed.
+- Council round 24 R2 (2026-10-28): every Manual row and the report-only summary say "pin MassTransit < 9; 9.x is commercial" (`MassTransitFixTests.FixAsync_ReasonGivesTargetGuidance`, `ReportOnlyReason_SaysPinBelowNine`).
 
 ## Deviations
 

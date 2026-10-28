@@ -30,6 +30,7 @@
 - [x] 6. Council round 12 T8: the simple-consumer Info row says "Filters registered outside the solution are not seen".
 
 - [x] 7. Rewrite study + council round 24 (`docs/projectinfo/architectuur/candidate-masstransit-rewrite.md`): no-go for another bus; stay on 8.5.x; fork swap later; re-check 2027-01-15 or earlier trigger.
+- [x] 8. Council round 24 R2: detector guidance (every Manual row via `MassTransitSyntax.Guidance`, and `ReportOnlyReason`) says "pin MassTransit < 9; 9.x is commercial"; tests in `MassTransitFixTests`, verify docs updated (branch masstransit-pin-text).
 
 ## Changes
 

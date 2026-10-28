@@ -11,7 +11,7 @@ internal static class MassTransitSyntax
     public const string Namespace = "MassTransit";
 
     public const string Guidance =
-        " OpenTransit (the v8 fork) would keep this code as it is once it ships on NuGet; Wolverine and Rebus need it rewritten by hand.";
+        " For now, pin MassTransit < 9; 9.x is commercial. OpenTransit (the v8 fork) would keep this code as it is once it ships on NuGet; Wolverine and Rebus need it rewritten by hand.";
 
     public static bool IsMassTransit(ISymbol? symbol) =>
         symbol?.ContainingNamespace?.ToDisplayString() is string ns && (ns == Namespace || ns.StartsWith(Namespace + ".", StringComparison.Ordinal));

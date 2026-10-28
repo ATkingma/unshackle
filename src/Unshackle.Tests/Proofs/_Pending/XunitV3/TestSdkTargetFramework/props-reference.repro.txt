@@ -1,0 +1,16 @@
+Pending (TAAK-383). The project below is a net8.0-only test project whose TargetFrameworks comes from a property defined in
+Directory.Build.props. MSBuild evaluates it to net8.0 (the Roslyn project has NET8_0_OR_GREATER and no NETFRAMEWORK), but
+XmlProjectProperties.TargetFrameworks returns null on "$(", so the Test.Sdk edit is Manual and AllOrNothing blocks the whole solution.
+Wanted: no Manual row; Test.Sdk stays with the Info "17.13.0+ recommended" row, and the migration runs.
+
+Directory.Build.props:
+  <Project><PropertyGroup><NetCoreFrameworks>net8.0</NetCoreFrameworks></PropertyGroup></Project>
+Tests.csproj:
+  <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup><TargetFrameworks>$(NetCoreFrameworks)</TargetFrameworks></PropertyGroup>
+    <ItemGroup>
+      <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
+      <PackageReference Include="xunit" Version="2.9.3" />
+      <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    </ItemGroup>
+  </Project>

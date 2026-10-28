@@ -15,7 +15,7 @@
 - The Roslyn project already knows the evaluated TFM: MSBuildWorkspace loads one `Project` per TFM, and `XunitV3TargetFramework` reads
   `NETFRAMEWORK`/`NETCOREAPP` from `ParseOptions.PreprocessorSymbolNames`. The union over the sibling projects with the same `FilePath` is the
   evaluated set for the current OS (an OS-conditional netfx TFM, as in serilog, is then invisible on Linux: say so in the Info row).
-- Pending repro: `src/Unshackle.Tests/Proofs/_Pending/XunitV3/TestSdkTargetFramework/props-reference.repro.txt`.
+- Pending repro: `src/Unshackle.Tests/Proofs/XunitV3/_Pending/TestSdkTargetFramework/props-reference.repro.txt`.
 
 ## Steps
 

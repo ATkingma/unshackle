@@ -15,7 +15,7 @@
   `Verify.XunitV3`), `Xunit.SkippableFact` (FakeItEasy, X14: out of scope, Info), `XunitXml.TestLogger` (logger, not a v2 dependency).
 - Detection idea: after the package edits, a v2 assembly (`XunitV3Assemblies.V2`) still referenced by the compilation through a non-xunit package
   is a blocker; or a known list (package → v3 counterpart). Council question.
-- Pending repro: `src/Unshackle.Tests/Proofs/_Pending/XunitV3/V2DependentPackage/verify-xunit.repro.txt`.
+- Pending repro: `src/Unshackle.Tests/Proofs/XunitV3/_Pending/V2DependentPackage/verify-xunit.repro.txt`.
 
 ## Steps
 

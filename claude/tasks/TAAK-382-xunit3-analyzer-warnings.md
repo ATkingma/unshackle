@@ -10,7 +10,7 @@
   sets `TreatWarningsAsErrors`). After the fix the build fails with 822 analyzer errors: 768 xUnit1051 (pass
   `TestContext.Current.CancellationToken`, new in v3), plus xUnit1010, xUnit1031, xUnit2000, xUnit2009, xUnit2012, xUnit2013 (the v2.2.0
   project had no `xunit.analyzers`; `xunit.v3` brings them).
-- Not fixed in the corpus round (by agreement). Pending proof: `src/Unshackle.Tests/Proofs/_Pending/XunitV3/AnalyzerWarnings/cancellation-token.*`
+- Not fixed in the corpus round (by agreement). Pending proof: `src/Unshackle.Tests/Proofs/XunitV3/_Pending/AnalyzerWarnings/cancellation-token.*`
   (one of two possible outcomes: rewrite to pass the token).
 - Options: (a) rewrite xUnit1051 calls (pattern, the proof); (b) add `xUnit1051` (and analyzer ids new to the project) to `NoWarn` /
   `WarningsNotAsErrors` with an Info row; (c) Info row only. Council question.

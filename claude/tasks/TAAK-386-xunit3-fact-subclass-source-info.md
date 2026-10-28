@@ -14,7 +14,7 @@ TreatWarningsAsErrors builds keep building.
   wants each subclass to forward them. TAAK-341 X12 does not report `FactAttribute` subclasses (they compile).
 - Related to TAAK-382 (other analyzer ids under TreatWarningsAsErrors), but mechanical: a pattern can add the constructor (or forward the
   parameters in every existing constructor).
-- Pending proof: `src/Unshackle.Tests/Proofs/_Pending/XunitV3/FactAttributeSubclass/source-info-constructor.*` (check the v3 3.2.2 constructor
+- Pending proof: `src/Unshackle.Tests/Proofs/XunitV3/_Pending/FactAttributeSubclass/source-info-constructor.*` (check the v3 3.2.2 constructor
   signature when moving it out of `_Pending`).
 
 ## Steps

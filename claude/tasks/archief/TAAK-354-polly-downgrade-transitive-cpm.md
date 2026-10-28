@@ -41,4 +41,4 @@ projects that get Microsoft.Extensions.Resilience through `ProjectReference`, an
 
 - `claude/tasks/CORPUSRUN-polly.md` (B5, B6)
 - `claude/docs/council.md` (Polly B1/B4 decisions)
-- `claude/tasks/TAAK-355-polly-kept-row-added-package.md` — P11 follow-up
+- `claude/tasks/archief/TAAK-355-polly-kept-row-added-package.md` — P11 follow-up

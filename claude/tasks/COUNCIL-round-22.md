@@ -37,4 +37,4 @@ Follow-ups: TAAK-341 steps 5g-5j (X10-X13; X14 in step 7), TAAK-355 (P11).
 - `claude/docs/council.md` — summary of all rounds
 - `claude/tasks/COUNCIL-round-21.md`
 - `claude/tasks/TAAK-341-xunit-v3.md`
-- `claude/tasks/TAAK-355-polly-kept-row-added-package.md`
+- `claude/tasks/archief/TAAK-355-polly-kept-row-added-package.md`

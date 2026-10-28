@@ -121,6 +121,8 @@ public class XunitV3PatternTests
         ManualResult manual = result.ShouldBeOfType<ManualResult>();
         manual.Code.ShouldBe(nameof(XunitV3Reason.TypeNameArgument));
         manual.Reason.ShouldContain(why);
+        manual.Reason.ShouldContain("no v2 → v3 name map");
+        manual.Reason.ShouldNotContain("Hint:");
     }
 
     [Fact]
@@ -151,6 +153,51 @@ public class XunitV3PatternTests
 
         // Assert
         results.ShouldHaveSingleItem().ShouldBeOfType<ManualResult>().Reason.ShouldContain("RetryFactAttribute builds on the v2 extensibility API (Xunit.Sdk.XunitTestCaseDiscovererAttribute)");
+    }
+
+    [Fact]
+    public async Task SdkUse_ChangedMembersProof_DoesNotBuildOnV3()
+    {
+        // Arrange: council 22 X12; TestTimeoutException keeps its name in v3 but lost the int constructor, RunSummary is gone.
+        string code = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Proofs", "XunitV3", "SdkUse", "changed-members.before.cs"),
+            TestContext.Current.CancellationToken);
+
+        // Act
+        IReadOnlyList<Diagnostic> errors = TestSolution.CompileErrors(code, XunitV3References.After);
+
+        // Assert
+        TestSolution.CompileErrors(code, XunitV3References.Before).ShouldBeEmpty();
+        errors.ShouldContain(e => e.GetMessage(null).Contains("TestTimeoutException", StringComparison.Ordinal));
+        errors.ShouldContain(e => e.GetMessage(null).Contains("RunSummary", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void SdkUse_Find_UsingAndDeclarationBaseOnly_NotFound()
+    {
+        // Arrange: the base list is ExtensibilityPattern's Manual row; a using is not a use.
+        (SyntaxNode root, SemanticModel model) = Parse("using System.Collections.Generic; using System.Reflection; using Xunit.Sdk;"
+            + " public class D : DataAttribute { public override IEnumerable<object[]> GetData(MethodInfo m) => [[1]]; }");
+
+        // Act
+        int found = new SdkUsePattern().Find(root, model).Count();
+
+        // Assert
+        found.ShouldBe(0);
+    }
+
+    [Fact]
+    public void SdkUse_GenericAndQualifiedUses_OneInfoRow()
+    {
+        // Arrange
+        (SyntaxNode root, SemanticModel model) = Parse("public class C {\n Xunit.Sdk.ExceptionAggregator a;\n Xunit.Sdk.ExceptionAggregator b;\n Xunit.Sdk.DelegatingMessageBus<Xunit.Abstractions.IMessageSinkMessage> c; }");
+        var pattern = new SdkUsePattern();
+
+        // Act
+        List<PatternResult> results = [.. pattern.Find(root, model).Select(n => pattern.Rewrite(n, model))];
+
+        // Assert
+        results.ShouldHaveSingleItem().ShouldBeOfType<InfoResult>().Text.ShouldContain(
+            "ExceptionAggregator (lines 2, 3; no same-name type in xunit.v3 3.2.2), DelegatingMessageBus (line 4; no same-name type in xunit.v3 3.2.2)");
     }
 
     private static (SyntaxNode Root, SemanticModel Model) Parse(string code)

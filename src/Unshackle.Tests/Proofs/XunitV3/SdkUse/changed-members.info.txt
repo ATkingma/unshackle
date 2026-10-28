@@ -1,0 +1,1 @@
+v2 Xunit.Sdk types used in this file: TestTimeoutException (lines 6, 10), RunSummary (line 8; no same-name type in xunit.v3 3.2.2).

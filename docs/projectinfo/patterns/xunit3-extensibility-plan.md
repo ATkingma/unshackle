@@ -27,7 +27,9 @@ A class that builds on the v2 extensibility API (an `Xunit.Sdk` base type, inter
 
 **In scope**: class declarations deriving from or implementing a type of `xunit.core`/`xunit.execution.*` in namespace `Xunit.Sdk` (custom `DataAttribute`, `BeforeAfterTestAttribute`, `ITestCaseOrderer`, discoverers, `XunitTestFramework`, runners), or `Xunit.ITestCollectionOrderer`/`Xunit.MemberDataAttributeBase`, or carrying an `Xunit.Sdk` attribute (`XunitTestCaseDiscoverer`, `TraitDiscoverer`, ...).
 
-**Out of scope**: subclasses of `FactAttribute`/`TheoryAttribute` without a discoverer, `TheoryData<T>` subclasses (its hidden `Xunit.Sdk.ITheoryData` is not counted), `Xunit.Abstractions` types (`xunit3.abstractions-namespace`). Never Fixed.
+**Out of scope**: subclasses of `FactAttribute`/`TheoryAttribute` without a discoverer, `TheoryData<T>` subclasses (its hidden `Xunit.Sdk.ITheoryData` is not counted), `Xunit.Abstractions` types (`xunit3.abstractions-namespace`), uses of `Xunit.Sdk` types outside class base lists and attributes (Info rows of `xunit3.sdk-use`, council 22 X12). Never Fixed.
+
+**`[PropertyData]` is out of scope (council 22 X13)**: it is `[Obsolete(error: true)]` in xUnit 2.9.3, so a v2 project that builds cannot use it; there is nothing left to migrate.
 
 ## Requirements
 

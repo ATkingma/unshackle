@@ -1,6 +1,6 @@
 # TAAK-304 — Release 0.3.0
 
-**Status**: step 1/3 — not started  
+**Status**: steps 1-2 done on branch `release-030`; next: step 3 (user go)  
 **Created**: 2026-10-22  
 **Goal**: Unshackle 0.3.0 on nuget.org with the TAAK-298 speed-up, after the user's go.
 
@@ -12,8 +12,8 @@
 
 ## Steps
 
-- [ ] 1. Changelog / release notes since v0.2.0 (user-visible: speed, new options, report wording changes from TAAK-300)
-- [ ] 2. Version to 0.3.0, verify-head, push, CI green
+- [x] 1. Changelog / release notes since v0.2.0 (user-visible: speed, new options, report wording changes from TAAK-300): `CHANGELOG.md` + README fix table. Status per fix is one `Corpus:` line (CHANGELOG) / cell (README); `pending` for moq, polly, specflow, xunit3 until their corpus rounds merge
+- [x] 2. Version to 0.3.0, verify-head, push, CI green (`dotnet pack` checked: nupkg has README.md and MIT license expression)
 - [ ] 3. User go -> tag `v0.3.0`, release run green, install from nuget.org checked
 
 ## Changes

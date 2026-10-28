@@ -38,6 +38,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | Document | Contents |
 | -------- | -------- |
 | `claude/docs/overdracht.md` | State at an account switch: ongoing work, open assignment, agreements |
+| `claude/docs/ai-handover-2026-10-28.md` | AI handover for the PC switch: open branches, merge loop, agent briefs, pitfalls |
 | `claude/docs/council.md` | Decision council (Guardian, Pragmatist, Architect): procedure and recorded decisions |
 | `claude/docs/agent-werkwijze.md` | Task management, cross-references, document splitting, rules of conduct |
 | `claude/docs/code-standaarden.md` | Code style (16 choices) |
@@ -61,6 +62,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tools/corpus-masstransit-repos.txt` | MassTransit survey repo list |
 | `docs/projectinfo/architectuur/candidate-specflow.md` | Scout TAAK-370: SpecFlow → Reqnroll, conditional go (EOL fix) |
 | `claude/tasks/TAAK-340-specflow-to-reqnroll.md` | SpecFlow → Reqnroll fix: steps, design of the first slice, council questions |
+| `claude/tasks/TAAK-353-specflow-partial-migration.md` | Backlog: SpecFlow per-project partial migration (council 18 S2) |
 | `docs/projectinfo/architectuur/candidate-imagesharp.md` | Scout TAAK-390: ImageSharp, conditional no-go (park) |
 | `docs/projectinfo/architectuur/candidate-newtonsoft.md` | Scout TAAK-420: Newtonsoft → STJ, no-go blanket, narrow fix possible |
 | `docs/projectinfo/architectuur/candidate-efbulk.md` | Scout TAAK-430: EF bulk extensions → ExecuteUpdate/Delete, conditional go (narrow) |
@@ -105,14 +107,22 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/COUNCIL-round-17.md` | Council round 17 decisions (transitive pins, MediatR generic-request closure, EF bulk) |
 | `claude/tasks/COUNCIL-round-18.md` | Council round 18 decisions (SpecFlow → Reqnroll, xUnit v3, EPPlus flow follow-ups) |
 | `claude/tasks/COUNCIL-round-19.md` | Council round 19 decisions (transitive pin reasons, EPPlus range locals, EF bulk update values) |
-| `claude/tasks/TAAK-349-transitive-pin-reasons.md` | Council round 19 T4-T5: transitive pin reason per version direction, all user projects listed |
-| `claude/tasks/TAAK-346-epplus-flow-rows.md` | Council round 18 E27-E32: EPPlus helper-name rename Manual, one row per node, failing member named |
+| `claude/tasks/COUNCIL-round-20.md` | Council round 20 decisions (xUnit v3 detection and async migrations, EPPlus helper names, unparsable pin bounds) |
+| `claude/tasks/archief/TAAK-351-epplus-row-fold.md` | Council round 19 R3 + round 20 E33: EPPlus address row fold, helper call named in reason |
+| `claude/tasks/archief/TAAK-352-async-project-migration.md` | Council round 20 X8: async `IProjectFileMigration` with required token |
+| `claude/tasks/archief/TAAK-349-transitive-pin-reasons.md` | Council round 19 T4-T5: transitive pin reason per version direction, all user projects listed |
+| `claude/tasks/archief/TAAK-346-epplus-flow-rows.md` | Council round 18 E27-E32: EPPlus helper-name rename Manual, one row per node, failing member named; R19 R3 address fold |
+| `claude/tasks/COUNCIL-round-21.md` | Council round 21 decisions (EF bulk kept rows, SpecFlow import/plugin detection, dropped usings) |
+| `claude/tasks/COUNCIL-round-22.md` | Council round 22 decisions (xUnit v3 step-5 patterns, Polly kept row) |
+| `claude/tasks/archief/TAAK-355-polly-kept-row-added-package.md` | (done) Council round 22 P11: Polly kept row names the added package |
 | `claude/tasks/archief/TAAK-336-epplus-flow-followups.md` | Council round 16 E21-E24: EPPlus Fixed field/return shapes, helper chains, one row per node |
 | `claude/tasks/archief/TAAK-337-epplus-range-locals.md` | Council round 16 E25-E26: EPPlus `ExcelRange` locals, then the range parameter flow type |
 | `claude/tasks/archief/TAAK-338-automapper-closure-regressions.md` | Council round 16 A15-A18: regression proofs for extension callers in `TypeArgumentClosure` (done) |
 | `claude/tasks/archief/TAAK-343-transitive-pin-followups.md` | Council round 17 T1-T3: NU1605 hint, user project in the pin reason, documented limits |
-| `claude/tasks/TAAK-344-mediatr-generic-request-closure.md` | Council round 17 M15: `mediatr.generic-request` via `TypeArgumentClosure` with a handler guard |
+| `claude/tasks/archief/TAAK-344-mediatr-generic-request-closure.md` | Council round 17 M15: done, count 2 < 3, only the Manual reason "callers not followed" |
 | `claude/tasks/TAAK-341-xunit-v3.md` | xUnit v2 → v3 fix (`xunit3`): skeleton, project-file edits, first three patterns, council questions |
+| `claude/tasks/archief/TAAK-348-automapper-generic-reason-wording.md` | Generic AutoMapper Manual reasons name an untyped IQueryable source and each row's own blocker (done) |
+| `claude/tasks/archief/TAAK-354-polly-downgrade-transitive-cpm.md` | Polly PackageDowngrade also checks ProjectReference consumers (B5) and central pins (B6) (done) |
 | `claude/tasks/archief/TAAK-335-polly-redundant-transient-clause.md` | Polly: `OrTransientHttpStatusCode()` after the transient filter no longer writes a duplicate clause (corpus B2 side issue) |
 | `claude/tasks/CLAIMS.md` | Live file-claims register for the agent pool (main session only edits it) |
 | `claude/tasks/TAAK-370-scout-specflow.md` | Scout SpecFlow → Reqnroll (go/no-go research) |

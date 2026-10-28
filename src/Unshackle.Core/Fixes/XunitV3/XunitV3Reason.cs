@@ -18,6 +18,10 @@ public enum XunitV3Reason
     // An async void test method that is also called or referenced by code.
     AsyncVoidCalled,
 
+    // [TestCaseOrderer]/[CollectionBehavior]/[TestCollectionOrderer]/[TestFramework] with names that are not constant strings or name a type
+    // outside the project: v3 only takes typeof(..).
+    TypeNameArgument,
+
     // A shape the pattern does not rewrite (an aliased return type, for example).
     UnsupportedShape,
 }

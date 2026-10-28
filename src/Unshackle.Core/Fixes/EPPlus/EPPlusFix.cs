@@ -61,9 +61,14 @@ public class EPPlusFix : IFix, IProjectFileMigration, IPartialFix
     private static readonly Version s_two = new(2, 0);
 
     // E7: the SixLabors.Fonts pin below 2.0, only for a project that declares EPPlus itself, with current assets that show nothing needing 2.0 (else the warning stays).
-    public IReadOnlyList<ProjectFileEdit> EditsFor(Project project)
+    public Task<IReadOnlyList<ProjectFileEdit>> EditsForAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
+        return Task.FromResult(Edits(project));
+    }
+
+    private IReadOnlyList<ProjectFileEdit> Edits(Project project)
+    {
         PackageAssets? assets = Assets(project);
         return assets is { State: AssetsState.Current }
             && assets.Requirements.Any(r => r.RequiredBy == "project" && string.Equals(r.Package, "EPPlus", StringComparison.OrdinalIgnoreCase))
@@ -73,9 +78,14 @@ public class EPPlusFix : IFix, IProjectFileMigration, IPartialFix
     }
 
     // E7: a project that already resolves SixLabors.Fonts 2.x would pull it into ClosedXML; that blocks the project (council round 10, C1/G4).
-    public IReadOnlyList<ManualResult> ProjectBlockers(Project project)
+    public Task<IReadOnlyList<ManualResult>> ProjectBlockersAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
+        return Task.FromResult(Blockers(project));
+    }
+
+    private IReadOnlyList<ManualResult> Blockers(Project project)
+    {
         PackageAssets? assets = Assets(project);
         Version? fonts = assets is { State: AssetsState.Current }
             ? assets.ResolvesAtLeast(FontsLicence.Package, s_two) ? PackageRequirement.ParseVersion(assets.Resolved[FontsLicence.Package]) : null

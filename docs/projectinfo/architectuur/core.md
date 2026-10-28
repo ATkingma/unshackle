@@ -226,7 +226,7 @@ each candidate file (same pre-filter as a normal run), and the solution, usings 
 
 ## Project-file migrations (TAAK-317)
 
-Council round 8, S3. A fix that also implements `IProjectFileMigration` (`EditsFor(Project)`, a Strategy) declares exact typed
+Council round 8, S3. A fix that also implements `IProjectFileMigration` (`EditsForAsync(Project, CancellationToken)`, a Strategy; async since TAAK-352) declares exact typed
 edits per project from a closed set (`ProjectFileEdit` has a private-protected constructor):
 
 | Edit                      | What it does                                                                                                                  | Manual when                                                          |
@@ -234,6 +234,7 @@ edits per project from a closed set (`ProjectFileEdit` has a private-protected c
 | `PackageRenameEdit`       | renames the project's `PackageReference` in place with the new version; under CPM adds a `PackageVersion` (the old one stays) | declared only in a shared `Directory.*.props`; no version and no CPM |
 | `PackageRemoveEdit`       | removes the project's `PackageReference`                                                                                      | declared only in a shared file                                       |
 | `PackageAddEdit`          | adds a `PackageReference` after the last one (plus `PackageVersion` under CPM)                                                | — (skipped when already declared)                                    |
+| `PackageVersionEdit`      | same-name bump of a plain version in [From, To): on the reference, a shared props file, or the central `PackageVersion` (council 18 X3) | Info when the version is not plain, or a central version is shared with an unloaded/blocked project |
 | `PropertyEdit`            | sets one MSBuild property, added to the last unconditional `PropertyGroup` when missing                                       | set twice or under a condition                                       |
 | `ConfigFileRenameEdit`    | renames a file next to the project, and items that name it exactly (`Include`/`Update`/`Remove`)                              | the new name exists                                                  |
 | `ConfigFileTransformEdit` | exact text replacements in a file next to the project                                                                         | an old text does not occur exactly once                              |
@@ -252,7 +253,7 @@ edits per project from a closed set (`ProjectFileEdit` has a private-protected c
 - **C1 reason codes.** `ManualResult.Code` (a string) is separate from `Kept`. A fix keeps its own enum and calls
   `PatternResult.Manual(code, reason)`. `KeptReasonText.Rendered` prints `<kept prefix><Code>: <reason>`, which is the text the fixes
   used to write by hand, so the rendered output stays byte-identical.
-- **C2 fix-level Info.** `IFix.ProjectInfo(Project)` (default empty) gives Info rows on the project file (`project-file` pattern id),
+- **C2 fix-level Info.** `IFix.ProjectInfoAsync(Project, CancellationToken)` (default empty) gives Info rows on the project file (`project-file` pattern id),
   once per project file, at the end of a run and of a report-only run.
 - **C3 blank first line.** When a removed using has no leading trivia at position 0, `UsingDirectives.WithoutBlankFirstLine` removes the one
   blank line it leaves on top (whitespace plus one line break). Any other leading trivia stays, and a second run changes nothing.
@@ -260,7 +261,7 @@ edits per project from a closed set (`ProjectFileEdit` has a private-protected c
   `FixReport.IsCounted` leave it out of every count.
 - **G4 what blocks.** A project's file edits are blocked by any blocking document row, and by a project-level Manual row whose `Code` is a
   `ProjectBlockingReason` (`TargetFrameworkUnsupported`, `SharedDeclarationBlocked`, `LicensedDependency`, `PackageDowngrade`). Fixes add such rows through
-  `IProjectFileMigration.ProjectBlockers(Project)`. An outcome with a blocking code turns the project's other edits into Manual rows, and
+  `IProjectFileMigration.ProjectBlockersAsync(Project, CancellationToken)`. An outcome with a blocking code turns the project's other edits into Manual rows, and
   none of its changes are kept.
 - **G3 shared declarations.** A package declared only in a shared `Directory.*.props` is edited there when every `.csproj` that imports it
   is loaded and unblocked (`ProjectFileEditContext`). Otherwise the outcome is Manual `SharedDeclarationBlocked`, naming that project.
@@ -279,7 +280,7 @@ edits per project from a closed set (`ProjectFileEdit` has a private-protected c
 
 ## Blocked projects stay untouched (TAAK-320)
 
-- The Fixer asks `IProjectFileMigration.ProjectBlockers` before the document pass, and the rows come first in the report.
+- The Fixer asks `IProjectFileMigration.ProjectBlockersAsync` (with the run's token) before the document pass, and the rows come first in the report.
 - If a project has a row with a `ProjectBlockingReason` code, every document of that project goes back to its original text after the
   document pass. That includes a file it shares with another project. Each Fixed row in those documents becomes Manual:
   `Not rewritten: blocked by <code> on <project>. ...`.
@@ -321,11 +322,14 @@ edits per project from a closed set (`ProjectFileEdit` has a private-protected c
   `Directory.Packages.props` (the build would not resolve what it did before).
 - Needs `Fixer(fixes, projectFiles, assetsReader)` (the CLI) and `Current` assets; without them nothing is pinned.
 - Row text (council round 17 T1/T2, TAAK-343): the Fixed row starts with "may conflict (NU1605)", names the pinned version and the user
-  project ("kept for `<project>`", the first project in solution order whose code uses the package) and gives "raise the pin" as the remedy.
+  projects ("kept for `A`, `B`, `C` and N more": every project whose code uses the package, in solution order, capped at three per council
+  round 19 T5; the full list goes in the detailed report as `Dependents`) and gives "raise the pin" as the remedy.
 - T2: a dependent that declares the package itself still counts as a user; the pin stays (one predictable rule).
 - T3: "kept" means package libraries in the assets only. A package that a project reference also brings is still seen as lost; the pin is
   accepted when the reference requires the same version (lower bound). A project reference that requires another version makes it a
   Manual row on the project file instead of a pin (`PackageAssets.ProjectReferenceRequirements`, read from the `project` libraries).
+  Council round 19 T4 (TAAK-349): a lower bound stays Manual too (dropping the pin would silently downgrade); the reason says
+  "higher: NU1605 risk" or "lower: removing the pin downgrades to X".
 - T1 limitation: the new package's dependency closure is not known before a restore, so a pin is not checked against it (no nuspec
   check). A nuspec reader is built on the first corpus NU1605, as a Core interface with a DataAccess implementation. Unshackle has no
   post-fix build/verify step, so the NU1605 hint lives in the row text only.

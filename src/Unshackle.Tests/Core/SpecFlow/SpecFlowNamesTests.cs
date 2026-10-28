@@ -51,7 +51,52 @@ public class SpecFlowNamesTests
         unknown.ShouldBeEmpty();
     }
 
+    [Fact]
+    public void EveryPublicAutofacPluginType_HasATwinUnderTheSwappedNamespace()
+    {
+        // Arrange (council round 21, S11: SpecFlow.Autofac 3.9.74 against Reqnroll.Autofac 3.3.4)
+        List<string> specFlowTypes = PublicTypes("SpecFlow.Autofac.SpecFlowPlugin");
+        HashSet<string> reqnrollTypes = [.. PublicTypes("Reqnroll.Autofac.ReqnrollPlugin")];
+
+        // Act
+        List<string> unmapped =
+        [
+            .. specFlowTypes.Where(t => !t.Contains('+', StringComparison.Ordinal)
+                && !reqnrollTypes.Contains(SpecFlowNames.NewNamespace(SpecFlowNames.NamespaceOf(t)) + "." + SpecFlowNames.SimpleNameOf(t))),
+        ];
+
+        // Assert
+        specFlowTypes.ShouldNotBeEmpty();
+        unmapped.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void EveryPublicAutofacPluginMember_HasATwin_OrIsListed()
+    {
+        // Arrange (council round 21, S11: a type twin is not enough when a member was renamed)
+        var reqnroll = TypeSymbols("Reqnroll.Autofac.ReqnrollPlugin").ToDictionary(SpecFlowNames.FullName, StringComparer.Ordinal);
+
+        // Act
+        List<string> missing =
+        [
+            .. TypeSymbols("SpecFlow.Autofac.SpecFlowPlugin")
+                .SelectMany(t => t.GetMembers()
+                    .Where(m => m.DeclaredAccessibility == Accessibility.Public && !m.IsImplicitlyDeclared && m is not IMethodSymbol { MethodKind: not MethodKind.Ordinary })
+                    .Select(m => (Type: t, m.Name)))
+                .Where(x => !SpecFlowNames.RemovedMembers.Contains(SpecFlowNames.FullName(x.Type) + "." + x.Name))
+                .Where(x => !(reqnroll.TryGetValue(SpecFlowNames.NewNamespace(x.Type.ContainingNamespace.ToDisplayString()) + "." + x.Type.MetadataName, out INamedTypeSymbol? twin)
+                    && twin.GetMembers(SpecFlowNames.RenamedMembers.GetValueOrDefault(SpecFlowNames.FullName(x.Type) + "." + x.Name, x.Name)).Any()))
+                .Select(x => SpecFlowNames.FullName(x.Type) + "." + x.Name)
+                .Distinct(),
+        ];
+
+        // Assert
+        missing.ShouldBeEmpty();
+    }
+
     [Theory]
+    [InlineData("SpecFlow.Autofac", "Reqnroll.Autofac")]
+    [InlineData("SpecFlow.Autofac.SpecFlowPlugin", "Reqnroll.Autofac.ReqnrollPlugin")]
     [InlineData("TechTalk.SpecFlow", "Reqnroll")]
     [InlineData("TechTalk.SpecFlow.Assist", "Reqnroll.Assist")]
     [InlineData("BoDi", "Reqnroll.BoDi")]
@@ -66,7 +111,9 @@ public class SpecFlowNamesTests
         actual.ShouldBe(expected);
     }
 
-    private static List<string> PublicTypes(params string[] assemblies)
+    private static List<string> PublicTypes(params string[] assemblies) => [.. TypeSymbols(assemblies).Select(SpecFlowNames.FullName)];
+
+    private static List<INamedTypeSymbol> TypeSymbols(params string[] assemblies)
     {
         var compilation = CSharpCompilation.Create("Names", references: [.. SpecFlowReferences.SpecFlow, .. SpecFlowReferences.Reqnroll]);
         return
@@ -76,8 +123,7 @@ public class SpecFlowNamesTests
                 .OfType<IAssemblySymbol>()
                 .Where(a => assemblies.Contains(a.Name))
                 .SelectMany(a => Types(a.GlobalNamespace))
-                .Where(t => t.DeclaredAccessibility == Accessibility.Public)
-                .Select(SpecFlowNames.FullName),
+                .Where(t => t.DeclaredAccessibility == Accessibility.Public),
         ];
     }
 

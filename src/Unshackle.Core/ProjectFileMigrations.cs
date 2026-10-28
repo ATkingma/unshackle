@@ -53,7 +53,7 @@ internal static class ProjectFileMigrations
         var context = new ProjectFileEditContext { LoadedProjects = new HashSet<string>(projects.Select(p => p.Key), s_pathComparer), BlockedProjects = blocked };
         foreach (IGrouping<string, Project> project in projects)
         {
-            IReadOnlyList<ProjectFileEdit> edits = migration.EditsFor(project.First());
+            IReadOnlyList<ProjectFileEdit> edits = await migration.EditsForAsync(project.First(), cancellationToken);
             if (edits.Count == 0)
             {
                 continue;
@@ -139,8 +139,8 @@ internal static class ProjectFileMigrations
     // TAAK-320: the ProjectBlockers rows of every project file, and per document file of a project with a blocking code (G4) the text
     // "<code> on <project>". Those documents are not rewritten, so no fix half-migrates a blocked project. TAAK-321: per blocked project
     // file its code, so the package migration leaves that project alone.
-    internal static (List<Finding> Rows, Dictionary<string, string> BlockedFiles, Dictionary<string, string> BlockedProjects) Blockers(
-        IFix fix, IProjectFileMigration migration, Solution original)
+    internal static async Task<(List<Finding> Rows, Dictionary<string, string> BlockedFiles, Dictionary<string, string> BlockedProjects)> BlockersAsync(
+        IFix fix, IProjectFileMigration migration, Solution original, CancellationToken cancellationToken)
     {
         List<Finding> rows = [];
         var blockedFiles = new Dictionary<string, string>(s_pathComparer);
@@ -148,7 +148,7 @@ internal static class ProjectFileMigrations
         foreach (IGrouping<string, Project> project in original.Projects
             .Where(p => p.Language == LanguageNames.CSharp && p.FilePath is not null).GroupBy(p => p.FilePath!, s_pathComparer))
         {
-            IReadOnlyList<ManualResult> blockers = migration.ProjectBlockers(project.First());
+            IReadOnlyList<ManualResult> blockers = await migration.ProjectBlockersAsync(project.First(), cancellationToken);
             rows.AddRange(blockers.Select(b => FindingFactory.CreateProjectFinding(project.Key, fix, b)));
             if (blockers.FirstOrDefault(b => b.Code is string code && s_blockingCodes.Contains(code)) is { Code: string blocking })
             {
@@ -197,6 +197,7 @@ internal static class ProjectFileMigrations
         {
             Info = outcome.Note is null ? outcome.Edit.Describe() : $"{outcome.Edit.Describe()}. {outcome.Note}",
             Warning = outcome.Edit is PropertyEdit property && s_warnedProperties.Contains(property.Name) ? property.Name + WarnedPropertyReason : null,
+            Dependents = outcome.Edit is PackageAddEdit { KeptFor.Count: > PackageAddEdit.MaxUsersInRow } pin ? pin.KeptFor : null,
         };
     }
 }

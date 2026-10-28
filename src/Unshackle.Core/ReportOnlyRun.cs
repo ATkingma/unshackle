@@ -40,7 +40,7 @@ internal static class ReportOnlyRun
             }
         }
 
-        findings.AddRange(Fixer.ProjectInfo(fix, solution));
+        findings.AddRange(await Fixer.ProjectInfoAsync(fix, solution, cancellationToken));
         return new FixReport { Solution = solution, Findings = findings, ProjectFileChanges = [], InventoryOnly = true };
     }
 

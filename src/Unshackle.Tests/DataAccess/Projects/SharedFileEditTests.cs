@@ -105,6 +105,76 @@ public class SharedFileEditTests
         // Assert
         outcome.ManualCode.ShouldBe(nameof(ProjectBlockingReason.SharedDeclarationBlocked));
         outcome.ManualReason.ShouldNotBeNull().ShouldContain(FullPath(Other) + " also imports and " + why);
+        outcome.ManualReason.ShouldContain("rename SpecFlow to Reqnroll 2.4.1 there, or edit it by hand");
+        outcome.FilePath.ShouldBe(FullPath(BuildProps));
+        outcome.Changes.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ApplyAsync_SharedDeclarationWithCondition_IsSharedDeclarationBlocked(bool onItem)
+    {
+        // Arrange (council round 18, S9: a Condition on the package item or on its group)
+        const string condition = " Condition=\"'$(IsTestProject)' == 'true'\"";
+        string props = $"<Project>\n  <ItemGroup{(onItem ? "" : condition)}>\n    <PackageReference Include=\"SpecFlow\" Version=\"3.9.74\"{(onItem ? condition : "")} />\n  </ItemGroup>\n</Project>\n";
+        _fileSystem.AddFile(Specs, new MockFileData(Empty));
+        _fileSystem.AddFile(BuildProps, new MockFileData(props));
+
+        // Act
+        ProjectFileEditOutcome outcome = (await ApplyAsync(Specs, s_rename, Loaded(Specs))).ShouldHaveSingleItem();
+
+        // Assert
+        outcome.ManualCode.ShouldBe(nameof(ProjectBlockingReason.SharedDeclarationBlocked));
+        outcome.ManualReason.ShouldNotBeNull().ShouldContain("has a Condition");
+        outcome.FilePath.ShouldBe(FullPath(BuildProps));
+        outcome.Changes.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ApplyAsync_PackageDeclaredNowhereStatically_IsManualOnlyWhenItMustBeDeclared(bool mustBeDeclared)
+    {
+        // Arrange (council round 18, S9: an imported file declares it)
+        _fileSystem.AddFile(Specs, new MockFileData("<Project Sdk=\"Microsoft.NET.Sdk\">\n  <Import Project=\"../specs.props\" />\n</Project>\n"));
+        _fileSystem.AddFile("/repo/src/specs.props", new MockFileData(SharedReference));
+        var edit = new PackageRenameEdit { OldName = "SpecFlow", NewName = "Reqnroll", Version = "2.4.1", MustBeDeclared = mustBeDeclared };
+
+        // Act
+        IReadOnlyList<ProjectFileEditOutcome> outcomes = await ApplyAsync(Specs, edit, Loaded(Specs));
+
+        // Assert
+        if (mustBeDeclared)
+        {
+            ProjectFileEditOutcome outcome = outcomes.ShouldHaveSingleItem();
+            outcome.ManualCode.ShouldBe(nameof(ProjectBlockingReason.SharedDeclarationBlocked));
+            outcome.ManualReason.ShouldNotBeNull().ShouldContain("declares it statically");
+            // Council round 21, S10: the declaring file, its line, and the rename to make there.
+            outcome.ManualReason.ShouldContain($"{FullPath("/repo/src/specs.props")} (line 3, imported by {FullPath(Specs)}) declares it");
+            outcome.ManualReason.ShouldContain("rename it to Reqnroll 2.4.1 there by hand");
+            outcome.Changes.ShouldBeEmpty();
+        }
+        else
+        {
+            outcomes.ShouldBeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task ApplyAsync_PackageOnlyThroughProjectReference_NamesTheDeclaringProject()
+    {
+        // Arrange (council round 21, S10)
+        _fileSystem.AddFile(Specs, new MockFileData("<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <ProjectReference Include=\"..\\Other\\Other.csproj\" />\n  </ItemGroup>\n</Project>\n"));
+        _fileSystem.AddFile(Other, new MockFileData(SharedReference));
+        var edit = new PackageRenameEdit { OldName = "SpecFlow", NewName = "Reqnroll", Version = "2.4.1", MustBeDeclared = true };
+
+        // Act
+        ProjectFileEditOutcome outcome = (await ApplyAsync(Specs, edit, Loaded(Specs, Other))).ShouldHaveSingleItem();
+
+        // Assert
+        outcome.ManualCode.ShouldBe(nameof(ProjectBlockingReason.SharedDeclarationBlocked));
+        outcome.ManualReason.ShouldNotBeNull().ShouldContain($"through the ProjectReference to {FullPath(Other)}, declared in {FullPath(Other)} (line 3)");
         outcome.Changes.ShouldBeEmpty();
     }
 

@@ -30,7 +30,7 @@ public class Fixer : IFixer
     // The one fix-level Info row of a run that changed code (council round 14, M13).
     public const string ChangedCodeInfoPatternId = "changed-code-info";
 
-    internal const string KeptPackageReason = " is still used in this project, so its package and global usings stay. ";
+    internal const string KeptPackageReason = " is still used in this project, so its package and global usings stay";
 
     internal const string KeptSharedPackageReason = " is not migrated but still uses ";
 
@@ -98,7 +98,35 @@ public class Fixer : IFixer
             return partialReport;
         }
 
-        return new FixReport { Solution = solution, Findings = [.. full.Findings.Select(f => f.Result is FixedResult ? FindingFactory.NotApplied(f) : f)], ProjectFileChanges = [] };
+        return new FixReport
+        {
+            Solution = solution,
+            Findings = [.. full.Findings.Select(f => f.Result is FixedResult ? FindingFactory.NotApplied(f) : f)],
+            ProjectFileChanges = [],
+            BlockingProjects = BlockingProjects(fix, solution, full.Findings),
+        };
+    }
+
+    // Council round 18, X1/S2: per project (by file, a project-file row by its own path), the reasons of the Manual findings that hold the run back.
+    private static List<BlockingProject> BlockingProjects(IFix fix, Solution solution, IReadOnlyList<Finding> findings)
+    {
+        Dictionary<string, string> owners = new(StringComparer.OrdinalIgnoreCase);
+        foreach (Project project in solution.Projects)
+        {
+            string name = project.FilePath ?? project.Name;
+            owners.TryAdd(name, name);
+            foreach (Document document in project.Documents.Where(d => d.FilePath is not null))
+            {
+                owners.TryAdd(document.FilePath!, name);
+            }
+        }
+
+        return
+        [
+            .. findings.Where(f => f.Result is ManualResult && !fix.AllowsPartial(f))
+                .GroupBy(f => owners.GetValueOrDefault(f.FilePath) ?? f.FilePath, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new BlockingProject { Project = g.Key, Reasons = [.. g.Select(f => ((ManualResult)f.Result).Reason).Distinct(StringComparer.Ordinal)] }),
+        ];
     }
 
     // One run of the fix over the solution; seed findings come first in the report (the rows of a partial plan).
@@ -111,7 +139,7 @@ public class Fixer : IFixer
         Dictionary<string, string> blockedProjects = new(StringComparer.OrdinalIgnoreCase);
         if (fix is IProjectFileMigration blockingMigration)
         {
-            (List<Finding> blockerRows, blockedFiles, blockedProjects) = ProjectFileMigrations.Blockers(fix, blockingMigration, original);
+            (List<Finding> blockerRows, blockedFiles, blockedProjects) = await ProjectFileMigrations.BlockersAsync(fix, blockingMigration, original, cancellationToken);
             findings.AddRange(blockerRows);
         }
 
@@ -227,7 +255,7 @@ public class Fixer : IFixer
             }
         }
 
-        findings.AddRange(ProjectInfo(fix, original));
+        findings.AddRange(await ProjectInfoAsync(fix, original, cancellationToken));
         findings.AddRange(ProjectSummary(fix, original, findings));
         if (fix.ChangedCodeInfo is { Length: > 0 } changedCodeInfo && findings.Any(f => f.Line > 0 && f.Result is FixedResult))
         {
@@ -280,11 +308,19 @@ public class Fixer : IFixer
     }
 
     // Council round 10, C2: the fix-level Info rows, once per project file (a multi-target project asks its first copy), in project order.
-    internal static IEnumerable<Finding> ProjectInfo(IFix fix, Solution solution) =>
-        solution.Projects
+    internal static async Task<List<Finding>> ProjectInfoAsync(IFix fix, Solution solution, CancellationToken cancellationToken)
+    {
+        List<Finding> rows = [];
+        foreach (IGrouping<string, Project> project in solution.Projects
             .Where(p => p.Language == LanguageNames.CSharp && p.FilePath is not null)
-            .GroupBy(p => p.FilePath!, StringComparer.OrdinalIgnoreCase)
-            .SelectMany(g => fix.ProjectInfo(g.First()).Select(text => FindingFactory.CreateProjectFinding(g.Key, fix, PatternResult.Note(text))));
+            .GroupBy(p => p.FilePath!, StringComparer.OrdinalIgnoreCase))
+        {
+            IReadOnlyList<string> texts = await fix.ProjectInfoAsync(project.First(), cancellationToken);
+            rows.AddRange(texts.Select(text => FindingFactory.CreateProjectFinding(project.Key, fix, PatternResult.Note(text))));
+        }
+
+        return rows;
+    }
 
     // TAAK-342, council round 17, B3: the fix's summary rows per project file, from the rows of that project's documents.
     internal static IEnumerable<Finding> ProjectSummary(IFix fix, Solution solution, IReadOnlyList<Finding> findings) =>
@@ -524,11 +560,13 @@ public class Fixer : IFixer
             return (solution, [], []);
         }
 
+        // Council round 21, B13: a fix that removes several packages names the one(s) the project references.
+        string KeptName(string projectPath) => fix.KeptPackageName(projectPath) is { Length: > 0 } name ? name : package.RemovedPackage;
         findings.AddRange(migrations.Where(m => m.KeepRemovedPackage).Select(m => FindingFactory.CreateProjectFinding(m.ProjectPath, fix,
             m.KeptForDependents.Count > 0
-                ? new ManualResult($"{package.RemovedPackage}{KeptForDependentReason}{DependentList(m.KeptForDependents)}{AddedNextTo(m, changes)}. " +
+                ? new ManualResult($"{KeptName(m.ProjectPath)}{KeptForDependentReason}{DependentList(m.KeptForDependents)}{AddedNextTo(m, changes)}. " +
                     (m.KeptForDependents.Count == 1 ? "Migrate that project and run the fix again." : "Migrate those projects and run the fix again.")) { Dependents = m.KeptForDependents }
-                : PatternResult.Manual($"{package.RemovedPackage}{KeptPackageReason}Fix the manual findings and run the fix again."))));
+                : PatternResult.Manual($"{KeptName(m.ProjectPath)}{KeptPackageReason}{AddedNextTo(m, changes)}. Fix the manual findings and run the fix again."))));
         // A kept project's own file edit (the new package next to the old one) is covered by its kept row: one row per project file.
         HashSet<string> keptRows = new(migrations.Where(m => m.KeepRemovedPackage).Select(m => m.ProjectPath), StringComparer.OrdinalIgnoreCase);
         // The project-file row alone says that something is left, not where. A file with a Manual finding already has its explanation.
@@ -536,7 +574,15 @@ public class Fixer : IFixer
         HashSet<string> explained = [.. findings.Where(f => f.Result is ManualResult).Select(f => f.FilePath)];
         foreach (ProjectMigration kept in migrations.Where(m => m.KeepRemovedPackage))
         {
-            foreach ((string filePath, int line, string symbol) in await ProjectPackages.RemainingUsesAsync(solution, kept.ProjectPath, removed, swappedTypes, cancellationToken))
+            IReadOnlyList<(string FilePath, int Line, string Symbol)> uses =
+                await ProjectPackages.RemainingUsesAsync(solution, kept.ProjectPath, removed, swappedTypes, cancellationToken);
+            if (fix.ReportsEveryRemainingUse)
+            {
+                AddRemainingUseRows(findings, fix, uses, KeptName(kept.ProjectPath));
+                continue;
+            }
+
+            foreach ((string filePath, int line, string symbol) in uses)
             {
                 if (!explained.Contains(filePath))
                 {
@@ -551,5 +597,20 @@ public class Fixer : IFixer
                 "Migrate that project and run the fix again.")
             : PatternResult.Fixed(Array.Empty<SyntaxNode>()))));
         return (solution, changes, migrations);
+    }
+
+    // Council round 21, B14: one row per file with the count and every line of the uses outside a Manual row's line (that row already names
+    // its call), also in a file that has a Manual row. The row sits on the first such line.
+    private static void AddRemainingUseRows(List<Finding> findings, IFix fix, IReadOnlyList<(string FilePath, int Line, string Symbol)> uses, string keptName)
+    {
+        HashSet<(string, int)> manualLines = [.. findings.Where(f => f.FixId == fix.Id && f.Line > 0 && f.Result is ManualResult).Select(f => (f.FilePath, f.Line))];
+        foreach (IGrouping<string, int> file in uses.Where(u => !manualLines.Contains((u.FilePath, u.Line))).GroupBy(u => u.FilePath, u => u.Line))
+        {
+            List<int> lines = [.. file.Distinct().Order()];
+            string usages = lines.Count == 1 ? "1 other usage" : $"{lines.Count} other usages";
+            findings.Add(FindingFactory.CreateFinding(file.Key, lines[0], fix, UnmatchedPatternId, PatternResult.Manual(
+                $"{usages} of {keptName} that no pattern migrates: line{(lines.Count == 1 ? string.Empty : "s")} {string.Join(", ", lines)}. " +
+                "The package stays in this project; migrate them by hand.")));
+        }
     }
 }

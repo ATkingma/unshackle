@@ -66,6 +66,53 @@ Of the 14 repos with a green baseline, 8 pass with 0 test regressions and 6 brea
   The project references `Microsoft.Extensions.DependencyInjection 5.0.0`. The added Resilience package brings in `DependencyInjection.Abstractions 8.0`, which also defines `ServiceCollection` -> CS0433. Expected: bump the direct `Microsoft.Extensions.DependencyInjection` reference to match, or report Manual. Same family as B1.
   **Fixed** with B1: DependencyInjection 5.0.0 is below the 8.0 group's major, so the project is blocked with `PackageDowngrade`.
 
+## Rerun after B1-B4 and TAAK-335 (2026-10-27, round 3)
+
+Tool built from main `07552c5` (published to `corpus-polly/tool-r3`), driver `corpus-polly-run.sh after` on the 14 repos with a green baseline,
+TEST_TIMEOUT=1200, NuGet caches under `corpus-polly/nuget`. Results in `_results/after`; the earlier same-day partial round moved to `_results/after-r2`.
+Free disk stayed above the H1 threshold (98 GB at the end).
+
+| Repo | After | Fixed | Manual | Tests base -> after |
+| ---- | ----- | ----- | ------ | ------------------- |
+| aerosharp | ok | 0 | 19 | 270/516 -> 270/516, 0 regressions |
+| babylon-gateway | **restore-after-fix-fails (B5)** | 7 | 19 | |
+| deepl-dotnet | ok | 0 | 11 | 627/663 -> 627/663, 0 regressions |
+| eventualshop | ok (was B1) | 3 | 18 | 10/11 -> 10/11, 0 regressions |
+| fergun | ok (was B2, B3) | 0 | 29 | 788/801 -> 788/801, 0 regressions |
+| igdb-dotnet | ok | 0 | 10 | 20/49 -> 20/49, 0 regressions |
+| listenarr | **restore-after-fix-fails (B6, NU1109)** | 3 | 14 | |
+| okta-sdk-dotnet | ok (was B4) | 0 | 28 | 2833/3213 -> 2834/3213, 1 regression: file-lock flake (`okta.yaml` in use), not caused by the fix |
+| recfluence | ok | 0 | 33 | 4/19 -> 4/19, 0 regressions |
+| seedwork.cqrs.bus | ok (was B1) | 0 | 10 | no tests |
+| sme-novosgp | ok | 0 | 141 | test run times out (1200 s) as in base; no code changed |
+| sme-servidorrelatorios | ok | 0 | 41 | 2/7 -> 2/7, 0 regressions |
+| suucat | ok | 0 | 86 | 22/50 -> 22/50, 0 regressions |
+| uno.check | ok | 1 | 5 | 376/376 -> 376/376, 0 regressions |
+
+12 of 14 pass with no test regression caused by the fix (was 8). B2, B3 and B4 are confirmed fixed (fergun, okta build and test green);
+B1 is fixed for eventualshop and seedwork.cqrs.bus, but two variants remain (B5, B6).
+fergun and okta now get 0 Fixed: the former Fixed sites became Manual (`HandlerResultUsed`, `PackageDowngrade`), as designed.
+TAAK-335 (single transient clause) could not be observed directly: the fergun site is now Manual (B2 fix), so no corpus rewrite exercises it.
+
+### New bugs (round 3)
+
+- **B5 project-file: package downgrade across a project reference** (babylon-gateway).
+  `restore1` fails with `NU1605 Detected package downgrade: Microsoft.Extensions.Logging.Abstractions from 8.0.3 to 8.0.0`:
+  `RadixDlt.NetworkGateway.Abstractions` references `Logging.Abstractions 8.0.0` directly and gets `Microsoft.Extensions.Resilience 10.11.0`
+  through `ProjectReference` `RadixDlt.CoreApiSdk` (-> Telemetry.Abstractions 10.11.0 -> Logging.Abstractions >= 8.0.3).
+  `PollyPackageDowngrade` only compares a project's own direct references, so the project that receives Resilience transitively is not blocked.
+  Oddly, the report lists `RadixDlt.CoreApiSdk.csproj` as Manual ("project-file edits not applied"), while the restore graph shows it with
+  Resilience 10.11.0; check where that reference comes from (shared props or a sibling project edit).
+  Expected: run the downgrade check over every project that gets the new package directly or through `ProjectReference`, and block (Manual) the
+  originating edit when a consumer would downgrade.
+- **B6 project-file: central package management pins below the Resilience minimums** (listenarr, NU1109; was listed under B1).
+  The fix edits `Directory.Packages.props`, `Listenarr.Api.csproj` and `tests/Listenarr.Tests.csproj`; central pins of `Microsoft.Extensions.*`
+  10.0.8 (`Http`, `Logging.Abstractions`, `Options`, `DependencyInjection.Abstractions`) are below the 10.0.13 that Resilience/Http.Resilience
+  10.11.0 require, so restore fails with NU1109. The downgrade check does not read the versions from `Directory.Packages.props`.
+  Expected: compare against the central `PackageVersion` pins (and bump them or report `PackageDowngrade`).
+
+B5 and B6 fixed in TAAK-354 (Manual `PackageDowngrade`, no bump); the CoreApiSdk row is explained there.
+
 ## H1 free-disk rule (council round 15)
 
 `claude/tools/corpus-polly-am.sh` (and `corpus-polly-run.sh`) stop the run when the corpus disk has less than `MIN_FREE_GB` (default 20)

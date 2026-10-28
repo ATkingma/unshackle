@@ -1,7 +1,30 @@
-# Handover (updated 2026-10-27)
+# Handover (updated 2026-10-28)
 
 Read this first if you are taking over this session. Then `CLAUDE.md` and `claude/docs/INDEX.md`.
 
+
+## State on 2026-10-28 (switching to the user's PC) — start here
+
+AI session: read `claude/docs/ai-handover-2026-10-28.md` first.
+
+Main green (`ab8ae4d`, CI green). Merged 2026-10-27: TAAK-325, 327 (rest), 329, 335-338, 340 (slice 1, 3a-3f, 4a-4c), 341
+(slice 1, 5a-5e), 342 (slice 1, steps 4-8b), 343, 344, 346/346b, 348, 349, 351, 352 (IProjectFileMigration async), 354
+(Polly B5/B6), council rounds 16-21, AutoMapper and Polly corpus re-runs. Merge rule used: `verify-head.sh <dir>` without
+pipe + green CI per branch; integration branches (`integ-1`, `integ-2`) where branches overlapped.
+
+**Pushed, NOT on main yet (merge each after verify-head + green CI):**
+- `taak-341c` — xUnit 5f + record-exception-async, type-name-attribute, extensibility (VERIFY OK on its own base).
+- `council-22` — round 22 decisions (X10-X14, P11), docs only.
+- `taak-355` — Polly kept row names the added package (P11); finished, verify state unknown (session ended).
+- `taak-341d` — WIP steps 5g-5j (X10-X14), unverified.
+- `efbulk-corpus` — WIP EF bulk corpus harness (TAAK-342 step 9), round not run to the end.
+- `moq-rerun-wip` — WIP Moq corpus rerun (TAAK-330 step 5) harness change only; results not recorded.
+- `epplus-corpus-wip` — WIP EPPlus corpus re-measure (TAAK-327 step 7).
+
+**Next:** merge the branches above (order: taak-341c, council-22, taak-355, then finish taak-341d); rerun the three
+corpus rounds (Moq, EF bulk, EPPlus) and the first SpecFlow/xUnit corpus rounds; regenerate `proofs.md` (LF);
+update the roadmap table in `docs/projectinfo/project.md` (steps 11-13: SpecFlow→Reqnroll, xUnit v3, EF bulk);
+TAAK-304 release 0.3.0 (user go). Local worktrees under `.claude/worktrees` are disposable: all work is on origin.
 
 ## State on 2026-10-27 (afternoon) — start here
 
@@ -18,7 +41,7 @@ unifies the blocking-projects output (340b vs 341b) and renames the SpecFlow bac
 
 **Agents running:** moq-rerun, polly-rerun (corpus rounds).
 
-**Next:** TAAK-352 (IProjectFileMigration async, council X8) after integ-1; TAAK-351 rest (E33 reason with file:line);
+**Next:** TAAK-352 (IProjectFileMigration async, council X8) after integ-1; TAAK-351 done;
 council round 21 on TAAK-342 Q13-14 and TAAK-340 Q9-11; TAAK-342 step 9 and TAAK-340/341 corpus rounds; EPPlus corpus
 re-measure; regenerate `proofs.md` (LF); TAAK-304 release 0.3.0 (user go). Agent cap: 10 until 02:10, then 8.
 

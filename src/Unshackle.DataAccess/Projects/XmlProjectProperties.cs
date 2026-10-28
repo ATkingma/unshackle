@@ -64,6 +64,33 @@ public class XmlProjectProperties : IProjectProperties
         return value ?? !IsTestProject(chain);
     }
 
+    public IReadOnlyList<string>? PackageReferences(string projectPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectPath);
+        string full = _fileSystem.Path.GetFullPath(projectPath);
+        var ids = new List<string>();
+        foreach (string? path in new[] { FindUp(full, "Directory.Build.props"), full, FindUp(full, "Directory.Build.targets") })
+        {
+            if (path is null)
+            {
+                continue;
+            }
+
+            if (Load(path) is not XDocument document)
+            {
+                return null;
+            }
+
+            ids.AddRange(document.Descendants()
+                .Where(e => e.Name.LocalName is "PackageReference" or "GlobalPackageReference")
+                .Select(e => ((string?)e.Attribute("Include"))?.Trim())
+                .OfType<string>()
+                .Where(id => id.Length > 0));
+        }
+
+        return [.. ids.Distinct(StringComparer.OrdinalIgnoreCase)];
+    }
+
     private static bool IsTestProject(List<XDocument> chain) =>
         chain.SelectMany(d => d.Descendants()).Any(e =>
             (e.Name.LocalName == "IsTestProject" && e.Parent?.Name.LocalName == "PropertyGroup" && e.Value.Trim().Equals("true", StringComparison.OrdinalIgnoreCase))

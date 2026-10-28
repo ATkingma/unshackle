@@ -23,8 +23,9 @@ public class AsyncVoidBindingPattern : IPattern
                 && m.AttributeLists.SelectMany(l => l.Attributes).Any(a => IsBindingAttribute(a, model)));
 
     public PatternResult Rewrite(SyntaxNode node, SemanticModel model) =>
-        PatternResult.Manual("An async void step definition or hook fails in Reqnroll. Make it async Task by hand: SpecFlow did not wait for " +
-            "it, Reqnroll will, so check that the scenario still behaves the same.");
+        // Council round 18, S3: the reason names the hand route.
+        PatternResult.Manual("async void step definition or hook: Reqnroll awaits this; change it to async Task by hand and check ordering " +
+            "(SpecFlow did not wait for it, so work that ran in the background now runs before the next step).");
 
     private static bool IsBindingAttribute(AttributeSyntax attribute, SemanticModel model)
     {

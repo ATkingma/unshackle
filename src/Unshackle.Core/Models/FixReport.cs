@@ -14,6 +14,9 @@ public class FixReport
     // True for a report-only fix (IReportOnlyFix, council round 8, S2): nothing was changed, the findings are an inventory.
     public bool InventoryOnly { get; init; }
 
+    // An all-or-nothing fix that changed nothing (council round 18, X1/S2): the projects whose Manual findings held it back. Empty otherwise.
+    public IReadOnlyList<BlockingProject> BlockingProjects { get; init; } = [];
+
     // The findings every count is made of: all rows except the header row of a report-only fix (council round 10, G1).
     public IEnumerable<Finding> CountedFindings => Findings.Where(IsCounted);
 

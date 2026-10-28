@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Unshackle.Core.Abstractions;
 using Unshackle.Core.Models;
 
 namespace Unshackle.Core.Fixes.Polly;
@@ -83,32 +84,71 @@ internal static class PollyPackageDowngrade
     }
 
     // "Id resolved < minimum" per package the closure would raise, sorted; empty when none.
-    public static IReadOnlyList<string> Conflicts(Project project)
+    public static IReadOnlyList<string> Conflicts(Project project) => Conflicts(project, PackageAssets.Missing);
+
+    // TAAK-354 (B6): with current assets, the project's own requirements count too. Under central package management these are the
+    // PackageVersion pins of Directory.Packages.props; a pin below the closure's minimum fails restore with NU1109 even when the
+    // compilation binds the assembly from a framework reference pack (so no package path shows it).
+    public static IReadOnlyList<string> Conflicts(Project project, PackageAssets assets)
     {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(assets);
         int groupMajor = GroupMajor(project.ParseOptions?.PreprocessorSymbolNames ?? []);
-        return [.. project.MetadataReferences.OfType<PortableExecutableReference>()
+        IEnumerable<(string Id, Version Version)> resolved = project.MetadataReferences.OfType<PortableExecutableReference>()
             .Select(r => r.FilePath is string path ? Resolved(path) : null)
-            .OfType<(string Id, Version Version)>()
+            .OfType<(string Id, Version Version)>();
+        IEnumerable<(string Id, Version Version)> declared = assets.State != AssetsState.Current ? []
+            : assets.Requirements
+                .Where(r => r.RequiredBy == "project" && r.Package.StartsWith("Microsoft.Extensions.", StringComparison.OrdinalIgnoreCase))
+                .Select(r => r.LowerBound is Version lower ? (r.Package, lower) : ((string, Version)?)null)
+                .OfType<(string Id, Version Version)>();
+        return [.. resolved.Concat(declared)
             .Where(p => !s_ignored.Contains(p.Id) && Normalize(p.Version) < Minimum(p.Id, groupMajor))
             .Select(p => $"{p.Id} {p.Version} (needs >= {Minimum(p.Id, groupMajor)})")
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Order(StringComparer.OrdinalIgnoreCase)];
     }
 
-    public static IReadOnlyList<ManualResult> Blockers(Project project)
+    public static IReadOnlyList<ManualResult> Blockers(Project project) => Blockers(project, null);
+
+    // TAAK-354 (B5): every project that references this one, directly or not, gets the Resilience closure too; a consumer that resolves
+    // an older Microsoft.Extensions.* package fails restore with NU1605. Such a consumer blocks this project's edits (council: Manual, no bump).
+    public static IReadOnlyList<ManualResult> Blockers(Project project, IPackageAssetsReader? assetsReader)
     {
+        ArgumentNullException.ThrowIfNull(project);
         if (!PollyFix.ReferencesPollyV7(project))
         {
             return [];
         }
 
-        IReadOnlyList<string> conflicts = Conflicts(project);
-        return conflicts.Count == 0
-            ? []
-            : [(ManualResult)PatternResult.Manual(ProjectBlockingReason.PackageDowngrade,
+        IReadOnlyList<string> conflicts = Conflicts(project, Assets(project, assetsReader));
+        if (conflicts.Count > 0)
+        {
+            return [(ManualResult)PatternResult.Manual(ProjectBlockingReason.PackageDowngrade,
                 $"Microsoft.Extensions.Resilience {PollyFix.ResilienceVersion} needs newer Microsoft.Extensions packages than the project resolves: "
                 + $"{string.Join(", ", conflicts)}. Raise those references first (restore would fail with NU1605/NU1109, or the build with CS0433), then run the fix again.")];
+        }
+
+        ProjectDependencyGraph graph = project.Solution.GetProjectDependencyGraph();
+        List<string> consumers = [];
+        foreach (ProjectId id in graph.GetProjectsThatTransitivelyDependOnThisProject(project.Id))
+        {
+            if (project.Solution.GetProject(id) is Project consumer && Conflicts(consumer, Assets(consumer, assetsReader)) is { Count: > 0 } found)
+            {
+                consumers.Add($"{consumer.Name}: {string.Join(", ", found)}");
+            }
+        }
+
+        consumers = [.. consumers.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase)];
+        return consumers.Count == 0
+            ? []
+            : [(ManualResult)PatternResult.Manual(ProjectBlockingReason.PackageDowngrade,
+                $"Microsoft.Extensions.Resilience {PollyFix.ResilienceVersion} would reach projects that reference this one through ProjectReference and resolve older "
+                + $"Microsoft.Extensions packages ({string.Join("; ", consumers)}). Raise those references first (restore would fail with NU1605/NU1109), then run the fix again.")];
     }
+
+    private static PackageAssets Assets(Project project, IPackageAssetsReader? assetsReader) =>
+        assetsReader is not null && project.FilePath is string path ? assetsReader.Read(path) : PackageAssets.Missing;
 
     // 8.0 and 8.0.0 compare equal.
     private static Version Normalize(Version version) => new(version.Major, version.Minor, Math.Max(version.Build, 0));

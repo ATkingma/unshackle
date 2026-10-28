@@ -31,6 +31,7 @@ public partial class XmlProjectFileStore
                 PackageRenameEdit rename => await RenamePackageAsync(run, rename, cancellationToken),
                 PackageRemoveEdit remove => await RemovePackageAsync(run, remove, cancellationToken),
                 PackageAddEdit add => await AddPackageAsync(run, add, cancellationToken),
+                PackageVersionEdit bump => await BumpPackageAsync(run, bump, cancellationToken),
                 PropertyEdit property => await SetPropertyAsync(run, property, cancellationToken),
                 ConfigFileRenameEdit rename => await RenameConfigFileAsync(run, rename, cancellationToken),
                 ConfigFileTransformEdit transform => await TransformConfigFileAsync(run, transform, cancellationToken),
@@ -53,7 +54,16 @@ public partial class XmlProjectFileStore
             return await RenameInAsync(run, project, reference, edit, null, cancellationToken);
         }
 
-        return await SharedDeclarationAsync(run, edit, edit.OldName, cancellationToken) switch
+        SharedDeclaration? declaration = await SharedDeclarationAsync(run, edit, edit.OldName, cancellationToken);
+        if (declaration is null && edit.MustBeDeclared)
+        {
+            // Council round 21, S10: name where it is declared instead; that file is not edited.
+            return Manual(run, edit, 0, $"the project uses {edit.OldName}, but neither the project file nor its Directory.Build.props or " +
+                $"Directory.Packages.props declares it statically; {await DeclaredElsewhereAsync(run, edit.OldName, cancellationToken)}" +
+                $"rename it to {edit.NewName} {edit.Version} there by hand.", null, nameof(ProjectBlockingReason.SharedDeclarationBlocked));
+        }
+
+        return declaration switch
         {
             null => null,
             { Blocked: ProjectFileEditOutcome blocked } => blocked,
@@ -179,6 +189,131 @@ public partial class XmlProjectFileStore
         return Applied(run, edit, line, touched);
     }
 
+    // Council round 18, X3: a same-name version bump where the version is declared (the reference, a shared props file, or the central version).
+    private async Task<ProjectFileEditOutcome?> BumpPackageAsync(EditRun run, PackageVersionEdit edit, CancellationToken cancellationToken)
+    {
+        ProjectFile project = await LoadProjectAsync(run, cancellationToken);
+        if (Find(project, PackageReference, edit.Name) is XElement reference)
+        {
+            return await BumpDeclaredAsync(run, project, reference, edit, null, cancellationToken);
+        }
+
+        return await SharedDeclarationAsync(run, edit, edit.Name, cancellationToken) switch
+        {
+            null => null,
+            { Blocked: ProjectFileEditOutcome blocked } => blocked,
+            { File: var shared, Declared: var declared } => await BumpDeclaredAsync(run, shared, declared, edit, shared.Path, cancellationToken),
+        };
+    }
+
+    private async Task<ProjectFileEditOutcome?> BumpDeclaredAsync(
+        EditRun run, ProjectFile file, XElement reference, PackageVersionEdit edit, string? filePath, CancellationToken cancellationToken)
+    {
+        int line = LineOf(reference);
+        XAttribute? attribute = s_versionNames.Select(n => reference.Attribute(n)).FirstOrDefault(a => a is not null);
+        XElement? element = attribute is null ? s_versionNames.Select(n => reference.Element(file.Namespace + n)).FirstOrDefault(e => e is not null) : null;
+        if (attribute is not null || element is not null)
+        {
+            string declared = attribute?.Value ?? element!.Value;
+            if (BumpDecision(edit, declared, $"PackageReference {edit.Name}") is var (stays, why))
+            {
+                return stays ? null : Kept(run, edit, line, why!, filePath);
+            }
+
+            attribute?.SetValue(edit.To);
+            element?.SetValue(edit.To);
+            return Applied(run, edit, line, [run.Store(file)], filePath);
+        }
+
+        ProjectFile? versions = await CentralVersionsAsync(run, file, cancellationToken);
+        if (versions is null || Find(versions, PackageVersion, edit.Name) is not XElement central)
+        {
+            return Manual(run, edit, line, "the reference has no version and there is no central package version for it; edit it by hand.", filePath);
+        }
+
+        int centralLine = LineOf(central);
+        XAttribute? centralAttribute = central.Attribute("Version");
+        XElement? centralElement = centralAttribute is null ? central.Element(versions.Namespace + "Version") : null;
+        string? centralVersion = centralAttribute?.Value ?? centralElement?.Value;
+        if (centralVersion is null)
+        {
+            return Manual(run, edit, centralLine, "the central PackageVersion has no version; edit it by hand.", versions.Path);
+        }
+
+        if (BumpDecision(edit, centralVersion, $"The PackageVersion of {edit.Name}") is var (centralStays, centralWhy))
+        {
+            return centralStays ? null : Kept(run, edit, centralLine, centralWhy!, versions.Path);
+        }
+
+        // X3: a shared central version moves only when every project under it that references the package is migrated.
+        if (await CentralBumpBlockersAsync(run, versions, edit.Name, cancellationToken) is { Count: > 0 } blockers)
+        {
+            return Kept(run, edit, centralLine,
+                $"The PackageVersion of {edit.Name} stays {centralVersion} in {versions.Path}: {string.Join("; ", blockers)}. Raise it to {edit.To} by hand once those are migrated.",
+                versions.Path);
+        }
+
+        centralAttribute?.SetValue(edit.To);
+        centralElement?.SetValue(edit.To);
+        return Applied(run, edit, centralLine, [run.Store(versions)], versions.Path);
+    }
+
+    // Null: bump. Stays: nothing to do (already at To or later, or below From without BelowFromInfo). Why: below From with BelowFromInfo, or a version that is not a plain version, stays, with an Info row.
+    private static (bool Stays, string? Why)? BumpDecision(PackageVersionEdit edit, string declared, string what)
+    {
+        if (!Version.TryParse(declared.Trim(), out Version? version) || !Version.TryParse(edit.From, out Version? from) || !Version.TryParse(edit.To, out Version? to))
+        {
+            return (false, $"{what} {declared} stays: it is not a plain version, so Unshackle cannot tell whether it is below {edit.To}; check it by hand.");
+        }
+
+        if (version < from && edit.BelowFromInfo is string below)
+        {
+            return (false, $"{what} {declared} stays: {below}");
+        }
+
+        return version < from || version >= to ? (true, null) : null;
+    }
+
+    // The projects under a Directory.Packages.props that reference the package and are not loaded or still blocked, each with why.
+    private async Task<List<string>> CentralBumpBlockersAsync(EditRun run, ProjectFile versions, string package, CancellationToken cancellationToken)
+    {
+        List<string> blockers = [];
+        if (Find(versions, "GlobalPackageReference", package) is not null)
+        {
+            blockers.Add("it is a GlobalPackageReference");
+        }
+
+        foreach (string user in Importers(versions.Path))
+        {
+            string? buildProps = FindUp(user, BuildProps);
+            string[] files = buildProps is null ? [user] : [user, _fileSystem.Path.GetFullPath(buildProps)];
+            bool references = false;
+            foreach (string path in files)
+            {
+                references |= (await StateAsync(run, path, cancellationToken)).Current is string text && Find(new ProjectFile(path, text), PackageReference, package) is not null;
+            }
+
+            if (!references)
+            {
+                continue;
+            }
+
+            if (!run.Context.LoadedProjects.Contains(user))
+            {
+                blockers.Add($"{user} also uses it and is not loaded");
+            }
+            else if (run.Context.BlockedProjects.TryGetValue(user, out string? why))
+            {
+                blockers.Add($"{user} also uses it and is not migrated ({why})");
+            }
+        }
+
+        return blockers;
+    }
+
+    private static ProjectFileEditOutcome Kept(EditRun run, ProjectFileEdit edit, int line, string why, string? filePath) =>
+        new() { Edit = edit, FilePath = filePath ?? run.ProjectPath, Line = line, KeptInfo = why };
+
     private async Task<ProjectFileEditOutcome?> SetPropertyAsync(EditRun run, PropertyEdit edit, CancellationToken cancellationToken)
     {
         ProjectFile project = await LoadProjectAsync(run, cancellationToken);
@@ -291,15 +426,93 @@ public partial class XmlProjectFileStore
                 var file = new ProjectFile(_fileSystem.Path.GetFullPath(shared), text);
                 if (Find(file, PackageReference, package) is XElement declared)
                 {
-                    return SharedBlocker(run, file.Path) is string why
+                    // Council round 18, S9: a conditioned item (or group) holds for some importers only; which ones is not evaluated here.
+                    string? conditioned = declared.AncestorsAndSelf().Any(e => e.Attribute("Condition") is not null)
+                        ? "has a Condition on the package item or its group" : null;
+                    return (conditioned ?? SharedBlocker(run, file.Path)) is string why
                         ? new SharedDeclaration(file, declared, Manual(run, edit, LineOf(declared),
-                            $"the package is declared in a shared file that {why}; edit it by hand.", file.Path, nameof(ProjectBlockingReason.SharedDeclarationBlocked)))
+                            $"the package is declared in a shared file that {why}; {RenameHint(edit)}edit it by hand.", file.Path, nameof(ProjectBlockingReason.SharedDeclarationBlocked)))
                         : new SharedDeclaration(file, declared, null);
                 }
             }
         }
 
         return null;
+    }
+
+    // Council round 21, S10: the rename to make in a blocked shared file (only a rename has one).
+    private static string RenameHint(ProjectFileEdit edit) =>
+        edit is PackageRenameEdit rename ? $"rename {rename.OldName} to {rename.NewName} {rename.Version} there, or " : string.Empty;
+
+    // Council round 21, S10: where a package the project uses is declared when the project file and its nearest props files do not: a
+    // static <Import> of either (file and line), else a ProjectReference whose project (or its Directory.Build.props) declares it. Those
+    // files are named, never edited. Ends with "; " so the caller's instruction follows.
+    private async Task<string> DeclaredElsewhereAsync(EditRun run, string package, CancellationToken cancellationToken)
+    {
+        string? buildProps = FindUp(run.ProjectPath, BuildProps);
+        string[] importers = buildProps is null ? [run.ProjectPath] : [run.ProjectPath, _fileSystem.Path.GetFullPath(buildProps)];
+        foreach (string importer in importers)
+        {
+            foreach (string imported in await StaticPathsAsync(run, importer, "Import", "Project", cancellationToken))
+            {
+                if (await ParsedAsync(run, imported, cancellationToken) is ProjectFile declaring && Find(declaring, PackageReference, package) is XElement declared)
+                {
+                    return $"{imported} (line {LineOf(declared)}, imported by {importer}) declares it, a file Unshackle does not edit; ";
+                }
+            }
+        }
+
+        foreach (string referenced in await StaticPathsAsync(run, run.ProjectPath, "ProjectReference", Include, cancellationToken))
+        {
+            string? referencedProps = FindUp(referenced, BuildProps);
+            string[] files = referencedProps is null ? [referenced] : [referenced, _fileSystem.Path.GetFullPath(referencedProps)];
+            foreach (string path in files)
+            {
+                if (await ParsedAsync(run, path, cancellationToken) is ProjectFile declaring && Find(declaring, PackageReference, package) is XElement declared)
+                {
+                    return $"it comes in through the ProjectReference to {referenced}, declared in {path} (line {LineOf(declared)}); reference it in this project, or ";
+                }
+            }
+        }
+
+        return "an imported file, a conditional import or a property-driven name brings it in; ";
+    }
+
+    // The full paths in an attribute of the file's elements that need no evaluation (no property but $(MSBuildThisFileDirectory), no wildcard).
+    private async Task<List<string>> StaticPathsAsync(EditRun run, string path, string element, string attribute, CancellationToken cancellationToken)
+    {
+        if (await ParsedAsync(run, path, cancellationToken) is not ProjectFile file)
+        {
+            return [];
+        }
+
+        string directory = _fileSystem.Path.GetDirectoryName(file.Path)!;
+        return
+        [
+            .. file.Document.Descendants(file.Namespace + element)
+                .Select(e => ((string?)e.Attribute(attribute))?.Replace("$(MSBuildThisFileDirectory)", string.Empty, StringComparison.OrdinalIgnoreCase))
+                .OfType<string>()
+                .Where(v => v.Length > 0 && !v.Contains("$(", StringComparison.Ordinal) && !v.Contains('*', StringComparison.Ordinal) && !v.Contains(';', StringComparison.Ordinal))
+                .Select(v => _fileSystem.Path.GetFullPath(_fileSystem.Path.Combine(directory, v.Replace('\\', '/')))),
+        ];
+    }
+
+    // The file as XML; null when it does not exist or does not parse.
+    private async Task<ProjectFile?> ParsedAsync(EditRun run, string path, CancellationToken cancellationToken)
+    {
+        if ((await StateAsync(run, path, cancellationToken)).Current is not string text)
+        {
+            return null;
+        }
+
+        try
+        {
+            return new ProjectFile(_fileSystem.Path.GetFullPath(path), text);
+        }
+        catch (Exception ex) when (ex is XmlException or InvalidDataException)
+        {
+            return null;
+        }
     }
 
     // Why a shared file may not be edited (G3): a project that imports it is not loaded, or has blocking rows; null when every one is fine.

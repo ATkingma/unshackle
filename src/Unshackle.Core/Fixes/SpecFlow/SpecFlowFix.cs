@@ -22,10 +22,30 @@ public class SpecFlowFix : IFix, IProjectFileMigration
         ("SpecFlow.xUnit", "Reqnroll.xUnit"),
         ("SpecFlow.MsTest", "Reqnroll.MsTest"),
         ("SpecFlow.Tools.MsBuild.Generation", "Reqnroll.Tools.MsBuild.Generation"),
+        // Council round 18, S8: the one plugin with a Reqnroll port; its namespace SpecFlow.Autofac becomes Reqnroll.Autofac (SpecFlowNames).
+        ("SpecFlow.Autofac", "Reqnroll.Autofac"),
     ];
 
+    // Council round 18, S8: plugins without a Reqnroll port, as package id prefixes (lower case, as in the NuGet folder). Each is a project
+    // blocker naming the package, seen in a reference path or (build-only packages, council round 21 S11) in the project file.
+    public static IReadOnlyList<string> UnportedPlugins { get; } =
+        ["specflow.plus.livingdocplugin", "specflow.allure", "specrun.", "specflow.assist.dynamic"];
+
+    // Packages that nothing else depends on: a project that resolves one declares it itself (or through a shared file). Council round 18,
+    // S9: when no file declares it statically, the rename is Manual instead of silently skipped.
+    private static readonly HashSet<string> s_directPackages =
+        new(["SpecFlow.NUnit", "SpecFlow.xUnit", "SpecFlow.MsTest", "SpecFlow.Autofac"], StringComparer.OrdinalIgnoreCase);
+
     // The assemblies of the SpecFlow package (= its runtime and its container).
-    private static readonly HashSet<string> s_oldAssemblies = new(["TechTalk.SpecFlow", "BoDi"], StringComparer.OrdinalIgnoreCase);
+    private static readonly HashSet<string> s_oldAssemblies = new(["TechTalk.SpecFlow", "BoDi", "SpecFlow.Autofac.SpecFlowPlugin"], StringComparer.OrdinalIgnoreCase);
+
+    private readonly IProjectProperties _properties;
+
+    public SpecFlowFix(IProjectProperties properties)
+    {
+        ArgumentNullException.ThrowIfNull(properties);
+        _properties = properties;
+    }
 
     public string Id => "specflow";
 
@@ -35,7 +55,8 @@ public class SpecFlowFix : IFix, IProjectFileMigration
         "TechTalk.SpecFlow", "TechTalk.SpecFlow.Assist", "TechTalk.SpecFlow.Assist.Attributes", "TechTalk.SpecFlow.Assist.ValueComparers",
         "TechTalk.SpecFlow.Assist.ValueRetrievers", "TechTalk.SpecFlow.Bindings", "TechTalk.SpecFlow.Bindings.Discovery", "TechTalk.SpecFlow.Bindings.Reflection",
         "TechTalk.SpecFlow.Configuration", "TechTalk.SpecFlow.Events", "TechTalk.SpecFlow.Infrastructure", "TechTalk.SpecFlow.Plugins",
-        "TechTalk.SpecFlow.TestFramework", "TechTalk.SpecFlow.Tracing", "TechTalk.SpecFlow.UnitTestProvider", "BoDi",
+        "TechTalk.SpecFlow.TestFramework", "TechTalk.SpecFlow.Tracing", "TechTalk.SpecFlow.UnitTestProvider", "BoDi", "SpecFlow.Autofac",
+        "SpecFlow.Autofac.SpecFlowPlugin",
     ];
 
     // The patterns write the Reqnroll usings in place of the SpecFlow ones.
@@ -50,22 +71,65 @@ public class SpecFlowFix : IFix, IProjectFileMigration
     // (a pattern, or a project blocker) leaves the solution as it is (conservative; council question 6 in TAAK-340).
     public bool AllOrNothing => true;
 
-    public IReadOnlyList<ManualResult> ProjectBlockers(Project project)
+    public Task<IReadOnlyList<ManualResult>> ProjectBlockersAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
-        // packages.config: the package swap is not an edit of the project file (survey: 3 of 13 repos). Manual until a packages.config edit exists.
-        return OldReferencePaths(project).Any(IsPackagesFolderPath)
-            ? [(ManualResult)PatternResult.Manual("The project references SpecFlow through packages.config. Unshackle only renames PackageReference items: " +
-                "switch to PackageReference (or swap the packages by hand) and run the fix again.")]
-            : [];
+        return Task.FromResult<IReadOnlyList<ManualResult>>(Blockers(project));
     }
 
-    public IReadOnlyList<ProjectFileEdit> EditsFor(Project project)
+    private List<ManualResult> Blockers(Project project)
+    {
+        List<ManualResult> blockers = [];
+        // packages.config: the package swap is not an edit of the project file (survey: 3 of 13 repos). Manual until a packages.config edit exists.
+        if (OldReferencePaths(project).Any(IsPackagesFolderPath))
+        {
+            blockers.Add((ManualResult)PatternResult.Manual("The project references SpecFlow through packages.config. Unshackle only renames PackageReference items: " +
+                "switch to PackageReference (or swap the packages by hand) and run the fix again."));
+        }
+
+        if (OldReferencePaths(project).Any())
+        {
+            // Council round 21, S11: a build-only package has no reference path, so the project file is read too.
+            IReadOnlyList<string> declared = project.FilePath is string path ? _properties.PackageReferences(path) ?? [] : [];
+            HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+            foreach (string plugin in PackageIds(project).Concat(declared).Where(id => UnportedPlugins.Any(p => id.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+                .Order(StringComparer.OrdinalIgnoreCase).Where(seen.Add))
+            {
+                blockers.Add((ManualResult)PatternResult.Manual($"The project uses the SpecFlow plugin package {plugin}, which has no Reqnroll port. " +
+                    "Replace or remove it by hand (Reqnroll has its own LivingDoc, Allure and runner integrations) and run the fix again."));
+            }
+
+            foreach (string unknown in declared.Where(IsUnknownSpecFlowPackage).Where(seen.Add).Order(StringComparer.OrdinalIgnoreCase))
+            {
+                blockers.Add((ManualResult)PatternResult.Manual($"The project references {unknown}, a SpecFlow package Unshackle does not know (no Reqnroll " +
+                    "counterpart on its list). Replace or remove it by hand and run the fix again."));
+            }
+        }
+
+        return blockers;
+    }
+
+    public Task<IReadOnlyList<ProjectFileEdit>> EditsForAsync(Project project, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
-        return OldReferencePaths(project).Any()
-            ? [.. RenamedPackages.Select(p => new PackageRenameEdit { OldName = p.Old, NewName = p.New, Version = ReqnrollVersion })]
-            : [];
+        return Task.FromResult(Edits(project));
+    }
+
+    private static IReadOnlyList<ProjectFileEdit> Edits(Project project)
+    {
+        if (!OldReferencePaths(project).Any())
+        {
+            return [];
+        }
+
+        HashSet<string> used = PackageIds(project);
+        return [.. RenamedPackages.Select(p => new PackageRenameEdit
+        {
+            OldName = p.Old,
+            NewName = p.New,
+            Version = ReqnrollVersion,
+            MustBeDeclared = s_directPackages.Contains(p.Old) && used.Contains(p.Old),
+        })];
     }
 
     public IReadOnlyList<IPattern> Patterns { get; } =
@@ -77,6 +141,24 @@ public class SpecFlowFix : IFix, IProjectFileMigration
             .Select(r => r.FilePath)
             .OfType<string>()
             .Where(path => s_oldAssemblies.Contains(Path.GetFileNameWithoutExtension(path)));
+
+    // Council round 21, S11: a SpecFlow.* / SpecRun.* package that is neither renamed nor a known unported plugin.
+    internal static bool IsUnknownSpecFlowPackage(string id) =>
+        (id.StartsWith("SpecFlow.", StringComparison.OrdinalIgnoreCase) || id.StartsWith("SpecRun.", StringComparison.OrdinalIgnoreCase))
+        && !RenamedPackages.Any(p => p.Old.Equals(id, StringComparison.OrdinalIgnoreCase))
+        && !UnportedPlugins.Any(p => id.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+
+    // The NuGet package ids of the project's references (<root>/<id>/<version>/lib/<tfm>/<file>.dll), as written in the path.
+    internal static HashSet<string> PackageIds(Project project) =>
+        new(project.MetadataReferences.OfType<PortableExecutableReference>().Select(r => r.FilePath).OfType<string>().Select(PackageIdOf).OfType<string>(),
+            StringComparer.OrdinalIgnoreCase);
+
+    internal static string? PackageIdOf(string path)
+    {
+        string[] parts = path.Replace('\\', '/').Split('/');
+        int lib = Array.FindLastIndex(parts, p => p.Equals("lib", StringComparison.OrdinalIgnoreCase));
+        return lib >= 2 ? parts[lib - 2] : null;
+    }
 
     // packages.config restores to <solution>/packages/<Id>.<Version>/lib/...; PackageReference to <nuget>/<id>/<version>/lib/....
     internal static bool IsPackagesFolderPath(string path) =>

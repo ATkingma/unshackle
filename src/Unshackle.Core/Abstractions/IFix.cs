@@ -99,7 +99,8 @@ public interface IFix
     /// Info row on the project file, rendered like <see cref="PatternResult.Note"/> and never counted as a warning. Empty (the default): none.
     /// </summary>
     /// <param name="project">A C# project of the original solution that lives in a file (the first copy of a multi-target project).</param>
-    IReadOnlyList<string> ProjectInfo(Project project) => [];
+    /// <param name="cancellationToken">The run's token.</param>
+    Task<IReadOnlyList<string>> ProjectInfoAsync(Project project, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<string>>([]);
 
     /// <summary>
     /// Project-level rows computed from the findings of one project's documents after the document pass (TAAK-342, council round 17, B3), for
@@ -113,4 +114,18 @@ public interface IFix
     /// of the new library that no pattern can prove away. Null or empty (the default): none.
     /// </summary>
     string? ChangedCodeInfo => null;
+
+    /// <summary>
+    /// The package name the kept-package rows of one project give (council round 21, B13), for a fix whose <see cref="Package"/> removes several
+    /// packages and whose project may reference only some of them. Null or empty (the default): <see cref="PackageMigration.RemovedPackage"/>.
+    /// </summary>
+    /// <param name="projectPath">The project file that keeps the package.</param>
+    string? KeptPackageName(string projectPath) => null;
+
+    /// <summary>
+    /// True when a kept project gets one unmatched-use row per file with every remaining use of the old library outside a Manual row's line,
+    /// also in a file that already has a Manual row (council round 21, B14): "N other usages: lines a, b, c". False (the default): one row per
+    /// use, only in a file without a Manual row. Removal of the package never depends on these rows.
+    /// </summary>
+    bool ReportsEveryRemainingUse => false;
 }

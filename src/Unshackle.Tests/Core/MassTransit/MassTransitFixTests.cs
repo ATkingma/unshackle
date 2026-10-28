@@ -81,6 +81,17 @@ public class MassTransitFixTests
         string reason = ((ManualResult)report.Findings.First(f => f.PatternId == "masstransit.consumer").Result).Reason;
         reason.ShouldContain("Rebus IHandleMessages<T>");
         reason.ShouldContain("OpenTransit");
+        reason.ShouldContain("pin MassTransit < 9; 9.x is commercial");
+    }
+
+    [Fact]
+    public void ReportOnlyReason_SaysPinBelowNine()
+    {
+        // Act
+        string reason = new MassTransitFix().ReportOnlyReason;
+
+        // Assert
+        reason.ShouldContain("pin MassTransit < 9; 9.x is commercial");
     }
 
     [Fact]

@@ -24,6 +24,7 @@
 - `dotnet build`: 0 warnings, 0 errors. `dotnet test`: all green (see TAAK-310 progress log).
 - No corpus run yet (the 24-repo corpus of `corpus-masstransit.md` is for a later round).
 - Round 11 (T6/T7, C1), branch `worktree-agent-a04c16b800e2dab3f`: build 0 warnings; `dotnet test` 2026 total, 2026 passed.
+- Council round 24 R2 (2026-10-28): every Manual row and the report-only summary say "pin MassTransit < 9; 9.x is commercial" (`MassTransitFixTests.FixAsync_ReasonGivesTargetGuidance`, `ReportOnlyReason_SaysPinBelowNine`).
 
 ## Deviations
 

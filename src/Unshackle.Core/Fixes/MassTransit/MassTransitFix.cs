@@ -12,7 +12,7 @@ public class MassTransitFix : IFix, IReportOnlyFix
     public string Id => "masstransit";
 
     public string ReportOnlyReason =>
-        "MassTransit v9 is commercial and no free drop-in target ships on NuGet yet (OpenTransit is unreleased); re-check in Q1 2027 (council round 8, T1-T2).";
+        "For now, pin MassTransit < 9; 9.x is commercial. No free drop-in target ships on NuGet yet (OpenTransit is unreleased); stay on 8.5.x and re-check by 2027-01-15 (council round 24, R2-R4).";
 
     public IReadOnlyList<string> RemovedNamespaces { get; } = [MassTransitSyntax.Namespace];
 

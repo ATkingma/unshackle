@@ -18,7 +18,7 @@ per test with base (`corpus-regression.py`). Repos and solutions: `claude/tools/
 | openttddiscord | ok | ok | 7 delete, package removed (2 projects) | 0 | 166/197 -> 166/197, 0 regressions (1 flaky Akka test) |
 | damselfly | ok | ok | 0 | 0 | no tests; uses EFCore.BulkExtensions `BatchDelete`/`BatchUpdate` only (out of scope, B2) |
 | yofi | baseline-build-fails (MSB3073: `pwsh` missing) | BUILD-AFTER-FIX-FAILS, same 2 MSB3073 as baseline | 0 | 0 | excluded; no Z usage at this commit |
-| sharding-core | ok (tests fail in base) | fix-fails: `fix` hung in "Loading ShardingCore.sln" for 1800 s (harness timeout) | scan: 0 | scan: 2 update (EF Core < 7), 3 unsupported | not measured |
+| sharding-core | ok (tests fail in base) | rerun alone: ok, `fix` 56 s (round 1 hung 1800 s next to yofi) | 0 | 2 update (EF Core < 7), 3 unsupported, 2 project-file, 1 unmatched-use | 0 files written; tests fail in base |
 
 Totals over 7 completed repos: 49 Fixed calls, 0 build breaks caused by the fix, 0 test regressions.
 
@@ -40,9 +40,9 @@ Totals over 7 completed repos: 49 Fixed calls, 0 build breaks caused by the fix,
 
 ## Not a confirmed bug
 
-- sharding-core `fix` hang: the `scan` of the same solution loaded and finished in 138 s; the `fix` run ran next to the yofi build (`-m:2`)
-  and stayed in solution loading until the 1800 s timeout. Not rerun (60-minute time-box per repo). Next round: rerun alone
-  (`corpus-efbulk-run.sh after sharding-core`); open a task only if it hangs again.
+- sharding-core `fix` hang: not reproduced. Rerun alone (2026-10-28, same tool, `corpus-efbulk-run.sh after sharding-core`): status ok,
+  `fix` loaded and finished in 56 s (8 Manual, 0 files written), whole run 1004 s. Round 1's hang came from running next to the yofi build
+  on a loaded machine; no task opened.
 
 ## See also
 

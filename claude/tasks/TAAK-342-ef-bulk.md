@@ -1,6 +1,6 @@
 # TAAK-342 — efbulk fix: Z.EntityFramework.Plus/Extensions batch calls → EF Core ExecuteDelete/ExecuteUpdate
 
-**Status**: step 9 round 1 done (CORPUSRUN-efbulk.md); open: sharding-core rerun, roadmap line, archive
+**Status**: step 9 round 1 done (CORPUSRUN-efbulk.md); open: roadmap line, archive
 **Created**: 2026-10-27
 **Branch / worktree**: `taak-342` (agent worktree under `.claude/worktrees/`)
 **Goal**: an `efbulk` fix that rewrites batch delete/update calls of the Z libraries on EF Core queries to EF Core 7+ native
@@ -71,7 +71,7 @@
 - [x] 9. Corpus round (protagonist, Plutus, morenote, NexusStack, Lavcode, OpenttdDiscord); B1: README roadmap line only now (steps 4
   and 6 done); archive
   - Round 1 done (2026-10-28): `claude/tasks/CORPUSRUN-efbulk.md`. 7/9 repos complete, 49 Fixed calls, 0 build breaks, 0 test
-    regressions. Bug → TAAK-356 (kept row on a project without Z). Open: sharding-core `fix` hang (rerun alone), README roadmap line
+    regressions. Bug → TAAK-356 (kept row on a project without Z). Sharding-core rerun alone: ok, no hang. Open: README roadmap line
     (with the `project.md` roadmap update), archive after TAAK-356
 
 ## Council questions

@@ -160,3 +160,33 @@ references keeps EPPlus too, so salesapi now stays whole. The transitive-depende
 | epplus.license-context | Manual | 13 |
 | usings | Manual | 2 |
 
+
+## TAAK-327 step 7 re-measure (Linux), 2026-10-28
+
+Tool built from `epplus-corpus-wip` 024b12e (`main` 74cdc50 merged in), `claude/tools/corpus-epplus-run.sh base|after` (corpus-am.sh:
+before = restore, build, test x2; after = `fix --fix epplus --force`, clean, restore, build, test, per-test compare). Own NuGet cache, TMPDIR on
+the corpus disk. The harness has no cell compare, so only build and per-test results are compared. The machine was heavily loaded (load 70-90 from
+other runs): several builds hit the 1800 s step timeout and are marked **not finished**, not failed. A session restart stopped the first after run;
+the last 8 repos were rerun with `-m:2` and a 60 min time-box per repo.
+
+**Result: no regression and no tool bug found.** Every repo whose build fails after the fix fails the same way before it (same error codes in
+`build0` and `build1`); every repo with tests has the same pass/fail per test before and after. No new tasks (TAAK-364..367 left unused).
+
+| Repo | After status | Fixed | Manual | Tests before → after (pass/fail) | Note |
+| --- | --- | ---: | ---: | --- | --- |
+| bookfx | ok | 2 | 164 | 547/1 → 547/1 | |
+| coreframework | ok | 0 | 19 | 22/7 → 22/7 | |
+| dataextractor | ok | 0 | 37 | 31/0 → 31/0 | |
+| excelcake | ok | 1 | 57 | 1/0 → 1/0 | |
+| excelchop | ok | 0 | 16 | 4/0 → 4/0 | |
+| pivotdata | ok | 0 | 0 | 53/0 → 53/0 | |
+| salesapi | ok | 0 | 10 | 21/0 → 21/0 | |
+| tunnetcom | ok | 3 | 26 | 705/8 → 705/8 | |
+| alizhou, dotnettools, filecontextcore, haohao, lazyfurs, lesi, openmirroring, xlobjmapper, eppsamples | ok | 1/0/3/2/0/0/0/0/0 | | no tests | lesi now loads (SDK issue of round 1 gone) |
+| endurance, griddly, manga, nopframework, zserver | build fails | 1/3/3/0/0 | | - | same errors before the fix (CS0619 MudBlazor, MSB4019, CA2017, rzc, MSB3021) |
+| aistory, closetcode, dorisoy, etlast, geekconfig, newdcms, qpas, zamin, simoona | restore fails | - | - | - | environment: workloads, Windows TFM, website project, NU1605/NU1008; same in before run |
+| dexiom | fix exits 1 | - | - | - | net40 reference assemblies missing: clean "could not be loaded" |
+| montr | not finished | 22 | 13 | - | build after fix hit the 1800 s timeout (built green in the TAAK-326 round) |
+| etlnet, panda, packt8, yourbrand, officeimo | not finished | | | - | step timeout under load |
+
+Results: `<corpus>/_results/{base,after}/<name>/` (`compare.json`, `steps.txt`, logs).

@@ -23,7 +23,7 @@
 - [x] 4. KingmaDoc plan/models/verify `docs/projectinfo/patterns/epplus-flow-types-*`, README row
 - [x] 5. Fields and return types: conservative, Manual `FlowFieldNotMapped` / `FlowReturnNotMapped` from `epplus.flow-types` (proofs `FlowTypes/field`, `FlowTypes/return`); Fixed shapes wait for council questions 2 and 3
 - [x] 6. `AddressPattern` (`epplus.address`, after `epplus.dimension`): `ws.Cells[..].Rows/Columns` → `RowCount()/ColumnCount()`, `.Start/.End.Row/.Column` → `RangeAddress.FirstAddress/LastAddress.RowNumber/ColumnNumber`; `WorkbookUses` maps the receiver to `ws.Range(..)`. Proofs `Address/_Combined/rows-columns` (combined + harness), `single-cell`, `reversed-literal`, `start-cell` (manual, `UnmappedAddress`). KingmaDoc `epplus-address-*`, README row, queue row 14
-- [ ] 7. Corpus re-measure (not run: disk space)
+- [x] 7. Corpus re-measure (2026-10-28, `CORPUSRUN-epplus.md`): no regression, no tool bug; montr, etlnet, panda, packt8, yourbrand, officeimo not finished (timeouts under load)
 
 ## Progress
 

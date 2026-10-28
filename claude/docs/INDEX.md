@@ -215,6 +215,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/CORPUSRUN-fa.md` | FA corpus runs; round 4: 16/16 build, 13/16 green, regressions → TAAK-220..222; round 5: Akka/Steeltoe/LiteDB 0 new regressions |
 | `claude/tasks/CORPUSRUN-automapper.md` | AutoMapper corpus run: harness, baseline 14/18 repos (7851 tests), scan 1 Fixed / 1373 Manual, top Manual reasons |
 | `claude/tasks/CORPUSRUN-blind.md` | Blind validation round (TAAK-268): 3 unseen repos per fix, selection and results |
+| `claude/tasks/CORPUSRUN-epplus.md` | EPPlus corpus runs: scan rounds 1 and TAAK-326, TAAK-327 step 7 before/after re-measure (2026-10-28: no regression, no tool bug) |
 | `claude/tasks/archief/TAAK-269-not-be-null-unconstrained-generic.md` | TAAK-269 — `NotBeNull()` on unconstrained `T` → CS0452 (ogooreck) |
 | `claude/tasks/archief/TAAK-270-blind-round-coverage-gaps.md` | TAAK-270 — blind round: Manual findings that block MediatR/AutoMapper migrations |
 | `claude/tasks/archief/TAAK-272-automapper-partial-migration.md` | ✅ TAAK-272 — AutoMapper partial migration per CreateMap pair (MapOwners plan, automapper.kept-map) |

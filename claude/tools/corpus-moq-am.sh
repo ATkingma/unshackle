@@ -77,7 +77,9 @@ XML
              [ "$JOBS" -le 1 ] || find "$SRC" -name node_modules -prune -o -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +; }
   step() { local s=$1; shift; local t=$(date +%s); timeout "$TO" nice "$@" > "$L/$s.log" 2>&1; local e=$?
            echo "$s exit=$e t=$(( $(date +%s)-t ))s" >> "$D/steps.txt"; return $e; }
-  step restore0 dotnet restore "$SLN" $P || { status "restore-fails"; return; }
+  # Moq H1: a restore can fail transiently under load (NU1102 on packages that exist), so it gets one retry
+  restore() { step "$1" dotnet restore "$SLN" $P || { sleep 30; step "$1-retry" dotnet restore "$SLN" $P; }; }
+  restore restore0 || { status "restore-fails"; return; }
   case $M in
   base)
     step build0 dotnet build "$SLN" $P --no-restore || { status "baseline-build-fails"; return; }
@@ -93,7 +95,7 @@ XML
     step build0 dotnet build "$SLN" $P --no-restore || true  # source generators must run before types resolve
     TO=3600; step fix dotnet "$TOOL" fix "$SLN" --fix "$F" --force --report "$D/report.json" || { status "fix-fails"; return; }; TO=1800
     find . -name node_modules -prune -o -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +  # keep node_modules/**/bin (npm tools)
-    step restore1 dotnet restore "$SLN" $P || { status "restore-after-fix-fails"; return; }
+    restore restore1 || { status "restore-after-fix-fails"; return; }
     step build1 dotnet build "$SLN" $P --no-restore || {
       grep -oE 'error [A-Z]+[0-9]+' "$L/build1.log" | sort | uniq -c | sort -rn > "$D/build1-errors.txt"
       status "BUILD-AFTER-FIX-FAILS"; return; }

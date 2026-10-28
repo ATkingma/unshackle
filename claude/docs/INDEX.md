@@ -123,7 +123,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-338-automapper-closure-regressions.md` | Council round 16 A15-A18: regression proofs for extension callers in `TypeArgumentClosure` (done) |
 | `claude/tasks/archief/TAAK-343-transitive-pin-followups.md` | Council round 17 T1-T3: NU1605 hint, user project in the pin reason, documented limits |
 | `claude/tasks/archief/TAAK-344-mediatr-generic-request-closure.md` | Council round 17 M15: done, count 2 < 3, only the Manual reason "callers not followed" |
-| `claude/tasks/TAAK-341-xunit-v3.md` | xUnit v2 → v3 fix (`xunit3`): skeleton, project-file edits, first three patterns, council questions |
+| `claude/tasks/TAAK-341-xunit-v3.md` | xUnit v2 → v3 fix (`xunit3`): skeleton, project-file edits incl. runner and Test.Sdk bumps, patterns, council questions |
 | `claude/tasks/archief/TAAK-348-automapper-generic-reason-wording.md` | Generic AutoMapper Manual reasons name an untyped IQueryable source and each row's own blocker (done) |
 | `claude/tasks/archief/TAAK-354-polly-downgrade-transitive-cpm.md` | Polly PackageDowngrade also checks ProjectReference consumers (B5) and central pins (B6) (done) |
 | `claude/tasks/archief/TAAK-335-polly-redundant-transient-clause.md` | Polly: `OrTransientHttpStatusCode()` after the transient filter no longer writes a duplicate clause (corpus B2 side issue) |

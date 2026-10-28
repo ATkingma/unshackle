@@ -57,6 +57,9 @@
     <PackageDownload Include="xunit.v3.extensibility.core" Version="[3.2.2]" />
     <PackageDownload Include="xunit.v3.common" Version="[3.2.2]" />
     <PackageDownload Include="xunit.v3.assert" Version="[3.2.2]" />
+    <!-- TAAK-341 step 6: the runner's nuspec pins the Microsoft.NET.Test.Sdk minimum (XunitV3Fix.TestSdkVersion) -->
+    <PackageDownload Include="xunit.runner.visualstudio" Version="[3.1.5]" />
+    <None Include="$(NuGetPackageRoot)xunit.runner.visualstudio/3.1.5/xunit.runner.visualstudio.nuspec" Link="XunitV3/xunit.runner.visualstudio.nuspec" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     <None Include="$(NuGetPackageRoot)xunit.v3.extensibility.core/3.2.2/lib/netstandard2.0/xunit.v3.core.dll" Link="XunitV3/xunit.v3.core.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     <None Include="$(NuGetPackageRoot)xunit.v3.common/3.2.2/lib/netstandard2.0/xunit.v3.common.dll" Link="XunitV3/xunit.v3.common.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     <None Include="$(NuGetPackageRoot)xunit.v3.assert/3.2.2/lib/net8.0/xunit.v3.assert.dll" Link="XunitV3/xunit.v3.assert.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />

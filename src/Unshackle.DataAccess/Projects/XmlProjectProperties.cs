@@ -91,6 +91,23 @@ public class XmlProjectProperties : IProjectProperties
         return [.. ids.Distinct(StringComparer.OrdinalIgnoreCase)];
     }
 
+    // shortcut: only App.config in the project folder; an <AppConfig> property pointing elsewhere is not followed.
+    public bool HasAppConfigSection(string projectPath, string sectionName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sectionName);
+        string? directory = _fileSystem.Path.GetDirectoryName(_fileSystem.Path.GetFullPath(projectPath));
+        if (directory is null || !_fileSystem.Directory.Exists(directory))
+        {
+            return false;
+        }
+
+        string? config = _fileSystem.Directory.EnumerateFiles(directory)
+            .FirstOrDefault(f => _fileSystem.Path.GetFileName(f).Equals("App.config", StringComparison.OrdinalIgnoreCase));
+        return config is not null
+            && (Load(config) is not XDocument document || document.Root?.Elements().Any(e => e.Name.LocalName == sectionName) == true);
+    }
+
     private static bool IsTestProject(List<XDocument> chain) =>
         chain.SelectMany(d => d.Descendants()).Any(e =>
             (e.Name.LocalName == "IsTestProject" && e.Parent?.Name.LocalName == "PropertyGroup" && e.Value.Trim().Equals("true", StringComparison.OrdinalIgnoreCase))

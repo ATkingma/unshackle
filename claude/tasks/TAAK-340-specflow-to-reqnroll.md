@@ -1,6 +1,6 @@
 # TAAK-340 — SpecFlow → Reqnroll (fix)
 
-**Status**: steps 4a-4c done (branch `taak-340c`); next: rest of step 4 (`<Using>` items), then step 5
+**Status**: steps 1-6 done (step 5 on branch `taak-340g`); next: step 7 (corpus round); council questions 14-15 open
 **Created**: 2026-10-27
 **Goal**: A `specflow` fix that migrates SpecFlow 3.x test projects to Reqnroll (packages, namespaces, renamed types, v3→v4 breaks, config), 100% on a SpecFlow corpus.
 
@@ -35,7 +35,7 @@
   - [x] 4b. Council 21 S11: license check, `SpecFlow.Autofac` + `Reqnroll.Autofac` in `Directory.Packages.props`, proof for namespace map and version pin (Manual "possible match" until then); unknown `SpecFlow.*`/`SpecRun.*` project-file references block
   - [x] 4c. Council 21 S12: plan lists the S7 exclusions literally; confirm the drop uses the semantic model
   - [x] 4d. `<Using Include="TechTalk.SpecFlow…" />` items: `UsingRenameEdit` per namespace (project file); one in `Directory.Build.props` is a `SharedDeclarationBlocked` Manual
-- [ ] 5. Config (App.config section and `*.feature.cs` hint open): `specflow.json` keeps its name (council 23 S14: no rename edit, fix-level Info row via `SpecFlowFix.ProjectInfoAsync`; a rename that also moves the csproj items is backlog, only with a proof); App.config `<specFlow>` section Manual; checked-in `*.feature.cs` hint
+- [x] 5. Config (branch `taak-340g`): `specflow.json` keeps its name (council 23 S14: no rename edit, fix-level Info row via `SpecFlowFix.ProjectInfoAsync`; a rename that also moves the csproj items is backlog, only with a proof); App.config `<specFlow>` section is a project blocker (`IProjectProperties.HasAppConfigSection`; Reqnroll 3.3.4 decompiled: `ConfigurationLoader.GetAppConfigStub` returns the defaults, app.config is never read); `*.feature.cs` documents get one Info row per project (the generator default `ReqnrollUseIntermediateOutputPathForCodeBehind=false` rewrites them in place on build)
 - [x] 6. Step text (`specflow.step-expression`; corpus inventory still in step 7): council 23 S13, Fixed + Info pin `ExpressionType = ExpressionType.RegularExpression`; escaped trailing `$`, interpolated/unreadable texts and custom attributes Manual
 - [ ] 7. Corpus round (S8 UI-suite bar: build + equal discovered-test count; baseline build + `dotnet test` counts before/after; UI suites: build + discovered-test count only), blind round, roadmap row, README text (EOL, not license)
 
@@ -89,6 +89,15 @@ Open design choices; the slice takes the conservative option for each.
     or keep the file name and drop the edit?
     **Decision (council 23 S14: keep the name, drop the edit, Info row; the generator was decompiled and also falls back to specflow.json.)**
 
+14. **App.config `<specFlow>` (step 5)**: any `<specFlow>` element in the project's App.config blocks the project (an unreadable
+    App.config too). A section with only `<unitTestProvider>` (ignored since SpecFlow 3, the runner package decides) or an empty one
+    loses nothing; make that an Info row instead of a blocker? And the existing reason texts say App.config "only works through
+    `Reqnroll.SpecFlowCompatibility`" (S1): not checked against that package (not in the NuGet cache). Verify, or drop the claim?
+    **Decision (council 25 S15: empty or `<unitTestProvider>`-only section → Info "ignored by Reqnroll; delete it", unless Reqnroll.SpecFlowCompatibility is referenced (its section handler has no unitTestProvider: blocker). Any other element stays a blocker. Claim verified, reworded: Reqnroll ignores App.config; only the SpecFlowCompatibility generator plugin reads language, bindingCulture, generator, runtime, trace, stepAssemblies; move them to reqnroll.json.)**
+15. **`*.feature.cs` (step 5)**: Info only; the patterns still rewrite the stale code-behind (overwritten on the next build). Skip
+    `*.feature.cs` documents in the patterns (fewer rows, no Manual from generated code), or keep as is?
+    **Decision (council 25 S16: skip `*.feature.cs` with a sibling `.feature` in all patterns; one Info row per project "generated code-behind skipped; regenerated on build".)**
+
 ## Progress log
 
 - 2026-10-27: created from the scout report; first slice built on branch `taak-340` (6 patterns, 14 proofs, `SpecFlowFixTests`, `SpecFlowNamesTests`).
@@ -127,3 +136,5 @@ Open design choices; the slice takes the conservative option for each.
 - `claude/tasks/TAAK-353-specflow-partial-migration.md` — backlog: per-project partial migration (S2)
 - `claude/docs/council.md` — rounds 8 (S1, S3, S4) and 10 (G4, G5)
 - `docs/projectinfo/README.md` — pattern table
+- 2026-10-28: branch `taak-340g`. Step 5: App.config `<specFlow>` blocker, `*.feature.cs` Info row (council questions 14, 15).
+  TAAK-353 built: `SpecFlowFix` is an `IPartialFix` (`SpecFlowProjects`, per unit).

@@ -62,7 +62,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tools/corpus-masstransit-repos.txt` | MassTransit survey repo list |
 | `docs/projectinfo/architectuur/candidate-specflow.md` | Scout TAAK-370: SpecFlow → Reqnroll, conditional go (EOL fix) |
 | `claude/tasks/TAAK-340-specflow-to-reqnroll.md` | SpecFlow → Reqnroll fix: steps, design of the first slice, council questions |
-| `claude/tasks/TAAK-353-specflow-partial-migration.md` | Backlog: SpecFlow per-project partial migration (council 18 S2) |
+| `claude/tasks/TAAK-353-specflow-partial-migration.md` | SpecFlow per-unit partial migration (council 18 S2): design, council question |
 | `docs/projectinfo/architectuur/candidate-imagesharp.md` | Scout TAAK-390: ImageSharp, conditional no-go (park) |
 | `docs/projectinfo/architectuur/candidate-newtonsoft.md` | Scout TAAK-420: Newtonsoft → STJ, no-go blanket, narrow fix possible |
 | `docs/projectinfo/architectuur/candidate-efbulk.md` | Scout TAAK-430: EF bulk extensions → ExecuteUpdate/Delete, conditional go (narrow) |
@@ -117,6 +117,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/COUNCIL-round-22.md` | Council round 22 decisions (xUnit v3 step-5 patterns, Polly kept row) |
 | `claude/tasks/COUNCIL-round-23.md` | Council round 23 decisions (SpecFlow step expressions, specflow.json) |
 | `claude/tasks/COUNCIL-round-24.md` | Council round 24 decisions (MassTransit rewrite: no-go, stay on v8) |
+| `claude/tasks/COUNCIL-round-25.md` | Council round 25 decisions (SpecFlow step expressions, specflow.json) |
 | `claude/tasks/archief/TAAK-355-polly-kept-row-added-package.md` | (done) Council round 22 P11: Polly kept row names the added package |
 | `claude/tasks/archief/TAAK-336-epplus-flow-followups.md` | Council round 16 E21-E24: EPPlus Fixed field/return shapes, helper chains, one row per node |
 | `claude/tasks/archief/TAAK-337-epplus-range-locals.md` | Council round 16 E25-E26: EPPlus `ExcelRange` locals, then the range parameter flow type |

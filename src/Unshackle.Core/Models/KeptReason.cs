@@ -50,4 +50,7 @@ public enum KeptReason
 
     /// <summary>EPPlus: the whole project stays on EPPlus while other projects move to ClosedXML (per-project migration, council round 13, E17).</summary>
     EPPlusProjectKept = 14,
+
+    /// <summary>SpecFlow: the whole project stays on SpecFlow while other units move to Reqnroll (per-project migration, TAAK-353, council round 18 S2).</summary>
+    SpecFlowProjectKept = 15,
 }

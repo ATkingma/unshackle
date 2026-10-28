@@ -15,12 +15,16 @@ public static class KeptReasonText
     /// <summary>The prefix of a project that stays on EPPlus while other projects move to ClosedXML.</summary>
     public const string EPPlusPrefix = "Stays on EPPlus: ";
 
+    /// <summary>The prefix of a project that stays on SpecFlow while other projects move to Reqnroll.</summary>
+    public const string SpecFlowPrefix = "Stays on SpecFlow: ";
+
     /// <summary>The prefix printed in front of the reason of a kept finding with this code; empty for <see cref="KeptReason.None"/>.</summary>
     public static string Prefix(KeptReason code) => code switch
     {
         KeptReason.None => string.Empty,
         KeptReason.MediatRNextToMediator => MediatRPrefix,
         KeptReason.EPPlusProjectKept => EPPlusPrefix,
+        KeptReason.SpecFlowProjectKept => SpecFlowPrefix,
         _ => AutoMapperPrefix,
     };
 

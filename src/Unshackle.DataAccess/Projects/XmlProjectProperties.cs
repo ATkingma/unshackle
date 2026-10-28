@@ -96,16 +96,67 @@ public class XmlProjectProperties : IProjectProperties
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(projectPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(sectionName);
-        string? directory = _fileSystem.Path.GetDirectoryName(_fileSystem.Path.GetFullPath(projectPath));
-        if (directory is null || !_fileSystem.Directory.Exists(directory))
-        {
-            return false;
-        }
-
-        string? config = _fileSystem.Directory.EnumerateFiles(directory)
-            .FirstOrDefault(f => _fileSystem.Path.GetFileName(f).Equals("App.config", StringComparison.OrdinalIgnoreCase));
+        string? config = AppConfig(projectPath);
         return config is not null
             && (Load(config) is not XDocument document || document.Root?.Elements().Any(e => e.Name.LocalName == sectionName) == true);
+    }
+
+    public IReadOnlyList<string>? AppConfigSectionChildren(string projectPath, string sectionName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sectionName);
+        string? config = AppConfig(projectPath);
+        XElement? section = config is null ? null : Load(config)?.Root?.Elements().FirstOrDefault(e => e.Name.LocalName == sectionName);
+        return section is null ? null : [.. section.Elements().Select(e => e.Name.LocalName)];
+    }
+
+    public IReadOnlyList<string>? TargetFrameworks(string projectPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectPath);
+        string full = _fileSystem.Path.GetFullPath(projectPath);
+        HashSet<string> frameworks = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string? path in new[] { FindUp(full, "Directory.Build.props"), full, FindUp(full, "Directory.Build.targets") })
+        {
+            if (path is null)
+            {
+                continue;
+            }
+
+            if (Load(path) is not XDocument document)
+            {
+                return null;
+            }
+
+            foreach (XElement property in document.Descendants().Where(e => e.Parent?.Name.LocalName == "PropertyGroup"
+                && e.Name.LocalName is "TargetFramework" or "TargetFrameworks" or "TargetFrameworkVersion"))
+            {
+                if (property.Value.Contains("$(", StringComparison.Ordinal))
+                {
+                    return null;
+                }
+
+                // An old-style project: <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion> is net472.
+                IEnumerable<string> values = property.Name.LocalName == "TargetFrameworkVersion"
+                    ? ["net" + property.Value.Trim().TrimStart('v', 'V').Replace(".", string.Empty, StringComparison.Ordinal)]
+                    : property.Value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                frameworks.UnionWith(values);
+            }
+        }
+
+        return frameworks.Count == 0 ? null : [.. frameworks.Order(StringComparer.OrdinalIgnoreCase)];
+    }
+
+    public bool FileExists(string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        return _fileSystem.File.Exists(path);
+    }
+
+    private string? AppConfig(string projectPath)
+    {
+        string? directory = _fileSystem.Path.GetDirectoryName(_fileSystem.Path.GetFullPath(projectPath));
+        return directory is null || !_fileSystem.Directory.Exists(directory) ? null
+            : _fileSystem.Directory.EnumerateFiles(directory).FirstOrDefault(f => _fileSystem.Path.GetFileName(f).Equals("App.config", StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool IsTestProject(List<XDocument> chain) =>

@@ -20,6 +20,9 @@
 - [x] 2. Shared `Directory.*.props` declarations: a props file imported by a blocked unit stays (G3 already blocks the edit)
 - [x] 3. Implement (`SpecFlowProjects`, `SpecFlowFix : IPartialFix`, `KeptReason.SpecFlowProjectKept`), two- and three-project tests in
   `SpecFlowPerProjectTests` (no proof: the proof harness is single-project), KingmaDoc update in `specflow-namespace-plan.md`, `core.md`
+- [x] 3b. Council 25 S17 (branch `taak-council25`): `SpecFlowProjects` also keeps every SpecFlow project that a project (any, SpecFlow
+  or not) reaches together with a kept one, to a fixpoint; the row names the dependent, the kept unit and the root blocker (`rootOf`);
+  one Info row `specflow.closure` counts the projects held back only by that rule. Test: `SpecFlowPerProjectTests.FixAsync_DependentReferencesKeptAndCleanUnit_*`
 - [ ] 4. Corpus check against the TAAK-340 corpus round
 
 ## Design (as built)

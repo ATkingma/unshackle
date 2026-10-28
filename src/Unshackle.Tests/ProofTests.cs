@@ -102,7 +102,7 @@ public class ProofTests
         },
         ["XunitV3"] = new()
         {
-            Fix = new XunitV3Fix(),
+            Fix = new XunitV3Fix(Substitute.For<IProjectProperties>()),
             Before = XunitV3References.Before,
             After = XunitV3References.After,
         },

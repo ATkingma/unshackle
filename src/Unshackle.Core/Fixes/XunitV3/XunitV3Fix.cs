@@ -23,6 +23,14 @@ public class XunitV3Fix : IFix, IProjectFileMigration
     // Microsoft.NET.Test.Sdk would pair that with an older test host. 17.13.0 supports every target xunit3 does not block (net8+, net472+).
     public const string TestSdkVersion = "17.13.0";
 
+    private readonly IProjectProperties _properties;
+
+    public XunitV3Fix(IProjectProperties properties)
+    {
+        ArgumentNullException.ThrowIfNull(properties);
+        _properties = properties;
+    }
+
     public string Id => "xunit3";
 
     // v3 keeps Xunit; the patterns swap Xunit.Abstractions themselves (the model still binds it to v2 while fixing).
@@ -68,7 +76,7 @@ public class XunitV3Fix : IFix, IProjectFileMigration
                 To = RunnerVersion,
                 BelowFromInfo = $"a 1.x runner cannot run xunit.v3 tests; update it to {RunnerVersion} by hand.",
             });
-            edits.Add(new PackageVersionEdit { Name = "Microsoft.NET.Test.Sdk", From = "15.0.0", To = TestSdkVersion });
+            edits.Add(TestSdkEdit(project));
         }
         else if (XunitV3Assemblies.ReferencesExecution(project))
         {
@@ -86,6 +94,37 @@ public class XunitV3Fix : IFix, IProjectFileMigration
         edits.Add(new PackageRemoveEdit { Name = "xunit.abstractions" });
         return edits;
     }
+
+    // Council round 25, X15: the bump is needed only for the runner's net472 dependency, so only a .NET Framework target gets it.
+    private PackageVersionEdit TestSdkEdit(Project project)
+    {
+        IReadOnlyList<string>? frameworks = project.FilePath is string path ? _properties.TargetFrameworks(path) : null;
+        if (frameworks is not { Count: > 0 })
+        {
+            return new PackageVersionEdit
+            {
+                Name = "Microsoft.NET.Test.Sdk",
+                From = "15.0.0",
+                To = TestSdkVersion,
+                ManualInstead = $"the target frameworks could not be determined (a property reference or no TargetFramework); raise it to {TestSdkVersion} by hand " +
+                    "if any target is .NET Framework (runner 3.x needs it there).",
+            };
+        }
+
+        return frameworks.Any(IsNetFramework)
+            ? new PackageVersionEdit { Name = "Microsoft.NET.Test.Sdk", From = "15.0.0", To = TestSdkVersion, CentralKeptIsManual = true }
+            : new PackageVersionEdit
+            {
+                Name = "Microsoft.NET.Test.Sdk",
+                From = "15.0.0",
+                To = TestSdkVersion,
+                InfoInstead = $"Microsoft.NET.Test.Sdk stays: {TestSdkVersion}+ recommended; it is required only for a .NET Framework target (runner 3.x).",
+            };
+    }
+
+    // net20 ... net481: a TFM without a dot below net5.0 (netstandard and netcoreapp have letters after "net").
+    internal static bool IsNetFramework(string framework) =>
+        framework.Length > 3 && framework.StartsWith("net", StringComparison.OrdinalIgnoreCase) && framework[3] is >= '1' and <= '4' && framework[3..].All(char.IsAsciiDigit);
 
     // X4: a project with the xunit package that is not a test project by both signs keeps its OutputType; the row says why.
     public async Task<IReadOnlyList<string>> ProjectInfoAsync(Project project, CancellationToken cancellationToken)

@@ -114,6 +114,7 @@ public class SpecFlowFixTests
         // Arrange (TAAK-340 step 5: Reqnroll 3.3.4 reads no App.config, its settings would be lost silently)
         IProjectProperties properties = Substitute.For<IProjectProperties>();
         properties.HasAppConfigSection("C:/src/P/P.csproj", "specFlow").Returns(true);
+        properties.AppConfigSectionChildren("C:/src/P/P.csproj", "specFlow").Returns(["language"]);
         Project project = CreateProject(SpecFlowReferences.SpecFlow, "C:/src/P/P.csproj");
 
         // Act
@@ -124,19 +125,82 @@ public class SpecFlowFixTests
     }
 
     [Fact]
-    public async Task ProjectInfo_CheckedInCodeBehind_SaysItIsRegenerated()
+    public async Task ProjectInfo_CodeBehindNextToFeature_OneSkippedRow()
     {
-        // Arrange (TAAK-340 step 5)
+        // Arrange (council round 25, S16): only code-behind with a .feature next to it is generated; a hand-written one is fixed.
+        IProjectProperties properties = Substitute.For<IProjectProperties>();
+        properties.FileExists("C:/src/P/Features/Login.feature").Returns(true);
+        properties.FileExists("C:/src/P/Features/Basket.feature").Returns(true);
         Project project = CreateProject(SpecFlowReferences.SpecFlow)
             .AddDocument("Login.feature.cs", "", filePath: "C:/src/P/Features/Login.feature.cs").Project
-            .AddDocument("Basket.feature.cs", "", filePath: "C:/src/P/Features/Basket.feature.cs").Project;
+            .AddDocument("Basket.feature.cs", "", filePath: "C:/src/P/Features/Basket.feature.cs").Project
+            .AddDocument("Hand.feature.cs", "", filePath: "C:/src/P/Features/Hand.feature.cs").Project;
+        var fix = new SpecFlowFix(properties);
 
         // Act
-        IReadOnlyList<string> info = await new SpecFlowFix(Substitute.For<IProjectProperties>()).ProjectInfoAsync(project, TestContext.Current.CancellationToken);
+        IReadOnlyList<string> info = await fix.ProjectInfoAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         info.Count.ShouldBe(2);
-        info[1].ShouldStartWith("2 *.feature.cs code-behind file(s) (Basket.feature.cs, Login.feature.cs)");
+        info[1].ShouldStartWith("2 *.feature.cs file(s) (Basket.feature.cs, Login.feature.cs): generated code-behind skipped; regenerated on build.");
+        fix.SkipsFile("C:/src/P/Features/Login.feature.cs").ShouldBeTrue();
+        fix.SkipsFile("C:/src/P/Features/Hand.feature.cs").ShouldBeFalse();
+        fix.SkipsFile("C:/src/P/Steps.cs").ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task FixAsync_GeneratedCodeBehind_NotRewritten()
+    {
+        // Arrange (S16)
+        const string Code = "using TechTalk.SpecFlow;\n[Binding]\npublic class LoginFeature { }\n";
+        IProjectProperties properties = Substitute.For<IProjectProperties>();
+        properties.FileExists("C:/src/P/Login.feature").Returns(true);
+        Project project = CreateProject(SpecFlowReferences.SpecFlow, "C:/src/P/P.csproj")
+            .AddDocument("Login.feature.cs", Code, filePath: "C:/src/P/Login.feature.cs").Project;
+
+        // Act
+        FixReport report = await new Fixer([new SpecFlowFix(properties)]).FixAsync(project.Solution, new FixRequest { FixId = "specflow" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        Document document = report.Solution.Projects.Single().Documents.Single(d => d.Name == "Login.feature.cs");
+        (await document.GetTextAsync(TestContext.Current.CancellationToken)).ToString().ShouldBe(Code);
+        report.Findings.ShouldNotContain(f => f.FilePath == "C:/src/P/Login.feature.cs");
+    }
+
+    [Theory]
+    [InlineData("", false, false)]
+    [InlineData("unitTestProvider", false, false)]
+    [InlineData("unitTestProvider", true, true)]
+    [InlineData("unitTestProvider,language", false, true)]
+    [InlineData("bindingCulture", false, true)]
+    public async Task AppConfigSpecFlowSection_DeadConfigIsInfoOtherwiseBlocker(string children, bool compatibility, bool blocks)
+    {
+        // Arrange (council round 25, S15)
+        IProjectProperties properties = Substitute.For<IProjectProperties>();
+        properties.HasAppConfigSection("C:/src/P/P.csproj", "specFlow").Returns(true);
+        properties.AppConfigSectionChildren("C:/src/P/P.csproj", "specFlow").Returns(children.Split(',', StringSplitOptions.RemoveEmptyEntries));
+        properties.PackageReferences("C:/src/P/P.csproj").Returns(compatibility ? ["Reqnroll.SpecFlowCompatibility"] : []);
+        Project project = CreateProject(SpecFlowReferences.SpecFlow, "C:/src/P/P.csproj");
+        var fix = new SpecFlowFix(properties);
+
+        // Act
+        IReadOnlyList<ManualResult> blockers = await fix.ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
+        IReadOnlyList<string> info = await fix.ProjectInfoAsync(project, TestContext.Current.CancellationToken);
+
+        // Assert
+        if (blocks)
+        {
+            string reason = blockers.ShouldHaveSingleItem().Reason;
+            reason.ShouldContain("Reqnroll ignores App.config");
+            reason.ShouldContain("language, bindingCulture, generator, runtime, trace and stepAssemblies");
+            reason.ShouldContain("reqnroll.json");
+            info.ShouldNotContain(i => i.Contains("App.config", StringComparison.Ordinal));
+        }
+        else
+        {
+            blockers.ShouldBeEmpty();
+            info.ShouldContain(i => i.Contains("ignored by Reqnroll", StringComparison.Ordinal));
+        }
     }
 
     [Theory]

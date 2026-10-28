@@ -1,6 +1,6 @@
 # TAAK-340 — SpecFlow → Reqnroll (fix)
 
-**Status**: steps 1-6 done (step 5 on branch `taak-340g`); next: step 7 (corpus round); council questions 14-15 open
+**Status**: steps 1-6 done (step 5 on branch `taak-340g`); next: step 7 (corpus round); council questions 14-15 decided and built (step 5b)
 **Created**: 2026-10-27
 **Goal**: A `specflow` fix that migrates SpecFlow 3.x test projects to Reqnroll (packages, namespaces, renamed types, v3→v4 breaks, config), 100% on a SpecFlow corpus.
 
@@ -37,6 +37,11 @@
   - [x] 4d. `<Using Include="TechTalk.SpecFlow…" />` items: `UsingRenameEdit` per namespace (project file); one in `Directory.Build.props` is a `SharedDeclarationBlocked` Manual
 - [x] 5. Config (branch `taak-340g`): `specflow.json` keeps its name (council 23 S14: no rename edit, fix-level Info row via `SpecFlowFix.ProjectInfoAsync`; a rename that also moves the csproj items is backlog, only with a proof); App.config `<specFlow>` section is a project blocker (`IProjectProperties.HasAppConfigSection`; Reqnroll 3.3.4 decompiled: `ConfigurationLoader.GetAppConfigStub` returns the defaults, app.config is never read); `*.feature.cs` documents get one Info row per project (the generator default `ReqnrollUseIntermediateOutputPathForCodeBehind=false` rewrites them in place on build)
 - [x] 6. Step text (`specflow.step-expression`; corpus inventory still in step 7): council 23 S13, Fixed + Info pin `ExpressionType = ExpressionType.RegularExpression`; escaped trailing `$`, interpolated/unreadable texts and custom attributes Manual
+- [x] 5b. Council 25 (branch `taak-council25`): S15, App.config `<specFlow>` that is empty or only `<unitTestProvider>` is an Info row
+  (`IProjectProperties.AppConfigSectionChildren`), a blocker when `Reqnroll.SpecFlowCompatibility` is referenced; other elements block with the
+  reworded reason (move language, bindingCulture, generator, runtime, trace, stepAssemblies to reqnroll.json). S16, `IFix.SkipsFile`: the Fixer
+  skips a `*.feature.cs` with a sibling `.feature` (`IProjectProperties.FileExists`); the existing Info row now lists only those files.
+  Tests: `SpecFlowFixTests.AppConfigSpecFlowSection_*`, `ProjectInfo_CodeBehindNextToFeature_*`, `FixAsync_GeneratedCodeBehind_NotRewritten`
 - [ ] 7. Corpus round (S8 UI-suite bar: build + equal discovered-test count; baseline build + `dotnet test` counts before/after; UI suites: build + discovered-test count only), blind round, roadmap row, README text (EOL, not license)
 
 ## Council questions

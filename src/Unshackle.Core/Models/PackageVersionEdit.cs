@@ -16,5 +16,14 @@ public class PackageVersionEdit : ProjectFileEdit
     // (an old major the fix will not raise itself, so the user updates it by hand).
     public string? BelowFromInfo { get; init; }
 
+    // Council round 25, X15: when set, a bump that would apply is not made but reported as Manual with this reason (the fix cannot tell whether it is needed).
+    public string? ManualInstead { get; init; }
+
+    // Council round 25, X15: when set, a bump that would apply is not made but kept with this Info row (recommended, not needed).
+    public string? InfoInstead { get; init; }
+
+    // Council round 25, X15: a central version kept for another project is Manual instead of Info (the project fails to restore without the bump, NU1605).
+    public bool CentralKeptIsManual { get; init; }
+
     public override string Describe() => $"PackageReference {Name} {From} or later → {To}";
 }

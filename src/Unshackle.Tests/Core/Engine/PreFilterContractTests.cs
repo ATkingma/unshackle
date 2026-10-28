@@ -44,7 +44,7 @@ public class PreFilterContractTests
         ["EfBulk"] = (() => new EfBulkFix(), EfBulkReferences.Before),
         ["SpecFlow"] = (() => new SpecFlowFix(Substitute.For<IProjectProperties>()), SpecFlowReferences.SpecFlow),
         ["MassTransit"] = (() => new MassTransitFix(), MassTransitReferences.MassTransit),
-        ["XunitV3"] = (() => new XunitV3Fix(), XunitV3References.Before),
+        ["XunitV3"] = (() => new XunitV3Fix(Substitute.For<IProjectProperties>()), XunitV3References.Before),
     };
 
     public static TheoryData<string> Proofs() =>

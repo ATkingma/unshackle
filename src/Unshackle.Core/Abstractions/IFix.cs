@@ -56,6 +56,12 @@ public interface IFix
     bool FindsOnlyOldLibraryCode => true;
 
     /// <summary>
+    /// True when the patterns leave this file alone (council round 25, S16), for example generated code the build rewrites. False (the default): checked.
+    /// </summary>
+    /// <param name="filePath">The document's file path.</param>
+    bool SkipsFile(string filePath) => false;
+
+    /// <summary>
     /// Names of the old library's assemblies (= package ids, for example <c>Polly</c>) for the pre-filter (council round 12, G9): every type and
     /// member of a referenced assembly with one of these names counts as a name of the old library, also when the fix removes none of its
     /// namespaces. The namespaces of <see cref="RemovedNamespaces"/> stay the fallback. Empty (the default): namespaces only.

@@ -27,7 +27,7 @@ specflow.namespace: `using TechTalk.SpecFlow[.X];` becomes `using Reqnroll[.X];`
 
 **In scope**: Plain, global, alias and static using directives; qualified names and member accesses in code (also `global::`); a fully written renamed type (rewritten as a whole to its new full name); `using TechTalk.SpecFlow.Assist;` also asks for `using Reqnroll` (the Assist extension methods moved there).
 
-**Out of scope**: `<Using Include="TechTalk.SpecFlow" />` items in the project file (open step in TAAK-340); generated `*.feature.cs`.
+**Out of scope**: `<Using Include="TechTalk.SpecFlow" />` items in the project file (open step in TAAK-340); generated `*.feature.cs` (skipped by every SpecFlow pattern when a `.feature` sits next to it, council 25 S16).
 
 ## Requirements
 

@@ -45,7 +45,7 @@ public static class Cli
             new MassTransitFix(),
             new EfBulkFix(new XmlProjectProperties(fileSystem)),
             new SpecFlowFix(new XmlProjectProperties(fileSystem)),
-            new XunitV3Fix(),
+            new XunitV3Fix(new XmlProjectProperties(fileSystem)),
         ];
         IReportWriter[] reportWriters =
             [new CsvReportWriter(fileSystem), new JsonReportWriter(fileSystem), new MarkdownReportWriter(fileSystem)];

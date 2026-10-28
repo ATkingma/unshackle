@@ -7,8 +7,7 @@ P: accept with a Warning). Round 2 put a joint proposal to each dissenter; both 
 Questions: TAAK-341 council question 1, TAAK-340 council questions 14 and 15, TAAK-353 council question 1.
 Follow-ups: TAAK-341 (X15), TAAK-340 step 5 (S15, S16), TAAK-353 (S17).
 
-Facts checked in the decompiled packages (`Reqnroll.dll` 3.3.4, `Reqnroll.SpecFlowCompatibility` 3.3.3, the latest; copies in
-`/mnt/dikkeschijf/unshackle-corpus/tmp/c25-compat/`):
+Facts checked in the decompiled packages (`Reqnroll.dll` 3.3.4, `Reqnroll.SpecFlowCompatibility` 3.3.3, the latest)
 
 - Reqnroll runtime `ConfigurationLoader.Load`: json config or defaults; App.config is never read.
 - Generator side: an App.config source gives a stub (defaults + `ConfigSourceText`); Reqnroll itself applies nothing from it.

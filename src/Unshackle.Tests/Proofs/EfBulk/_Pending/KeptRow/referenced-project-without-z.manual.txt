@@ -1,2 +1,0 @@
-Expected: no project-file row for Config.csproj (it references no Z package; nothing stays there).
-Today (corpus morenote, TAAK-356): "Z.EntityFramework.Plus.EFCore or Z.EntityFramework.Extensions.EFCore stays in this project because a project that references it still uses it: .../Logic.csproj".

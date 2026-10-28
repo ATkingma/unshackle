@@ -35,7 +35,8 @@ Totals over 7 completed repos: 49 Fixed calls, 0 build breaks caused by the fix,
 ## Bugs
 
 - **TAAK-356**: morenote `MoreNote.Config`, `MoreNote.CryptographyProvider`, `MoreNote.SignatureService` reference no Z package but get the
-  kept-for-dependent row with the B13 fallback name "Plus or Extensions". Proof (pending): `Proofs/EfBulk/_Pending/KeptRow/`.
+  kept-for-dependent row with the B13 fallback name "Plus or Extensions". Fixed: they get Z only through `MoreNote.Models`;
+  `ProjectPackages.KeepForDependents` no longer keeps a project that gets the package from a project it references (all fixes).
 
 ## Not a confirmed bug
 
@@ -46,5 +47,5 @@ Totals over 7 completed repos: 49 Fixed calls, 0 build breaks caused by the fix,
 ## See also
 
 - `claude/tasks/TAAK-342-ef-bulk.md` — EF bulk fix
-- `claude/tasks/TAAK-356-efbulk-kept-row-without-z.md` — kept row on a project without Z
+- `claude/tasks/archief/TAAK-356-efbulk-kept-row-without-z.md` — kept row on a project without Z
 - `docs/projectinfo/architectuur/candidate-efbulk.md` — scout report with the repo selection

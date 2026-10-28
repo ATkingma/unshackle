@@ -320,6 +320,38 @@ public class EfBulkFixTests
         other.Result.ShouldBeOfType<ManualResult>().Reason.ShouldStartWith("2 other usages of Z.EntityFramework.Plus.EFCore that no pattern migrates: lines 21, 22.");
     }
 
+    [Fact]
+    public async Task FixAsync_ReferencedProjectGetsZOnlyTransitively_NoKeptRow()
+    {
+        // Arrange: TAAK-356 (morenote): Logic -> Config -> Models; only Models declares Z, Config gets it transitively.
+        IProjectFileStore store = Store();
+        List<ProjectMigration> edited = [];
+        await store.EditAsync(Arg.Do<IEnumerable<ProjectMigration>>(m => edited.AddRange(m)), Arg.Any<CancellationToken>());
+        var models = ProjectId.CreateNewId();
+        var config = ProjectId.CreateNewId();
+        var logic = ProjectId.CreateNewId();
+        Solution solution = new AdhocWorkspace().CurrentSolution
+            .AddProject(Project(models, "Models"))
+            .AddProject(Project(config, "Config").WithProjectReferences([new ProjectReference(models)]))
+            .AddProject(Project(logic, "Logic").WithProjectReferences([new ProjectReference(config)]))
+            .AddDocument(DocumentId.CreateNewId(models), "Marker.cs", "public class Marker { }", filePath: "/repo/Models/Model.cs")
+            .AddDocument(DocumentId.CreateNewId(config), "Settings.cs", "public class Settings { }", filePath: "/repo/Config/Settings.cs")
+            .AddDocument(DocumentId.CreateNewId(logic), "Cleanup.cs", Source("db.Orders.Future().Count()"), filePath: "/repo/Logic/Cleanup.cs");
+
+        // Act
+        FixReport report = await new Fixer([new EfBulkFix()], store).FixAsync(solution, new FixRequest { FixId = "efbulk" }, TestContext.Current.CancellationToken);
+
+        // Assert
+        edited.Single(m => m.ProjectPath == "/repo/Models/Models.csproj").KeepRemovedPackage.ShouldBeTrue();
+        edited.Single(m => m.ProjectPath == "/repo/Config/Config.csproj").KeepRemovedPackage.ShouldBeFalse();
+        report.Findings.ShouldNotContain(f => f.FilePath == "/repo/Config/Config.csproj");
+    }
+
+    private static ProjectInfo Project(ProjectId id, string name) =>
+        ProjectInfo.Create(id, VersionStamp.Default, name, name, LanguageNames.CSharp, filePath: $"/repo/{name}/{name}.csproj")
+            .WithCompilationOptions(new Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+            .WithMetadataReferences(EfBulkReferences.Before);
+
     private static IProjectFileStore Store()
     {
         IProjectFileStore store = Substitute.For<IProjectFileStore>();

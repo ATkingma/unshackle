@@ -1,6 +1,6 @@
 # TAAK-342 — efbulk fix: Z.EntityFramework.Plus/Extensions batch calls → EF Core ExecuteDelete/ExecuteUpdate
 
-**Status**: step 9 round 1 done (CORPUSRUN-efbulk.md); open: TAAK-356, sharding-core rerun, roadmap line, archive
+**Status**: step 9 round 1 done (CORPUSRUN-efbulk.md); open: sharding-core rerun, roadmap line, archive
 **Created**: 2026-10-27
 **Branch / worktree**: `taak-342` (agent worktree under `.claude/worktrees/`)
 **Goal**: an `efbulk` fix that rewrites batch delete/update calls of the Z libraries on EF Core queries to EF Core 7+ native
@@ -120,5 +120,5 @@
 - `claude/docs/council.md` — decision council
 - `claude/tasks/COUNCIL-round-17.md` — decisions B1-B8
 - `claude/tasks/CORPUSRUN-efbulk.md` — corpus round
-- `claude/tasks/TAAK-356-efbulk-kept-row-without-z.md` — corpus bug
+- `claude/tasks/archief/TAAK-356-efbulk-kept-row-without-z.md` — corpus bug
 - `docs/projectinfo/patterns/efbulk-delete-plan.md`, `docs/projectinfo/patterns/efbulk-update-plan.md`

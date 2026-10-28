@@ -37,6 +37,7 @@
 1. A non-SpecFlow project that references both a kept and a migrated unit (a shared helper) is not touched; both packages then reach
    any project referencing both units. The closure keeps such units apart only through SpecFlow links. Acceptable, or keep both units
    when a third project references both?
+   **Decision (council 25 S17: keep both. Units sharing any dependent project migrate together or not at all (transitive, to a fixpoint). The held-back unit's row names the chain and the root blocker on the kept unit; the summary counts units held back only by the closure.)**
 
 ## See also
 

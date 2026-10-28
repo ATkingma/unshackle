@@ -93,8 +93,10 @@ Open design choices; the slice takes the conservative option for each.
     App.config too). A section with only `<unitTestProvider>` (ignored since SpecFlow 3, the runner package decides) or an empty one
     loses nothing; make that an Info row instead of a blocker? And the existing reason texts say App.config "only works through
     `Reqnroll.SpecFlowCompatibility`" (S1): not checked against that package (not in the NuGet cache). Verify, or drop the claim?
+    **Decision (council 25 S15: empty or `<unitTestProvider>`-only section → Info "ignored by Reqnroll; delete it", unless Reqnroll.SpecFlowCompatibility is referenced (its section handler has no unitTestProvider: blocker). Any other element stays a blocker. Claim verified, reworded: Reqnroll ignores App.config; only the SpecFlowCompatibility generator plugin reads language, bindingCulture, generator, runtime, trace, stepAssemblies; move them to reqnroll.json.)**
 15. **`*.feature.cs` (step 5)**: Info only; the patterns still rewrite the stale code-behind (overwritten on the next build). Skip
     `*.feature.cs` documents in the patterns (fewer rows, no Manual from generated code), or keep as is?
+    **Decision (council 25 S16: skip `*.feature.cs` with a sibling `.feature` in all patterns; one Info row per project "generated code-behind skipped; regenerated on build".)**
 
 ## Progress log
 

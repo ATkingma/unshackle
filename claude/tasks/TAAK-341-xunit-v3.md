@@ -119,6 +119,7 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
 1. **Test.Sdk bump on every target.** Built: 15.0.0+ → 17.13.0 for every xunit3 test project, although only the .NET Framework runner
    needs ObjectModel 17.13.0 (net8.0 has no dependency). Simpler and harmless (17.13.0 supports net8+/net472+), but it touches net8-only
    projects too, and under CPM a non-xUnit project sharing the `PackageVersion` blocks it with an Info row. Keep, or bump only netfx projects?
+     **Decision (council 25 X15: bump only when an evaluated TFM (union of TargetFramework/TargetFrameworks after imports and conditions) is .NET Framework; an unresolvable TFM → Manual; net-only below 17.13.0 → Info "17.13.0+ recommended"; a CPM PackageVersion below 17.13.0 shared with a netfx xunit3 project → Manual (NU1605).)**
 
 ## Context for the next agent
 

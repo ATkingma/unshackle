@@ -376,6 +376,17 @@ Full text: `claude/tasks/COUNCIL-round-23.md`. Follow-ups: TAAK-340 steps 5-6.
 | S13 | Cucumber-read regex step texts | Fixed + Info: pin `ExpressionType.RegularExpression`; escaped trailing `$` and non-literal texts Manual. |
 | S14 | `specflow.json` rename | Keep the name, no edit; Info row; rename with csproj items is backlog. |
 
+## Round 25 (2026-10-28)
+
+Full text: `claude/tasks/COUNCIL-round-25.md`. Follow-ups: TAAK-341, TAAK-340 step 5, TAAK-353.
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| X15 | Test.Sdk bump scope | Only with an evaluated netfx TFM; unresolvable TFM or NU1605 CPM case Manual; net-only Info. |
+| S15 | App.config `<specFlow>` | Empty / `unitTestProvider`-only → Info unless SpecFlowCompatibility is referenced; reason text reworded. |
+| S16 | `*.feature.cs` | Skipped when a sibling `.feature` exists; one Info per project. |
+| S17 | Mixed helper | Units sharing a dependent migrate together; row names chain and root blocker; closure-only count. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct
@@ -385,6 +396,7 @@ Full text: `claude/tasks/COUNCIL-round-23.md`. Follow-ups: TAAK-340 steps 5-6.
 - `claude/tasks/COUNCIL-round-21.md` — round 21
 - `claude/tasks/COUNCIL-round-22.md` — round 22
 - `claude/tasks/COUNCIL-round-23.md` — round 23
+- `claude/tasks/COUNCIL-round-25.md` — round 25
 - `claude/tasks/archief/TAAK-292-council-follow-up.md` — implementation of these decisions
 - `claude/tasks/archief/TAAK-293-council-round-3.md` — implementation of the round-3 decisions
 - `claude/tasks/archief/TAAK-294-council-round-4.md` — round-4 changes before 0.2.0

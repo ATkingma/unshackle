@@ -1,0 +1,12 @@
+# name sln  -- EF bulk corpus (TAAK-342 step 9)
+protagonist src/protagonist/protagonist.sln
+plutus api/Plutus.sln
+# morenote: MoreNote.sln needs android/wasm workloads (NETSDK1147) and its test project does not compile upstream (CS1503/CS7036); MoreNote.Logic holds all batch calls
+morenote Src/Share/MoreNote.Logic/MoreNote.Logic.csproj
+nexusstack NexusStack_Backend.slnx
+# lavcode: Lavcode.sln contains a UWP app (MSB4019); the ASP.NET project holds all batch calls, no test project
+lavcode src/Lavcode.Asp/Lavcode.Asp.csproj
+openttddiscord OpenttdDiscord.sln
+damselfly Damselfly.sln
+yofi YoFi.sln
+sharding-core ShardingCore.sln

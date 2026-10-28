@@ -63,6 +63,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `docs/projectinfo/architectuur/candidate-specflow.md` | Scout TAAK-370: SpecFlow → Reqnroll, conditional go (EOL fix) |
 | `claude/tasks/TAAK-340-specflow-to-reqnroll.md` | SpecFlow → Reqnroll fix: steps, design of the first slice, council questions |
 | `claude/tasks/TAAK-353-specflow-partial-migration.md` | SpecFlow per-unit partial migration (council 18 S2): design, council question |
+| `claude/tasks/TAAK-356-efbulk-kept-row-without-z.md` | EF bulk: kept-for-dependent row on a project without a Z package (corpus morenote) |
 | `docs/projectinfo/architectuur/candidate-imagesharp.md` | Scout TAAK-390: ImageSharp, conditional no-go (park) |
 | `docs/projectinfo/architectuur/candidate-newtonsoft.md` | Scout TAAK-420: Newtonsoft → STJ, no-go blanket, narrow fix possible |
 | `docs/projectinfo/architectuur/candidate-efbulk.md` | Scout TAAK-430: EF bulk extensions → ExecuteUpdate/Delete, conditional go (narrow) |
@@ -217,6 +218,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/archief/TAAK-136-mediatr-msg0005-zonder-handler.md` | ✅ TAAK-136 — MediatR: Mediator generator MSG0005 breaks the build with TreatWarningsAsErrors |
 | `claude/tasks/archief/TAAK-118-gedeeld-pakketbestand-niet-geladen-projecten.md` | ✅ TAAK-118 — A shared `Directory.*.props` keeps the old package if a non-migrated project on disk still uses it |
 | `claude/tasks/CORPUSRUN-fa.md` | FA corpus runs; round 4: 16/16 build, 13/16 green, regressions → TAAK-220..222; round 5: Akka/Steeltoe/LiteDB 0 new regressions |
+| `claude/tasks/CORPUSRUN-efbulk.md` | EF bulk corpus round 1: 7/9 repos, 49 Fixed, 0 regressions; bug → TAAK-356 |
 | `claude/tasks/CORPUSRUN-automapper.md` | AutoMapper corpus run: harness, baseline 14/18 repos (7851 tests), scan 1 Fixed / 1373 Manual, top Manual reasons |
 | `claude/tasks/CORPUSRUN-blind.md` | Blind validation round (TAAK-268): 3 unseen repos per fix, selection and results |
 | `claude/tasks/archief/TAAK-269-not-be-null-unconstrained-generic.md` | TAAK-269 — `NotBeNull()` on unconstrained `T` → CS0452 (ogooreck) |

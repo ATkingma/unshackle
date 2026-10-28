@@ -1,0 +1,10 @@
+# name repo ref(short sha)   -- EF bulk corpus (TAAK-342 step 9; repos from candidate-efbulk.md, HEAD at scout time 2026-10-22); clones in <corpus>/src/<name>
+protagonist dlcs/protagonist 7d9dda4
+plutus StefanFanaru/Plutus 34b90b6
+morenote morenote/Server 954da1f
+nexusstack yongpengW/NexusStack b61d616
+lavcode hal-wang/Lavcode a540fa7
+openttddiscord shoter/OpenttdDiscord 31e7354
+damselfly Webreaper/Damselfly e110926
+yofi jcoliz/yofi 0522c8a
+sharding-core dotnetcore/sharding-core cbdd84a

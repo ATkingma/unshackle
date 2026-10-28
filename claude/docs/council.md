@@ -367,6 +367,15 @@ Full text: `claude/tasks/COUNCIL-round-22.md`. Follow-ups: TAAK-341 steps 5g-5j,
 | X14 | `TheoryData` / `SkipException` | Corpus first; `Xunit.SkippableFact` out of scope. |
 | P11 | Polly kept row | Says the new package was added, only when it was; shared `Fixer` text. |
 
+## Round 23 (2026-10-28)
+
+Full text: `claude/tasks/COUNCIL-round-23.md`. Follow-ups: TAAK-340 steps 5-6.
+
+| Id | Question | Decision |
+| --- | --- | --- |
+| S13 | Cucumber-read regex step texts | Fixed + Info: pin `ExpressionType.RegularExpression`; escaped trailing `$` and non-literal texts Manual. |
+| S14 | `specflow.json` rename | Keep the name, no edit; Info row; rename with csproj items is backlog. |
+
 ## See also
 
 - `claude/docs/agent-werkwijze.md` — task management and rules of conduct
@@ -375,6 +384,7 @@ Full text: `claude/tasks/COUNCIL-round-22.md`. Follow-ups: TAAK-341 steps 5g-5j,
 - `claude/tasks/COUNCIL-round-20.md` — round 20
 - `claude/tasks/COUNCIL-round-21.md` — round 21
 - `claude/tasks/COUNCIL-round-22.md` — round 22
+- `claude/tasks/COUNCIL-round-23.md` — round 23
 - `claude/tasks/archief/TAAK-292-council-follow-up.md` — implementation of these decisions
 - `claude/tasks/archief/TAAK-293-council-round-3.md` — implementation of the round-3 decisions
 - `claude/tasks/archief/TAAK-294-council-round-4.md` — round-4 changes before 0.2.0

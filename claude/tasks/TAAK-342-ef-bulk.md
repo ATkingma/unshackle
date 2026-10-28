@@ -1,6 +1,6 @@
 # TAAK-342 — efbulk fix: Z.EntityFramework.Plus/Extensions batch calls → EF Core ExecuteDelete/ExecuteUpdate
 
-**Status**: step 8/9 — efbulk.unsupported + B5 package rule done; next is step 9
+**Status**: step 9 round 1 done (CORPUSRUN-efbulk.md); open: TAAK-356, sharding-core rerun, roadmap line, archive
 **Created**: 2026-10-27
 **Branch / worktree**: `taak-342` (agent worktree under `.claude/worktrees/`)
 **Goal**: an `efbulk` fix that rewrites batch delete/update calls of the Z libraries on EF Core queries to EF Core 7+ native
@@ -68,8 +68,11 @@
     from-cache, audit), unit tests in `EfBulkFixTests` and `XmlProjectFileStoreTests`, docs `efbulk-unsupported-{plan,modellen,verify}.md`
 - [x] 8a. Round 21 B13: kept row names the Z package(s) the project references (unit test: Extensions-only project)
 - [x] 8b. Round 21 B14: unmatched-use row per file with any other bound Z symbol, also next to a Manual row, "N other Z usages: lines ..."
-- [ ] 9. Corpus round (protagonist, Plutus, morenote, NexusStack, Lavcode, OpenttdDiscord); B1: README roadmap line only now (steps 4
+- [x] 9. Corpus round (protagonist, Plutus, morenote, NexusStack, Lavcode, OpenttdDiscord); B1: README roadmap line only now (steps 4
   and 6 done); archive
+  - Round 1 done (2026-10-28): `claude/tasks/CORPUSRUN-efbulk.md`. 7/9 repos complete, 49 Fixed calls, 0 build breaks, 0 test
+    regressions. Bug → TAAK-356 (kept row on a project without Z). Open: sharding-core `fix` hang (rerun alone), README roadmap line
+    (with the `project.md` roadmap update), archive after TAAK-356
 
 ## Council questions
 
@@ -116,4 +119,6 @@
 - `claude/tasks/TAAK-430-scout-efbulk.md` — scout task
 - `claude/docs/council.md` — decision council
 - `claude/tasks/COUNCIL-round-17.md` — decisions B1-B8
+- `claude/tasks/CORPUSRUN-efbulk.md` — corpus round
+- `claude/tasks/TAAK-356-efbulk-kept-row-without-z.md` — corpus bug
 - `docs/projectinfo/patterns/efbulk-delete-plan.md`, `docs/projectinfo/patterns/efbulk-update-plan.md`

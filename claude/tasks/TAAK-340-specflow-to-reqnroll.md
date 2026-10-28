@@ -35,8 +35,8 @@
   - [x] 4b. Council 21 S11: license check, `SpecFlow.Autofac` + `Reqnroll.Autofac` in `Directory.Packages.props`, proof for namespace map and version pin (Manual "possible match" until then); unknown `SpecFlow.*`/`SpecRun.*` project-file references block
   - [x] 4c. Council 21 S12: plan lists the S7 exclusions literally; confirm the drop uses the semantic model
   - [x] 4d. `<Using Include="TechTalk.SpecFlow…" />` items: `UsingRenameEdit` per namespace (project file); one in `Directory.Build.props` is a `SharedDeclarationBlocked` Manual
-- [ ] 5. Config (rename done; App.config section and `*.feature.cs` hint open): `specflow.json` → `reqnroll.json` (`ConfigFileRenameEdit` exists) plus key renames (`stepAssemblies` → `bindingAssemblies`, `bindingCulture/name` → `language/binding`) under council G5 (parsed-tree proof); App.config `<specFlow>` section Manual; checked-in `*.feature.cs` hint
-- [x] 6. Step text (`specflow.step-expression`, Manual; corpus inventory still in step 7): Reqnroll detects Cucumber expressions; a regex step text without `^`/`$` can change meaning. Inventory the corpus, then Info or a rewrite (add `^...$`)
+- [ ] 5. Config (App.config section and `*.feature.cs` hint open): `specflow.json` keeps its name (council 23 S14: no rename edit, fix-level Info row via `SpecFlowFix.ProjectInfoAsync`; a rename that also moves the csproj items is backlog, only with a proof); App.config `<specFlow>` section Manual; checked-in `*.feature.cs` hint
+- [x] 6. Step text (`specflow.step-expression`; corpus inventory still in step 7): council 23 S13, Fixed + Info pin `ExpressionType = ExpressionType.RegularExpression`; escaped trailing `$`, interpolated/unreadable texts and custom attributes Manual
 - [ ] 7. Corpus round (S8 UI-suite bar: build + equal discovered-test count; baseline build + `dotnet test` counts before/after; UI suites: build + discovered-test count only), blind round, roadmap row, README text (EOL, not license)
 
 ## Council questions
@@ -108,6 +108,9 @@ Open design choices; the slice takes the conservative option for each.
 - 2026-10-28: branch `taak-340e`. `UsingRenameEdit` (new typed edit, `XmlProjectFileStore.RenameUsingAsync`) for `<Using>` items;
   `SpecFlowFix` emits it per namespace plus `ConfigFileRenameEdit` specflow.json → reqnroll.json (no key renames, see question 13);
   `specflow.step-expression` pattern (Manual, question 12) with proof `StepExpression/optional-text` and KingmaDoc docs.
+- 2026-10-28: branch `taak-340f`, council 23. S13: `specflow.step-expression` pins `ExpressionType.RegularExpression` (Fixed + Info);
+  proofs literal, const (after compiles against Reqnroll 3.3.4), escaped-dollar and interpolated (Manual). S14: the
+  `ConfigFileRenameEdit` for specflow.json is dropped (the edit type stays); `SpecFlowFix.ProjectInfoAsync` adds the Info row.
 
 ## Changes
 

@@ -78,7 +78,7 @@ public class SpecFlowFixTests
     }
 
     [Fact]
-    public async Task EditsFor_ProjectOnSpecFlow_RenamesUsingItemsAndConfigFile()
+    public async Task EditsFor_ProjectOnSpecFlow_RenamesUsingItemsKeepsConfigFile()
     {
         // Arrange
         Project project = CreateProject(SpecFlowReferences.SpecFlow);
@@ -91,10 +91,30 @@ public class SpecFlowFixTests
         usings.ShouldContain(u => u.OldNamespace == "TechTalk.SpecFlow" && u.NewNamespace == "Reqnroll");
         usings.ShouldContain(u => u.OldNamespace == "TechTalk.SpecFlow.Assist" && u.NewNamespace == "Reqnroll.Assist");
         usings.ShouldContain(u => u.OldNamespace == "BoDi" && u.NewNamespace == "Reqnroll.BoDi");
-        ConfigFileRenameEdit config = edits.OfType<ConfigFileRenameEdit>().ShouldHaveSingleItem();
-        (config.OldFileName, config.NewFileName).ShouldBe(("specflow.json", "reqnroll.json"));
+        edits.OfType<ConfigFileRenameEdit>().ShouldBeEmpty();
         edits.OfType<ConfigFileTransformEdit>().ShouldBeEmpty();
     }
+
+    [Fact]
+    public async Task ProjectInfo_ProjectOnSpecFlow_SaysSpecFlowJsonIsKept()
+    {
+        // Arrange (council round 23, S14)
+        Project project = CreateProject(SpecFlowReferences.SpecFlow);
+
+        // Act
+        IReadOnlyList<string> info = await new SpecFlowFix(Substitute.For<IProjectProperties>()).ProjectInfoAsync(project, TestContext.Current.CancellationToken);
+
+        // Assert
+        info.ShouldHaveSingleItem().ShouldStartWith("specflow.json kept (Reqnroll reads it)");
+    }
+
+    [Theory]
+    [InlineData("the price is 5$", false)]
+    [InlineData(@"the price is 5\$", true)]
+    [InlineData(@"the price is 5\\$", false)]
+    [InlineData("plain text", false)]
+    public void StepExpression_EndsWithEscapedDollar_CountsBackslashes(string text, bool expected) =>
+        StepExpressionPattern.EndsWithEscapedDollar(text).ShouldBe(expected);
 
     [Theory]
     [InlineData("I am logged in", false)]

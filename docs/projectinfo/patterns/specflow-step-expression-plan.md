@@ -2,7 +2,7 @@
 kingmadoc: 1
 feature: "specflow-step-expression"
 status: approved
-requirements: [REQ-1]
+requirements: [REQ-1, REQ-2, REQ-3, REQ-4]
 files_expected:
     - src/Unshackle.Core/Fixes/SpecFlow/Patterns/StepExpressionPattern.cs
     - src/Unshackle.Core/Fixes/SpecFlow/SpecFlowNames.cs
@@ -21,17 +21,22 @@ files_expected:
 
 ## One-sentence summary
 
-specflow.step-expression: A step text that SpecFlow reads as a regex but Reqnroll 3.3.4 reads as a Cucumber expression, and that holds a character whose meaning differs, is Manual.
+specflow.step-expression: A step text that SpecFlow reads as a regex but Reqnroll 3.3.4 reads as a Cucumber expression, and that holds a character whose meaning differs, gets `ExpressionType = ExpressionType.RegularExpression` (Fixed + Info, council 23 S13); an escaped trailing `$` and an interpolated or unreadable text are Manual.
 
 ## Scope (in / out)
 
 **In scope**: The first positional string of an attribute deriving from `TechTalk.SpecFlow.StepDefinitionBaseAttribute`, judged by a copy of Reqnroll 3.3.4 `CucumberExpressionDetector.IsCucumberExpression` (checked in the decompiled `Reqnroll.dll`: `^`/`$` anchor → regex; `{\w*}` → Cucumber; `(...*)`/`(...+)`/`.*`/`\.`/`\d+` → regex; else Cucumber), and holding one of `()[]{}.*+?|\/^$`. Plain text matches the same under both and is left alone.
 
-**Out of scope**: Rewriting (adding `ExpressionType = ExpressionType.RegularExpression`, or `^...$`): council question 12 in TAAK-340. Step texts built from non-constant values (attributes only take constants).
+The pin is added only on `Given`/`When`/`Then`/`StepDefinition` whose first argument is a string literal or a constant with a compile-time value and that set no `ExpressionType` yet; a qualified attribute name gets `global::Reqnroll.ExpressionType`. A text ending in an escaped `$` (odd backslash run before the final `$`, counted on the cooked value) is Manual whatever the detector says: SpecFlow anchors its end, Reqnroll does not.
+
+**Out of scope**: Adding `^...$` to texts. Custom step attributes (Manual).
 
 ## Requirements
 
-- **REQ-1**: WHEN a step text is read as a Cucumber expression by Reqnroll and holds a regex or Cucumber special character THE SYSTEM SHALL report Manual (proof: optional-text; test: `StepExpression_ChangesMeaning_*`).
+- **REQ-1**: WHEN a literal or constant step text of `Given`/`When`/`Then`/`StepDefinition` without `ExpressionType` is read as a Cucumber expression by Reqnroll and holds a regex or Cucumber special character THE SYSTEM SHALL add `ExpressionType = ExpressionType.RegularExpression` with an Info "kept as regex via ExpressionType.RegularExpression" (proofs: literal, const; test: `StepExpression_ChangesMeaning_*`).
+- **REQ-2**: WHEN a step text ends in an escaped `$` THE SYSTEM SHALL report Manual (proof: escaped-dollar; test: `StepExpression_EndsWithEscapedDollar_*`).
+- **REQ-3**: WHEN a step text is interpolated or has no compile-time value THE SYSTEM SHALL report Manual (proof: interpolated).
+- **REQ-4**: WHEN the attribute already sets `ExpressionType` or is a custom step attribute THE SYSTEM SHALL report Manual (no proof: SpecFlow 3.9.74 has no `ExpressionType`, so such a before file cannot compile).
 
 ## Assumptions
 

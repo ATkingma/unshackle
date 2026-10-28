@@ -6,7 +6,7 @@ A proof is a `*.before.cs` (compiles against the old library) plus `*.after.cs` 
 or `*.manual.txt` (expected Manual reason). `ProofTests` and `CombinedProofTests` run them; `_Pending/` holds known failures with a task.
 Column *What it proves*: for Fixed the first line that changes (before → after), for Manual the assertion and the reason.
 
-Total: 1307 proofs (excluding `_Pending`).
+Total: 1424 proofs (excluding `_Pending`).
 
 ## AutoMapper
 
@@ -34,7 +34,7 @@ Total: 1307 proofs (excluding `_Pending`).
 | `unmigrated-map` | Manual | `public static void CreateMapsForV1(this IProfileExpression options)` — reason: AssertConfigurationIsValid still has maps to check (the map at Test.cs:27 is not in a profile constructor this fix rewrites) |
 | `validity-test` | Fixed | `private readonly IConfigurationProvider _configuration; private readonly IMapper _mapper;` →  |
 
-### CreateMap (117)
+### CreateMap (116)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -105,7 +105,6 @@ Total: 1307 proofs (excluding `_Pending`).
 | `for-source-member-do-not-validate` | Fixed | `CreateMap<Order, OrderDto>(MemberList.Source).ForSourceMember(s => s.Name, o => o.DoNotValidate());` → `public static class OrderProfileExtensions {` |
 | `forward-condition-reverse-map` | Fixed | `CreateMap<Person, PersonDto>() .ForMember(dto => dto.Nickname, opt => opt.Condition(person => person.Active))` → `public static class OrderProfileExtensions {` |
 | `forward-for-path-reverse-map` | Manual | `CreateMap<CustomerDto, Customer>()` — reason: ReverseMap reverses the ForPath of the forward map |
-| `generic` | Manual | `CreateMap<User, TUserDto>();` — reason: is generic or nested in a generic type |
 | `get-only-collection` | Manual | `CreateMap<Post, PostDto>();` — reason: PostDto.Tags is a get-only collection, which AutoMapper fills with the items from Post |
 | `internal-types` | Fixed | `CreateMap<Order, OrderDto>();` → `internal static class OrderProfileExtensions {` |
 | `max-depth` | Fixed | `CreateMap<Order, OrderDto>().MaxDepth(1);` → `public static class OrderProfileExtensions {` |
@@ -195,6 +194,38 @@ Total: 1307 proofs (excluding `_Pending`).
 | `reverse-pre-condition-map-from` | Fixed | `CreateMap<Person, PersonDto>() .ForMember(dto => dto.Alias, opt => opt.MapFrom(person => person.Nickname))` → `public static class OrderProfileExtensions {` |
 | `simple` | Fixed | `CreateMap<Order, OrderDto>() .ForMember(d => d.Total, o => o.MapFrom(s => s.Price * s.Quantity))` → `public static class OrderProfileExtensions {` |
 
+### GenericDestination (5)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `no-projection` | Manual |  — reason: no ProjectTo<OrderSummary> on a query of Order with a type of its own uses the map |
+| `packable-paging-helper` | Manual |  — reason: is public in a packable project |
+| `paging-helper` | Fixed | `.ProjectTo<TResult>(configuration)` → `.Select(typeof(T) == typeof(Order) && typeof(TResult) == typeof(OrderDto) ? (Expression<Func<T, TResult>>)(obj…` |
+| `parameters` | Manual |  — reason: ProjectTo<TDestination> with parameters or members to expand fills in or leaves out members per call |
+| `two-callers` | Fixed | `public IQueryable<TResult> Query<TResult>(IQueryable<Order> orders) => _mapper.ProjectTo<TResult>(orders);` → `public IQueryable<TResult> Query<TResult>(IQueryable<Order> orders) => orders.Select(typeof(TResult) == typeof…` |
+
+### GenericMap (8)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `constraint-filter` | Fixed | `where TDto : class, IDto => _mapper.Map<TDto>(order);` → `where TDto : class, IDto => typeof(TDto) == typeof(OrderDto) ? (TDto)(object)order.ToOrderDto() : throw new gl…` |
+| `derived-repositories` | Fixed | `public TDto ToDto(TEntity entity) => _mapper.Map<TEntity, TDto>(entity);` → `public TDto ToDto(TEntity entity) => typeof(TEntity) == typeof(Order) && typeof(TDto) == typeof(OrderDto) ? (T…` |
+| `extension-callers` | Fixed | `public static TResult ReadAs<TResult>(this IMapper mapper, Order order) => mapper.Map<TResult>(order);` → `public static TResult ReadAs<TResult>(this IMapper mapper, Order order) => typeof(TResult) == typeof(OrderDto)…` |
+| `extension-mixed-open` | Manual |  — reason: typeof(Reader<>) is used at |
+| `open-registration` | Manual |  — reason: Map<TDto> from Shop.Order: typeof(Reader<>) is used at Test.cs:36 (an open generic registration or reflection) |
+| `packable-public-base` | Manual |  — reason: Map<TDto> from Shop.Order: ReaderBase is public in a packable project (Test), so callers outside the solution may close it with other types. Set `<IsPackable>false</IsPackable>` in Test if this library is not published |
+| `reflection-caller` | Manual |  — reason: Map<TResult> from Shop.Order: MakeGenericMethod is called at Test.cs:35; a closed OrderReader.Read may be made by reflection |
+| `two-callers` | Fixed | `public TResult Read<TResult>(Order order) => _mapper.Map<TResult>(order);` → `public TResult Read<TResult>(Order order) => typeof(TResult) == typeof(OrderDto) ? (TResult)(object)order.ToOr…` |
+
+### GenericProfile (4)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `closed-subclasses` | Fixed | `CreateMap<T, T>();` → `} internal static class CopyProfileExtensions` |
+| `open-registration` | Manual | `CreateMap<T, T>();` — reason: Profile CopyProfile<T>: typeof(CopyProfile<>) is used at |
+| `packable-library` | Manual | `CreateMap<T, T>();` — reason: Profile CopyProfile<T>: CopyProfile is public in a packable project (Test), so callers outside the solution may close it with other types. Set `<IsPackable>false</IsPackable>` in Test if this library is not published. |
+| `skoruba-shape` | Manual | `CreateMap<User, TUserDto>();` — reason: Profile IdentityMapperProfile<TUserDto>: IdentityMapperProfile is public in a packable project (Test), so callers outside the solution may close it with other types. Set `<IsPackable>false</IsPackable>` in Test if this library is not published. |
+
 ### KeptMap (1)
 
 | Proof | Outcome | What it proves |
@@ -231,14 +262,12 @@ Total: 1307 proofs (excluding `_Pending`).
 | `receiver-call` | Manual |  — reason: plain field, property or variable |
 | `unknown-map` | Manual |  — reason: No CreateMap<Order, OrderDto> |
 
-### ProjectTo (5)
+### ProjectTo (3)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `existing-projection` | Fixed | `.ProjectTo<OrderDto>(_mapper.ConfigurationProvider) public IQueryable<OrderDto> Query(IQueryable<Order> orders…` → `.Select(OrderMapping.OrderToOrderDtoProjection) public IQueryable<OrderDto> Query(IQueryable<Order> orders) =>…` |
-| `generic` | Manual |  — reason: has no destination type of its own |
 | `parameters` | Manual | `CreateMap<Order, OrderDto>();` — reason: ProjectTo<OrderDto> passes userId, but CreateMap<Order, OrderDto> reads no variable of the profile constructor with that name |
-| `parameters-generic` | Manual |  — reason: ProjectTo<TDestination> has no destination type of its own |
 | `unknown-map` | Manual |  — reason: No CreateMap<Order, OrderDto> in a profile this fix rewrites |
 
 ### UnusedMapper (9)
@@ -310,21 +339,50 @@ Total: 1307 proofs (excluding `_Pending`).
 
 ## EPPlus
 
+### Address (4)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `range-local-reassigned` | Manual |  — reason: UnmappedAddress: 'range.Rows' |
+| `reversed-literal` | Manual |  — reason: UnmappedAddress |
+| `single-cell` | Manual |  — reason: UnmappedAddress: 'sheet.Cells["B2"].Rows' |
+| `start-cell` | Manual |  — reason: UnmappedAddress: 'sheet.Cells["A1:C2"].Start' |
+
 ### Dimension (2)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
-| `address` | Manual |  — reason: [UnmappedDimension] EPPlus 'Dimension' used as 'sheet.Dimension.Address' |
-| `null-check` | Manual |  — reason: [UnmappedDimension] EPPlus 'Dimension' used as 'sheet.Dimension' |
+| `address` | Manual |  — reason: UnmappedDimension: EPPlus 'Dimension' used as 'sheet.Dimension.Address' |
+| `null-check` | Manual |  — reason: UnmappedDimension: EPPlus 'Dimension' used as 'sheet.Dimension' |
+
+### FlowTypes (15)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `chain` | Fixed | `private static void Fill(ExcelWorksheet sheet) sheet.Cells[1, 1].Value = "Name";` → `private static void Fill(IXLWorksheet sheet) sheet.Cell(1, 1).Value = "Name";` |
+| `chain-failing-member` | Manual |  — reason: Protection |
+| `chain-recursive` | Manual |  — reason: FlowUseNotMigrated |
+| `chain-too-deep` | Manual |  — reason: FlowUseNotMigrated |
+| `field-ctor-parameter` | Manual |  — reason: FlowFieldNotMapped |
+| `method-group` | Manual |  — reason: not invoked |
+| `parameter` | Fixed | `private static void Fill(ExcelWorksheet sheet) sheet.Cells[1, 1].Value = "Name";` → `private static void Fill(IXLWorksheet sheet) sheet.Cell(1, 1).Value = "Name";` |
+| `public-member` | Manual |  — reason: FlowMemberNotPrivate |
+| `range-parameter` | Fixed | `private static int Size(ExcelRange range) return range.Rows * range.Columns + range.Start.Row + range.End.Colu…` → `private static int Size(IXLRange range) return range.RowCount() * range.ColumnCount() + range.RangeAddress.Fir…` |
+| `range-parameter-passed-on` | Manual |  — reason: passed on to WriteLine |
+| `range-parameter-unfixed-use` | Manual |  — reason: FlowUseNotMigrated: Range parameter range is used as 'range.Address' (line 7): member .Address |
+| `return` | Fixed | `private static ExcelWorksheet AddSheet(ExcelPackage package) => package.Workbook.Worksheets.Add("Report");` → `private static IXLWorksheet AddSheet(XLWorkbook package) => package.Worksheets.Add("Report");` |
+| `return-nonliteral-name` | Manual |  — reason: FlowReturnNotMapped |
+| `unfixed-caller` | Manual |  — reason: FlowCallerNotMigrated |
+| `unfixed-use` | Manual |  — reason: CellReadDiffers |
 
 ### Layout (4)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
-| `auto-fit-columns` | Manual |  — reason: [AutoFitDiffers] EPPlus layout 'AutoFit': the width auto-fit computes depends on the fonts |
-| `column-width` | Manual |  — reason: [ColumnWidthDiffers] EPPlus layout 'Column(i).Width' |
-| `freeze-variable` | Manual |  — reason: [UnmappedEPPlusLayout] EPPlus layout 'View.FreezePanes' |
-| `unmerge` | Manual |  — reason: [UnmappedEPPlusLayout] EPPlus layout 'Merge' |
+| `auto-fit-columns` | Manual |  — reason: AutoFitDiffers: EPPlus layout 'AutoFit': the width auto-fit computes depends on the fonts |
+| `column-width` | Manual |  — reason: ColumnWidthDiffers: EPPlus layout 'Column(i).Width' |
+| `freeze-variable` | Manual |  — reason: UnmappedEPPlusLayout: EPPlus layout 'View.FreezePanes' |
+| `unmerge` | Manual |  — reason: UnmappedEPPlusLayout: EPPlus layout 'Merge' |
 
 ### LicenseContext (5)
 
@@ -340,11 +398,11 @@ Total: 1307 proofs (excluding `_Pending`).
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
-| `data-table` | Manual |  — reason: [UncoveredRuntimeType] EPPlus 'LoadFromDataTable' |
-| `datetime-property` | Manual |  — reason: [LoadFromTypeDiffers] EPPlus 'LoadFromCollection': Order.Placed (System.DateTime) |
-| `with-headers` | Manual |  — reason: [LoadFromHeadersNotMapped] |
+| `data-table` | Manual |  — reason: UncoveredRuntimeType: EPPlus 'LoadFromDataTable' |
+| `datetime-property` | Manual |  — reason: LoadFromTypeDiffers: EPPlus 'LoadFromCollection': Order.Placed (System.DateTime) |
+| `with-headers` | Manual |  — reason: LoadFromHeadersNotMapped: |
 
-### Package (22)
+### Package (23)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
@@ -361,6 +419,7 @@ Total: 1307 proofs (excluding `_Pending`).
 | `name-missing` | Manual |  — reason: is used as |
 | `plain-local` | Fixed | `var package = new ExcelPackage(); package.Workbook.Worksheets.Add("Report");` → `var package = new XLWorkbook(); package.Worksheets.Add("Report");` |
 | `rename-to-existing` | Manual |  — reason: is used as |
+| `rename-to-helper-added` | Manual |  — reason: is already added by the helper call 'AddSheet(package)' ( |
 | `save-stream` | Fixed | `package.Workbook.Worksheets.Add("Report");` → `package.Worksheets.Add("Report");` |
 | `uncovered-datetime` | Manual |  — reason: UncoveredRuntimeType: cell value |
 | `uncovered-double` | Manual |  — reason: UncoveredRuntimeType: cell value |
@@ -380,10 +439,11 @@ Total: 1307 proofs (excluding `_Pending`).
 | `fill-without-color` | Manual |  — reason: FillWithoutSolidPattern: |
 | `underline` | Manual |  — reason: UnmappedEPPlusStyle: EPPlus style 'Font.UnderLine' |
 
-### Unsupported (4)
+### Unsupported (5)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
+| `address-folded` | Manual |  — reason: Also epplus.address UnmappedAddress: |
 | `cells` | Manual |  — reason: UnmigratedEPPlusApi: EPPlus API not migrated (line 7): ExcelWorksheet (row 3), ExcelWorksheet.Cells (row 4), ExcelRangeBase.Value (row 5). |
 | `chart` | Manual |  — reason: ExcelDrawings.AddChart (no row planned, by hand) |
 | `internal-api` | Manual |  — reason: UnmigratedEPPlusApi: |
@@ -398,6 +458,48 @@ Total: 1307 proofs (excluding `_Pending`).
 | `range-merge-layout` | Fixed | `var sheet = package.Workbook.Worksheets.Add("Orders"); sheet.Cells["A1:C1"].Merge = true;` → `var sheet = package.Worksheets.Add("Orders"); sheet.Range("A1:C1").Merge();` |
 | `save-variants` | Fixed | `var sheet = package.Workbook.Worksheets.Add("Orders"); sheet.Cells[1, 1].Value = "Name";` → `var sheet = package.Worksheets.Add("Orders"); sheet.Cell(1, 1).Value = "Name";` |
 | `value-types` | Fixed | `var sheet = package.Workbook.Worksheets.Add("Data"); sheet.Cells[1, 1].Value = "Widget";` → `var sheet = package.Worksheets.Add("Data"); sheet.Cell(1, 1).Value = "Widget";` |
+
+## EfBulk
+
+### Delete (4)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `batch-builder` | Manual |  — reason: the batch options BatchSize |
+| `extensions-from-query` | Fixed | `int sync = db.Orders.DeleteFromQuery(); return sync + await db.Orders.Where(o => o.Id < 10).DeleteFromQueryAsy…` → `int sync = db.Orders.ExecuteDelete(); return sync + await db.Orders.Where(o => o.Id < 10).ExecuteDeleteAsync()…` |
+| `plus-async-token` | Fixed | `db.Orders.Where(o => o.Retries > 3).DeleteAsync(cancellationToken);` → `db.Orders.Where(o => o.Retries > 3).ExecuteDeleteAsync(cancellationToken);` |
+| `plus-sync` | Fixed | `public int Run(ShopContext db) => db.Orders.Where(o => o.Status == "old").Delete();` → `public int Run(ShopContext db) => db.Orders.Where(o => o.Status == "old").ExecuteDelete();` |
+
+### Unsupported (4)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `audit` | Manual |  — reason: no audit trail |
+| `bulk-insert` | Manual |  — reason: EFCore.BulkExtensions.MIT |
+| `from-cache` | Manual |  — reason: second-level query cache |
+| `future` | Manual |  — reason: no query batching |
+
+### Update (17)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `captured-field` | Fixed | `public int Run(ShopContext db) => db.Orders.Update(o => new Order { Retries = _limit });` → `public int Run(ShopContext db) => db.Orders.ExecuteUpdate(setters => setters.SetProperty(o => o.Retries, o => …` |
+| `captured-local` | Fixed | `return db.Orders.Where(o => o.Id == id).Update(o => new Order { Retries = limit });` → `return db.Orders.Where(o => o.Id == id).ExecuteUpdate(setters => setters.SetProperty(o => o.Retries, o => limi…` |
+| `captured-property` | Fixed | `public int Run(ShopContext db, Request request) => db.Orders.Update(o => new Order { Retries = request.Limit }…` → `public int Run(ShopContext db, Request request) => db.Orders.ExecuteUpdate(setters => setters.SetProperty(o =>…` |
+| `constant` | Fixed | `public int Run(ShopContext db) => db.Orders.Update(o => new Order { Retries = MaxRetries });` → `public int Run(ShopContext db) => db.Orders.ExecuteUpdate(setters => setters.SetProperty(o => o.Retries, o => …` |
+| `decimal-arithmetic` | Manual |  — reason: 'o.Total * 1.21m' may translate |
+| `entity-member` | Fixed | `public int Run(ShopContext db) => db.Orders.Update(o => new Order { Retries = o.Id });` → `public int Run(ShopContext db) => db.Orders.ExecuteUpdate(setters => setters.SetProperty(o => o.Retries, o => …` |
+| `enum-member` | Fixed | `public int Run(ShopContext db) => db.Orders.Update(o => new Order { Kind = OrderKind.Return });` → `public int Run(ShopContext db) => db.Orders.ExecuteUpdate(setters => setters.SetProperty(o => o.Kind, o => Ord…` |
+| `extensions-async` | Fixed | `db.Orders.UpdateFromQueryAsync(x => new Order { Total = null }, cancellationToken);` → `db.Orders.ExecuteUpdateAsync(setters => setters.SetProperty(x => x.Total, x => null), cancellationToken);` |
+| `factory-variable` | Manual |  — reason: UpdateFactoryShape |
+| `method-call` | Manual |  — reason: UpdateValueNotProvable |
+| `navigation` | Manual |  — reason: UpdateValueNotProvable |
+| `numeric-arithmetic` | Fixed | `public int Run(ShopContext db, int step) => db.Orders.Update(o => new Order { Retries = (o.Retries + step) * 2…` → `public int Run(ShopContext db, int step) => db.Orders.ExecuteUpdate(setters => setters.SetProperty(o => o.Retr…` |
+| `plus-initializer` | Fixed | `db.Orders.Where(o => o.Id > 5).Update(o => new Order { Status = status, Retries = o.Retries + 1 });` → `db.Orders.Where(o => o.Id > 5).ExecuteUpdate(setters => setters.SetProperty(o => o.Status, o => status).SetPro…` |
+| `static-now` | Manual |  — reason: 'System.DateTime.Now.Hour' may translate |
+| `string-concatenation` | Manual |  — reason: 'o.Status + suffix' may translate |
+| `string-equality` | Fixed | `public int Run(ShopContext db) => db.Orders.Update(o => new Order { Open = o.Note == "new" }); public int Reop…` → `public int Run(ShopContext db) => db.Orders.ExecuteUpdate(setters => setters.SetProperty(o => o.Open, o => o.N…` |
+| `string-equality-captured` | Manual |  — reason: 'o.Note == wanted' may translate |
 
 ## FluentAssertions
 
@@ -1429,12 +1531,13 @@ Total: 1307 proofs (excluding `_Pending`).
 | `new-closed` | Fixed | `public sealed class Envelope<TEvent> : INotification await _publisher.Publish(new Envelope<OrderPlaced>(new Or…` → `public abstract class Envelope<TEvent> : INotification }` |
 | `no-constraint` | Manual |  — reason: no class or interface constraint |
 
-### GenericRequest (5)
+### GenericRequest (6)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `closed-uses` | Fixed | `public class Retried<TRequest, TResponse> : IRequest<TResponse> Retried<Ping, int> retried = new(ping, 3);` → `public abstract class Retried<TRequest, TResponse> : IRequest<TResponse> public class RetriedOfPingAndInt32 : …` |
 | `derived-generic-record` | Manual |  — reason: is a record, partial or file-local |
+| `extension-callers` | Manual |  — reason: Retried: open type argument in generic code; callers not followed |
 | `not-plain-argument` | Manual |  — reason: is not a plain |
 | `open-creation` | Manual |  — reason: open type argument in generic code; callers not followed |
 | `unbound-typeof` | Manual |  — reason: Retried becomes abstract with one concrete subclass per closed type |
@@ -1685,14 +1788,17 @@ Total: 1307 proofs (excluding `_Pending`).
 | `returns-async` | Fixed | `repo.Setup(r => r.TotalAsync(It.IsAny<int>())).ReturnsAsync((int year) => year * 2);` → `repo.Object.TotalAsync(Arg.Any<int>()).Returns(ci => Task.FromResult<int>(ci.ArgAt<int>(0) * 2));` |
 | `two-parameters` | Fixed | `repo.Setup(r => r.Find(It.IsAny<int>(), It.IsAny<string>())).Returns((int id, string name) => name + id);` → `repo.Object.Find(Arg.Any<int>(), Arg.Any<string>()).Returns(ci => ci.ArgAt<string>(1) + ci.ArgAt<int>(0));` |
 
-### SetupReturns (9)
+### SetupReturns (12)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `any-argument` | Fixed | `repo.Setup(r => r.Count(It.IsAny<string>())).Returns(3);` → `repo.Object.Count(Arg.Any<string>()).Returns(3);` |
+| `deconstruction` | Manual |  — reason: MockPassedAround |
 | `literal-arguments` | Fixed | `repo.Setup(r => r.Find(1, "a")).Returns("found");` → `repo.Object.Find(1, "a").Returns("found");` |
 | `mixed-arguments` | Fixed | `repo.Setup(r => r.Find(1, It.Is<string>(n => n.Length > 2))).Returns("found");` → `repo.Object.Find(Arg.Is<int>(1), Arg.Is<string>(n => n.Length > 2)).Returns("found");` |
+| `null-argument` | Fixed | `repo.Setup(r => r.Find(It.IsAny<int>(), null)).Returns("found");` → `repo.Object.Find(Arg.Any<int>(), Arg.Is<string>(a => a == null)).Returns("found");` |
 | `other-use-blocks` | Manual |  — reason: MockUsedBeyondObject |
+| `out-argument` | Manual |  — reason: MockPassedAround |
 | `property` | Fixed | `repo.Setup(r => r.Now).Returns(System.DateTime.MinValue);` → `repo.Object.Now.Returns(System.DateTime.MinValue);` |
 | `property-order` | Manual |  — reason: PropertyOrder |
 | `returns-async` | Fixed | `repo.Setup(r => r.TotalAsync(2020)).ReturnsAsync(5);` → `repo.Object.TotalAsync(2020).Returns(Task.FromResult<int>(5));` |
@@ -1755,14 +1861,15 @@ Total: 1307 proofs (excluding `_Pending`).
 
 ## Polly
 
-### AddPolicyHandler (5)
+### AddPolicyHandler (6)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `inline-transient` | Fixed | `.AddPolicyHandler(HttpPolicyExtensions.HandleTransientHttpError().WaitAndRetryAsync(3, attempt => TimeSpan.Fro…` → `.AddResilienceHandler("retry", builder => builder.AddRetry(new RetryStrategyOptions<HttpResponseMessage> {` |
 | `policy-method` | Fixed | `.AddPolicyHandler(GetRetryPolicy()); }` → `.AddResilienceHandler("retry", builder => builder.AddRetry(new RetryStrategyOptions<HttpResponseMessage> {` |
-| `transient-lambda-429` | Fixed | `.AddTransientHttpErrorPolicy(p => p.OrResult(r => r.StatusCode == HttpStatusCode.NotFound).RetryAsync(3, (outc…` → `.AddResilienceHandler("retry", builder => builder.AddRetry(new RetryStrategyOptions<HttpResponseMessage> {` |
 | `result-returned` | Manual |  — reason: HandlerResultUsed |
+| `transient-lambda-429` | Fixed | `.AddTransientHttpErrorPolicy(p => p.OrResult(r => r.StatusCode == HttpStatusCode.NotFound).RetryAsync(3, (outc…` → `.AddResilienceHandler("retry", builder => builder.AddRetry(new RetryStrategyOptions<HttpResponseMessage> {` |
+| `transient-or-status` | Fixed | `.AddTransientHttpErrorPolicy(p => p.OrTransientHttpStatusCode().RetryAsync(3, (outcome, retryCount) => trace.A…` → `.AddResilienceHandler("retry", builder => builder.AddRetry(new RetryStrategyOptions<HttpResponseMessage> {` |
 | `two-handlers` | Manual |  — reason: HandlerOrderNotProvable |
 
 ### CircuitBreaker (2)
@@ -1781,13 +1888,14 @@ Total: 1307 proofs (excluding `_Pending`).
 | `sync-inline` | Fixed | `int value = Policy.NoOp().Execute(() => 6);` → `int value = ResiliencePipeline.Empty.Execute(() => 6);` |
 | `typed` | Fixed | `var policy = Policy.NoOpAsync<int>(); int value = await policy.ExecuteAsync(() => Task.FromResult(9));` → `var policy = ResiliencePipeline<int>.Empty; int value = await policy.ExecuteAsync(_ => new ValueTask<int>(Task…` |
 
-### RetryVariants (6)
+### RetryVariants (7)
 
 | Proof | Outcome | What it proves |
 | --- | --- | --- |
 | `durations` | Fixed | `var policy = Policy.Handle<TimeoutException>().WaitAndRetryAsync(new[] { TimeSpan.Zero, TimeSpan.FromMilliseco…` → `var policy = new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
 | `durations-variable` | Manual |  — reason: SleepDurationsNotLiteral |
 | `field-instance` | Fixed | `private readonly AsyncRetryPolicy<int> _policy = Policy.HandleResult<int>(r => r < 0).RetryAsync(2); int first…` → `private readonly ResiliencePipeline<int> _policy = new ResiliencePipelineBuilder<int>() .AddRetry(new RetryStr…` |
+| `on-retry-exception-nullable` | Fixed | `var policy = Policy<int>.Handle<TimeoutException>().RetryAsync(2, (result, retryCount) => string message = ((T…` → `var policy = new ResiliencePipelineBuilder<int>() .AddRetry(new RetryStrategyOptions<int>` |
 | `retry-count` | Fixed | `var policy = Policy.Handle<TimeoutException>().RetryAsync(2, (exception, retryCount) => trace.Add("retry " + r…` → `var policy = new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
 | `retry-default` | Fixed | `await Policy.Handle<TimeoutException>().RetryAsync().ExecuteAsync(() => FailAsync(trace, ++calls));` → `await new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
 | `wait-forever` | Fixed | `var policy = Policy.HandleResult<int>(r => r < 5).WaitAndRetryForeverAsync(attempt => Delay(trace, attempt)); …` → `var policy = new ResiliencePipelineBuilder<int>() .AddRetry(new RetryStrategyOptions<int>` |
@@ -1860,6 +1968,114 @@ Total: 1307 proofs (excluding `_Pending`).
 | `operand-reused` | Manual |  — reason: WrapOrderNotProvable |
 | `three-inline` | Fixed | `await Policy.WrapAsync( Policy.Handle<TimeoutException>().RetryAsync(1, (exception, retryCount) => trace.Add("…` → `await new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
 | `two-locals` | Fixed | `var outer = Policy.Handle<TimeoutException>().RetryAsync(1, (exception, retryCount) => trace.Add("outer " + re…` → `var policy = new ResiliencePipelineBuilder() .AddRetry(new RetryStrategyOptions` |
+
+## SpecFlow
+
+### AsyncVoidBinding (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `async-void` | Manual |  — reason: Reqnroll awaits this; change it to async Task by hand and check ordering |
+
+### CombinedTags (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `tags` | Fixed | `bool slow = _scenarioContext.ScenarioInfo.ScenarioAndFeatureTags.Contains("slow");` → `bool slow = _scenarioContext.ScenarioInfo.CombinedTags.Contains("slow");` |
+
+### Namespace (5)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `app-config` | Manual |  — reason: has no Reqnroll counterpart |
+| `assist` | Fixed | usings only |
+| `bodi` | Fixed | usings only |
+| `qualified` | Fixed | `[TechTalk.SpecFlow.Binding] [TechTalk.SpecFlow.Given("a step")]` → `[Reqnroll.Binding] [Reqnroll.Given("a step")]` |
+| `steps` | Fixed | usings only |
+
+### Pending (2)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `not-last` | Manual |  — reason: is not the last statement of its block |
+| `skeleton` | Fixed | `_scenarioContext.Pending(); public void WhenItIsUsed() => _scenarioContext.Pending();` → `throw new PendingStepException(); public void WhenItIsUsed() => throw new PendingStepException();` |
+
+### RenamedType (5)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `autofac-bindings` | Fixed | `public static void SetupScenario(ContainerBuilder builder) => builder.AddSpecFlowBindings<Steps>();` → `public static void SetupScenario(ContainerBuilder builder) => builder.AddReqnrollBindings<Steps>();` |
+| `autofac-finder` | Manual |  — reason: has no Reqnroll counterpart |
+| `output-helper` | Fixed | `private readonly ISpecFlowOutputHelper _output; public Logging(ISpecFlowOutputHelper output)` → `private readonly IReqnrollOutputHelper _output; public Logging(IReqnrollOutputHelper output)` |
+| `removed-type` | Manual |  — reason: has no Reqnroll counterpart |
+| `table-row` | Fixed | `foreach (TableRow row in table.Rows)` → `foreach (DataTableRow row in table.Rows)` |
+
+### StepExpression (4)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `const` | Fixed | `[When(Pay)]` → `[When(Pay, ExpressionType = ExpressionType.RegularExpression)]` |
+| `escaped-dollar` | Manual |  — reason: The step text ends in an escaped $ |
+| `interpolated` | Manual |  — reason: The step text has no compile-time value (interpolated |
+| `literal` | Fixed | `[Then("the item(s) are listed")]` → `[Then("the item(s) are listed", ExpressionType = ExpressionType.RegularExpression)]` |
+
+### StringStepCall (2)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `possible-match` | Manual |  — reason: Possible match: LoginSteps.GivenIOpenThePage. |
+| `steps-base` | Manual |  — reason: (or keep them through Reqnroll.SpecFlowCompatibility) |
+
+## XunitV3
+
+### AbstractionsNamespace (5)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `message-sink` | Manual |  — reason: ExtensibilityType |
+| `output-helper` | Fixed | usings only |
+| `own-helper` | Manual |  — reason: OutputHelperImplemented |
+| `qualified` | Fixed | `private readonly Xunit.Abstractions.ITestOutputHelper _output; public Logger(global::Xunit.Abstractions.ITestO…` → `private readonly Xunit.ITestOutputHelper _output; public Logger(global::Xunit.ITestOutputHelper output)` |
+| `swap-only` | Fixed | usings only |
+
+### AsyncLifetime (6)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `as-task` | Fixed | `public Task InitializeAsync() => Task.CompletedTask; public Task DisposeAsync() => Task.CompletedTask;` → `public ValueTask InitializeAsync() => default; public ValueTask DisposeAsync() => default;` |
+| `async-methods` | Fixed | `public async Task InitializeAsync() public async Task DisposeAsync()` → `public async ValueTask InitializeAsync() public async ValueTask DisposeAsync()` |
+| `disposable` | Manual |  — reason: DualDisposal |
+| `explicit` | Fixed | `async System.Threading.Tasks.Task IAsyncLifetime.InitializeAsync() Task IAsyncLifetime.DisposeAsync()` → `async System.Threading.Tasks.ValueTask IAsyncLifetime.InitializeAsync() ValueTask IAsyncDisposable.DisposeAsyn…` |
+| `result-used` | Manual |  — reason: LifetimeResultUsed |
+| `returned-task` | Fixed | `public Task InitializeAsync() return Task.CompletedTask;` → `public ValueTask InitializeAsync() return default;` |
+
+### AsyncVoidTest (2)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `called` | Manual |  — reason: AsyncVoidCalled |
+| `fact` | Fixed | `public async void Call_Completes() public async void Value_IsPositive(int value)` → `public async Task Call_Completes() public async Task Value_IsPositive(int value)` |
+
+### Extensibility (1)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `custom-types` | Manual |  — reason: ExtensibilityType |
+
+### RecordExceptionAsync (3)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `as-task` | Fixed | `Task<Exception> pending = Record.ExceptionAsync(() => Task.CompletedTask); var later = Record.ExceptionAsync((…` → `Task<Exception> pending = Record.ExceptionAsync(() => Task.CompletedTask).AsTask(); var later = Record.Excepti…` |
+| `awaited-twice` | Fixed | `Task<Exception> pending = Record.ExceptionAsync(Fail);` → `Task<Exception> pending = Record.ExceptionAsync(Fail).AsTask();` |
+| `method-group` | Manual |  — reason: method group |
+
+### TypeNameAttribute (2)
+
+| Proof | Outcome | What it proves |
+| --- | --- | --- |
+| `other-assembly` | Manual |  — reason: TypeNameArgument: TestFramework names Xunit.Sdk.XunitTestFramework in xunit.execution.dotnet, which is not a type of this project; no v2 → v3 name map, and v3 takes typeof(..) of a v3 type, so pick its v3 counterpart by hand. Hint: the documented v3 type is Xunit.v3.XunitTestFramework. |
+| `own-orderer` | Fixed | `[assembly: CollectionBehavior("Tests.Ordering.PerClassFactory", "Test")] [assembly: TestCollectionOrderer("Tes…` → `[assembly: CollectionBehavior(typeof(Tests.Ordering.PerClassFactory))] [assembly: TestCollectionOrderer(typeof…` |
 
 ## See also
 

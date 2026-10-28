@@ -134,9 +134,17 @@ public class SpecFlowFix : IFix, IProjectFileMigration
             }),
             // <Using Include="TechTalk.SpecFlow" /> items: the code patterns never see the global usings MSBuild generates from them.
             .. RemovedNamespaces.Select(ns => new UsingRenameEdit { OldNamespace = ns, NewNamespace = SpecFlowNames.NewNamespace(ns)! }),
-            // Council G5: Reqnroll 3.3.4 reads every specflow.json key (stepAssemblies, bindingCulture included), so the file moves unchanged.
-            new ConfigFileRenameEdit { OldFileName = "specflow.json", NewFileName = "reqnroll.json" },
         ];
+    }
+
+    // Council round 23, S14: specflow.json keeps its name (the Reqnroll runtime and generator both fall back to it); no file edit.
+    public Task<IReadOnlyList<string>> ProjectInfoAsync(Project project, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        return Task.FromResult<IReadOnlyList<string>>(OldReferencePaths(project).Any()
+            ? ["specflow.json kept (Reqnroll reads it); rename by hand together with its csproj items; the generator lists only reqnroll.json " +
+                "for VS up-to-date checks."]
+            : []);
     }
 
     public IReadOnlyList<IPattern> Patterns { get; } =

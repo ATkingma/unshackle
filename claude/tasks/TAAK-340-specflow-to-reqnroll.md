@@ -81,11 +81,13 @@ Open design choices; the slice takes the conservative option for each.
     expression (its own `CucumberExpressionDetector`, copied) that holds one of `()[]{}.*+?|\/^$`. Under AllOrNothing this blocks
     any solution with such a text (e.g. a trailing `.`). A rewrite to `[Given("...", ExpressionType = ExpressionType.RegularExpression)]`
     keeps the SpecFlow regex meaning exactly (SpecFlow anchors regexes as Reqnroll does). Rewrite automatically (Fixed + Info), or stay Manual?
+    **Decision (council 23 S13: Fixed + Info pin when literal/const, detector says Cucumber and a regex char is present; escaped trailing `$` and non-literal texts Manual.)**
 13. **specflow.json (step 5)**: Reqnroll 3.3.4 reads `reqnroll.json`, else `specflow.json` (`ReqnrollJsonLocator`), and still binds
     `stepAssemblies` and `bindingCulture` (`JsonConfig`, `JsonConfigurationLoader`; checked in the decompiled `Reqnroll.dll`). So the
     rename is the only edit: no key renames, the parsed tree is identical (G5 met trivially). The `Reqnroll.Tools.MsBuild.Generation`
     generator was not decompiled (not in the local NuGet cache); its config lookup is assumed to match. Rename at all (the old name works),
     or keep the file name and drop the edit?
+    **Decision (council 23 S14: keep the name, drop the edit, Info row; the generator was decompiled and also falls back to specflow.json.)**
 
 ## Progress log
 

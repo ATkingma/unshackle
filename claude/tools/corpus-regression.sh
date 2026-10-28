@@ -6,7 +6,7 @@
 #   corpus-regression.sh summary
 #
 # Env: OUT (results, default $PWD/corpus-regression-out), TOOL (published unshackle.dll; default: publish this repo
-# once into $OUT/tool), JOBS, TEST_TIMEOUT (s per test run, default 3600).
+# once into $OUT/tool), JOBS, TEST_TIMEOUT (s per test run, default 3600), MSBUILD_EXTRA (extra build/restore args).
 # Source must be an untouched original (corpus dir or tarball); a fresh copy is made on every run.
 # Steps: copy -> global.json SDK 10 (VSTest; MTP + --report-trx if the source uses MTP) -> restore -> build ->
 # test x2 (flaky) -> fix -> clean bin/obj ->
@@ -17,7 +17,7 @@ OUT=${OUT:-$PWD/corpus-regression-out}
 JOBS=${JOBS:-3}
 TEST_TIMEOUT=${TEST_TIMEOUT:-3600}
 PY="python3 -I $HERE/corpus-regression.py"
-P="-p:NuGetAudit=false -p:AllowMissingPrunePackageData=true -p:SkipNSwag=True"
+P="-p:NuGetAudit=false -p:AllowMissingPrunePackageData=true -p:SkipNSwag=True ${MSBUILD_EXTRA:-}"  # MSBUILD_EXTRA e.g. -m:2 on a loaded machine
 export OUT JOBS TEST_TIMEOUT
 export DOCKER_HOST=tcp://127.0.0.1:1 DOTNET_CLI_TELEMETRY_OPTOUT=1 MSBUILDDISABLENODEREUSE=1 DOTNET_ROLL_FORWARD=Major
 # H1 (council round 15): before each solution $OUT's disk needs MIN_FREE_GB (default 20) free; below it the run stops (exit 255, xargs

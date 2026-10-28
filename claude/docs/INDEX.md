@@ -64,6 +64,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/TAAK-340-specflow-to-reqnroll.md` | SpecFlow → Reqnroll fix: steps, design of the first slice, council questions |
 | `claude/tasks/TAAK-353-specflow-partial-migration.md` | SpecFlow per-unit partial migration (council 18 S2): design, council question |
 | `claude/tasks/TAAK-356-efbulk-kept-row-without-z.md` | EF bulk: kept-for-dependent row on a project without a Z package (corpus morenote) |
+| `claude/tasks/TAAK-377-specflow-step-expression-cucumber-parameter.md`, `TAAK-378-specflow-generated-obj-documents.md`, `TAAK-379-specflow-transitive-runner-reason.md`, `TAAK-381-corpus-compare-notexecuted.md` | Open bugs from SpecFlow corpus round 1 (377 with a pending proof in `Proofs/SpecFlow/_Pending`) |
 | `docs/projectinfo/architectuur/candidate-imagesharp.md` | Scout TAAK-390: ImageSharp, conditional no-go (park) |
 | `docs/projectinfo/architectuur/candidate-newtonsoft.md` | Scout TAAK-420: Newtonsoft → STJ, no-go blanket, narrow fix possible |
 | `docs/projectinfo/architectuur/candidate-efbulk.md` | Scout TAAK-430: EF bulk extensions → ExecuteUpdate/Delete, conditional go (narrow) |
@@ -222,6 +223,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/CORPUSRUN-automapper.md` | AutoMapper corpus run: harness, baseline 14/18 repos (7851 tests), scan 1 Fixed / 1373 Manual, top Manual reasons |
 | `claude/tasks/CORPUSRUN-blind.md` | Blind validation round (TAAK-268): 3 unseen repos per fix, selection and results |
 | `claude/tasks/CORPUSRUN-epplus.md` | EPPlus corpus runs: scan rounds 1 and TAAK-326, TAAK-327 step 7 before/after re-measure (2026-10-28: no regression, no tool bug) |
+| `claude/tasks/CORPUSRUN-specflow.md` | SpecFlow corpus round 1: 12 repos, 7 baselines, 1 migrated with a regression (TAAK-377), inventory S13/S15/S17 |
 | `claude/tasks/archief/TAAK-269-not-be-null-unconstrained-generic.md` | TAAK-269 — `NotBeNull()` on unconstrained `T` → CS0452 (ogooreck) |
 | `claude/tasks/archief/TAAK-270-blind-round-coverage-gaps.md` | TAAK-270 — blind round: Manual findings that block MediatR/AutoMapper migrations |
 | `claude/tasks/archief/TAAK-272-automapper-partial-migration.md` | ✅ TAAK-272 — AutoMapper partial migration per CreateMap pair (MapOwners plan, automapper.kept-map) |

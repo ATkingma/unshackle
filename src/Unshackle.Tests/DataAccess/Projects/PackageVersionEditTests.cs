@@ -63,6 +63,22 @@ public class PackageVersionEditTests
     }
 
     [Fact]
+    public async Task ApplyAsync_BelowFromWithInfo_KeptWithInfo()
+    {
+        // Arrange (council round 20, X9): a 1.x runner is not raised, but the user is told to update it.
+        _fileSystem.AddFile(Project, new MockFileData(Reference("1.4.0")));
+        PackageVersionEdit edit = new() { Name = s_edit.Name, From = s_edit.From, To = s_edit.To, BelowFromInfo = "update it by hand." };
+
+        // Act
+        ProjectFileEditOutcome outcome = (await new XmlProjectFileStore(_fileSystem).ApplyAsync(Project, [edit], [], ProjectFileEditContext.None, TestContext.Current.CancellationToken))
+            .ShouldHaveSingleItem();
+
+        // Assert
+        outcome.Changes.ShouldBeEmpty();
+        outcome.KeptInfo.ShouldBe("PackageReference xunit.runner.visualstudio 1.4.0 stays: update it by hand.");
+    }
+
+    [Fact]
     public async Task ApplyAsync_PropertyVersion_KeptWithInfo()
     {
         // Arrange

@@ -5,6 +5,7 @@ using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.SpecFlow;
+using Unshackle.Core.Fixes.SpecFlow.Patterns;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
 using Xunit;
@@ -67,7 +68,7 @@ public class SpecFlowFixTests
         IReadOnlyList<ProjectFileEdit> edits = await new SpecFlowFix(Substitute.For<IProjectProperties>()).EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
-        List<PackageRenameEdit> renames = [.. edits.Select(e => e.ShouldBeOfType<PackageRenameEdit>())];
+        List<PackageRenameEdit> renames = [.. edits.OfType<PackageRenameEdit>()];
         renames.Select(r => (r.OldName, r.NewName)).ShouldBe(
         [
             ("SpecFlow", "Reqnroll"), ("SpecFlow.NUnit", "Reqnroll.NUnit"), ("SpecFlow.xUnit", "Reqnroll.xUnit"), ("SpecFlow.MsTest", "Reqnroll.MsTest"),
@@ -75,6 +76,37 @@ public class SpecFlowFixTests
         ]);
         renames.ShouldAllBe(r => r.Version == SpecFlowFix.ReqnrollVersion);
     }
+
+    [Fact]
+    public async Task EditsFor_ProjectOnSpecFlow_RenamesUsingItemsAndConfigFile()
+    {
+        // Arrange
+        Project project = CreateProject(SpecFlowReferences.SpecFlow);
+
+        // Act
+        IReadOnlyList<ProjectFileEdit> edits = await new SpecFlowFix(Substitute.For<IProjectProperties>()).EditsForAsync(project, TestContext.Current.CancellationToken);
+
+        // Assert
+        List<UsingRenameEdit> usings = [.. edits.OfType<UsingRenameEdit>()];
+        usings.ShouldContain(u => u.OldNamespace == "TechTalk.SpecFlow" && u.NewNamespace == "Reqnroll");
+        usings.ShouldContain(u => u.OldNamespace == "TechTalk.SpecFlow.Assist" && u.NewNamespace == "Reqnroll.Assist");
+        usings.ShouldContain(u => u.OldNamespace == "BoDi" && u.NewNamespace == "Reqnroll.BoDi");
+        ConfigFileRenameEdit config = edits.OfType<ConfigFileRenameEdit>().ShouldHaveSingleItem();
+        (config.OldFileName, config.NewFileName).ShouldBe(("specflow.json", "reqnroll.json"));
+        edits.OfType<ConfigFileTransformEdit>().ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("I am logged in", false)]
+    [InlineData("the basket contains (.*) items", false)]
+    [InlineData(@"the basket has (\d+) items", false)]
+    [InlineData("^the user clicks Save.$", false)]
+    [InlineData("the user clicks Save.", true)]
+    [InlineData("the item(s) are listed", true)]
+    [InlineData("I pay with card/cash", true)]
+    [InlineData("I have {int} items", true)]
+    public void StepExpression_ChangesMeaning_OnlyForCucumberTextWithSpecialCharacters(string text, bool expected) =>
+        StepExpressionPattern.ChangesMeaning(text).ShouldBe(expected);
 
     [Fact]
     public async Task EditsFor_RunnerPackageInReferences_MustBeDeclared()

@@ -279,6 +279,49 @@ public class ProjectFileEditTests
     }
 
     [Fact]
+    public async Task ApplyAsync_UsingRename_RenamesTheUsingItem()
+    {
+        // Arrange
+        string before = Before.Replace("<None Update", "<Using Include=\"TechTalk.SpecFlow\" />\n    <None Update", StringComparison.Ordinal);
+        _fileSystem.AddFile(Project, new MockFileData(before));
+
+        // Act
+        ProjectFileEditOutcome outcome = (await ApplyAsync([new UsingRenameEdit { OldNamespace = "TechTalk.SpecFlow", NewNamespace = "Reqnroll" }])).ShouldHaveSingleItem();
+
+        // Assert
+        outcome.ManualReason.ShouldBeNull();
+        Text(outcome, Project).ShouldBe(before.Replace("<Using Include=\"TechTalk.SpecFlow\"", "<Using Include=\"Reqnroll\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ApplyAsync_UsingRenameWithoutItem_DoesNothing()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(Before));
+
+        // Act
+        IReadOnlyList<ProjectFileEditOutcome> outcomes = await ApplyAsync([new UsingRenameEdit { OldNamespace = "TechTalk.SpecFlow", NewNamespace = "Reqnroll" }]);
+
+        // Assert
+        outcomes.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task ApplyAsync_UsingRenameInSharedBuildProps_IsManual()
+    {
+        // Arrange
+        _fileSystem.AddFile(Project, new MockFileData(Before));
+        _fileSystem.AddFile(BuildProps, new MockFileData("<Project>\n  <ItemGroup>\n    <Using Include=\"TechTalk.SpecFlow\" />\n  </ItemGroup>\n</Project>\n"));
+
+        // Act
+        ProjectFileEditOutcome outcome = (await ApplyAsync([new UsingRenameEdit { OldNamespace = "TechTalk.SpecFlow", NewNamespace = "Reqnroll" }])).ShouldHaveSingleItem();
+
+        // Assert
+        outcome.ManualReason.ShouldNotBeNull();
+        outcome.Changes.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task ApplyAsync_ConfigFileRenameTargetExists_IsManual()
     {
         // Arrange

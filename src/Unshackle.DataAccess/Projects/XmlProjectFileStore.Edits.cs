@@ -35,6 +35,7 @@ public partial class XmlProjectFileStore
                 PropertyEdit property => await SetPropertyAsync(run, property, cancellationToken),
                 ConfigFileRenameEdit rename => await RenameConfigFileAsync(run, rename, cancellationToken),
                 ConfigFileTransformEdit transform => await TransformConfigFileAsync(run, transform, cancellationToken),
+                UsingRenameEdit rename => await RenameUsingAsync(run, rename, cancellationToken),
                 _ => throw new UnreachableException(),
             };
             if (outcome is not null)
@@ -414,6 +415,30 @@ public partial class XmlProjectFileStore
         run.SetText(path, text);
         return Applied(run, edit, line, [path], path);
     }
+
+    private async Task<ProjectFileEditOutcome?> RenameUsingAsync(EditRun run, UsingRenameEdit edit, CancellationToken cancellationToken)
+    {
+        // Conservative: a shared global using reaches every importer, migrated or not; it is named, not edited.
+        if (FindUp(run.ProjectPath, BuildProps) is string shared && (await StateAsync(run, shared, cancellationToken)).Current is string text
+            && UsingItems(new ProjectFile(_fileSystem.Path.GetFullPath(shared), text), edit.OldNamespace).FirstOrDefault() is XElement declared)
+        {
+            return Manual(run, edit, LineOf(declared), $"the <Using> item is declared in a shared file; rename it to {edit.NewNamespace} there by hand.",
+                _fileSystem.Path.GetFullPath(shared), nameof(ProjectBlockingReason.SharedDeclarationBlocked));
+        }
+
+        ProjectFile project = await LoadProjectAsync(run, cancellationToken);
+        List<XElement> items = [.. UsingItems(project, edit.OldNamespace)];
+        if (items.Count == 0)
+        {
+            return null;
+        }
+
+        items.ForEach(i => i.SetAttributeValue(Include, edit.NewNamespace));
+        return Applied(run, edit, LineOf(items[0]), [run.Store(project)]);
+    }
+
+    private static IEnumerable<XElement> UsingItems(ProjectFile file, string ns) =>
+        file.Document.Descendants(file.Namespace + "Using").Where(e => (string?)e.Attribute(Include) == ns);
 
     // A Directory.Build.props or Directory.Packages.props (without central management) above the project that declares the package: the file
     // to edit, or why it may not be edited (council round 10, G3); null when no shared file declares it.

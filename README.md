@@ -1,17 +1,28 @@
 # Unshackle
 
-Migrate .NET code away from libraries that went commercial (FluentAssertions, MediatR, AutoMapper).
+Migrate .NET code away from libraries that went commercial or end-of-life (FluentAssertions, MediatR, AutoMapper, Moq, Polly v7,
+EPPlus, Z.EntityFramework bulk, SpecFlow, xUnit v2; MassTransit report-only).
 Roslyn-powered, with a report and dry-run before anything changes.
 
-> Version 0.1. Design and architecture: [docs/projectinfo](https://github.com/ATkingma/unshackle/blob/main/docs/projectinfo/README.md).
+> Version 0.3.0. What changed: [CHANGELOG](https://github.com/ATkingma/unshackle/blob/main/CHANGELOG.md). Design and architecture: [docs/projectinfo](https://github.com/ATkingma/unshackle/blob/main/docs/projectinfo/README.md).
 
 ## What it migrates
 
 | Fix (`--fix`) | From → to | Status |
 |---|---|---|
-| `fluentassertions` | FluentAssertions 6–7 → [Shouldly](https://github.com/shouldly/shouldly) | Most assertions rewritten (`Should().Be`, collections, exceptions, `AssertionScope`, `Equal`, …); the rest is reported as manual work |
-| `mediatr` | MediatR 12 → [Mediator](https://github.com/martinothamar/Mediator) (source generator) | Handlers, notification handlers, pipeline/stream behaviors, pre/post-processors, exception handlers, `AddMediatR` |
-| `automapper` | AutoMapper 12–14 → hand-written `ToB()` extension methods | `CreateMap` with `ForMember`/`MapFrom`/`Ignore`, constructors, flattening, nested maps, `Map` calls, `ProjectTo`, `AddAutoMapper`; only when provably equivalent |
+| `fluentassertions` | FluentAssertions 6–7 → [Shouldly](https://github.com/shouldly/shouldly) | Corpus: 0 regressions (12 repos) |
+| `mediatr` | MediatR 12 → [Mediator](https://github.com/martinothamar/Mediator) (source generator) | Corpus: 0 regressions (12 repos) |
+| `automapper` | AutoMapper 12–14 → hand-written `ToB()` extension methods | Corpus: 0 regressions (12 repos) |
+| `moq` | Moq → NSubstitute | Corpus: pending |
+| `polly` | Polly v7 → Microsoft.Extensions.Resilience (Polly fee from 2026-11-16) | Corpus: pending |
+| `epplus` | EPPlus → ClosedXML, per project | Corpus: 0 regressions |
+| `efbulk` | Z.EntityFramework bulk → EF Core `ExecuteDelete`/`ExecuteUpdate` | Corpus: 0 regressions (3 repos) |
+| `specflow` | SpecFlow 3.x → Reqnroll | Corpus: pending (preview) |
+| `xunit3` | xUnit v2 → v3 | Corpus: pending (preview) |
+| `masstransit` | MassTransit v8: report only, no rewrite; pin MassTransit < 9 (9.x is commercial) | Corpus: 0 tool bugs (scan only) |
+
+"Corpus" = measured on open-source repos with their own tests before and after `fix`; *pending* = no finished corpus round yet,
+review the diff yourself. Details per fix in the [CHANGELOG](https://github.com/ATkingma/unshackle/blob/main/CHANGELOG.md).
 
 `unshackle list` shows every pattern with a one-line description. Each pattern has proofs (`before` → `after`) in
 `src/Unshackle.Tests/Proofs/`. A pattern never guesses: when a rewrite is not provably safe it is reported as
@@ -40,7 +51,7 @@ dotnet build && dotnet test                       # always check the result with
 **Full guide**: [docs/usage.md](https://github.com/ATkingma/unshackle/blob/main/docs/usage.md) (install, workflow, options, reports,
 CI, troubleshooting). **All supported patterns**: [docs/patterns.md](https://github.com/ATkingma/unshackle/blob/main/docs/patterns.md).
 
-`--fix` is `fluentassertions`, `mediatr` or `automapper` (`unshackle list` shows every pattern). Run one library at a time and
+`--fix` takes a fix id from the table above (`unshackle list` shows every pattern). Run one library at a time and
 commit in between, so each step is easy to review and revert. Out of memory on a large solution? Add `--max-degree 2` (or `--sequential`); the result is the same, only slower.
 
 What `fix --dry-run` shows (from `samples/SampleShop`):

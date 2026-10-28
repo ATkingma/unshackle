@@ -5,7 +5,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>unshackle</ToolCommandName>
     <PackageId>Unshackle</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <Authors>Timme Kingma</Authors>
     <Description>Migrates .NET code away from libraries that went commercial: FluentAssertions → Shouldly, MediatR → Mediator, AutoMapper → hand-written mappings, Moq → NSubstitute, Polly v7 → Microsoft.Extensions.Resilience, EPPlus → ClosedXML; MassTransit v8 inventory. Roslyn-based, with a report and --dry-run; what it cannot rewrite safely is reported as manual work.</Description>
     <PackageTags>fluentassertions;shouldly;mediatr;mediator;automapper;migration;roslyn;dotnet-tool</PackageTags>

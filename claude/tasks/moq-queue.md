@@ -29,6 +29,11 @@ Order: projects first, hits second. Rows that rewrite a use of a mock (2–9) ru
 one rule to `MockUseRules` and a pattern before `CreatePattern`; rows touching `MockUseRules` go one after another, not in parallel.
 Every row needs run-time proofs in `src/Unshackle.Tests/Proofs/Moq/_Runtime/` (council round 9, Q2).
 
+**Corpus H items (`CORPUSRUN-moq.md`)**: H1 (transient restore failure) is handled in `claude/tools/corpus-moq-am.sh`: every
+restore step gets one retry after 30 s (`restore0-retry` / `restore1-retry` in `steps.txt`). H2 (orchardcore scan/fix 40-50 min)
+needs no change: `scan` and `fix` already run with a 3600 s timeout. The TAAK-330 leftovers (helper-project kept-package text,
+one row per project file, qualified `Moq.Mock<T>` keeping `using Moq;`) are done; only its corpus rerun (step 5) is open.
+
 ## See also
 
 - `claude/tasks/TAAK-307-moq-to-nsubstitute.md` — the task

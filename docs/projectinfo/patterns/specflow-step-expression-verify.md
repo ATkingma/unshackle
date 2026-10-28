@@ -6,7 +6,7 @@
 | **Status**    | Verified                                                          |
 | **Generated** | 2026-10-28 by KingmaDoc                                           |
 
-> Verified by an AI agent (TAAK-340 step 6) against the code on branch `taak-340e`.
+> Verified by an AI agent (TAAK-340 step 6) against the code on branch `taak-340e`; re-verified for council 23 S13 on branch `taak-340f`.
 
 ## Requirements
 
@@ -15,7 +15,10 @@ Proofs: `src/Unshackle.Tests/Proofs/SpecFlow/StepExpression/` (`ProofTests`; an 
 
 | REQ | Verdict | Evidence |
 | --- | --- | --- |
-| REQ-1 | Met | optional-text; `SpecFlowFixTests.StepExpression_ChangesMeaning_OnlyForCucumberTextWithSpecialCharacters` |
+| REQ-1 | Met | literal, const (after compiles against Reqnroll 3.3.4); `SpecFlowFixTests.StepExpression_ChangesMeaning_OnlyForCucumberTextWithSpecialCharacters` |
+| REQ-2 | Met | escaped-dollar; `SpecFlowFixTests.StepExpression_EndsWithEscapedDollar_CountsBackslashes` |
+| REQ-3 | Met | interpolated |
+| REQ-4 | Met (code only) | no proof possible: `ExpressionType` does not exist in SpecFlow 3.9.74 |
 
 ## Deviations
 

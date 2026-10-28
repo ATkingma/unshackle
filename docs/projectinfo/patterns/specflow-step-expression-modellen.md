@@ -38,18 +38,25 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    A[attribute with a constant first string] --> B{SpecFlow step attribute?}
+    A[attribute with a positional first argument] --> B{SpecFlow step attribute?}
     B -- no --> N[not found]
-    B -- yes --> C{Reqnroll detector: Cucumber expression?}
+    B -- yes --> T{interpolated or no compile-time value?}
+    T -- yes --> MT[Manual: no compile-time value]
+    T -- no --> E{ends in an escaped dollar?}
+    E -- yes --> ME[Manual: escaped dollar]
+    E -- no --> C{Reqnroll detector: Cucumber and a special character?}
     C -- no --> N
-    C -- yes --> D{holds a special character?}
-    D -- no --> N
-    D -- yes --> M[Manual]
+    C -- yes --> P{Given/When/Then/StepDefinition without ExpressionType?}
+    P -- no --> M[Manual]
+    P -- yes --> F[Fixed + Info: ExpressionType.RegularExpression]
 ```
 
 | Leaf | Proof |
 | --- | --- |
-| Manual | optional-text |
+| Fixed + Info | literal, const |
+| Manual: escaped dollar | escaped-dollar |
+| Manual: no compile-time value | interpolated |
+| Manual | none (cannot compile against SpecFlow 3.9.74) |
 | not found | `StepExpression_ChangesMeaning_*` (plain, regex-detected and anchored texts) |
 
 ## See also

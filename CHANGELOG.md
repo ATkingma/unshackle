@@ -24,10 +24,10 @@ New fixes (run each with `--fix <id>`; `unshackle list` shows every pattern):
   Corpus: 0 tool bugs (scan only).
 - **`specflow`**: SpecFlow 3.x → Reqnroll (packages, namespaces, renamed types, v3→v4 breaks, `<Using>` items, `Directory.Build.props`,
   `reqnroll.json`), per unit with its shared dependencies. Step texts are pinned to regular expressions.
-  Corpus: pending (preview, no corpus proof yet).
+  Corpus: preview, see Known limitations.
 - **`xunit3`**: xUnit v2 → v3 (packages, `OutputType Exe`, abstractions, async lifetime, `Record.ExceptionAsync`, runner and
   `Microsoft.NET.Test.Sdk` bumps; extensibility points are Manual).
-  Corpus: pending (preview, no corpus proof yet).
+  Corpus: preview, see Known limitations.
 
 CLI:
 
@@ -54,7 +54,12 @@ Existing fixes:
   detected up front (accepted limitation B1).
 - `polly`: when the fix would downgrade a package across a project reference, the project is reported as Manual.
 - `masstransit`: no rewrite; stay on 8.5.x until a free v8 fork ships on NuGet.
-- `specflow` and `xunit3`: no corpus proof yet; review the diff and run your tests.
+- `specflow`: first corpus round (12 repos, 7 with a baseline) found one regression, fixed in this release (step text with the
+  CucumberExpressions plugin); the plugin package stays in the project file after the fix (TAAK-378/379 open).
+- `xunit3`: corpus round unfinished; open findings TAAK-382..386 (analyzer warnings with `TreatWarningsAsErrors`, Test.Sdk TFM property,
+  netfx module initializer, v2-only dependent packages, `Fact` subclasses). Review the diff and run your tests.
+- Shared engine: a project that declares a package and also gets it through a project reference loses its own reference; with
+  `PrivateAssets` on the referenced project's package that can break the build.
 - A solution whose `global.json` asks for an SDK that is not installed cannot be loaded.
 - Always build and run your own tests after `fix`.
 

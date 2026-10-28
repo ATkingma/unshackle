@@ -13,12 +13,12 @@ Roslyn-powered, with a report and dry-run before anything changes.
 | `fluentassertions` | FluentAssertions 6–7 → [Shouldly](https://github.com/shouldly/shouldly) | Corpus: 0 regressions (12 repos) |
 | `mediatr` | MediatR 12 → [Mediator](https://github.com/martinothamar/Mediator) (source generator) | Corpus: 0 regressions (12 repos) |
 | `automapper` | AutoMapper 12–14 → hand-written `ToB()` extension methods | Corpus: 0 regressions (12 repos) |
-| `moq` | Moq → NSubstitute | Corpus: pending |
-| `polly` | Polly v7 → Microsoft.Extensions.Resilience (Polly fee from 2026-11-16) | Corpus: pending |
+| `moq` | Moq → NSubstitute | Corpus: partial (round 2, 5 repos; rerun open) |
+| `polly` | Polly v7 → Microsoft.Extensions.Resilience (Polly fee from 2026-11-16) | Corpus: partial (12 of 14 repos, 0 regressions; rerun open) |
 | `epplus` | EPPlus → ClosedXML, per project | Corpus: 0 regressions |
 | `efbulk` | Z.EntityFramework bulk → EF Core `ExecuteDelete`/`ExecuteUpdate` | Corpus: 0 regressions (3 repos) |
-| `specflow` | SpecFlow 3.x → Reqnroll | Corpus: pending (preview) |
-| `xunit3` | xUnit v2 → v3 | Corpus: pending (preview) |
+| `specflow` | SpecFlow 3.x → Reqnroll | Corpus: round 1, 1 regression fixed (preview) |
+| `xunit3` | xUnit v2 → v3 | Corpus: unfinished (preview) |
 | `masstransit` | MassTransit v8: report only, no rewrite; pin MassTransit < 9 (9.x is commercial) | Corpus: 0 tool bugs (scan only) |
 
 "Corpus" = measured on open-source repos with their own tests before and after `fix`; *pending* = no finished corpus round yet,

@@ -35,8 +35,8 @@ Reqnroll is based on SpecFlow v4, so it is a rename plus a few v3→v4 breaks (m
 | Attributes, hooks, `ScenarioContext`, `FeatureContext`, `Table` | | same names (`DataTable` alias is new) | Fixed (using only) |
 | `BoDi.IObjectContainer` | `BoDi` | `Reqnroll.BoDi` | Fixed (using) |
 | `ISpecFlowOutputHelper` and other `*SpecFlow*` type names | | `IReqnrollOutputHelper` etc. | Fixed (finite rename list) |
-| Config | `specflow.json`, App.config `<specFlow>` | `reqnroll.json`: rename file, `stepAssemblies`→`bindingAssemblies`, `bindingCulture/name`→`language/binding`; App.config only via compat package | json Fixed (non-Roslyn edit); App.config Manual |
-| Generated `*.feature.cs` | MSBuild generator | regenerated at build | checked-in ones: hint |
+| Config | `specflow.json`, App.config `<specFlow>` | `reqnroll.json`: rename file, `stepAssemblies`→`bindingAssemblies`, `bindingCulture/name`→`language/binding`; App.config only via compat package | json kept with Info (S14); App.config Manual, Info when empty or `<unitTestProvider>`-only (S15) |
+| Generated `*.feature.cs` | MSBuild generator | regenerated at build | skipped when a `.feature` is next to it, one Info row per project (S16) |
 | Step text | regex | regex or Cucumber expression; text with `/` or `$` may change meaning | Manual flag |
 | v3→v4 breaks | | string step-calls (`Given("...")` in a `Steps` class) removed; `async void` bindings forbidden; `ScenarioAndFeatureTags` deprecated for `CombinedTags`; AggregateException no longer swallowed | `Steps` + string calls Manual; `async void` Manual or Fixed to `async Task`; tags Fixed |
 | MsTest scenario outlines | one method per example | one `[DataRow]` method (breaks VSTest filters) | Fixed by `generator/allowRowTests=false` in `reqnroll.json` |

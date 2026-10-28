@@ -117,7 +117,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/COUNCIL-round-22.md` | Council round 22 decisions (xUnit v3 step-5 patterns, Polly kept row) |
 | `claude/tasks/COUNCIL-round-23.md` | Council round 23 decisions (SpecFlow step expressions, specflow.json) |
 | `claude/tasks/COUNCIL-round-24.md` | Council round 24 decisions (MassTransit rewrite: no-go, stay on v8) |
-| `claude/tasks/COUNCIL-round-25.md` | Council round 25 decisions (SpecFlow step expressions, specflow.json) |
+| `claude/tasks/COUNCIL-round-25.md` | Council round 25 decisions X15, S15-S17 (Test.Sdk scope, App.config section, feature.cs, mixed helper); built on branch `taak-council25` |
 | `claude/tasks/archief/TAAK-355-polly-kept-row-added-package.md` | (done) Council round 22 P11: Polly kept row names the added package |
 | `claude/tasks/archief/TAAK-336-epplus-flow-followups.md` | Council round 16 E21-E24: EPPlus Fixed field/return shapes, helper chains, one row per node |
 | `claude/tasks/archief/TAAK-337-epplus-range-locals.md` | Council round 16 E25-E26: EPPlus `ExcelRange` locals, then the range parameter flow type |

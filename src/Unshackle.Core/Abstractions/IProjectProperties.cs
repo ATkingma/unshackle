@@ -27,4 +27,24 @@ public interface IProjectProperties
     /// <param name="projectPath">The project file.</param>
     /// <param name="sectionName">The element name, e.g. <c>specFlow</c>.</param>
     bool HasAppConfigSection(string projectPath, string sectionName);
+
+    /// <summary>
+    /// The local names of the child elements of that top-level <c>App.config</c> section (council round 25, S15). Null without an App.config
+    /// or that section, or when the file cannot be read (callers then rely on <see cref="HasAppConfigSection"/>, the cautious side).
+    /// </summary>
+    /// <param name="projectPath">The project file.</param>
+    /// <param name="sectionName">The element name, e.g. <c>specFlow</c>.</param>
+    IReadOnlyList<string>? AppConfigSectionChildren(string projectPath, string sectionName);
+
+    /// <summary>
+    /// The union of the project's target frameworks (council round 25, X15): every <c>TargetFramework</c>/<c>TargetFrameworks</c> value
+    /// (and an old-style <c>TargetFrameworkVersion</c>) in the project file and the nearest <c>Directory.Build.props</c>/<c>.targets</c>,
+    /// conditional ones included (a superset). Null when it cannot be determined: none found, a property reference, an unreadable file.
+    /// </summary>
+    /// <param name="projectPath">The project file.</param>
+    IReadOnlyList<string>? TargetFrameworks(string projectPath);
+
+    /// <summary>Whether the file exists (council round 25, S16: a <c>.feature</c> next to its code-behind).</summary>
+    /// <param name="path">The file.</param>
+    bool FileExists(string path);
 }

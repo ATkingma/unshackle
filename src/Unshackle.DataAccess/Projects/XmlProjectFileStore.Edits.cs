@@ -221,6 +221,11 @@ public partial class XmlProjectFileStore
                 return stays ? null : Kept(run, edit, line, why!, filePath);
             }
 
+            if (Instead(run, edit, line, filePath) is ProjectFileEditOutcome instead)
+            {
+                return instead;
+            }
+
             attribute?.SetValue(edit.To);
             element?.SetValue(edit.To);
             return Applied(run, edit, line, [run.Store(file)], filePath);
@@ -246,12 +251,18 @@ public partial class XmlProjectFileStore
             return centralStays ? null : Kept(run, edit, centralLine, centralWhy!, versions.Path);
         }
 
+        if (Instead(run, edit, centralLine, versions.Path) is ProjectFileEditOutcome centralInstead)
+        {
+            return centralInstead;
+        }
+
         // X3: a shared central version moves only when every project under it that references the package is migrated.
         if (await CentralBumpBlockersAsync(run, versions, edit.Name, cancellationToken) is { Count: > 0 } blockers)
         {
-            return Kept(run, edit, centralLine,
-                $"The PackageVersion of {edit.Name} stays {centralVersion} in {versions.Path}: {string.Join("; ", blockers)}. Raise it to {edit.To} by hand once those are migrated.",
-                versions.Path);
+            string kept = $"The PackageVersion of {edit.Name} stays {centralVersion} in {versions.Path}: {string.Join("; ", blockers)}.";
+            return edit.CentralKeptIsManual
+                ? Manual(run, edit, centralLine, $"{kept} This project needs {edit.To} or later (restore fails with NU1605 otherwise); raise it by hand for every project under that file.", versions.Path)
+                : Kept(run, edit, centralLine, $"{kept} Raise it to {edit.To} by hand once those are migrated.", versions.Path);
         }
 
         centralAttribute?.SetValue(edit.To);
@@ -311,6 +322,12 @@ public partial class XmlProjectFileStore
 
         return blockers;
     }
+
+    // X15: a bump that would apply but the fix asked to report instead.
+    private static ProjectFileEditOutcome? Instead(EditRun run, PackageVersionEdit edit, int line, string? filePath) =>
+        edit.ManualInstead is string manual ? Manual(run, edit, line, manual, filePath)
+        : edit.InfoInstead is string info ? Kept(run, edit, line, info, filePath)
+        : null;
 
     private static ProjectFileEditOutcome Kept(EditRun run, ProjectFileEdit edit, int line, string why, string? filePath) =>
         new() { Edit = edit, FilePath = filePath ?? run.ProjectPath, Line = line, KeptInfo = why };

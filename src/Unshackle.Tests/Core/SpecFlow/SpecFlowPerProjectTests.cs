@@ -85,6 +85,29 @@ public class SpecFlowPerProjectTests
         report.BlockingProjects.ShouldNotBeEmpty();
     }
 
+    [Fact]
+    public async Task FixAsync_DependentReferencesKeptAndCleanUnit_CleanStaysWithRootBlocker()
+    {
+        // Arrange (council round 25, S17): Helper (no SpecFlow) references Blocked and Clean; Other is independent and still moves.
+        Solution solution = Create(("Blocked", [], Blocked), ("Clean", [], Clean), ("Other", [], Clean.Replace("CleanSteps", "OtherSteps", StringComparison.Ordinal)),
+            ("Helper", ["Blocked", "Clean"], "public static class Helper { }\n"));
+        ProjectId helper = solution.Projects.Single(p => p.Name == "Helper").Id;
+        solution = solution.WithProjectMetadataReferences(helper, []);
+
+        // Act
+        FixReport report = await FixAsync(solution);
+
+        // Assert
+        (await TextAsync(report, "Other")).ShouldStartWith("using Reqnroll;");
+        (await TextAsync(report, "Clean")).ShouldBe(Clean);
+        Finding clean = report.Findings.Single(f => f.PatternId == SpecFlowProjects.KeptPatternId && f.FilePath == "Clean.csproj");
+        string reason = clean.Result.ShouldBeOfType<ManualResult>().Reason;
+        reason.ShouldContain("Helper.csproj references both it and Blocked.csproj");
+        reason.ShouldContain("root blocker: Blocked.cs:");
+        report.Findings.Single(f => f.PatternId == SpecFlowProjects.ClosurePatternId).Result.ShouldBeOfType<InfoResult>().Text
+            .ShouldStartWith("1 SpecFlow project(s) stay on SpecFlow only because");
+    }
+
     private static async Task<FixReport> FixAsync(Solution solution) =>
         await new Fixer([new SpecFlowFix(Substitute.For<IProjectProperties>())]).FixAsync(solution, new FixRequest { FixId = "specflow" }, TestContext.Current.CancellationToken);
 

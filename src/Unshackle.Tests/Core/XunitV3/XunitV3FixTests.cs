@@ -1,8 +1,10 @@
 using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using NSubstitute;
 using Shouldly;
 using Unshackle.Core;
+using Unshackle.Core.Abstractions;
 using Unshackle.Core.Fixes.XunitV3;
 using Unshackle.Core.Models;
 using Unshackle.Tests.Helpers;
@@ -48,7 +50,7 @@ public class XunitV3FixTests
     public void Patterns_IdsUseXunit3Prefix()
     {
         // Arrange
-        XunitV3Fix fix = new();
+        XunitV3Fix fix = new(Substitute.For<IProjectProperties>());
 
         // Act
         List<string> ids = [.. fix.Patterns.Select(p => p.Id)];
@@ -67,7 +69,7 @@ public class XunitV3FixTests
         Project project = CreateTestProject(["NETCOREAPP", "NET8_0_OR_GREATER"]);
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = await new XunitV3Fix().EditsForAsync(project, TestContext.Current.CancellationToken);
+        IReadOnlyList<ProjectFileEdit> edits = await new XunitV3Fix(Substitute.For<IProjectProperties>()).EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         edits.Select(e => e.Describe()).ShouldBe(
@@ -84,8 +86,51 @@ public class XunitV3FixTests
         ]);
         // Council round 20, X9: a 1.x runner is kept with an Info row.
         edits.OfType<PackageVersionEdit>().First().BelowFromInfo.ShouldNotBeNull().ShouldContain("1.x runner");
-        (await new XunitV3Fix().ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        (await new XunitV3Fix(Substitute.For<IProjectProperties>()).ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
     }
+
+    [Theory]
+    [InlineData("net472", false, null)]
+    [InlineData("net8.0,net48", false, null)]
+    [InlineData("net8.0", false, "17.13.0+ recommended")]
+    [InlineData(null, true, null)]
+    public async Task EditsFor_TestSdk_BumpOnlyForNetFramework(string? frameworks, bool manual, string? info)
+    {
+        // Arrange (council round 25, X15)
+        IProjectProperties properties = Substitute.For<IProjectProperties>();
+        properties.TargetFrameworks("C:/src/P/P.csproj").Returns(frameworks?.Split(','));
+        Project test = CreateTestProject(["NETCOREAPP", "NET8_0_OR_GREATER"]);
+        Project project = test.Solution.WithProjectFilePath(test.Id, "C:/src/P/P.csproj").GetProject(test.Id)!;
+
+        // Act
+        PackageVersionEdit edit = (await new XunitV3Fix(properties).EditsForAsync(project, TestContext.Current.CancellationToken))
+            .OfType<PackageVersionEdit>().Single(e => e.Name == "Microsoft.NET.Test.Sdk");
+
+        // Assert
+        (edit.ManualInstead is not null).ShouldBe(manual);
+        if (info is null)
+        {
+            edit.InfoInstead.ShouldBeNull();
+        }
+        else
+        {
+            edit.InfoInstead.ShouldNotBeNull().ShouldContain(info);
+        }
+
+        edit.CentralKeptIsManual.ShouldBe(!manual && info is null);
+    }
+
+    [Theory]
+    [InlineData("net472", true)]
+    [InlineData("net48", true)]
+    [InlineData("net481", true)]
+    [InlineData("net8.0", false)]
+    [InlineData("net10.0", false)]
+    [InlineData("netstandard2.0", false)]
+    [InlineData("netcoreapp3.1", false)]
+    [InlineData("net8.0-windows", false)]
+    public void IsNetFramework_OnlyDotlessNet4AndOlder(string framework, bool expected) =>
+        XunitV3Fix.IsNetFramework(framework).ShouldBe(expected);
 
     [Theory]
     [InlineData(true, false, "references Microsoft.NET.Test.Sdk and has no xUnit test attributes")]
@@ -97,7 +142,7 @@ public class XunitV3FixTests
         Project project = CreateProject(["NETCOREAPP", "NET8_0_OR_GREATER"], sdk ? [.. XunitV3References.Before, TestSdk] : XunitV3References.Before, attributes ? TestCode : HelperCode);
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = await new XunitV3Fix().EditsForAsync(project, TestContext.Current.CancellationToken);
+        IReadOnlyList<ProjectFileEdit> edits = await new XunitV3Fix(Substitute.For<IProjectProperties>()).EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         edits.Select(e => e.Describe()).ShouldBe(
@@ -110,8 +155,8 @@ public class XunitV3FixTests
             "PackageReference xunit.extensibility.execution → xunit.v3.extensibility.core 3.2.2",
             "PackageReference xunit.abstractions removed",
         ]);
-        (await new XunitV3Fix().ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldHaveSingleItem().ShouldContain(why);
-        (await new XunitV3Fix().ProjectBlockersAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        (await new XunitV3Fix(Substitute.For<IProjectProperties>()).ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldHaveSingleItem().ShouldContain(why);
+        (await new XunitV3Fix(Substitute.For<IProjectProperties>()).ProjectBlockersAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
     }
 
     [Fact]
@@ -135,13 +180,13 @@ public class XunitV3FixTests
         Project project = CreateProject(["NETSTANDARD"], [.. XunitV3References.Before.Where(r => !(r.Display ?? string.Empty).Contains("execution", StringComparison.Ordinal))]);
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = await new XunitV3Fix().EditsForAsync(project, TestContext.Current.CancellationToken);
+        IReadOnlyList<ProjectFileEdit> edits = await new XunitV3Fix(Substitute.For<IProjectProperties>()).EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         edits.ShouldNotContain(e => e is PropertyEdit);
         edits.ShouldContain(e => e is PackageRenameEdit && ((PackageRenameEdit)e).OldName == "xunit.extensibility.core");
-        (await new XunitV3Fix().ProjectBlockersAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
-        (await new XunitV3Fix().ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        (await new XunitV3Fix(Substitute.For<IProjectProperties>()).ProjectBlockersAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        (await new XunitV3Fix(Substitute.For<IProjectProperties>()).ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
     }
 
     [Fact]
@@ -151,11 +196,11 @@ public class XunitV3FixTests
         Project project = CreateProject(["NETCOREAPP", "NET8_0_OR_GREATER"], XunitV3References.After);
 
         // Act
-        IReadOnlyList<ProjectFileEdit> edits = await new XunitV3Fix().EditsForAsync(project, TestContext.Current.CancellationToken);
+        IReadOnlyList<ProjectFileEdit> edits = await new XunitV3Fix(Substitute.For<IProjectProperties>()).EditsForAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         edits.ShouldBeEmpty();
-        (await new XunitV3Fix().ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        (await new XunitV3Fix(Substitute.For<IProjectProperties>()).ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
     }
 
     [Theory]
@@ -171,7 +216,7 @@ public class XunitV3FixTests
         Project project = CreateTestProject(symbols.Split(';'));
 
         // Act
-        IReadOnlyList<ManualResult> blockers = await new XunitV3Fix().ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
+        IReadOnlyList<ManualResult> blockers = await new XunitV3Fix(Substitute.For<IProjectProperties>()).ProjectBlockersAsync(project, TestContext.Current.CancellationToken);
 
         // Assert
         if (blocked)
@@ -194,7 +239,7 @@ public class XunitV3FixTests
         Solution solution = TestSolution.Create(code, XunitV3References.Before);
 
         // Act
-        FixReport report = await new Fixer([new XunitV3Fix()]).FixAsync(solution, new FixRequest { FixId = "xunit3" }, TestContext.Current.CancellationToken);
+        FixReport report = await new Fixer([new XunitV3Fix(Substitute.For<IProjectProperties>())]).FixAsync(solution, new FixRequest { FixId = "xunit3" }, TestContext.Current.CancellationToken);
 
         // Assert
         (await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken)).ShouldBe(code);
@@ -213,7 +258,7 @@ public class XunitV3FixTests
         Solution solution = TestSolution.Create(code, XunitV3References.Before);
 
         // Act
-        FixReport report = await new Fixer([new XunitV3Fix()]).FixAsync(solution, new FixRequest { FixId = "xunit3" }, TestContext.Current.CancellationToken);
+        FixReport report = await new Fixer([new XunitV3Fix(Substitute.For<IProjectProperties>())]).FixAsync(solution, new FixRequest { FixId = "xunit3" }, TestContext.Current.CancellationToken);
 
         // Assert
         string text = await TestSolution.GetTextAsync(report.Solution, TestContext.Current.CancellationToken);

@@ -126,6 +126,55 @@ public class PackageVersionEditTests
     }
 
     [Fact]
+    public async Task ApplyAsync_CentralKeptIsManual_ManualNamingTheOtherProject()
+    {
+        // Arrange (council round 25, X15): a netfx project cannot restore against the shared old version (NU1605).
+        _fileSystem.AddFile(Project, new MockFileData(Central));
+        _fileSystem.AddFile(Other, new MockFileData(Central));
+        _fileSystem.AddFile(PackagesProps, new MockFileData(Versions));
+        PackageVersionEdit edit = new() { Name = s_edit.Name, From = s_edit.From, To = s_edit.To, CentralKeptIsManual = true };
+
+        // Act
+        ProjectFileEditOutcome outcome = (await new XmlProjectFileStore(_fileSystem).ApplyAsync(Project, [edit], [], Context(blocked: true), TestContext.Current.CancellationToken))
+            .ShouldHaveSingleItem();
+
+        // Assert
+        outcome.Changes.ShouldBeEmpty();
+        outcome.KeptInfo.ShouldBeNull();
+        outcome.ManualReason.ShouldNotBeNull().ShouldContain(FullPath(Other));
+        outcome.ManualReason.ShouldContain("NU1605");
+    }
+
+    [Theory]
+    [InlineData("2.8.2", true)]
+    [InlineData("3.1.5", false)]
+    public async Task ApplyAsync_ManualOrInfoInstead_ReportsOnlyWhenTheBumpWouldApply(string declared, bool reported)
+    {
+        // Arrange (X15)
+        _fileSystem.AddFile(Project, new MockFileData(Reference(declared)));
+        PackageVersionEdit manual = new() { Name = s_edit.Name, From = s_edit.From, To = s_edit.To, ManualInstead = "check it." };
+        PackageVersionEdit info = new() { Name = s_edit.Name, From = s_edit.From, To = s_edit.To, InfoInstead = "recommended." };
+
+        // Act
+        IReadOnlyList<ProjectFileEditOutcome> manualOutcomes = await new XmlProjectFileStore(_fileSystem).ApplyAsync(Project, [manual], [], ProjectFileEditContext.None, TestContext.Current.CancellationToken);
+        IReadOnlyList<ProjectFileEditOutcome> infoOutcomes = await new XmlProjectFileStore(_fileSystem).ApplyAsync(Project, [info], [], ProjectFileEditContext.None, TestContext.Current.CancellationToken);
+
+        // Assert
+        if (reported)
+        {
+            manualOutcomes.ShouldHaveSingleItem().ManualReason.ShouldBe("check it.");
+            infoOutcomes.ShouldHaveSingleItem().KeptInfo.ShouldBe("recommended.");
+            manualOutcomes[0].Changes.ShouldBeEmpty();
+            infoOutcomes[0].Changes.ShouldBeEmpty();
+        }
+        else
+        {
+            manualOutcomes.ShouldBeEmpty();
+            infoOutcomes.ShouldBeEmpty();
+        }
+    }
+
+    [Fact]
     public async Task ApplyAsync_NotDeclared_DoesNothing()
     {
         // Arrange

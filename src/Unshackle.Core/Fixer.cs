@@ -190,7 +190,7 @@ public class Fixer : IFixer
 
         // TAAK-298: files are independent (each is fixed against the baseline), so they run in parallel; each collects its own
         // rows and the rows are merged in file order, which gives the same report as one file at a time.
-        List<IGrouping<string, DocumentId>> checkedFiles = [.. files.Where(f => candidates?.Contains(f.Key) != false)];
+        List<IGrouping<string, DocumentId>> checkedFiles = [.. files.Where(f => candidates?.Contains(f.Key) != false && !fix.SkipsFile(f.Key))];
         var outcomes = new FileOutcome[checkedFiles.Count];
         var options = new ParallelOptions
         {

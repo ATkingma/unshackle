@@ -59,6 +59,11 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
   runner 3.1.5 depends on `Microsoft.TestPlatform.ObjectModel` 17.13.0 for net472 (none for net8.0). Test projects therefore bump
   `Microsoft.NET.Test.Sdk` 15.0.0+ → 17.13.0 (`XunitV3Fix.TestSdkVersion`, `PackageVersionEdit`, CPM rules of X3). Test
   `TestSdkVersion_IsTheObjectModelTheRunnerNeeds` reads the real runner nuspec (`PackageDownload`, copied to `XunitV3/`)
+- [x] 6b. X15 (branch `taak-council25`): `Microsoft.NET.Test.Sdk` is bumped only when `IProjectProperties.TargetFrameworks` (union of
+  `TargetFramework`/`TargetFrameworks`/`TargetFrameworkVersion` in project and nearest `Directory.Build.*`, conditional values included as a
+  superset) has a .NET Framework TFM (`XunitV3Fix.IsNetFramework`); unresolvable (`$(...)`, none found) → `PackageVersionEdit.ManualInstead`;
+  net-only → `InfoInstead` "17.13.0+ recommended"; a shared central version kept for another project → Manual naming it (`CentralKeptIsManual`, NU1605).
+  Tests: `XunitV3FixTests.EditsFor_TestSdk_*`, `IsNetFramework_*`, `PackageVersionEditTests.*Instead*`/`*CentralKeptIsManual*`, `XmlProjectPropertiesTests.TargetFrameworks_*`
 - [ ] 7. Corpus (discovered-test count > 0 and equal before/after, X2; count X11 `TypeNameArgument` and X12 rows, X14 breaks): 10-15 xUnit 2.x repos incl. integration suites with `IAsyncLifetime` (scout survey gap), pinned shas, build after fix
 - [ ] 8. Blind round, roadmap row in `docs/projectinfo/project.md`
 
@@ -114,7 +119,7 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
    `TheoryData<T>` usage compiles on v3. Leave for the corpus to show a real break?
      **Decision (council 22 X14: corpus first with the discovered-test count check; `Xunit.SkippableFact` out of scope, Info row if found; step 7.)**
 
-## Council questions (from step 6, open)
+## Council questions (from step 6, decided in council round 25, built in step 6b)
 
 1. **Test.Sdk bump on every target.** Built: 15.0.0+ → 17.13.0 for every xunit3 test project, although only the .NET Framework runner
    needs ObjectModel 17.13.0 (net8.0 has no dependency). Simpler and harmless (17.13.0 supports net8+/net472+), but it touches net8-only

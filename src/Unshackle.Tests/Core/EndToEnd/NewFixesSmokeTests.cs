@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using NSubstitute;
 using Shouldly;
 using Unshackle.Core;
 using Unshackle.Core.Abstractions;
@@ -40,7 +41,7 @@ public class NewFixesSmokeTests
     [Fact]
     public async Task XunitV3_RealFix_RewritesKnownGoodFile()
     {
-        await ShouldRewriteAsync(new XunitV3Fix(), "xunit3", "XunitV3/AsyncLifetime/async-methods", XunitV3References.Before);
+        await ShouldRewriteAsync(new XunitV3Fix(Substitute.For<IProjectProperties>()), "xunit3", "XunitV3/AsyncLifetime/async-methods", XunitV3References.Before);
     }
 
     [Fact]

@@ -83,4 +83,46 @@ public class XmlProjectPropertiesTests
         // Assert
         references.ShouldBeNull();
     }
+
+    [Theory]
+    [InlineData("<Project><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup></Project>", null, "net8.0")]
+    [InlineData("<Project><PropertyGroup><TargetFrameworks>net8.0;net472</TargetFrameworks></PropertyGroup></Project>", null, "net472,net8.0")]
+    [InlineData("<Project><PropertyGroup Condition=\"'$(OS)' == 'Windows_NT'\"><TargetFrameworks>net48</TargetFrameworks></PropertyGroup></Project>", "<Project><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup></Project>", "net48,net8.0")]
+    [InlineData("<Project><PropertyGroup><TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion></PropertyGroup></Project>", null, "net472")]
+    [InlineData("<Project><PropertyGroup><TargetFramework>$(DefaultTfm)</TargetFramework></PropertyGroup></Project>", null, null)]
+    [InlineData("<Project />", null, null)]
+    [InlineData("not xml", null, null)]
+    public void TargetFrameworks_UnionOfEveryValue_NullWhenUnresolvable(string project, string? buildProps, string? expected)
+    {
+        // Arrange (council round 25, X15)
+        _fileSystem.AddFile(Project, new MockFileData(project));
+        if (buildProps is not null)
+        {
+            _fileSystem.AddFile("/repo/Directory.Build.props", new MockFileData(buildProps));
+        }
+
+        // Act
+        IReadOnlyList<string>? frameworks = new XmlProjectProperties(_fileSystem).TargetFrameworks(Project);
+
+        // Assert
+        (frameworks is null ? null : string.Join(",", frameworks)).ShouldBe(expected);
+    }
+
+    [Theory]
+    [InlineData("<configuration><specFlow><unitTestProvider name=\"NUnit\" /><language feature=\"nl\" /></specFlow></configuration>", "unitTestProvider,language")]
+    [InlineData("<configuration><specFlow /></configuration>", "")]
+    [InlineData("<configuration />", null)]
+    [InlineData("not xml", null)]
+    public void AppConfigSectionChildren_ChildNamesOrNull(string content, string? expected)
+    {
+        // Arrange (council round 25, S15)
+        _fileSystem.AddFile(Project, new MockFileData("<Project />"));
+        _fileSystem.AddFile("/repo/src/Lib/App.config", new MockFileData(content));
+
+        // Act
+        IReadOnlyList<string>? children = new XmlProjectProperties(_fileSystem).AppConfigSectionChildren(Project, "specFlow");
+
+        // Assert
+        (children is null ? null : string.Join(",", children)).ShouldBe(expected);
+    }
 }

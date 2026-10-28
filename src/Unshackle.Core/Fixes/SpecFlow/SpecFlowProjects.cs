@@ -11,6 +11,8 @@ internal static class SpecFlowProjects
 {
     public const string KeptPatternId = "specflow.kept";
 
+    public const string ClosurePatternId = "specflow.closure";
+
     private static readonly StringComparer s_pathComparer =
         OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 
@@ -37,6 +39,9 @@ internal static class SpecFlowProjects
         }
 
         var kept = new Dictionary<string, string>(s_pathComparer);
+        // The root blocker each kept project stays for (council round 25, S17), and the ones held back only by a shared dependent project.
+        var rootOf = new Dictionary<string, string>(s_pathComparer);
+        HashSet<string> closureOnly = new(s_pathComparer);
         foreach (Finding root in roots)
         {
             IEnumerable<string> owners = projects.Any(p => s_pathComparer.Equals(p.Key, root.FilePath)) ? [root.FilePath]
@@ -48,7 +53,10 @@ internal static class SpecFlowProjects
 
             foreach (string owner in owners)
             {
-                kept.TryAdd(owner, $"{Where(root)} cannot be migrated");
+                if (kept.TryAdd(owner, $"{Where(root)} cannot be migrated"))
+                {
+                    rootOf[owner] = kept[owner];
+                }
             }
         }
 
@@ -58,6 +66,12 @@ internal static class SpecFlowProjects
         [
             .. projects.Where(p => withSpecFlow.Contains(p.Key))
                 .SelectMany(p => References(solution, p).Where(r => withSpecFlow.Contains(r) && !s_pathComparer.Equals(r, p.Key)).Select(r => (p.Key, r))),
+        ];
+
+        // S17: every project with the SpecFlow projects it reaches; one that reaches a kept and a moving unit would load both libraries.
+        List<(string Project, List<string> Reached)> dependents =
+        [
+            .. projects.Select(p => (p.Key, References(solution, p).Where(withSpecFlow.Contains).ToList())).Where(d => d.Item2.Count > 1),
         ];
 
         bool changed = true;
@@ -70,6 +84,7 @@ internal static class SpecFlowProjects
                 foreach (string owner in owners.Where(o => !kept.ContainsKey(o)))
                 {
                     kept[owner] = $"it shares {Path.GetFileName(path)} with {Path.GetFileName(keeper)}, which stays on SpecFlow";
+                    rootOf[owner] = rootOf[keeper];
                     changed = true;
                 }
             }
@@ -79,13 +94,33 @@ internal static class SpecFlowProjects
                 if (kept.ContainsKey(user))
                 {
                     kept[referenced] = $"{Path.GetFileName(user)} references it and stays on SpecFlow (its bindings must run on the same library)";
+                    rootOf[referenced] = rootOf[user];
                 }
                 else
                 {
                     kept[user] = $"it references {Path.GetFileName(referenced)}, which stays on SpecFlow (its bindings must run on the same library)";
+                    rootOf[user] = rootOf[referenced];
                 }
 
                 changed = true;
+            }
+
+            foreach ((string dependent, List<string> reached) in dependents)
+            {
+                if (reached.FirstOrDefault(kept.ContainsKey) is not string keeper)
+                {
+                    continue;
+                }
+
+                foreach (string unit in reached.Where(r => !kept.ContainsKey(r)))
+                {
+                    string root = rootOf[keeper];
+                    kept[unit] = $"{Path.GetFileName(dependent)} references both it and {Path.GetFileName(keeper)}, which stays on SpecFlow (one process cannot " +
+                        $"run both libraries); root blocker: {root}";
+                    rootOf[unit] = root;
+                    closureOnly.Add(unit);
+                    changed = true;
+                }
             }
         }
 
@@ -115,6 +150,20 @@ internal static class SpecFlowProjects
                 {
                     Kept = KeptReason.SpecFlowProjectKept,
                 },
+            });
+        }
+
+        // S17: the summary counts the units held back only by the closure.
+        if (closureOnly.Count > 0)
+        {
+            rows.Add(new Finding
+            {
+                FilePath = solution.FilePath ?? ".",
+                Line = 0,
+                FixId = "specflow",
+                PatternId = ClosurePatternId,
+                Result = PatternResult.Note($"{closureOnly.Count} SpecFlow project(s) stay on SpecFlow only because a project that depends on them also depends on a " +
+                    $"kept one: {string.Join(", ", closureOnly.Select(Path.GetFileName).Order(StringComparer.Ordinal))}."),
             });
         }
 

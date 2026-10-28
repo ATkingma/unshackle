@@ -7,7 +7,7 @@
 #   corpus-am.sh summary <base|scan|after>
 #
 # Env: CORPUS (required: the corpus root on a large disk; never /tmp: tmpfs in RAM), TOOL (published unshackle.dll),
-# FIX (default fix id when a line has none; default automapper), REPOS, JOBS, TEST_TIMEOUT (s, default 3600), EXTRA (extra msbuild args), NOLOCK=1 (delete packages.lock.json in the copy; needed for bitwarden).
+# FIX (default fix id when a line has none; default automapper), REPOS, JOBS, TEST_TIMEOUT (s, default 3600), FIX_TIMEOUT (s, `fix` step, default 3600), EXTRA (extra msbuild args), NOLOCK=1 (delete packages.lock.json in the copy; needed for bitwarden).
 # Sources in $CORPUS/src/<name> are untrusted clones: only restore/build/test and the tool run on them. A fresh copy
 # (no .git/bin/obj/node_modules) is made per run in $CORPUS/work/<mode>-<name> and deleted afterwards.
 # base  = restore, build, test x2.  scan = restore, build, `scan --fix $FIX --report`.
@@ -91,7 +91,7 @@ XML
     step scan dotnet "$TOOL" scan "$SLN" --fix "$F" --report "$D/report.json" ;;
   after)
     step build0 dotnet build "$SLN" $P --no-restore || true  # source generators must run before types resolve
-    TO=3600; step fix dotnet "$TOOL" fix "$SLN" --fix "$F" --force --report "$D/report.json" || { status "fix-fails"; return; }; TO=1800
+    TO=${FIX_TIMEOUT:-3600}; step fix dotnet "$TOOL" fix "$SLN" --fix "$F" --force --report "$D/report.json" || { status "fix-fails"; return; }; TO=1800
     find . -name node_modules -prune -o -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +  # keep node_modules/**/bin (npm tools)
     step restore1 dotnet restore "$SLN" $P || { status "restore-after-fix-fails"; return; }
     step build1 dotnet build "$SLN" $P --no-restore || {

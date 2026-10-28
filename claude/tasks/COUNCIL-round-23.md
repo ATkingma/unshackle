@@ -10,7 +10,7 @@ Questions: council questions 12 and 13 in `claude/tasks/TAAK-340-specflow-to-req
 Follow-ups: TAAK-340 step 6 (S13), step 5 (S14).
 
 Facts checked in the decompiled packages (`Reqnroll.dll` 3.3.4, `Reqnroll.Generator.dll` from `Reqnroll.Tools.MsBuild.Generation`
-3.3.4, `TechTalk.SpecFlow.dll` 3.9.74; under `/mnt/dikkeschijf/unshackle-corpus/tmp/`):
+3.3.4, `TechTalk.SpecFlow.dll` 3.9.74):
 
 - `Reqnroll.ExpressionType { Unspecified, CucumberExpression, RegularExpression }`; `StepDefinitionBaseAttribute.ExpressionType { get; set; }`.
 - `BindingFactory`: `RegularExpression` always builds `RegexStepDefinitionBindingBuilder` (detector skipped); `RegexOptions.CultureInvariant`, as SpecFlow.

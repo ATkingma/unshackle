@@ -49,11 +49,11 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
   `typeof(..)` for an own type, else Manual `TypeNameArgument`), `xunit3.extensibility` (Manual inventory: `Xunit.Sdk` bases/interfaces/
   discoverer attributes, `ITestCollectionOrderer`, `MemberDataAttributeBase`). Not built: `[PropertyData]` (council question 4 below),
   `TheoryData`/`SkipException` differences (question 5)
-- [ ] 5g. X10: proof `RecordExceptionAsync/awaited-twice` (result stored, awaited twice, same exception); plan states why X10 differs from X6
-- [ ] 5h. X11: `TypeNameArgument` row names the type, says "no v2 → v3 name map", adds the documented v3 name as a hint when known
-- [ ] 5i. X12: Info row per file for uses of v2 `Xunit.Sdk` types (every line, type named, "no same-name type in xunit.v3 3.2.2" when so);
-  the missing-type list is built by a test from the real 2.9.3 and 3.2.2 assemblies; proof with a same-name type with changed members
-- [ ] 5j. X13: extensibility plan records why `[PropertyData]` is out of scope
+- [x] 5g. X10: proof `RecordExceptionAsync/awaited-twice` (result stored, awaited twice, same exception); plan states why X10 differs from X6
+- [x] 5h. X11: `TypeNameArgument` row names the type, says "no v2 → v3 name map", adds the documented v3 name as a hint when known
+- [x] 5i. X12: Info row per file for uses of v2 `Xunit.Sdk` types (every line, type named, "no same-name type in xunit.v3 3.2.2" when so);
+  the missing-type list is built by a test from the real 2.9.3 and 3.2.2 assemblies; proof with a same-name type with changed members. New pattern `xunit3.sdk-use` (Info, docs `xunit3-sdk-use-*`), `XunitV3SdkTypes` (`MissingInV3`, `V3Hints`) checked by `XunitV3SdkTypesTests` (branch `taak-341d`)
+- [x] 5j. X13: extensibility plan records why `[PropertyData]` is out of scope
 - [ ] 6. `xunit.runner.visualstudio` bump (needs a same-name version edit in the engine: `PackageRenameEdit` with OldName == NewName removes
   the reference, and under central package management the old `PackageVersion` stays), and `Microsoft.NET.Test.Sdk` minimum
 - [ ] 7. Corpus (discovered-test count > 0 and equal before/after, X2; count X11 `TypeNameArgument` and X12 rows, X14 breaks): 10-15 xUnit 2.x repos incl. integration suites with `IAsyncLifetime` (scout survey gap), pinned shas, build after fix
@@ -113,8 +113,8 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
 
 ## Context for the next agent
 
-- Done: steps 1-5 (5f and the step-5 patterns on branch `taak-341c`); all proofs and unit tests green, full `dotnet test` green, `verify-head.sh` VERIFY OK.
-- Next: steps 5g-5j (council 22), then step 7 (corpus) and step 8.
+- Done: steps 1-5j (5g-5j on branch `taak-341d`); all proofs and unit tests green, `verify-head.sh` VERIFY OK.
+- Next: step 7 (corpus) and step 8.
 - Changed files: `src/Unshackle.Core/Fixes/XunitV3/**`, `src/Unshackle.Interface/Cli.cs`, `src/Unshackle.Tests/Core/XunitV3/**`,
   `src/Unshackle.Tests/Proofs/XunitV3/**`, `src/Unshackle.Tests/{ProofTests.cs,Core/Engine/PreFilterContractTests.cs,Core/EndToEnd/NewFixesSmokeTests.cs}`,
   `src/Unshackle.Tests/Unshackle.Tests.csproj`, `Directory.Packages.props`, `docs/projectinfo/patterns/xunit3-*`, `docs/projectinfo/README.md`.

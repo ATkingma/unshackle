@@ -5,6 +5,8 @@ Read this first if you are taking over this session. Then `CLAUDE.md` and `claud
 
 ## State on 2026-10-28 (switching to the user's PC) — start here
 
+AI session: read `claude/docs/ai-handover-2026-10-28.md` first.
+
 Main green (`ab8ae4d`, CI green). Merged 2026-10-27: TAAK-325, 327 (rest), 329, 335-338, 340 (slice 1, 3a-3f, 4a-4c), 341
 (slice 1, 5a-5e), 342 (slice 1, steps 4-8b), 343, 344, 346/346b, 348, 349, 351, 352 (IProjectFileMigration async), 354
 (Polly B5/B6), council rounds 16-21, AutoMapper and Polly corpus re-runs. Merge rule used: `verify-head.sh <dir>` without

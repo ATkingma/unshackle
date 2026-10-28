@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Shouldly;
@@ -23,6 +24,24 @@ public class XunitV3FixTests
 
         // Assert
         pinned.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void TestSdkVersion_IsTheObjectModelTheRunnerNeeds()
+    {
+        // Arrange: the real xunit.runner.visualstudio nuspec (PackageDownload, copied to XunitV3/); on .NET Framework it needs
+        // Microsoft.TestPlatform.ObjectModel at least this version, which Microsoft.NET.Test.Sdk of the same version brings.
+        var nuspec = XDocument.Load(Path.Combine(AppContext.BaseDirectory, "XunitV3", "xunit.runner.visualstudio.nuspec"));
+
+        // Act
+        XElement package = nuspec.Root!.Elements().First(e => e.Name.LocalName == "metadata");
+        string? version = package.Elements().First(e => e.Name.LocalName == "version").Value;
+        string? objectModel = package.Descendants().Where(e => e.Name.LocalName == "dependency" && (string?)e.Attribute("id") == "Microsoft.TestPlatform.ObjectModel")
+            .Select(e => (string?)e.Attribute("version")).Max(StringComparer.Ordinal);
+
+        // Assert
+        version.ShouldBe(XunitV3Fix.RunnerVersion);
+        objectModel.ShouldBe(XunitV3Fix.TestSdkVersion);
     }
 
     [Fact]
@@ -57,13 +76,14 @@ public class XunitV3FixTests
             "PackageReference xunit → xunit.v3 3.2.2",
             "PackageReference xunit.core → xunit.v3 3.2.2",
             "PackageReference xunit.runner.visualstudio 2.0.0 or later → 3.1.5",
+            "PackageReference Microsoft.NET.Test.Sdk 15.0.0 or later → 17.13.0",
             "PackageReference xunit.assert → xunit.v3.assert 3.2.2",
             "PackageReference xunit.extensibility.core → xunit.v3.extensibility.core 3.2.2",
             "PackageReference xunit.extensibility.execution → xunit.v3.extensibility.core 3.2.2",
             "PackageReference xunit.abstractions removed",
         ]);
         // Council round 20, X9: a 1.x runner is kept with an Info row.
-        edits.OfType<PackageVersionEdit>().ShouldHaveSingleItem().BelowFromInfo.ShouldNotBeNull().ShouldContain("1.x runner");
+        edits.OfType<PackageVersionEdit>().First().BelowFromInfo.ShouldNotBeNull().ShouldContain("1.x runner");
         (await new XunitV3Fix().ProjectInfoAsync(project, TestContext.Current.CancellationToken)).ShouldBeEmpty();
     }
 

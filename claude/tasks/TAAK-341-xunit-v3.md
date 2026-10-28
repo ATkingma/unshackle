@@ -1,6 +1,6 @@
 # TAAK-341 — xUnit v2 → v3 fix (`xunit3`)
 
-**Status**: in progress (steps 1-5 done; next: corpus, step 7)
+**Status**: in progress (steps 1-6 done; next: corpus, step 7)
 **Created**: 2026-10-27
 **Branch / worktree**: `taak-341` (agent worktree `.claude/worktrees/agent-ad1cc69b2d7075655`)
 **Goal**: An `xunit3` fix that migrates xUnit v2 test projects to xunit.v3: package renames, `OutputType Exe`, `Xunit.Abstractions`
@@ -54,8 +54,11 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
 - [x] 5i. X12: Info row per file for uses of v2 `Xunit.Sdk` types (every line, type named, "no same-name type in xunit.v3 3.2.2" when so);
   the missing-type list is built by a test from the real 2.9.3 and 3.2.2 assemblies; proof with a same-name type with changed members. New pattern `xunit3.sdk-use` (Info, docs `xunit3-sdk-use-*`), `XunitV3SdkTypes` (`MissingInV3`, `V3Hints`) checked by `XunitV3SdkTypesTests` (branch `taak-341d`)
 - [x] 5j. X13: extensibility plan records why `[PropertyData]` is out of scope
-- [ ] 6. `xunit.runner.visualstudio` bump (needs a same-name version edit in the engine: `PackageRenameEdit` with OldName == NewName removes
-  the reference, and under central package management the old `PackageVersion` stays), and `Microsoft.NET.Test.Sdk` minimum
+- [x] 6. `xunit.runner.visualstudio` bump (done in 5e/5f) and `Microsoft.NET.Test.Sdk` minimum (branch `taak-341e`): checked in the real
+  packages: xunit.v3 3.2.2 itself has no Test.Sdk dependency (its `xunit.v3.core.mtp-v1` props only set `GenerateProgramFile=false`);
+  runner 3.1.5 depends on `Microsoft.TestPlatform.ObjectModel` 17.13.0 for net472 (none for net8.0). Test projects therefore bump
+  `Microsoft.NET.Test.Sdk` 15.0.0+ → 17.13.0 (`XunitV3Fix.TestSdkVersion`, `PackageVersionEdit`, CPM rules of X3). Test
+  `TestSdkVersion_IsTheObjectModelTheRunnerNeeds` reads the real runner nuspec (`PackageDownload`, copied to `XunitV3/`)
 - [ ] 7. Corpus (discovered-test count > 0 and equal before/after, X2; count X11 `TypeNameArgument` and X12 rows, X14 breaks): 10-15 xUnit 2.x repos incl. integration suites with `IAsyncLifetime` (scout survey gap), pinned shas, build after fix
 - [ ] 8. Blind round, roadmap row in `docs/projectinfo/project.md`
 
@@ -111,9 +114,15 @@ dual-disposal classes; 100% on a corpus where every project builds after the fix
    `TheoryData<T>` usage compiles on v3. Leave for the corpus to show a real break?
      **Decision (council 22 X14: corpus first with the discovered-test count check; `Xunit.SkippableFact` out of scope, Info row if found; step 7.)**
 
+## Council questions (from step 6, open)
+
+1. **Test.Sdk bump on every target.** Built: 15.0.0+ → 17.13.0 for every xunit3 test project, although only the .NET Framework runner
+   needs ObjectModel 17.13.0 (net8.0 has no dependency). Simpler and harmless (17.13.0 supports net8+/net472+), but it touches net8-only
+   projects too, and under CPM a non-xUnit project sharing the `PackageVersion` blocks it with an Info row. Keep, or bump only netfx projects?
+
 ## Context for the next agent
 
-- Done: steps 1-5j (5g-5j on branch `taak-341d`); all proofs and unit tests green, `verify-head.sh` VERIFY OK.
+- Done: steps 1-6 (5g-5j on branch `taak-341d`, 6 on `taak-341e`); all proofs and unit tests green, `verify-head.sh` VERIFY OK.
 - Next: step 7 (corpus) and step 8.
 - Changed files: `src/Unshackle.Core/Fixes/XunitV3/**`, `src/Unshackle.Interface/Cli.cs`, `src/Unshackle.Tests/Core/XunitV3/**`,
   `src/Unshackle.Tests/Proofs/XunitV3/**`, `src/Unshackle.Tests/{ProofTests.cs,Core/Engine/PreFilterContractTests.cs,Core/EndToEnd/NewFixesSmokeTests.cs}`,

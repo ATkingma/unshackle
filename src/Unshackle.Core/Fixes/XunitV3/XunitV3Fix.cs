@@ -19,6 +19,10 @@ public class XunitV3Fix : IFix, IProjectFileMigration
 
     public const string RunnerFromVersion = "2.0.0";
 
+    // TAAK-341 step 6: runner 3.1.5 needs Microsoft.TestPlatform.ObjectModel 17.13.0 on .NET Framework (its nuspec); an older
+    // Microsoft.NET.Test.Sdk would pair that with an older test host. 17.13.0 supports every target xunit3 does not block (net8+, net472+).
+    public const string TestSdkVersion = "17.13.0";
+
     public string Id => "xunit3";
 
     // v3 keeps Xunit; the patterns swap Xunit.Abstractions themselves (the model still binds it to v2 while fixing).
@@ -64,6 +68,7 @@ public class XunitV3Fix : IFix, IProjectFileMigration
                 To = RunnerVersion,
                 BelowFromInfo = $"a 1.x runner cannot run xunit.v3 tests; update it to {RunnerVersion} by hand.",
             });
+            edits.Add(new PackageVersionEdit { Name = "Microsoft.NET.Test.Sdk", From = "15.0.0", To = TestSdkVersion });
         }
         else if (XunitV3Assemblies.ReferencesExecution(project))
         {

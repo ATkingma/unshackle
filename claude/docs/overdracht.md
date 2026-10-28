@@ -1,7 +1,18 @@
-# Handover (updated 2026-10-28)
+# Handover (updated 2026-10-29)
 
 Read this first if you are taking over this session. Then `CLAUDE.md` and `claude/docs/INDEX.md`.
 
+
+## State on 2026-10-29 (project wrap-up, release 0.3.0 prepared) — start here
+
+Main green (`6aa13ff1`, CI green), version 0.3.0 in `Unshackle.Interface.csproj`, `CHANGELOG.md` written. The user decided
+to wrap the project up after this release. Merged 2026-10-28/29: SpecFlow corpus round 1 (TAAK-377..381), TAAK-356
+(shared `ProjectPackages.KeepForDependents`), TAAK-377 + TAAK-381, unfinished xUnit v3 corpus round (findings TAAK-382..386,
+repros in `Proofs/XunitV3/_Pending/`), release-030.
+
+**Not done:** tag `v0.3.0` (needs the user's go; the tag push publishes to NuGet via `.github/workflows/release.yml`), GitHub
+Release page, install check (TAAK-304 step 3). `moq-rerun-wip` is unfinished and breaks `Directory.Packages.props`: do not merge.
+Open known limitations are listed in `CHANGELOG.md` (TAAK-378, 379, 382..386; Moq/Polly reruns open).
 
 ## State on 2026-10-28 (switching to the user's PC) — start here
 

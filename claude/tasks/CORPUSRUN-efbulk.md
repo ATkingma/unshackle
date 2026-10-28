@@ -3,7 +3,7 @@
 ## Round 1 (2026-10-28, Linux)
 
 Tool published from branch `efbulk-corpus` (origin/main merged, `6fe378a2`) to `corpus-efbulk/tool`. Clones, results and logs on the
-corpus disk (`/mnt/dikkeschijf/unshackle-corpus/corpus-efbulk/{src,_results/{base,scan,after}/<name>}`), own NuGet cache under
+corpus disk (`<corpus>/corpus-efbulk/{src,_results/{base,scan,after}/<name>}`), own NuGet cache under
 `corpus-efbulk/nuget`, TMPDIR on the corpus disk. Driver `claude/tools/corpus-efbulk-run.sh` -> `corpus-efbulk-am.sh` (`--max-degree 4`);
 the last two repos ran with `EXTRA=-m:2`, two at a time. `after` = build, `fix --fix efbulk --force`, clean, restore, build, test, compare
 per test with base (`corpus-regression.py`). Repos and solutions: `claude/tools/corpus-efbulk-{repos,list}.txt`.

@@ -145,7 +145,7 @@ File names are historical and partly Dutch (`archief/` = archive, `modellen` = m
 | `claude/tasks/TAAK-301-document-parallel-options.md` | Document `--sequential` / `--max-degree` for users |
 | `claude/tasks/TAAK-302-verify-head-pattern-check.md` | verify-head must not pass when the pattern-docs check could not run (jq) |
 | `claude/tasks/TAAK-303-cleanup-worktrees.md` | Remove stale agent worktrees and merged branches |
-| `claude/tasks/TAAK-304-release-0-3-0.md` | Release 0.3.0 (after the user's go) |
+| `claude/tasks/archief/TAAK-304-release-0-3-0.md` | Release 0.3.0 (after the user's go) |
 | `claude/tasks/TAAK-305-readytorun-tool.md` | Measure and maybe ship ReadyToRun tool packages |
 | `claude/tasks/TAAK-306-manual-reduction-round-2.md` | Rank MediatR/AutoMapper Manual blockers in the corpus |
 | `claude/tasks/TAAK-307-moq-to-nsubstitute.md` | Moq → NSubstitute (roadmap step 7) |

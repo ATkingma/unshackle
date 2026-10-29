@@ -10,7 +10,7 @@ to wrap the project up after this release. Merged 2026-10-28/29: SpecFlow corpus
 (shared `ProjectPackages.KeepForDependents`), TAAK-377 + TAAK-381, unfinished xUnit v3 corpus round (findings TAAK-382..386,
 repros in `Proofs/XunitV3/_Pending/`), release-030.
 
-**Not done:** tag `v0.3.0` (needs the user's go; the tag push publishes to NuGet via `.github/workflows/release.yml`), GitHub
+**Released:** v0.3.0 on nuget.org and GitHub Releases (2026-10-29, TAAK-304 archived).
 Release page, install check (TAAK-304 step 3). `moq-rerun-wip` is unfinished and breaks `Directory.Packages.props`: do not merge.
 Open known limitations are listed in `CHANGELOG.md` (TAAK-378, 379, 382..386; Moq/Polly reruns open).
 

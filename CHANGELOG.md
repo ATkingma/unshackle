@@ -5,16 +5,16 @@ All notable user-visible changes. Format: [Keep a Changelog](https://keepachange
 Status per fix comes from the corpus rounds (open-source repos, their own tests run before and after `fix`). Lines marked
 `Corpus:` are the only place the status of a fix is stated; they change when a new round is merged.
 
-## [0.3.0] - unreleased
+## [0.3.0] - 2026-10-29
 
 ### Added
 
 New fixes (run each with `--fix <id>`; `unshackle list` shows every pattern):
 
 - **`moq`**: Moq → NSubstitute (setups, returns, throws, sequences, verify, verify-all).
-  Corpus: pending (round 2 on 5 repos found build breaks B2-B7, all fixed with proofs; rerun open).
+  Corpus: partial (round 2 on 5 repos found build breaks B2-B7, all fixed with proofs; rerun open).
 - **`polly`**: Polly v7 policies → Microsoft.Extensions.Resilience / Polly v8 pipelines. Polly charges a fee from 2026-11-16.
-  Corpus: pending (round 3: 12 of 14 repos build and test with 0 regressions caused by the fix; the 2 restore failures are now Manual, rerun open).
+  Corpus: partial (round 3: 12 of 14 repos build and test with 0 regressions caused by the fix; the 2 restore failures are now Manual, rerun open).
 - **`epplus`**: EPPlus → ClosedXML, per project (a project the tool cannot fully migrate stays on EPPlus).
   Corpus: 0 regressions (re-measure before/after; every build that fails after the fix fails the same way before it).
 - **`efbulk`**: Z.EntityFramework bulk `DeleteFromQuery`/`UpdateFromQuery` → EF Core `ExecuteDelete`/`ExecuteUpdate`; EF Core < 7 is blocked.
